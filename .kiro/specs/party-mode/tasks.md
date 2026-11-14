@@ -103,11 +103,11 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.28 Write property test for the clock and nextWake
     - **Property 13: The clock, nextWake, and disconnects end turns exactly once**
     - **Validates: Requirements 5.3, 5.5**
-  - [ ] 2.29 `canSuggest` (Poltergeist and Cold Spot refusals) and `resolveSuggestion`
-    - _Requirements: 6.1, 6.2_
-  - [ ]* 2.30 Write property test for suggestions
+  - [ ] 2.29 `canSuggest` (Poltergeist and Cold Spot refusals) and `resolveSuggestion`; a Suggestion may name a Suspect or a Relic from the suggester's own Hand (a Bluff), and `isBluff(hand, {suspect, relic})` decides it for every Suggestion, kept only in `state.bluffs` until the ending
+    - _Requirements: 6.1, 6.2, 6.7_
+  - [ ]* 2.30 Write property test for suggestions, including a Bluff that gives the same public event, log line and narrator prompt as a non-Bluff with the same result, and `isBluff` true exactly when the Suspect or the Relic is in the Hand
     - **Property 14: Suggestions resolve to the first holder clockwise**
-    - **Validates: Requirements 6.1, 6.2**
+    - **Validates: Requirements 6.1, 6.2, 6.7**
   - [ ] 2.31 `resolveAccusation` (a wrong Accusation makes a Poltergeist and raises the Haunt) and `gameOver` (correct Accusation, every Player a Poltergeist, or the Haunt at its maximum)
     - _Requirements: 6.3, 6.5_
   - [ ]* 2.32 Write property test for accusations and termination
@@ -118,11 +118,11 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.34 Write property test for relic tokens
     - **Property 16: Relic tokens parse strictly**
     - **Validates: Requirements 6.4**
-  - [ ] 2.35 `endingPayload` (with the Frame and House Cue reveal, the winners with the haunting and the two Nudge counters) and `playAgain` (resets the Haunt, `tippedBy`, Residue, Resolve, Poltergeists, Cue and Nudge counters, Round limits and Cue sources)
-    - _Requirements: 6.6_
-  - [ ]* 2.36 Write property test for endings and replays
+  - [ ] 2.35 `endingPayload` (with the Frame and House Cue reveal, the winners with the haunting, the two Nudge counters and the recap) and `playAgain` (resets the Haunt, `tippedBy`, Residue, Resolve, Poltergeists, Cue and Nudge counters, Round limits, Cue sources, the Bluff ids and the recap), and `buildRecap(publicLog, players, solution, reveal, bluffs)` in `recap.ts`, taking only the redacted public log and the Bluff event ids, and marking each Bluff Suggestion and counting them per Player
+    - _Requirements: 6.6, 6.8_
+  - [ ]* 2.36 Write property test for endings and replays, with the recap checked in the token-planting fuzz game (no planted Hand, shown card, unfound Residue, Inspect, Eavesdrop or Stitch token), counts equal to the matching public events, Bluff marks on exactly the Suggestions whose Suspect or Relic was in the suggester's Hand (Bots included), and no recap before the game ends
     - **Property 17: Endings and replays preserve what they should**
-    - **Validates: Requirements 6.6**
+    - **Validates: Requirements 6.6, 6.8**
   - [ ] 2.37 `pyramidLayout` and `fitTile`
     - _Requirements: 7.3_
   - [ ]* 2.38 Write property test for the pyramid layout
@@ -326,10 +326,10 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7, 11.1_
   - [ ] 4.5 Pose and input pipeline: sanitise host pose at ≤ 4 Hz, relay the active Player's input only, rate limit every token
     - _Requirements: 2.2, 7.2_
-  - [ ] 4.6 Suggestion and Accusation handlers, event log, achievement awards, end conditions
-    - _Requirements: 5.4, 6.1, 6.2, 6.3, 6.5_
-  - [ ] 4.7 Ending payload and Play again
-    - _Requirements: 6.6_
+  - [ ] 4.6 Suggestion and Accusation handlers, event log, achievement awards, end conditions; the handler records a Bluff only in `state.bluffs` and never in an event, log line or view
+    - _Requirements: 5.4, 6.1, 6.2, 6.3, 6.5, 6.7_
+  - [ ] 4.7 Ending payload with the recap, built once when the game ends, and Play again
+    - _Requirements: 6.6, 6.8_
   - [ ] 4.8 Time-to-live alarm, Master or host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
     - _Requirements: 1.5, 10.4, 10.6, 10.7_
   - [ ] 4.9 Bot runner driven by alarms with think time of 1.5 to 6 s
@@ -390,8 +390,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 7.2, 5.1_
   - [ ] 8.4 Free-standing photo frames near each Zone, facing the spawn, no collision
     - _Requirements: 3.5_
-  - [ ] 8.5 Ending screen and Play again (Master), listing the winners with the haunting and the two Nudge counters
-    - _Requirements: 6.6_
+  - [ ] 8.5 Ending screen and Play again (Master), listing the winners with the haunting and the two Nudge counters, and playing the recap entry by entry within the `effectLimits` (still under reduced motion), with each Bluff called out in words, and a Skip control for the Master
+    - _Requirements: 6.6, 6.8_
   - [ ] 8.6 "Play on this screen": the page joins as the first Player and Master and embeds that Player's pad beside the world; the Master adds Bots; the Private View shows only when every other seat is a Bot
     - _Requirements: 9.1, 9.3_
   - [ ] 8.7 Regression: the single-player game is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
@@ -422,8 +422,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 2.5_
   - [ ] 9.6 Hand view and notebook stored on the device
     - _Requirements: 4.2, 4.4_
-  - [ ] 9.7 Suggest and Accuse screens, relic selection by list or by camera scan
-    - _Requirements: 6.1, 6.3, 6.4_
+  - [ ] 9.7 Suggest and Accuse screens, relic selection by list or by camera scan; the Suggest list offers every Suspect and Relic, including cards in the Hand and cards marked no
+    - _Requirements: 6.1, 6.3, 6.4, 6.7_
   - [ ] 9.8 Contribution screens for Suspect, photo and Zone name; the photo step shows three Photo Prompts with tips to choose from, opens the camera for `take_now` and the picker for `camera_roll`, offers "Show me three more" (up to three times, with the remaining count shown) and "Use my own photo"
     - _Requirements: 3.1_
   - [ ] 9.9 Clock, warning and Achievement display
@@ -452,6 +452,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 18.2, 18.3_
   - [ ] 9.21 Master switches: the conditions choice (place, table's location or off), the hour strike, the light bar, Rattle and Stitch, alongside the presets of 9.15
     - _Requirements: 15.3, 15.4, 17.1, 18.1, 19.3_
+  - [ ] 9.22 Ending recap on the phone: the entries as a plain list with a text line each, each Bluff marked in words, the Solution and the Frame and House Cue senders at the end, usable with no Display and no sound
+    - _Requirements: 6.8_
 
 - [ ] 10. Web: Display (`web/src/party/display/`)
   - [ ] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected
