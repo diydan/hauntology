@@ -28,7 +28,7 @@ See `docs/SUBMISSION.md` for the product and technical overview and `.kiro/specs
 
 ## Spec-driven with Kiro
 Everything in this repo was planned in Kiro specs first. See `/.kiro`:
-- `specs/world-pipeline`, `world-viewer`, `ghost-creator`, `ghost-engine`, `conditions`, `ghost-voice`, `party-mode`: requirements (EARS), design with correctness properties, tasks (287 criteria, 124 properties across the seven)
+- `specs/world-pipeline`, `world-viewer`, `ghost-creator`, `ghost-engine`, `conditions`, `ghost-voice`, `party-mode`: requirements (EARS), design with correctness properties, tasks (287 criteria, 125 properties across the seven)
 - `steering/`: product, tech, structure, security-and-cost (always), plus file-scoped guides (ghost safety, testing, visual style, World Labs API, party mode)
 - `hooks/`: traceability check on spec save, spend-guard audit, property-test sync, print-kit validation, typecheck on stop
 - `settings/mcp.json`: a spend-capped World Labs dev MCP server

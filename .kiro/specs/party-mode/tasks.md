@@ -18,7 +18,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - Play the base rules (Residue and Inspect, the Haunt's speed, Poltergeists, thin hands at six Players) with Bots and two or three people in one room, or on paper. Record in `docs/spikes/party-1.4.md` and tune the design numbers (Haunt maximum, thresholds, Resolve cap, Inspect time).
     - _Requirements: 4.6, 11.1, 11.2, 11.3_
   - [ ] 1.5 Balance
-    - Run the seeded balance simulation (every Player Nudging whenever the rules allow) for two to six Players on a 60 s clock, then play three real games with Classic and one with Gentle. Record the share of Turns that are Spooked, the average seconds removed, the Turn timeout rate, how fast the Haunt rises, Eavesdrop use and how many Cues each Player plays. Check the amendment's worst-case model (about half of all Turns Spooked under the old limits and 23% under the new ones at four Players) and my own (40% at two Players, 27% at three and 20% at four with one Spook per Round alone, about 20% everywhere with the extra four-Turn rule). Check also whether Poltergeists Helping and Spooking feels fun or like piling on. Tune the Spook cost, the floor and the table limits in `docs/spikes/party-1.5.md`.
+    - Run the seeded balance simulation (every Player Nudging whenever the rules allow) for two to six Players on a 60 s clock, then play three real games with Classic, one with Gentle and one with Quick. Record the share of Turns that are Spooked, the average seconds removed, the Turn timeout rate, how fast the Haunt rises, Eavesdrop use, how many Cues each Player plays and the two Nudge counters (haunting Players against everyone else; decide on separate Nudge tokens from them). Check the amendment's worst-case model (about half of all Turns Spooked under the old limits and 23% under the new ones at four Players) and my own (40% at two Players, 27% at three and 20% at four with one Spook per Round alone, about 20% everywhere with the extra four-Turn rule). Check also whether Poltergeists Helping and Spooking feels fun or like piling on. Tune the Spook cost, the floor and the table limits in `docs/spikes/party-1.5.md`.
     - _Requirements: 11.1, 12.2, 12.3, 12.4_
   - [ ] 1.6 Phone sound
     - On a real iPhone (Safari) and a real Android phone (Chrome): whether one tap at join unlocks audio for the rest of the game, the iOS silent switch, whether a sound plays with the screen dimmed or the tab in the background, loudness across a table, the delay and spread of a sound sent to six phones at once, how well Restless at 400 ms steps survives clock drift (against the server clock), and what the flash and vibrate fallback feels like.
@@ -118,7 +118,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.34 Write property test for relic tokens
     - **Property 16: Relic tokens parse strictly**
     - **Validates: Requirements 6.4**
-  - [ ] 2.35 `endingPayload` (with the Frame and House Cue reveal) and `playAgain` (resets the Haunt, Residue, Resolve, Poltergeists, Cue counters, Round limits and Cue sources)
+  - [ ] 2.35 `endingPayload` (with the Frame and House Cue reveal, the winners with the haunting and the two Nudge counters) and `playAgain` (resets the Haunt, `tippedBy`, Residue, Resolve, Poltergeists, Cue and Nudge counters, Round limits and Cue sources)
     - _Requirements: 6.6_
   - [ ]* 2.36 Write property test for endings and replays
     - **Property 17: Endings and replays preserve what they should**
@@ -158,7 +158,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.50 Write property test for Residue and Inspect
     - **Property 28: Residue is hidden, and inspection is private and once only**
     - **Validates: Requirements 4.6**
-  - [ ] 2.51 `hauntRise` (a timeout after a Spook raises nothing), `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot, Blackout, Restless, Lull; 15 s choice window)
+  - [ ] 2.51 `hauntRise` (a timeout after a Spook raises nothing; it records `tippedBy`, the Player whose lost Turn or wrong Accusation reached the maximum), `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot, Blackout, Restless, Lull; 15 s choice window)
     - _Requirements: 11.1, 11.2_
   - [ ]* 2.52 Write property test for the Haunt
     - **Property 26: The Haunt rises by the rules and events fire once**
@@ -178,7 +178,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.58 Write property test for Photo Prompts
     - **Property 30: Photo Prompt offers are deterministic, complete and bounded**
     - **Validates: Requirements 3.6, 3.7, 3.8**
-  - [ ] 2.59 `nudgeCost`, `canNudge` (with every named reason) and `nudge`: Help +10 s up to 120 s, Spook -10 s with 20 s left, a 30 s floor, one of each per Turn, one Spook per Round, never the same Player on consecutive Turns, none from the active Player or a Bot (a Poltergeist may Help and Spook), and no Spook within three Turns of the last
+  - [ ] 2.59 `nudgeCost`, `canNudge` (with every named reason) and `nudge`: Help +10 s up to 120 s, Spook -10 s with 20 s left, a 30 s floor, one of each per Turn, one Spook per Round, never the same Player on consecutive Turns, none from the active Player or a Bot (a Poltergeist may Help and Spook), and no Spook within three Turns of the last; each accepted Nudge counted for haunting Players or for everyone else
     - _Requirements: 12.2, 12.3, 12.4_
   - [ ]* 2.60 Write property test for Nudges
     - **Property 31: Nudges obey cost, floor and limits**
@@ -188,7 +188,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.62 Write property test for Cues
     - **Property 32: Cues are rate limited and change no rule**
     - **Validates: Requirements 12.1, 14.1, 14.2**
-  - [ ] 2.63 `applyPreset` (Classic, Gentle), the Nudge, Frame and sound switches, and `canControl` extended so that only the Master's token can change them; no Cue, Nudge or Frame calls a model (their lines come from `partyScripted`)
+  - [ ] 2.63 `applyPreset` (Classic, Gentle, Quick; the default Haunt maximum is 8), the Nudge, Frame and sound switches, and `canControl` extended so that only the Master's token can change them; no Cue, Nudge or Frame calls a model (their lines come from `partyScripted`)
     - _Requirements: 12.5, 14.6_
   - [ ]* 2.64 Write property test for presets and switches
     - **Property 33: Presets and switches do what they say**
@@ -295,6 +295,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.105 Write property test for absent sound files
     - **Property 53: Absent sound files change nothing**
     - **Validates: Requirements 20.2**
+  - [ ]* 2.106 Write property test for tipping the Haunt
+    - **Property 54: Nobody wins by tipping the Haunt**
+    - **Validates: Requirements 6.5**
 
 - [ ] 3. Print module (`shared/src/print/`)
   - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
@@ -387,7 +390,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 7.2, 5.1_
   - [ ] 8.4 Free-standing photo frames near each Zone, facing the spawn, no collision
     - _Requirements: 3.5_
-  - [ ] 8.5 Ending screen and Play again (Master)
+  - [ ] 8.5 Ending screen and Play again (Master), listing the winners with the haunting and the two Nudge counters
     - _Requirements: 6.6_
   - [ ] 8.6 "Play on this screen": the page joins as the first Player and Master and embeds that Player's pad beside the world; the Master adds Bots; the Private View shows only when every other seat is a Bot
     - _Requirements: 9.1, 9.3_
@@ -435,7 +438,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 7.7_
   - [ ] 9.14 Phone sound: the one-time consent question with a tap that unlocks Web Audio, changeable from the menu; the four Cue sound files (at most 3 s each, absent files mean flash, vibration and the log line); playback at the scheduled start on the server clock; the flash (at most three per second, none under reduced motion) and vibration fallback; the private "that was not you" message
     - _Requirements: 14.1, 14.3, 14.4_
-  - [ ] 9.15 Master presets: Classic and Gentle in the Master menu, with separate switches for Nudges (all or help-only), Frames and sounds; non-Masters never see them
+  - [ ] 9.15 Master presets: Classic, Gentle and Quick in the Master menu, with separate switches for Nudges (all or help-only), Frames and sounds; non-Masters never see them
     - _Requirements: 12.5, 14.6_
   - [ ] 9.16 Cue, Nudge and Frame controls in the menu: the Cue picker with TV or this phone, Help and Spook with their Resolve cost, the Frame picker (a Player and a Cue), 48 px targets, and the reason in words whenever one is unavailable
     - _Requirements: 13.1, 14.2, 14.4_

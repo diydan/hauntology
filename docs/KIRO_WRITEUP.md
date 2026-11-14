@@ -14,13 +14,13 @@ Do not submit with any tag left in. Delete a claim you cannot back up.
 
 | Kiro feature | In the repo now | Still to do |
 |---|---|---|
-| Specs | 7 specs: 287 criteria, 124 properties, traceability tool | Mark tasks done as they pass |
+| Specs | 7 specs: 287 criteria, 125 properties, traceability tool | Mark tasks done as they pass |
 | Steering | 9 files: 4 always-on, 5 file-scoped | Update world-pipeline and party steering for Workers AI |
 | Hooks | 5 standalone hooks in `.kiro/hooks/` | Capture one firing for evidence |
 | Custom agents | `spec-reviewer` (read-only), `pbt-writer` (writes tests only) in `.kiro/agents/` | Run each once in the surface you use, capture the result |
 | Powers | `powers/hauntology-guarded-ai/` (own power, one skill) | Import it in the Powers panel. Install any third-party power you really use |
 | MCP | `worldlabs-dev` entry in `.kiro/settings/mcp.json` | **The server is not built yet.** `tools/worldlabs-mcp/` holds only a README. Build it (world-pipeline task 0) before claiming it |
-| PBT | 124 properties specified | **No tests exist yet.** Everything in section 7 is `[AFTER BUILD]` |
+| PBT | 125 properties specified | **No tests exist yet.** Everything in section 7 is `[AFTER BUILD]` |
 
 Changes made while writing this: removed the Nova Canvas MCP entry (the stack moved to Workers AI), and updated the spend-guard hook to audit `env.AI` and Cloudflare Images instead of Bedrock. All AI now runs on Cloudflare: Llama 4 Scout (text and vision), Llama Guard 3 (free-text moderation), FLUX.2 klein 9B (images) and Cloudflare Images (sprite cut-out).
 
@@ -121,7 +121,7 @@ Related and real: the World Labs CLI and its skills were installed and used for 
 
 ## 7. Property-based testing
 
-124 properties are specified across seven specs. They cover:
+125 properties are specified across seven specs. They cover:
 
 - **Hidden information.** Views never leak secrets, using a fuzz that plants unique tokens in every hand and the Solution and checks that none appears in any public output (party Property 8).
 - **Fair play.** The deal is a valid partition. Turn order is fair. Suggestions resolve to the first holder clockwise. Games terminate.

@@ -47,7 +47,8 @@ Log:
 - [x] Replace Bedrock and Nova with Workers AI in world-pipeline, ghost-creator, ghost-engine and party-mode specs. Also `README.md`, `docs/PLAN.md`, `docs/SUBMISSION.md`.
 - [x] Amendment E, AI part: all AI on Cloudflare (Llama 4 Scout, Llama Guard 3, FLUX.2 klein 9B, Cloudflare Images); `AIClient` renamed `WorkersAiClient`; steering, hook, power, specs and docs updated.
 - [x] Amendment E, party part (phone sound, Frames, balance limits), with Amendment C rebuilt from E's summary: party requirements 12 to 14, Properties 31 to 36, Spikes 1.4 and 1.5, new tasks. Review the rebuilt parts of C.
-- [x] Master amendment applied: `conditions` and `ghost-voice` specs, party Requirements 12 to 20, world-viewer `setAtmosphere` and tilt to look. 287 criteria, 124 properties. TTS is now the `ghost-voice` spec.
+- [x] Master amendment applied: `conditions` and `ghost-voice` specs, party Requirements 12 to 20, world-viewer `setAtmosphere` and tilt to look. 287 criteria, 125 properties. TTS is now the `ghost-voice` spec.
+- [x] Balance changes from section 9 applied: default Haunt maximum 8 and a Quick preset, no win for the Player who tips the Haunt (Property 54), Nudge counters for haunting Players and everyone else. 287 criteria, 125 properties.
 - [x] Party Photo Prompts are specced (party requirement 3.6 to 3.9, Property 30).
 - [ ] Decide whether to keep the hidden-photo relic-sketch idea. If yes, spec it with the photo deleted right after generation. If no, drop it.
 - [ ] Close the ownership gaps: `POST /api/play/start`, `GET /api/play/:id`, `POST /api/sketch/select`.
