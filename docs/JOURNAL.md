@@ -46,9 +46,10 @@ Log:
 ### Sun Nov 15 Specs match the stack
 - [x] Replace Bedrock and Nova with Workers AI in world-pipeline, ghost-creator, ghost-engine and party-mode specs. Also `README.md`, `docs/PLAN.md`, `docs/SUBMISSION.md`.
 - [ ] Add TTS to the specs: ghost voice, host voice, a `TTS` cap, text always shown.
-- [ ] Add the relic-sketch contribution to party requirement 3. Personal photo is deleted right after generation.
+- [x] Party Photo Prompts are specced (party requirement 3.6 to 3.9, Property 25).
+- [ ] Decide whether to keep the hidden-photo relic-sketch idea. If yes, spec it with the photo deleted right after generation. If no, drop it.
 - [ ] Close the ownership gaps: `POST /api/play/start`, `GET /api/play/:id`, `POST /api/sketch/select`.
-- [ ] Write a short spec for the web shell (routing, error boundaries, confirm gate UI, sketch pad).
+- [ ] Web shell spec (`.kiro/specs/haunwallker`): requirements and design are done. Write `tasks.md`.
 - [ ] Run `node tools/check-traceability.mjs` until it passes.
 
 Done when: the traceability check passes and `grep -ri bedrock .kiro/specs` finds nothing.
@@ -107,7 +108,7 @@ Done when: routes pass with a fake AI and the Gallery script runs end to end on 
 Log:
 
 ### Sat Nov 21 Printing day 2 + Gallery worlds (hard date)
-- [ ] **Generate the six Gallery worlds.** About $7.5. Check each in the viewer.
+- [ ] **Generate the six Gallery worlds.** About $7.5. Start as early as Nov 18, once Spike C and the `ingest-gallery` script work, and finish today. Check each in the viewer.
 - [ ] Write `docs/ATTRIBUTION.md`.
 - [ ] Start `WorldJob` (world-pipeline 7). Alarm-driven poll, ingest to R2.
 

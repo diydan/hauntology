@@ -36,7 +36,7 @@ Still open:
 - **Web shell spec** (`.kiro/specs/haunwallker`): requirements and design are written. `tasks.md` is next. It also owns `world-pipeline` tasks 10.1 to 10.4 (photo picker, sketch pad, confirm screen, progress screen).
 - **TTS**: a voice per Ghost Persona, a host voice, a `TTS_*` cap in `SpendGuard`, text always shown, audio optional, off by default for reduced-motion and muted users.
 - **Party contributions**: party requirement 3 now has Photo Prompts (three offered, up to three skips, framed in the world). The earlier relic-sketch idea (a hidden personal photo that is deleted after generation) overlaps it and is not decided.
-- **Security gaps** from the reviews: play-session ownership, sketch-select ownership, and the `errors.ts` code list that does not match the `world-pipeline` design.
+- **Security gaps** from the reviews: play-session ownership, sketch-select ownership, own-world read and delete ownership (the shell design assumes it, see "World access" in `.kiro/specs/haunwallker/design.md`), and the `errors.ts` code list that does not match the `world-pipeline` design.
 
 ## Phases
 

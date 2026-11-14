@@ -125,7 +125,7 @@ type Capabilities = {
 ```ts
 type ConfirmState =
   | { k: 'quoting' }
-  | { k: 'ready'; imageUrl: string; token: string; quota: QuotaSnapshot }
+  | { k: 'ready'; imageUrl: string; token: string; quota: QuotaSnapshot; needsTurnstile: boolean }
   | { k: 'challenge'; token: string }                 // Turnstile needed
   | { k: 'creating'; token: string }
   | { k: 'created'; worldId: string }
@@ -135,14 +135,14 @@ type ConfirmEvent =
   | { t: 'quote_ok'; imageUrl: string; token: string; quota: QuotaSnapshot; needsTurnstile: boolean }
   | { t: 'quote_fail'; code: ErrorCode }
   | { t: 'turnstile_ok'; turnstile: string }
-  | { t: 'enter' } | { t: 'back' }
+  | { t: 'enter' } | { t: 'back' } | { t: 'retry' }
   | { t: 'create_ok'; worldId: string } | { t: 'create_fail'; code: ErrorCode };
 type ConfirmEffect =
   | { e: 'quote'; imageId: string }
   | { e: 'create'; imageId: string; token: string; turnstile?: string }
   | { e: 'navigate'; to: Route };
 ```
-Rules: `create` is emitted only on `enter` from `ready` (or after `turnstile_ok` when the visitor already pressed enter in `challenge`). From `creating`, `created`, `rejected` and `cancelled`, `enter` is ignored. A token is never emitted twice. `back` emits `navigate` without any `create`.
+Rules: `enter` from `ready` with `needsTurnstile` false emits `create`. `enter` from `ready` with `needsTurnstile` true moves to `challenge` and emits nothing; `turnstile_ok` in `challenge` then emits `create`. `retry` is accepted only from `rejected` (for example `confirm_expired` or a failed quote): it emits one `quote` effect and moves to `quoting`, and the new token replaces the old one. From `creating`, `created`, `rejected` and `cancelled`, `enter` is ignored. A token is never emitted twice. `back` emits `navigate` without any `create`.
 
 ### Stage mapping and polling
 `stageOf(jobState)`: `queued → queued`, `generating → dreaming`, `ingesting → stitching`, `ready → ready`, `failed → failed`, matching `world-pipeline` states and the labels in `steering/visual-style.md`.
@@ -183,7 +183,7 @@ The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server
 `errorCopy(code: ErrorCode) → { title: string; body: string; next: 'retry' | 'gallery' | 'home' | 'wait' }`, an exhaustive table over `ErrorCode` in `shared/src/errors.ts`. The table is a `Record<ErrorCode, …>`, so adding a code without copy is a compile error. Unknown strings from the network map to a single generic entry. Server `message` text is never rendered.
 `retryGate(retryAfterSec, now) → { enabledAt }` clamps the advised delay to [1 s, 120 s].
 
-`errors.ts` currently lacks several codes that the `world-pipeline` design lists (`blank_sketch`, `unsafe_image`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `quota_session`, `quota_day`, `quota_total`, `gen_disabled`, `timeout`, `ingest_failed`) and has some the design does not. The first shell task reconciles them into one list; `errorCopy` is then exhaustive over it.
+`errors.ts` currently lacks several codes that the `world-pipeline` design lists (`blank_sketch`, `unsafe_image`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `quota_session`, `quota_day`, `quota_total`, `gen_disabled`, `timeout`, `ingest_failed`) and has some the design does not. The shell adds `shell_crash` (screen boundary fallback) and `session_expired` (Expired screen), so the reconciled list must contain both, together with `world_not_found`. The first shell task reconciles them into one list; `errorCopy` is then exhaustive over it.
 
 ### Capabilities
 `capabilities(quota, flags) → Capabilities`. `canDraw` needs image quota, world quota and `WORLD_GEN_ENABLED`; `canUpload` needs world quota and the flag; `canGallery` is always `true`. `reason` follows a fixed priority (kill switch, total cap, day cap, image quota, world quota).
@@ -204,6 +204,7 @@ The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server
 - Chat is a bottom sheet below 900 px and a side panel at 900 px and above. The layout is CSS grid with a container query; no JS breakpoint logic.
 
 ### Security and privacy
+- **World access.** Gallery worlds are public. A visitor's own world is private to the Session that created it. The shell assumes `GET /api/worlds/:id`, its assets, `DELETE /api/worlds/:id` and `POST /api/play/start` serve an own world only to that Session, and answer `world_not_found` for both a missing and a foreign id, so ids cannot be probed. `/haunt/:worldId` and `/play/:worldId` are therefore not shareable for own worlds. A visitor shares the memory card image, not a link. This is a requirement on the `world-pipeline` and `ghost-engine` routes, tracked in `docs/IMPLEMENTATION.md` until those specs state it.
 - Same-origin `fetch` with `credentials: 'same-origin'`. No third-party origin appears in the CSP `script-src`, `connect-src`, `font-src` or `img-src` except Turnstile when configured.
 - User text is rendered through React text nodes. A lint rule bans `dangerouslySetInnerHTML` in `web/`.
 - Production builds replace `console.*` with a logger that accepts only `(code, screenId)`.
