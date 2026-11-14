@@ -93,7 +93,7 @@ sequenceDiagram
 `App.tsx` (router, providers), `screens/` (one folder per Screen), `ApiClient.ts` (typed fetch, maps failures to `Result`), `QuotaStore.ts` (single boot request, shared by Screens), `ErrorBoundary.tsx`, `LiveRegion.tsx`, `DebugOverlay.tsx`, `FakeApi.ts` (`?demo=1`, non-production builds only).
 
 ### `shared/src/app/`
-`routes.ts` (`resolveRoute`, `pathFor`, `guardRoute`), `confirm.ts` (`confirmReduce`), `errors-copy.ts` (`errorCopy`, `retryGate`), `capabilities.ts` (`capabilities`), `stage.ts` (`stageOf`, `pollPlan`), `play.ts` (`playReduce`), `resume.ts` (`resumeTarget`), `sketch-size.ts` (`downscaleSize`), `events.ts` (the Shell-to-Viewer contract), `fake-api.ts` (fixture timeline for demo mode).
+`types.ts` (the data types below and the literal lists they come from), `routes.ts` (`resolveRoute`, `pathFor`, `guardRoute`), `confirm.ts` (`confirmReduce`), `errors-copy.ts` (`errorCopy`, `retryGate`), `capabilities.ts` (`capabilities`), `stage.ts` (`stageOf`, `pollPlan`), `play.ts` (`playReduce`), `resume.ts` (`resumeTarget`), `sketch-size.ts` (`downscaleSize`), `events.ts` (the Shell-to-Viewer contract), `fake-api.ts` (fixture timeline for demo mode).
 
 ```ts
 type ScreenId = 'home' | 'gallery' | 'create' | 'confirm' | 'haunt' | 'play' | 'end' | 'not_found' | 'expired';

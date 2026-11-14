@@ -1,0 +1,109 @@
+/**
+ * Data types of the web shell's pure logic (`shared/src/app/`).
+ * Types only, plus the literal lists they are derived from. No I/O.
+ */
+import type { ErrorCode } from "../errors";
+
+export const SCREEN_IDS = [
+  "home", "gallery", "create", "confirm", "haunt", "play", "end", "not_found", "expired",
+] as const;
+export type ScreenId = (typeof SCREEN_IDS)[number];
+
+export type Route = { screen: ScreenId; worldId?: string };
+
+export type FlowState = {
+  pickedImageId?: string; // set when a Place Image is chosen
+  worldId?: string;       // known world (own or Gallery)
+  ghostReady: boolean;    // preset or created ghost chosen
+  noticeAcked: boolean;
+  playEnded: boolean;
+};
+
+/** Remaining count per meter, as returned by `GET /api/quota` (world-pipeline 5.7). */
+export type QuotaSnapshot = { world: number; image: number; llm: number; tts: number };
+
+/** Server switches the shell reads from `GET /api/session`. */
+export type ShellFlags = {
+  worldGenEnabled: boolean;
+  dayCapReached: boolean;
+  totalCapReached: boolean;
+};
+
+export type CapabilityReason = "kill_switch" | "day_cap" | "total_cap" | "quota_image" | "quota_world";
+export type Capabilities = {
+  canDraw: boolean;
+  canUpload: boolean;
+  canGallery: true;
+  reason?: CapabilityReason;
+};
+
+/** The `GET /api/session` payload. Only ids and flags; never photos, sketches or captions. */
+export type SessionRecord = {
+  lastWorldId?: string;
+  lastPlayId?: string;
+  ackNotice: boolean;
+  flags: ShellFlags;
+};
+
+/** World job states, as in the world-pipeline design. */
+export const JOB_STATES = ["queued", "generating", "ingesting", "ready", "failed"] as const;
+export type JobState = (typeof JOB_STATES)[number];
+
+/** Labels the visitor sees; mapped from `JobState` by `stageOf`. */
+export const STAGES = ["queued", "dreaming", "stitching", "ready", "failed"] as const;
+export type Stage = (typeof STAGES)[number];
+
+/** Input of `pollPlan`. Times are epoch milliseconds. `rateLimitedUntil` is null when not rate limited. */
+export type PollInput = {
+  now: number;
+  lastPollAt: number;
+  visible: boolean;
+  stage: Stage;
+  rateLimitedUntil: number | null;
+  startedAt: number;
+};
+
+// Confirm Gate
+export type ConfirmState =
+  | { k: "quoting" }
+  | { k: "ready"; imageUrl: string; token: string; quota: QuotaSnapshot; needsTurnstile: boolean }
+  | { k: "challenge"; token: string }
+  | { k: "creating"; token: string }
+  | { k: "created"; worldId: string }
+  | { k: "rejected"; code: ErrorCode }
+  | { k: "cancelled" };
+
+export type ConfirmEvent =
+  | { t: "quote_ok"; imageUrl: string; token: string; quota: QuotaSnapshot; needsTurnstile: boolean }
+  | { t: "quote_fail"; code: ErrorCode }
+  | { t: "turnstile_ok"; turnstile: string }
+  | { t: "enter" } | { t: "back" } | { t: "retry" }
+  | { t: "create_ok"; worldId: string } | { t: "create_fail"; code: ErrorCode };
+
+export type ConfirmEffect =
+  | { e: "quote"; imageId: string }
+  | { e: "create"; imageId: string; token: string; turnstile?: string }
+  | { e: "navigate"; to: Route };
+
+// Play screen
+export const VIEWER_RUNGS = ["pano", "thumb"] as const;
+export type ViewerRung = (typeof VIEWER_RUNGS)[number];
+
+export type PlayState = {
+  mode: "play" | "chat";
+  found: number;
+  noticeAcked: boolean;
+  ended: boolean;
+  degraded?: ViewerRung;
+};
+
+export type PlayEvent =
+  | { t: "ack_notice" } | { t: "open_chat" } | { t: "close_chat" } | { t: "exit" }
+  | { t: "view"; found: number; ended: boolean } | { t: "viewer_degraded"; rung: ViewerRung };
+
+export type PlayEffect =
+  | { e: "start_viewer" } | { e: "set_input_mode"; mode: "play" | "chat" }
+  | { e: "dispose_viewer" } | { e: "navigate"; to: Route };
+
+/** RGBA pixels, row by row, like canvas `ImageData`. */
+export type Bitmap = { width: number; height: number; data: Uint8ClampedArray };
