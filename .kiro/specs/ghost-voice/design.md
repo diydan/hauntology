@@ -184,7 +184,7 @@ The ports are injected, so the gate has no I/O of its own and is property-tested
 ### `shared/src/voice/stitch/`
 `wordbank.ts` (`WORD_BANK`, `validateWordBank`), `templates.ts` (`TEMPLATES`, `validateTemplates`, `eligibleTemplates`), `compose.ts` (`composeStitch`), `check.ts` (`heardWord`, `canCheck`, `recordCheck`), `consent.ts` (`STITCH_QUESTION`, `consentReduce`, `consentEffective`), `play.ts` (`stitchEligible`, `stitchPublicEvent`, `stitchReveal`), `purge.ts` (`purgeClips`, `nextPurgeAt`).
 
-**Word Bank and Templates.** The default Word Bank is the twelve words listen, behind, you, here, wait, closer, cold, tonight, again, candle, stairs, sleep. `validateWordBank` refuses more than 12 words, duplicates, and any word that is not lowercase letters. A Template is a fixed ordered list of two to four Word Bank words, and its subtitle is those words joined by spaces. Starter Templates, whose wording the owner reviews because it is a safety surface: `listen behind you`, `wait here`, `here again tonight`, `cold tonight`, `sleep here`, `wait closer`, `stairs behind you`, `listen again`, `candle cold`, `you closer`. `validateTemplates` fails the build if a Template uses a word outside the bank, if any bank word is in no Template, or if a Template's subtitle is rejected by `validateGhostReply`. A line has no free slot: nothing a player or a model writes can enter a Template.
+**Word Bank and Templates.** The default Word Bank is the twelve words listen, behind, you, here, wait, closer, cold, tonight, again, candle, stairs, sleep. `validateWordBank` refuses more than 12 words, duplicates, and any word that is not lowercase letters. A Template is a fixed ordered list of two to four Word Bank words, and its subtitle is those words joined by spaces. Starter Templates, a safety surface, whose wording the owner reviewed and kept as written on 2026-11-14: `listen behind you`, `wait here`, `here again tonight`, `cold tonight`, `sleep here`, `wait closer`, `stairs behind you`, `listen again`, `candle cold`, `you closer`. `validateTemplates` fails the build if a Template uses a word outside the bank, if any bank word is in no Template, or if a Template's subtitle is rejected by `validateGhostReply`. A line has no free slot: nothing a player or a model writes can enter a Template.
 
 ```ts
 type StitchTemplate = { id: string; words: readonly string[]; subtitle: string };
@@ -254,9 +254,9 @@ These controls are built under the web shell spec `.kiro/specs/haunwallker` (Pla
 | `VOICE_TTS_FALLBACK_MODEL_ID` | `@cf/myshell-ai/melotts` | unverified, Spike 1.1 |
 | `VOICE_STT_MODEL_ID` | `@cf/openai/whisper-large-v3-turbo` | unverified, Spike 1.1 |
 | `VOICE_TTS_SESSION_CAP` | `40` | spoken lines per Single-player session |
-| `VOICE_TTS_DAY_CAP` | `1500` | not in the amendment; the old `TTS_DAY_CAP` default, for the owner to confirm |
+| `VOICE_TTS_DAY_CAP` | `1500` | not in the amendment; the old `TTS_DAY_CAP` default; confirmed by the owner on 2026-11-14 |
 | `VOICE_STT_SESSION_CAP` | `20` | heard clips per Single-player session |
-| `VOICE_STT_DAY_CAP` | `750` | not in the amendment; half of the speech cap, for the owner to confirm |
+| `VOICE_STT_DAY_CAP` | `750` | not in the amendment; half of the speech cap; confirmed by the owner on 2026-11-14 |
 | `VOICE_ROOM_LINE_CAP` | `20` | spoken lines per room; may be lowered, never raised above 20 |
 | `VOICE_STITCH_ENABLED` | `true` | `false` removes Stitch everywhere (cut order, step 2) |
 | `VOICE_STITCH_PLAYER_CHECKS` | `30` | Word Checks per player |

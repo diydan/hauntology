@@ -123,7 +123,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
 
 - [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
   - [ ] 5.1 Word Bank, Templates and composition
-    - `WORD_BANK` of the 12 default words, `validateWordBank`, the ten starter Templates, `validateTemplates` (no word outside the bank, every bank word used, subtitles pass `validateGhostReply`), `composeStitch`; `stitch.arb.ts` generators. The owner reviews the Template wording.
+    - `WORD_BANK` of the 12 default words, `validateWordBank`, the ten starter Templates, `validateTemplates` (no word outside the bank, every bank word used, subtitles pass `validateGhostReply`), `composeStitch`; `stitch.arb.ts` generators. The owner reviewed and kept the starter Template wording on 2026-11-14.
     - _Requirements: 5.1_
   - [ ]* 5.2 Write property test for stitched lines
     - **Property 8: Stitched lines contain only template and Word Bank words**
