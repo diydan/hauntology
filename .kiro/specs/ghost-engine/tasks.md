@@ -3,7 +3,7 @@
 Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and 5.2 (WorkersAiClient), and `world-viewer` 6.3 (ViewerBridge).
 
 - [ ] 1. Spike: narration tone and cost
-  - Add one weather case per persona (a rainy dusk, a snowy night). Run three personas (soft/childlike, dry/stern, formal/melancholic) for ten turns each through `llama-4-scout-17b-16e-instruct` (`GHOST_MODEL_ID`) using the guarded WorkersAiClient text wrapper. Record latency, tokens, validation failure rate, and whether the rules in `steering/ghost-safety.md` hold against 10 jailbreak attempts. Tune prompt wording. Write `docs/spikes/4.1.md`.
+  - Add one weather case per persona (a rainy dusk, a snowy night). Run two personas (soft/wistful, dry/stern) for ten turns each through `llama-4-scout-17b-16e-instruct` (`GHOST_MODEL_ID`) using the guarded WorkersAiClient text wrapper. Record latency, tokens, validation failure rate, and whether the rules in `steering/ghost-safety.md` hold against 10 jailbreak attempts. Tune prompt wording. Write `docs/spikes/4.1.md`.
   - _Requirements: 5.1, 5.5, 5.6_
 
 - [ ] 2. Pure engine logic (`shared/src/ghost/`)

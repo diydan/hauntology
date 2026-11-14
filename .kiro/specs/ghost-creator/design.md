@@ -47,7 +47,7 @@ type Traits = {
   palette: 'moonlight' | 'ember' | 'moss' | 'rose' | 'slate' | 'dusk';
   translucency: 30 | 40 | 50 | 60 | 70 | 80;
   accessories: Array<'lantern' | 'hat' | 'scarf' | 'spectacles' | 'key' | 'bouquet' | 'ribbon' | 'pocketwatch'>; // 0..2, unique
-  voice: 'soft' | 'dry' | 'formal' | 'childlike';
+  voice: 'soft' | 'dry';
   detail?: string; // sanitised, ≤ 140
 };
 type Persona = { name: string; voice: Traits['voice']; styleRules: string[]; wants: string; avoids: string;

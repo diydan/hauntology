@@ -127,7 +127,7 @@ Stitch has no HTTP route. Its messages travel on the seat's own WebSocket to the
 
 ```ts
 type VoiceId = `aura-1:${string}` | 'melotts:en';
-type PersonaVoice = 'soft' | 'dry' | 'formal' | 'childlike';       // from ghost-creator Persona
+type PersonaVoice = 'soft' | 'dry';                                 // from ghost-creator Persona
 type LineKind = 'narration' | 'haunt_event' | 'midnight' | 'ending';
 type VoiceLine = { id: string; kind: LineKind; text: string; spoken: string; voice: VoiceId; createdAt: number };
   // text: the whole validated line (the Subtitle). spoken: leading whole sentences, at most 240 characters; '' means subtitle only.
