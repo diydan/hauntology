@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef } from "react";
 import { runBoot } from "./boot";
 import { ShellContext, useBoot, useRouterState, useShell, type ShellContextValue } from "./context";
 import { DebugOverlay } from "./DebugOverlay";
+import { createGalleryStore } from "./GalleryStore";
 import { ScreenBoundary } from "./ErrorBoundary";
 import { LiveRegionProvider, useAnnounce } from "./LiveRegion";
 import { OfflineBanner } from "./OfflineBanner";
@@ -13,7 +14,7 @@ import { FocusProvider } from "./RouteFocus";
 import type { Router } from "./router";
 import type { DebugStore } from "./debugStore";
 import { SCREENS, SCREEN_TITLES } from "./screens";
-import { useRetryGate } from "./useRetryGate";
+import { RetryButton } from "./RetryButton";
 
 export type AppProps = {
   api: ShellApi;
@@ -25,7 +26,8 @@ export type AppProps = {
 };
 
 export function App({ api, router, quota, debugStore, debug = false }: AppProps) {
-  const value = useMemo<ShellContextValue>(() => ({ api, router, quota, debug: debugStore }), [api, router, quota, debugStore]);
+  const gallery = useMemo(() => createGalleryStore(api), [api]);
+  const value = useMemo<ShellContextValue>(() => ({ api, router, quota, debug: debugStore, gallery }), [api, router, quota, debugStore, gallery]);
   return (
     <ShellContext.Provider value={value}>
       <LiveRegionProvider>
@@ -64,14 +66,6 @@ function Gate({ showDebug }: { showDebug: boolean }) {
 
 function BootFailure({ code, retryAfterSec, onRetry }: { code: string; retryAfterSec: number | undefined; onRetry: () => void }) {
   const copy = errorCopy(code);
-  const gate = useRetryGate();
-  const armed = useRef(false);
-  useEffect(() => {
-    if (!armed.current && retryAfterSec !== undefined) {
-      armed.current = true;
-      gate.arm(retryAfterSec);
-    }
-  }, [retryAfterSec, gate]);
   return (
     <main className="screen">
       <h1>{copy.title}</h1>
@@ -80,9 +74,7 @@ function BootFailure({ code, retryAfterSec, onRetry }: { code: string; retryAfte
         Code: <code>{code}</code>
       </p>
       <p>
-        <button className="button" type="button" disabled={!gate.enabled} onClick={onRetry}>
-          {gate.enabled ? "Try again" : `Try again in ${gate.secondsLeft}`}
-        </button>
+        <RetryButton retryAfterSec={retryAfterSec} onRetry={onRetry} />
       </p>
     </main>
   );

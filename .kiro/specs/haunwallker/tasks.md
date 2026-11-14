@@ -123,12 +123,12 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - With `?debug=1`, show the Quota Snapshot, the current Stage and the Viewer frame rate.
     - _Requirements: 11.4_
 
-- [ ] 5. Home and Gallery
-  - [ ] 5.1 Home screen
-    - The one-line premise, "Draw a place", "Upload a photo" and "Visit a gallery place"; plain copy that worlds are static, the ghost is a billboard sprite and personal photos are deleted after 24 hours; the first two actions follow `capabilities` and show a one-line reason when off; after the screen is idle (`requestIdleCallback`, or a 1 s timeout) it prefetches the Gallery list and nothing else.
+- [x] 5. Home and Gallery
+  - [x] 5.1 Home screen
+    - The one-line premise, "Draw a place", "Upload a photo" and "Visit a gallery place"; plain copy that worlds are static, the ghost is a billboard sprite and personal photos are deleted after 24 hours; the first two actions follow `capabilities` and show a one-line reason when off; after the screen is idle (`requestIdleCallback`, or a 1 s timeout) it prefetches the Gallery list and nothing else. The fixed words are in `shared/src/app/home-copy.ts`. "Draw a place" and "Upload a photo" both lead to `/create`, so Create (7.1, 7.2) shows the Sketch Pad and the photo picker side by side; an action that is off stays on the page as a focusable control with `aria-disabled` and the reason line.
     - _Requirements: 1.1, 1.2, 1.3, 10.4_
-  - [ ] 5.2 Gallery screen
-    - Thumbnail, title and short description from `GET /api/gallery` (static, no paid call); on failure an error message with a Retry action, never an empty grid; choosing a world sets `worldId` and goes to `/haunt/:worldId`, where the ghost choice happens (task 9.2). No world asset is fetched before that choice.
+  - [x] 5.2 Gallery screen
+    - Thumbnail, title and short description from `GET /api/gallery` (static, no paid call); on failure an error message with a Retry action, never an empty grid; choosing a world sets `worldId` and goes to `/haunt/:worldId`, where the ghost choice happens (task 9.2). No world asset is fetched before that choice. The list is held in `GalleryStore`, so the Home prefetch and the Gallery screen make one request. The `?demo=1` thumbnails are `web/public/demo/gallery/*.svg`, dropped from the production build.
     - _Requirements: 5.1, 5.5, 10.4_
 
 - [ ] 6. Play and Ending

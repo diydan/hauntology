@@ -1,6 +1,7 @@
 import type { ShellApi } from "@hauntology/shared/app/api";
 import { createContext, useContext, useSyncExternalStore } from "react";
 import type { DebugStore } from "./debugStore";
+import type { GalleryStore, GalleryState } from "./GalleryStore";
 import type { QuotaStore } from "./QuotaStore";
 import type { Router } from "./router";
 
@@ -11,6 +12,8 @@ export type ShellContextValue = {
   quota: QuotaStore;
   /** The Stage and frame rate shown by `?debug=1`. Screens write to it; nothing else reads it. */
   debug: DebugStore;
+  /** The Gallery list, loaded once and shared by Home (prefetch) and the Gallery screen. */
+  gallery: GalleryStore;
 };
 
 export const ShellContext = createContext<ShellContextValue | null>(null);
@@ -29,4 +32,9 @@ export function useRouterState() {
 export function useBoot() {
   const { quota } = useShell();
   return useSyncExternalStore(quota.subscribe, quota.getSnapshot, quota.getSnapshot);
+}
+
+export function useGallery(): GalleryState {
+  const { gallery } = useShell();
+  return useSyncExternalStore(gallery.subscribe, gallery.getSnapshot, gallery.getSnapshot);
 }

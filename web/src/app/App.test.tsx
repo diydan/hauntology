@@ -19,7 +19,7 @@ describe("App boot", () => {
     const h = renderApp("/");
     expect(screen.getByText("Loading…")).toBeTruthy();
     await screen.findByText("Draw a place");
-    expect(heading()?.textContent).toBe("Draw a place");
+    expect(heading()?.textContent).toBe("Hauntology");
     expect(document.activeElement).toBe(document.body);
     expect(liveText()).toBe(""); // nothing is announced for the first page
     expect(document.title).toBe("Home · Hauntology");

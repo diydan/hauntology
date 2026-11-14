@@ -173,3 +173,79 @@ a {
     opacity: 1;
   }
 }
+
+.premise {
+  font-size: 1.125rem;
+  margin: 0 0 1.5rem;
+}
+
+.actions,
+.facts {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+}
+
+.actions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.actions .button {
+  width: 100%;
+}
+
+.facts li {
+  margin: 0 0 0.5rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--dust);
+}
+
+.reason {
+  margin: -0.5rem 0 1.5rem;
+  color: var(--alarm);
+}
+
+.button[aria-disabled="true"] {
+  border-color: var(--dust);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.card {
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--dust);
+}
+
+.card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: var(--ink);
+}
+
+.card h2,
+.card p {
+  margin: 0;
+}
+
+.card h2 {
+  font-size: 1.125rem;
+}
+
+.attribution {
+  font-size: 0.875rem;
+  color: var(--ghost);
+}

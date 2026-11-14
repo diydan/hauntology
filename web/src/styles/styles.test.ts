@@ -81,6 +81,15 @@ describe("app styles", () => {
     expect(app).toMatch(/\.play-layout \.chat\s*{[^}]*grid-row:\s*2/);
   });
 
+  it("shows a button that is off the same way whether it is `disabled` or `aria-disabled`", () => {
+    expect(app).toMatch(/\.button:disabled\s*{[^}]*cursor:\s*not-allowed/);
+    expect(app).toMatch(/\.button\[aria-disabled="true"\]\s*{[^}]*cursor:\s*not-allowed/);
+  });
+
+  it("lays the Gallery out in a grid that never needs more than the screen is wide", () => {
+    expect(app).toMatch(/\.gallery\s*{[^}]*grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(min\(100%,\s*14rem\),\s*1fr\)\)/);
+  });
+
   it("has nothing that forces a page wider than 320 px", () => {
     // A fixed width of 321 px or more on any rule would scroll sideways at 320 px.
     for (const m of app.matchAll(/(?<![-\w])width:\s*(\d+)px/g)) expect(Number(m[1])).toBeLessThanOrEqual(320);
