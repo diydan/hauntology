@@ -36,4 +36,4 @@ Accounts, online matchmaking or remote play (Party Mode is same-room only), VR/W
 
 ## Demo beats (≤ 3:00 video)
 0:00 hook: sketch a kitchen in 10 s → 0:25 confirm gate → 0:40 pre-baked generation montage → 0:55 walk in, ghost appears → 1:20 first memory → 1:50 second/third (cut) → 2:15 ending card → 2:30 Kiro: specs, steering, hooks, MCP, property tests on screen → 2:55 title.
-Party clip (use in place of the 1:50–2:15 cut if time allows, ≤ 25 s): three phones join by QR → a relic is scanned → the pyramid ghost reacts → an Accusation resolves.
+Party clip (use in place of the 1:50–2:15 cut if time allows, ≤ 25 s): three phones join by QR → a relic is scanned → the pyramid ghost reacts → a sealed Accusation is revealed at the end of the Round.

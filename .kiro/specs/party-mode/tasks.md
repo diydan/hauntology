@@ -18,7 +18,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - Play the base rules (Residue and Inspect, the Haunt's speed, Poltergeists, thin hands at six Players) with Bots and two or three people in one room, or on paper. Record in `docs/spikes/party-1.4.md` and tune the design numbers (Haunt maximum, thresholds, Resolve cap, Inspect time).
     - _Requirements: 4.6, 11.1, 11.2, 11.3_
   - [ ] 1.5 Balance
-    - Run the seeded balance simulation (every Player Nudging whenever the rules allow) for two to six Players on a 60 s clock, then play three real games with Classic, one with Gentle and one with Quick. Record the share of Turns that are Spooked, the average seconds removed, the Turn timeout rate, how fast the Haunt rises, Eavesdrop use, how many Cues each Player plays and the two Nudge counters (haunting Players against everyone else; decide on separate Nudge tokens from them). Check the amendment's worst-case model (about half of all Turns Spooked under the old limits and 23% under the new ones at four Players) and my own (40% at two Players, 27% at three and 20% at four with one Spook per Round alone, about 20% everywhere with the extra four-Turn rule). Check also whether Poltergeists Helping and Spooking feels fun or like piling on. Tune the Spook cost, the floor and the table limits in `docs/spikes/party-1.5.md`.
+    - Run the seeded balance simulation (every Player Nudging whenever the rules allow) for two to six Players on a 60 s clock, then play three real games with Classic, one with Gentle and one with Quick. Record the share of Turns that are Spooked, the average seconds removed, the Turn timeout rate, how fast the Haunt rises, Eavesdrop use, how many Cues each Player plays and the two Nudge counters (haunting Players against everyone else; decide on separate Nudge tokens from them). Check the amendment's worst-case model (about half of all Turns Spooked under the old limits and 23% under the new ones at four Players) and my own (40% at two Players, 27% at three and 20% at four with one Spook per Round alone, about 20% everywhere with the extra four-Turn rule). Check also whether Poltergeists Helping and Spooking feels fun or like piling on. Tune the Spook cost, the floor and the table limits in `docs/spikes/party-1.5.md`. The balance numbers of the Multiplayer rules amendment come from perfect note-takers, so play real tables before fixing the Haunt maximum and the presets, and watch the share of shared wins (about one game in five at four to six Players), whether Nudges come mostly from haunting Players, and whether the answer choice and the sealed Accusations slow the table.
     - _Requirements: 11.1, 12.2, 12.3, 12.4_
   - [ ] 1.6 Phone sound
     - On a real iPhone (Safari) and a real Android phone (Chrome): whether one tap at join unlocks audio for the rest of the game, the iOS silent switch, whether a sound plays with the screen dimmed or the tab in the background, loudness across a table, the delay and spread of a sound sent to six phones at once, how well Restless at 400 ms steps survives clock drift (against the server clock), and what the flash and vibrate fallback feels like.
@@ -83,12 +83,12 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.20 Write property test for zones
     - **Property 9: Zones are valid and the world-size rule holds**
     - **Validates: Requirements 4.5**
-  - [ ] 2.21 Notebook `autoMarks` (hand, shown cards, found Residue) and `markCard`
+  - [ ] 2.21 Notebook `autoMarks` (Hand, shown cards, found Residue and, with `autoCross`, the passes) as a grid of the 18 cards against every Player and the Residue, the Residue counter, and `markCard`
     - _Requirements: 4.4_
   - [ ]* 2.22 Write property test for the notebook
     - **Property 10: Notebook marks are monotone**
     - **Validates: Requirements 4.4**
-  - [ ] 2.23 `nextPlayer` and `advance` with Poltergeists, skips and rounds
+  - [ ] 2.23 `firstPlayer(round)` (it moves one Detective clockwise each Round), `nextPlayer` and `advance` with Poltergeists, skips and rounds
     - _Requirements: 5.1, 5.7_
   - [ ]* 2.24 Write property test for turn order
     - **Property 11: Turn order is fair**
@@ -103,26 +103,26 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.28 Write property test for the clock and nextWake
     - **Property 13: The clock, nextWake, and disconnects end turns exactly once**
     - **Validates: Requirements 5.3, 5.5**
-  - [ ] 2.29 `canSuggest` (Poltergeist and Cold Spot refusals) and `resolveSuggestion`; a Suggestion may name a Suspect or a Relic from the suggester's own Hand (a Bluff), and `isBluff(hand, {suspect, relic})` decides it for every Suggestion, kept only in `state.bluffs` until the ending
+  - [ ] 2.29 `canSuggest` (Poltergeist and Cold Spot refusals), `resolveSuggestion` (the published passes and the first holder clockwise), `defaultShown` and the 10 s `show` choice for a human Detective holding several named cards, with a refused `show` for a card not held or not named; a Suggestion may name a Suspect or a Relic from the suggester's own Hand (a Bluff), and `isBluff(hand, {suspect, relic})` decides it for every Suggestion, kept only in `state.bluffs` until the ending
     - _Requirements: 6.1, 6.2, 6.7_
-  - [ ]* 2.30 Write property test for suggestions, including a Bluff that gives the same public event, log line and narrator prompt as a non-Bluff with the same result, and `isBluff` true exactly when the Suspect or the Relic is in the Hand
+  - [ ]* 2.30 Write property test for suggestions, including the default card and a refused show, and a Bluff that gives the same public event, log line and narrator prompt as a non-Bluff with the same result, and `isBluff` true exactly when the Suspect or the Relic is in the Hand
     - **Property 14: Suggestions resolve to the first holder clockwise**
     - **Validates: Requirements 6.1, 6.2, 6.7**
-  - [ ] 2.31 `resolveAccusation` (a wrong Accusation makes a Poltergeist and raises the Haunt) and `gameOver` (correct Accusation, every Player a Poltergeist, or the Haunt at its maximum)
-    - _Requirements: 6.3, 6.5_
+  - [ ] 2.31 `sealAccusation` (once per Player per game, hidden from every view but its owner's), `roundEnd` (the five steps of 6.5: reveal together, correct ones share the win, wrong ones join the haunting and raise the Haunt, the Round's rise, Haunt Events, and the house wins at the maximum) and `gameOver` (a correct reveal, every Player a Poltergeist, or the Haunt at its maximum at a Round end)
+    - _Requirements: 6.3, 6.5, 11.1_
   - [ ]* 2.32 Write property test for accusations and termination
     - **Property 15: Accusations decide the game and the game terminates**
-    - **Validates: Requirements 6.3, 6.5**
+    - **Validates: Requirements 6.3, 6.5, 11.1, 11.5**
   - [ ] 2.33 `parseRelicToken`
     - _Requirements: 6.4_
   - [ ]* 2.34 Write property test for relic tokens
     - **Property 16: Relic tokens parse strictly**
     - **Validates: Requirements 6.4**
-  - [ ] 2.35 `endingPayload` (with the Frame and House Cue reveal, the winners with the haunting, the two Nudge counters and the recap) and `playAgain` (resets the Haunt, `tippedBy`, Residue, Resolve, Poltergeists, Cue and Nudge counters, Round limits, Cue sources, the Bluff ids and the recap), and `buildRecap(publicLog, players, solution, reveal, bluffs)` in `recap.ts`, taking only the redacted public log and the Bluff event ids, and marking each Bluff Suggestion and counting them per Player
-    - _Requirements: 6.6, 6.8_
+  - [ ] 2.35 `endingPayload` (with the Frame and House Cue reveal, the winners ranked by `firstDetective` or none when the house wins, the Residue placements, the Most Haunting award, the two Nudge counters and the recap) and `playAgain` (resets the Haunt, Residue, Resolve, Poltergeists, Cue and Nudge counters, Round limits, Cue sources, sealed Accusations, the Bluff ids and the recap), and `buildRecap(publicLog, players, solution, reveal, bluffs)` in `recap.ts`, taking only the redacted public log and the Bluff ids and returning the entries, the per-Player counts, the Solution and the reveal list
+    - _Requirements: 6.6, 6.8, 11.6_
   - [ ]* 2.36 Write property test for endings and replays, with the recap checked in the token-planting fuzz game (no planted Hand, shown card, unfound Residue, Inspect, Eavesdrop or Stitch token), counts equal to the matching public events, Bluff marks on exactly the Suggestions whose Suspect or Relic was in the suggester's Hand (Bots included), and no recap before the game ends
     - **Property 17: Endings and replays preserve what they should**
-    - **Validates: Requirements 6.6, 6.8**
+    - **Validates: Requirements 6.6, 6.8, 11.6**
   - [ ] 2.37 `pyramidLayout` and `fitTile`
     - _Requirements: 7.3_
   - [ ]* 2.38 Write property test for the pyramid layout
@@ -133,7 +133,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.40 Write property test for display effects
     - **Property 19: Display effects respect photosensitivity limits**
     - **Validates: Requirements 7.4**
-  - [ ] 2.41 `botAct` (walk to and Inspect, Suggest, Accuse, Haunt Event choice) and `peekAllowed`
+  - [ ] 2.41 `botAct` on `botMind` (walk to and Inspect, Suggest from the candidates, seal when Standard certain or Gentle at 50%, the default answer and Eavesdrop; never a Cue, Nudge, Frame, Rattle or Haunt Event choice) and `peekAllowed`
     - _Requirements: 9.2, 9.3_
   - [ ]* 2.42 Write property test for bots
     - **Property 22: Bots are legal and blind to other hands**
@@ -158,20 +158,20 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.50 Write property test for Residue and Inspect
     - **Property 28: Residue is hidden, and inspection is private and once only**
     - **Validates: Requirements 4.6**
-  - [ ] 2.51 `hauntRise` (a timeout after a Spook raises nothing; it records `tippedBy`, the Player whose lost Turn or wrong Accusation reached the maximum), `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot, Blackout, Restless, Lull; 15 s choice window)
+  - [ ] 2.51 `hauntRise` (a timeout after a Spook raises nothing; a wrong Accusation raises it only in `roundEnd`), `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot blocks Suggestions only and holds until the end of the next Round, Blackout, Restless, Lull; 15 s choice window rotating among Poltergeists in the order they joined)
     - _Requirements: 11.1, 11.2_
   - [ ]* 2.52 Write property test for the Haunt
     - **Property 26: The Haunt rises by the rules and events fire once**
     - **Validates: Requirements 11.1, 11.2**
-  - [ ] 2.53 Poltergeist transition and refusals: keep seat, nickname and Hand, no Turns, no move, Suggest, Accuse or Inspect, may choose Haunt options
+  - [ ] 2.53 Poltergeist transition and refusals: keep seat, nickname, Hand and Resolve, no Turns, no move, Suggest, Accuse, Inspect or Eavesdrop, never a winner; the Hand answers by the default choice; may choose Haunt options
     - _Requirements: 11.3_
   - [ ]* 2.54 Write property test for Poltergeists
     - **Property 27: Poltergeists keep their Hand and never take a Turn**
     - **Validates: Requirements 11.3**
-  - [ ] 2.55 `gainResolve` (every Player, Poltergeists included), `canEavesdrop` and `eavesdrop` (category only, 10 s window, never for a Poltergeist or for the Player's own Suggestion); Resolve is shared with Nudges
+  - [ ] 2.55 `gainResolve` (at the start of every Round, Poltergeists included), `canEavesdrop` and `eavesdrop` (one named card that was not shown, 10 s window, never for a Poltergeist, the suggester or the Player who showed the card); Resolve is shared with Nudges
     - _Requirements: 11.4, 11.5, 12.2_
   - [ ]* 2.56 Write property test for Resolve and Eavesdrop
-    - **Property 29: Resolve is bounded and Eavesdrop reveals only a category**
+    - **Property 29: Resolve is bounded and Eavesdrop reveals one card that was not shown**
     - **Validates: Requirements 11.4, 11.5, 12.2**
   - [ ] 2.57 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
     - _Requirements: 3.6, 3.7, 3.8_
@@ -188,7 +188,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.62 Write property test for Cues
     - **Property 32: Cues are rate limited and change no rule**
     - **Validates: Requirements 12.1, 14.1, 14.2**
-  - [ ] 2.63 `applyPreset` (Classic, Gentle, Quick; the default Haunt maximum is 8), the Nudge, Frame and sound switches, and `canControl` extended so that only the Master's token can change them; no Cue, Nudge or Frame calls a model (their lines come from `partyScripted`)
+  - [ ] 2.63 `applyPreset` (Classic 60 s and 10, Gentle 90 s and 12, Quick 45 s and 8, each with its Nudge, Frame, auto-cross and Bot settings), the Nudge (all, help-only, off), Frame and sound switches, and `canControl` extended so that only the Master's token can change them; no Cue, Nudge or Frame calls a model (their lines come from `partyScripted`)
     - _Requirements: 12.5, 14.6_
   - [ ]* 2.64 Write property test for presets and switches
     - **Property 33: Presets and switches do what they say**
@@ -245,7 +245,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.85 Write property test for Stitch consent
     - **Property 43: Stitch is off, then each Player's own yes**
     - **Validates: Requirements 18.1, 18.2**
-  - [ ] 2.86 `stitchSchedule` (only at a Haunt Event or midnight, one a Round, two a game, never in the first 60 s or during an Accusation, never the same Player twice running)
+  - [ ] 2.86 `stitchSchedule` (only at a Haunt Event or midnight, one a Round, two a game, never in the first 60 s or during the end-of-Round reveal, never the same Player twice running)
     - _Requirements: 18.4_
   - [ ]* 2.87 Write property test for Stitch scheduling
     - **Property 44: Stitched lines are rare and never at the wrong moment**
@@ -295,9 +295,25 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.105 Write property test for absent sound files
     - **Property 53: Absent sound files change nothing**
     - **Validates: Requirements 20.2**
-  - [ ]* 2.106 Write property test for tipping the Haunt
-    - **Property 54: Nobody wins by tipping the Haunt**
-    - **Validates: Requirements 6.5**
+  - [ ]* 2.106 Write property test for a wrong guess never winning
+    - **Property 54: A wrong guess never wins**
+    - **Validates: Requirements 6.5, 11.3**
+  - [ ] 2.107 `botMind`: `observe`, `propagate`, `candidates` and `chance`, from a Bot's own Hand, the cards shown to it, its found Residue, every pass, every showing, the public Hand sizes and its own Eavesdrop hints
+    - _Requirements: 9.2_
+  - [ ]* 2.108 Write property test for Bot inference soundness, by brute force over small cases
+    - **Property 57: Bot inference is sound**
+    - **Validates: Requirements 9.2**
+  - [ ] 2.109 `awards`: `scarePoints(log, reveal)` (one per Frame sent, one per Rattle accepted, two per Spook applied, three for each Turn that ended by the clock while the Poltergeist had Spooked or Rattled during it) and `firstDetective` (fewest Suggestions, then least Turn time; a tie shares the title)
+    - _Requirements: 6.6, 11.6_
+  - [ ]* 2.110 Write property tests for order-independent reveals, a fair first player and scare points that change nothing
+    - **Property 55: Reveals do not depend on order**
+    - **Validates: Requirements 6.3, 6.5**
+    - **Property 56: The first player rotates fairly**
+    - **Validates: Requirements 5.1**
+    - **Property 58: Scare points change nothing**
+    - **Validates: Requirements 11.6**
+  - [ ] 2.111 `tools/balance.mjs`: the statistical balance regression (500 seeded games each at 3 to 6 Players, all Standard Bots: at least 95% solved, mean Rounds between 4 and 7, every seat's win share within 8 points of its fair share), run in CI; a failing run blocks merges that touch `shared/src/party/`
+    - _Requirements: 9.2, 5.1_
 
 - [ ] 3. Print module (`shared/src/print/`)
   - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
@@ -326,17 +342,17 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7, 11.1_
   - [ ] 4.5 Pose and input pipeline: sanitise host pose at ≤ 4 Hz, relay the active Player's input only, rate limit every token
     - _Requirements: 2.2, 7.2_
-  - [ ] 4.6 Suggestion and Accusation handlers, event log, achievement awards, end conditions; the handler records a Bluff only in `state.bluffs` and never in an event, log line or view
+  - [ ] 4.6 Suggestion, `show`, `seal` and `endTurn` handlers, the round-end reveal with the shared win, the event log, achievement awards and end conditions; the handler records a Bluff only in `state.bluffs` and never in an event, log line or view, and a sealed Accusation only in its owner's view until the Round ends
     - _Requirements: 5.4, 6.1, 6.2, 6.3, 6.5, 6.7_
-  - [ ] 4.7 Ending payload with the recap, built once when the game ends, and Play again
-    - _Requirements: 6.6, 6.8_
+  - [ ] 4.7 Ending payload with the winners, the Residue placements, the Most Haunting award and the recap, built once when the game ends, and Play again
+    - _Requirements: 6.6, 6.8, 11.6_
   - [ ] 4.8 Time-to-live alarm, Master or host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
     - _Requirements: 1.5, 10.4, 10.6, 10.7_
-  - [ ] 4.9 Bot runner driven by alarms with think time of 1.5 to 6 s
+  - [ ] 4.9 Bot runner driven by alarms with think time of 1.5 to 6 s, using `botMind`
     - _Requirements: 9.1, 9.2_
   - [ ] 4.10 PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
     - _Requirements: 10.6_
-  - [ ] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings (including the Classic and Gentle presets and the Nudge, Frame and sound switches), hand-over, 60 s Master timeout, host token limited to `end`
+  - [ ] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings (including the Classic, Gentle and Quick presets and the Nudge, Frame, sound, auto-cross and Bot switches), hand-over, 60 s Master timeout, host token limited to `end`
     - _Requirements: 1.7, 1.5, 12.5, 14.6_
   - [ ] 4.12 Residue, Inspect and Haunt handlers: place the Residue, run the 10 s Inspect timer, private results, Haunt Event choice with the 15 s default, Cold Spot and Blackout effects, Poltergeist transition
     - _Requirements: 4.6, 11.1, 11.2, 11.3_
@@ -358,6 +374,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5_
   - [ ] 4.21 Rattle, the Becoming and prompts: handlers through `canRattle`, intensity by count, the three anonymous log lines, the secret senders, `becoming` once per Player, prompts
     - _Requirements: 19.1, 19.2, 19.4, 19.5, 19.6, 19.7_
+  - [ ] 4.22 Answer-choice window: the private `answer` prompt, 10 s to `show`, the default card on timeout (and at once for a Bot or a Poltergeist), the Turn Clock paused throughout, and the 15 s window after the answer
+    - _Requirements: 6.1, 6.2_
 
 - [ ] 5. Contribution services
   - [ ] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded WorkersAiClient (Llama 4 Scout), fail closed, store privately for the Room
@@ -390,8 +408,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 7.2, 5.1_
   - [ ] 8.4 Free-standing photo frames near each Zone, facing the spawn, no collision
     - _Requirements: 3.5_
-  - [ ] 8.5 Ending screen and Play again (Master), listing the winners with the haunting and the two Nudge counters, and playing the recap entry by entry within the `effectLimits` (still under reduced motion), with each Bluff called out in words, and a Skip control for the Master
-    - _Requirements: 6.6, 6.8_
+  - [ ] 8.5 Ending screen and Play again (Master): the winners ranked for the First Detective title, or "The haunting continues" when the house wins, who joined the haunting, the Solution, the Residue placements, the Most Haunting award and the two Nudge counters, and the recap played entry by entry within the `effectLimits` (still under reduced motion), with each Bluff called out in words, and a Skip control for the Master
+    - _Requirements: 6.6, 6.8, 11.6, 13.2_
   - [ ] 8.6 "Play on this screen": the page joins as the first Player and Master and embeds that Player's pad beside the world; the Master adds Bots; the Private View shows only when every other seat is a Bot
     - _Requirements: 9.1, 9.3_
   - [ ] 8.7 Regression: the single-player game is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
@@ -408,6 +426,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 15.1, 15.2, 15.4_
   - [ ] 8.13 Rattle and the Becoming on the Host (the three levels, at most 80% volume, the sting), and the Stitch whisper with its subtitle and the log line "a voice whispered"
     - _Requirements: 18.4, 19.4, 19.6_
+  - [ ] 8.14 Host: the number of Accusations sealed this Round, the end-of-Round reveal sequence, the shared-win ending, "joined the haunting" wording in every player-facing string (never "Poltergeist") and the Most Haunting award
+    - _Requirements: 6.5, 11.5, 11.6, 13.2_
 
 - [ ] 9. Web: Controller (`web/src/party/controller/`), installable web app
   - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
@@ -420,9 +440,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 2.4_
   - [ ] 9.5 Vibration where supported, with visual and optional sound cues otherwise
     - _Requirements: 2.5_
-  - [ ] 9.6 Hand view and notebook stored on the device
+  - [ ] 9.6 Hand view and the notebook grid (18 cards against every Player and the Residue, the Residue counter, auto-cross when the Master turned it on) stored on the device
     - _Requirements: 4.2, 4.4_
-  - [ ] 9.7 Suggest and Accuse screens, relic selection by list or by camera scan; the Suggest list offers every Suspect and Relic, including cards in the Hand and cards marked no
+  - [ ] 9.7 Suggest and seal screens (a two-step "This is final" confirm, and the 15 s window after a Suggestion), relic selection by list or by camera scan; the Suggest list offers every Suspect and Relic, including cards in the Hand and cards marked no
     - _Requirements: 6.1, 6.3, 6.4, 6.7_
   - [ ] 9.8 Contribution screens for Suspect, photo and Zone name; the photo step shows three Photo Prompts with tips to choose from, opens the camera for `take_now` and the picker for `camera_roll`, offers "Show me three more" (up to three times, with the remaining count shown) and "Use my own photo"
     - _Requirements: 3.1_
@@ -432,13 +452,13 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 1.7, 2.1_
   - [ ] 9.11 Inspect button with a 10 s progress bar and the private result, found Residue in the notebook, Resolve count and the Eavesdrop reaction after another Player's Suggestion
     - _Requirements: 2.1, 4.4, 4.6, 11.4, 11.5_
-  - [ ] 9.12 Poltergeist view: a clear "you are haunting now" state, spectating the world, and the Haunt Event choice with a 15 s countdown
-    - _Requirements: 11.2, 11.3_
+  - [ ] 9.12 Poltergeist view: a clear "you are haunting now" state, spectating the world, the Haunt Event choice with a 15 s countdown, and the scare points shown privately
+    - _Requirements: 11.2, 11.3, 11.6_
   - [ ] 9.13 Installable web app: manifest, service worker with an offline shell that explains how to rejoin, screen wake lock while a game is running
     - _Requirements: 7.7_
   - [ ] 9.14 Phone sound: the one-time consent question with a tap that unlocks Web Audio, changeable from the menu; the four Cue sound files (at most 3 s each, absent files mean flash, vibration and the log line); playback at the scheduled start on the server clock; the flash (at most three per second, none under reduced motion) and vibration fallback; the private "that was not you" message
     - _Requirements: 14.1, 14.3, 14.4_
-  - [ ] 9.15 Master presets: Classic, Gentle and Quick in the Master menu, with separate switches for Nudges (all or help-only), Frames and sounds; non-Masters never see them
+  - [ ] 9.15 Master presets: Classic, Gentle and Quick in the Master menu, with separate switches for Nudges (all, help-only or off), Frames, sounds, auto-cross and the Bot level; non-Masters never see them
     - _Requirements: 12.5, 14.6_
   - [ ] 9.16 Cue, Nudge and Frame controls in the menu: the Cue picker with TV or this phone, Help and Spook with their Resolve cost, the Frame picker (a Player and a Cue), 48 px targets, and the reason in words whenever one is unavailable
     - _Requirements: 13.1, 14.2, 14.4_
@@ -454,6 +474,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 15.3, 15.4, 17.1, 18.1, 19.3_
   - [ ] 9.22 Ending recap on the phone: the entries as a plain list with a text line each, each Bluff marked in words, the Solution and the Frame and House Cue senders at the end, usable with no Display and no sound
     - _Requirements: 6.8_
+  - [ ] 9.23 Controller: the card-choice prompt when holding several named cards, with a 10 s countdown and the default shown in words
+    - _Requirements: 6.2_
 
 - [ ] 10. Web: Display (`web/src/party/display/`)
   - [ ] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected

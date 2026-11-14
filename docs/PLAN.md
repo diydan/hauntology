@@ -45,7 +45,7 @@ World Labs: about $1.2–1.3 per world, $5 minimum top-up. Plan: ~14 dev and Gal
 ## Kiro write-up (fill in as you go)
 Each section needs one concrete example with evidence.
 1. **Specs**: how requirements → design → tasks drove the build. One design property that caught a real bug; screenshot the failing test.
-2. **Property-based testing**: 125 properties across seven specs. One shrunk counter-example fast-check found, with before and after code. For party mode, the token-planting leakage test (Property 8) is the best story.
+2. **Property-based testing**: 129 properties across seven specs. One shrunk counter-example fast-check found, with before and after code. For party mode, the token-planting leakage test (Property 8) is the best story.
 3. **Steering**: a specific example from `security-and-cost.md` (every guarded call takes a SpendTicket) or `party-mode.md` (narrator takes a Public View only).
 4. **Hooks**: what each of the five catches. Screenshot the traceability hook firing when a spec changed without a matching task.
 5. **MCP**: the spend-capped World Labs server; a fixture it produced.
