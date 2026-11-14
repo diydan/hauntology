@@ -1,11 +1,11 @@
 ---
 name: add-guarded-call
-description: Add a new paid upstream call (Workers AI model, TTS, or World Labs) to Hauntwalk behind SpendGuard. Use when adding any call that costs money or quota.
+description: Add a new paid upstream call (Workers AI model, TTS, or World Labs) to Hauntology behind SpendGuard. Use when adding any call that costs money or quota.
 ---
 
 # Add a guarded call
 
-Every paid call in Hauntwalk lives in `api/src/guarded/` and requires a `SpendTicket`. No other folder may call `env.AI` or the World Labs API.
+Every paid call in Hauntology lives in `api/src/guarded/` and requires a `SpendTicket`. No other folder may call `env.AI` or the World Labs API.
 
 ## Step 1: Pick the meter
 

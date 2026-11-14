@@ -1,6 +1,6 @@
-# Hauntwalk
+# Hauntology
 
-Draw or upload a place you've lost. Walk back into it as a 3D world. Let its ghost lead you to three memories.
+Draw or upload any place. Walk into it as a 3D world. Let its ghost lead you to three memories.
 
 Built for **Kiroween 2026 — Frankenstein** (stitching together tech that was never meant to meet).
 
@@ -15,17 +15,18 @@ A pre-generated Gallery lets anyone play the whole thing with zero quota.
 
 ## Party mode (same room, 2–6 players)
 Turn the world into a deduction game: **which ghost is haunting this place, and which relic binds it?**
-- The computer shows the world; every phone is a PlayStation-style game pad and a private screen holding that player's hidden cards and notebook.
+- A laptop or TV only displays the world. Every phone is an installable game pad and a private screen holding that player's hidden cards and notebook. The first player to join is the Master and runs the room.
 - Everyone contributes: a suspect ghost, a photo, a named zone.
-- Timed turns. Walk the world, make suggestions, earn extra seconds with achievements, then make one accusation.
+- Timed turns. Walk the world, inspect Zones for hidden clues, make suggestions, earn extra seconds with achievements, then make one accusation.
+- The Haunt rises as time passes and fires events. A wrong accusation turns you into a Poltergeist who helps steer the haunting, so nobody is out.
 - Six original 3D-printable relics with QR tokens, and an optional Pepper's-ghost pyramid that shows the ghost on a second screen. Both are optional; everything has an on-screen fallback.
-- Play alone with Bots and a keyboard, no phones or hardware needed.
+- Play alone on one screen: "Play on this screen" embeds a pad beside the world and Bots fill the other seats. No other phones or hardware needed.
 
 See `docs/SUBMISSION.md` for the product and technical overview and `.kiro/specs/party-mode` for the spec.
 
 ## Spec-driven with Kiro
 Everything in this repo was planned in Kiro specs first. See `/.kiro`:
-- `specs/world-pipeline`, `world-viewer`, `ghost-creator`, `ghost-engine`, `party-mode`: requirements (EARS), design with correctness properties, tasks (186 criteria, 71 properties)
+- `specs/world-pipeline`, `world-viewer`, `ghost-creator`, `ghost-engine`, `party-mode`: requirements (EARS), design with correctness properties, tasks (199 criteria, 77 properties)
 - `steering/`: product, tech, structure, security-and-cost (always), plus file-scoped guides (ghost safety, testing, visual style, World Labs API, party mode)
 - `hooks/`: traceability check on spec save, spend-guard audit, property-test sync, print-kit validation, typecheck on stop
 - `settings/mcp.json`: a spend-capped World Labs dev MCP server

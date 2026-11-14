@@ -2,11 +2,11 @@
 
 ## Introduction
 
-HauntWalk is the product: draw or upload a place you have lost, walk back into it as a 3D world, and let its ghost lead you to three memories. The existing specs cover the engines (`world-pipeline`, `world-viewer`, `ghost-creator`, `ghost-engine`, `party-mode`). This spec covers the part that joins them: the **web shell** in `web/src/app`. It owns routing, the screen flow from Start to Ending, the sketch pad, the confirm gate UI, error handling, the zero-quota path, and the way the viewer and chat are composed on the Play screen.
+Hauntology is the product: draw or upload any place, walk into it as a 3D world, and let its ghost lead you to three memories. The existing specs cover the engines (`world-pipeline`, `world-viewer`, `ghost-creator`, `ghost-engine`, `party-mode`). This spec covers the part that joins them: the **web shell** in `web/src/app`. It owns routing, the screen flow from Start to Ending, the sketch pad, the confirm gate UI, error handling, the zero-quota path, and the way the viewer and chat are composed on the Play screen.
 
 The shell contains no business rules. It calls the API, renders typed results, and sends the visitor to the right screen. It must never start a paid call without an explicit confirmation, and a visitor with no quota and no LLM must still be able to finish the experience.
 
-The spec directory is named `haunwallker` because it was created under that name. The product name is HauntWalk.
+The spec directory is named `haunwallker` because it was created under that name. The product name is Hauntology.
 
 ## Glossary
 

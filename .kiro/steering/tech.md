@@ -1,12 +1,12 @@
 ---
 inclusion: always
 ---
-# Hauntwalk — tech stack
+# Hauntology — tech stack
 
 ## Languages and tooling
 - TypeScript (strict) everywhere. pnpm workspaces. Vitest + fast-check for tests. zod for runtime schemas.
 - `web/`: Vite + React + three.js (r180+) + `@sparkjsdev/spark` + `three-mesh-bvh`.
-- `api/`: Cloudflare Workers + Hono. Durable Objects: `SpendGuard`, `WorldJob`, `PlaySession`, `PartyRoom` (WebSocket Hibernation API). R2 for blobs. KV only for non-critical caches.
+- `api/`: Cloudflare Workers + Hono. Durable Objects: `SpendGuard`, `WorldJob`, `PlaySession`, `PartyRoom` (WebSocket Hibernation API), `PartyDirectory` (singleton for room codes and caps). R2 for blobs. KV only for non-critical caches.
 - `shared/`: pure TypeScript (no I/O, no Date.now/Math.random inside logic; inject clock and rng). This is where property tests live.
 - Pin exact versions in the lockfile at install time; do not guess version numbers.
 
@@ -19,6 +19,7 @@ inclusion: always
 | Workers AI `@cf/meta/llama-3.3-70b-instruct-fp8-fast` | ghost narration text, place brief, scripted-line generation | 220-token output cap; fp8-fast variant has 2–4× speed boost via speculative decoding |
 | Workers AI `@cf/meta/llama-4-scout-17b-16e-instruct` | image moderation (safety verdict on uploaded photos) | vision model; used only for the moderation call, not narration |
 | Workers AI `@cf/inworld/tts-2` | ghost voice (spoken narration per persona) and host voice (turn announcements, achievements, endings) | 90+ voices; ghost voice ID is a field on `GhostPersona`; host voice default `Serena`; mp3 output streamed to client; scripted text fallback when cap hit |
+| Browser `speechSynthesis` (Web Speech API) | Party Mode spoken narration on the Host screen | optional, off by default, free, voice quality varies by device; text is always shown |
 | Browser camera + QR decoding (built-in `BarcodeDetector` where present, a pinned JS decoder otherwise) | Party Mode relic scans | optional; every scan has a list fallback |
 | `openscad` CLI (optional, dev only) | compile `print/scad/*.scad` to STL | `tools/build-print.mjs` skips the compile step if it is absent |
 | Cloudflare Turnstile | optional bot gate on world creation | only if `TURNSTILE_SECRET` set |

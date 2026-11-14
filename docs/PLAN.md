@@ -15,23 +15,23 @@
 - [ ] `docs/ATTRIBUTION.md` for Gallery images
 
 ## Devpost pitch (paste)
-> **Category: Frankenstein.** Hauntwalk stitches together technologies that were never meant to meet: a hand-drawn sketch or old photo becomes an image with FLUX.2 on Workers AI, then a walkable 3D Gaussian-splat world via World Labs, rendered in the browser with three.js and Spark. You design a ghost, walk back into the place you've lost, and talk to the ghost to find its three memories. Then play it as a same-room party game: phones become game pads and private screens, 3D-printed relics carry QR tokens, and a Pepper's-ghost pyramid shows the ghost while everyone races the clock to work out who is haunting the place. Built spec-first in Kiro with steering, hooks, a custom MCP server and 71 property-based tests.
+> **Category: Frankenstein.** Hauntology stitches together technologies that were never meant to meet: a hand-drawn sketch or old photo becomes an image with FLUX.2 on Workers AI, then a walkable 3D Gaussian-splat world via World Labs, rendered in the browser with three.js and Spark. You design a ghost, walk into the place, and talk to the ghost to find its three memories. Then play it as a same-room party game: phones become game pads and private screens, 3D-printed relics carry QR tokens, and a Pepper's-ghost pyramid shows the ghost while everyone races the clock to work out who is haunting the place. Built spec-first in Kiro with steering, hooks, a custom MCP server and 77 property-based tests.
 
 ## Naming
-Check domain and trademark availability for "Hauntwalk" before publishing. No third-party game names, characters, quotes or art anywhere (app, repo, video, Devpost). Party Mode uses an original relic set and no CLUE or Cluedo names.
+Check domain and trademark availability for "Hauntology" before publishing. No third-party game names, characters, quotes or art anywhere (app, repo, video, Devpost). Party Mode uses an original relic set and no CLUE or Cluedo names.
 
 ## Timeline
 | Dates | Goal |
 |---|---|
-| Nov 14–20 | Scaffold, worldlabs MCP, spikes 1.1–1.3 (core), pure logic and property tests. Start capturing write-up evidence. |
-| Nov 21–27 | SpendGuard, routes, WorldJob, viewer core. **Generate Gallery worlds.** Engine pure logic. **Party: spikes 1.1–1.3 and `shared/src/party` pure logic.** |
+| Nov 14–21 | Scaffold, worldlabs MCP, spikes 1.1–1.3 (core), pure logic and property tests. **Generate Gallery worlds (right after the World Labs spike, done by Nov 21).** Start capturing write-up evidence. |
+| Nov 22–27 | SpendGuard, routes, WorldJob, viewer core. Engine pure logic. **Party: spikes 1.1–1.3 and `shared/src/party` pure logic.** |
 | Nov 28–Dec 1 | PlaySession + narrator, creator, chat UI. **Request Kiro credits.** Deploy preview. **Party: PartyRoom DO, Host and Controller pages.** Write-up sections 1–4. |
 | Dec 2–3 | Polish, phone perf pass, **Party: Display and print kit if time**, record video, finish write-up, README, submit. |
 | Dec 4 | Buffer. |
 
 ### Party Mode cut line
 Party Mode is large. Build in this order and stop when time runs out; each layer is playable on its own.
-1. **Core**: rooms and join, Controller pad, deal, turns and clock, Suggest and Accuse, Bots, scripted narration, Gallery zones (party tasks 2, 4, 6–9, 12).
+1. **Core**: rooms, the Master and join, Controller pad, deal with Residue and Inspect, turns and clock, Suggest and Accuse, the Haunt and Poltergeists, Bots, scripted narration, Gallery zones (party tasks 2, 4, 6–9, 12). Within the core, **cut Resolve and Eavesdrop first** (2.55, 2.56, 4.13, 9.11 Eavesdrop part), then **spoken narration** (8.8). The Haunt, Residue and Poltergeists stay.
 2. **Contributions**: Suspect, photo and Zone name from phones (tasks 5, 9.8).
 3. **Display**: pyramid page (task 10).
 4. **Print kit**: relics, QR plates, holder (tasks 3, 11). The standee (3.6) is a stretch.
@@ -43,7 +43,7 @@ World Labs: about $1.2–1.3 per world, $5 minimum top-up. Plan: ~14 dev and Gal
 ## Kiro write-up (fill in as you go)
 Each section needs one concrete example with evidence.
 1. **Specs**: how requirements → design → tasks drove the build. One design property that caught a real bug; screenshot the failing test.
-2. **Property-based testing**: 71 properties across five specs. One shrunk counter-example fast-check found, with before and after code. For party mode, the token-planting leakage test (Property 8) is the best story.
+2. **Property-based testing**: 77 properties across five specs. One shrunk counter-example fast-check found, with before and after code. For party mode, the token-planting leakage test (Property 8) is the best story.
 3. **Steering**: a specific example from `security-and-cost.md` (every guarded call takes a SpendTicket) or `party-mode.md` (narrator takes a Public View only).
 4. **Hooks**: what each of the five catches. Screenshot the traceability hook firing when a spec changed without a matching task.
 5. **MCP**: the spend-capped World Labs server; a fixture it produced.
@@ -69,6 +69,6 @@ Evidence goes in `docs/evidence/` as you build: hook output, a failing then pass
 2. Credits run out before judging (Gallery, caps, kill switch; request credits by Dec 1).
 3. Party Mode scope. Mitigation: the cut line above.
 4. Phone performance of splats (LOD, adaptive quality, pano fallback).
-5. Party Spikes 1.2 and 1.3 (iOS controls, QR scans, pyramid) go badly. Mitigation: list fallback for relics, single-view Display, keyboard solo play.
+5. Party Spikes 1.2 and 1.3 (iOS controls, QR scans, pyramid) go badly. Mitigation: list fallback for relics, single-view Display, embedded-pad solo play.
 6. Write-up left to the last day.
 7. Multi-view enhance doesn't help (off by default; Spike 1.3 of world-pipeline decides).

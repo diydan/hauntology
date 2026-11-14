@@ -1,4 +1,4 @@
-# Hauntwalk daily journal
+# Hauntology daily journal
 
 Day-by-day task list, Sat Nov 14 to Fri Dec 4. Tick a box when its test is green or its file exists. Write one or two lines under **Log** at the end of each day: what shipped, what broke, what you cut. Those lines are raw material for `docs/KIRO_WRITEUP.md`.
 
@@ -46,9 +46,10 @@ Log:
 ### Sun Nov 15 Specs match the stack
 - [x] Replace Bedrock and Nova with Workers AI in world-pipeline, ghost-creator, ghost-engine and party-mode specs. Also `README.md`, `docs/PLAN.md`, `docs/SUBMISSION.md`.
 - [ ] Add TTS to the specs: ghost voice, host voice, a `TTS` cap, text always shown.
-- [ ] Add the relic-sketch contribution to party requirement 3. Personal photo is deleted right after generation.
+- [x] Party Photo Prompts are specced (party requirement 3.6 to 3.9, Property 30).
+- [ ] Decide whether to keep the hidden-photo relic-sketch idea. If yes, spec it with the photo deleted right after generation. If no, drop it.
 - [ ] Close the ownership gaps: `POST /api/play/start`, `GET /api/play/:id`, `POST /api/sketch/select`.
-- [ ] Write a short spec for the web shell (routing, error boundaries, confirm gate UI, sketch pad).
+- [ ] Web shell spec (`.kiro/specs/haunwallker`): requirements and design are done. Write `tasks.md`.
 - [ ] Run `node tools/check-traceability.mjs` until it passes.
 
 Done when: the traceability check passes and `grep -ri bedrock .kiro/specs` finds nothing.
@@ -107,7 +108,7 @@ Done when: routes pass with a fake AI and the Gallery script runs end to end on 
 Log:
 
 ### Sat Nov 21 Printing day 2 + Gallery worlds (hard date)
-- [ ] **Generate the six Gallery worlds.** About $7.5. Check each in the viewer.
+- [ ] **Generate the six Gallery worlds.** About $7.5. Start as early as Nov 18, once Spike C and the `ingest-gallery` script work, and finish today. Check each in the viewer.
 - [ ] Write `docs/ATTRIBUTION.md`.
 - [ ] Start `WorldJob` (world-pipeline 7). Alarm-driven poll, ingest to R2.
 
@@ -154,7 +155,7 @@ Log:
 
 ### Thu Nov 26 Ghost engine, suggestions
 - [ ] Ghost engine: pure logic, `PlaySession`, narrator (ghost-engine 2 to 4). Wire TTS to the ghost lines. Text is always shown.
-- [ ] Party: suggest, accuse, relic token, bots (party 2.29 to 2.42).
+- [ ] Party: suggest, accuse, relic token, bots, Master, Residue and Inspect, the Haunt, Poltergeists (party 2.29 to 2.42 and 2.47 to 2.54). Resolve and Eavesdrop (2.55, 2.56) only if time allows.
 
 Done when: a scripted single-player game runs through the engine with no model.
 
@@ -173,7 +174,7 @@ Log:
 ### Sat Nov 28 Deploy and credits
 - [ ] Deploy preview. `wrangler secret put` for each secret.
 - [ ] **Request Kiro credits today.** Do not wait for Dec 1.
-- [ ] Party: `PartyRoom` and `PartyDirectory` Durable Objects (party 4.1 to 4.10).
+- [ ] Party: `PartyRoom` and `PartyDirectory` Durable Objects (party 4.1 to 4.12; 4.13 Resolve and Eavesdrop is the first thing to cut).
 
 Done when: the app loads on a phone over the public URL, and the credit request is sent.
 

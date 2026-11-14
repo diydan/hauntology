@@ -1,4 +1,4 @@
-# Hauntwalk implementation plan
+# Hauntology implementation plan
 
 Written 2026-11-14. Submission target **Thu Dec 3**. Hard deadline **Fri Dec 4, 14:00 PT**. Kiro credits must be requested by **Tue Dec 1, 12:00 PT**.
 
@@ -27,21 +27,16 @@ Workers AI models:
 
 Model IDs are unverified. Spike A confirms the exact strings and input shapes before any code depends on them.
 
-## Spec drift to fix first (half a day)
+## Spec status
 
-The decision to leave Bedrock is only in `steering/tech.md`. These still say Bedrock or Nova and must change before code does:
+Done on 2026-11-14: the Bedrock and Nova wording is gone from every spec, steering file and doc. `grep -ri bedrock .kiro/specs` finds nothing.
 
-- `world-pipeline`: tasks 1.2 and 5.2 (`BedrockClient`), design error codes, requirement 2.x (Nova Canvas)
-- `ghost-creator`: portrait and sprite routes
-- `ghost-engine`: Narrator requirement 5.x ("configured Bedrock text model")
-- `party-mode`: design diagram, Spend section, Testing ("fake Bedrock")
-- `README.md`, `docs/PLAN.md`, `docs/SUBMISSION.md`, the Devpost pitch (Nova Canvas wording)
+Still open:
 
-New spec work this plan depends on:
-
+- **Web shell spec** (`.kiro/specs/haunwallker`): requirements and design are written. `tasks.md` is next. It also owns `world-pipeline` tasks 10.1 to 10.4 (photo picker, sketch pad, confirm screen, progress screen).
 - **TTS**: a voice per Ghost Persona, a host voice, a `TTS_*` cap in `SpendGuard`, text always shown, audio optional, off by default for reduced-motion and muted users.
-- **Relic-sketch contribution** (party-mode requirement 3): each player is dealt a Relic, draws it, adds a personal photo, and the pair becomes their Suspect portrait. The personal photo is deleted right after generation.
-- **Security gaps** from the reviews: play-session ownership, sketch-select ownership, a web shell spec, and the `PartyRoom` ownership rules already fixed.
+- **Party contributions**: party requirement 3 now has Photo Prompts (three offered, up to three skips, framed in the world). The earlier relic-sketch idea (a hidden personal photo that is deleted after generation) overlaps it and is not decided.
+- **Security gaps** from the reviews: play-session ownership, sketch-select ownership, own-world read and delete ownership (the shell design assumes it, see "World access" in `.kiro/specs/haunwallker/design.md`), and the `errors.ts` code list that does not match the `world-pipeline` design.
 
 ## Phases
 
@@ -49,7 +44,6 @@ New spec work this plan depends on:
 - Commit the staged repo. Push to a new GitHub repo, public, MIT.
 - Finish scaffold: `api/` (Hono, `wrangler.jsonc` with DO, R2, `AI` bindings), `web/` (Vite React), shared lint and test config. (world-pipeline 2)
 - Install the World Labs MCP (world-pipeline 0). Already usable from the CLI.
-- Fix spec drift above.
 - **Exit:** `pnpm test`, `pnpm typecheck` and `node tools/check-traceability.mjs` all pass on an empty-but-wired repo. `wrangler dev` serves `/health`.
 
 ### Phase 1: Spikes (Nov 16 to 19), run in parallel where possible
@@ -63,6 +57,8 @@ New spec work this plan depends on:
 
 Party spikes 1.2 (iOS and Android controls, QR) and 1.3 (pyramid) wait until Phase 4.
 
+**Gallery worlds (Nov 18 to 21).** Generate the six Gallery worlds right after Spike C, through the dev MCP (`worldlabs-dev`) and the `ingest-gallery` script (world-pipeline 9.1). This needs only the Spike C adapter and the spend-capped MCP. It does not need `SpendGuard`, the routes or `WorldJob`. Budget about $18. Nov 21 is the hard date because credits must be spent before the Dec 1 request. Hand-tune the manifests (orientation, scale, spawn, anchors) later, when the viewer runs.
+
 - **Exit:** each spike has `docs/spikes/<id>.md` and recorded fixtures in `shared/fixtures/`. `tech.md` unverified list is updated.
 
 ### Phase 2: Single-player core (Nov 17 to 27)
@@ -72,11 +68,11 @@ This is the product. Party mode cannot ship without it.
 2. **`SpendGuard`** (world-pipeline 4). Everything paid depends on it. Add the TTS meter here.
 3. **Routes**: upload, sketch, brief, confirm gate (world-pipeline 5, 6). Add the ownership checks from the review.
 4. **`WorldJob`** (world-pipeline 7).
-5. **Generate Gallery worlds by Nov 21** (world-pipeline 9.1). Budget about $18. This is the hard date because credits must be spent before the Dec 1 request.
+5. **Tune Gallery manifests** (orientation, scale, spawn, anchors) once the viewer renders them. The worlds themselves are generated in Phase 1.
 6. **Viewer** (world-viewer 3 to 6): loader, controls, collision, haunt layer, HUD.
 7. **Ghost creator** (ghost-creator 2 to 4) and **engine** (ghost-engine 3 to 6): `PlaySession`, narrator, chat, journal.
 8. **TTS wiring**: ghost voice on narration lines, text always shown.
-9. **Web shell**: routing, error boundaries, confirm gate UI, sketch pad (needs its own short spec).
+9. **Web shell** (`.kiro/specs/haunwallker`): routing, error boundaries, confirm gate UI, sketch pad.
 
 - **Exit (Nov 27):** a visitor opens the deployed URL, picks a Gallery world, designs a ghost, walks, talks, finds three memories, and sees the memory card. Zero paid calls needed.
 
@@ -92,7 +88,7 @@ Follow the cut line in `docs/PLAN.md`. Each layer must work before the next star
 
 | Layer | Tasks | Target date |
 |---|---|---|
-| 1. Core: rooms, join, pad, deal, turns, suggest, accuse, Bots, scripted lines | party 2, 4, 6 to 9, 12 | Nov 30 |
+| 1. Core: rooms and the Master, join, pad, deal and Residue, turns, Inspect, suggest, accuse, the Haunt, Poltergeists, Bots, scripted lines | party 2, 4, 6 to 9, 12 | Nov 30 |
 | 2. Contributions: relic sketch, photo, Zone name, Suspect | party 5, 9.8 | Dec 1 |
 | 3. Display: pyramid page | party 10 | Dec 2 |
 | 4. Print kit: relics, QR plates, holder | party 3, 11 | runs as a parallel hardware track: designed Nov 18, printed Nov 19 to 21 (2 days), tested Nov 22. See `docs/JOURNAL.md` |
@@ -108,11 +104,32 @@ If Phase 2 is not done by Nov 27, **pause party mode** and finish Phase 2 first.
 ## Critical path
 
 ```
-spec drift -> scaffold -> spikes A,C -> SpendGuard -> routes -> WorldJob -> Gallery worlds (Nov 21)
-                                                        \-> viewer -> engine + chat -> deploy -> credits (Dec 1)
+scaffold -> spike C -> Gallery worlds (Nov 21)
+         -> spike A,C -> SpendGuard -> routes -> WorldJob
+         -> viewer -> engine + chat -> shell -> deploy -> credits (Dec 1)
 ```
 
 The Gallery date (Nov 21) and the credits date (Dec 1) are the only ones the contest sets. Everything else can slip a day.
+
+## Cut order
+
+If a date slips, cut from the top of this list first. Each item can go without breaking the ones below it.
+
+1. Enhance (world-pipeline 11)
+2. Party Resolve and Eavesdrop (party 2.55, 2.56, 4.13, 9.11 Eavesdrop part)
+3. Party spoken narration (party 8.8); written narration and TTS audio stay
+4. Print kit parts beyond the QR plates and one relic (party 3.6 standee, holder)
+5. Display page and pyramid (party 10)
+6. TTS audio for the ghost (text stays)
+7. Party contributions: Suspect, photo, Zone name (party 5, 9.8)
+8. Sketch to photo (upload and Gallery stay)
+9. Party Mode as a whole (single player with the Gallery stays)
+
+In Party Mode the Haunt, Residue and Poltergeists are core and stay until Party Mode itself is cut.
+
+Never cut: SpendGuard and the confirm gate, the Gallery path, scripted ghost lines, the content notice and Exit control, property tests for spend and privacy.
+
+Decide at the Nov 27 gate. If Phase 2 is not done, cut items 1 to 3 at once and pause Party Mode.
 
 ## Definition of done per task
 - Tests green. A task with failing tests is not done.
@@ -141,7 +158,7 @@ The Gallery date (Nov 21) and the credits date (Dec 1) are the only ones the con
 | Personal photos from players | Deleted right after generation, never shown, counters only in logs |
 
 ## Open decisions
-1. Gemini TTS or Inworld TTS (Spike B decides)
+1. `inworld/tts-2` or the faster `openai/tts-1` for ghost and host voice (Spike B decides)
 2. Whether `flux-2-dev` or `flux-2-max` is the default (Spike A decides)
-3. Domain name and trademark check for "Hauntwalk"
+3. Domain name and trademark check for "Hauntology"
 4. Eligibility: Luxembourg residency confirmed by you. A written Devpost answer would still be safer
