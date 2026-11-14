@@ -117,7 +117,7 @@ type Capabilities = {
 `guardRoute(route, flow) → {allow: true} | {allow: false, redirect: Route}`.
 - `confirm` requires `pickedImageId`, else redirect to `create`.
 - `play` requires `worldId` and `ghostReady`, else redirect to `gallery` (no world) or `haunt` (no ghost).
-- `end` requires `playEnded`, else redirect to `play`.
+- `end` requires `playEnded`, else redirect to `play` when `worldId` and `ghostReady` are set, otherwise to the redirect `play` itself would give (`gallery` or `haunt`). A redirect never lands on a route that redirects again.
 - `haunt` requires `worldId`.
 - All other screens always allow.
 
@@ -195,7 +195,7 @@ The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server
 - The pad is a `<canvas>` with pointer events and `touch-action: none`. It stores strokes in memory for undo and redo (≥ 30 steps, per `world-pipeline`). Ink coverage uses `inkCoverage` from `shared/src/sketch.ts`, the same function the server uses.
 - A keyboard path to the same outcome is the photo picker and the Gallery, both reachable by Tab. The pad itself is a pointer tool and is labelled as such.
 - The photo picker re-encodes through a canvas (drops EXIF, GPS and XMP) before upload, per `world-pipeline` task 10.1, and shows the retention notice before the file is chosen.
-- Turnstile loads only when the quote says it is required, from a pinned same-origin-proxied script URL allowed in the CSP.
+- Turnstile loads only when the quote says it is required. The script is fetched from Cloudflare's own URL (`https://challenges.cloudflare.com/turnstile/v0/api.js`). It is never proxied, cached or self-hosted, because Cloudflare's [client-side rendering docs](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/) warn that proxying or caching it breaks Turnstile when Cloudflare updates it. The CSP allows `https://challenges.cloudflare.com` in `script-src` and `frame-src` and only when Turnstile is configured.
 
 ### Accessibility and motion
 - On route change the router focuses the Screen's `h1` (`tabIndex={-1}`) and announces the title in a polite live region.
@@ -254,7 +254,7 @@ The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server
 **Validates: Requirements 1.3, 5.3**
 
 ### Property 6: Stage mapping and polling plan are safe
-*For any* job state, `stageOf` returns the matching label and `ready` maps to a Stage that offers "Walk in" without auto-starting; for any timeline of polls, `pollPlan` returns `null` while hidden or terminal, never schedules a poll earlier than `lastPollAt + 3000` or before `rateLimitedUntil`, never schedules more than 5000 ms after the last poll when visible, and flags `overdue` only after 15 minutes.
+*For any* job state, `stageOf` returns the matching label and `ready` maps to a Stage that offers "Walk in" without auto-starting; for any timeline of polls, `pollPlan` returns `null` while hidden or terminal, never schedules a poll earlier than `lastPollAt + 3000` or before `rateLimitedUntil`, never schedules more than 5000 ms after the last poll when visible and not rate limited (when rate limited, the next poll is exactly `rateLimitedUntil`), and flags `overdue` only after 15 minutes.
 **Validates: Requirements 4.1, 4.3, 4.4, 4.7, 10.3**
 
 ### Property 7: Play reducer keeps input mode and Exit consistent

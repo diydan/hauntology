@@ -28,7 +28,7 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
     - _Requirements: 1.4, 1.6_
   - [ ]* 2.6 Write property test for token ownership
     - **Property 3: Tokens grant exactly their own data**
-    - **Validates: Requirements 1.4, 1.6**
+    - **Validates: Requirements 1.4, 1.6, 9.3**
   - [ ] 2.7 Room serialise, parse, expiry and delete
     - _Requirements: 1.5, 10.4_
   - [ ]* 2.8 Write property test for the room lifecycle
