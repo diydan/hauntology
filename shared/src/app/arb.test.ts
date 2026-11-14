@@ -43,13 +43,13 @@ describe("routes and flow state", () => {
     for (const id of sample(worldIdArb)) expect(id).toMatch(/^[A-Za-z0-9_-]{22,43}$/);
   });
 
-  it("only haunt, play and end carry a world id, and every screen is reachable", () => {
+  it("only haunt, play, case and end carry a world id, and every screen is reachable", () => {
     const routes = sample(routeArb, 600);
     for (const r of routes) {
-      const needs = r.screen === "haunt" || r.screen === "play" || r.screen === "end";
+      const needs = r.screen === "haunt" || r.screen === "play" || r.screen === "case" || r.screen === "end";
       expect("worldId" in r).toBe(needs);
     }
-    expect(new Set(routes.map((r) => r.screen)).size).toBe(9);
+    expect(new Set(routes.map((r) => r.screen)).size).toBe(10);
   });
 
   it("flow states never hold an undefined optional field and reach both values of every flag", () => {
@@ -66,7 +66,7 @@ describe("routes and flow state", () => {
 
   it("route and flow pairs, at the size the guard property runs, reach both an allowed and a redirected result for every guarded screen", () => {
     const pairs = sample(routeWithFlowArb, GUARD_RUNS);
-    for (const screen of ["confirm", "haunt", "play", "end"] as const) {
+    for (const screen of ["confirm", "haunt", "play", "case", "end"] as const) {
       const results = pairs.filter((p) => p.route.screen === screen).map((p) => guardRoute(p.route, p.flow).allow);
       expect(results, screen).toContain(true);
       expect(results, screen).toContain(false);
@@ -85,7 +85,8 @@ describe("routes and flow state", () => {
   it("paths include real routes, trailing slashes, query strings and text that is not a path", () => {
     const paths = sample(anyPathArb, 800);
     expect(paths.some((p) => /^\/(gallery|create|confirm)$/.test(p))).toBe(true);
-    expect(paths.some((p) => /^\/(haunt|play|end)\/[A-Za-z0-9_-]{22,43}$/.test(p))).toBe(true);
+    expect(paths.some((p) => /^\/(haunt|play|case|end)\/[A-Za-z0-9_-]{22,43}$/.test(p))).toBe(true);
+    expect(paths.some((p) => /^\/case\/[A-Za-z0-9_-]{22,43}$/.test(p))).toBe(true);
     expect(paths.some((p) => p.endsWith("/") && p.length > 1)).toBe(true);
     expect(paths.some((p) => p.includes("?"))).toBe(true);
     expect(paths.some((p) => !p.startsWith("/"))).toBe(true);
@@ -102,9 +103,9 @@ describe("quota, flags and errors", () => {
     }
   });
 
-  it("flags reach all 32 combinations", () => {
-    const seen = new Set(sample(shellFlagsArb).map((f) => `${f.worldGenEnabled}${f.dayCapReached}${f.totalCapReached}${f.voiceEnabled}${f.liveEnabled}`));
-    expect(seen.size).toBe(32);
+  it("flags reach all 64 combinations", () => {
+    const seen = new Set(sample(shellFlagsArb).map((f) => `${f.worldGenEnabled}${f.dayCapReached}${f.totalCapReached}${f.voiceEnabled}${f.liveEnabled}${f.partyEnabled}`));
+    expect(seen.size).toBe(64);
   });
 
   it("error codes are real codes, and the other strings are not", () => {

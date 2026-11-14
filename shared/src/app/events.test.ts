@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseShellMessage, parseViewerMessage, type ShellToViewer, type ViewerToShell } from "./events";
+import { ErrorCode } from "../errors";
+import { parseHostMessage, parseShellMessage, parseViewerMessage, type HostToShell, type ShellToViewer, type ViewerToShell } from "./events";
 
 const anchor = { id: "a1", pos: [1, 0, -2], radius: 2.5 };
 
@@ -68,5 +69,20 @@ describe("ShellToViewer", () => {
       { t: "pose", pos: [0, 0, 0], yaw: 0 },
     ];
     for (const m of bad) expect(parseShellMessage(m), JSON.stringify(m)).toBeNull();
+  });
+});
+
+describe("HostToShell", () => {
+  it("accepts started, scripted, ended and a refusal with any API error code", () => {
+    const ok: HostToShell[] = [{ t: "started" }, { t: "scripted" }, { t: "ended" }, ...Object.values(ErrorCode).map((code): HostToShell => ({ t: "refused", code }))];
+    for (const m of ok) expect(parseHostMessage(m)).toEqual(m);
+  });
+
+  it("rejects anything else, so no card, note or seed can come through", () => {
+    const bad: unknown[] = [
+      null, undefined, "started", 3, [], {}, { t: "start" }, { t: "refused" }, { t: "refused", code: "made_up" }, { t: "refused", code: 5 },
+      { t: "started", seed: "abc" }, { t: "ended", solution: ["a", "b", "c"] }, { t: "scripted", line: "hi" }, { t: "refused", code: "world_too_small", note: "x" },
+    ];
+    for (const m of bad) expect(parseHostMessage(m), JSON.stringify(m)).toBeNull();
   });
 });

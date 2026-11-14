@@ -1,12 +1,15 @@
+import { defaultLoadHost, type LoadHost } from "./case/types";
 import { defaultLoadViewer, type LoadViewer } from "./viewer/types";
 import { browserAudio, browserRecorderFactory, browserUnlock, type RecorderFactory, type VoiceDeps } from "./play/voice";
 
 /**
- * What the shell takes from the browser, in one place, so tests and the demo can swap it: loading
- * the Viewer, the microphone and speaker, and saving a file. Each default is the real browser's.
+* What the shell takes from the browser, in one place, so tests and the demo can swap it: loading
+ * the Viewer, the party Host page, the microphone and speaker, and saving a file. Each default is the real browser's.
  */
 export type PlatformKit = {
   loadViewer: LoadViewer;
+  /** Loads the party Host page for "Play a case". */
+  loadHost: LoadHost;
   voice: {
     recorder: RecorderFactory | null;
     createAudio: NonNullable<VoiceDeps["createAudio"]>;
@@ -32,6 +35,7 @@ export function browserSaveFile(name: string, blob: Blob): void {
 export function defaultPlatform(): PlatformKit {
   return {
     loadViewer: defaultLoadViewer,
+    loadHost: defaultLoadHost,
     voice: { recorder: browserRecorderFactory(), createAudio: browserAudio, unlockAudio: browserUnlock },
     saveFile: browserSaveFile,
   };

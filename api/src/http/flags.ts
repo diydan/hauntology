@@ -21,5 +21,6 @@ export function flagsFrom(env: Bindings | undefined, spend?: SpendStatus): Shell
     totalCapReached: spend?.totalCapReached ?? false,
     voiceEnabled: !OFF.has((env?.VOICE_ENABLED ?? "true").trim().toLowerCase()),
     liveEnabled: ON.has((env?.VOICE_LIVE_ENABLED ?? "false").trim().toLowerCase()),
+    partyEnabled: !OFF.has((env?.PARTY_ENABLED ?? "true").trim().toLowerCase()),
   };
 }

@@ -24,10 +24,10 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - _Requirements: 1.5, 3.7, 5.2, 6.5, 7.6_
   - [x]* 1.5 Write property test for the route table
     - **Property 1: Routes are total and round-trip**
-    - **Validates: Requirements 1.5, 7.6**
+    - **Validates: Requirements 1.5, 7.6, 13.2**
   - [x]* 1.6 Write property test for guards
     - **Property 2: Guards never expose a screen without its prerequisites**
-    - **Validates: Requirements 3.7, 5.2, 6.5**
+    - **Validates: Requirements 3.7, 5.2, 6.5, 13.2**
   - [x] 1.7 `confirm.ts`: `confirmReduce`
     - States, events and effects exactly as in the design, including `challenge` for Turnstile and `retry` only from `rejected`.
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6_
@@ -200,23 +200,23 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - An optional card beside the ghost choice: city search with up to five matches, "Use my location" asked from an explicit tap, a Memory Day (1940 to yesterday, plus a time of day) prefilled from the photo suggestion when there is one, the chosen place shown as a label only. Nothing is stored in the browser, defaults apply when the visitor does nothing, and "Walk in" never waits for it. The choice (a `ConditionsChoice`) stays in memory and goes with `POST /api/play/start`, where the snapshot is frozen once (the `conditions` spec). This line satisfies `conditions` task group 7.
     - _Requirements: 12.1_
 
-- [ ] 12. Play a case on one screen (added after the checkpoint was numbered; satisfies Requirement 13 and `party-mode` 9.5 and 9.6)
-  - [ ] 12.1 Route and flag
+- [x] 12. Play a case on one screen (added after the checkpoint was numbered; satisfies Requirement 13 and `party-mode` 9.5 and 9.6)
+  - [x] 12.1 Route and flag
     - Add `case` to `ScreenId`, `/case/:worldId` to `resolveRoute` and `pathFor` and a guard like Haunt's to `guardRoute`; add `partyEnabled` to `ShellFlags` (`PARTY_ENABLED` in `api/src/http/flags.ts`, `GET /api/session`, `FakeApi`); update the generators and the tests, so Properties 1 to 3 cover the new route.
     - _Requirements: 13.2, 13.4_
-  - [ ] 12.2 Haunt: "Play a case" and "Wander"
-    - Replace "Walk in" with the two actions and their one-line descriptions; Wander goes to Play as before; "Play a case" opens the setup. Hide or disable "Play a case" with a one-line reason when `flags.partyEnabled` is false or the world is `world_too_small`.
+  - [x] 12.2 Haunt: "Play a case" and "Wander"
+    - Replace "Walk in" with the two actions and their one-line descriptions; Wander goes to Play as before; "Play a case" opens the setup. Hide or disable "Play a case" with a one-line reason when `flags.partyEnabled` is false or the world is `world_too_small`. Wander is off, with its reason, until a ghost is chosen (the Play route needs one); a case needs none. Built as `PlayChoice`, which Haunt (group 9) hosts once the Stage is ready.
     - _Requirements: 13.1, 13.4_
-  - [ ] 12.3 Case setup card
+  - [x] 12.3 Case setup card
     - A preset (Classic, Relaxed or Quick) and two to five Bots (default two), kept in `PlayMemory.caseSetup`, memory only; "Start" goes to `/case/:worldId`.
     - _Requirements: 13.2_
-  - [ ] 12.4 Case Screen
-    - Mounts the party Host page in solo mode (party task 8.15); an always-visible Exit that ends the Room and releases the Viewer first; the party ending with "Play again", Home and Gallery; the scripted indicator; a reload returns to the setup.
+  - [x] 12.4 Case Screen
+    - Mounts the party Host page in solo mode (party task 8.15); an always-visible Exit that ends the Room and releases the Viewer first; the party ending with "Play again", Home and Gallery; the scripted indicator; a reload returns to the setup. Built against a Host seam (`mountHost`, `HostToShell` messages, `PlatformKit.loadHost`) and a stand-in Host, as the Viewer is, so the real Host page of party task 8.15 plugs in without a change to the shell. Until group 9 builds Haunt, its stand-in hosts the choice once the world is ready.
     - _Requirements: 13.2, 13.3_
-  - [ ] 12.5 Names and copy
+  - [x] 12.5 Names and copy
     - The Play screen is titled and headed "Wander"; the Home premise and facts say that a place can be solved as a case (`shared/src/app/home-copy.ts`); `SCREEN_TITLES` gains the Case Screen.
     - _Requirements: 1.1_
-  - [ ] 12.6 Tests
+  - [x] 12.6 Tests
     - Component tests for the Haunt choice, the setup card and the Case Screen against a fake Host, including the Zero-Quota Path through a case and the hidden or disabled action; one main-path and one failure-path test each.
     - _Requirements: 13.1, 13.2, 13.3, 13.4_
 

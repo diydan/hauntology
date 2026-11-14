@@ -40,7 +40,7 @@ describe("GET /api/session", () => {
     const { call } = setup();
     const res = await call("/api/session");
     expect(res.status).toBe(200);
-    expect(await json(res)).toEqual({ ackNotice: false, flags: { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false } });
+    expect(await json(res)).toEqual({ ackNotice: false, flags: { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true } });
     const sc = setCookie(res) as string;
     expect(sc).toContain(`${SESSION_COOKIE}=`);
     expect(sc).toMatch(/HttpOnly/i);
@@ -215,7 +215,7 @@ describe("flags", () => {
 
   it("reports what SpendGuard says once it is wired in", async () => {
     const { call } = setup({ spend: () => ({ dayCapReached: true, totalCapReached: false, killed: true }) });
-    expect((await json(await call("/api/session"))).flags).toEqual({ worldGenEnabled: false, dayCapReached: true, totalCapReached: false, voiceEnabled: true, liveEnabled: false });
+    expect((await json(await call("/api/session"))).flags).toEqual({ worldGenEnabled: false, dayCapReached: true, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true });
   });
 
   it("reports the voice switches: voice on unless VOICE_ENABLED says off, live off unless VOICE_LIVE_ENABLED says on", () => {
@@ -225,13 +225,21 @@ describe("flags", () => {
     for (const [value, expected] of [["true", true], ["1", true], ["ON", true], ["false", false], ["", false], ["yes", false]] as const) {
       expect(flagsFrom({ VOICE_LIVE_ENABLED: value }).liveEnabled, JSON.stringify(value)).toBe(expected);
     }
-    expect(flagsFrom(undefined)).toMatchObject({ voiceEnabled: true, liveEnabled: false });
+    expect(flagsFrom(undefined)).toMatchObject({ voiceEnabled: true, liveEnabled: false, partyEnabled: true });
+  });
+
+  it("reports whether Party Rooms may be made: on unless PARTY_ENABLED says off", () => {
+    for (const [value, expected] of [["false", false], ["0", false], [" OFF ", false], ["true", true], ["", true], ["no", true]] as const) {
+      expect(flagsFrom({ PARTY_ENABLED: value }).partyEnabled, JSON.stringify(value)).toBe(expected);
+    }
+    expect(flagsFrom(undefined).partyEnabled).toBe(true);
+    expect(flagsFrom({ PARTY_ENABLED: "false" })).toMatchObject({ worldGenEnabled: true, voiceEnabled: true, partyEnabled: false });
   });
 
   it("flagsFrom treats a missing environment as everything on", () => {
-    expect(flagsFrom(undefined)).toEqual({ worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false });
+    expect(flagsFrom(undefined)).toEqual({ worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true });
     expect(flagsFrom({ WORLD_GEN_ENABLED: "off" }, { dayCapReached: false, totalCapReached: true, killed: false })).toEqual({
-      worldGenEnabled: false, dayCapReached: false, totalCapReached: true, voiceEnabled: true, liveEnabled: false,
+      worldGenEnabled: false, dayCapReached: false, totalCapReached: true, voiceEnabled: true, liveEnabled: false, partyEnabled: true,
     });
   });
 });

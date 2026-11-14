@@ -7,7 +7,7 @@ import { ShellContext, useBoot, useRouterState, useShell, type ShellContextValue
 import { DebugOverlay } from "./DebugOverlay";
 import { createGalleryStore } from "./GalleryStore";
 import { defaultPlatform, type PlatformKit } from "./platform";
-import { createPlayMemory } from "./play/memory";
+import { createPlayMemory, type PlayMemoryStore } from "./play/memory";
 import { ScreenBoundary } from "./ErrorBoundary";
 import { LiveRegionProvider, useAnnounce } from "./LiveRegion";
 import { OfflineBanner } from "./OfflineBanner";
@@ -27,11 +27,13 @@ export type AppProps = {
   debug?: boolean;
   /** Replaces parts of the browser kit (tests, the demo). */
   platform?: Partial<PlatformKit>;
+  /** What the visit remembers between Screens. Tests start it with something in it; the app leaves it empty. */
+  memory?: PlayMemoryStore;
 };
 
-export function App({ api, router, quota, debugStore, debug = false, platform }: AppProps) {
+export function App({ api, router, quota, debugStore, debug = false, platform, memory: given }: AppProps) {
   const gallery = useMemo(() => createGalleryStore(api), [api]);
-  const memory = useMemo(() => createPlayMemory(), []);
+  const memory = useMemo(() => given ?? createPlayMemory(), [given]);
   const kit = useMemo<PlatformKit>(() => ({ ...defaultPlatform(), ...platform }), [platform]);
   const value = useMemo<ShellContextValue>(
     () => ({ api, router, quota, debug: debugStore, gallery, memory, platform: kit }),

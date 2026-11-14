@@ -15,6 +15,7 @@ describe("resolveRoute", () => {
     expect(resolveRoute("/expired")).toEqual({ screen: "expired" });
     expect(resolveRoute(`/haunt/${W}`)).toEqual({ screen: "haunt", worldId: W });
     expect(resolveRoute(`/play/${W}`)).toEqual({ screen: "play", worldId: W });
+    expect(resolveRoute(`/case/${W}`)).toEqual({ screen: "case", worldId: W });
     expect(resolveRoute(`/end/${W}`)).toEqual({ screen: "end", worldId: W });
   });
 
@@ -29,7 +30,7 @@ describe("resolveRoute", () => {
   it("gives not_found for everything else", () => {
     const bad = [
       "", "gallery", "gallery/", "//", "///", "/gallery//", "//gallery", "/gallery/x", "/Gallery", "/GALLERY",
-      "/haunt", "/haunt/", `/haunt/${W}/extra`, `/haunt//${W}`, "/play/..", "/play/.", "/play/a%20b", "/play/%2e%2e",
+      "/haunt", "/haunt/", "/case", "/case/", "/Case/x", `/case/${W}/extra`, `/case//${W}`, "/case/..", "/case/a.b", `/haunt/${W}/extra`, `/haunt//${W}`, "/play/..", "/play/.", "/play/a%20b", "/play/%2e%2e",
       "/play/a.b", "/play/ä", `/play/${"a".repeat(65)}`, "/constructor", "/__proto__", "/toString",
       "/hasOwnProperty", "/api/quota", "/index.html", "/not-found", "/gallery%20", "/ gallery", "http://x/gallery",
       "\n/gallery", "/gallery\n", "/gallery\n/",
@@ -47,17 +48,18 @@ describe("resolveRoute", () => {
 describe("pathFor", () => {
   it("is the canonical path of each route and round-trips", () => {
     const routes: Route[] = [
-      ...SCREEN_IDS.filter((s) => s !== "haunt" && s !== "play" && s !== "end").map((screen): Route => ({ screen })),
-      { screen: "haunt", worldId: W }, { screen: "play", worldId: W }, { screen: "end", worldId: W },
+      ...SCREEN_IDS.filter((s) => s !== "haunt" && s !== "play" && s !== "case" && s !== "end").map((screen): Route => ({ screen })),
+      { screen: "haunt", worldId: W }, { screen: "play", worldId: W }, { screen: "case", worldId: W }, { screen: "end", worldId: W },
     ];
     for (const r of routes) expect(resolveRoute(pathFor(r))).toEqual(r);
     expect(pathFor({ screen: "play", worldId: W })).toBe(`/play/${W}`);
+    expect(pathFor({ screen: "case", worldId: W })).toBe(`/case/${W}`);
     expect(pathFor({ screen: "home" })).toBe("/");
   });
 
   it("gives the not-found path when a world route has no valid world id", () => {
     for (const worldId of [undefined, "", "a b", "a/b", "..", "x".repeat(65)]) {
-      for (const screen of ["haunt", "play", "end"] as const) {
+      for (const screen of ["haunt", "play", "case", "end"] as const) {
         const route: Route = worldId === undefined ? { screen } : { screen, worldId };
         expect(pathFor(route)).toBe("/not-found");
         expect(resolveRoute(pathFor(route))).toEqual({ screen: "not_found" });
@@ -90,8 +92,8 @@ describe("guardRoute", () => {
     expect(guardRoute({ screen: "confirm" }, flow({ pickedImageId: "img12345" }))).toEqual({ allow: true });
   });
 
-  it("sends haunt, play and end for an unknown world to the gallery", () => {
-    for (const screen of ["haunt", "play", "end"] as const) {
+  it("sends haunt, play, case and end for an unknown world to the gallery", () => {
+    for (const screen of ["haunt", "play", "case", "end"] as const) {
       const all = flow({ ghostReady: true, playEnded: true });
       expect(guardRoute({ screen, worldId: W }, all)).toEqual({ allow: false, redirect: GALLERY });
       expect(guardRoute({ screen, worldId: W }, { ...all, worldId: OTHER })).toEqual({ allow: false, redirect: GALLERY });
@@ -101,6 +103,14 @@ describe("guardRoute", () => {
 
   it("lets haunt through for the known world", () => {
     expect(guardRoute({ screen: "haunt", worldId: W }, flow({ worldId: W }))).toEqual({ allow: true });
+  });
+
+  it("lets case through for the known world with no ghost, and sends it to the gallery for any other world", () => {
+    for (const ghostReady of [false, true]) {
+      expect(guardRoute({ screen: "case", worldId: W }, flow({ worldId: W, ghostReady }))).toEqual({ allow: true });
+    }
+    expect(guardRoute({ screen: "case", worldId: W }, flow({ worldId: OTHER, ghostReady: true }))).toEqual({ allow: false, redirect: GALLERY });
+    expect(guardRoute({ screen: "case", worldId: W }, flow())).toEqual({ allow: false, redirect: GALLERY });
   });
 
   it("sends play without a ghost to haunt for the same world", () => {
@@ -126,7 +136,7 @@ describe("guardRoute", () => {
     const routes: Route[] = [
       { screen: "home" }, { screen: "gallery" }, { screen: "create" }, { screen: "confirm" },
       { screen: "not_found" }, { screen: "expired" },
-      ...(["haunt", "play", "end"] as const).flatMap((screen): Route[] => [
+      ...(["haunt", "play", "case", "end"] as const).flatMap((screen): Route[] => [
         { screen }, { screen, worldId: W }, { screen, worldId: OTHER },
       ]),
     ];

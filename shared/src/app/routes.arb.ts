@@ -4,17 +4,17 @@ import { SCREEN_IDS, type FlowState, type Route, type ScreenId } from "./types";
 /** An opaque world id: 22 to 43 URL-safe characters (at least 128 bits, as in world-pipeline 9.2). */
 export const worldIdArb: fc.Arbitrary<string> = fc.stringMatching(/^[A-Za-z0-9_-]{22,43}$/);
 
-const WITH_WORLD_ID: readonly ScreenId[] = ["haunt", "play", "end"];
+const WITH_WORLD_ID: readonly ScreenId[] = ["haunt", "play", "case", "end"];
 const WITHOUT_WORLD_ID = SCREEN_IDS.filter((s) => !WITH_WORLD_ID.includes(s));
 
-/** Any route the shell can hold: `haunt`, `play` and `end` carry a world id, the rest do not. */
+/** Any route the shell can hold: `haunt`, `play`, `case` and `end` carry a world id, the rest do not. */
 export const routeArb: fc.Arbitrary<Route> = fc.oneof(
   fc.constantFrom(...WITHOUT_WORLD_ID).map((screen): Route => ({ screen })),
   fc.tuple(fc.constantFrom(...WITH_WORLD_ID), worldIdArb).map(([screen, worldId]): Route => ({ screen, worldId })),
 );
 
 const segment: fc.Arbitrary<string> = fc.oneof(
-  fc.constantFrom("", "gallery", "create", "confirm", "haunt", "play", "end", "api", "index.html", "..", ".", "%2e%2e"),
+  fc.constantFrom("", "gallery", "create", "confirm", "haunt", "play", "case", "end", "api", "index.html", "..", ".", "%2e%2e"),
   fc.string({ maxLength: 12 }),
   worldIdArb,
 );
@@ -34,7 +34,7 @@ const nearMissWorldId: fc.Arbitrary<string> = fc.oneof(
 /** Paths shaped like the real route table, so valid routes are reached often and not only by luck. */
 const wellFormedPath: fc.Arbitrary<string> = fc.oneof(
   fc.constantFrom("/", "/gallery", "/create", "/confirm"),
-  fc.tuple(fc.constantFrom("haunt", "play", "end"), fc.oneof({ weight: 3, arbitrary: worldIdArb }, { weight: 2, arbitrary: nearMissWorldId }), suffix).map(
+  fc.tuple(fc.constantFrom("haunt", "play", "case", "end"), fc.oneof({ weight: 3, arbitrary: worldIdArb }, { weight: 2, arbitrary: nearMissWorldId }), suffix).map(
     ([screen, id, s]) => `/${screen}/${id}${s}`,
   ),
 );
@@ -59,12 +59,12 @@ export const flowStateArb: fc.Arbitrary<FlowState> = fc.record(
   { requiredKeys: ["ghostReady", "noticeAcked", "playEnded"] },
 );
 
-/** Runs for the guard properties: four screens are guarded, so this is more than the 100 minimum. */
+/** Runs for the guard properties: five screens are guarded, so this is more than the 100 minimum. */
 export const GUARD_RUNS = 300;
 
 const guardedRouteArb: fc.Arbitrary<Route> = fc.oneof(
   fc.constant<Route>({ screen: "confirm" }),
-  fc.tuple(fc.constantFrom<ScreenId[]>("haunt", "play", "end"), worldIdArb).map(([screen, worldId]): Route => ({ screen, worldId })),
+  fc.tuple(fc.constantFrom<ScreenId[]>("haunt", "play", "case", "end"), worldIdArb).map(([screen, worldId]): Route => ({ screen, worldId })),
 );
 
 /**

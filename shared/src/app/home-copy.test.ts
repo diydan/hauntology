@@ -4,7 +4,7 @@ import { HOME_FACTS, HOME_PREMISE, REASON_COPY, reasonCopy } from "./home-copy";
 import type { CapabilityReason, QuotaSnapshot, ShellFlags } from "./types";
 
 const REASONS: CapabilityReason[] = ["kill_switch", "day_cap", "total_cap", "quota_image", "quota_world"];
-const open: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false };
+const open: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true };
 const quota = (world: number, image: number): QuotaSnapshot => ({ world, image, llm: 10, tts: 10, stt: 10, live: 10 });
 
 describe("Home copy", () => {
@@ -15,10 +15,20 @@ describe("Home copy", () => {
 
   it("says that worlds are static, that the ghost is a billboard sprite and that photos are deleted after 24 hours", () => {
     const text = HOME_FACTS.join(" ");
-    expect(HOME_FACTS).toHaveLength(3);
+    expect(HOME_FACTS).toHaveLength(4);
     expect(text).toMatch(/static/);
     expect(text).toMatch(/billboard sprite/);
     expect(text).toMatch(/deleted after 24 hours/);
+  });
+
+  it("says that a place can be solved as a case, alone against Bots, and that wandering is the other way (Requirement 1.1)", () => {
+    expect(HOME_PREMISE).toMatch(/\bcase\b/);
+    expect(HOME_PREMISE).toMatch(/wander/i);
+    expect(HOME_PREMISE).not.toMatch(/\bsingle player\b/i);
+    const fact = HOME_FACTS.find((f) => /\bcase\b/.test(f));
+    expect(fact).toBeDefined();
+    expect(fact).toMatch(/alone/);
+    expect(fact).toMatch(/Bots/);
   });
 
   it("has a line for every reason, and only for them", () => {

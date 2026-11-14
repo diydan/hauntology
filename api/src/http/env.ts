@@ -10,6 +10,8 @@ export type Bindings = {
   VOICE_ENABLED?: string;
   /** `true` or `1` turns live conversation mode on (a stretch). Unset is off. */
   VOICE_LIVE_ENABLED?: string;
+  /** `false`, `0` or `off` stops new Party Rooms, a solo case included; Wander stays (party-mode). Unset is on. */
+  PARTY_ENABLED?: string;
   /** When set (not empty), Turnstile is configured and its origin is allowed by the page policy. */
   TURNSTILE_SECRET?: string;
   /** Extra allowed `Origin` values, comma-separated (development only). */

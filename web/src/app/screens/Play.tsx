@@ -142,7 +142,7 @@ export default function Play() {
     const copy = errorCopy(ui.failure.code);
     return (
       <main className="screen">
-        <ScreenHeading>Walk</ScreenHeading>
+        <ScreenHeading>Wander</ScreenHeading>
         <h2>{copy.title}</h2>
         <p>{copy.body}</p>
         <p>
@@ -162,7 +162,7 @@ export default function Play() {
   return (
     <div className="play-layout">
       <main className="play-main">
-        <ScreenHeading>Walk</ScreenHeading>
+        <ScreenHeading>Wander</ScreenHeading>
         {ui.phase === "loading" ? <p aria-busy="true">Opening the door…</p> : null}
         {ui.phase === "ready" ? (
           <>

@@ -425,3 +425,76 @@ a {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+/*
+ * Play a case: the choice on Haunt, the setup card and the Case Screen. Targets are at least 44 px
+ * (the `--target` token) and the card is a plain column, so it works at 320 px.
+ */
+.play-choice h2 {
+  margin-top: 1.5rem;
+}
+
+.play-choice .actions p {
+  margin: 0.25rem 0 0;
+}
+
+.case-setup {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--dust);
+}
+
+.case-setup h2 {
+  margin: 0;
+}
+
+.choice-group {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group legend {
+  padding: 0;
+  margin-bottom: 0.25rem;
+}
+
+.choice-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: var(--target);
+}
+
+.choice-option input {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+}
+
+.choice-bots {
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: 1rem;
+}
+
+.case-layout {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.case-bar,
+.case-after {
+  margin: 0;
+}
+
+.case-host {
+  min-width: 0;
+}

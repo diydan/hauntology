@@ -9,14 +9,14 @@ import { SCREEN_IDS, type Route } from "./types";
 function oracle(path: string): Route {
   const base = path.replace(/[?#][\s\S]*$/, "");
   if (base === "/") return { screen: "home" };
-  const m = /^\/(?:(gallery|create|confirm|expired)|(haunt|play|end)\/([A-Za-z0-9_-]{1,64}))\/?$/.exec(base);
+  const m = /^\/(?:(gallery|create|confirm|expired)|(haunt|play|case|end)\/([A-Za-z0-9_-]{1,64}))\/?$/.exec(base);
   if (!m) return { screen: "not_found" };
   if (m[1]) return { screen: m[1] as Route["screen"] };
   return { screen: m[2] as Route["screen"], worldId: m[3] as string };
 }
 
 describe("Property 1: Routes are total and round-trip", () => {
-  // Validates: Requirements 1.5, 7.6
+  // Validates: Requirements 1.5, 7.6, 13.2
   const paths = fc.oneof(anyPathArb, fc.string({ unit: "binary", maxLength: 40 }));
 
   it("returns exactly one known screen for any string, and not_found for every unknown path", () => {
@@ -24,7 +24,7 @@ describe("Property 1: Routes are total and round-trip", () => {
       fc.property(paths, (path) => {
         const route = resolveRoute(path);
         if (!SCREEN_IDS.includes(route.screen)) return false;
-        const needsWorld = route.screen === "haunt" || route.screen === "play" || route.screen === "end";
+        const needsWorld = route.screen === "haunt" || route.screen === "play" || route.screen === "case" || route.screen === "end";
         if (needsWorld !== (route.worldId !== undefined)) return false;
         if (route.worldId !== undefined && !isWorldId(route.worldId)) return false;
         const expected = oracle(path);
@@ -53,7 +53,7 @@ describe("Property 1: Routes are total and round-trip", () => {
 });
 
 describe("Property 2: Guards never expose a screen without its prerequisites", () => {
-  // Validates: Requirements 3.7, 5.2, 6.5
+  // Validates: Requirements 3.7, 5.2, 6.5, 13.2
   it("allows confirm, play and end only when their prerequisites hold, and nothing else is blocked", () => {
     fc.assert(
       fc.property(routeWithFlowArb, ({ route, flow }) => {
@@ -63,6 +63,8 @@ describe("Property 2: Guards never expose a screen without its prerequisites", (
           case "confirm":
             return result.allow === (flow.pickedImageId !== undefined);
           case "haunt":
+          case "case":
+            // A case needs no ghost: it fills every Suspect from the Preset Ghosts (Requirement 13.2).
             return result.allow === knowsWorld;
           case "play":
             // The design's own words are a necessary condition: a world is set and the ghost is ready.

@@ -22,4 +22,5 @@ export const shellFlagsArb: fc.Arbitrary<ShellFlags> = fc.record({
   totalCapReached: fc.boolean(),
   voiceEnabled: fc.boolean(),
   liveEnabled: fc.boolean(),
+  partyEnabled: fc.boolean(),
 });

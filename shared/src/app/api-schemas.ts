@@ -34,6 +34,7 @@ export const ShellFlagsSchema = z.object({
   totalCapReached: z.boolean(),
   voiceEnabled: z.boolean(),
   liveEnabled: z.boolean(),
+  partyEnabled: z.boolean(),
 });
 
 export const SessionRecordSchema = z.object({

@@ -204,7 +204,7 @@ describe("restoring after a reload", () => {
     expect(t.memory.get().playId).not.toBe(started.value.playId);
   });
 
-  it("starts fresh, ignoring the Session, when asked to (Walk in, Haunt again)", async () => {
+  it("starts fresh, ignoring the Session, when asked to (Wander, Haunt again)", async () => {
     const { api, playId } = await liveSession();
     const memory = createPlayMemory();
     memory.set({ startFresh: true });

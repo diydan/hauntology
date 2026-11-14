@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AtmosphereSchema } from "../conditions/types";
+import { ErrorCode } from "../errors";
 import { VIEWER_RUNGS } from "./types";
 
 /**
@@ -52,5 +53,29 @@ export const parseViewerMessage = (input: unknown): ViewerToShell | null => {
 
 export const parseShellMessage = (input: unknown): ShellToViewer | null => {
   const r = ShellToViewerSchema.safeParse(input);
+  return r.success ? r.data : null;
+};
+
+/**
+ * Host to Shell, for "Play a case" (shell Requirement 13; the party Host page is `party-mode` 8.15).
+ * The Host page runs the solo Room; the Shell only learns how it is going. Strict, so nothing else
+ * (a card, a note, a seed) can come through this door.
+ *
+ * - `started`: the Room is up and the game has begun.
+ * - `refused`: no Room was made. `code` is `world_too_small`, `party_disabled`, `rooms_full` or another API code.
+ * - `scripted`: the narration is scripted lines (the indicator of Requirement 5.4).
+ * - `ended`: the game is over and the party ending is on screen.
+ */
+const ERROR_CODES = Object.values(ErrorCode) as [ErrorCode, ...ErrorCode[]];
+export const HostToShellSchema = z.discriminatedUnion("t", [
+  z.object({ t: z.literal("started") }).strict(),
+  z.object({ t: z.literal("refused"), code: z.enum(ERROR_CODES) }).strict(),
+  z.object({ t: z.literal("scripted") }).strict(),
+  z.object({ t: z.literal("ended") }).strict(),
+]);
+export type HostToShell = z.infer<typeof HostToShellSchema>;
+
+export const parseHostMessage = (input: unknown): HostToShell | null => {
+  const r = HostToShellSchema.safeParse(input);
   return r.success ? r.data : null;
 };

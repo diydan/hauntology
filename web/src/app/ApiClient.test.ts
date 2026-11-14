@@ -20,7 +20,7 @@ function scripted(...answers: Array<Response | (() => Response | Promise<Respons
 }
 
 const alwaysOnline: OnlineSource = { isOnline: () => true, whenOnline: async () => true };
-const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false };
+const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true };
 const session = { ackNotice: false, flags };
 const quota = { world: 2, image: 8, llm: 40, tts: 40, stt: 20, live: 30 };
 const failure = <T>(r: ApiResult<T>) => {

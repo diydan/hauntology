@@ -5,13 +5,14 @@ import type { CapabilityReason } from "./types";
  * claim about money or quota beyond what the screen knows.
  */
 
-export const HOME_PREMISE = "Draw or photograph any place. Walk into it. Meet whoever is still there.";
+export const HOME_PREMISE = "Draw or photograph any place. Wander it and meet whoever is still there, or solve it as a case.";
 
 /** What the visitor should know before they start (Requirement 1.2). */
 export const HOME_FACTS: readonly string[] = [
   "Places are static: nothing in them moves or changes while you walk.",
   "The ghost is a flat picture that always turns to face you (a billboard sprite), not a 3D figure.",
   "A photo you upload is deleted after 24 hours.",
+  "A case is a deduction game: work out which ghost haunts the place, where, and with which relic. You can play one alone, against Bots, on this screen.",
 ];
 
 /** One line for why drawing or uploading is off (Requirement 1.3). The Gallery is always open. */

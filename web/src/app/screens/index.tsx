@@ -11,7 +11,7 @@ import NotFound from "./NotFound";
 /**
  * The Screen for each route. Play and Create are split into their own chunks with a dynamic
  * `import()`, so Home's first load does not carry the Viewer or the Sketch Pad (shell design,
- * "Performance"). Their files are stand-ins until tasks 6.1 and 7.1.
+ * "Performance"). The Case Screen is split off the same way: it loads the party Host page only when a case opens.
  */
 type Screen = ComponentType | LazyExoticComponent<ComponentType>;
 
@@ -22,6 +22,7 @@ export const SCREENS: Record<ScreenId, Screen> = {
   confirm: Confirm,
   haunt: Haunt,
   play: lazy(() => import("./Play")),
+  case: lazy(() => import("./Case")),
   end: End,
   not_found: NotFound,
   expired: Expired,
@@ -34,7 +35,8 @@ export const SCREEN_TITLES: Record<ScreenId, string> = {
   create: "Make a place",
   confirm: "Confirm",
   haunt: "Your place",
-  play: "Play",
+  play: "Wander",
+  case: "Play a case",
   end: "The ending",
   not_found: "Nothing here",
   expired: "That place is gone",

@@ -9,7 +9,8 @@ import type { FlowState, GuardResult, Route, ScreenId } from "./types";
  *   /create            create
  *   /confirm           confirm
  *   /haunt/:worldId    haunt
- *   /play/:worldId     play
+ *   /play/:worldId     play  (Wander)
+ *   /case/:worldId     case  (a solo case)
  *   /end/:worldId      end
  *   /expired           expired
  *   anything else      not_found  (pathFor gives /not-found)
@@ -31,6 +32,7 @@ const STATIC_PATHS = new Map<string, ScreenId>([
 const WORLD_PATHS = new Map<string, ScreenId>([
   ["haunt", "haunt"],
   ["play", "play"],
+  ["case", "case"],
   ["end", "end"],
 ]);
 
@@ -72,6 +74,7 @@ export function pathFor(route: Route): string {
     case "expired": return "/expired";
     case "haunt":
     case "play":
+    case "case":
     case "end":
       return route.worldId !== undefined && isWorldId(route.worldId) ? `/${route.screen}/${route.worldId}` : "/not-found";
     case "not_found": return "/not-found";
@@ -83,9 +86,10 @@ export function pathFor(route: Route): string {
  * A redirect never lands on a route that redirects again.
  *
  * - `confirm` needs a picked Place Image, else `create`.
- * - `haunt`, `play` and `end` are about one world: the route's world id must be the flow's `worldId`,
+ * - `haunt`, `play`, `case` and `end` are about one world: the route's world id must be the flow's `worldId`,
  *   else `gallery`.
  * - `play` also needs `ghostReady`, else `haunt` for that world.
+ * - `case` needs no ghost: a solo case fills every Suspect from the Preset Ghosts, so it is allowed for the known world.
  * - `end` also needs `playEnded`, else the place `play` would give.
  */
 export function guardRoute(route: Route, flow: FlowState): GuardResult {
@@ -93,6 +97,7 @@ export function guardRoute(route: Route, flow: FlowState): GuardResult {
     case "confirm":
       return flow.pickedImageId !== undefined ? ALLOW : redirect({ screen: "create" });
     case "haunt":
+    case "case":
       return knowsWorld(route, flow) ? ALLOW : redirect({ screen: "gallery" });
     case "play": {
       if (!knowsWorld(route, flow)) return redirect({ screen: "gallery" });

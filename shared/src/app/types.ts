@@ -5,7 +5,7 @@
 import type { ErrorCode } from "../errors";
 
 export const SCREEN_IDS = [
-  "home", "gallery", "create", "confirm", "haunt", "play", "end", "not_found", "expired",
+  "home", "gallery", "create", "confirm", "haunt", "play", "case", "end", "not_found", "expired",
 ] as const;
 export type ScreenId = (typeof SCREEN_IDS)[number];
 
@@ -33,6 +33,8 @@ export type ShellFlags = {
   voiceEnabled: boolean;
   /** `VOICE_LIVE_ENABLED`: live conversation mode exists (a stretch, off by default). */
   liveEnabled: boolean;
+  /** `PARTY_ENABLED`: a Party Room may be made, a solo case included. Off hides "Play a case"; Wander stays. */
+  partyEnabled: boolean;
 };
 
 export type CapabilityReason = "kill_switch" | "day_cap" | "total_cap" | "quota_image" | "quota_world";

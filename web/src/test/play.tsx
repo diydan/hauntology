@@ -3,6 +3,7 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { expect, vi } from "vitest";
 import type { PlatformKit } from "../app/platform";
 import type { Recorder } from "../app/play/voice";
+import type { HostModule } from "../app/case/types";
 import type { ViewerModule } from "../app/viewer/types";
 import { renderApp, type Harness } from "./harness";
 import type { FakeApiOptions } from "../app/FakeApi";
@@ -32,9 +33,29 @@ export function testPlatform(over: Partial<PlatformKit> = {}) {
       },
     };
   });
+  // The real stand-in Host, logged, so a test can see that the Room is ended before the next Screen mounts.
+  const loadHost = vi.fn(async (): Promise<HostModule> => {
+    log.push("load host");
+    const real = await import("../app/case/standin");
+    return {
+      async mountHost(setup) {
+        log.push("host mount");
+        const handle = await real.mountHost(setup);
+        return {
+          playAgain: () => handle.playAgain(),
+          async dispose() {
+            log.push("host dispose");
+            await handle.dispose();
+            log.push("host disposed");
+          },
+        };
+      },
+    };
+  });
   const saveFile = vi.fn();
   const kit: Partial<PlatformKit> = {
     loadViewer,
+    loadHost,
     voice: {
       recorder: async () => recorder,
       createAudio: (blob) => {
@@ -47,7 +68,7 @@ export function testPlatform(over: Partial<PlatformKit> = {}) {
     saveFile,
     ...over,
   };
-  return { kit, log, loadViewer, saveFile, played, recorder };
+  return { kit, log, loadViewer, loadHost, saveFile, played, recorder };
 }
 
 export type Played = ReturnType<typeof testPlatform>;
@@ -61,7 +82,7 @@ export async function enterPlay(options: { api?: ShellApi; fake?: FakeApiOptions
   await screen.findByRole("heading", { name: "Your place is coming" });
   act(() => h.router.setFlow({ ghostReady: true }));
   act(() => h.router.navigate({ screen: "play", worldId: "attic-room" }));
-  await screen.findByRole("heading", { name: "Walk" });
+  await screen.findByRole("heading", { name: "Wander" });
   return { ...h, p };
 }
 

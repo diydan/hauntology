@@ -1,3 +1,4 @@
+import type { CaseSetup } from "@hauntology/shared/app/case-setup";
 import type { ConditionsChoice } from "@hauntology/shared/conditions/types";
 
 /**
@@ -6,13 +7,21 @@ import type { ConditionsChoice } from "@hauntology/shared/conditions/types";
  * the ghost spoke. The API's Session record holds only ids; this holds the rest for the tab.
  *
  * `startFresh` makes Play begin a new play session even when the Session names an old one:
- * "Walk in" and "Haunt again" set it; a reload does not.
+ * "Wander" and "Haunt again" set it; a reload does not.
+ *
+ * A case (Requirement 13): `caseSetup` is what the setup card holds for this visit. `caseStart` is
+ * set by its Start action and means "the Case Screen may open one Room"; it is cleared when the
+ * Case Screen is left, so Back, or a reload, shows the setup again and never opens a Room by
+ * itself. `caseRefusal` is set when the Host would not make a Room for a world, so Haunt can say why.
  */
 export type PlayMemory = {
   playId?: string | undefined;
   ghostPreset?: string | undefined;
   conditions?: ConditionsChoice | undefined;
   startFresh: boolean;
+  caseSetup?: CaseSetup | undefined;
+  caseStart: boolean;
+  caseRefusal?: { worldId: string; code: string } | undefined;
   /** The ghost's last line when the game ended, for the Ending card. */
   farewell?: string | undefined;
 };
@@ -24,14 +33,14 @@ export type PlayMemoryStore = {
 };
 
 export function createPlayMemory(): PlayMemoryStore {
-  let memory: PlayMemory = { startFresh: false };
+  let memory: PlayMemory = { startFresh: false, caseStart: false };
   return {
     get: () => memory,
     set(patch) {
       memory = { ...memory, ...patch };
     },
     clear() {
-      memory = { startFresh: false };
+      memory = { startFresh: false, caseStart: false };
     },
   };
 }

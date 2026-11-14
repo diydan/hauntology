@@ -65,7 +65,7 @@ describe("Ending: the main path", () => {
     const get = vi.spyOn(api, "playGet");
     get.mockClear();
     await press("Haunt again");
-    await screen.findByRole("heading", { name: "Walk" });
+    await screen.findByRole("heading", { name: "Wander" });
     await screen.findByText("Stand-in view. The 3D Viewer is not built yet.");
     expect(start).toHaveBeenCalledTimes(2);
     expect(get).not.toHaveBeenCalled(); // no look at the old, finished game
@@ -96,7 +96,7 @@ describe("Ending: the main path", () => {
     const start = vi.spyOn(api, "playStart");
     const p = testPlatform();
     const h = renderApp("/end/attic-room", { api, platform: p.kit });
-    await screen.findByRole("heading", { name: "Walk" });
+    await screen.findByRole("heading", { name: "Wander" });
     await waitFor(() => expect(start).toHaveBeenCalledTimes(1));
     expect(h.history.stack).toEqual(["/play/attic-room"]);
   });

@@ -249,7 +249,7 @@ describe("Play: reloading", () => {
     const get = vi.spyOn(api, "playGet");
     const p = testPlatform();
     renderApp("/play/attic-room", { api, platform: p.kit });
-    await screen.findByRole("heading", { name: "Walk" });
+    await screen.findByRole("heading", { name: "Wander" });
     await waitFor(() => expect(foundText()).toBe("Memories found: 1 of 3"));
     expect(start).not.toHaveBeenCalled();
     expect(get).toHaveBeenCalled();
