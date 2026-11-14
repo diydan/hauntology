@@ -12,7 +12,7 @@ This spec reuses, and does not restate, the engines it joins:
 `world-pipeline` tasks 10.1 to 10.4 (photo picker, sketch pad, confirm screen, progress screen) are implemented under this spec's tasks and satisfy those task lines.
 
 Decisions:
-- **One effect-returning reducer per flow.** `confirmReduce(state, event) → {state, effects}` and `playReduce` never perform I/O. The React layer runs effects and feeds results back as events. This is what makes "world creation fires at most once" provable.
+- **One effect-returning reducer per flow.** `confirmReduce(state, event, imageId) → {state, effects}` and `playReduce(state, event, worldId)` never perform I/O (`confirmStart` and `playStart` give each screen its first state and effects). The React layer runs effects and feeds results back as events. This is what makes "world creation fires at most once" provable.
 - **The server is the source of truth.** Quota, job state, found memories and the ending come from the API. The shell keeps only the picked Place Image id, the Confirm Token (memory only), the world id and the acknowledged-notice flag.
 - **The world id survives reload in the Session, not in storage the visitor can lose.** The API keeps `lastWorldId` and `lastPlayId` on the Session record, and `GET /api/session` returns them. The shell never writes photos, sketches or captions to local storage, cookies or IndexedDB.
 - **Lazy Viewer.** three.js, Spark and three-mesh-bvh load by dynamic `import()` when Play mounts. Home ships without them.
@@ -93,7 +93,7 @@ sequenceDiagram
 `App.tsx` (router, providers), `screens/` (one folder per Screen), `ApiClient.ts` (typed fetch, maps failures to `Result`), `QuotaStore.ts` (single boot request, shared by Screens), `ErrorBoundary.tsx`, `LiveRegion.tsx`, `DebugOverlay.tsx`, `FakeApi.ts` (`?demo=1`, non-production builds only).
 
 ### `shared/src/app/`
-`types.ts` (the data types below and the literal lists they come from), `routes.ts` (`resolveRoute`, `pathFor`, `guardRoute`), `confirm.ts` (`confirmReduce`), `errors-copy.ts` (`errorCopy`, `retryGate`), `capabilities.ts` (`capabilities`), `stage.ts` (`stageOf`, `pollPlan`), `play.ts` (`playReduce`), `resume.ts` (`resumeTarget`), `sketch-size.ts` (`downscaleSize`), `events.ts` (the Shell-to-Viewer contract), `fake-api.ts` (fixture timeline for demo mode).
+`types.ts` (the data types below and the literal lists they come from), `routes.ts` (`resolveRoute`, `pathFor`, `guardRoute`), `confirm.ts` (`confirmStart`, `confirmReduce`), `errors-copy.ts` (`errorCopy`, `retryGate`), `capabilities.ts` (`capabilities`), `stage.ts` (`stageOf`, `pollPlan`), `play.ts` (`playStart`, `playReduce`), `resume.ts` (`resumeTarget`, `resumedFlow`), `sketch-size.ts` (`downscaleSize`, `inkGate`), `events.ts` (the Shell-to-Viewer contract), `fake-api.ts` (fixture timeline for demo mode).
 
 ```ts
 type ScreenId = 'home' | 'gallery' | 'create' | 'confirm' | 'haunt' | 'play' | 'end' | 'not_found' | 'expired';
@@ -142,26 +142,27 @@ type ConfirmEffect =
   | { e: 'create'; imageId: string; token: string; turnstile?: string }
   | { e: 'navigate'; to: Route };
 ```
-Rules: `enter` from `ready` with `needsTurnstile` false emits `create`. `enter` from `ready` with `needsTurnstile` true moves to `challenge` and emits nothing; `turnstile_ok` in `challenge` then emits `create`. `retry` is accepted only from `rejected` (for example `confirm_expired` or a failed quote): it emits one `quote` effect and moves to `quoting`, and the new token replaces the old one. From `creating`, `created`, `rejected` and `cancelled`, `enter` is ignored. A token is never emitted twice. `back` emits `navigate` without any `create`.
+Rules: `enter` from `ready` with `needsTurnstile` false emits `create`. `enter` from `ready` with `needsTurnstile` true moves to `challenge` and emits nothing; `turnstile_ok` in `challenge` then emits `create`. `retry` is accepted only from `rejected` (for example `confirm_expired` or a failed quote): it emits one `quote` effect and moves to `quoting`, and the new token replaces the old one. From `quoting`, `challenge`, `creating`, `created`, `rejected` and `cancelled`, `enter` is ignored. A token is never emitted twice. `back` is accepted from `quoting`, `ready`, `challenge` and `rejected`: it moves to `cancelled` and emits one `navigate` to Create, never a `create`. It is ignored while `creating` (the request is in flight), after `created` and after `cancelled`; a late answer after `back` changes nothing.
 
 ### Stage mapping and polling
 `stageOf(jobState)`: `queued → queued`, `generating → dreaming`, `ingesting → stitching`, `ready → ready`, `failed → failed`, matching `world-pipeline` states and the labels in `steering/visual-style.md`.
 `pollPlan({ now, lastPollAt, visible, stage, rateLimitedUntil, startedAt }) → { pollAt: number | null; overdue: boolean }`:
 - `null` when the tab is hidden or the stage is terminal.
-- otherwise the next time is `max(lastPollAt + 3000, rateLimitedUntil)`, never more than 5000 ms after the last poll, so a change shows within 5 s of the next poll.
-- `overdue` is true once `now − startedAt` passes 15 minutes (the job times out at 20), which triggers the honest "taking long" copy and the Gallery offer without cancelling.
+- otherwise the next time is `max(lastPollAt + 3000, rateLimitedUntil)`, where `rateLimitedUntil` is `null` when not rate limited. Without a limit that runs past the normal interval it is 3000 ms after the last poll, so a change shows within 5 s of the next poll. It may lie in the past (the tab was hidden), and the caller then polls at once.
+- `overdue` is true once `now − startedAt` passes 15 minutes, and never for a terminal stage (the job times out at 20), which triggers the honest "taking long" copy and the Gallery offer without cancelling.
 
 ### Play screen reducer
 ```ts
 type PlayState = { mode: 'play' | 'chat'; found: number; noticeAcked: boolean; ended: boolean; degraded?: 'pano' | 'thumb' };
 type PlayEvent =
-  | { t: 'ack_notice' } | { t: 'open_chat' } | { t: 'close_chat' } | { t: 'exit' }
+  | { t: 'ack_notice' } | { t: 'open_chat' } | { t: 'close_chat' }
+  | { t: 'exit'; to?: 'home' | 'gallery' }
   | { t: 'view'; found: number; ended: boolean } | { t: 'viewer_degraded'; rung: 'pano' | 'thumb' };
 type PlayEffect =
   | { e: 'start_viewer' } | { e: 'set_input_mode'; mode: 'play' | 'chat' }
   | { e: 'dispose_viewer' } | { e: 'navigate'; to: Route };
 ```
-`start_viewer` is emitted only after `ack_notice` (or when the Session already has the notice acknowledged). `open_chat` and `close_chat` each emit `set_input_mode` once. `view` with `ended` true emits `navigate` to `end`. `exit` always emits `dispose_viewer` before `navigate`.
+`start_viewer` is emitted only after `ack_notice` (or at once when the Session already has the notice acknowledged), and once. `open_chat` and `close_chat` each emit `set_input_mode` once; the Chat cannot open behind the content notice or after the end. `view` with `ended` true (the first time) emits `dispose_viewer` and then `navigate` to `end` for this world. `exit` always emits `dispose_viewer` before `navigate` to Home, or to the Gallery when `to` says so. `found` never goes down or past 3, and a fallback rung (`pano`, then `thumb`) never gets better.
 
 ### Shell-to-Viewer contract (`events.ts`)
 Defined once in `shared` and used by both sides, so neither imports the other's internals.
@@ -177,10 +178,10 @@ type ShellToViewer =
 The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server runs `sanitizePose`. The shell never sends hidden seeds because it never receives them.
 
 ### Resume
-`resumeTarget(session, flags) → Route`: with `lastPlayId` and a live play session → `play`; with a `lastWorldId` whose status is `queued | generating | ingesting` → `haunt`; with a `ready` world and no play → `play` start; otherwise `home`. Missing or expired Session → `home` with a short notice. Resume applies only when the visitor opens `/` or a stale route; it never overrides a deep link that passes its guard.
+`resumeTarget(session, facts) → Route`, where `facts` is `{ worldStatus?: JobState | 'missing'; playLive: boolean }` fetched by the caller: with no Session, no `lastWorldId` or a `missing` world → `home` (with a short notice for a missing Session); with `lastPlayId` and a live play session → `play`; with a `lastWorldId` whose status is `queued | generating | ingesting` → `haunt`; with a `ready` world and no live play → `play` (the persisted ghost, or the default one); otherwise `home`. `resumedFlow(session, facts)` returns the flow state this leaves behind (the world is known, `ghostReady` is true for `play`, the notice flag comes from the Session), so the target passes `guardRoute`. Resume applies only when the visitor opens `/` or a stale route; it never overrides a deep link that passes its guard.
 
 ### Error copy
-`errorCopy(code: ErrorCode) → { title: string; body: string; next: 'retry' | 'gallery' | 'home' | 'wait' }`, an exhaustive table over `ErrorCode` in `shared/src/errors.ts`. The table is a `Record<ErrorCode, …>`, so adding a code without copy is a compile error. Unknown strings from the network map to a single generic entry. Server `message` text is never rendered.
+`errorCopy(code: string) → { title: string; body: string; next: 'retry' | 'gallery' | 'home' | 'wait' }`, an exhaustive table over `ErrorCode` in `shared/src/errors.ts`. The table is a `Record<ErrorCode, …>`, so adding a code without copy is a compile error. Unknown strings from the network map to a single generic entry. Server `message` text is never rendered.
 `retryGate(retryAfterSec, now) → { enabledAt }` clamps the advised delay to [1 s, 120 s].
 
 `errors.ts` lacked several codes that the `world-pipeline` design lists (`blank_sketch`, `unsafe_image`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `quota_session`, `quota_day`, `quota_total`, `timeout`, `ingest_failed`) and used different names for three conditions. Task 1.1 reconciled them: `errors.ts` is the source of truth, keeps its existing names (`upload_bad_type`, `upload_too_large`, `world_gen_disabled`) and adds `upload_too_small` and `upload_bad_magic` for the design's `too_small` and `bad_magic` (`world_too_small` is a party code and stays apart). The shell adds `shell_crash` (screen boundary fallback) and `session_expired` (Expired screen), alongside the existing `world_not_found`. `errorCopy` is exhaustive over the one list.
@@ -192,7 +193,7 @@ The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server
 `downscaleSize(w, h, max = 512) → {w, h}`: preserves aspect ratio within rounding, longest side ≤ `max`, never enlarges, always ≥ 1 px on each side.
 
 ### Sketch Pad, photo picker, Turnstile
-- The pad is a `<canvas>` with pointer events and `touch-action: none`. It stores strokes in memory for undo and redo (≥ 30 steps, per `world-pipeline`). Ink coverage uses `inkCoverage` from `shared/src/sketch.ts`, the same function the server uses.
+- The pad is a `<canvas>` with pointer events and `touch-action: none`. It stores strokes in memory for undo and redo (≥ 30 steps, per `world-pipeline`). Ink coverage uses `inkCoverage` and `INK_FLOOR` from `shared/src/sketch.ts`, the same function and constant the server uses; `inkGate(bitmap)` returns `{enabled, coverage}`. A pixel is ink when it is mostly opaque and dark, so black strokes count on a white or a transparent page.
 - A keyboard path to the same outcome is the photo picker and the Gallery, both reachable by Tab. The pad itself is a pointer tool and is labelled as such.
 - The photo picker re-encodes through a canvas (drops EXIF, GPS and XMP) before upload, per `world-pipeline` task 10.1, and shows the retention notice before the file is chosen.
 - Turnstile loads only when the quote says it is required. The script is fetched from Cloudflare's own URL (`https://challenges.cloudflare.com/turnstile/v0/api.js`). It is never proxied, cached or self-hosted, because Cloudflare's [client-side rendering docs](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/) warn that proxying or caching it breaks Turnstile when Cloudflare updates it. The CSP allows `https://challenges.cloudflare.com` in `script-src` and `frame-src` and only when Turnstile is configured.
@@ -243,7 +244,7 @@ The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server
 **Validates: Requirements 3.7, 5.2, 6.5**
 
 ### Property 3: World creation fires at most once and only after consent
-*For any* sequence of confirm events, `create` effects number at most one, appear only after an `enter` event, never appear after `back`, and never follow `create_fail` or `create_ok` without a new quote; ignored events leave the state unchanged.
+*For any* sequence of confirm events, a `create` effect is emitted at most once per accepted quote (so a Confirm Token is used at most once), only after an accepted `enter` on that quote (and, when Turnstile is needed, after its result), never after `back`, and never after `create_fail` or `create_ok` until a new quote and a new `enter`; `quote` effects number one plus the accepted retries; ignored events leave the very same state and emit nothing.
 **Validates: Requirements 3.2, 3.3, 3.4, 3.6**
 
 ### Property 4: Every error code has fixed copy and no raw server text is shown
@@ -255,7 +256,7 @@ The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server
 **Validates: Requirements 1.3, 5.3**
 
 ### Property 6: Stage mapping and polling plan are safe
-*For any* job state, `stageOf` returns the matching label and `ready` maps to a Stage that offers "Walk in" without auto-starting; for any timeline of polls, `pollPlan` returns `null` while hidden or terminal, never schedules a poll earlier than `lastPollAt + 3000` or before `rateLimitedUntil`, never schedules more than 5000 ms after the last poll when visible and not rate limited (when rate limited, the next poll is exactly `rateLimitedUntil`), and flags `overdue` only after 15 minutes.
+*For any* job state, `stageOf` returns the matching label and `ready` maps to a Stage that offers "Walk in" without auto-starting; for any timeline of polls, `pollPlan` returns `null` while hidden or terminal, never schedules a poll earlier than `lastPollAt + 3000` or before `rateLimitedUntil`, never schedules more than 5000 ms after the last poll when visible and the rate limit does not run past the normal interval (when it does, the next poll is exactly `rateLimitedUntil`), and flags `overdue` only after 15 minutes and never for a terminal stage.
 **Validates: Requirements 4.1, 4.3, 4.4, 4.7, 10.3**
 
 ### Property 7: Play reducer keeps input mode and Exit consistent

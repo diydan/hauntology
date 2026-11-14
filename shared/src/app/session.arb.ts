@@ -1,7 +1,7 @@
 import * as fc from "fast-check";
 import { shellFlagsArb } from "./capabilities.arb";
 import { worldIdArb } from "./routes.arb";
-import { JOB_STATES, STAGES, type JobState, type PollInput, type SessionRecord, type Stage } from "./types";
+import { JOB_STATES, STAGES, type JobState, type PollInput, type ResumeFacts, type SessionRecord, type Stage } from "./types";
 
 export const jobStateArb: fc.Arbitrary<JobState> = fc.constantFrom(...JOB_STATES);
 export const stageArb: fc.Arbitrary<Stage> = fc.constantFrom(...STAGES);
@@ -19,6 +19,15 @@ export const sessionRecordArb: fc.Arbitrary<SessionRecord> = fc.record(
 
 /** A missing or expired Session is `null`. */
 export const sessionOrNullArb: fc.Arbitrary<SessionRecord | null> = fc.option(sessionRecordArb, { nil: null, freq: 6 });
+
+/** What the API said about the last world and play session. A status may be absent or `missing`. */
+export const resumeFactsArb: fc.Arbitrary<ResumeFacts> = fc.record(
+  {
+    worldStatus: fc.oneof(jobStateArb, fc.constant("missing" as const)),
+    playLive: fc.boolean(),
+  },
+  { requiredKeys: ["playLive"] },
+);
 
 const MINUTE = 60_000;
 

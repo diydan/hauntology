@@ -21,10 +21,22 @@ const segment: fc.Arbitrary<string> = fc.oneof(
 
 const suffix: fc.Arbitrary<string> = fc.constantFrom("", "", "", "/", "?x=1", "#top", "/?a=b#c");
 
+/** World ids that look right but are not: one bad character added, a bad character alone, or too long. */
+const nearMissWorldId: fc.Arbitrary<string> = fc.oneof(
+  fc.tuple(worldIdArb, fc.constantFrom(".", "%", "/", " ", "ä", "\n", "+", "~"), fc.nat(40)).map(([id, bad, at]) => {
+    const i = at % (id.length + 1);
+    return id.slice(0, i) + bad + id.slice(i);
+  }),
+  fc.stringMatching(/^[A-Za-z0-9_-]{65,100}$/),
+  fc.constantFrom(".", "..", "a.b", "a b", "a%20b", "ä", "x".repeat(65), "x".repeat(200)),
+);
+
 /** Paths shaped like the real route table, so valid routes are reached often and not only by luck. */
 const wellFormedPath: fc.Arbitrary<string> = fc.oneof(
   fc.constantFrom("/", "/gallery", "/create", "/confirm"),
-  fc.tuple(fc.constantFrom("haunt", "play", "end"), worldIdArb, suffix).map(([screen, id, s]) => `/${screen}/${id}${s}`),
+  fc.tuple(fc.constantFrom("haunt", "play", "end"), fc.oneof({ weight: 3, arbitrary: worldIdArb }, { weight: 2, arbitrary: nearMissWorldId }), suffix).map(
+    ([screen, id, s]) => `/${screen}/${id}${s}`,
+  ),
 );
 
 /** Strings to throw at `resolveRoute`: real paths, near misses, junk, and text that is not a path at all. */
@@ -46,3 +58,22 @@ export const flowStateArb: fc.Arbitrary<FlowState> = fc.record(
   },
   { requiredKeys: ["ghostReady", "noticeAcked", "playEnded"] },
 );
+
+/** Runs for the guard properties: four screens are guarded, so this is more than the 100 minimum. */
+export const GUARD_RUNS = 300;
+
+const guardedRouteArb: fc.Arbitrary<Route> = fc.oneof(
+  fc.constant<Route>({ screen: "confirm" }),
+  fc.tuple(fc.constantFrom<ScreenId[]>("haunt", "play", "end"), worldIdArb).map(([screen, worldId]): Route => ({ screen, worldId })),
+);
+
+/**
+ * A route with a flow state. Three in four routes are on a guarded screen, and half the time the flow's `worldId` is the route's, because two random
+ * world ids never match, and the cases where a world route is allowed would not be reached.
+ */
+export const routeWithFlowArb: fc.Arbitrary<{ route: Route; flow: FlowState }> = fc
+  .tuple(fc.oneof({ weight: 3, arbitrary: guardedRouteArb }, { weight: 1, arbitrary: routeArb }), flowStateArb, fc.boolean())
+  .map(([route, flow, align]) => ({
+    route,
+    flow: align && route.worldId !== undefined ? { ...flow, worldId: route.worldId } : flow,
+  }));

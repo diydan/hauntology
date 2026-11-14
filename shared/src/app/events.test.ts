@@ -1,0 +1,67 @@
+import { describe, expect, it } from "vitest";
+import { parseShellMessage, parseViewerMessage, type ShellToViewer, type ViewerToShell } from "./events";
+
+const anchor = { id: "a1", pos: [1, 0, -2], radius: 2.5 };
+
+describe("ViewerToShell", () => {
+  it("accepts a pose, a prompt (with a target or none) and a degraded notice", () => {
+    const ok: ViewerToShell[] = [
+      { t: "pose", pos: [0, 1.6, 0], yaw: -3.1 },
+      { t: "prompt", target: "ghost" },
+      { t: "prompt", target: "anchor" },
+      { t: "prompt", target: null },
+      { t: "degraded", rung: "pano" },
+      { t: "degraded", rung: "thumb" },
+    ];
+    for (const m of ok) expect(parseViewerMessage(m)).toEqual(m);
+  });
+
+  it("rejects bad shapes, non-finite numbers, unknown kinds and extra fields", () => {
+    const bad: unknown[] = [
+      null, undefined, "pose", 7, [], {},
+      { t: "pose", pos: [0, 0], yaw: 0 },
+      { t: "pose", pos: [0, 0, 0, 0], yaw: 0 },
+      { t: "pose", pos: [0, Number.NaN, 0], yaw: 0 },
+      { t: "pose", pos: [0, 0, 0], yaw: Number.POSITIVE_INFINITY },
+      { t: "pose", pos: [0, 0, 0] },
+      { t: "pose", pos: [0, 0, 0], yaw: 0, seed: "hidden" },
+      { t: "prompt", target: "wall" },
+      { t: "prompt" },
+      { t: "degraded", rung: "splat" },
+      { t: "set_input_mode", mode: "chat" },
+      { t: "unknown" },
+    ];
+    for (const m of bad) expect(parseViewerMessage(m), JSON.stringify(m)).toBeNull();
+  });
+});
+
+describe("ShellToViewer", () => {
+  it("accepts an input mode and a view", () => {
+    const ok: ShellToViewer[] = [
+      { t: "set_input_mode", mode: "chat" },
+      { t: "set_input_mode", mode: "play" },
+      { t: "apply_view", found: [], anchors: [], hauntLevel: 0, ghostVisible: false },
+      { t: "apply_view", found: ["a1", "a3"], anchors: [anchor as never], hauntLevel: 1, ghostVisible: true },
+    ];
+    for (const m of ok) expect(parseShellMessage(m)).toEqual(m);
+  });
+
+  it("rejects out-of-range, over-long and leaking views", () => {
+    const base = { t: "apply_view", found: ["a1"], anchors: [anchor], hauntLevel: 0.5, ghostVisible: true };
+    const bad: unknown[] = [
+      { t: "set_input_mode", mode: "walk" },
+      { ...base, hauntLevel: 1.01 },
+      { ...base, hauntLevel: -0.01 },
+      { ...base, hauntLevel: Number.NaN },
+      { ...base, found: ["a1", "a2", "a3", "a1"] },
+      { ...base, found: ["a4"] },
+      { ...base, anchors: [{ ...anchor, radius: 0 }] },
+      { ...base, anchors: [{ ...anchor, hook: "a hidden seed" }] },
+      { ...base, anchors: [anchor, anchor, anchor, anchor] },
+      { ...base, seeds: [] },
+      { ...base, ghostVisible: "yes" },
+      { t: "pose", pos: [0, 0, 0], yaw: 0 },
+    ];
+    for (const m of bad) expect(parseShellMessage(m), JSON.stringify(m)).toBeNull();
+  });
+});

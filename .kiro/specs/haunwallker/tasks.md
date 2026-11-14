@@ -8,7 +8,7 @@ This spec owns `world-pipeline` tasks 10.1 to 10.4. Tasks 7.1, 7.2, 8.1 and 9.1 
 
 Tasks marked `*` are optional test tasks that should still be done before submission.
 
-- [ ] 1. Shared pure logic (`shared/src/app/`)
+- [x] 1. Shared pure logic (`shared/src/app/`)
   - [x] 1.1 Reconcile `shared/src/errors.ts`
     - Add every code in the `world-pipeline` design code list that `errors.ts` does not already have (`blank_sketch`, `unsafe_image`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `quota_session`, `quota_day`, `quota_total`, `upstream_rate_limited`, `upstream_rejected`, `upstream_no_credits`, `ingest_failed`, `timeout` and any other missing one). Where both lists name one condition, keep the name already in `errors.ts` (`upload_bad_type`, `upload_too_large`, `world_gen_disabled`) and change that one list line in `world-pipeline/design.md` to say `errors.ts` is the source. Add the shell codes `shell_crash` and `session_expired`; `world_not_found` stays.
     - Unit test: every value equals its key, and `shell_crash`, `session_expired` and `world_not_found` exist.
@@ -16,63 +16,63 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [x] 1.2 Test generators `*.arb.ts`
     - `shared/src/app/types.ts` holds the shell's data types. The generators are `routes.arb.ts` (paths, routes, flow states), `capabilities.arb.ts` (quota snapshots, flags), `confirm.arb.ts` and `play.arb.ts` (events and sequences), `session.arb.ts` (session records, job states, polling timelines), `errors-copy.arb.ts` (error codes, non-codes, server messages, retry delays) and `sketch-size.arb.ts` (sizes, bitmaps with a known ink count, including exactly at the 0.5% floor). `prop-config.ts` gives `propParams(seed?, numRuns?)`: every property test passes it, so each runs seeded and at least 100 times. `arb.test.ts` checks that the generators reach the cases the properties need.
     - _Requirements: 11.1_
-  - [ ] 1.3 `events.ts`: the Shell-to-Viewer contract
+  - [x] 1.3 `events.ts`: the Shell-to-Viewer contract
     - `ViewerToShell` (`pose`, `prompt`, `degraded`) and `ShellToViewer` (`set_input_mode`, `apply_view`) as zod schemas with inferred types, and a `Vec3` type. Reuse `Anchor` and `AnchorId` from `shared/src/ghost/` (ghost-engine 2.5); if that task has not landed, declare the minimal types here and move them when it does. `world-viewer` task 6.3 (`ViewerBridge`) imports this file, not the reverse.
     - _Requirements: 6.3_
   - [x] 1.4 `routes.ts`
     - `resolveRoute`, `pathFor`, `guardRoute` and `isWorldId` with the redirect rules in the design (a redirect never lands on a route that redirects again). The types `ScreenId`, `Route` and `FlowState` live in `types.ts` (task 1.2). Unit tests cover the table, the bad paths, and every small flow state against every route.
     - _Requirements: 1.5, 3.7, 5.2, 6.5, 7.6_
-  - [ ]* 1.5 Write property test for the route table
+  - [x]* 1.5 Write property test for the route table
     - **Property 1: Routes are total and round-trip**
     - **Validates: Requirements 1.5, 7.6**
-  - [ ]* 1.6 Write property test for guards
+  - [x]* 1.6 Write property test for guards
     - **Property 2: Guards never expose a screen without its prerequisites**
     - **Validates: Requirements 3.7, 5.2, 6.5**
-  - [ ] 1.7 `confirm.ts`: `confirmReduce`
+  - [x] 1.7 `confirm.ts`: `confirmReduce`
     - States, events and effects exactly as in the design, including `challenge` for Turnstile and `retry` only from `rejected`.
     - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6_
-  - [ ]* 1.8 Write model-based property test for the confirm machine
+  - [x]* 1.8 Write model-based property test for the confirm machine
     - **Property 3: World creation fires at most once and only after consent**
     - **Validates: Requirements 3.2, 3.3, 3.4, 3.6**
-  - [ ] 1.9 `errors-copy.ts`: `errorCopy` and `retryGate`
+  - [x] 1.9 `errors-copy.ts`: `errorCopy` and `retryGate`
     - `errorCopy` is a `Record<ErrorCode, …>` (a missing code is a compile error) plus one generic entry for unknown strings; server `message` is never read. `retryGate` clamps to [1 s, 120 s].
     - _Requirements: 2.7, 3.4, 4.4, 7.3, 7.5_
-  - [ ]* 1.10 Write property test for error copy
+  - [x]* 1.10 Write property test for error copy
     - **Property 4: Every error code has fixed copy and no raw server text is shown**
     - **Validates: Requirements 2.7, 3.4, 4.4, 7.3**
-  - [ ]* 1.11 Write property test for the retry gate
+  - [x]* 1.11 Write property test for the retry gate
     - **Property 9: Retry gate honours the advised delay**
     - **Validates: Requirements 7.5**
-  - [ ] 1.12 `capabilities.ts`
+  - [x] 1.12 `capabilities.ts`
     - `capabilities(quota, flags)` with the fixed `reason` priority.
     - _Requirements: 1.3, 5.3_
-  - [ ]* 1.13 Write property test for capabilities
+  - [x]* 1.13 Write property test for capabilities
     - **Property 5: Gallery is always available and creation follows quota**
     - **Validates: Requirements 1.3, 5.3**
-  - [ ] 1.14 `stage.ts`: `stageOf` and `pollPlan`
+  - [x] 1.14 `stage.ts`: `stageOf` and `pollPlan`
     - Poll no sooner than 3 s after the last poll and no later than 5 s; honour `rateLimitedUntil`; `null` when hidden or terminal; `overdue` after 15 minutes.
     - _Requirements: 4.1, 4.3, 4.4, 4.7, 10.3_
-  - [ ]* 1.15 Write property test for stages and polling
+  - [x]* 1.15 Write property test for stages and polling
     - **Property 6: Stage mapping and polling plan are safe**
     - **Validates: Requirements 4.1, 4.3, 4.4, 4.7, 10.3**
-  - [ ] 1.16 `play.ts`: `playReduce`
+  - [x] 1.16 `play.ts`: `playReduce`
     - Mode, found count, notice gate, degraded rung, `exit` ordering and the single navigation to the Ending.
     - _Requirements: 6.1, 6.2, 6.4, 6.5, 6.6, 6.7_
-  - [ ]* 1.17 Write model-based property test for the Play reducer
+  - [x]* 1.17 Write model-based property test for the Play reducer
     - **Property 7: Play reducer keeps input mode and Exit consistent**
     - **Validates: Requirements 6.1, 6.2, 6.4, 6.5, 6.6**
-  - [ ] 1.18 `resume.ts`: `resumeTarget`
+  - [x] 1.18 `resume.ts`: `resumeTarget`
     - _Requirements: 4.5, 6.8, 7.7_
-  - [ ]* 1.19 Write property test for resume
+  - [x]* 1.19 Write property test for resume
     - **Property 10: Resume picks a reachable, correct target**
     - **Validates: Requirements 4.5, 6.8, 7.7**
-  - [ ] 1.20 `sketch-size.ts`: `downscaleSize` and `inkGate`
-    - `inkGate(bitmap)` returns `{enabled, coverage}` using `inkCoverage` and the 0.5% constant from `shared/src/sketch.ts` (world-pipeline 3.5; export the constant there if it is not exported yet). The pad and the API route share it.
+  - [x] 1.20 `sketch-size.ts`: `downscaleSize` and `inkGate`
+    - `inkGate(bitmap)` returns `{enabled, coverage}` using `inkCoverage` and `INK_FLOOR` (0.005) from `shared/src/sketch.ts`. That file did not exist, so this task created it with those two and the `Bitmap` type; `buildSketchPrompt` and its tests stay with world-pipeline 3.5. The pad and the API route share it.
     - _Requirements: 2.3, 2.4_
-  - [ ]* 1.21 Write property test for downscale
+  - [x]* 1.21 Write property test for downscale
     - **Property 8: Sketch downscale preserves shape and never enlarges**
     - **Validates: Requirements 2.3**
-  - [ ]* 1.22 Write property test for the ink gate
+  - [x]* 1.22 Write property test for the ink gate
     - **Property 11: The ink floor gate matches the server**
     - **Validates: Requirements 2.4**
 

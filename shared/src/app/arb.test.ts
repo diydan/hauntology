@@ -4,9 +4,11 @@ import { ErrorCode } from "../errors";
 import { quotaSnapshotArb, shellFlagsArb } from "./capabilities.arb";
 import { confirmEventsArb } from "./confirm.arb";
 import { advisedDelayArb, errorCodeArb, notErrorCodeArb } from "./errors-copy.arb";
+import { playReduce, playStart } from "./play";
 import { playEventsArb } from "./play.arb";
 import { DEFAULT_SEED, propParams } from "./prop-config";
-import { anyPathArb, flowStateArb, routeArb, worldIdArb } from "./routes.arb";
+import { guardRoute } from "./routes";
+import { anyPathArb, flowStateArb, routeArb, routeWithFlowArb, worldIdArb, GUARD_RUNS } from "./routes.arb";
 import { jobStateArb, pollInputArb, sessionOrNullArb, sessionRecordArb } from "./session.arb";
 import { inkBitmapArb, sketchDimsArb } from "./sketch-size.arb";
 import { JOB_STATES } from "./types";
@@ -60,6 +62,24 @@ describe("routes and flow state", () => {
     expect(states.some((s) => !("pickedImageId" in s))).toBe(true);
     expect(states.some((s) => "worldId" in s)).toBe(true);
     expect(states.some((s) => !("worldId" in s))).toBe(true);
+  });
+
+  it("route and flow pairs, at the size the guard property runs, reach both an allowed and a redirected result for every guarded screen", () => {
+    const pairs = sample(routeWithFlowArb, GUARD_RUNS);
+    for (const screen of ["confirm", "haunt", "play", "end"] as const) {
+      const results = pairs.filter((p) => p.route.screen === screen).map((p) => guardRoute(p.route, p.flow).allow);
+      expect(results, screen).toContain(true);
+      expect(results, screen).toContain(false);
+    }
+    const noPick = pairs.filter((p) => p.route.screen === "confirm" && p.flow.pickedImageId === undefined);
+    expect(noPick.length).toBeGreaterThan(5);
+    const redirects = new Set(
+      pairs.flatMap((p) => {
+        const g = guardRoute(p.route, p.flow);
+        return g.allow ? [] : [g.redirect.screen];
+      }),
+    );
+    expect(redirects).toEqual(new Set(["create", "gallery", "haunt", "play"]));
   });
 
   it("paths include real routes, trailing slashes, query strings and text that is not a path", () => {
@@ -124,6 +144,25 @@ describe("event sequences reach the cases the properties need", () => {
     expect(views.some((v) => v.ended)).toBe(true);
     expect(views.some((v) => !v.ended)).toBe(true);
     expect(new Set(views.map((v) => v.found))).toEqual(new Set([0, 1, 2, 3]));
+  });
+});
+
+describe("play sequences, at the size the Play property runs", () => {
+  it("often end with the Chat open, and then try to open and close it again", () => {
+    const runs = fc.sample(fc.tuple(fc.boolean(), playEventsArb), { seed: DEFAULT_SEED, numRuns: 100 });
+    let endedWithChatOpen = 0;
+    let chatEventAfterEnd = 0;
+    for (const [acked, events] of runs) {
+      let state = playStart(acked).state;
+      for (const e of events) {
+        const before = state;
+        state = playReduce(state, e, "w").state;
+        if (e.t === "view" && e.ended && !before.ended && before.mode === "chat") endedWithChatOpen++;
+        if ((e.t === "close_chat" || e.t === "open_chat") && before.ended) chatEventAfterEnd++;
+      }
+    }
+    expect(endedWithChatOpen).toBeGreaterThan(15);
+    expect(chatEventAfterEnd).toBeGreaterThan(15);
   });
 });
 

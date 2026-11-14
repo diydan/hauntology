@@ -87,6 +87,8 @@ export type ConfirmEffect =
   | { e: "create"; imageId: string; token: string; turnstile?: string }
   | { e: "navigate"; to: Route };
 
+export type ConfirmStep = { state: ConfirmState; effects: ConfirmEffect[] };
+
 // Play screen
 export const VIEWER_RUNGS = ["pano", "thumb"] as const;
 export type ViewerRung = (typeof VIEWER_RUNGS)[number];
@@ -100,12 +102,22 @@ export type PlayState = {
 };
 
 export type PlayEvent =
-  | { t: "ack_notice" } | { t: "open_chat" } | { t: "close_chat" } | { t: "exit" }
+  | { t: "ack_notice" } | { t: "open_chat" } | { t: "close_chat" }
+  | { t: "exit"; to?: "home" | "gallery" }
   | { t: "view"; found: number; ended: boolean } | { t: "viewer_degraded"; rung: ViewerRung };
 
 export type PlayEffect =
   | { e: "start_viewer" } | { e: "set_input_mode"; mode: "play" | "chat" }
   | { e: "dispose_viewer" } | { e: "navigate"; to: Route };
 
-/** RGBA pixels, row by row, like canvas `ImageData`. */
-export type Bitmap = { width: number; height: number; data: Uint8ClampedArray };
+export type PlayStep = { state: PlayState; effects: PlayEffect[] };
+
+/** What the API said about the Session's last world and play session, used by `resumeTarget`. */
+export type ResumeFacts = {
+  /** Status of `lastWorldId`, or `missing` if the API no longer knows it. Absent when there is no `lastWorldId`. */
+  worldStatus?: JobState | "missing";
+  /** `lastPlayId` names a play session that is still alive. */
+  playLive: boolean;
+};
+
+export type { Bitmap } from "../sketch";

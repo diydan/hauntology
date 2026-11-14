@@ -36,7 +36,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - **Property 2: Metadata stripping preserves pixels and removes metadata**
     - **Validates: Requirements 1.3**
   - [ ] 3.5 Sketch prompt builder and ink coverage
-    - `buildSketchPrompt(caption)` with data clause, cap, fixed negative prompt; `inkCoverage(bitmap)`.
+    - `buildSketchPrompt(caption)` with data clause, cap, fixed negative prompt; `inkCoverage(bitmap)`. `inkCoverage`, `INK_FLOOR` and `Bitmap` already exist in `shared/src/sketch.ts` (web shell task 1.20); keep them and add the prompt builder beside them.
     - _Requirements: 2.2, 2.3_
   - [ ]* 3.6 Write property test for prompt composition
     - **Property 3: Prompt composition is bounded and contained**
