@@ -298,6 +298,7 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
         const record: PlayRecord = { id: nextId("demo-play"), worldId: req.worldId, found: [], journal: [], turns: 0, atmosphere, lines: new Set() };
         plays.set(record.id, record);
         lastPlayId = record.id;
+        lastWorldId = req.worldId; // the real route calls setLastWorld and setLastPlay
         return ok({ playId: record.id, view: viewOf(record) });
       });
     },

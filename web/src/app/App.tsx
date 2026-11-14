@@ -6,6 +6,8 @@ import { runBoot } from "./boot";
 import { ShellContext, useBoot, useRouterState, useShell, type ShellContextValue } from "./context";
 import { DebugOverlay } from "./DebugOverlay";
 import { createGalleryStore } from "./GalleryStore";
+import { defaultPlatform, type PlatformKit } from "./platform";
+import { createPlayMemory } from "./play/memory";
 import { ScreenBoundary } from "./ErrorBoundary";
 import { LiveRegionProvider, useAnnounce } from "./LiveRegion";
 import { OfflineBanner } from "./OfflineBanner";
@@ -23,11 +25,18 @@ export type AppProps = {
   debugStore: DebugStore;
   /** Show the debug overlay (`?debug=1`). */
   debug?: boolean;
+  /** Replaces parts of the browser kit (tests, the demo). */
+  platform?: Partial<PlatformKit>;
 };
 
-export function App({ api, router, quota, debugStore, debug = false }: AppProps) {
+export function App({ api, router, quota, debugStore, debug = false, platform }: AppProps) {
   const gallery = useMemo(() => createGalleryStore(api), [api]);
-  const value = useMemo<ShellContextValue>(() => ({ api, router, quota, debug: debugStore, gallery }), [api, router, quota, debugStore, gallery]);
+  const memory = useMemo(() => createPlayMemory(), []);
+  const kit = useMemo<PlatformKit>(() => ({ ...defaultPlatform(), ...platform }), [platform]);
+  const value = useMemo<ShellContextValue>(
+    () => ({ api, router, quota, debug: debugStore, gallery, memory, platform: kit }),
+    [api, router, quota, debugStore, gallery, memory, kit],
+  );
   return (
     <ShellContext.Provider value={value}>
       <LiveRegionProvider>

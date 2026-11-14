@@ -249,3 +249,179 @@ a {
   font-size: 0.875rem;
   color: var(--ghost);
 }
+
+/* Play */
+.play-main {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.viewer {
+  min-height: 12rem;
+  border: 1px solid var(--dust);
+}
+
+.hud {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.hud-buttons,
+.quick,
+.voice,
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.found,
+.prompt,
+.note,
+.degraded,
+.notice p {
+  margin: 0;
+}
+
+.prompt {
+  color: var(--ghost);
+}
+
+.degraded {
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--lantern);
+}
+
+.scripted {
+  color: var(--ghost);
+  font-size: 0.75rem;
+}
+
+.notice {
+  padding: 1rem;
+  border: 1px solid var(--lantern);
+}
+
+.chat {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--ink);
+}
+
+.chat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.transcript {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+
+.line {
+  margin: 0 0 0.5rem;
+}
+
+.line.ghost {
+  font-family: var(--font-ghost);
+  color: var(--ghost);
+}
+
+.line.system {
+  color: var(--alarm);
+}
+
+.who {
+  font-size: 0.75rem;
+  color: var(--bone);
+}
+
+.say {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.say input[type="text"] {
+  min-height: var(--target);
+  padding: 0 0.75rem;
+  border: 1px solid var(--dust);
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--bone);
+  font: inherit;
+}
+
+.mic {
+  color: var(--ghost);
+}
+
+.farewell {
+  margin: 0 0 1rem;
+  padding-left: 1rem;
+  border-left: 3px solid var(--ghost);
+  font-family: var(--font-ghost);
+  color: var(--ghost);
+}
+
+.journal {
+  padding-left: 1.5rem;
+}
+
+.journal li {
+  margin-bottom: 0.75rem;
+  font-family: var(--font-ghost);
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(11 13 16 / 85%);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 32rem;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 1rem;
+  border: 1px solid var(--lantern);
+  background: var(--ink);
+}
+
+.dialog h2 {
+  margin-top: 0;
+}
+
+.standin {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+
+.standin p {
+  margin: 0;
+}
+
+.standin-walk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

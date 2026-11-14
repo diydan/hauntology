@@ -132,26 +132,27 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - _Requirements: 5.1, 5.5, 10.4_
 
 - [ ] 6. Play and Ending
-  - [ ] 6.1 Play screen
+  - [x] 6.1 Play screen
     - Composes the Viewer, the Chat (ghost-engine 6.1) and the HUD (world-viewer 6.1) in the layout from task 4.5. Shows the content notice and calls `POST /api/session/ack-notice`; the Viewer loads by `import()` only after `playReduce` emits `start_viewer`. Runs the effects `playReduce` returns, bridges `ViewerToShell` and `ShellToViewer` messages (validated with the schemas from task 1.3), sends the last pose with each `POST /api/play/:id/turn`, and shows the found count out of three, a journal action and an always-visible Exit.
+    - Built as `play/controller.ts` (no DOM: starts or restores the game, runs the `playReduce` effects in order, validates Viewer messages, asks for each turn), `screens/Play.tsx`, `play/Chat.tsx` (quick buttons, text box, transcript), `play/Hud.tsx`, `play/Journal.tsx` and `Dialog.tsx`. The Viewer is behind `viewer/types.ts` (`mountViewer`, `send`, `dispose`); `viewer/standin.tsx` is a stand-in until `world-viewer` exists, and it walks the same `pose` and `prompt` messages through the real contract. This covers the shell's side of `ghost-engine` 6.1 and `world-viewer` 6.1; prompt detection, pointer lock and the real renderer stay in those specs. What the visitor chose on Haunt (ghost, sky) reaches Play through `play/memory.ts`, in memory only: task 9.2 and 9.6 set `ghostPreset`, `conditions` and `startFresh: true` there, and `router.setFlow({ ghostReady: true })`.
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 8.6, 10.1_
-  - [ ] 6.6 Atmosphere and voice in Play
+  - [x] 6.6 Atmosphere and voice in Play
     - Pass the play view's `atmosphere` to the Viewer as `set_atmosphere` (the contract in `events.ts`). The Chat gets a speak switch (on by default in Single player, hidden when `flags.voiceEnabled` is false), shows each ghost line as a subtitle in the polite live region whether or not it is spoken, asks `ShellApi.speak` for the line named in `reply.voice` after a user gesture has unlocked audio, and in Single player a hold-to-talk button (up to 8 seconds, a visible microphone indicator) that sends the clip through `ShellApi.listen` and treats the transcript exactly like typed text; nothing is stored in the browser. A cap, a refused permission or a failure falls back to subtitles and typing, with no error screen.
     - _Requirements: 12.3_
   - [ ] 6.7 Live mode controls (stretch, last)
-    - A clear microphone indicator and a stop button whenever the page listens; stops after 10 seconds of silence or when the page is hidden; falls back to hold-to-talk on any problem.
+    - Not started on purpose: it needs the live transport from `ghost-voice` (Spike 1.3 and its group 6) and a route the shell does not have yet; live mode is first in the cut order, and `flags.liveEnabled` is off by default, so nothing in Play changes until then. A clear microphone indicator and a stop button whenever the page listens; stops after 10 seconds of silence or when the page is hidden; falls back to hold-to-talk on any problem.
     - _Requirements: 12.4_
-  - [ ] 6.2 Scripted and degraded notices
+  - [x] 6.2 Scripted and degraded notices
     - A small, quiet "scripted ghost" indicator when the turn response says scripted lines are used; a one-line notice when the Viewer falls back to a panorama or thumbnail, with the Chat still usable.
     - _Requirements: 5.4, 6.7_
-  - [ ] 6.3 Exit and release
+  - [x] 6.3 Exit and release
     - `exit` closes the Chat, calls `dispose_viewer`, waits for its promise and only then mounts Home or Gallery, without a page reload; a Viewer crash leaves the Chat and Exit working (boundary from task 4.4).
     - _Requirements: 6.6, 7.2, 10.2_
-  - [ ] 6.4 Reload restore
-    - On load of `/play/:worldId`, read `GET /api/play/:id` and restore the world, ghost and found memories; show the content notice again only if `ackNotice` is false.
+  - [x] 6.4 Reload restore
+    - On load of `/play/:worldId`, read `GET /api/play/:id` and restore the world, ghost and found memories; show the content notice again only if `ackNotice` is false. A game that has ended is not restored: a reload of Play or the Ending starts a new game, so the visitor never lands on a finished one.
     - _Requirements: 6.8_
-  - [ ] 6.5 Ending screen
-    - The ending card, "Save memory card" (`layoutMemoryCard` from world-viewer 9, hand-off per ghost-engine 6.2) and "Haunt again". Opened only by the single navigation from `playReduce`, or by a URL that passes its guard.
+  - [x] 6.5 Ending screen
+    - The ending card, "Save memory card" (`layoutMemoryCard` from world-viewer 9, hand-off per ghost-engine 6.2; until that exists the shell saves `shared/src/app/memory-card.ts`, a self-contained SVG of only the found memories) and "Haunt again". Opened only by the single navigation from `playReduce`, or by a URL that passes its guard.
     - _Requirements: 6.5_
 
 - [ ] 7. Create: photo picker, Sketch Pad, candidates (satisfies `world-pipeline` 10.1 and 10.2)
