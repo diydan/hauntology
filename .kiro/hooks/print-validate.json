@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Print kit validate",
+      "description": "When a printable model or print geometry code is saved, regenerate QR plates and check every STL (closed, consistent winding, fits a 180 mm bed).",
+      "trigger": "PostFileSave",
+      "matcher": "^(print/.*|shared/src/print/(?!.*\\.test\\.).*\\.ts)$",
+      "action": {
+        "type": "command",
+        "command": "node tools/build-print.mjs --check"
+      },
+      "timeout": 120,
+      "enabled": true
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+# Implementation Plan
+
+Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and 5.2 (AIClient), and `world-viewer` 6.3 (ViewerBridge).
+
+- [ ] 1. Spike: narration tone and cost
+  - Run three personas (soft/childlike, dry/stern, formal/melancholic) for ten turns each through `llama-3.3-70b-instruct-fp8-fast` using the guarded AIClient text wrapper. Record latency, tokens, validation failure rate, and whether the rules in `steering/ghost-safety.md` hold against 10 jailbreak attempts. Tune prompt wording. Write `docs/spikes/4.1.md`.
+  - _Requirements: 5.1, 5.5, 5.6_
+
+- [ ] 2. Pure engine logic (`shared/src/ghost/`)
+  - [ ] 2.1 `parseAction` with verb table and sanitising
+    - _Requirements: 2.1, 2.3_
+  - [ ]* 2.2 Write property test for parsing
+    - **Property 2: Action parsing is total and deterministic**
+    - **Validates: Requirements 2.1, 2.3**
+  - [ ] 2.3 `acceptTurn` rate limiter
+    - _Requirements: 2.2_
+  - [ ]* 2.4 Write property test for rate limiting
+    - **Property 3: Turn rate limiting**
+    - **Validates: Requirements 2.2**
+  - [ ] 2.5 `placeAnchors`, `ringAnchors`, `validateAnchors`
+    - _Requirements: 1.2, 1.5_
+  - [ ]* 2.6 Write property test for anchors
+    - **Property 1: Anchor placement and validation**
+    - **Validates: Requirements 1.2, 1.5**
+  - [ ] 2.7 `sanitizePose`
+    - _Requirements: 3.5_
+  - [ ]* 2.8 Write property test for pose sanitising
+    - **Property 6: Pose sanitising**
+    - **Validates: Requirements 3.5**
+  - [ ] 2.9 `step` reducer with Directives, progress and ending
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - [ ]* 2.10 Write property test for the reveal rule
+    - **Property 4: Reveal rule and monotone progress**
+    - **Validates: Requirements 3.1, 3.2, 3.3**
+  - [ ]* 2.11 Write property test for ending
+    - **Property 5: Ending is reached exactly at three and is absorbing**
+    - **Validates: Requirements 3.4**
+  - [ ] 2.12 `relativeBearing`, `distanceBand`, `autoHintDue` and hint wording
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [ ]* 2.13 Write property test for hint geometry
+    - **Property 7: Hints are geometric words only**
+    - **Validates: Requirements 4.1, 4.3**
+  - [ ]* 2.14 Write property test for automatic hints
+    - **Property 8: Automatic hints trigger on idleness**
+    - **Validates: Requirements 4.2**
+  - [ ] 2.15 `buildNarrationPrompt` and `clientView`
+    - _Requirements: 1.1, 5.1, 5.2_
+  - [ ]* 2.16 Write property test for leakage
+    - **Property 9: No leakage of unrevealed memories**
+    - **Validates: Requirements 1.1, 5.2**
+  - [ ] 2.17 `validateGhostReply` and scripted line library (≥ 5 variants per Directive kind per voice)
+    - _Requirements: 5.3, 5.4_
+  - [ ]* 2.18 Write property test for reply safety
+    - **Property 10: Replies are always safe and non-empty**
+    - **Validates: Requirements 5.3, 5.4**
+  - [ ] 2.19 `narrationMode`
+    - _Requirements: 6.1, 6.2_
+  - [ ]* 2.20 Write property test for narration independence
+    - **Property 11: State transitions are independent of narration**
+    - **Validates: Requirements 6.1, 6.2, 6.3**
+  - [ ]* 2.21 Write property test for completability
+    - **Property 12: The game is always completable**
+    - **Validates: Requirements 7.1**
+  - [ ] 2.22 Session serialise/parse and expiry
+    - _Requirements: 1.4, 8.1, 8.2_
+  - [ ]* 2.23 Write property test for session round-trip
+    - **Property 13: Sessions round-trip and expire**
+    - **Validates: Requirements 1.4, 8.1, 8.2**
+  - [ ] 2.24 Telemetry whitelist
+    - _Requirements: 9.1_
+  - [ ]* 2.25 Write property test for telemetry
+    - **Property 14: Telemetry carries no content**
+    - **Validates: Requirements 9.1**
+
+- [ ] 3. PlaySession Durable Object
+  - [ ] 3.1 Start, turn, view, reset and 24-hour expiry alarm
+    - Turn pipeline: rate limit → sanitise → parse → clamp pose → `step` → narrate → record → persist. Seeds generated from archetype table with seeded rng and never returned to the client.
+    - _Requirements: 1.1, 1.4, 2.2, 8.3_
+  - [ ] 3.2 Anchor intake
+    - Accept client anchors, validate, fall back to ring layout; use authored Gallery anchors when the manifest has them.
+    - _Requirements: 1.2, 1.3, 1.5_
+
+- [ ] 4. Narrator
+  - [ ] 4.1 Guarded AIClient text call with persona and rules, `llm` reserve per turn, 6 s timeout, one retry, scripted fallback
+    - _Requirements: 5.1, 5.3, 6.1_
+  - [ ] 4.2 Memory reveal narration
+    - Two to four first-person sentences grounded in the brief and archetype; validate and store as the Memory; scripted memory templates per archetype as fallback.
+    - _Requirements: 5.5, 5.4_
+  - [ ] 4.3 Red-team fixtures
+    - 20+ jailbreak and markup strings through parser, prompt builder, validator; in-character deflection lines for `refuse`.
+    - _Requirements: 5.6, 2.3_
+  - [ ] 4.4 Kill switch and global daily cap wiring
+    - _Requirements: 6.1, 6.2_
+
+- [ ] 5. Routes
+  - `POST /api/play/start`, `POST /api/play/:id/turn`, `GET /api/play/:id`, `POST /api/play/:id/reset`; origin and cookie checks; counters only in logs.
+  - _Requirements: 1.1, 1.4, 8.1, 8.2, 8.3, 9.1_
+
+- [ ] 6. Web chat and journal
+  - [ ] 6.1 Chat panel (bottom sheet on phones, side panel on wide screens) with quick buttons, input, transcript in an `aria-live` region, portrait from the Ghost Profile
+    - _Requirements: 2.1, 2.2_
+  - [ ] 6.2 Journal, ending screen with memory card hand-off, "Haunt again"
+    - _Requirements: 8.1, 8.2, 8.3_
+  - [ ] 6.3 Client anchor placement
+    - Build floor sampler from the Viewer BVH, call `placeAnchors` with a seed from the world id, send to `start`; pose reporting at ≤ 4 Hz.
+    - _Requirements: 1.2, 3.5_
+
+- [ ] 7. Gallery content
+  - Author anchors and review scripted lines for the six Gallery Worlds and six Preset Ghosts.
+  - _Requirements: 1.3, 5.4_
+
+- [ ] 8. Checkpoint
+  - Run tests, typecheck, `node tools/check-traceability.mjs`; play each Gallery World to completion in Scripted Mode and once with the model; ask the user if questions arise.

@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Property test sync",
+      "description": "When pure shared logic changes, make sure its Correctness Property test still exists and still states the same rule.",
+      "trigger": "PostFileSave",
+      "matcher": "^shared/src/(?!.*\\.test\\.)(?!.*\\.arb\\.).*\\.ts$",
+      "action": {
+        "type": "agent",
+        "prompt": "A pure logic file in shared/src was saved. Find any Correctness Property in .kiro/specs/*/design.md that this file implements (search for its exported function names). For each, confirm a property test exists with the matching '// Feature: <spec>, Property <N>' comment and that it still exercises the changed behaviour. If a test is missing or stale, update or add only the test file. Never edit requirements.md or design.md from this hook; if the code now contradicts a requirement, report the conflict instead. Do not touch files unrelated to this change."
+      },
+      "enabled": true
+    }
+  ]
+}

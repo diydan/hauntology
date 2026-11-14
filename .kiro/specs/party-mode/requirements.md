@@ -1,0 +1,155 @@
+# Requirements Document
+
+## Introduction
+
+Party mode turns Hauntwalk into a same-room deduction game for two to six players. One computer shows the shared haunted world; every player's phone is a game pad and a private screen; an optional second device under a Pepper's-ghost pyramid shows the ghost as a hologram-style centrepiece; six original relics can be 3D printed. The premise is gentle: a visitor ghost is rattling the place, and the players work out **which ghost** (Suspect), **where** (Zone) and **with which relic** (Relic). Players take timed turns walking the shared world, earn extra time through achievements, keep their cards secret on their phones, and contribute a suspect, a framed photo and a room name to the world. The server holds every secret, the engine decides every outcome, and a model only narrates. The mode is additive: the single-player game is unchanged, and the whole mode works with no phones, no printer, no Display and no model.
+
+## Glossary
+
+- **Party Service**: the `PartyRoom` Durable Object, its routes in `api/src/routes/party.ts`, and the pure logic in `shared/src/party/`.
+- **Room**: one party game, held by one `PartyRoom` Durable Object, in one world.
+- **Room Code**: four characters from an alphabet without ambiguous characters, identifying a Room while it is open.
+- **Host**: the computer page that runs the Viewer and shows the Public View. The Host is also the shared screen.
+- **Controller**: the phone page that acts as a game pad (pad layout) and private screen (panel layout).
+- **Display**: an optional third page that shows the ghost for the pyramid centrepiece.
+- **Player**: a seated participant, human or Bot, with a seat number, nickname and hand.
+- **Bot**: a Player controlled by the Party Service using only its own Private View.
+- **Suspect, Zone, Relic**: the three card categories. There are six of each. A Suspect is a Ghost Profile. A Zone is a named anchor in the world. A Relic comes from a fixed catalogue of six.
+- **Card**: one Suspect, Zone or Relic. There are 18 cards.
+- **Solution**: the one Suspect, one Zone and one Relic that make up the case.
+- **Hand**: the cards dealt to a Player. The 15 non-solution cards are dealt out.
+- **Public View / Private View**: what the Host and Display may see, versus what one Player's phone may see.
+- **Turn, Round**: one Player's go; one Round is one Turn for every active Player.
+- **Turn Clock**: the countdown for a Turn. **Bonus Seconds**: time earned through Achievements.
+- **Suggestion / Accusation**: a guess at a Zone you are standing in, answered by one card; versus a final claim of all three cards.
+- **Contribution**: a Suspect, a framed photo or a Zone name supplied by a Player.
+- **Relic Token**: a printed base carrying a QR plate with the payload `hw:<relic id>`.
+- **Print Kit**: the models, generator and checks in `print/` and `shared/src/print/`.
+
+## Requirements
+
+### Requirement 1
+
+**User Story:** As a host, I want friends to join from their phones with a code or a QR code, so that nobody installs an app or makes an account.
+
+#### Acceptance Criteria
+
+1. WHEN the host opens Party mode in a world THEN the Party Service SHALL create a Room with a four-character Room Code from an alphabet that excludes ambiguous characters, a join URL, a QR code of that URL and a host token held only by the Host.
+2. WHEN a phone opens the join URL, or enters a Room Code and a nickname, THEN the Room SHALL seat it as a Player with a player token, allow two to six Players including Bots, and sanitise the nickname to at most 16 characters without control characters, markup or URLs.
+3. IF the Room is full, the game has started, or the code is unknown or expired THEN the Room SHALL refuse the join with a specific reason code and SHALL NOT reveal anything about any Room.
+4. WHEN a phone reconnects with its player token THEN the Room SHALL restore the same seat, hand and Private View, and a phone without a token SHALL NOT take a seat after the game has started.
+5. WHEN a Room is idle for its time to live (default 6 hours) or the Host ends it THEN the Party Service SHALL delete the Room together with all of its Contributions.
+6. THE Party Service SHALL serve a Player's Private View only to that Player's token, the Public View only to tokens of the same Room, and SHALL scope every route and socket to the token that owns it.
+
+### Requirement 2
+
+**User Story:** As a player, I want my phone to work like a game pad, so that I can play without a keyboard.
+
+#### Acceptance Criteria
+
+1. WHEN a phone is seated THEN the Controller SHALL offer a landscape pad layout with a left movement stick, a right look area, four face buttons and a menu, and a portrait panel layout with the hand, notebook and contributions, and SHALL let the Player switch between them. The four face buttons are: **Suggest** (opens the suggest screen when inside a Zone and not yet suggested this Turn), **Accuse** (opens the accuse screen at any time during the Player's Turn), **Map** (toggles an overhead minimap of the Zones), and **Pass** (ends the Turn without a Suggestion or Accusation). These four buttons map directly to the `act {kind:'suggest'}`, `act {kind:'accuse'}`, `act {kind:'pass'}` protocol messages and a local map overlay; no button is left undefined.
+2. WHEN the Player touches the controls THEN the Controller SHALL send input at most 30 times per second with stick values clamped to the unit disc and look deltas clamped, and the Room SHALL discard movement and look input from any Player who is not the active Player and rate limit every token.
+3. WHEN several fingers touch at once THEN the Controller SHALL track them independently, and WHEN the page loses focus or the connection drops THEN the Controller SHALL release all inputs so the stick never sticks.
+4. WHERE the phone supports orientation events and the Player turns on Gyro aim THEN the Controller SHALL request permission from an explicit tap and send aim deltas, and IF permission is denied or unsupported THEN the Controller SHALL fall back to touch look without an error.
+5. WHERE vibration is supported THEN the Controller SHALL pulse on turn start, time warning and card shown, and WHERE it is not supported THEN the Controller SHALL give a visual cue and an optional sound instead, and no feature SHALL depend on vibration.
+6. THE Controller SHALL use touch targets of at least 48 CSS pixels, visible focus, text contrast of at least 4.5:1, never rely on colour alone, and offer a tap-to-walk direction pad as an alternative to the stick.
+
+### Requirement 3
+
+**User Story:** As a player, I want to add something of mine to the world, so that the mystery feels like ours.
+
+#### Acceptance Criteria
+
+1. WHEN the lobby is open THEN each Player MAY contribute a Suspect designed with the Ghost Creator traits or chosen from the Preset Ghosts, one photo to be framed in the world, and a name for one Zone of 3 to 24 characters, and the game SHALL start with none of them required.
+2. WHEN a photo is contributed THEN the Room SHALL apply the upload rules of the world pipeline (type, size, magic bytes, metadata removal), downscale it to at most 512 pixels on the long side, obtain a safety verdict from a vision-capable model, and fail closed by rejecting the photo while keeping the Player seated.
+3. WHEN a Suspect needs a portrait THEN the Room SHALL use the Ghost Creator flow with its image and model usage charged to the Room's budget, and SHALL substitute a Preset Ghost when quota is exhausted or generation fails.
+4. WHEN the lobby closes THEN the Room SHALL build exactly six Suspects (contributed first, filled from Preset Ghosts), six Zones (named from contributions first, filled from a curated name list) and the six Relics, deterministically from the Room seed.
+5. WHEN the world is entered THEN the Viewer SHALL show each accepted photo in a free-standing frame near its Zone, facing the spawn point, and the frame SHALL NOT block movement.
+
+### Requirement 4
+
+**User Story:** As a player, I want secrets that only my phone shows, so that deduction matters.
+
+#### Acceptance Criteria
+
+1. WHEN the game starts THEN the Room SHALL choose the Solution from the seed and deal the other 15 cards so that every card is in exactly one Hand and Hand sizes differ by at most one.
+2. THE Room SHALL send each phone only its own Private View (its Hand and the cards shown to it) and SHALL send the Host and Display only the Public View, which contains no Hand and no Solution until the game has ended.
+3. WHEN a prompt for the narrator is built THEN the Party Service SHALL include no card from any Hand and not the Solution until the game has ended.
+4. WHEN the Player opens the notebook THEN the Controller SHALL show all 18 cards with three states (unknown, no, maybe), mark the Player's own Hand and every card shown to the Player as no, never remove a mark the Player made, and keep the notebook only on the device.
+5. WHEN Zones are placed THEN the Party Service SHALL choose six positions deterministically from the seed on walkable floor, within the walk radius, at least 3 m from the spawn and at least 4 m from each other, using authored Zones where a Gallery World supplies them and a fixed ring layout when validation fails, and IF the world's walk radius is below 7 m and it has no authored Zones THEN the Room SHALL refuse Party mode for that world with the reason `world_too_small` and point to the Gallery.
+
+### Requirement 5
+
+**User Story:** As a player, I want fair timed turns and a way to earn more time, so that play is tense but fair.
+
+#### Acceptance Criteria
+
+1. WHEN the game starts THEN the Room SHALL order Turns by seat, one Turn at a time, the active Player SHALL control the shared camera while all other Players see the Public View and their own Private View, and WHEN a Turn starts the camera SHALL be positioned at the spawn point of the world so every Player begins from the same known location; and local keyboard and mouse input SHALL be accepted only for seat 1 when seat 1 is the active Player.
+2. WHEN a Turn starts THEN the Room SHALL set the Turn Clock to the base seconds (host choice of 30, 45, 60 or 90, default 60) plus the active Player's Bonus Seconds, capped at 120, run the clock on the server and send its deadline with the server time so every screen shows the same countdown.
+3. WHEN the clock expires THEN the Room SHALL end the Turn with no penalty beyond the lost Turn, and WHEN 10 seconds remain THEN every screen SHALL show a warning as visible text and the Controller SHALL pulse where supported.
+4. WHEN a Player earns an Achievement THEN the Room SHALL add its Bonus Seconds to that Player's later Turns once per Achievement per game and announce it on the Public View, where the catalogue is: wanderer (visit three different Zones, +10 s), cartographer (visit all six, +15 s), quick feet (reach a Zone within 20 s of a Turn start, +5 s), persistent (make three Suggestions, +10 s) and second wind (lose two Turns to the clock, +10 s), derived only from the event log.
+5. WHEN the active Player's phone disconnects THEN the Room SHALL pause the Turn Clock for up to 20 seconds and then end the Turn, and a Player who stays disconnected for two consecutive Turns SHALL be skipped until they reconnect.
+6. WHERE the Host selects no clock THEN the Room SHALL run no Turn Clock and a Turn SHALL end by Suggestion, Accusation or pass, and the Host SHALL be able to pause and resume the game at any time.
+7. WHEN a Player has been eliminated THEN the Room SHALL skip them in the Turn order and their Hand SHALL still be used to answer Suggestions.
+
+### Requirement 6
+
+**User Story:** As a player, I want to suggest, accuse and win, so that the deduction has a payoff.
+
+#### Acceptance Criteria
+
+1. WHEN the active Player stands inside a Zone THEN the Controller SHALL let them make one Suggestion of a Suspect and a Relic for that Zone, at most one per Turn, and the Suggestion SHALL end the Turn once resolved.
+2. WHEN a Suggestion is made THEN the Room SHALL find the first other Player, clockwise from the suggester, who holds at least one of the three cards (including eliminated players and Bots), show one matching card privately to the suggester only, chosen deterministically from the seed, and announce publicly only that that Player showed a card, or that no one could.
+3. WHEN the active Player makes an Accusation of a Suspect, a Zone and a Relic at any time during their Turn THEN the Room SHALL end the game with that Player as winner and reveal the Solution if all three match, and otherwise eliminate that Player, tell only them it was wrong and announce publicly that they accused wrongly.
+4. WHERE the Player scans a Relic Token with the phone camera THEN the Controller SHALL accept the payload `hw:<relic id>` as the Relic selection, reject any other payload, and keep manual selection available at all times.
+5. WHEN every Player has been eliminated, or the round limit (default 12, host choice of 6 to 20) is reached THEN the Room SHALL end the game, reveal the Solution and report that the haunting continues.
+6. WHEN the game ends THEN the Room SHALL return the Solution, the winner if any and a short timeline for the ending screen, and WHEN the Host chooses Play again THEN the Room SHALL start a new game with a new seed, the same world, Players and Contributions.
+
+### Requirement 7
+
+**User Story:** As a group in one room, I want a big shared screen and an optional hologram centrepiece, so that the table feels like a game.
+
+#### Acceptance Criteria
+
+1. THE Host SHALL show the shared Viewer with a Public HUD of the active Player, the clock, the round, the public log, Achievements and eliminations, with all ghost and narrator text in a polite live region and never any Hand or Solution.
+2. WHEN a Controller drives the Viewer THEN the Viewer SHALL accept remote movement and look input through the ViewerBridge with the same speed, collision and comfort limits as local input, and keyboard and mouse SHALL keep working.
+3. WHEN a device opens the Display URL of a Room THEN the Party Service SHALL send it only the Public View, and the Display SHALL draw the host ghost's Sprite on black four times at 0, 90, 180 and 270 degrees around the centre, sized from a footprint the user calibrates on screen without assuming any pixel density, with a single-view mode for plain screens and toggles for orientation and mirroring.
+4. WHEN a public event occurs (suggestion, card shown, wrong Accusation, correct Accusation, Achievement, time warning) THEN the Display SHALL react with a scripted animation limited to three flashes per second and a luminance change of at most 20%, SHALL remove flicker when the visitor prefers reduced motion, and on a correct Accusation SHALL reveal the culprit Suspect's Sprite.
+5. IF no Display is connected THEN the game SHALL be unaffected.
+
+### Requirement 8
+
+**User Story:** As a maker, I want printable relics and a pyramid holder, so that the table has real objects.
+
+#### Acceptance Criteria
+
+1. THE Print Kit SHALL contain original parametric models in `print/scad/` for six Relics (music box, wax hand, locket, planchette, silver key, bell), each with a base for a Relic Token, and SHALL NOT reproduce any third-party game's weapons, characters, names or art.
+2. WHEN the Print Kit is built THEN `tools/build-print.mjs` SHALL generate each Relic Token plate as an STL from the payload `hw:<relic id>` with a module size of at least 1.2 mm and a plate no larger than 40 mm, check every STL for watertightness, positive volume and fit on a 180 mm bed, and fail on any violation.
+3. WHEN a pyramid holder is built THEN its four trapezoid faces SHALL be computed from the base and top edge with the faces at about 45 degrees to the screen, defaulting to a 60 mm base and a 10 mm top, and the holder SHALL be parametric for larger screens.
+4. WHERE a Suspect Sprite exists THEN the Print Kit MAY export a standee STL made from the alpha silhouette extruded with a base, which SHALL be watertight and fit the bed.
+5. THE Print Kit SHALL be optional: no Room feature SHALL depend on any printed object.
+
+### Requirement 9
+
+**User Story:** As a judge or a lone visitor, I want to see party mode with one laptop, so that I never need friends, phones or hardware.
+
+#### Acceptance Criteria
+
+1. WHERE no phone has joined THEN the Host SHALL let a keyboard-and-mouse human play seat 1 and let the Host add Bots up to the Player limit.
+2. WHEN a Bot has a Turn THEN the Party Service SHALL choose only legal actions using only that Bot's Private View, make a Suggestion at a Zone it stands in, make an Accusation only when its notebook leaves exactly one candidate in each category, and wait between 1.5 and 6 seconds so play is watchable, deterministically from the seed.
+3. WHERE every other seat is a Bot THEN the Host MAY show the human's Private View while the human holds a peek key, WHERE the Party Service determines this condition server-side and sends the peek permission only when every other seated Player is a Bot, and WHERE any other human is seated THEN the Host SHALL NOT show any Private View.
+4. THE single-player game SHALL be unaffected by Party mode, and WHILE world generation or model quota is exhausted THEN Party mode SHALL still run with Gallery Worlds, Preset Ghosts and scripted narration.
+
+### Requirement 10
+
+**User Story:** As the operator, I want party mode bounded in cost and safe for private photos, so that a crowd or a bug cannot hurt anyone or the budget.
+
+#### Acceptance Criteria
+
+1. WHEN a Room needs a paid call THEN the Party Service SHALL reserve it from SpendGuard against the Room's own caps (images 12, model calls 60, by default) in addition to the global caps, and SHALL make no upstream call when any cap denies.
+2. WHEN narration is needed THEN the Party Service SHALL request at most one model narration per public event for the whole Room, not one per phone, and SHALL use scripted lines when the cap is reached, the kill switch is on, or the reply fails validation, with game state identical in every case.
+3. WHEN a nickname, Zone name or Suspect detail is used in a prompt THEN the Party Service SHALL place it only inside a delimited data block, strip control characters and enforce its length limit.
+4. WHEN a Room is deleted THEN the Party Service SHALL remove its photos, Sprites, nicknames and state immediately, and SHALL use a photo for nothing but moderation and its frame.
+5. THE Party Service SHALL record only counters and error codes (rooms, players seated, turns, suggestions, accusations, timeouts, fallbacks), and SHALL NOT record nicknames, photos, Zone names, details or narration text.
+6. THE Party Service SHALL rate limit join attempts by hashed IP, allow one active Room per host session and at most 20 active Rooms in total by default, and refuse the rest with a reason code.
+7. WHERE `PARTY_ENABLED` is false THEN the Party Service SHALL refuse to create Rooms while the single-player game keeps working.

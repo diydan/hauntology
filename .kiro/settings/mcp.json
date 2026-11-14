@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "worldlabs-dev": {
+      "command": "node",
+      "args": ["tools/worldlabs-mcp/dist/index.js"],
+      "env": {
+        "WLT_API_KEY": "${WLT_API_KEY}",
+        "WL_MAX_SPEND_CREDITS": "6000",
+        "WL_FIXTURE_DIR": "shared/fixtures/worldlabs"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "worldlabs_get_operation",
+        "worldlabs_get_world",
+        "worldlabs_list_worlds"
+      ]
+    }
+  }
+}

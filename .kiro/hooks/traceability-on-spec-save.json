@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Spec traceability check",
+      "description": "On saving a spec file, verify requirement ids referenced by tasks and properties exist and every acceptance criterion is covered.",
+      "trigger": "PostFileSave",
+      "matcher": "\\.kiro/specs/.*\\.md$",
+      "action": {
+        "type": "command",
+        "command": "node tools/check-traceability.mjs"
+      },
+      "timeout": 30,
+      "enabled": true
+    }
+  ]
+}

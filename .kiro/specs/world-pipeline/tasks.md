@@ -1,0 +1,167 @@
+# Implementation Plan
+
+Order matters: tooling and spikes first (they retire the unverified assumptions in `steering/tech.md`), then pure logic with property tests, then Durable Objects, then routes, then UI. Tasks marked `*` are optional test tasks that should still be done before submission.
+
+- [ ] 0. Dev tooling: World Labs MCP server
+  - Build `tools/worldlabs-mcp` per its README: stdio MCP, tools `worldlabs_generate_from_image`, `worldlabs_get_operation`, `worldlabs_get_world`, `worldlabs_list_worlds`, `worldlabs_spend_status`; hard credit cap and ledger; scrub secrets when saving fixtures.
+  - Build to `dist/index.js` so `.kiro/settings/mcp.json` works.
+  - _Requirements: 7.1_
+
+- [ ] 1. Spikes (time-boxed; each writes `docs/spikes/<id>.md` and fixtures)
+  - [ ] 1.1 World Labs end to end with one photo
+    - Run generate → poll → get world through the MCP server. Record: real asset field names and formats (SPZ/PLY LODs, collider GLB, pano, thumbnail), whether upstream URLs expire, wall-clock time, credits used, up-axis and scale conventions, how a photo vs a Nova image behaves. Save scrubbed fixtures in `shared/fixtures/worldlabs/`. Update `steering/worldlabs-api.md` and `steering/tech.md` unverified list.
+    - _Requirements: 7.1, 8.1, 8.2_
+  - [ ] 1.2 Workers AI from a Worker
+    - Verify the exact model ids and input shapes for `@cf/black-forest-labs/flux-2-dev` (sketch as a reference image), `@cf/bria/rmbg-2.0` (background removal) and `@cf/meta/llama-4-scout-17b-16e-instruct` (image moderation) through `env.AI.run`; record image size limits, latency and neuron cost per call, and whether a sketch gives usable photo quality (if not, evaluate `flux-2-max`).
+    - _Requirements: 2.4, 3.1_
+  - [ ] 1.3 Enhance A/B (single image vs outpaint-extended multi-image)
+    - On three photos and three sketch results, generate both variants, compare in the viewer, record preference and credit cost. Decide `ENHANCE_VIEWS` default.
+    - _Requirements: 11.1, 11.2_
+
+- [ ] 2. Scaffold monorepo
+  - pnpm workspace (`shared`, `api`, `web`, `tools/*`), strict tsconfig, Vitest, fast-check, zod, Hono, wrangler config with Durable Object, R2 and cron bindings, `.dev.vars.example` (names only), `.gitignore` (ledger, `.dev.vars`).
+  - Add `LICENSE` (MIT) and confirm `/.kiro` is not ignored.
+
+- [ ] 3. Shared pure logic
+  - [ ] 3.1 Schemas and error codes
+    - zod `WorldManifestSchema`, `QuoteSchema`, `JobStatusSchema`, `QuotaSchema`; `errors.ts` with stable codes.
+    - _Requirements: 7.3, 8.2_
+  - [ ] 3.2 Upload validation and JPEG metadata stripper
+    - `validateUpload`, `stripJpegMetadata` (drop APP1/APP13/COM segments, keep scan data).
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [ ]* 3.3 Write property test for upload validation
+    - **Property 1: Upload validation is exact**
+    - **Validates: Requirements 1.1, 1.2**
+  - [ ]* 3.4 Write property test for metadata stripping
+    - **Property 2: Metadata stripping preserves pixels and removes metadata**
+    - **Validates: Requirements 1.3**
+  - [ ] 3.5 Sketch prompt builder and ink coverage
+    - `buildSketchPrompt(caption)` with data clause, cap, fixed negative prompt; `inkCoverage(bitmap)`.
+    - _Requirements: 2.2, 2.3_
+  - [ ]* 3.6 Write property test for prompt composition
+    - **Property 3: Prompt composition is bounded and contained**
+    - **Validates: Requirements 2.3**
+  - [ ]* 3.7 Write property test for blank-sketch rejection
+    - **Property 4: Blank sketches are rejected**
+    - **Validates: Requirements 2.2**
+  - [ ] 3.8 Confirm token sign/verify (WebCrypto HMAC-SHA-256)
+    - _Requirements: 4.2, 4.3_
+  - [ ]* 3.9 Write property test for confirm tokens
+    - **Property 5: Confirm tokens bind their inputs**
+    - **Validates: Requirements 4.2, 4.3**
+  - [ ] 3.10 Dedup key
+    - `worldKey(imageHash, options)`.
+    - _Requirements: 6.1_
+  - [ ]* 3.11 Write property test for dedup key
+    - **Property 10: Dedup key is a function of image and options**
+    - **Validates: Requirements 6.1**
+  - [ ] 3.12 Job reducer
+    - `jobReducer(state, event, now)` returning next state plus effects (`release`, `commit`, `scheduleNext`, `tripKill`).
+    - _Requirements: 7.2, 7.3, 7.4, 7.5, 7.6_
+  - [ ]* 3.13 Write property test for the job state machine
+    - **Property 9: Job state machine is safe**
+    - **Validates: Requirements 7.2, 7.6, 5.2**
+  - [ ] 3.14 Manifest builder
+    - `buildManifest(worldLabsResponse, ctx)` with defaults for orientation, scale, spawn, floor, bounds from Spike 1.1; optional assets omitted when absent; splat missing → `ingest_failed`.
+    - _Requirements: 8.2, 8.3_
+  - [ ]* 3.15 Write property test for manifest building
+    - **Property 11: Manifest building is total and fail-closed on splat**
+    - **Validates: Requirements 8.2, 8.3**
+  - [ ]* 3.16 Write property test for secret and URL hygiene
+    - **Property 12: Browser-facing payloads leak no secrets or upstream URLs**
+    - **Validates: Requirements 8.5**
+  - [ ] 3.17 Retention calculator
+    - `expiredKeys(objects, now)`.
+    - _Requirements: 10.1_
+  - [ ]* 3.18 Write property test for retention
+    - **Property 13: Retention deletes exactly the expired non-Gallery objects**
+    - **Validates: Requirements 10.1**
+
+- [ ] 4. SpendGuard Durable Object
+  - [ ] 4.1 Implement reserve, commit, release, expiry alarm, remaining, kill switch
+    - Meters `world`, `image`, `llm`; caps session / ip-day / global-day / global-total from env; denial leaves state unchanged.
+    - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7_
+  - [ ]* 4.2 Write model-based property test for SpendGuard bounds
+    - **Property 7: SpendGuard never exceeds a cap**
+    - **Validates: Requirements 5.1, 5.6**
+  - [ ]* 4.3 Write property test for reservation accounting
+    - **Property 8: Reservations are accounted exactly once**
+    - **Validates: Requirements 5.2, 5.3**
+  - [ ] 4.4 Kill switch wiring
+    - `WORLD_GEN_ENABLED`, upstream 402, manual `setKill`; Gallery routes unaffected.
+    - _Requirements: 5.4, 9.3_
+
+- [ ] 5. Upload, sketch and brief routes
+  - [ ] 5.1 `POST /api/uploads`
+    - Multipart parse, validate, strip metadata, store in R2 with 24 h expiry under opaque id; reject listing.
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+  - [ ] 5.2 `AIClient` (wraps `env.AI.run`, per Spike 1.2) and guarded FLUX.2, rmbg and text wrappers
+    - All wrappers live in `api/src/guarded/` and require a `SpendTicket`.
+    - _Requirements: 2.4, 3.1, 5.1, 5.5_
+  - [ ] 5.3 `POST /api/sketch/render` and `/api/sketch/select`
+    - Reject blank, build prompt, reserve `image`, call FLUX.2 with the sketch as a reference image ×2, store candidates; quota exhausted → no call.
+    - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.6_
+  - [ ] 5.4 `POST /api/places/brief`
+    - Vision model with image → `{brief ≤ 80 words, safe}`; unsafe → delete image; failure → fail closed; persist brief.
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+
+- [ ] 6. Confirm gate and world creation
+  - [ ] 6.1 `POST /api/worlds/quote` and `POST /api/worlds`
+    - Issue/verify Confirm Token, optional Turnstile, dedup (ready world and in-flight job), reserve `world`, start WorldJob; single-use token returns existing job.
+    - _Requirements: 4.2, 4.3, 4.4, 4.5, 6.1, 6.2, 5.1_
+  - [ ]* 6.2 Write property test for idempotent creation
+    - **Property 6: Creation is idempotent**
+    - **Validates: Requirements 4.4, 6.2**
+
+- [ ] 7. WorldJob Durable Object
+  - [ ] 7.1 Generate and poll
+    - Call guarded World Labs client, store operation id, alarm polling ~10 s with jitter, rate-limit backoff, 20-minute timeout, all transitions via `jobReducer`.
+    - _Requirements: 7.1, 7.2, 7.3_
+  - [ ] 7.2 Error mapping and kill switch
+    - Client errors → `failed` with safe message and release; 402 → release and `tripKill`.
+    - _Requirements: 7.4, 7.5, 7.6_
+  - [ ] 7.3 Ingest
+    - Fetch world, copy assets to R2, verify non-empty, write manifest, commit ticket; splat missing → fail and release; optional assets degrade.
+    - _Requirements: 8.1, 8.2, 8.3, 5.3_
+  - [ ] 7.4 `GET /api/worlds/:id` and asset streaming
+    - Status payload, manifest when ready, range requests, immutable cache headers, no upstream URLs or keys.
+    - _Requirements: 7.3, 8.4, 8.5_
+
+- [ ] 8. Retention, delete and logging
+  - [ ] 8.1 Scheduled cleanup (cron trigger) using `expiredKeys`; `DELETE /api/worlds/:id` removing upload, candidates, bundle, sprite and play sessions.
+    - _Requirements: 10.1, 10.2_
+  - [ ] 8.2 Logging policy
+    - Central logger that only accepts ids, counters, codes; lint rule or test that forbids logging request bodies.
+    - _Requirements: 10.3_
+
+- [ ] 9. Gallery
+  - [ ] 9.1 `tools/ingest-gallery` script
+    - Generate six Gallery Worlds from licensed or self-generated images via the dev MCP, ingest through the same manifest builder, hand-tune spawn and anchors, write attribution.
+    - _Requirements: 9.1, 9.2_
+  - [ ] 9.2 `GET /api/gallery` and share links
+    - List endpoint; user worlds exposed at unguessable ids of ≥ 128 bits; Gallery works with generation disabled.
+    - _Requirements: 9.2, 9.3, 9.4_
+
+- [ ] 10. Web: start, sketch, confirm, progress
+  - [ ] 10.1 Photo picker with client-side re-encode (strips metadata before upload) and error copy per reason code
+    - _Requirements: 1.1, 1.3_
+  - [ ] 10.2 Sketch pad
+    - Canvas with brush, eraser, 3 sizes, undo/redo ≥ 30, clear; mouse/touch/pen; caption input; candidate picker; quota display and Gallery pointer when exhausted.
+    - _Requirements: 2.1, 2.6_
+  - [ ] 10.3 Confirm screen
+    - Exact image preview, remaining quota, "Enter this place?" and Cancel; calls quote then create.
+    - _Requirements: 4.1, 5.7_
+  - [ ] 10.4 Progress screen
+    - Stage labels from status endpoint (queued, dreaming, stitching, ready), failure copy, link to Gallery while waiting.
+    - _Requirements: 7.3_
+
+- [ ] 11. Enhance (optional, gated by Spike 1.3)
+  - [ ] 11.1 `planEnhance` and guarded outpaint calls
+    - Plan extensions with ≥ 40% overlap and distinct azimuths; build multi-image prompt; any failure falls back to the single-image prompt.
+    - _Requirements: 11.1, 11.2, 11.3_
+  - [ ]* 11.2 Write property test for enhance planning and fallback
+    - **Property 14: Enhance plans overlap and fall back**
+    - **Validates: Requirements 11.1, 11.3**
+
+- [ ] 12. Checkpoint
+  - Run `pnpm -r test`, `pnpm -r typecheck` and `node tools/check-traceability.mjs`; ensure all pass, ask the user if questions arise.

@@ -1,0 +1,249 @@
+# Implementation Plan
+
+Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `ghost-engine` 2.5 (anchor placement), 2.7 (`sanitizePose`) and 2.17 (reply validation), `world-pipeline` 4.1 (SpendGuard) and 5.2 (AIClient), and `world-viewer` 6.3 (ViewerBridge). Do the three spikes before any code that depends on their answers. Pure logic first, then the Durable Object, then the three pages, then the Print Kit.
+
+- [ ] 1. Spikes (record each in `docs/spikes/party-<n>.md`)
+  - [ ] 1.1 Transport and latency
+    - Build a throwaway `PartyRoom` with the WebSocket Hibernation API. Connect one Host and six simulated phones sending `input` at 30 Hz. Record p50 and p95 input-to-Host latency on the same network and over a phone hotspot, and whether hibernation drops sockets. Optionally compare an unordered, no-retransmit WebRTC data channel; adopt it only if it clearly helps, with WebSocket as fallback.
+    - _Requirements: 1.6, 2.2_
+  - [ ] 1.2 Phone capabilities
+    - On a real iPhone (Safari) and a real Android phone (Chrome): multitouch stick with two thumbs, orientation permission flow, vibration availability, camera QR scanning with the built-in detector where present and a JavaScript decoder otherwise, and scan reliability of a single-colour relief QR plate versus a two-colour plate printed on a real printer. Pick the QR encoder and decoder libraries and pin them.
+    - _Requirements: 2.3, 2.4, 2.5, 6.4, 8.2_
+  - [ ] 1.3 Pyramid on hardware
+    - Cut a pyramid from clear plastic using the default trapezoid, put it on a spare phone or tablet running a throwaway four-view page, and decide: tops inward or outward, mirror or not, how the footprint calibration should work, minimum usable brightness. Photograph the result for the write-up.
+    - _Requirements: 7.3, 8.3_
+
+- [ ] 2. Pure logic (`shared/src/party/`)
+  - [ ] 2.1 `generateRoomCode` and `normalizeCode`
+    - _Requirements: 1.1_
+  - [ ]* 2.2 Write property test for room codes
+    - **Property 1: Room codes are well formed**
+    - **Validates: Requirements 1.1**
+  - [ ] 2.3 `sanitizeNickname`, `seatPlayer`, `canJoin`
+    - _Requirements: 1.2, 1.3_
+  - [ ]* 2.4 Write property test for seating and nicknames
+    - **Property 2: Seating and nicknames**
+    - **Validates: Requirements 1.2, 1.3**
+  - [ ] 2.5 `authorize` for host, player and display tokens
+    - _Requirements: 1.4, 1.6_
+  - [ ]* 2.6 Write property test for token ownership
+    - **Property 3: Tokens grant exactly their own data**
+    - **Validates: Requirements 1.4, 1.6**
+  - [ ] 2.7 Room serialise, parse, expiry and delete
+    - _Requirements: 1.5, 10.4_
+  - [ ]* 2.8 Write property test for the room lifecycle
+    - **Property 4: Room lifecycle round-trips and deletes completely**
+    - **Validates: Requirements 1.5, 10.4**
+  - [ ] 2.9 `sanitizeInput`, `coalesceInput`, `releaseAll`
+    - _Requirements: 2.2, 2.3_
+  - [ ]* 2.10 Write property test for controller input
+    - **Property 5: Controller input is bounded and never sticks**
+    - **Validates: Requirements 2.2, 2.3**
+  - [ ] 2.11 `buildPool` with contributed-first ordering and Preset and curated-name fill
+    - _Requirements: 3.1, 3.4_
+  - [ ] 2.12 Contribution fallback rules for rejected photos and failed portraits
+    - _Requirements: 3.2, 3.3_
+  - [ ]* 2.13 Write property test for the case pool
+    - **Property 6: The case pool is complete, deterministic and never blocked**
+    - **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
+  - [ ] 2.14 `dealCase`
+    - _Requirements: 4.1_
+  - [ ]* 2.15 Write property test for the deal
+    - **Property 7: The deal is a valid partition**
+    - **Validates: Requirements 4.1**
+  - [ ] 2.16 `publicView`, `privateView` and redacted public events
+    - _Requirements: 4.2_
+  - [ ] 2.17 `buildPartyPrompt` taking only a Public View
+    - _Requirements: 4.3_
+  - [ ]* 2.18 Write property test for leakage, with the token-planting fuzz game
+    - **Property 8: Views never leak secrets**
+    - **Validates: Requirements 4.2, 4.3**
+  - [ ] 2.19 Extract `placePoints` from `ghost/anchors.ts` (no behaviour change, ghost-engine Property 1 stays green), then `placeZones`, `validateZones`, `ringZones` and the `world_too_small` rule
+    - _Requirements: 4.5_
+  - [ ]* 2.20 Write property test for zones
+    - **Property 9: Zones are valid and the world-size rule holds**
+    - **Validates: Requirements 4.5**
+  - [ ] 2.21 Notebook `autoMarks` and `markCard`
+    - _Requirements: 4.4_
+  - [ ]* 2.22 Write property test for the notebook
+    - **Property 10: Notebook marks are monotone**
+    - **Validates: Requirements 4.4**
+  - [ ] 2.23 `nextPlayer` and `advance` with eliminations, skips and rounds
+    - _Requirements: 5.1, 5.7_
+  - [ ]* 2.24 Write property test for turn order
+    - **Property 11: Turn order is fair**
+    - **Validates: Requirements 5.1, 5.7**
+  - [ ] 2.25 `turnBudget`, achievement detectors `earned` and `bonusSeconds`
+    - _Requirements: 5.2, 5.4, 5.6_
+  - [ ]* 2.26 Write property test for budgets and achievements
+    - **Property 12: Turn budgets and achievements are bounded and monotone**
+    - **Validates: Requirements 5.2, 5.4, 5.6**
+  - [ ] 2.27 `clockStatus`, `nextWake`, and `onDisconnect`
+    - _Requirements: 5.3, 5.5_
+  - [ ]* 2.28 Write property test for the clock and nextWake
+    - **Property 13: The clock, nextWake, and disconnects end turns exactly once**
+    - **Validates: Requirements 5.3, 5.5**
+  - [ ] 2.29 `canSuggest` and `resolveSuggestion`
+    - _Requirements: 6.1, 6.2_
+  - [ ]* 2.30 Write property test for suggestions
+    - **Property 14: Suggestions resolve to the first holder clockwise**
+    - **Validates: Requirements 6.1, 6.2**
+  - [ ] 2.31 `resolveAccusation` and `gameOver`
+    - _Requirements: 6.3, 6.5_
+  - [ ]* 2.32 Write property test for accusations and termination
+    - **Property 15: Accusations decide the game and the game terminates**
+    - **Validates: Requirements 6.3, 6.5**
+  - [ ] 2.33 `parseRelicToken`
+    - _Requirements: 6.4_
+  - [ ]* 2.34 Write property test for relic tokens
+    - **Property 16: Relic tokens parse strictly**
+    - **Validates: Requirements 6.4**
+  - [ ] 2.35 `endingPayload` and `playAgain`
+    - _Requirements: 6.6_
+  - [ ]* 2.36 Write property test for endings and replays
+    - **Property 17: Endings and replays preserve what they should**
+    - **Validates: Requirements 6.6**
+  - [ ] 2.37 `pyramidLayout` and `fitTile`
+    - _Requirements: 7.3_
+  - [ ]* 2.38 Write property test for the pyramid layout
+    - **Property 18: The pyramid layout is symmetric and in bounds**
+    - **Validates: Requirements 7.3**
+  - [ ] 2.39 `effectLimits`
+    - _Requirements: 7.4_
+  - [ ]* 2.40 Write property test for display effects
+    - **Property 19: Display effects respect photosensitivity limits**
+    - **Validates: Requirements 7.4**
+  - [ ] 2.41 `botAct` and `peekAllowed`
+    - _Requirements: 9.2, 9.3_
+  - [ ]* 2.42 Write property test for bots
+    - **Property 22: Bots are legal and blind to other hands**
+    - **Validates: Requirements 9.2, 9.3**
+  - [ ] 2.43 `roomCaps`, `narrationRequests`, spend accounting, and a scripted line library with at least five variants per party directive kind
+    - _Requirements: 10.1, 10.2_
+  - [ ]* 2.44 Write property test for spend and narration independence
+    - **Property 23: Spend is bounded and narration never changes the game**
+    - **Validates: Requirements 10.1, 10.2**
+  - [ ] 2.45 Telemetry whitelist, `acceptJoin` and `acceptRoom`
+    - _Requirements: 10.5, 10.6_
+  - [ ]* 2.46 Write property test for telemetry and abuse caps
+    - **Property 24: Telemetry carries no content and abuse is capped**
+    - **Validates: Requirements 10.5, 10.6**
+
+- [ ] 3. Print module (`shared/src/print/`)
+  - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
+    - _Requirements: 8.2_
+  - [ ] 3.2 `qrPlateMesh` heightfield solid and `rasterTop`
+    - _Requirements: 8.2_
+  - [ ]* 3.3 Write property test for printed meshes and QR plates
+    - **Property 20: Printed meshes are valid and QR plates round-trip**
+    - **Validates: Requirements 8.2**
+  - [ ] 3.4 `pyramidTrapezoid` and `holderParams`
+    - _Requirements: 8.3_
+  - [ ]* 3.5 Write property test for pyramid faces
+    - **Property 21: Pyramid faces are consistent**
+    - **Validates: Requirements 8.3**
+  - [ ] 3.6 Stretch: `standeeMesh` from an alpha mask, with the same checks
+    - _Requirements: 8.4_
+
+- [ ] 4. PartyRoom Durable Object
+  - [ ] 4.1 Create, join, seat and token issue; socket `hello` within 5 s; Hibernation API; origin check; zod validation of every message; seed is 128-bit crypto.getRandomValues; register with PartyDirectory on create, unregister on delete
+    - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6_
+  - [ ] 4.2 Lobby: contribution intake and pool build when the lobby closes
+    - _Requirements: 3.1, 3.4_
+  - [ ] 4.3 Game start: choose the Solution, deal, place Zones (authored, placed or ring), fan out Public and Private Views
+    - _Requirements: 4.1, 4.2, 4.5_
+  - [ ] 4.4 Turn engine: `nextWake(state, now)` pure function + single DO alarm always set to nextWake; 10-second warning, disconnect pause and skip, host pause and resume, no-clock mode, eliminated players skipped
+    - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7_
+  - [ ] 4.5 Pose and input pipeline: sanitise host pose at ≤ 4 Hz, relay the active Player's input only, rate limit every token
+    - _Requirements: 2.2, 7.2_
+  - [ ] 4.6 Suggestion and Accusation handlers, event log, achievement awards, end conditions
+    - _Requirements: 5.4, 6.1, 6.2, 6.3, 6.5_
+  - [ ] 4.7 Ending payload and Play again
+    - _Requirements: 6.6_
+  - [ ] 4.8 Time-to-live alarm, host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
+    - _Requirements: 1.5, 10.4, 10.6, 10.7_
+  - [ ] 4.10 PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
+    - _Requirements: 10.6_
+  - [ ] 4.9 Bot runner driven by alarms with think time of 1.5 to 6 s
+    - _Requirements: 9.1, 9.2_
+
+- [ ] 5. Contribution services
+  - [ ] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded AIClient text wrapper, fail closed, store privately for the Room
+    - _Requirements: 3.2_
+  - [ ] 5.2 Suspect flow reusing the Ghost Creator, charged to the Room budget, Preset fallback on any failure
+    - _Requirements: 3.3_
+  - [ ] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement
+    - _Requirements: 3.1, 10.3_
+  - [ ] 5.4 Room budget wiring: Room-scoped caps through SpendGuard on top of global caps
+    - _Requirements: 10.1_
+
+- [ ] 6. Party narrator
+  - [ ] 6.1 `narratePartyEvent`: one guarded model call per public event at most, validate with `validateGhostReply`, scripted fallback on cap, kill switch or failure
+    - _Requirements: 10.2_
+  - [ ] 6.2 Prompt assembly from the Public View only, with contributed text inside delimited data blocks
+    - _Requirements: 4.3, 10.3_
+
+- [ ] 7. Routes
+  - `POST /api/party/rooms`, `POST /api/party/:code/join`, `GET /api/party/:code/ws`, contribution routes, `DELETE /api/party/:code`; origin and cookie checks for host routes; reason codes; counters only in logs.
+  - _Requirements: 1.1, 1.2, 1.3, 1.5, 10.5, 10.6, 10.7_
+
+- [ ] 8. Web: Host (`web/src/party/host/`)
+  - [ ] 8.1 Party entry from a world, lobby with Room Code and QR, settings (clock, round limit), start
+    - _Requirements: 1.1, 5.2, 5.6, 6.5_
+  - [ ] 8.2 Public HUD: active Player, clock, round, public log, Achievements, eliminations, narrator text in a polite live region
+    - _Requirements: 7.1_
+  - [ ] 8.3 Remote movement and look input through the ViewerBridge; keyboard and mouse active only when seat 1 is the active Player; ViewerBridge blocks local input otherwise
+    - _Requirements: 7.2, 5.1_
+  - [ ] 8.4 Free-standing photo frames near each Zone, facing the spawn, no collision
+    - _Requirements: 3.5_
+  - [ ] 8.5 Ending screen and Play again
+    - _Requirements: 6.6_
+  - [ ] 8.6 Solo mode: keyboard seat 1, add Bots, hold-to-peek panel only when every other seat is a Bot
+    - _Requirements: 9.1, 9.3_
+  - [ ] 8.7 Regression: the single-player game is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
+    - _Requirements: 9.4_
+
+- [ ] 9. Web: Controller (`web/src/party/controller/`)
+  - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
+    - _Requirements: 1.2, 1.4_
+  - [ ] 9.2 Pad and panel layouts with switching; 48 px targets, focus, contrast, tap-to-walk pad
+    - _Requirements: 2.1, 2.6_
+  - [ ] 9.3 Multitouch stick and look, input at ≤ 30 Hz, release on blur and disconnect
+    - _Requirements: 2.2, 2.3_
+  - [ ] 9.4 Gyro aim opt-in with permission from a tap and touch fallback
+    - _Requirements: 2.4_
+  - [ ] 9.5 Vibration where supported, with visual and optional sound cues otherwise
+    - _Requirements: 2.5_
+  - [ ] 9.6 Hand view and notebook stored on the device
+    - _Requirements: 4.2, 4.4_
+  - [ ] 9.7 Suggest and Accuse screens, relic selection by list or by camera scan
+    - _Requirements: 6.1, 6.3, 6.4_
+  - [ ] 9.8 Contribution screens for Suspect, photo and Zone name
+    - _Requirements: 3.1_
+  - [ ] 9.9 Clock, warning and Achievement display
+    - _Requirements: 5.3, 5.4_
+
+- [ ] 10. Web: Display (`web/src/party/display/`)
+  - [ ] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected
+    - _Requirements: 7.3, 7.5_
+  - [ ] 10.2 Event reactions within photosensitivity limits, reduced-motion handling, culprit reveal
+    - _Requirements: 7.4_
+
+- [ ] 11. Print Kit (`print/`, `tools/build-print.mjs`)
+  - [ ] 11.1 Six original parametric relic models (music box, wax hand, locket, planchette, silver key, bell) with token bases
+    - _Requirements: 8.1_
+  - [ ] 11.2 Parametric pyramid holder
+    - _Requirements: 8.3_
+  - [ ] 11.3 `tools/build-print.mjs`: generate token plates, run `openscad` when present, check every STL, exit non-zero on failure
+    - _Requirements: 8.2_
+  - [ ] 11.4 `print/README.md`: materials, settings, assembly, and that printing is optional
+    - _Requirements: 8.5_
+  - [ ] 11.5 Hook `print-validate` runs the build check when `print/` or `shared/src/print/` is saved
+    - _Requirements: 8.2_
+
+- [ ] 12. Gallery content
+  - Author six Zones for each Gallery World and review the party scripted lines for the six Preset Ghosts.
+  - _Requirements: 4.5, 9.4_
+
+- [ ] 13. Checkpoint
+  - Run tests, typecheck, `node tools/check-traceability.mjs` and `node tools/build-print.mjs --check`. Play one full party game with three Bots and one keyboard player in scripted mode, one with real phones and the model, and one with a Display and printed relics. Record a short clip of each for the write-up. Ask the user if questions arise.

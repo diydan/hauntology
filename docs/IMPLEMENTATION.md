@@ -1,0 +1,147 @@
+# Hauntwalk implementation plan
+
+Written 2026-11-14. Submission target **Thu Dec 3**. Hard deadline **Fri Dec 4, 14:00 PT**. Kiro credits must be requested by **Tue Dec 1, 12:00 PT**.
+
+This plan orders the existing specs. It does not replace them. Task numbers refer to `.kiro/specs/<spec>/tasks.md`.
+
+## Stack (decided)
+
+| Layer | Choice |
+|---|---|
+| Web | Vite, React, three.js, `@sparkjsdev/spark`, `three-mesh-bvh` |
+| API | Cloudflare Worker, Hono |
+| State | Durable Objects: `SpendGuard`, `WorldJob`, `PlaySession`, `PartyRoom`, `PartyDirectory` |
+| Blobs | R2 |
+| AI | Workers AI binding (`env.AI`), behind one `AIClient` with `SpendGuard` tickets |
+| World | World Labs Marble API |
+
+Workers AI models:
+
+| Job | Model |
+|---|---|
+| Sketch to photo, portraits | `flux-2-dev` |
+| Sprite cut-out | `bria/rmbg-2.0` |
+| Narration, place brief | `llama-3.3-70b-instruct-fp8-fast` |
+| Photo moderation (vision) | `llama-4-scout-17b-16e-instruct` |
+| Ghost and host voice | `inworld/tts-2` |
+
+Model IDs are unverified. Spike A confirms the exact strings and input shapes before any code depends on them.
+
+## Spec drift to fix first (half a day)
+
+The decision to leave Bedrock is only in `steering/tech.md`. These still say Bedrock or Nova and must change before code does:
+
+- `world-pipeline`: tasks 1.2 and 5.2 (`BedrockClient`), design error codes, requirement 2.x (Nova Canvas)
+- `ghost-creator`: portrait and sprite routes
+- `ghost-engine`: Narrator requirement 5.x ("configured Bedrock text model")
+- `party-mode`: design diagram, Spend section, Testing ("fake Bedrock")
+- `README.md`, `docs/PLAN.md`, `docs/SUBMISSION.md`, the Devpost pitch (Nova Canvas wording)
+
+New spec work this plan depends on:
+
+- **TTS**: a voice per Ghost Persona, a host voice, a `TTS_*` cap in `SpendGuard`, text always shown, audio optional, off by default for reduced-motion and muted users.
+- **Relic-sketch contribution** (party-mode requirement 3): each player is dealt a Relic, draws it, adds a personal photo, and the pair becomes their Suspect portrait. The personal photo is deleted right after generation.
+- **Security gaps** from the reviews: play-session ownership, sketch-select ownership, a web shell spec, and the `PartyRoom` ownership rules already fixed.
+
+## Phases
+
+### Phase 0: Foundation (Nov 14 to 16)
+- Commit the staged repo. Push to a new GitHub repo, public, MIT.
+- Finish scaffold: `api/` (Hono, `wrangler.jsonc` with DO, R2, `AI` bindings), `web/` (Vite React), shared lint and test config. (world-pipeline 2)
+- Install the World Labs MCP (world-pipeline 0). Already usable from the CLI.
+- Fix spec drift above.
+- **Exit:** `pnpm test`, `pnpm typecheck` and `node tools/check-traceability.mjs` all pass on an empty-but-wired repo. `wrangler dev` serves `/health`.
+
+### Phase 1: Spikes (Nov 16 to 19), run in parallel where possible
+| Spike | Question | Fallback if it fails |
+|---|---|---|
+| A. Workers AI | Do model IDs and input shapes match? Does `flux-2-dev` turn a sketch into a usable photo? | Try `flux-2-max`; else upload-only (sketch becomes a stretch feature) |
+| B. TTS | Is `inworld/tts-2` under 2 s for a 220-token line? | `openai/tts-1`; else text only |
+| C. World Labs | Response fields, asset expiry, orientation, scale (world-pipeline 1.1) | Adapter per what is real |
+| D. Splat in browser | Spark renders a real world on a phone at usable FPS (world-viewer 1) | Pano fallback |
+| E. Party transport | DO WebSocket latency, six phones at 30 Hz (party 1.1) | Lower rate, coalesce input |
+
+Party spikes 1.2 (iOS and Android controls, QR) and 1.3 (pyramid) wait until Phase 4.
+
+- **Exit:** each spike has `docs/spikes/<id>.md` and recorded fixtures in `shared/fixtures/`. `tech.md` unverified list is updated.
+
+### Phase 2: Single-player core (Nov 17 to 27)
+This is the product. Party mode cannot ship without it.
+
+1. **Pure logic with property tests** (all in `shared/`): world-pipeline 3, world-viewer 2, ghost-creator 1, ghost-engine 2.
+2. **`SpendGuard`** (world-pipeline 4). Everything paid depends on it. Add the TTS meter here.
+3. **Routes**: upload, sketch, brief, confirm gate (world-pipeline 5, 6). Add the ownership checks from the review.
+4. **`WorldJob`** (world-pipeline 7).
+5. **Generate Gallery worlds by Nov 21** (world-pipeline 9.1). Budget about $18. This is the hard date because credits must be spent before the Dec 1 request.
+6. **Viewer** (world-viewer 3 to 6): loader, controls, collision, haunt layer, HUD.
+7. **Ghost creator** (ghost-creator 2 to 4) and **engine** (ghost-engine 3 to 6): `PlaySession`, narrator, chat, journal.
+8. **TTS wiring**: ghost voice on narration lines, text always shown.
+9. **Web shell**: routing, error boundaries, confirm gate UI, sketch pad (needs its own short spec).
+
+- **Exit (Nov 27):** a visitor opens the deployed URL, picks a Gallery world, designs a ghost, walks, talks, finds three memories, and sees the memory card. Zero paid calls needed.
+
+### Phase 3: Deploy and credits (Nov 28 to Dec 1)
+- Deploy preview to Cloudflare Pages and Workers. Set secrets with `wrangler secret put`.
+- **Request Kiro credits before Dec 1, 12:00 PT.** Do it Nov 28, not Dec 1.
+- Phone performance pass (world-viewer 7).
+- Accessibility and safety pass (world-viewer 8).
+- Write-up sections 1 to 4 drafted with real evidence.
+
+### Phase 4: Party mode (Nov 24 to Dec 2, overlapping)
+Follow the cut line in `docs/PLAN.md`. Each layer must work before the next starts.
+
+| Layer | Tasks | Target date |
+|---|---|---|
+| 1. Core: rooms, join, pad, deal, turns, suggest, accuse, Bots, scripted lines | party 2, 4, 6 to 9, 12 | Nov 30 |
+| 2. Contributions: relic sketch, photo, Zone name, Suspect | party 5, 9.8 | Dec 1 |
+| 3. Display: pyramid page | party 10 | Dec 2 |
+| 4. Print kit: relics, QR plates, holder | party 3, 11 | runs as a parallel hardware track: designed Nov 18, printed Nov 19 to 21 (2 days), tested Nov 22. See `docs/JOURNAL.md` |
+
+If Phase 2 is not done by Nov 27, **pause party mode** and finish Phase 2 first. Solo with Bots (layer 1) is enough to demo.
+
+### Phase 5: Ship (Dec 2 to 3)
+- Dec 2: feature freeze at noon. Bug fixes only after that.
+- Dec 2: record the demo video, under 3:00, beats from `steering/product.md`.
+- Dec 2: finish the Kiro write-up, `docs/ATTRIBUTION.md`, README disclosure.
+- Dec 3: submit on Devpost. Dec 4 is buffer only.
+
+## Critical path
+
+```
+spec drift -> scaffold -> spikes A,C -> SpendGuard -> routes -> WorldJob -> Gallery worlds (Nov 21)
+                                                        \-> viewer -> engine + chat -> deploy -> credits (Dec 1)
+```
+
+The Gallery date (Nov 21) and the credits date (Dec 1) are the only ones the contest sets. Everything else can slip a day.
+
+## Definition of done per task
+- Tests green. A task with failing tests is not done.
+- Property tests carry the `**Property N**` and `**Validates:**` lines the traceability tool reads.
+- Every paid call goes through `api/src/guarded/` with a `SpendTicket`.
+- Conventional commit with the task id, for example `feat(pipeline): 4.1 spend guard reserve`.
+
+## Evidence for the write-up (collect as you go, into `docs/evidence/`)
+- Traceability hook firing on a spec edit without a task
+- One property test that failed, the shrunk counter-example, and the fix
+- Spend-guard audit hook catching an unguarded call
+- The token-planting leakage test (party Property 8)
+- Spike docs, including the ones that failed
+- Photos of the pyramid and printed relics, if built
+
+## Risks and mitigations
+| Risk | Mitigation |
+|---|---|
+| FLUX.2 sketch quality is poor | Photo upload is the main path. Sketch is a bonus. Decide at Spike A |
+| World Labs output differs from assumptions | Spike C, adapter layer, recorded fixtures |
+| Credits or spend run out | Gallery, caps, kill switch, request by Nov 28 |
+| Party mode eats the schedule | Cut line, and the Nov 27 gate |
+| Splats too slow on phones | LOD, adaptive quality, pano fallback |
+| TTS too slow or odd | Text is always shown. Audio is optional |
+| Write-up left to the end | Evidence folder from day one, sections 1 to 4 by Dec 1 |
+| Personal photos from players | Deleted right after generation, never shown, counters only in logs |
+
+## Open decisions
+1. Gemini TTS or Inworld TTS (Spike B decides)
+2. Whether `flux-2-dev` or `flux-2-max` is the default (Spike A decides)
+3. Domain name and trademark check for "Hauntwalk"
+4. Eligibility: Luxembourg residency confirmed by you. A written Devpost answer would still be safer

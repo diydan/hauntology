@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Typecheck when agent stops",
+      "description": "Run the workspace typecheck after each agent turn so type errors surface immediately.",
+      "trigger": "Stop",
+      "action": {
+        "type": "command",
+        "command": "pnpm -r --if-present typecheck"
+      },
+      "timeout": 120,
+      "enabled": true
+    }
+  ]
+}
