@@ -6,7 +6,12 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./errors": "./src/errors.ts"
+    "./errors": "./src/errors.ts",
+    "./app/*": "./src/app/*.ts",
+    "./sketch": "./src/sketch.ts",
+    "./session-cookie": "./src/session-cookie.ts",
+    "./origin": "./src/origin.ts",
+    "./conditions/*": "./src/conditions/*.ts"
   },
   "scripts": {
     "test":     "vitest run",

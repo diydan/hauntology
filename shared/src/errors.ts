@@ -35,6 +35,20 @@ export const ErrorCode = {
   // Web shell
   shell_crash:             "shell_crash",
   session_expired:         "session_expired",
+  bad_origin:              "bad_origin",
+  // Conditions
+  conditions_disabled:     "conditions_disabled",
+  bad_place:               "bad_place",
+  bad_memory_day:          "bad_memory_day",
+  geocode_unavailable:     "geocode_unavailable",
+  // Ghost voice
+  voice_unavailable:       "voice_unavailable",
+  clip_too_long:           "clip_too_long",
+  clip_not_heard:          "clip_not_heard",
+  stitch_not_on:           "stitch_not_on",
+  stitch_no_consent:       "stitch_no_consent",
+  stitch_check_limit:      "stitch_check_limit",
+  live_unavailable:        "live_unavailable",
   // Ghost engine
   session_not_found:       "session_not_found",
   session_ended:           "session_ended",

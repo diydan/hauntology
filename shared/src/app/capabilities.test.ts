@@ -5,8 +5,8 @@ import { quotaSnapshotArb, shellFlagsArb } from "./capabilities.arb";
 import { propParams } from "./prop-config";
 import type { QuotaSnapshot, ShellFlags } from "./types";
 
-const OPEN: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false };
-const Q = (world: number, image: number): QuotaSnapshot => ({ world, image, llm: 10, tts: 10 });
+const OPEN: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false };
+const Q = (world: number, image: number): QuotaSnapshot => ({ world, image, llm: 10, tts: 10, stt: 10, live: 5 });
 
 describe("capabilities", () => {
   it("offers everything when generation is on and quota is left", () => {
@@ -14,7 +14,7 @@ describe("capabilities", () => {
   });
 
   it("names the kill switch first, then the total cap, the day cap, the image quota and the world quota", () => {
-    const all: ShellFlags = { worldGenEnabled: false, dayCapReached: true, totalCapReached: true };
+    const all: ShellFlags = { worldGenEnabled: false, dayCapReached: true, totalCapReached: true, voiceEnabled: true, liveEnabled: false };
     expect(capabilities(Q(0, 0), all).reason).toBe("kill_switch");
     expect(capabilities(Q(0, 0), { ...all, worldGenEnabled: true }).reason).toBe("total_cap");
     expect(capabilities(Q(0, 0), { ...all, worldGenEnabled: true, totalCapReached: false }).reason).toBe("day_cap");

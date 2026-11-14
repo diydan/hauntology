@@ -7,14 +7,18 @@ inclusion: always
 hauntology/
   .kiro/               specs, steering, hooks, settings/mcp.json (all committed)
   shared/src/          pure logic + zod schemas + fixtures loaders. No I/O. Property tests live here.
-    party/             Party Mode rules: rooms, deal, turns, suggestions, bots, views
+    party/             Party Mode rules: rooms, deal, turns, suggestions, bots, views, nudges, cues, light, rattle, stitch
+    conditions/        the real world: place, weather class, time of day, moon, Memory Day, stars (pure)
+    voice/             the ghost's voice: speakable lines, speaking policy, Word Bank and Stitch templates, budgets (pure)
     print/             STL writer, mesh checks, QR plates, pyramid geometry
   shared/fixtures/     recorded upstream responses (worldlabs/, ai/) used by contract tests
   api/src/
     routes/            Hono route modules (thin: parse → call service → respond)
-    guarded/           the ONLY place that calls World Labs or Workers AI (see security-and-cost.md)
+    guarded/           the ONLY place that calls World Labs, Workers AI or Cloudflare Images (see security-and-cost.md)
+      workersai/       WorkersAiClient: text and vision (Scout), guard (Llama Guard 3), images (FLUX.2), cut-out (Images)
     worldlabs/         typed client + response adapters
-    ai/                AIClient and Workers AI wrappers
+    conditions/        geocoding and weather fetch (3 s timeout, 15 minute cache), snapshot freeze
+    voice/             speech, listening and live-mode services (calls go through guarded/workersai/)
     do/                SpendGuard, WorldJob, PlaySession, PartyRoom durable objects
     ghost/             engine glue: narrate(), prompts, fallbacks
   web/src/
@@ -26,7 +30,8 @@ hauntology/
     worldlabs-mcp/     dev MCP server (spend-capped)
     build-print.mjs    generates QR plates, runs openscad if present, checks every STL
     check-traceability.mjs   spec ↔ task ↔ property consistency check
-  docs/                SUBMISSION.md (overview for readers), PLAN.md (internal), spikes/
+    check-sounds.mjs   fails the build on a sound file with no credit, over a size limit or in the wrong format
+  docs/                SUBMISSION.md (overview for readers), PLAN.md (internal), SOUNDS.md (sourcing brief), sounds/CREDITS.md, spikes/
 ```
 
 ## Rules

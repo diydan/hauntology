@@ -22,13 +22,17 @@ export type FlowState = {
 export type GuardResult = { allow: true } | { allow: false; redirect: Route };
 
 /** Remaining count per meter, as returned by `GET /api/quota` (world-pipeline 5.7). */
-export type QuotaSnapshot = { world: number; image: number; llm: number; tts: number };
+export type QuotaSnapshot = { world: number; image: number; llm: number; tts: number; stt: number; live: number };
 
 /** Server switches the shell reads from `GET /api/session`. */
 export type ShellFlags = {
   worldGenEnabled: boolean;
   dayCapReached: boolean;
   totalCapReached: boolean;
+  /** `VOICE_ENABLED`: the ghost may speak and listen. Off hides the controls; subtitles and typing remain. */
+  voiceEnabled: boolean;
+  /** `VOICE_LIVE_ENABLED`: live conversation mode exists (a stretch, off by default). */
+  liveEnabled: boolean;
 };
 
 export type CapabilityReason = "kill_switch" | "day_cap" | "total_cap" | "quota_image" | "quota_world";

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AtmosphereSchema } from "../conditions/types";
 import { VIEWER_RUNGS } from "./types";
 
 /**
@@ -29,6 +30,8 @@ export type ViewerToShell = z.infer<typeof ViewerToShellSchema>;
 /** Shell to Viewer. `hauntLevel` is 0 to 1 (world-viewer glossary). */
 export const ShellToViewerSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("set_input_mode"), mode: z.enum(["play", "chat"]) }).strict(),
+  // The frozen conditions of the place, or null to restore the normal look. Idempotent.
+  z.object({ t: z.literal("set_atmosphere"), atmosphere: AtmosphereSchema.nullable() }).strict(),
   z
     .object({
       t: z.literal("apply_view"),

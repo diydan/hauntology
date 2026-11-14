@@ -1,8 +1,8 @@
 # Implementation Plan
 
-Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `ghost-engine` 2.5 (anchor placement), 2.7 (`sanitizePose`) and 2.17 (reply validation), `world-pipeline` 4.1 (SpendGuard) and 5.2 (AIClient), and `world-viewer` 6.3 (ViewerBridge). Do the three spikes before any code that depends on their answers. Pure logic first, then the Durable Object, then the three pages, then the Print Kit.
+Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `ghost-engine` 2.5 (anchor placement), 2.7 (`sanitizePose`) and 2.17 (reply validation), `world-pipeline` 4.1 (SpendGuard) and 5.2 (WorkersAiClient), and `world-viewer` 6.3 (ViewerBridge). Do the three spikes before any code that depends on their answers. Pure logic first, then the Durable Object, then the three pages, then the Print Kit.
 
-Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eavesdrop part) first, then spoken narration (8.8), then the Display and Print Kit (see `docs/PLAN.md`). The Haunt, Residue and Poltergeists stay in the core.
+Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (2.84 to 2.89, 4.20, 8.13 whisper part, 9.20), the Rattle and Becoming extras (2.94 to 2.101, 4.21, 9.19), the Spirit lens and light bar (2.76 to 2.83, 4.19, 9.17, 9.18), Frames, House Cues and phone sound (2.67 to 2.70, 4.16, 9.14), Cues and Nudges (2.59 to 2.62, 4.14, 4.15, 8.11, 9.16), Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eavesdrop part; Nudges spend Resolve, so they go first), spoken narration (8.8), then the Display and Print Kit (see `docs/PLAN.md`). Build order for the extras, cheapest first: the sky dome (`conditions`), the Spirit lens, the light bar and tilt to look; Rattle before Stitch. The Haunt, Residue and Poltergeists stay in the core. The presets (9.15) are tiny: keep them if any of Cues, Nudges or Frames ships.
 
 - [ ] 1. Spikes (record each in `docs/spikes/party-<n>.md`)
   - [ ] 1.1 Transport and latency
@@ -14,6 +14,24 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
   - [ ] 1.3 Pyramid on hardware
     - Cut a pyramid from clear plastic using the default trapezoid, put it on a spare phone or tablet running a throwaway four-view page, and decide: tops inward or outward, mirror or not, how the footprint calibration should work, minimum usable brightness. Photograph the result for the write-up.
     - _Requirements: 7.3, 8.3_
+  - [ ] 1.4 Core feel
+    - Play the base rules (Residue and Inspect, the Haunt's speed, Poltergeists, thin hands at six Players) with Bots and two or three people in one room, or on paper. Record in `docs/spikes/party-1.4.md` and tune the design numbers (Haunt maximum, thresholds, Resolve cap, Inspect time).
+    - _Requirements: 4.6, 11.1, 11.2, 11.3_
+  - [ ] 1.5 Balance
+    - Run the seeded balance simulation (every Player Nudging whenever the rules allow) for two to six Players on a 60 s clock, then play three real games with Classic and one with Gentle. Record the share of Turns that are Spooked, the average seconds removed, the Turn timeout rate, how fast the Haunt rises, Eavesdrop use and how many Cues each Player plays. Check the amendment's worst-case model (about half of all Turns Spooked under the old limits and 23% under the new ones at four Players) and my own (40% at two Players, 27% at three and 20% at four with one Spook per Round alone, about 20% everywhere with the extra four-Turn rule). Check also whether Poltergeists Helping and Spooking feels fun or like piling on. Tune the Spook cost, the floor and the table limits in `docs/spikes/party-1.5.md`.
+    - _Requirements: 11.1, 12.2, 12.3, 12.4_
+  - [ ] 1.6 Phone sound
+    - On a real iPhone (Safari) and a real Android phone (Chrome): whether one tap at join unlocks audio for the rest of the game, the iOS silent switch, whether a sound plays with the screen dimmed or the tab in the background, loudness across a table, the delay and spread of a sound sent to six phones at once, how well Restless at 400 ms steps survives clock drift (against the server clock), and what the flash and vibrate fallback feels like.
+    - _Requirements: 14.1, 14.3_
+  - [ ] 1.7 Lens, light and clock offset
+    - On real phones: gyro drift for the Spirit lens, motion permission, battery cost, wake lock support, the light bar (greys, fades, peak, at most two changes a second) on an OLED and an LCD phone, the clock offset between phones and whether 500 ms and 150 ms are right. A stretch experiment, not in the spec: lining the lens up with the TV picture using the camera and markers on screen.
+    - _Requirements: 16.1, 16.4, 17.3, 17.4_
+  - [ ] 1.8 Shake
+    - How often a bump on a table looks like a shake, the strength threshold and the three-swings-in-1.5-seconds rule, the iOS motion permission flow, and the hold-to-rattle button without sensors.
+    - _Requirements: 19.1, 19.3_
+  - [ ] 1.9 Sound files on real phones
+    - Once the seven files exist: loudness and bass through a phone speaker (rumble energy from 150 to 800 Hz), the Becoming's drama at a safe volume, the size limits, and the game with every file removed.
+    - _Requirements: 20.1, 20.2_
 
 - [ ] 2. Pure logic (`shared/src/party/`)
   - [ ] 2.1 `generateRoomCode` and `normalizeCode`
@@ -53,13 +71,13 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
   - [ ]* 2.15 Write property test for the deal
     - **Property 7: The deal is a valid partition**
     - **Validates: Requirements 4.1**
-  - [ ] 2.16 `publicView`, `privateView` (with found Residue and Resolve) and redacted public events
+  - [ ] 2.16 `publicView`, `privateView` (with found Residue, Resolve and the seat's own sound consent) and redacted public events (a House Cue and a Frame produce the same `phone-cue` event)
     - _Requirements: 4.2_
   - [ ] 2.17 `buildPartyPrompt` taking only a Public View
     - _Requirements: 4.3_
-  - [ ]* 2.18 Write property test for leakage, with the token-planting fuzz game (Hands, Residue and Solution)
+  - [ ]* 2.18 Write property test for leakage, with the token-planting fuzz game (Hands, Residue, Solution, the source of every Frame, House Cue and Rattle, and the content of every Stitch clip)
     - **Property 8: Views never leak secrets**
-    - **Validates: Requirements 4.2, 4.3**
+    - **Validates: Requirements 4.2, 4.3, 14.5, 19.5**
   - [ ] 2.19 Extract `placePoints` from `ghost/anchors.ts` (no behaviour change, ghost-engine Property 1 stays green), then `placeZones`, `validateZones`, `ringZones` and the `world_too_small` rule
     - _Requirements: 4.5_
   - [ ]* 2.20 Write property test for zones
@@ -100,7 +118,7 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
   - [ ]* 2.34 Write property test for relic tokens
     - **Property 16: Relic tokens parse strictly**
     - **Validates: Requirements 6.4**
-  - [ ] 2.35 `endingPayload` and `playAgain` (resets the Haunt, Residue, Resolve and Poltergeists)
+  - [ ] 2.35 `endingPayload` (with the Frame and House Cue reveal) and `playAgain` (resets the Haunt, Residue, Resolve, Poltergeists, Cue counters, Round limits and Cue sources)
     - _Requirements: 6.6_
   - [ ]* 2.36 Write property test for endings and replays
     - **Property 17: Endings and replays preserve what they should**
@@ -140,7 +158,7 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
   - [ ]* 2.50 Write property test for Residue and Inspect
     - **Property 28: Residue is hidden, and inspection is private and once only**
     - **Validates: Requirements 4.6**
-  - [ ] 2.51 `hauntRise`, `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot, Blackout, Restless, Lull; 15 s choice window)
+  - [ ] 2.51 `hauntRise` (a timeout after a Spook raises nothing), `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot, Blackout, Restless, Lull; 15 s choice window)
     - _Requirements: 11.1, 11.2_
   - [ ]* 2.52 Write property test for the Haunt
     - **Property 26: The Haunt rises by the rules and events fire once**
@@ -150,16 +168,133 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
   - [ ]* 2.54 Write property test for Poltergeists
     - **Property 27: Poltergeists keep their Hand and never take a Turn**
     - **Validates: Requirements 11.3**
-  - [ ] 2.55 `gainResolve`, `canEavesdrop` and `eavesdrop` (category only, 10 s window, never for the Player's own Suggestion)
-    - _Requirements: 11.4, 11.5_
+  - [ ] 2.55 `gainResolve` (every Player, Poltergeists included), `canEavesdrop` and `eavesdrop` (category only, 10 s window, never for a Poltergeist or for the Player's own Suggestion); Resolve is shared with Nudges
+    - _Requirements: 11.4, 11.5, 12.2_
   - [ ]* 2.56 Write property test for Resolve and Eavesdrop
     - **Property 29: Resolve is bounded and Eavesdrop reveals only a category**
-    - **Validates: Requirements 11.4, 11.5**
+    - **Validates: Requirements 11.4, 11.5, 12.2**
   - [ ] 2.57 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
     - _Requirements: 3.6, 3.7, 3.8_
   - [ ]* 2.58 Write property test for Photo Prompts
     - **Property 30: Photo Prompt offers are deterministic, complete and bounded**
     - **Validates: Requirements 3.6, 3.7, 3.8**
+  - [ ] 2.59 `nudgeCost`, `canNudge` (with every named reason) and `nudge`: Help +10 s up to 120 s, Spook -10 s with 20 s left, a 30 s floor, one of each per Turn, one Spook per Round, never the same Player on consecutive Turns, none from the active Player or a Bot (a Poltergeist may Help and Spook), and no Spook within three Turns of the last
+    - _Requirements: 12.2, 12.3, 12.4_
+  - [ ]* 2.60 Write property test for Nudges
+    - **Property 31: Nudges obey cost, floor and limits**
+    - **Validates: Requirements 12.2, 12.3, 12.4**
+  - [ ] 2.61 `CUES` (four: creak, whisper, bell, laugh), `canCue` and `playCue`: one per Player per 4 s, three playing, six per Turn, text-only when sounds are off, no rule effect
+    - _Requirements: 12.1_
+  - [ ]* 2.62 Write property test for Cues
+    - **Property 32: Cues are rate limited and change no rule**
+    - **Validates: Requirements 12.1, 14.1, 14.2**
+  - [ ] 2.63 `applyPreset` (Classic, Gentle), the Nudge, Frame and sound switches, and `canControl` extended so that only the Master's token can change them; no Cue, Nudge or Frame calls a model (their lines come from `partyScripted`)
+    - _Requirements: 12.5, 14.6_
+  - [ ]* 2.64 Write property test for presets and switches
+    - **Property 33: Presets and switches do what they say**
+    - **Validates: Requirements 12.5, 14.6**
+  - [ ] 2.65 Seat-owned limits: Resolve, per-Turn Nudges, Cue timing, sounds this Round, Frames sent and received and Sound Consent live on the seat and are unchanged by reconnect, hand-over and serialise-then-parse
+    - _Requirements: 12.1, 12.4, 14.4_
+  - [ ]* 2.66 Write property test for seat-owned limits
+    - **Property 34: Per-seat limits survive a reconnect**
+    - **Validates: Requirements 12.1, 12.4, 14.4**
+  - [ ] 2.67 `setConsent`, `soundPlan` (play, flash or none; three sounds per phone per Round), `houseCuePhones` (seeded stream `housecue`) and `restlessSchedule` (400 ms steps)
+    - _Requirements: 13.1, 14.1, 14.2, 14.3_
+  - [ ]* 2.68 Write property test for phone sound
+    - **Property 35: Phone sound needs consent and always has a fallback**
+    - **Validates: Requirements 13.1, 14.1, 14.2**
+  - [ ] 2.69 `canFrame`, `frame` and `phoneCueEvent` (one public event for a House Cue and a Frame, a private `notYou`), the secret `cueSources`, and the ending reveal
+    - _Requirements: 14.3, 14.4, 14.5_
+  - [ ]* 2.70 Write property test for House Cues and Frames
+    - **Property 36: A House Cue and a Frame look the same until the end**
+    - **Validates: Requirements 14.3, 14.4, 14.5**
+  - [ ] 2.71 Reconcile `shared/src/errors.ts` and `shared/src/app/errors-copy.ts` with every party code in the design (the codes missing today, and `nudge_denied`, `cue_denied` and `frame_denied` with their reasons such as `spook_round_limit`); the copy table is a `Record<ErrorCode, …>`, so the compiler lists what is missing
+    - _Requirements: 12.3, 14.4_
+  - [ ] 2.72 `hourStrike` and the midnight strike (the hour on a 12-hour dial, twelve at midnight, one server time for every target, the Master's off switch)
+    - _Requirements: 15.1, 15.2, 15.3_
+  - [ ]* 2.73 Write property test for the hour strike
+    - **Property 37: The hour strike is exact, shared and rule-free**
+    - **Validates: Requirements 15.1, 15.2, 15.3**
+  - [ ] 2.74 `roomConditions` (cosmetic Public View fields only), the frozen snapshot on `PartyState`, and no rule function taking it as an input
+    - _Requirements: 15.4_
+  - [ ]* 2.75 Write property test that the real world changes no rule
+    - **Property 38: The real world never changes a rule**
+    - **Validates: Requirements 15.4**
+  - [ ] 2.76 `lensData` from the Player's own Private View and the Public View only
+    - _Requirements: 16.2_
+  - [ ]* 2.77 Write property test for the lens data
+    - **Property 39: The Spirit lens draws only from what the phone may already see**
+    - **Validates: Requirements 16.2**
+  - [ ] 2.78 `lensPlan` (at most 30 fps, paused face down or hidden, a fixed view without sensors, re-calibration, no camera)
+    - _Requirements: 16.1, 16.3, 16.4_
+  - [ ]* 2.79 Write property test for the lens limits
+    - **Property 40: The Spirit lens obeys its limits**
+    - **Validates: Requirements 16.1, 16.3, 16.4**
+  - [ ] 2.80 `lightCue` (wave, heartbeat, failing bulb, creeping dark, glow; greys only, fades, at most two changes a second, a peak below full white, at most 6 s, none under reduced motion or without consent, seat order)
+    - _Requirements: 17.1, 17.2, 17.3_
+  - [ ]* 2.81 Write property test for light cues
+    - **Property 41: Light cues stay inside the limits**
+    - **Validates: Requirements 17.1, 17.2, 17.3**
+  - [ ] 2.82 `lightSync` and the clock offset estimate (median of `ping` and `pong`, the error, a start at least 500 ms ahead, phones over 150 ms dropped)
+    - _Requirements: 17.4_
+  - [ ]* 2.83 Write property test for cue timing
+    - **Property 42: Cue starts are ahead of now and late phones are dropped**
+    - **Validates: Requirements 17.4**
+  - [ ] 2.84 Stitch room rules: `stitchEnabled`, `recordConsent` (a Player's own yes, the tick kept as a yes or no, the Master cannot say yes for anyone, leaving deletes at once)
+    - _Requirements: 18.1, 18.2_
+  - [ ]* 2.85 Write property test for Stitch consent
+    - **Property 43: Stitch is off, then each Player's own yes**
+    - **Validates: Requirements 18.1, 18.2**
+  - [ ] 2.86 `stitchSchedule` (only at a Haunt Event or midnight, one a Round, two a game, never in the first 60 s or during an Accusation, never the same Player twice running)
+    - _Requirements: 18.4_
+  - [ ]* 2.87 Write property test for Stitch scheduling
+    - **Property 44: Stitched lines are rare and never at the wrong moment**
+    - **Validates: Requirements 18.4**
+  - [ ] 2.88 `stitchLifecycle` (clips only in the Room, never blocking the lobby or the start, deleted at the end or after 6 hours, the reveal)
+    - _Requirements: 18.3, 18.5_
+  - [ ]* 2.89 Write property test for Stitch clips
+    - **Property 45: Stitch clips stay in the room and are revealed at the end**
+    - **Validates: Requirements 18.3, 18.5**
+  - [ ] 2.90 `shakeDetect` (three swings above the strength within 1.5 s, single bumps ignored) and the Rattle opt-in rules (a Poltergeist with Rattle on, hold-to-rattle without sensors)
+    - _Requirements: 19.1, 19.3_
+  - [ ]* 2.91 Write property test for shake detection
+    - **Property 46: A deliberate shake is three swings in 1.5 seconds**
+    - **Validates: Requirements 19.1, 19.3**
+  - [ ] 2.92 `canRattle` sharing the Cue limits (4 s, six per Turn, three sounds per phone per Round)
+    - _Requirements: 19.2_
+  - [ ]* 2.93 Write property test for the shared limits
+    - **Property 47: Rattle shares every Cue limit**
+    - **Validates: Requirements 19.2**
+  - [ ] 2.94 `rattleIntensity` (levels 1 to 3 from the count this Turn, at most 80% volume, light only for a phone with no sounds left, reset each Turn)
+    - _Requirements: 19.4_
+  - [ ]* 2.95 Write property test for Rattle intensity
+    - **Property 48: Rattle intensity follows the count and resets each Turn**
+    - **Validates: Requirements 19.4**
+  - [ ] 2.96 Anonymous Rattle events (three log lines), the senders only in the ending payload, no rule touched
+    - _Requirements: 19.5_
+  - [ ]* 2.97 Write property test for Rattle anonymity
+    - **Property 49: Rattles are anonymous until the ending**
+    - **Validates: Requirements 19.5**
+  - [ ] 2.98 `becoming` (once per Player, at most 4 s, not counted toward the three sounds, then Rattle is offered)
+    - _Requirements: 19.6_
+  - [ ]* 2.99 Write property test for the Becoming
+    - **Property 50: The Becoming plays once per Player**
+    - **Validates: Requirements 19.6**
+  - [ ] 2.100 `rattlePrompts` (the first prompt and the stronger prompt, each at most once per Turn, private, no sender)
+    - _Requirements: 19.7_
+  - [ ]* 2.101 Write property test for Rattle prompts
+    - **Property 51: Rattle prompts appear at most once per Turn each**
+    - **Validates: Requirements 19.7**
+  - [ ] 2.102 `SOUND_FILES` and `tools/check-sounds.mjs` (mono `.m4a`, 50 KB each, 350 KB in all, 3 s and 4 s, every file credited in `docs/sounds/CREDITS.md`; passes when there are no files)
+    - _Requirements: 20.1, 20.3_
+  - [ ]* 2.103 Write property test for the sound file check
+    - **Property 52: Sound files are checked**
+    - **Validates: Requirements 20.1, 20.3**
+  - [ ] 2.104 `soundAvailability` and the flash and vibrate fallback when a file is missing
+    - _Requirements: 20.2_
+  - [ ]* 2.105 Write property test for absent sound files
+    - **Property 53: Absent sound files change nothing**
+    - **Validates: Requirements 20.2**
 
 - [ ] 3. Print module (`shared/src/print/`)
   - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
@@ -198,21 +333,37 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
     - _Requirements: 9.1, 9.2_
   - [ ] 4.10 PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
     - _Requirements: 10.6_
-  - [ ] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings, hand-over, 60 s Master timeout, host token limited to `end`
-    - _Requirements: 1.7, 1.5_
+  - [ ] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings (including the Classic and Gentle presets and the Nudge, Frame and sound switches), hand-over, 60 s Master timeout, host token limited to `end`
+    - _Requirements: 1.7, 1.5, 12.5, 14.6_
   - [ ] 4.12 Residue, Inspect and Haunt handlers: place the Residue, run the 10 s Inspect timer, private results, Haunt Event choice with the 15 s default, Cold Spot and Blackout effects, Poltergeist transition
     - _Requirements: 4.6, 11.1, 11.2, 11.3_
   - [ ] 4.13 Resolve and Eavesdrop handlers: gain at Round end, the 10 s window after a resolved Suggestion, private `heard` message, speech relay from the Master to the Host
     - _Requirements: 11.4, 11.5, 7.6_
+  - [ ] 4.14 Cue handler: `cue` messages through `canCue` and `playCue`, delivery to the Host or the sender's phone with `playAtMs`, public log line (scripted text), pruning of `playing`
+    - _Requirements: 12.1, 14.2_
+  - [ ] 4.15 Nudge handlers: `nudge` messages through `canNudge` and `nudge`, `clock` sent to every screen at once, `nextWake` and the single alarm recomputed after every Nudge, no Haunt rise for a timeout after a Spook, refusals as `nudge_denied` with a reason
+    - _Requirements: 12.2, 12.3, 12.4, 11.1, 13.1_
+  - [ ] 4.16 Sound consent, House Cues at every Haunt Event (Restless on every consenting phone), Frames, the private `notYou`, the secret `cueSources` kept out of every view and prompt, and the reveal in the ending payload
+    - _Requirements: 14.1, 14.3, 14.4, 14.5_
+  - [ ] 4.17 Hour strike and midnight: `nextWake` includes the next hour boundary, `strike` to the Host and the consenting phones at one server time, the scripted midnight line (through the ghost voice when it is on)
+    - _Requirements: 15.1, 15.2, 15.3_
+  - [ ] 4.18 Conditions at start: call the `conditions` service once, freeze the snapshot, send `setAtmosphere` to the Host, put only the cosmetic fields in the Public View, fall back to the default on any failure
+    - _Requirements: 15.4_
+  - [ ] 4.19 Clock offset (`ping` and `pong`) and light cues for Haunt Events, the hour strike and House Cues, started at a common server time with late phones dropped
+    - _Requirements: 17.1, 17.2, 17.3, 17.4_
+  - [ ] 4.20 Stitch in the room: the Master switch, the join question and tick, the `stitchClip` and `stitchResult` messages (no route), storage in the Room only, `stitchSchedule` at Haunt Events and midnight, deletion at leave, end or 6 hours, the reveal in the ending payload
+    - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5_
+  - [ ] 4.21 Rattle, the Becoming and prompts: handlers through `canRattle`, intensity by count, the three anonymous log lines, the secret senders, `becoming` once per Player, prompts
+    - _Requirements: 19.1, 19.2, 19.4, 19.5, 19.6, 19.7_
 
 - [ ] 5. Contribution services
-  - [ ] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded AIClient text wrapper, fail closed, store privately for the Room
+  - [ ] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded WorkersAiClient (Llama 4 Scout), fail closed, store privately for the Room
     - _Requirements: 3.2_
   - [ ] 5.1a Vision verdict returns `{safe, personVisible}`; `personVisible` rejects with `photo_rejected:person_visible`; `POST /api/party/:code/prompt/skip` with up to three skips per Player
     - _Requirements: 3.8, 3.9_
   - [ ] 5.2 Suspect flow reusing the Ghost Creator, charged to the Room budget, Preset fallback on any failure
     - _Requirements: 3.3_
-  - [ ] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement
+  - [ ] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement, and a Llama Guard 3 check through the guarded WorkersAiClient (`llm` meter, charged to the Room budget), failing closed with `moderation_unavailable`
     - _Requirements: 3.1, 10.3_
   - [ ] 5.4 Room budget wiring: Room-scoped caps through SpendGuard on top of global caps
     - _Requirements: 10.1_
@@ -224,7 +375,7 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
     - _Requirements: 4.3, 10.3_
 
 - [ ] 7. Routes
-  - `POST /api/party/rooms` (no body, no world), `POST /api/party/:code/join`, `GET /api/party/:code/ws`, contribution routes, `DELETE /api/party/:code` (Master or host token); origin and cookie checks for host routes; reason codes; counters only in logs.
+  - `POST /api/party/rooms` (no body, no world), `POST /api/party/:code/join`, `GET /api/party/:code/ws`, contribution routes, `DELETE /api/party/:code` (Master or host token); origin and cookie checks for host routes; reason codes; counters only in logs. The `cue`, `nudge`, `frame` and `sound` socket messages are validated like every other message.
   - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.7, 10.5, 10.6, 10.7_
 
 - [ ] 8. Web: Host (`web/src/party/host/`), display-only
@@ -242,12 +393,18 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
     - _Requirements: 9.1, 9.3_
   - [ ] 8.7 Regression: the single-player game is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
     - _Requirements: 9.4_
-  - [ ] 8.8 Spoken narration: `speechSynthesis` reading each narration line, off by default, text always shown, mute, replay and skip from the Master
+  - [ ] 8.8 Spoken narration through the ghost voice (`ghost-voice`, at most 20 lines per Room), with `speechSynthesis` and then the subtitle as fallbacks; off by default, one tap on the Host to unlock audio, text always shown, mute, replay and skip from the Master
     - _Requirements: 7.6_
   - [ ] 8.9 Haunt visuals: Haunt level meter, Cold Spot marker on its Zone, Blackout dimming within the photosensitivity limits, Restless ghost Sprite move
     - _Requirements: 7.1, 7.4, 11.2_
   - [ ] 8.10 Inspect visuals: a public marker on the Zone being inspected, never what was found
     - _Requirements: 4.6, 7.1_
+  - [ ] 8.11 Cues, Nudges and phone sound on the Host: every Cue, Nudge, Frame and House Cue as a text line in the public log and in a polite live region, a Cue on the TV that lasts at most 3 s with its caption, the new clock deadline within a second of a Nudge, and the Frame and House Cue reveal on the ending screen
+    - _Requirements: 13.1, 14.5_
+  - [ ] 8.12 Atmosphere on the Host from the frozen snapshot through `setAtmosphere` (the sky dome first), the hour strike with twelve Bell strikes at midnight
+    - _Requirements: 15.1, 15.2, 15.4_
+  - [ ] 8.13 Rattle and the Becoming on the Host (the three levels, at most 80% volume, the sting), and the Stitch whisper with its subtitle and the log line "a voice whispered"
+    - _Requirements: 18.4, 19.4, 19.6_
 
 - [ ] 9. Web: Controller (`web/src/party/controller/`), installable web app
   - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
@@ -276,6 +433,22 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
     - _Requirements: 11.2, 11.3_
   - [ ] 9.13 Installable web app: manifest, service worker with an offline shell that explains how to rejoin, screen wake lock while a game is running
     - _Requirements: 7.7_
+  - [ ] 9.14 Phone sound: the one-time consent question with a tap that unlocks Web Audio, changeable from the menu; the four Cue sound files (at most 3 s each, absent files mean flash, vibration and the log line); playback at the scheduled start on the server clock; the flash (at most three per second, none under reduced motion) and vibration fallback; the private "that was not you" message
+    - _Requirements: 14.1, 14.3, 14.4_
+  - [ ] 9.15 Master presets: Classic and Gentle in the Master menu, with separate switches for Nudges (all or help-only), Frames and sounds; non-Masters never see them
+    - _Requirements: 12.5, 14.6_
+  - [ ] 9.16 Cue, Nudge and Frame controls in the menu: the Cue picker with TV or this phone, Help and Spook with their Resolve cost, the Frame picker (a Player and a Cue), 48 px targets, and the reason in words whenever one is unavailable
+    - _Requirements: 13.1, 14.2, 14.4_
+  - [ ] 9.17 Spirit lens: off by default, a calibration tap, motion permission from a tap, a fixed view without sensors, simple sprites at 30 fps at most, paused face down or hidden, a re-tap to calibrate again
+    - _Requirements: 16.1, 16.2, 16.3, 16.4_
+  - [ ] 9.18 Light bar on the phone: the consent in the join question, light cues played at their scheduled start within the limits, nothing under reduced motion
+    - _Requirements: 17.1, 17.3_
+  - [ ] 9.19 Rattle: the opt-in with the motion permission, shake detection and the hold-to-rattle button, the prompts, the Becoming sting, and Rattle offered afterwards
+    - _Requirements: 19.1, 19.3, 19.6, 19.7_
+  - [ ] 9.20 Stitch on the phone: the join question with the tick and the plain words, recording the Word Bank with the word check, leaving deletes the clips
+    - _Requirements: 18.2, 18.3_
+  - [ ] 9.21 Master switches: the conditions choice (place, table's location or off), the hour strike, the light bar, Rattle and Stitch, alongside the presets of 9.15
+    - _Requirements: 15.3, 15.4, 17.1, 18.1, 19.3_
 
 - [ ] 10. Web: Display (`web/src/party/display/`)
   - [ ] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected
@@ -299,5 +472,11 @@ Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eave
   - Author six Zones for each Gallery World and review the party scripted lines for the six Preset Ghosts.
   - _Requirements: 4.5, 9.4_
 
-- [ ] 13. Checkpoint
-  - Run tests, typecheck, `node tools/check-traceability.mjs` and `node tools/build-print.mjs --check`. Play one full party game with three Bots and one embedded-pad player in scripted mode, one with real phones and the model, and one with a Display and printed relics. Record a short clip of each for the write-up. Playtest the design numbers (Haunt maximum, thresholds, Resolve cap, Inspect time, choice window, Master timeout) and note changes. Ask the user if questions arise.
+- [ ] 13. Sound files
+  - [ ] 13.1 `docs/SOUNDS.md` (the sourcing brief for the seven clips, search words, the convert command) and `docs/sounds/CREDITS.md` (one line per file)
+    - _Requirements: 20.1, 20.3_
+  - [ ] 13.2 The owner sources the seven files (mono `.m4a`, levelled to about -16 LUFS, licence allowing a public web app and the submission video) and drops them in; `tools/check-sounds.mjs` passes
+    - _Requirements: 20.1, 20.2, 20.3_
+
+- [ ] 14. Checkpoint
+  - Run tests, typecheck, `node tools/check-traceability.mjs` and `node tools/build-print.mjs --check`. Play one full party game with three Bots and one embedded-pad player in scripted mode, one with real phones and the model, and one with a Display and printed relics. Record a short clip of each for the write-up. Playtest the design numbers (Haunt maximum, thresholds, Resolve cap, Inspect time, choice window, Master timeout, Spook cost and limits, Cue limits, Restless spacing), compare Classic with Gentle using the numbers from Spike 1.5, and note changes. Ask the user if questions arise.

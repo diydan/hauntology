@@ -27,7 +27,7 @@ sequenceDiagram
   S->>S: step(state, action, ctx) -> directive
   S->>G: reserve(llm)
   alt granted and under cap
-    S->>B: AIClient text call(persona, rules, revealed memories, directive)
+    S->>B: WorkersAiClient text call, Llama 4 Scout (persona, rules, revealed memories, directive)
     B-->>S: text
     S->>S: validate (retry once) else scripted
   else denied or capped
@@ -48,7 +48,7 @@ sequenceDiagram
 | `POST /api/play/:id/reset` | "Haunt again" | 8.3 |
 
 ### `shared/src/ghost/`
-`parse.ts` (`parseAction`), `rate.ts` (`acceptTurn`), `anchors.ts` (`placeAnchors`, `validateAnchors`, `ringAnchors`), `engine.ts` (`step`), `pose.ts` (`sanitizePose`), `hints.ts` (`relativeBearing`, `distanceBand`, `autoHintDue`), `prompt.ts` (`buildNarrationPrompt`, `clientView`), `validate.ts` (`validateGhostReply`, banned phrases), `scripted.ts` (`pickLine`), `budget.ts` (`narrationMode`), `session.ts` (serialise/parse, expiry), `telemetry.ts` (`event` whitelist).
+`parse.ts` (`parseAction`), `rate.ts` (`acceptTurn`), `anchors.ts` (`placeAnchors`, `validateAnchors`, `ringAnchors`), `engine.ts` (`step`), `pose.ts` (`sanitizePose`), `hints.ts` (`relativeBearing`, `distanceBand`, `autoHintDue`), `prompt.ts` (`buildNarrationPrompt` with an optional `sky?: PromptFields` (weather class, time bucket and moon name) from the `conditions` spec, `clientView` carrying `atmosphere`), `validate.ts` (`validateGhostReply`, banned phrases), `scripted.ts` (`pickLine`), `budget.ts` (`narrationMode`), `session.ts` (serialise/parse, expiry), `telemetry.ts` (`event` whitelist).
 
 ```ts
 type Vec3 = [number, number, number];
@@ -76,7 +76,7 @@ type GameState = Progress & { memories: Memory[]; history: { role: 'visitor' | '
 `relativeBearing(player, yaw, target)`: forward = (−sin yaw, 0, −cos yaw); signed angle to the target in the XZ plane, eight 45° sectors centred on ahead, ahead-right, right, behind-right, behind, behind-left, left, ahead-left. `distanceBand(d)`: ≤ 6 m "very close", ≤ 15 m "nearer", else "far". `autoHintDue(state, now)`: `idleTurns ≥ 8` or `now − lastProgressAt ≥ 90 s`.
 
 ### Narration
-`buildNarrationPrompt(persona, brief, revealed, directive, visitorText, history)` returns system and messages. The system text = persona + fixed rules from `steering/ghost-safety.md` + revealed memories + directive. Visitor text goes in `<player>…</player>`. Params: temperature 0.8, max tokens 220, timeout 6 s, one retry. `validateGhostReply` rejects empty, > 600 chars, URLs, markup/control characters, banned phrases. `pickLine(kind, persona, rng)` picks from ≥ 5 variants per kind and voice.
+`buildNarrationPrompt(persona, brief, revealed, directive, visitorText, history, sky?)` returns system and messages; `sky` is the `conditions` spec's `PromptFields` (weather class, time bucket, moon name) and is absent for a default snapshot, so a game with conditions off prompts exactly as before. `engine.ts` never imports `shared/src/conditions/`: the real world changes words, never a state. The system text = persona + fixed rules from `steering/ghost-safety.md` + revealed memories + directive. Visitor text goes in `<player>…</player>`. Params: temperature 0.8, max tokens 220, timeout 6 s, one retry. `validateGhostReply` rejects empty, > 600 chars, URLs, markup/control characters, banned phrases. `pickLine(kind, persona, rng)` picks from ≥ 5 variants per kind and voice.
 
 ### Budget
 `narrationMode({ llmTurns, sessionCap, ticketGranted, kill }) → 'model' | 'scripted'`. A model call happens only when mode is `model`.

@@ -12,10 +12,14 @@ export const quotaSnapshotArb: fc.Arbitrary<QuotaSnapshot> = fc.record({
   image: remaining,
   llm: remaining,
   tts: remaining,
+  stt: remaining,
+  live: remaining,
 });
 
 export const shellFlagsArb: fc.Arbitrary<ShellFlags> = fc.record({
   worldGenEnabled: fc.boolean(),
   dayCapReached: fc.boolean(),
   totalCapReached: fc.boolean(),
+  voiceEnabled: fc.boolean(),
+  liveEnabled: fc.boolean(),
 });

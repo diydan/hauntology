@@ -16,7 +16,7 @@ The spec directory is named `haunwallker` because it was created under that name
 - **Sketch Pad**: the drawing surface on the Create screen.
 - **Confirm Gate**: the Confirm screen. It shows the exact Place Image and remaining quota, and is the only place that can start a world creation.
 - **Confirm Token**: the short-lived token issued by the API when the visitor confirms (see `world-pipeline`).
-- **Quota Snapshot**: the remaining per-session and per-day allowance returned by the API for worlds, images, LLM calls and TTS calls.
+- **Quota Snapshot**: the remaining per-session and per-day allowance returned by the API for worlds, images, LLM calls, spoken lines, heard clips and live-mode minutes.
 - **Zero-Quota Path**: the route through Gallery world + Preset Ghost + scripted ghost lines that needs no paid call and no LLM.
 - **Stage**: a labelled step of world creation: queued, dreaming, stitching, ready, failed.
 - **Play Screen**: the Screen that hosts the Viewer and the Chat together.
@@ -171,3 +171,14 @@ The spec directory is named `haunwallker` because it was created under that name
 3. WHERE `?demo=1` is set on a non-production build THEN the Shell SHALL use a fake API that returns fixture Stages on a short timer, so the demo beats (sketch, confirm gate, generation montage, walk, memories, ending) can be recorded without spending.
 4. THE Shell SHALL expose the Quota Snapshot, the current Stage and the Viewer frame rate in a debug overlay when `?debug=1` is set.
 5. EACH Screen SHALL have at least one component test that covers its main path and one that covers its main failure path.
+
+### Requirement 12
+
+**User Story:** As a visitor, I want to set the sky of my place and to hear and talk to its ghost, so that the place feels real and the ghost feels present, and I want to be able to ignore all of it.
+
+#### Acceptance Criteria
+
+1. WHEN the Haunt screen is open THEN the Shell SHALL offer an optional "Set the sky" card with a city search (up to five matches), a "Use my location" action that asks the browser only after an explicit tap, and a Memory Day (a date from 1940 to yesterday and a time of day), SHALL apply the default sky when the visitor does nothing, SHALL show the chosen place only as a label, and SHALL NOT make "Walk in" wait for it.
+2. WHEN the visitor chooses a photo THEN the Shell SHALL read its capture date and time in the browser before the re-encode, offer it as a suggested Memory Day that the visitor can change or clear, and keep no other field of the photo's metadata, location included.
+3. WHEN the Play screen starts THEN the Shell SHALL pass the frozen conditions to the Viewer as `setAtmosphere`, and the Chat SHALL offer a speak switch (on by default in a Single player game), always show the ghost's line as a subtitle in a polite live region and, in Single player, offer a hold-to-talk button with a visible microphone indicator, and SHALL fall back to subtitles and typing without an error screen when a cap, a permission or a failure stops speech or listening.
+4. WHERE live mode is available (a stretch) THEN the Shell SHALL show a clear microphone indicator and a stop button whenever it listens, stop it after 10 seconds of silence or when the page is hidden, and fall back to hold-to-talk on any problem.

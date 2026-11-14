@@ -17,7 +17,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - `shared/src/app/types.ts` holds the shell's data types. The generators are `routes.arb.ts` (paths, routes, flow states), `capabilities.arb.ts` (quota snapshots, flags), `confirm.arb.ts` and `play.arb.ts` (events and sequences), `session.arb.ts` (session records, job states, polling timelines), `errors-copy.arb.ts` (error codes, non-codes, server messages, retry delays) and `sketch-size.arb.ts` (sizes, bitmaps with a known ink count, including exactly at the 0.5% floor). `prop-config.ts` gives `propParams(seed?, numRuns?)`: every property test passes it, so each runs seeded and at least 100 times. `arb.test.ts` checks that the generators reach the cases the properties need.
     - _Requirements: 11.1_
   - [x] 1.3 `events.ts`: the Shell-to-Viewer contract
-    - `ViewerToShell` (`pose`, `prompt`, `degraded`) and `ShellToViewer` (`set_input_mode`, `apply_view`) as zod schemas with inferred types, and a `Vec3` type. Reuse `Anchor` and `AnchorId` from `shared/src/ghost/` (ghost-engine 2.5); if that task has not landed, declare the minimal types here and move them when it does. `world-viewer` task 6.3 (`ViewerBridge`) imports this file, not the reverse.
+    - `ViewerToShell` (`pose`, `prompt`, `degraded`) and `ShellToViewer` (`set_input_mode`, `set_atmosphere`, `apply_view`) as zod schemas with inferred types, and a `Vec3` type. Reuse `Anchor` and `AnchorId` from `shared/src/ghost/` (ghost-engine 2.5); if that task has not landed, declare the minimal types here and move them when it does. `world-viewer` task 6.3 (`ViewerBridge`) imports this file, not the reverse.
     - _Requirements: 6.3_
   - [x] 1.4 `routes.ts`
     - `resolveRoute`, `pathFor`, `guardRoute` and `isWorldId` with the redirect rules in the design (a redirect never lands on a route that redirects again). The types `ScreenId`, `Route` and `FlowState` live in `types.ts` (task 1.2). Unit tests cover the table, the bad paths, and every small flow state against every route.
@@ -76,20 +76,23 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - **Property 11: The ink floor gate matches the server**
     - **Validates: Requirements 2.4**
 
-- [ ] 2. Fakes and fixtures
-  - [ ] 2.1 `shared/src/app/fake-api.ts`
-    - A fixture timeline: a Quota Snapshot, a quote, a create call, job states `queued → generating → ingesting → ready` on a short timer, a six-world Gallery list, and a three-memory play run with scripted ghost lines. Pure and clock-injected; makes no network call.
+- [x] 2. Fakes and fixtures
+  - [x] 2.1 `shared/src/app/fake-api.ts`
+    - A fixture timeline: a Quota Snapshot (six meters), a quote, a create call, job states `queued → generating → ingesting → ready` on a short timer, a six-world Gallery list, a city search, a conditions choice that becomes an atmosphere at play start, `speak` and `listen` with their meters and refusals, and a three-memory play run with scripted ghost lines. Pure and clock-injected; makes no network call.
     - _Requirements: 11.2, 11.3_
-  - [ ] 2.2 `web/src/app/FakeApi.ts` and `?demo=1`
-    - Wires the timeline behind the same `ApiClient` interface. The import sits behind an `import.meta.env.PROD` guard so it is tree-shaken from production builds.
+  - [x] 2.2 `web/src/app/FakeApi.ts` and `?demo=1`
+    - Wires the timeline behind the same `ShellApi` interface (`shared/src/app/api.ts`, defined here because `ApiClient`, task 4.1, implements it too) with a short delay per call. This task also adds the minimal `web/` package (`package.json`, `tsconfig.json`, vitest config) that the tests need; `world-pipeline` task 2 adds Vite and React to it. `demo.ts` reads `?demo=1` and the switches `fast`, `zero`, `turnstile` and `fail`. The import sits behind an `import.meta.env.PROD` guard so it is tree-shaken from production builds.
     - _Requirements: 11.2, 11.3_
 
 - [ ] 3. Session routes (`api/src/routes/session.ts`)
-  - [ ] 3.1 `GET /api/session` and `POST /api/session/ack-notice`
-    - Session record fields `lastWorldId`, `lastPlayId`, `ackNotice`. `GET` returns `{lastWorldId?, lastPlayId?, ackNotice, flags}`. Cookie and origin checks as for every state-changing route. A missing or expired cookie gets a new Session with no ids. `POST /api/worlds` sets `lastWorldId` and `POST /api/play/start` sets `lastPlayId` through two small helpers; if those routes are not built yet, add the helpers and call them when they are. Routes that need earlier state answer `session_expired`.
+  - [x] 3.1 `GET /api/session` and `POST /api/session/ack-notice`
+    - The Session record is a signed cookie (`shared/src/session-cookie.ts`) holding the session id, `lastWorldId`, `lastPlayId` and `ackNotice`. `GET` returns `{lastWorldId?, lastPlayId?, ackNotice, flags}`; `POST` sets the notice flag and answers 204. Origin check (`shared/src/origin.ts`, code `bad_origin`) runs before the Session middleware, so a refused request sets no cookie. A missing, forged, re-signed or expired cookie gets a new Session with no ids. `requireSession` answers `session_expired` for routes that need earlier state. `setLastWorld`, `setLastPlay` and `forgetWorld` are the helpers `POST /api/worlds`, `POST /api/play/start` and `DELETE /api/worlds/:id` call when they are built. This task also adds the minimal `api/` package (Hono, vitest, a `createApp` that mounts the routes); `world-pipeline` task 2 adds the Worker entry and bindings.
     - _Requirements: 4.5, 6.1, 6.8, 7.7_
-  - [ ] 3.2 Contract test for world access
-    - Run after `world-pipeline` 7.4 and 8.1 and `ghost-engine` 5. A foreign world id and a missing world id both answer `world_not_found` on `GET /api/worlds/:id`, `DELETE /api/worlds/:id` and `POST /api/play/start`; Gallery worlds stay readable by any Session. If a route fails the test, record it in `docs/IMPLEMENTATION.md` under "Security gaps" instead of editing that route here.
+  - [x] 3.2 Contract suite for world access
+    - `api/src/contract/world-access.ts` checks that a foreign world id, a request with no cookie and a missing id all answer `404 world_not_found` identically on `GET` and `DELETE /api/worlds/:id`, `POST /api/play/start` and an asset path; that the owner can read, play and delete; and that Gallery worlds are readable and playable by anyone and deletable by no visitor. It is checked against a compliant reference app and against nine deliberately leaky ones, so it can fail.
+    - _Requirements: 3.8, 7.6_
+  - [ ] 3.3 Run the contract suite against the real routes
+    - Blocked until `world-pipeline` 7.4 and 8.1 and `ghost-engine` 5 exist. Call `worldAccessContract(label, makeHarness)` with a harness for the real app. If a route fails, record it in `docs/IMPLEMENTATION.md` under "Security gaps" instead of editing that route here.
     - _Requirements: 3.8, 7.6_
 
 - [ ] 4. Shell infrastructure (`web/src/app/`)
@@ -130,6 +133,12 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 6.1 Play screen
     - Composes the Viewer, the Chat (ghost-engine 6.1) and the HUD (world-viewer 6.1) in the layout from task 4.5. Shows the content notice and calls `POST /api/session/ack-notice`; the Viewer loads by `import()` only after `playReduce` emits `start_viewer`. Runs the effects `playReduce` returns, bridges `ViewerToShell` and `ShellToViewer` messages (validated with the schemas from task 1.3), sends the last pose with each `POST /api/play/:id/turn`, and shows the found count out of three, a journal action and an always-visible Exit.
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 8.6, 10.1_
+  - [ ] 6.6 Atmosphere and voice in Play
+    - Pass the play view's `atmosphere` to the Viewer as `set_atmosphere` (the contract in `events.ts`). The Chat gets a speak switch (on by default in Single player, hidden when `flags.voiceEnabled` is false), shows each ghost line as a subtitle in the polite live region whether or not it is spoken, asks `ShellApi.speak` for the line named in `reply.voice` after a user gesture has unlocked audio, and in Single player a hold-to-talk button (up to 8 seconds, a visible microphone indicator) that sends the clip through `ShellApi.listen` and treats the transcript exactly like typed text; nothing is stored in the browser. A cap, a refused permission or a failure falls back to subtitles and typing, with no error screen.
+    - _Requirements: 12.3_
+  - [ ] 6.7 Live mode controls (stretch, last)
+    - A clear microphone indicator and a stop button whenever the page listens; stops after 10 seconds of silence or when the page is hidden; falls back to hold-to-talk on any problem.
+    - _Requirements: 12.4_
   - [ ] 6.2 Scripted and degraded notices
     - A small, quiet "scripted ghost" indicator when the turn response says scripted lines are used; a one-line notice when the Viewer falls back to a panorama or thumbnail, with the Chat still usable.
     - _Requirements: 5.4, 6.7_
@@ -145,8 +154,8 @@ Tasks marked `*` are optional test tasks that should still be done before submis
 
 - [ ] 7. Create: photo picker, Sketch Pad, candidates (satisfies `world-pipeline` 10.1 and 10.2)
   - [ ] 7.1 `PhotoPicker`
-    - Accepts JPEG, PNG and WebP up to the limit in `validateUpload`; shows the retention notice (metadata stripped, kept 24 hours at most) before the file is chosen; shows a preview; re-encodes through a canvas to drop EXIF, GPS and XMP; uploads nothing the visitor did not choose; per-reason error copy from `errorCopy`.
-    - _Requirements: 2.6, 8.3, 9.6_
+    - Accepts JPEG, PNG and WebP up to the limit in `validateUpload`; shows the retention notice (metadata stripped, kept 24 hours at most) before the file is chosen; shows a preview; reads only the capture date and time (the `conditions` spec's `readCaptureDate`) from the file in the browser and offers it as a suggested Memory Day, then re-encodes through a canvas to drop EXIF, GPS and XMP; uploads nothing the visitor did not choose; per-reason error copy from `errorCopy`.
+    - _Requirements: 2.6, 8.3, 9.6, 12.2_
   - [ ] 7.2 `SketchPad`
     - A `<canvas>` with pointer events and `touch-action: none`; the tool rules from `world-pipeline` Requirement 2.1 are not redefined here; targets of at least 44 px; strokes, undo and redo (at least 30 steps) in memory only, never in storage, cookies or analytics; optional caption; "Make it real" disabled with a one-line reason while `inkGate` says no; the pad is labelled as a pointer tool and sits next to the photo picker and Gallery, both reachable by Tab.
     - _Requirements: 2.1, 2.2, 2.4, 2.8, 8.3_
@@ -184,6 +193,9 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 9.5 "Delete my place"
     - On Haunt, Play and Ending for an own world: an accessible dialog (no `confirm()`), `DELETE /api/worlds/:id`, clear all in-memory state for that place, return to Home. A `world_not_found` or `session_expired` answer shows the Expired screen.
     - _Requirements: 3.8, 7.6_
+  - [ ] 9.6 "Set the sky" card
+    - An optional card beside the ghost choice: city search with up to five matches, "Use my location" asked from an explicit tap, a Memory Day (1940 to yesterday, plus a time of day) prefilled from the photo suggestion when there is one, the chosen place shown as a label only. Nothing is stored in the browser, defaults apply when the visitor does nothing, and "Walk in" never waits for it. The choice (a `ConditionsChoice`) stays in memory and goes with `POST /api/play/start`, where the snapshot is frozen once (the `conditions` spec). This line satisfies `conditions` task group 7.
+    - _Requirements: 12.1_
 
 - [ ] 10. Tests and manual checks
   - [ ] 10.1 Component tests (jsdom, Testing Library, `FakeApi`)

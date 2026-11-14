@@ -3,7 +3,7 @@ import { confirmReduce, confirmStart } from "./confirm";
 import type { ConfirmEvent, ConfirmState, QuotaSnapshot } from "./types";
 
 const IMG = "img-12345678";
-const QUOTA: QuotaSnapshot = { world: 2, image: 4, llm: 10, tts: 10 };
+const QUOTA: QuotaSnapshot = { world: 2, image: 4, llm: 10, tts: 10, stt: 10, live: 5 };
 const quoteOk = (token: string, needsTurnstile = false): ConfirmEvent => ({
   t: "quote_ok", imageUrl: "/api/uploads/img-12345678.png", token, quota: QUOTA, needsTurnstile,
 });

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The creator is a small form, a prompt builder, two guarded FLUX.2 calls, and a persona builder. Everything deterministic is pure code in `shared/src/creator/`. The only paid calls are portrait generation, background removal (both `image` meter) and one tiny text moderation call (`llm` meter). Preset Ghosts (≥ 6, shipped as static sprites) make every failure path end in a playable game.
+The creator is a small form, a prompt builder, two guarded image-model calls (FLUX.2), and a persona builder. Everything deterministic is pure code in `shared/src/creator/`. The only paid calls are portrait generation, background removal with Cloudflare Images `segment=foreground` (both `image` meter) and one tiny text moderation call to Llama Guard 3 (`llm` meter). Preset Ghosts (≥ 6, shipped as static sprites) make every failure path end in a playable game.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ sequenceDiagram
   participant R as R2
   W->>A: POST /api/ghosts/portraits {traits, worldId}
   A->>A: validateTraits, sanitise, build prompt
-  A->>B: AIClient text call (moderation of free text, if any)
+  A->>B: WorkersAiClient guard call, Llama Guard 3 (moderation of free text, if any)
   A->>G: reserve(image)
   A->>B: FLUX.2 text-to-image x2
   A-->>W: candidates + quota
@@ -33,7 +33,7 @@ sequenceDiagram
 |---|---|---|
 | `GET /api/ghosts/presets` | list Preset Ghosts | 3.3, 4.2 |
 | `POST /api/ghosts/portraits` | validate, moderate, generate 2 candidates | 1.5, 2.x, 3.x |
-| `POST /api/ghosts/sprite` | cut-out, validate, store, build profile | 4.x, 5.x |
+| `POST /api/ghosts/sprite` | cut-out (Cloudflare Images `segment=foreground`), validate, store, build profile | 4.x, 5.x |
 | `GET /api/worlds/:id/ghost` | load Ghost Profile for a world | 6.2 |
 
 ### `shared/src/creator/`

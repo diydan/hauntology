@@ -21,6 +21,9 @@ Read this with `README.md`. Everything under `/.kiro` is the source of truth for
 - **Timed turns**: players walk the world on a clock, **Inspect** Zones for hidden **Residue** clues, make Suggestions, and get one Accusation. Achievements (visit three Zones, map all six, be quick, be persistent, survive a timeout) earn extra seconds, capped.
 - **The Haunt pushes back**: a meter rises every Round, on every lost Turn and every wrong Accusation. At levels 3, 6 and 9 it fires an event (a Zone goes cold, a blackout, the ghost moves, a lull). At the maximum the haunting wins.
 - **A wrong guess is not the end**: a Player who accuses wrongly becomes a **Poltergeist**. They keep their hand, take no turns, and choose between the Haunt's events. Players who are waiting earn **Resolve** and can **Eavesdrop** on the category of a card another Player was shown.
+- **Waiting is play**: players who wait can **Nudge** the clock (Help adds 10 s, Spook removes 10 s, paid in Resolve, with limits so a Turn never drops under 30 s), play short **Cues**, and, if their owners agree, make a friend's phone creak (a **Frame**). A Frame costs nothing and changes no rule; nobody can tell a Frame from the house until the ending screen reveals every sender. Phone sound is opt-in and always has text, and the Master can pick the Gentle preset.
+- **The real world and the ghost's voice**: the room can read the weather, hour, moon and stars of a place once and freeze them, so every player sees the same sky; a Bell sounds on the hour. The ghost can speak (and, alone, listen) through Workers AI. None of it changes a rule, and every line is shown as text.
+- **Phones as light, lens and shake**: phones can light up in greys across the table, a Poltergeist can rattle the house by shaking a phone, and an optional private lens shows your own notebook marks around you. With every player's own yes, the ghost can whisper a line cut from short words the players recorded (Stitch); the clips never leave the room and are deleted at the end.
 - **Secrets stay private**: the server deals hidden cards; each phone sees only its own hand and notebook.
 - **Six original 3D-printable relics** carry QR tokens. Scanning one is how you name it in a Suggestion. Printing is optional; every scan has an on-screen list fallback.
 - **Premise is "who is haunting this place?"**, not a murder. Relics, not weapons. No real people.
@@ -34,11 +37,12 @@ Read this with `README.md`. Everything under `/.kiro` is the source of truth for
 
 | Stage | Technology | Role |
 |---|---|---|
-| Sketch → image | FLUX.2 on Workers AI | turns a rough drawing into a photoreal place |
+| Sketch → image | FLUX.2 klein 9B on Workers AI | turns a rough drawing into a photoreal place |
 | Image → world | World Labs Marble API | async generation of a Gaussian-splat world with a collider |
 | Render and walk | three.js, Spark, three-mesh-bvh | splat rendering, first-person movement, collision |
-| Ghost design | FLUX.2 and rmbg-2.0 (portrait, background removal) | persona and billboard sprite |
-| Ghost voice | Llama 3.3 70B on Workers AI | narrates directives chosen by deterministic code |
+| Ghost design | FLUX.2 klein 9B and Cloudflare Images (portrait, background removal) | persona and billboard sprite |
+| Ghost voice | Llama 4 Scout on Workers AI (words), Aura-1 (speech), Whisper (listening) | narrates directives chosen by deterministic code, then speaks them |
+| The real world | Open-Meteo | the weather, hour and moon of a place, read once per game and frozen |
 | Backend | Cloudflare Workers, Hono, Durable Objects, R2 | spend control, jobs, sessions, party rooms |
 | Phones as pads | WebSocket to a Durable Object, touch, gyro, camera QR scan | controller and private screen |
 | Hologram | four-view layout on a second screen under a clear pyramid | Pepper's-ghost centrepiece |

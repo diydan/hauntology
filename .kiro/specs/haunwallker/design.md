@@ -85,15 +85,19 @@ sequenceDiagram
 | `GET /api/worlds/:id` | Haunt (poll), Play (manifest) | 4.1 |
 | `DELETE /api/worlds/:id` | "Delete my place" | 3.8 |
 | `POST /api/play/start`, `POST /api/play/:id/turn`, `GET /api/play/:id` | Play | 6.2, 6.3, 6.8 |
+| `POST /api/conditions/search` `{q}` | the Set the sky card (city search, at most five matches, a POST so the query is not in a URL) | 12.1 |
+| `POST /api/voice/speak` `{playId, lineId}`, `POST /api/voice/listen` (the clip) | speaking a line the server holds, and hold-to-talk | 12.3 |
 | `POST /api/session/ack-notice` | content notice | 6.1 |
 
-`GET /api/session` and `POST /api/session/ack-notice` are new thin routes. They read and write only fields of the Session record and are covered by the same cookie and origin checks as every state-changing route. `ghost-engine` already persists the play session; the Session record stores only the ids.
+`GET /api/session` and `POST /api/session/ack-notice` are new thin routes. They read and write only fields of the Session record and are covered by the same cookie and origin checks as every state-changing route. `ghost-engine` already persists the play session; the Session record stores only the ids. The Session record is a signed cookie, `hw_session` (versioned JSON signed with HMAC-SHA-256, HttpOnly, SameSite=Lax, Secure on https, seven days, renewed past half its life). It holds the session id, `lastWorldId`, `lastPlayId` and `ackNotice` and nothing else: no photo, sketch, caption or chat text. A malformed, edited, re-signed or expired cookie is not a Session, and the visitor gets a new one with no ids. A state-changing request must carry an `Origin` equal to the origin it was sent to (or a listed development origin), otherwise it is refused with `bad_origin` before any Session is made. A route that needs earlier state answers `session_expired`. The shared contract in `api/src/contract/world-access.ts` pins the world access rule below for every route that serves worlds.
+
+`ShellApi` (`shared/src/app/api.ts`) is the shell's typed view of these routes: one method per call, each returning an `ApiResult` (`Ok` or a failure with a stable `ErrorCode` and an optional `retryAfterSec`), none throwing. The real `ApiClient` and the demo `FakeApi` both implement it, so a screen cannot tell them apart. Two shapes the shell needs go beyond what the pipeline specs list, and the routes must return them: each Gallery item has a short `description` (shell Requirement 5.1; world-pipeline 9.2 lists id, title, thumbnail and attribution), and each sketch candidate has an `imageUrl` on the app's own origin.
 
 ### `web/src/app/`
-`App.tsx` (router, providers), `screens/` (one folder per Screen), `ApiClient.ts` (typed fetch, maps failures to `Result`), `QuotaStore.ts` (single boot request, shared by Screens), `ErrorBoundary.tsx`, `LiveRegion.tsx`, `DebugOverlay.tsx`, `FakeApi.ts` (`?demo=1`, non-production builds only).
+`App.tsx` (router, providers), `screens/` (one folder per Screen), `ApiClient.ts` (typed fetch, maps failures to `Result`), `QuotaStore.ts` (single boot request, shared by Screens), `ErrorBoundary.tsx`, `LiveRegion.tsx`, `DebugOverlay.tsx`, `FakeApi.ts` and `demo.ts` (`?demo=1`, non-production builds only; `fast=1` short stages, `zero=1` every quota at zero with the kill switch on, `turnstile=1`, `fail=1`).
 
 ### `shared/src/app/`
-`types.ts` (the data types below and the literal lists they come from), `routes.ts` (`resolveRoute`, `pathFor`, `guardRoute`), `confirm.ts` (`confirmStart`, `confirmReduce`), `errors-copy.ts` (`errorCopy`, `retryGate`), `capabilities.ts` (`capabilities`), `stage.ts` (`stageOf`, `pollPlan`), `play.ts` (`playStart`, `playReduce`), `resume.ts` (`resumeTarget`, `resumedFlow`), `sketch-size.ts` (`downscaleSize`, `inkGate`), `events.ts` (the Shell-to-Viewer contract), `fake-api.ts` (fixture timeline for demo mode).
+`types.ts` (the data types below and the literal lists they come from), `api.ts` (the `ShellApi` interface and its result types), `routes.ts` (`resolveRoute`, `pathFor`, `guardRoute`), `confirm.ts` (`confirmStart`, `confirmReduce`), `errors-copy.ts` (`errorCopy`, `retryGate`), `capabilities.ts` (`capabilities`), `stage.ts` (`stageOf`, `pollPlan`), `play.ts` (`playStart`, `playReduce`), `resume.ts` (`resumeTarget`, `resumedFlow`), `sketch-size.ts` (`downscaleSize`, `inkGate`), `events.ts` (the Shell-to-Viewer contract), `fake-api.ts` (fixture timeline for demo mode).
 
 ```ts
 type ScreenId = 'home' | 'gallery' | 'create' | 'confirm' | 'haunt' | 'play' | 'end' | 'not_found' | 'expired';
@@ -173,6 +177,7 @@ type ViewerToShell =
   | { t: 'degraded'; rung: 'pano' | 'thumb' };
 type ShellToViewer =
   | { t: 'set_input_mode'; mode: 'play' | 'chat' }
+  | { t: 'set_atmosphere'; atmosphere: Atmosphere | null }   // the frozen conditions of the place, no coordinates; null restores the normal look
   | { t: 'apply_view'; found: AnchorId[]; anchors: Anchor[]; hauntLevel: number; ghostVisible: boolean };
 ```
 The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server runs `sanitizePose`. The shell never sends hidden seeds because it never receives them.
@@ -197,6 +202,13 @@ The shell attaches the last `pose` to each `POST /api/play/:id/turn`; the server
 - A keyboard path to the same outcome is the photo picker and the Gallery, both reachable by Tab. The pad itself is a pointer tool and is labelled as such.
 - The photo picker re-encodes through a canvas (drops EXIF, GPS and XMP) before upload, per `world-pipeline` task 10.1, and shows the retention notice before the file is chosen.
 - Turnstile loads only when the quote says it is required. The script is fetched from Cloudflare's own URL (`https://challenges.cloudflare.com/turnstile/v0/api.js`). It is never proxied, cached or self-hosted, because Cloudflare's [client-side rendering docs](https://developers.cloudflare.com/turnstile/get-started/client-side-rendering/) warn that proxying or caching it breaks Turnstile when Cloudflare updates it. The CSP allows `https://challenges.cloudflare.com` in `script-src` and `frame-src` and only when Turnstile is configured.
+
+### Sky and voice
+- **Set the sky.** An optional card on the Haunt screen, beside the ghost choice: a city search (`ShellApi.searchPlaces`, at most five matches, the position already rounded by the server), a "Use my location" action that asks the browser only after an explicit tap and sends nothing finer than two decimals, and a Memory Day (1940 to yesterday, plus a time of day). The choice is a `ConditionsChoice` held in memory, never in storage, and goes with `POST /api/play/start`, where the snapshot is frozen once (the `conditions` spec). With no choice the normal look applies and nothing waits: "Walk in" never depends on the card. The chosen place is shown as a label only. A search failure shows `errorCopy` (`geocode_unavailable`, `conditions_disabled`, `bad_place`) and leaves the card usable.
+- **Photo date.** `PhotoPicker` reads the capture date and time with the `conditions` spec's `readCaptureDate` from the original file in the browser, then re-encodes. It offers the date as a suggested Memory Day that the visitor can change or clear, and keeps no other field.
+- **Atmosphere.** The play view carries `atmosphere` (or null). Play sends it to the Viewer as `set_atmosphere` (the contract in `events.ts`); the Viewer owns how it looks.
+- **Voice.** The turn reply may carry `voice {lineId}`. When the speak switch is on (default on in a Single player game) and `flags.voiceEnabled` is true, Play asks `ShellApi.speak` for the audio and plays it after a user gesture has unlocked audio; the line is always shown as a subtitle in the polite live region, spoken or not. A refusal (`voice_unavailable`, a spent meter, a failure, a permission denial) is silent: the subtitle and typing carry on, with no error screen. Hold-to-talk (Single player only, shown only when `flags.voiceEnabled`) records up to 8 seconds with a visible microphone indicator, sends the clip through `ShellApi.listen`, and puts the returned transcript through exactly the path typed text takes. The shell never stores audio. Live mode (a stretch, shown only when `flags.liveEnabled`) adds a stop button and a microphone indicator whenever it listens, stops after 10 seconds of silence or when the page is hidden, and falls back to hold-to-talk on any problem.
+- **Quota and flags.** `QuotaSnapshot` has six meters (`world`, `image`, `llm`, `tts`, `stt`, `live`), and `ShellFlags` carries `voiceEnabled` and `liveEnabled` from `GET /api/session`, so a control is hidden instead of failing.
 
 ### Accessibility and motion
 - On route change the router focuses the Screen's `h1` (`tabIndex={-1}`) and announces the title in a polite live region.

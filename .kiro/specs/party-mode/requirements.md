@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Party mode turns Hauntology into a same-room deduction game for two to six players. A laptop or TV only displays the shared haunted world. Every control lives on a phone: one player, the **Master**, runs the room, and every player's phone is a game pad and a private screen. An optional second device under a Pepper's-ghost pyramid shows the ghost as a hologram-style centrepiece; six original relics can be 3D printed. The premise is gentle: a visitor ghost is haunting the place, and the players work out **which ghost** (Suspect), **where** (Zone) and **with which relic** (Relic). Players take timed turns walking the shared world, search it for hidden clues, earn extra time through achievements, keep their cards secret on their phones, and contribute a suspect, a framed photo and a room name to the world. Time works against them: a **Haunt** rises as the game goes on, fires events, and ends the game if it reaches its maximum. A player who accuses wrongly stays in the game as a **Poltergeist** and helps steer the haunting. The server holds every secret, the engine decides every outcome, and a model only narrates. The mode is additive: the single-player game is unchanged, and the whole mode works with no printer, no Display and no model, and on one screen with Bots.
+Party mode turns Hauntology into a same-room deduction game for two to six players. A laptop or TV only displays the shared haunted world. Every control lives on a phone: one player, the **Master**, runs the room, and every player's phone is a game pad and a private screen. An optional second device under a Pepper's-ghost pyramid shows the ghost as a hologram-style centrepiece; six original relics can be 3D printed. The premise is gentle: a visitor ghost is haunting the place, and the players work out **which ghost** (Suspect), **where** (Zone) and **with which relic** (Relic). Players take timed turns walking the shared world, search it for hidden clues, earn extra time through achievements, keep their cards secret on their phones, and contribute a suspect, a framed photo and a room name to the world. Time works against them: a **Haunt** rises as the game goes on, fires events, and ends the game if it reaches its maximum. A player who accuses wrongly stays in the game as a **Poltergeist** and helps steer the haunting. Players who are waiting can still take part: they can **Nudge** the clock (Help or Spook, paid in Resolve), play short **Cues**, and, where the owner agrees, make a friend's phone creak (a **Frame**) without anyone knowing who did it until the ending. Sound is opt-in, always has a text line, and never changes a rule. The room can also borrow the real world (the weather, hour, moon and stars of a place, and a chime on the hour), light the phones with greys, let a Poltergeist rattle the house by shaking a phone, and, with every player's own yes, let the ghost whisper a line cut from short words the players recorded (Stitch). All of it is optional, every player says yes for themselves, and none of it changes a rule. The server holds every secret, the engine decides every outcome, and a model only narrates. The mode is additive: the single-player game is unchanged, and the whole mode works with no printer, no Display and no model, and on one screen with Bots.
 
 ## Glossary
 
@@ -27,9 +27,22 @@ Party mode turns Hauntology into a same-room deduction game for two to six playe
 - **Inspect**: an action that spends 10 seconds of a Turn in a Zone to look for Residue there.
 - **Haunt**: a level that rises as the game goes on and ends the game when it reaches its maximum.
 - **Haunt Event**: a change to the game that fires once when the Haunt first reaches level 3, 6 and 9.
-- **Poltergeist**: a Player who accused wrongly. They keep their seat, nickname and Hand, take no Turns, and choose between the options of Haunt Events.
-- **Resolve**: a small store a Player fills each Round and spends on Eavesdrop.
+- **Poltergeist**: a Player who accused wrongly (who has "joined the haunting"). They keep their seat, nickname and Hand, take no Turns, choose between the options of Haunt Events, gain Resolve each Round, and can play Cues, Frames, Rattles and Nudges (but not Eavesdrop).
+- **Resolve**: a small store a Player fills each Round and spends on Eavesdrop, Help and Spook.
 - **Eavesdrop**: a reaction that spends 1 Resolve to learn the category of the card shown to another Player.
+- **Nudge**: a paid change to the active Player's Turn Clock by another Player. **Help** adds 10 seconds and costs 1 Resolve. **Spook** removes 10 seconds and costs 2 Resolve.
+- **Cue**: a short sound of at most 3 seconds from a fixed catalogue of four (creak, whisper, bell, laugh), played from a sound file when one exists, with a text caption. A Player who is not on their Turn plays a Cue on the Host (the TV) or on their own phone. A Cue changes no rule, and with no sound file the phone flashes and vibrates and the caption is logged.
+- **Phone Cue / House Cue / Frame**: a Cue a Player plays on their own phone; a Cue the Room plays on one seeded phone when a Haunt Event fires; and a Cue one Player plays on another Player's phone. A House Cue and a Frame look identical to everyone except the sender until the ending.
+- **Sound Consent**: a Player's answer, given on their phone, to whether the house may play sounds on it.
+- **Conditions**: one frozen snapshot of the real world (weather class, time of day, moon, optionally stars) read once at the start; see the `conditions` spec.
+- **Hour strike**: a Bell sounded on the Host and every consenting phone at the top of the host's hour; at midnight the Host strikes twelve.
+- **Spirit lens**: an optional private layer on a phone, drawn only from that Player's own Private View and the Public View.
+- **Light bar / light cue**: a grey light effect that runs across the screens of consenting phones in seat order.
+- **Rattle**: a Cue by gesture, played by a Poltergeist by shaking their phone, that makes the floorboards creak.
+- **The Becoming**: the sting that plays when a Player joins the haunting.
+- **Stitch**: the ghost whispering a line cut from short words that consenting Players recorded, from a fixed Word Bank and fixed templates; see the `ghost-voice` spec.
+- **Sound file**: one of seven short clips (creak, whisper, bell, laugh, wind, rumble, becoming); the game works without any of them.
+- **Preset**: the Master's choice of Classic (everything on) or Gentle (Nudges help-only, Frames off).
 - **Contribution**: a Suspect, a framed photo or a Zone name supplied by a Player.
 - **Photo Prompt**: a short, fixed instruction that suggests which everyday photo to add; each Player is offered three at a time (for example "the view from a window"), with a tip and a source of either `camera_roll` or `take_now`.
 - **Relic Token**: a printed base carrying a QR plate with the payload `hw:<relic id>`.
@@ -101,7 +114,7 @@ Party mode turns Hauntology into a same-room deduction game for two to six playe
 
 1. WHEN the game starts THEN the Room SHALL order Turns by seat, one Turn at a time, the active Player SHALL control the shared camera through their own Controller while all other Players see the Public View and their own Private View, and WHEN a Turn starts the camera SHALL be positioned at the spawn point of the world so every Player begins from the same known location.
 2. WHEN a Turn starts THEN the Room SHALL set the Turn Clock to the base seconds (Master choice of 30, 45, 60 or 90, default 60, reduced by any Blackout) plus the active Player's Bonus Seconds, capped at 120, run the clock on the server and send its deadline with the server time so every screen shows the same countdown.
-3. WHEN the clock expires THEN the Room SHALL end the Turn with no penalty beyond the lost Turn and one Haunt level, and WHEN 10 seconds remain THEN every screen SHALL show a warning as visible text and the Controller SHALL pulse where supported.
+3. WHEN the clock expires THEN the Room SHALL end the Turn with no penalty beyond the lost Turn and one Haunt level (and no Haunt level when a Spook was used on that Turn), and WHEN 10 seconds remain THEN every screen SHALL show a warning as visible text and the Controller SHALL pulse where supported.
 4. WHEN a Player earns an Achievement THEN the Room SHALL add its Bonus Seconds to that Player's later Turns once per Achievement per game and announce it on the Public View, where the catalogue is: wanderer (visit three different Zones, +10 s), cartographer (visit all six, +15 s), quick feet (reach a Zone within 20 s of a Turn start, +5 s), persistent (make three Suggestions, +10 s) and second wind (lose two Turns to the clock, +10 s), derived only from the event log.
 5. WHEN the active Player's phone disconnects THEN the Room SHALL pause the Turn Clock for up to 20 seconds and then end the Turn, and a Player who stays disconnected for two consecutive Turns SHALL be skipped until they reconnect.
 6. WHERE the Master selects no clock THEN the Room SHALL run no Turn Clock and a Turn SHALL end by Suggestion, Accusation or pass, and the Master SHALL be able to pause and resume the game at any time.
@@ -131,7 +144,7 @@ Party mode turns Hauntology into a same-room deduction game for two to six playe
 3. WHEN a device opens the Display URL of a Room THEN the Party Service SHALL send it only the Public View, and the Display SHALL draw the host ghost's Sprite on black four times at 0, 90, 180 and 270 degrees around the centre, sized from a footprint the user calibrates on screen without assuming any pixel density, with a single-view mode for plain screens and toggles for orientation and mirroring.
 4. WHEN a public event occurs (suggestion, card shown, wrong Accusation, correct Accusation, Achievement, time warning, Haunt Event) THEN the Display SHALL react with a scripted animation limited to three flashes per second and a luminance change of at most 20%, SHALL remove flicker when the visitor prefers reduced motion, and on a correct Accusation SHALL reveal the culprit Suspect's Sprite.
 5. IF no Display is connected THEN the game SHALL be unaffected.
-6. WHERE the Master turns on spoken narration THEN the Host SHALL read each narration line aloud with the browser's speech synthesis, SHALL leave it off by default, SHALL always show the same line as text, and SHALL let the Master mute, replay or skip a line.
+6. WHERE the Master turns on spoken narration THEN the Host SHALL read each narration line aloud with the ghost voice of the `ghost-voice` spec (the browser's speech synthesis when that is unavailable), SHALL leave it off by default, SHALL always show the same line as text, and SHALL let the Master mute, replay or skip a line.
 7. THE Controller SHALL be an installable web app with a manifest, an offline shell that explains how to rejoin, and a screen wake lock while a game is running, and no feature SHALL need a native app.
 
 ### Requirement 8
@@ -177,8 +190,110 @@ Party mode turns Hauntology into a same-room deduction game for two to six playe
 
 #### Acceptance Criteria
 
-1. THE Room SHALL keep a Haunt level that starts at 0, rises by 1 at the end of every Round, for every Turn lost to the clock and for every wrong Accusation, never exceeds its maximum (8, 10 or 12, Master choice, default 10), and ends the game when it reaches the maximum.
+1. THE Room SHALL keep a Haunt level that starts at 0, rises by 1 at the end of every Round, for every Turn lost to the clock (except a Turn on which a Spook was used) and for every wrong Accusation, never exceeds its maximum (8, 10 or 12, Master choice, default 10), and ends the game when it reaches the maximum.
 2. WHEN the Haunt first reaches level 3, 6 or 9 and is below its maximum THEN the Room SHALL fire a Haunt Event once for that level, offering two distinct options chosen from the seed among Cold Spot (one Zone refuses Suggestions and Inspect for one Round), Blackout (the next Turn's base seconds drop by 15, never below 15, and the Host scene dims within the photosensitivity limits), Restless (the ghost Sprite moves to another Zone, narration only) and Lull (the Haunt falls by 1, never below 0), and the next Poltergeist in seat order SHALL pick one within 15 seconds, otherwise the first option, or the first option when no Poltergeist exists.
 3. WHEN a Player becomes a Poltergeist THEN the Room SHALL keep their seat, nickname and Hand (still used to answer Suggestions), give them no Turns, and refuse their movement, Suggestion, Accusation and Inspect, while they remain connected and able to choose Haunt Event options.
-4. WHEN a Round ends THEN the Room SHALL add 1 Resolve to each Player who is not a Poltergeist, up to a maximum of 3.
+4. WHEN a Round ends THEN the Room SHALL add 1 Resolve to each Player, Poltergeists included, up to a maximum of 3.
 5. WHEN another Player's Suggestion has been resolved and a Player who is not a Poltergeist spends 1 Resolve within 10 seconds THEN the Room SHALL show that Player privately only the category (Suspect, Zone or Relic) of the card shown, SHALL NOT show the card, and SHALL refuse Eavesdrop on the Player's own Suggestion, without Resolve, or after the 10 seconds.
+
+### Requirement 12
+
+**User Story:** As a player waiting for my Turn, I want small ways to take part, so that I am never only watching; and as the player on my Turn, I want those ways to be limited, so that nobody can wreck my Turn.
+
+#### Acceptance Criteria
+
+1. WHEN a Player who is not the active Player and not a Bot plays a Cue THEN the Room SHALL accept one of the four catalogue Cues, at most one per Player every 4 seconds, with at most three Cues playing at once and at most six Cues per Turn for the whole table, SHALL add it to the public log as text under the Player's nickname, and SHALL change no rule, and WHEN a limit is reached THEN the Room SHALL refuse the Cue with a reason and play nothing.
+2. WHEN a Player who is not the active Player and not a Bot (a Poltergeist may) uses a Nudge while a Turn Clock runs THEN the Room SHALL spend that Player's Resolve (Help 1, Spook 2) and refuse the Nudge without enough Resolve, SHALL add 10 seconds (Help, never past 120 seconds) or remove 10 seconds (Spook) from that Turn's clock for every screen at the same deadline, and SHALL announce it in the public log under the Player's nickname.
+3. A Spook SHALL be accepted only when at least 20 seconds remain on the clock, the Turn's total seconds stay at 30 or more after it, no Spook has been used in this Round by any Player or in any of the previous three Turns, and the Player did not Spook on the previous Turn, and otherwise the Room SHALL refuse it with a named reason (for example `spook_round_limit`) and spend no Resolve, so that a 30-second clock never allows a Spook.
+4. THE Room SHALL allow at most one Help and one Spook per Turn, so that Nudges add at most 10 seconds and remove at most 10 seconds from any Turn, and every per-Player limit (Resolve, Nudges, Cue timing, sounds per Round, Frames) SHALL belong to the seat and survive a reconnect.
+5. THE Master SHALL be able to choose the Classic preset (Nudges all, Frames on, sounds on) or the Gentle preset (Nudges help-only, Frames off), and to turn Frames or sounds off, and no Cue, Nudge or Frame SHALL use a paid call or a model: their public lines are scripted.
+
+### Requirement 13
+
+**User Story:** As a player, I want to see and understand every Cue and Nudge, so that nothing happens to the table silently.
+
+#### Acceptance Criteria
+
+1. WHEN a Cue, Nudge, Frame or House Cue happens THEN the Host SHALL show it as a text line in the public log and in a polite live region, a Cue played on the TV SHALL last at most 3 seconds, no sound SHALL be the only signal of anything, every screen SHALL show a changed Turn Clock deadline within one second with the active Player's Controller showing "+10 s" or "-10 s" and the nickname as text, and the Controller menu SHALL offer the Cue picker (the four Cues, TV or this phone), Help and Spook with their Resolve cost and, where Frames are on, the Frame picker (a Player and a Cue), each with touch targets of at least 48 CSS pixels and an unavailable one explained in words.
+
+### Requirement 14
+
+**User Story:** As a player, I want the phones to be part of the haunting, only if their owners agree, so that a creak can come from the table and nobody can tell who made it.
+
+#### Acceptance Criteria
+
+1. WHEN a phone is seated THEN the Controller SHALL ask once, with a tap that also unlocks audio, whether the house may play sounds on it, keep the answer on the seat and let the Player change it at any time, play a sound on a phone only after a yes and at most three sounds per phone per Round from every source, and WHERE a consenting phone cannot play sound THEN it SHALL flash (at most three flashes per second, none when the visitor prefers reduced motion) and vibrate where supported instead, and no feature SHALL depend on sound.
+2. WHEN a Player who is not the active Player plays a Cue THEN they SHALL choose the TV (the default) or their own phone as the place it plays, a Cue on their own phone SHALL need their consent, last at most 3 seconds and share the limits of Requirement 12.1, and the public log SHALL show it under their nickname.
+3. WHEN a Haunt Event fires THEN the Room SHALL play a House Cue on one phone chosen from the seed among consenting phones with a free sound slot (on every such phone in seat order, 400 milliseconds apart, for Restless), SHALL log it as text such as "a creak came from Sam's phone" without saying the house made it, and SHALL tell only that phone's owner privately "that was not you".
+4. WHEN a Player who is not the active Player plays a Cue on another Player's consenting phone (a Frame) THEN the Room SHALL accept it only while Frames are on, at most one per sender and one per target per Round and within the Cue limits of Requirement 12.1, SHALL charge no Resolve and change no rule, SHALL log it as the same public event as a House Cue naming only the target's phone, and SHALL tell only the target privately "that was not you".
+5. WHEN the game ends THEN the ending screen SHALL reveal the sender of every Frame and mark every House Cue as the house's, and before the end no Public View, public event, log line, narrator prompt or other Player's Private View SHALL carry the source of any Frame or House Cue, so that a House Cue and a Frame are indistinguishable until then.
+6. WHEN the Master turns Frames off THEN the Room SHALL refuse every Frame with a reason, and WHEN the Master turns sounds off THEN no sound SHALL play on any device while every line stays in the log as text, and neither switch SHALL need a paid call or a model.
+
+### Requirement 15
+
+**User Story:** As a player, I want the room to share the real sky and the real hour, so that the haunting feels tied to a real place and time.
+
+#### Acceptance Criteria
+
+1. WHEN the host's local clock reaches the top of an hour during a game THEN the Room SHALL sound a Bell on the Host and, at the same server time, on every phone with Sound Consent and a free sound slot, log it as text, and change no rule.
+2. WHEN the host's local time is midnight THEN the Host SHALL strike the Bell twelve times, the ghost SHALL speak one scripted midnight line, and nothing about the clock, Resolve, the Haunt, a Hand or the Solution SHALL change.
+3. THE Master SHALL be able to turn the hour strike off, and it SHALL be on by default.
+4. WHEN the Master starts a game THEN the Master SHALL be able to choose a place from a city search, the table's location, or conditions off, and the Room SHALL read the conditions once through the `conditions` spec, freeze them for the whole game, show the atmosphere on the Host, add only the weather class, time of day and moon to the Public View, and let the real world change looks, sound and the ghost's words but never a rule.
+
+### Requirement 16
+
+**User Story:** As a player, I want an optional private lens on my phone, so that the haunting also has a layer only I can see.
+
+#### Acceptance Criteria
+
+1. THE Spirit lens SHALL be off by default and a Player SHALL turn it on for themselves, point the phone at the TV, tap to calibrate and then turn the phone to look around the layer, asking for motion permission from an explicit tap and showing a fixed view where there are no sensors.
+2. THE Spirit lens SHALL draw only the Player's own notebook marks, the Zones they inspected and ripples from Cues, using only their own Private View and the Public View, so that the server sends no new hidden information for it.
+3. THE Spirit lens SHALL draw simple sprites at no more than 30 frames per second and SHALL pause when the phone is face down or the page is hidden.
+4. THE Spirit lens SHALL say that it is a private layer around the Player that can drift, SHALL offer a re-tap to calibrate again, and SHALL use neither the camera nor markers.
+
+### Requirement 17
+
+**User Story:** As a player, I want the haunting to reach across the phones as light, so that the whole table feels it together.
+
+#### Acceptance Criteria
+
+1. WHEN a phone is seated THEN the join question SHALL also ask, with the sound question, whether the house may light that phone's screen, SHALL keep the answer on the seat and let the Player change it at any time, and the light bar SHALL be on by default with a Master switch.
+2. WHEN a Haunt Event, the hour strike or a House Cue happens THEN the Room SHALL run one light cue (a wave, a heartbeat, a failing bulb, a creeping dark or a one-phone glow) across the consenting phones in seat order.
+3. THE light cues SHALL use greys and whites only and never a colour, at most two brightness changes per second, fades only, a peak below full white and a length of at most 6 seconds, and SHALL not run for a Player who prefers reduced motion.
+4. WHEN the Room starts a light or sound cue on several phones THEN it SHALL set the start at a server time at least 500 milliseconds ahead using each phone's measured clock offset, and SHALL drop a phone whose offset error is over 150 milliseconds rather than play the cue late.
+
+### Requirement 18
+
+**User Story:** As a group, I want the ghost to be able to whisper a line made from our own words, only if each of us agrees, so that the haunting can sound like the room.
+
+#### Acceptance Criteria
+
+1. THE Master SHALL be able to turn Stitch on for the Room, it SHALL be off by default, and nothing about Stitch SHALL be asked or recorded while it is off.
+2. WHEN Stitch is on THEN the join question SHALL ask each Player for their own yes, the Master SHALL NOT be able to say yes for anyone, the question SHALL say in plain words that the clips are deleted when the game ends and that a parent or guardian should say yes for a child, and SHALL include a tick "I am 16 or older, or a parent or guardian is saying yes for me" kept only as a yes or no, and WHEN a Player leaves THEN the Room SHALL delete their clips at once.
+3. WHEN a consenting Player records the Word Bank THEN the Room SHALL accept each word through the word check of the `ghost-voice` spec, never block the lobby or the start for a missing clip, and never use a Player who has no clips.
+4. WHEN a Haunt Event fires or it is midnight THEN the Room MAY play one stitched line on the Host with a subtitle, at most once per Round and twice per game, never in the first 60 seconds of a game or during an Accusation, never from the same Player twice running, with the log saying only "a voice whispered", and no rule SHALL change.
+5. WHEN the game ends or 6 hours pass THEN the Room SHALL delete every clip, and the ending screen SHALL show each stitched line and whose words it used.
+
+### Requirement 19
+
+**User Story:** As a player who has joined the haunting, I want to rattle the house from my phone, so that I am still part of the table, without anyone knowing who did it.
+
+#### Acceptance Criteria
+
+1. THE Room SHALL let only a Poltergeist Rattle, by shaking their phone (a deliberate shake is three swings above a set strength within 1.5 seconds) or, without sensors, with a hold-to-rattle button.
+2. THE Rattle SHALL be a Cue by gesture and share every Cue limit of Requirement 12.1: 4 seconds between sends, 6 per Turn for the whole table and 3 sounds per phone per Round, refusing it with a reason when a limit is reached.
+3. EACH Poltergeist SHALL turn Rattle on for themselves, off by default because iPhones ask for motion permission, and the Master's Rattle switch SHALL be on by default.
+4. WHEN Rattles are accepted in a Turn THEN the effect SHALL follow their number (1 to 2 a creak and a slow grey breathing, 3 to 4 wind and a grey wave in seat order, 5 to 6 a low rumble and a creeping dark that returns as a pale swell), played on the Host and on every phone that said yes at no more than 80 percent volume, a phone with no sounds left for the Round getting the light only, and the count SHALL reset each Turn.
+5. THE public log SHALL say only "the floorboards creaked", "a wind passed" or "the house rumbled", the ending screen SHALL list every Rattle with who sent it, and no clock, Resolve, Haunt level, Hand or Solution SHALL be touched.
+6. WHEN a Player joins the haunting THEN a sting of at most 4 seconds SHALL play on their own phone and the Host with a grey fade of the light bar outward from their seat, once per Player and not counted toward the 3 sounds a phone gets, and their phone SHALL then offer Rattle.
+7. WHILE a Turn runs THEN a Poltergeist's phone SHALL show a private prompt to start the first Rattle and a stronger one once someone else's Rattle has landed, each at most once per Turn, with a button to turn Rattle on, and no sender SHALL be named.
+
+### Requirement 20
+
+**User Story:** As the maker, I want the game's sounds to be a few small, properly licensed files that the game does not depend on, so that nothing is blocked while they are found.
+
+#### Acceptance Criteria
+
+1. THE game SHALL use seven sound files (creak, whisper, bell, laugh, wind, rumble, becoming), each mono `.m4a` of at most 50 kilobytes, at most 350 kilobytes in all, at most 3 seconds (the becoming at most 4), levelled to about -16 LUFS, with no words, no real person's voice and nothing from a film, game or song.
+2. WHEN a sound file is absent THEN the game SHALL behave identically except that the phone flashes and vibrates and the Host shows the log line, and nothing SHALL fail or wait.
+3. THE build check SHALL fail on a sound file with no credit in `docs/sounds/CREDITS.md`, over a size limit or in the wrong format.

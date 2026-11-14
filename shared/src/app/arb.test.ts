@@ -96,15 +96,15 @@ describe("quota, flags and errors", () => {
   it("quota counts are whole numbers from zero, and zero is reached on every meter", () => {
     const quotas = sample(quotaSnapshotArb);
     for (const q of quotas) for (const n of Object.values(q)) expect(Number.isInteger(n) && n >= 0).toBe(true);
-    for (const m of ["world", "image", "llm", "tts"] as const) {
+    for (const m of ["world", "image", "llm", "tts", "stt", "live"] as const) {
       expect(quotas.some((q) => q[m] === 0)).toBe(true);
       expect(quotas.some((q) => q[m] > 0)).toBe(true);
     }
   });
 
-  it("flags reach all eight combinations", () => {
-    const seen = new Set(sample(shellFlagsArb).map((f) => `${f.worldGenEnabled}${f.dayCapReached}${f.totalCapReached}`));
-    expect(seen.size).toBe(8);
+  it("flags reach all 32 combinations", () => {
+    const seen = new Set(sample(shellFlagsArb).map((f) => `${f.worldGenEnabled}${f.dayCapReached}${f.totalCapReached}${f.voiceEnabled}${f.liveEnabled}`));
+    expect(seen.size).toBe(32);
   });
 
   it("error codes are real codes, and the other strings are not", () => {

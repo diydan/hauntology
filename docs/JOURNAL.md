@@ -45,7 +45,9 @@ Log:
 
 ### Sun Nov 15 Specs match the stack
 - [x] Replace Bedrock and Nova with Workers AI in world-pipeline, ghost-creator, ghost-engine and party-mode specs. Also `README.md`, `docs/PLAN.md`, `docs/SUBMISSION.md`.
-- [ ] Add TTS to the specs: ghost voice, host voice, a `TTS` cap, text always shown.
+- [x] Amendment E, AI part: all AI on Cloudflare (Llama 4 Scout, Llama Guard 3, FLUX.2 klein 9B, Cloudflare Images); `AIClient` renamed `WorkersAiClient`; steering, hook, power, specs and docs updated.
+- [x] Amendment E, party part (phone sound, Frames, balance limits), with Amendment C rebuilt from E's summary: party requirements 12 to 14, Properties 31 to 36, Spikes 1.4 and 1.5, new tasks. Review the rebuilt parts of C.
+- [x] Master amendment applied: `conditions` and `ghost-voice` specs, party Requirements 12 to 20, world-viewer `setAtmosphere` and tilt to look. 287 criteria, 124 properties. TTS is now the `ghost-voice` spec.
 - [x] Party Photo Prompts are specced (party requirement 3.6 to 3.9, Property 30).
 - [ ] Decide whether to keep the hidden-photo relic-sketch idea. If yes, spec it with the photo deleted right after generation. If no, drop it.
 - [ ] Close the ownership gaps: `POST /api/play/start`, `GET /api/play/:id`, `POST /api/sketch/select`.
@@ -58,7 +60,7 @@ Log:
 
 ### Mon Nov 16 Build the dev MCP, run the first spikes
 - [ ] Build `tools/worldlabs-mcp` (world-pipeline 0). Spend cap, ledger, fixture recording.
-- [ ] **Spike A, Workers AI** (the `AIClient` call shapes). Confirm model ids and inputs for `flux-2-dev`, `rmbg-2.0`, `llama-3.3-70b`, `llama-4-scout` and `inworld/tts-2`. Try one sketch to photo. Write `docs/spikes/A.md`.
+- [ ] **Spike A, Workers AI and Images** (the `WorkersAiClient` call shapes). Confirm model ids and inputs for `flux-2-klein-9b` (fallback `flux-2-dev`), `llama-4-scout`, `llama-guard-3-8b`, Cloudflare Images `segment=foreground` and `inworld/tts-2`. Try one sketch to photo and one cut-out. Record the cost per call in neurons and confirm klein 9B's zero data retention before any sketch is sent. Write `docs/spikes/A.md`.
 - [ ] **Spike C, World Labs.** Generate one real world. Record the response as a fixture. Write `docs/spikes/C.md`. This costs about $1.2.
 - [ ] Update the "Unverified assumptions" list in `tech.md`.
 
@@ -68,7 +70,7 @@ Log:
 
 ### Tue Nov 17 Spikes, then pure logic starts
 - [ ] **Spike D, splat on a phone.** Render the Spike C world in three.js + Spark on your phone. Note FPS. world-viewer 1.
-- [ ] **Spike B, TTS.** Time a 220-token line to audio. Under 2 s? Write `docs/spikes/B.md`.
+- [ ] **Spike B, voice and weather** (ghost-voice 1.1, conditions 1.1). Time a spoken line (under 4 s?), try Whisper on a short clip, call Open-Meteo from a Worker. Write `docs/spikes/ghost-voice-1.1.md` and `docs/spikes/conditions-1.1.md`.
 - [ ] Pure logic, world-pipeline 3: errors, caps, quote, world key, upload rules. Property tests with them.
 - [ ] Pin the QR encoder and decoder libraries (party 1.2, desk part).
 
@@ -99,7 +101,7 @@ Log:
 
 ### Fri Nov 20 Printing day 1
 - [ ] Routes: upload, sketch, brief (world-pipeline 5), with the ownership checks.
-- [ ] `AIClient` in `api/src/guarded/` with ticket enforcement and scripted fallbacks.
+- [ ] `WorkersAiClient` in `api/src/guarded/workersai/` with ticket enforcement and scripted fallbacks.
 - [ ] Write the `ingest-gallery` script (world-pipeline 9.1). Dry-run it on the Spike C world.
 - [ ] Check the print once. Do not stop it.
 
@@ -120,6 +122,7 @@ Log:
 - [ ] Collect the prints. Check with `checkMesh` numbers: fit, no warp.
 - [ ] **Party spike 1.2:** scan every QR plate on a real iPhone (Safari) and Android (Chrome). Note the failures.
 - [ ] **Party spike 1.3:** put a clear pyramid on a spare screen. Decide tops in or out, mirror or not. Take photos for the write-up.
+- [ ] **Party spike 1.4:** phone sound on a real iPhone and Android: one-tap unlock, sound with a dim screen, six phones at once, Restless at 400 ms steps, the flash fallback. Write `docs/spikes/party-1.4.md`.
 - [ ] If any plate fails, fix the model and **start the reprint now** (ready Nov 24).
 - [ ] Finish `WorldJob` and the confirm gate (world-pipeline 6, 7).
 
@@ -154,7 +157,7 @@ Done when: ghost creator route works with a fake AI, and Property 13 passes.
 Log:
 
 ### Thu Nov 26 Ghost engine, suggestions
-- [ ] Ghost engine: pure logic, `PlaySession`, narrator (ghost-engine 2 to 4). Wire TTS to the ghost lines. Text is always shown.
+- [ ] Ghost engine: pure logic, `PlaySession`, narrator (ghost-engine 2 to 4). Wire the ghost voice to the lines (ghost-voice 1 to 4). Text is always shown.
 - [ ] Party: suggest, accuse, relic token, bots, Master, Residue and Inspect, the Haunt, Poltergeists (party 2.29 to 2.42 and 2.47 to 2.54). Resolve and Eavesdrop (2.55, 2.56) only if time allows.
 
 Done when: a scripted single-player game runs through the engine with no model.
@@ -184,6 +187,7 @@ Log:
 - [ ] Party routes (party 7).
 - [ ] Host page: lobby with QR, HUD, remote input, solo with Bots (party 8).
 - [ ] Controller: join, pad and panel, stick, hand and notebook (party 9.1 to 9.7).
+- [ ] If layer 1 is done: **party spike 1.5** (balance simulation and three real games), then Cues, Nudges, phone sound and Frames (party 2.59 to 2.71, 4.14 to 4.16, 8.11, 9.14 to 9.16). Cut Frames and phone sound first.
 
 Done when: one laptop plus one phone can play a Bot game to the end.
 

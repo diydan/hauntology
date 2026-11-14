@@ -1,0 +1,181 @@
+# Implementation Plan
+
+Depends on `ghost-engine` 2.1 (`parseAction`), 2.3 (`acceptTurn`) and 2.17 (`validateGhostReply`, scripted lines), `ghost-creator` 1.10 (Persona voice), `world-pipeline` 4.1 (SpendGuard, which gains the Meters `tts`, `stt` and `live`) and 5.2 (WorkersAiClient), `haunwallker` 1.2 (`propParams`) and 6.1 (Play screen), and `party-mode` Requirement 18 (the room side of Stitch) with its task 8.9 (spoken narration through the ghost voice). Do the three spikes before any code that depends on their answers.
+
+**Cut order if short of time: live mode first (group 6 and task 4.5), then Stitch second (group 5).** Speaking and listening (groups 2 to 4) are the core. Stitch and live logic sit in their own groups and files, so cutting one removes its pure logic, services, helpers and property tests together and changes nothing else. Build order: spikes, pure logic, API, Web, then Stitch, then live mode last. No task here calls a paid upstream in tests; every call goes through the guarded wrappers with fakes.
+
+Tasks marked `*` are optional test tasks that should still be done before submission.
+
+- [ ] 1. Spikes
+  - [ ] 1.1 Spike 1.1: Aura-1, MeloTTS and Whisper
+    - Through the guarded wrappers with a small manual budget set by the owner. Record in `docs/spikes/ghost-voice-1.1.md`: whether `@cf/deepgram/aura-1` is on Workers AI and which speaker names it offers; which four suit the Persona voices soft, dry, formal and childlike (there may be no child voice: pick the closest and say so); output format, price in neurons, and first-audio latency p50 and p95 for a 240-character line, for Aura-1 and for `@cf/myshell-ai/melotts`; how often audio is ready within 4 seconds; whether streaming works. For `@cf/openai/whisper-large-v3-turbo`: input format, whether it accepts what browsers record (webm with opus, mp4 with aac), clip length and size limits, the byte ceiling that fits 8 seconds of each codec and not 16, latency and price for 1-second and 8-second clips. The data-retention terms for audio and text sent to each model. Mark each fact verified or still unverified, and update the list in `tech.md`.
+    - _Requirements: 1.1, 1.3, 3.2, 3.3_
+  - [ ] 1.2 Spike 1.2: word rejection and joined clips
+    - With at least five real people on at least one iPhone and one Android phone, recording only with their consent and deleting afterwards. Record in `docs/spikes/ghost-voice-1.2.md`: how often Whisper rejects a clean one-second word from a phone microphone, per Word Bank word and per phone; how many retries a player typically needs; the size of a 2-second clip per codec; how joined clips sound through Web Audio scheduling (gaps, clicks, level jumps, mp4 against webm); whether the starter Templates read as gentle; and whether `heardWord` should stay exact.
+    - _Requirements: 5.1, 5.2_
+  - [ ] 1.3 Spike 1.3: a live voice transport
+    - Compare WebRTC, a WebSocket to a Worker and Cloudflare Realtime for a live voice turn on Cloudflare, with end-of-speech detection in the browser. Record in `docs/spikes/ghost-voice-1.3.md`: which transport works, how end of speech is detected, the real delay from the end of a sentence to the first spoken word (the guess of 2 to 3 seconds is an estimate, not a result), battery and data use on a phone, and what happens on a page that is hidden or a connection that drops. If none works within the cap, say so; live mode is then cut.
+    - _Requirements: 6.1, 6.2, 6.3_
+
+- [ ] 2. Pure logic for speaking and listening (`shared/src/voice/`)
+  - [ ] 2.1 `limits.ts`, `config.ts` and the generators
+    - `limits.ts` names every number in the requirements (the 200-character cap and 1.5-second gap come from `shared/src/ghost/`). `config.ts` has `parseVoiceConfig(env)` with the `VOICE_*` defaults from the design, zod, a bad value falling back to its default, and the room line cap never above 20. `voice.arb.ts` generates texts with sentence ends, long runs, URLs, markup, control characters and banned phrases. Unit tests for the defaults and clamps.
+    - _Requirements: 4.1, 2.3_
+  - [ ] 2.2 `voices.ts` and `speakable.ts`
+    - The fixed English voice allow-list and `voiceFor(persona voice)` (filled in from Spike 1.1); `splitSentences`; `toVoiceLine` calls the engine's `validateGhostReply` and cuts at the last sentence end within 240 characters, leaving `spoken` empty when none fits. No second banned-phrase list. The synthesis request type has no field for a reference voice.
+    - _Requirements: 1.1, 1.5_
+  - [ ]* 2.3 Write property test for spoken lines
+    - **Property 1: Spoken lines are short, safe and validated**
+    - **Validates: Requirements 1.1, 1.5**
+  - [ ] 2.4 `fallback.ts`: `resolveSpeech`
+    - Cache, Aura-1, MeloTTS, browser, subtitle in order; paid steps skipped on the kill switch or no ticket; no step starts after 4000 ms; the result type has no error member and always reports the Subtitle shown. Includes a test helper that runs the engine's `step` with working and failed voice.
+    - _Requirements: 1.2, 1.3, 4.2, 4.3_
+  - [ ]* 2.5 Write property test for the fallback chain
+    - **Property 2: The fallback chain always ends in a subtitle**
+    - **Validates: Requirements 1.2, 1.3, 4.2, 4.3**
+  - [ ] 2.6 `cache.ts`: `canonicalSpeechKey`, `speechCacheKey` (digest injected) and `cacheFresh`
+    - _Requirements: 1.4_
+  - [ ]* 2.7 Write property test for the cache key
+    - **Property 3: The audio cache key depends on voice and text and expires after 30 days**
+    - **Validates: Requirements 1.4**
+  - [ ] 2.8 `policy.ts`: `decideSpeak` and `canSwitchSpeaking`
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [ ]* 2.9 Write property test for the speaking policy
+    - **Property 4: The speaking policy**
+    - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
+  - [ ] 2.10 `listen.ts`: `listeningAllowed`, `clipVerdict` and `withTransientClip`
+    - The holder zeroes the buffer and drops its reference exactly once on success, throw or timeout.
+    - _Requirements: 3.1, 3.2, 3.3_
+  - [ ]* 2.11 Write property test for listening limits and deletion
+    - **Property 5: Listening limits and immediate deletion**
+    - **Validates: Requirements 3.1, 3.2, 3.3**
+  - [ ] 2.12 `transcript.ts`: `prepareTurnInput`
+    - Reuses `parseAction` and `acceptTurn`; the source is carried for the UI and read by no rule.
+    - _Requirements: 3.4_
+  - [ ]* 2.13 Write property test for the transcript path
+    - **Property 6: A transcript takes the typed-text path**
+    - **Validates: Requirements 3.4**
+  - [ ] 2.14 `gate.ts`: `withTicket` with injected ports
+    - Reserve, one call, commit on success, release on failure, no call after a denial or on the kill switch.
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [ ]* 2.15 Write property test for budgets
+    - **Property 7: Budgets are never exceeded and no call follows a denial**
+    - **Validates: Requirements 4.1, 4.2**
+  - [ ] 2.16 `telemetry.ts`: the voice counter whitelist
+    - Counters for speech requests, cache hits, fallbacks by step, listen calls, Clips checked, accepted and rejected, stitches played, live slices and stop reasons, added to the ghost engine's whitelist. Unit test: no event carries audio, a transcript, a prompt, a word or text.
+    - _Requirements: 3.3, 5.5_
+
+- [ ] 3. API (`api/src/voice/` and `api/src/guarded/workersai/`)
+  - [ ] 3.1 Error codes
+    - Add `voice_unavailable`, `clip_too_long`, `clip_not_heard`, `stitch_not_on`, `stitch_no_consent`, `stitch_check_limit` and `live_unavailable` to `shared/src/errors.ts`. Unit test: every value equals its key. None maps to an error screen in `errors-copy`.
+    - _Requirements: 4.2_
+  - [ ] 3.2 Meters, caps and variables
+    - Add `tts`, `stt` and `live` to `SpendGuard`'s `Meter` type and cap table (session and room scopes, global day), with the `VOICE_*` variables and kill-switch wiring; `GET /api/quota` returns the three remaining counts and the flags `voice`, `stitch` and `live`. The `live` Meter counts 10-second slices (30 a session, 180 a day by default). Coordinate with `world-pipeline` 4.1.
+    - _Requirements: 4.1, 4.2, 6.2_
+  - [ ] 3.3 Guarded wrappers `speak` and `transcribe`
+    - In `api/src/guarded/workersai/`, typed by Meter: `speak(ticket: tts or live)` calls Aura-1, then MeloTTS with the same ticket, aborting at 4 seconds from the request; `transcribe(ticket: stt or live)` calls Whisper with `language: 'en'` and the clip passed straight in, never written anywhere. Fake Workers AI that returns good, slow, empty and failing results and counts calls.
+    - _Requirements: 1.1, 1.3, 3.3, 4.1_
+  - [ ] 3.4 Speech cache in R2
+    - R2 binding, a `SpeechCache` port, objects under `speech/v1/<hash>` with `storedAt` and `voice` metadata and no text, a 30-day lifecycle rule, a read-side `cacheFresh` check, lookup of the line's own voice key and then the MeloTTS key. Test with a fake R2 and an injected clock.
+    - _Requirements: 1.4_
+  - [ ] 3.5 Voice lines in sessions
+    - `api/src/voice/lines.ts`: `PlaySession` makes a `VoiceLine` for each approved reply (`narration` or `ending`), keeps the last 8 for 10 minutes under unguessable ids, and returns `voice {lineId}` with the turn response without delaying the text.
+    - _Requirements: 1.1, 1.2, 2.1_
+  - [ ] 3.6 `POST /api/voice/speak`
+    - Accepts `{playId or roomCode, lineId}` only (a body with any text is refused); origin and cookie for Single player, host token for a room; finds the line, checks the cache, then `withTicket('tts')`, `speak`, cache put; answers audio, or `503 voice_unavailable` that the client treats as a quiet fallback; counters only in logs.
+    - _Requirements: 1.1, 1.3, 1.5, 4.1, 4.2_
+  - [ ] 3.7 `POST /api/voice/listen`
+    - Origin and cookie checks, a content-type allow-list, `clipVerdict` and the byte ceiling from Spike 1.1, one clip per 1.5 seconds per Session, `withTicket('stt')`, `withTransientClip(transcribe)`, answers `{transcript}`; no audio, transcript or text in logs or storage; release on failure.
+    - _Requirements: 3.1, 3.2, 3.3, 4.1, 4.2_
+  - [ ] 3.8 Transcript through the typed route
+    - The turn route has no voice flag. Contract test: a transcript posted as `{text}` gets the same truncation, parse and rate-limit result as the same typed string.
+    - _Requirements: 3.4_
+  - [ ] 3.9 Speaking in a room
+    - With `party-mode` task 8.9: `PartyRoom` keeps `voice.spoken`, applies `decideSpeak` (Master's `settings.speech`, off by default) to each narration, Haunt Event, midnight and ending line, counts only lines sent with `speak: true` and a non-empty `spoken`, and sends `voice {lineId, text, kind}` to the Host only. Phones get the public log text as before. Replaces the browser-voice-only path of party-mode Requirement 7.6.
+    - _Requirements: 2.2, 2.3, 2.4_
+  - [ ] 3.10 Contract tests with fakes
+    - The listen handler writes no audio to any storage and logs no transcript; the speak route refuses text and a foreign `lineId`; logs hold only whitelisted counters; no module outside `api/src/guarded/` calls `env.AI.run` for speech or transcription; with the kill switch on and every Meter at zero every route answers quietly and the turn route still works.
+    - _Requirements: 1.5, 3.3, 4.2, 4.3_
+
+- [ ] 4. Web in Play and on the Host
+  - These tasks are built inside the Play screen under the web shell spec `.kiro/specs/haunwallker` (Play tasks 6.1 and 6.2, the Chat and the HUD), and on the Host page from party-mode. They add components and change no part of its Play reducer.
+  - [ ] 4.1 Speak toggle
+    - A button with `aria-pressed`, a 48 CSS pixel target and a text label; on by default in Single player, kept in `sessionStorage`; in Multiplayer it shows the room's switch and only the Master's phone can change it.
+    - _Requirements: 2.1, 2.4_
+  - [ ] 4.2 Subtitle and audio player
+    - The line's full text goes into the Chat transcript's polite live region when it arrives and is marked while it plays; one `AudioContext` created on the content-notice acknowledgement; a 4-second timer from the request; refusal, timeout or autoplay block falls back to `speechSynthesis` and then the Subtitle alone with a quiet "voice off" mark and no error screen; late audio is dropped; the line stops when the switch goes off.
+    - _Requirements: 1.2, 1.3, 2.4_
+  - [ ] 4.3 Talk Button, recorder and microphone indicator
+    - Hold with the pointer or hold Space or Enter; `MediaRecorder` for up to 8 seconds; a persistent "Microphone on" badge with a dot while the stream is open (no pulsing under reduced motion); tracks stopped the moment recording ends and the Blob cleared after sending; a denied permission or a missing `MediaRecorder` hides the button and leaves typing; the transcript is shown as the visitor's line and sent through the typed turn route; an empty result shows one quiet line. Not offered in Multiplayer.
+    - _Requirements: 3.1, 3.2, 3.4_
+  - [ ] 4.4 Quota-aware controls and the zero-quota path
+    - Read the `tts`, `stt` and `live` remaining counts and flags from the quota snapshot and show a control as unavailable with one line of words instead of failing; with everything at zero or the kill switch on, the Play screen still plays to the Ending by reading and typing.
+    - _Requirements: 4.2, 4.3_
+  - [ ] 4.5 Live mode controls (stretch, built with group 6)
+    - A Live button, a microphone indicator and a stop button that are visible whenever the microphone is open, disabled with a reason when speaking is off, and a return to the Talk Button on every stop.
+    - _Requirements: 6.1, 6.2_
+  - [ ] 4.6 Host audio
+    - The Host page asks for audio with its host token for each `voice` message, plays it, shows the Subtitle in its polite live region, and offers one tap to unlock audio on the room-code screen; without the tap it shows Subtitles only.
+    - _Requirements: 1.2, 1.3, 2.3_
+  - [ ] 4.7 Accessibility and manual checks
+    - Keyboard-only run of the speak toggle and Talk Button; a screen-reader pass that a spoken line is announced once; contrast of the indicator at least 4.5:1; a real iPhone and Android run of recording and playback.
+    - _Requirements: 1.2, 3.2_
+
+- [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
+  - [ ] 5.1 Word Bank, Templates and composition
+    - `WORD_BANK` of the 12 default words, `validateWordBank`, the ten starter Templates, `validateTemplates` (no word outside the bank, every bank word used, subtitles pass `validateGhostReply`), `composeStitch`; `stitch.arb.ts` generators. The owner reviews the Template wording.
+    - _Requirements: 5.1_
+  - [ ]* 5.2 Write property test for stitched lines
+    - **Property 8: Stitched lines contain only template and Word Bank words**
+    - **Validates: Requirements 5.1**
+  - [ ] 5.3 `consent.ts`
+    - `StitchConsent {seat, yes, ageOrGuardianTick}`, `consentReduce`, `consentEffective`, and `STITCH_QUESTION` with the deletion statement, the aloud-and-revealed statement, the parent-or-guardian statement and the exact tick label. Unit test pins the phrases and that no age field exists.
+    - _Requirements: 5.3_
+  - [ ]* 5.4 Write property test for consent
+    - **Property 9: Stitch consent is each player's own**
+    - **Validates: Requirements 5.3**
+  - [ ] 5.5 `check.ts`
+    - `heardWord`, `canCheck` and `recordCheck` with three attempts per word, 30 checks per player, 120 per room, and no use of a check on a denied ticket.
+    - _Requirements: 5.2_
+  - [ ]* 5.6 Write property test for word checks
+    - **Property 10: Word checks obey their limits**
+    - **Validates: Requirements 5.2**
+  - [ ] 5.7 `play.ts` and `purge.ts`
+    - `stitchEligible` (Haunt Event or midnight, 60 seconds, no Accusation, one a Round, two a game, not the same seat twice running, seeded choice), `stitchPublicEvent`, `stitchReveal`, `purgeClips` and `nextPurgeAt`.
+    - _Requirements: 5.4, 5.5_
+  - [ ]* 5.8 Write property test for rarity and deletion
+    - **Property 11: Stitch is rare and is deleted at the end or after 6 hours**
+    - **Validates: Requirements 5.4, 5.5**
+  - [ ] 5.9 Word Check service
+    - `api/src/voice/stitch.ts`, called by `PartyRoom`: `canCheck`, `withTicket('stt')`, `withTransientClip(transcribe)`, `heardWord`, `recordCheck`; the transcript is dropped; an accepted Clip goes to room storage and a rejected one is dropped; a refusal returns `stitch_check_limit` or `voice_unavailable`.
+    - _Requirements: 5.2, 5.5_
+  - [ ] 5.10 Clip store in the room
+    - Clips under `clip:<seat>:<word>` in the `PartyRoom`'s own storage with `recordedAt`; the Durable Object alarm set from `nextPurgeAt`; purge on leave, withdraw, Master off, game end and room deletion; never R2, KV, a log, a prompt or a route. Test with an in-memory storage fake.
+    - _Requirements: 5.5_
+  - [ ] 5.11 Recorder and player helpers
+    - `recorder.ts` records one word of at most 2 seconds and rejects a longer one; `stitch-player.ts` decodes and schedules the Clips back to back with Web Audio on the Host with the Subtitle. Reused by party-mode's Controller and Host pages.
+    - _Requirements: 5.1, 5.4_
+  - [ ] 5.12 Room wiring with party-mode Requirement 18
+    - Provide the pure functions and message names to party-mode: `settings {stitch}` (Master only, off by default), the question and tick at join, `stitchAnswer`, `stitchClip`, `stitchResult`, `stitch {eventId, subtitle, clips}` to the Host, the log line "a voice whispered", and the Reveal in the ending payload only. Model-based contract test with a fake `PartyRoom`: the Master's token cannot answer for another seat, no Clip leaves the room, the public log never names a seat, and a Stitch changes no rule state.
+    - _Requirements: 5.3, 5.4_
+
+- [ ] 6. Live mode (stretch, first in the cut order, built last; `shared/src/voice/live.ts`)
+  - [ ] 6.1 `live.ts`: `liveReduce` and `live.arb.ts`
+    - Phases idle, listening, thinking, speaking and stopped; 10 seconds of silence from the later of the start and the last voice; stop; page hidden; 10-second slices bought one at a time (30 a session, 180 a day); every problem ends in hold-to-talk; no effect that stores audio; never offered in Multiplayer.
+    - _Requirements: 6.1, 6.2, 6.3_
+  - [ ]* 6.2 Write property test for live mode
+    - **Property 12: Live mode obeys its limits and checks every sentence**
+    - **Validates: Requirements 6.1, 6.2, 6.3**
+  - [ ] 6.3 Transport and slice service
+    - After Spike 1.3 only. `POST /api/voice/live/slice` reserves a `live` ticket per slice; the chosen transport carries utterances to the same transcription path (typed-text rules) and replies back; the slice ticket pays for transcription, narration and speech; `VOICE_LIVE_ENABLED` stays false until this passes.
+    - _Requirements: 6.2, 6.3_
+  - [ ] 6.4 Sentence-checked replies
+    - Stream the narrator's reply, run each completed sentence through `toVoiceLine` (the engine's `validateGhostReply`, at most 240 characters) before it is spoken, replace a failing sentence's remainder with one scripted line, validate the assembled reply as a whole for the Subtitle, and store no audio. Fake narrator tests with good, bad and slow streams.
+    - _Requirements: 6.3_
+  - [ ] 6.5 Fallback wiring and delay measurement
+    - Any transport, microphone, ticket, cap, silence or hidden-page event ends Live Mode and shows the Talk Button with no error screen; measure the real delay on a phone and a laptop and record it in `docs/spikes/ghost-voice-1.3.md`.
+    - _Requirements: 6.1, 6.2_
+
+- [ ] 7. Checkpoint
+  - Run tests, typecheck, `node tools/check-traceability.mjs`; confirm no test calls a real model; play a full game once with voice on in Single player, once with `VOICE_ENABLED=false` and every Meter at zero (it must reach the Ending by reading and typing), and once in a Multiplayer room with speaking on and Stitch on using fake Clips; confirm which of Stitch (`VOICE_STITCH_ENABLED`) and live mode (`VOICE_LIVE_ENABLED`) ship, and that cutting either leaves the rest working; update `tech.md`, `ghost-safety.md`, `security-and-cost.md` and `structure.md` with what the spikes resolved; ask the user if questions arise.
+  - _Requirements: 4.3_

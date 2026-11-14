@@ -9,10 +9,11 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 
 - [ ] 1. Spikes (time-boxed; each writes `docs/spikes/<id>.md` and fixtures)
   - [ ] 1.1 World Labs end to end with one photo
-    - Run generate → poll → get world through the MCP server. Record: real asset field names and formats (SPZ/PLY LODs, collider GLB, pano, thumbnail), whether upstream URLs expire, wall-clock time, credits used, up-axis and scale conventions, how a photo vs a Nova image behaves. Save scrubbed fixtures in `shared/fixtures/worldlabs/`. Update `steering/worldlabs-api.md` and `steering/tech.md` unverified list.
+    - Run generate → poll → get world through the MCP server. Record: real asset field names and formats (SPZ/PLY LODs, collider GLB, pano, thumbnail), whether upstream URLs expire, wall-clock time, credits used, up-axis and scale conventions, how a photo vs a generated image behaves. Save scrubbed fixtures in `shared/fixtures/worldlabs/`. Update `steering/worldlabs-api.md` and `steering/tech.md` unverified list.
     - _Requirements: 7.1, 8.1, 8.2_
   - [ ] 1.2 Workers AI from a Worker
-    - Verify the exact model ids and input shapes for `@cf/black-forest-labs/flux-2-dev` (sketch as a reference image), `@cf/bria/rmbg-2.0` (background removal) and `@cf/meta/llama-4-scout-17b-16e-instruct` (image moderation) through `env.AI.run`; record image size limits, latency and neuron cost per call, and whether a sketch gives usable photo quality (if not, evaluate `flux-2-max`).
+    - Verify the exact model ids and input shapes through `env.AI.run` for `@cf/black-forest-labs/flux-2-klein-9b` (a 512 px sketch as a reference image plus the caption prompt, and text-to-image for portraits; fall back to `@cf/black-forest-labs/flux-2-dev` by changing `IMAGE_MODEL_ID` if klein is not good enough), `@cf/meta/llama-4-scout-17b-16e-instruct` (place brief and a safe or unsafe verdict from a photo as clean JSON, narration, image size limits) and `@cf/meta/llama-guard-3-8b` (accuracy on short text such as nicknames, behaviour for languages it does not list, fail closed). Verify Cloudflare Images `segment=foreground` from a Worker (clean transparency, cost, Images binding or `cf.image` fetch).
+    - Record image size limits, latency and the real cost per call in neurons (Workers AI bills in its own units, not dollars) to size the image meter caps. Confirm the klein 9B zero-data-retention listing before any sketch is sent. Decide whether a 512 px sketch is good enough for World Labs to build from.
     - _Requirements: 2.4, 3.1_
   - [ ] 1.3 Enhance A/B (single image vs outpaint-extended multi-image)
     - On three photos and three sketch results, generate both variants, compare in the viewer, record preference and credit cost. Decide `ENHANCE_VIEWS` default.
@@ -79,7 +80,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 
 - [ ] 4. SpendGuard Durable Object
   - [ ] 4.1 Implement reserve, commit, release, expiry alarm, remaining, kill switch
-    - Meters `world`, `image`, `llm`; caps session / ip-day / global-day / global-total from env; denial leaves state unchanged.
+    - Meters `world`, `image`, `llm`, `tts`, `stt` and `live` (caps from the `ghost-voice` spec; `PARTY_TTS_ROOM_CAP` is replaced by `VOICE_ROOM_LINE_CAP`); caps session / ip-day / global-day / global-total from env; denial leaves state unchanged.
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7_
   - [ ]* 4.2 Write model-based property test for SpendGuard bounds
     - **Property 7: SpendGuard never exceeds a cap**
@@ -95,14 +96,14 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
   - [ ] 5.1 `POST /api/uploads`
     - Multipart parse, validate, strip metadata, store in R2 with 24 h expiry under opaque id; reject listing.
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
-  - [ ] 5.2 `AIClient` (wraps `env.AI.run`, per Spike 1.2) and guarded FLUX.2, rmbg and text wrappers
-    - All wrappers live in `api/src/guarded/` and require a `SpendTicket`.
+  - [ ] 5.2 `WorkersAiClient` (wraps `env.AI.run` and the Images call, per Spike 1.2) and its guarded wrappers: image model, Scout text and vision, Llama Guard, cut-out
+    - All wrappers live in `api/src/guarded/workersai/` and require a `SpendTicket`. Model ids come from `IMAGE_MODEL_ID`, `GHOST_MODEL_ID` and `GUARD_MODEL_ID`; no route hard-codes one.
     - _Requirements: 2.4, 3.1, 5.1, 5.5_
   - [ ] 5.3 `POST /api/sketch/render` and `/api/sketch/select`
-    - Reject blank, build prompt, reserve `image`, call FLUX.2 with the sketch as a reference image ×2, store candidates; quota exhausted → no call.
+    - Reject blank, build prompt, reserve `image`, call the image model with the sketch as a reference image ×2, store candidates; quota exhausted → no call.
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.6_
   - [ ] 5.4 `POST /api/places/brief`
-    - Vision model with image → `{brief ≤ 80 words, safe}`; unsafe → delete image; failure → fail closed; persist brief.
+    - Scout vision with the image → `{brief ≤ 80 words, safe}`; unsafe → delete image; failure → fail closed; persist brief.
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
 - [ ] 6. Confirm gate and world creation

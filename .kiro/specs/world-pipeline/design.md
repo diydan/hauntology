@@ -24,10 +24,10 @@ sequenceDiagram
 
   W->>A: POST /api/uploads (photo) or /api/sketch/render
   A->>G: reserve(image)  (sketch only)
-  A->>B: FLUX.2 (sketch as reference)
+  A->>B: FLUX.2 klein 9B (sketch as reference, caption prompt)
   A->>R: store Place Image (metadata stripped)
   W->>A: POST /api/places/brief
-  A->>B: Vision model (image) -> brief + safe
+  A->>B: Llama 4 Scout (image) -> brief + safe
   W->>A: POST /api/worlds/quote
   A-->>W: quote + confirmToken
   W->>A: POST /api/worlds (confirmToken)
@@ -58,19 +58,19 @@ sequenceDiagram
 | `GET /api/worlds/:id/assets/:name` | range-capable asset stream | 8.4 |
 | `DELETE /api/worlds/:id` | delete my place | 10.2 |
 | `GET /api/gallery` | list Gallery Worlds | 9.2 |
-| `GET /api/quota` | remaining per meter | 5.7 |
+| `GET /api/quota` | remaining per meter (`world`, `image`, `llm`, `tts`, `stt`, `live`) and the flags `voice`, `stitch` and `live` | 5.7 |
 
 ### `shared/` pure modules
 `upload.ts` (validate + `stripJpegMetadata`), `sketch.ts` (`inkCoverage`, `buildSketchPrompt`), `token.ts` (`signConfirm`, `verifyConfirm`), `dedup.ts` (`worldKey`), `job.ts` (`jobReducer`), `manifest.ts` (`buildManifest`), `retention.ts` (`expiredKeys`), `enhance.ts` (`planEnhance`), `errors.ts`.
 
 ### Durable Objects
-- `SpendGuard`: `reserve({meter, sessionId, ipHash, now}) → {ok:true, ticket} | {ok:false, reason}`, `commit(ticket)`, `release(ticket)`, `remaining(sessionId, ipHash)`, `setKill(on)`. Meters: `world`, `image`, `llm`. Caps: session, ip-day, global-day, global-total (world only). Unreleased reservations expire after 30 min and are treated as released.
+- `SpendGuard`: `reserve({meter, sessionId, ipHash, now}) → {ok:true, ticket} | {ok:false, reason}`, `commit(ticket)`, `release(ticket)`, `remaining(sessionId, ipHash)`, `setKill(on)`. Meters: `world`, `image`, `llm`, `tts`, `stt`, `live` (the last three from the `ghost-voice` spec, with its own session, room and day caps). Caps: session, ip-day, global-day, global-total (world only). Unreleased reservations expire after 30 min and are treated as released.
 - `WorldJob`: `start(args)`, `status()`, `alarm()`; uses `jobReducer` for every transition; persists after each event.
 
 ## Data models
 
 ```ts
-type Meter = 'world' | 'image' | 'llm';
+type Meter = 'world' | 'image' | 'llm' | 'tts' | 'stt' | 'live';   // tts, stt and live are the ghost-voice meters (live counts 10-second slices)
 type SpendTicket = { id: string; meter: Meter; sessionId: string; issuedAt: number };
 
 type JobState = 'queued' | 'generating' | 'ingesting' | 'ready' | 'failed';

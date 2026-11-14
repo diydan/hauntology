@@ -49,6 +49,11 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
   - [ ]* 2.16 Write property test for the memory card
     - **Property 11: Memory card contains exactly the found memories**
     - **Validates: Requirements 7.1**
+  - [ ] 2.17 `atmosphereParams` and `tiltLook`
+    - _Requirements: 3.6, 8.1_
+  - [ ]* 2.18 Write property test for atmosphere and tilt
+    - **Property 12: Atmosphere and tilt are bounded and never touch movement**
+    - **Validates: Requirements 3.6, 8.1**
 
 - [ ] 3. Loader and fallbacks
   - [ ] 3.1 `WorldLoader`: manifest fetch, LOD choice, progress stages, retry ×2 with backoff, orientation applied, spawn placed
@@ -66,6 +71,8 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
   - [ ]* 4.4 Write property test for collision
     - **Property 3: Collision resolution never leaves the player inside geometry**
     - **Validates: Requirements 2.4**
+  - [ ] 4.5 Tilt to look on phones: one motion-permission tap, a calibration tap, wobble threshold, drag-to-look as the fallback, movement and collision untouched
+    - _Requirements: 8.1_
 
 - [ ] 5. Haunt layer
   - [ ] 5.1 Grade overlay (desaturate, vignette, grain, dim) driven by Haunt Level with smoothing
@@ -78,14 +85,16 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
     - _Requirements: 3.4_
   - [ ] 5.5 Procedural ambient audio with mute and ducking (optional stretch)
     - _Requirements: 3.5_
+  - [ ] 5.6 Atmosphere from `setAtmosphere`: tint and fog by weather class and time of day, capped rain or snow, sky dome from the star texture at dusk and night (the `conditions` spec supplies the snapshot and the texture)
+    - _Requirements: 3.6_
 
 - [ ] 6. HUD and interaction
   - [ ] 6.1 Interaction prompt, memory counter, journal button, Exit control
     - _Requirements: 4.1, 4.3, 4.4_
   - [ ] 6.2 `InputRouter` integration: chat open releases pointer lock and suspends movement
     - _Requirements: 4.2_
-  - [ ] 6.3 `ViewerBridge` to the ghost engine (pose ≤ 4 Hz, haunt level, found ids, ghost visibility)
-    - _Requirements: 3.3, 3.4, 4.1_
+  - [ ] 6.3 `ViewerBridge` to the ghost engine (pose ≤ 4 Hz, haunt level, found ids, ghost visibility, `setAtmosphere`), importing its messages from `shared/src/app/events.ts`
+    - _Requirements: 3.3, 3.4, 3.6, 4.1_
 
 - [ ] 7. Performance
   - [ ] 7.1 `QualityController` wired to render loop; resolution scale and LOD switching; `?debug=1` overlay

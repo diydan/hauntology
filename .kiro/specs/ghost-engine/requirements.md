@@ -68,7 +68,7 @@ The ghost engine runs the text-adventure loop: the visitor walks to three hidden
 
 #### Acceptance Criteria
 
-1. WHEN a Directive needs narration THEN the Narrator SHALL call the configured Workers AI text model with the persona, fixed rules, only the revealed memories and the Directive, with at most 220 output tokens and a 6-second timeout.
+1. WHEN a Directive needs narration THEN the Narrator SHALL call the configured Workers AI text model with the persona, fixed rules, only the revealed memories and the Directive, and optionally the weather class, the time-of-day bucket and the moon name from the frozen conditions snapshot (nothing else about the real world), with at most 220 output tokens and a 6-second timeout.
 2. WHEN any prompt is built THEN the Engine SHALL include no text of any memory that is not yet revealed.
 3. WHEN a model reply is received THEN the Engine SHALL validate it (non-empty, at most 600 characters, no URLs, markup or control characters, no out-of-fiction phrases), retry once on failure and then substitute a scripted line.
 4. THE Engine SHALL provide at least five persona-flavoured scripted lines for every Directive kind, selected with a seeded random generator.

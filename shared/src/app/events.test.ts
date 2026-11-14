@@ -40,6 +40,8 @@ describe("ShellToViewer", () => {
     const ok: ShellToViewer[] = [
       { t: "set_input_mode", mode: "chat" },
       { t: "set_input_mode", mode: "play" },
+      { t: "set_atmosphere", atmosphere: null },
+      { t: "set_atmosphere", atmosphere: { timeOfDay: "night", weather: "fog", tempBand: "cold", windBand: "calm", moon: "full moon" } },
       { t: "apply_view", found: [], anchors: [], hauntLevel: 0, ghostVisible: false },
       { t: "apply_view", found: ["a1", "a3"], anchors: [anchor as never], hauntLevel: 1, ghostVisible: true },
     ];
@@ -50,6 +52,9 @@ describe("ShellToViewer", () => {
     const base = { t: "apply_view", found: ["a1"], anchors: [anchor], hauntLevel: 0.5, ghostVisible: true };
     const bad: unknown[] = [
       { t: "set_input_mode", mode: "walk" },
+      { t: "set_atmosphere" },
+      { t: "set_atmosphere", atmosphere: { timeOfDay: "night", weather: "fog", tempBand: "cold", windBand: "calm", moon: "full moon", place: { lat: 1, lon: 2 } } },
+      { t: "set_atmosphere", atmosphere: { timeOfDay: "night", weather: "hail", tempBand: "cold", windBand: "calm", moon: "full moon" } },
       { ...base, hauntLevel: 1.01 },
       { ...base, hauntLevel: -0.01 },
       { ...base, hauntLevel: Number.NaN },

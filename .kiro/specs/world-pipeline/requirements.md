@@ -2,13 +2,13 @@
 
 ## Introduction
 
-The world pipeline turns a place the user chooses into a stored, walkable 3D world. It supports two starting paths (upload a photo, or draw a sketch that FLUX.2 on Workers AI turns into a photo), a mandatory confirm gate before any paid world generation, a spend guard that makes cost bounded and predictable, and ingestion of the finished World Labs world into our own storage. A pre-generated Gallery guarantees the full experience with zero quota.
+The world pipeline turns a place the user chooses into a stored, walkable 3D world. It supports two starting paths (upload a photo, or draw a sketch that FLUX.2 klein 9B on Workers AI turns into a photo), a mandatory confirm gate before any paid world generation, a spend guard that makes cost bounded and predictable, and ingestion of the finished World Labs world into our own storage. A pre-generated Gallery guarantees the full experience with zero quota.
 
 ## Glossary
 
 - **Pipeline**: the API-side services and Durable Objects that implement this spec.
 - **Place Image**: the single image that is sent to World Labs (an uploaded photo, or a chosen sketch candidate).
-- **Candidate**: one of the images FLUX.2 returns for a sketch.
+- **Candidate**: one of the images the image model (FLUX.2 klein 9B) returns for a sketch.
 - **Place Brief**: a short description (setting, salient objects, mood) of the Place Image plus a safety verdict.
 - **Quote**: the pre-spend summary shown at the confirm gate.
 - **Confirm Token**: a short-lived HMAC token proving the user confirmed a specific Place Image in a specific session.
@@ -39,11 +39,11 @@ The world pipeline turns a place the user chooses into a stored, walkable 3D wor
 #### Acceptance Criteria
 
 1. WHEN the user opens the sketch pad THEN the Web app SHALL provide brush, eraser, three brush sizes, undo and redo of at least 30 steps, and clear, working with mouse, touch and pen input.
-2. IF the submitted sketch has ink coverage below 0.5% of its pixels THEN the Pipeline SHALL reject it without calling FLUX.2.
+2. IF the submitted sketch has ink coverage below 0.5% of its pixels THEN the Pipeline SHALL reject it without calling the image model.
 3. WHEN composing the image prompt THEN the Pipeline SHALL embed the user caption (3 to 200 characters) only inside a delimited data clause, strip control characters, cap total prompt length, and always attach a fixed negative prompt excluding people, text and watermarks.
-4. WHEN a valid sketch and caption are submitted THEN the Pipeline SHALL call FLUX.2 with the sketch as a reference image and return two Candidates.
+4. WHEN a valid sketch and caption are submitted THEN the Pipeline SHALL call the image model (FLUX.2 klein 9B on Workers AI, set by `IMAGE_MODEL_ID`) with the sketch as a reference image together with the caption prompt, and return two Candidates.
 5. WHEN the user selects a Candidate THEN the Pipeline SHALL store it as the Place Image using the same storage rules as Requirement 1.
-6. IF the image-generation quota is exhausted THEN the Pipeline SHALL make no Workers AI call and SHALL return the remaining quota and a pointer to the Gallery.
+6. IF the image-generation quota is exhausted THEN the Pipeline SHALL make no image call and SHALL return the remaining quota and a pointer to the Gallery.
 
 ### Requirement 3
 
@@ -78,7 +78,7 @@ The world pipeline turns a place the user chooses into a stored, walkable 3D wor
 2. WHEN a reserved operation fails, times out or is cancelled THEN the Pipeline SHALL release the Ticket so the unit is returned.
 3. WHEN a reserved operation succeeds THEN the Pipeline SHALL commit the Ticket so the unit stays consumed.
 4. IF world generation is disabled by configuration or the upstream returns insufficient-credits THEN the Pipeline SHALL deny all new world creation until re-enabled while keeping the Gallery available.
-5. WHEN FLUX.2 image calls and ghost LLM calls are made THEN the Pipeline SHALL meter them in SpendGuard with their own caps, separate from the world meter.
+5. WHEN image-model calls, text, vision or moderation calls, and speech, listening or live-voice calls are made THEN the Pipeline SHALL meter them in SpendGuard with their own caps, separate from the world meter.
 6. WHEN reserve, commit and release requests arrive concurrently THEN SpendGuard SHALL never allow committed plus reserved units to exceed any cap.
 7. WHEN the client asks for quota THEN the Pipeline SHALL return remaining counts per meter and nothing else about other sessions.
 

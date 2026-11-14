@@ -8,6 +8,25 @@ importers:
 
   .: {}
 
+  api:
+    dependencies:
+      '@hauntology/shared':
+        specifier: workspace:*
+        version: link:../shared
+      hono:
+        specifier: 4.13.18
+        version: 4.13.18
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 4.20241218.0
+        version: 4.20241218.0
+      typescript:
+        specifier: 5.7.2
+        version: 5.7.2
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8
+
   shared:
     dependencies:
       zod:
@@ -20,6 +39,19 @@ importers:
       fast-check:
         specifier: 3.23.1
         version: 3.23.1
+      typescript:
+        specifier: 5.7.2
+        version: 5.7.2
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8
+
+  web:
+    dependencies:
+      '@hauntology/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
       typescript:
         specifier: 5.7.2
         version: 5.7.2
@@ -390,6 +422,10 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  hono@4.13.18:
+    resolution: {integrity: sha512-H9q/E1XizaWstJxUW881dmLxEj+t/TrGGnyxINkm4+sK0qUwsMtFdo2BWI9Vs3cIS19MU6b6iCijoUoEf4f3DA==}
+    engines: {node: '>=16.9.0'}
 
   loupe@3.2.1:
     resolution: {integrity: sha512-CdzqowRJCeLU72bHvWqwRBBlLcMEtIvGrlvef74kMnV2AolS9Y8xUv1I0U/MNAWMhBlKIoyuEgoJ0t/bbwHbLQ==}
@@ -791,6 +827,8 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  hono@4.13.18: {}
 
   loupe@3.2.1: {}
 

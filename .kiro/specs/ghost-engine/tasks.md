@@ -1,9 +1,9 @@
 # Implementation Plan
 
-Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and 5.2 (AIClient), and `world-viewer` 6.3 (ViewerBridge).
+Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and 5.2 (WorkersAiClient), and `world-viewer` 6.3 (ViewerBridge).
 
 - [ ] 1. Spike: narration tone and cost
-  - Run three personas (soft/childlike, dry/stern, formal/melancholic) for ten turns each through `llama-3.3-70b-instruct-fp8-fast` using the guarded AIClient text wrapper. Record latency, tokens, validation failure rate, and whether the rules in `steering/ghost-safety.md` hold against 10 jailbreak attempts. Tune prompt wording. Write `docs/spikes/4.1.md`.
+  - Add one weather case per persona (a rainy dusk, a snowy night). Run three personas (soft/childlike, dry/stern, formal/melancholic) for ten turns each through `llama-4-scout-17b-16e-instruct` (`GHOST_MODEL_ID`) using the guarded WorkersAiClient text wrapper. Record latency, tokens, validation failure rate, and whether the rules in `steering/ghost-safety.md` hold against 10 jailbreak attempts. Tune prompt wording. Write `docs/spikes/4.1.md`.
   - _Requirements: 5.1, 5.5, 5.6_
 
 - [ ] 2. Pure engine logic (`shared/src/ghost/`)
@@ -27,7 +27,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - [ ]* 2.8 Write property test for pose sanitising
     - **Property 6: Pose sanitising**
     - **Validates: Requirements 3.5**
-  - [ ] 2.9 `step` reducer with Directives, progress and ending
+  - [ ] 2.9 `step` reducer with Directives, progress and ending (`engine.ts` must not import `shared/src/conditions/`)
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
   - [ ]* 2.10 Write property test for the reveal rule
     - **Property 4: Reveal rule and monotone progress**
@@ -43,12 +43,12 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - [ ]* 2.14 Write property test for automatic hints
     - **Property 8: Automatic hints trigger on idleness**
     - **Validates: Requirements 4.2**
-  - [ ] 2.15 `buildNarrationPrompt` and `clientView`
+  - [ ] 2.15 `buildNarrationPrompt` (with the optional `sky?: PromptFields`: weather class, time bucket and moon name) and `clientView` (carrying `atmosphere`)
     - _Requirements: 1.1, 5.1, 5.2_
   - [ ]* 2.16 Write property test for leakage
     - **Property 9: No leakage of unrevealed memories**
     - **Validates: Requirements 1.1, 5.2**
-  - [ ] 2.17 `validateGhostReply` and scripted line library (≥ 5 variants per Directive kind per voice)
+  - [ ] 2.17 `validateGhostReply` (it calls the `conditions` spec's `mentionsRealWorld` and replaces a reply that mentions news, crime, death or real events with a scripted line) and scripted line library (≥ 5 variants per Directive kind per voice, plus scripted weather lines and star lines)
     - _Requirements: 5.3, 5.4_
   - [ ]* 2.18 Write property test for reply safety
     - **Property 10: Replies are always safe and non-empty**
@@ -66,14 +66,14 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - [ ]* 2.23 Write property test for session round-trip
     - **Property 13: Sessions round-trip and expire**
     - **Validates: Requirements 1.4, 8.1, 8.2**
-  - [ ] 2.24 Telemetry whitelist
+  - [ ] 2.24 Telemetry whitelist (including the voice counters of the `ghost-voice` spec)
     - _Requirements: 9.1_
   - [ ]* 2.25 Write property test for telemetry
     - **Property 14: Telemetry carries no content**
     - **Validates: Requirements 9.1**
 
 - [ ] 3. PlaySession Durable Object
-  - [ ] 3.1 Start, turn, view, reset and 24-hour expiry alarm
+  - [ ] 3.1 Start (taking an optional `ConditionsChoice`, reading the snapshot once through the `conditions` spec and storing it frozen), turn, view, reset and 24-hour expiry alarm
     - Turn pipeline: rate limit → sanitise → parse → clamp pose → `step` → narrate → record → persist. Seeds generated from archetype table with seeded rng and never returned to the client.
     - _Requirements: 1.1, 1.4, 2.2, 8.3_
   - [ ] 3.2 Anchor intake
@@ -81,7 +81,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
     - _Requirements: 1.2, 1.3, 1.5_
 
 - [ ] 4. Narrator
-  - [ ] 4.1 Guarded AIClient text call with persona and rules, `llm` reserve per turn, 6 s timeout, one retry, scripted fallback
+  - [ ] 4.1 Guarded WorkersAiClient text call (Scout) with persona and rules, `llm` reserve per turn, 6 s timeout, one retry, scripted fallback
     - _Requirements: 5.1, 5.3, 6.1_
   - [ ] 4.2 Memory reveal narration
     - Two to four first-person sentences grounded in the brief and archetype; validate and store as the Memory; scripted memory templates per archetype as fallback.
@@ -93,7 +93,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
     - _Requirements: 6.1, 6.2_
 
 - [ ] 5. Routes
-  - `POST /api/play/start`, `POST /api/play/:id/turn`, `GET /api/play/:id`, `POST /api/play/:id/reset`; origin and cookie checks; counters only in logs.
+  - `POST /api/play/start`, `POST /api/play/:id/turn` (its reply carries `voice {lineId}` for the line the server holds, the last 8 lines for 10 minutes, as `ghost-voice` needs; `parseAction` and `acceptTurn` constants are exported from `shared/src/ghost/` for the transcript path), `GET /api/play/:id`, `POST /api/play/:id/reset`; origin and cookie checks; counters only in logs.
   - _Requirements: 1.1, 1.4, 8.1, 8.2, 8.3, 9.1_
 
 - [ ] 6. Web chat and journal

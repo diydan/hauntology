@@ -5,7 +5,7 @@ import type { ResumeFacts, SessionRecord } from "./types";
 
 const W = "w-AbCdEfGhIjKlMnOpQrSt12";
 const P = "p-AbCdEfGhIjKlMnOpQrSt12";
-const FLAGS = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false };
+const FLAGS = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false };
 const session = (over: Partial<SessionRecord> = {}): SessionRecord => ({ ackNotice: false, flags: FLAGS, ...over });
 
 describe("resumeTarget", () => {

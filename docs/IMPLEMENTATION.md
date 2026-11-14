@@ -12,18 +12,20 @@ This plan orders the existing specs. It does not replace them. Task numbers refe
 | API | Cloudflare Worker, Hono |
 | State | Durable Objects: `SpendGuard`, `WorldJob`, `PlaySession`, `PartyRoom`, `PartyDirectory` |
 | Blobs | R2 |
-| AI | Workers AI binding (`env.AI`), behind one `AIClient` with `SpendGuard` tickets |
+| AI | All on Cloudflare: Workers AI binding (`env.AI`) and Cloudflare Images, behind one `WorkersAiClient` in `api/src/guarded/workersai/` with `SpendGuard` tickets. No AWS. |
 | World | World Labs Marble API |
 
-Workers AI models:
+AI models (all on Cloudflare):
 
-| Job | Model |
-|---|---|
-| Sketch to photo, portraits | `flux-2-dev` |
-| Sprite cut-out | `bria/rmbg-2.0` |
-| Narration, place brief | `llama-3.3-70b-instruct-fp8-fast` |
-| Photo moderation (vision) | `llama-4-scout-17b-16e-instruct` |
-| Ghost and host voice | `inworld/tts-2` |
+| Job | Model | Variable |
+|---|---|---|
+| Sketch to photo, portraits | `flux-2-klein-9b` (fallback `flux-2-dev`) | `IMAGE_MODEL_ID` |
+| Sprite cut-out | Cloudflare Images `segment=foreground` | none |
+| Narration, place brief, photo moderation (image in) | `llama-4-scout-17b-16e-instruct` | `GHOST_MODEL_ID` |
+| Moderation of free text (ghost detail, nicknames, Zone names) | `llama-guard-3-8b` | `GUARD_MODEL_ID` |
+| Ghost voice (speech) | `deepgram/aura-1`, fallback `myshell-ai/melotts` | `VOICE_TTS_MODEL_ID` |
+| Listening and the Stitch word check | `openai/whisper-large-v3-turbo` | `VOICE_STT_MODEL_ID` |
+| Real weather, hour and moon | Open-Meteo (not Workers AI) | `WEATHER_BASE_URL`, `CONDITIONS_ENABLED` |
 
 Model IDs are unverified. Spike A confirms the exact strings and input shapes before any code depends on them.
 
@@ -33,10 +35,16 @@ Done on 2026-11-14: the Bedrock and Nova wording is gone from every spec, steeri
 
 Still open:
 
-- **Web shell spec** (`.kiro/specs/haunwallker`): requirements and design are written. `tasks.md` is next. It also owns `world-pipeline` tasks 10.1 to 10.4 (photo picker, sketch pad, confirm screen, progress screen).
-- **TTS**: a voice per Ghost Persona, a host voice, a `TTS_*` cap in `SpendGuard`, text always shown, audio optional, off by default for reduced-motion and muted users.
+- **Web shell spec** (`.kiro/specs/haunwallker`): requirements, design and `tasks.md` (57 tasks) are written. Groups 1 and 2 (shared pure logic with Properties 1 to 11, fakes and demo mode) are done; group 3 (session routes) is in progress. It also owns `world-pipeline` tasks 10.1 to 10.4 (photo picker, sketch pad, confirm screen, progress screen).
+- **Amendment E, AI part** (applied 2026-11-14): all AI runs on Cloudflare. Llama 4 Scout does text and vision (narration, place brief, photo moderation), Llama Guard 3 checks free text, FLUX.2 klein 9B makes images (FLUX.2 dev is the fallback), Cloudflare Images `segment=foreground` cuts out sprites. `AIClient` is now `WorkersAiClient` in `api/src/guarded/workersai/`. New vars `GUARD_MODEL_ID` and `IMAGE_MODEL_ID`. Applied to steering, the spend-guard hook, the guarded-ai power, world-pipeline, ghost-creator, ghost-engine, the party-mode tasks and these docs. Spike A verifies every model id and number before code depends on it. No shell code changed.
+- **Master amendment** (applied 2026-11-14; it replaces Amendments E, F, G and H and assumes A to D): seven specs, 287 criteria and 124 properties, which is what the amendment states. New specs `conditions` (23 and 11) and `ghost-voice` (24 and 12). `party-mode` is 108 and 53 (Requirements 12 to 20, rewritten 11 and 12), `world-viewer` 31 and 12 (`setAtmosphere`, tilt to look). Amendment C was not in the repo and was rebuilt from E's summary; the master amendment then settled the open parts: Cues are creak, whisper, bell and laugh as sound files, Poltergeists can also Nudge and gain Resolve, Spike numbers are 1.5 to 1.9. I added two things on my own, open to review: at most one Spook in any four consecutive Turns (one per Round alone gives 40% of Turns Spooked at two Players in the worst case), and the 16-or-guardian tick in the Stitch question. Not decided and chosen by me: Bots never Nudge, Cue, Frame or Rattle; the hour strike is on by default; `CONDITIONS_ENABLED` defaults to true. Not applied: the landing page (not in this repo). `shared/src/errors.ts` gets the party codes in party task 2.71, and the shell's `QuotaSnapshot` gains `stt` and `live`.
+- **Choices the spec writers made, for you to review** (each is marked in the spec itself):
+  - `conditions`: temperature bands at 0, 10, 20 and 28 degrees; wind bands at 12 and 29 km/h; particle caps 1200, 400 at low quality and 120 under reduced motion; dawn 5 to 7, day 8 to 17, dusk 18 to 20, night 21 to 4; city search limited to one a second and 30 an hour per session; the "at most 12 ambient loops" is read as six weather classes by day or night; the narrator names a star through a fixed scripted line, not the model prompt; the star catalogue licence is unconfirmed (avoid share-alike lists).
+  - `ghost-voice`: day caps `VOICE_TTS_DAY_CAP=1500` and `VOICE_STT_DAY_CAP=750` are not in the amendment (the old `TTS_DAY_CAP` and half of it); the `live` meter counts 10-second slices (30 a session, 180 a day); a line over 240 characters is spoken only to its last sentence end that fits, and the subtitle shows all of it; a cache hit takes no ticket and is not one of the 40; the word check must hear exactly the asked word; the ten starter Stitch templates are the writer's; Stitch is on in config by default and the Master switch is off, so use `VOICE_STITCH_ENABLED=false` for a public launch until you have taken advice; clips travel on the seat's own WebSocket and never touch a route, R2, KV or a log; multiplayer audio plays on the Host only.
+  - Me: the hour strike is on by default, a stitched line does not count toward the 20 spoken lines, Bots never Nudge, Cue, Frame or Rattle, and the shell reads two voice flags (`voiceEnabled`, `liveEnabled`) from `GET /api/session`.
+- **TTS**: superseded by the `ghost-voice` spec (Aura-1, with the `tts`, `stt` and `live` meters).
 - **Party contributions**: party requirement 3 now has Photo Prompts (three offered, up to three skips, framed in the world). The earlier relic-sketch idea (a hidden personal photo that is deleted after generation) overlaps it and is not decided.
-- **Security gaps** from the reviews: play-session ownership, sketch-select ownership, own-world read and delete ownership (the shell design assumes it, see "World access" in `.kiro/specs/haunwallker/design.md`), and the `errors.ts` code list that does not match the `world-pipeline` design.
+- **Security gaps** from the reviews: play-session ownership, sketch-select ownership, own-world read and delete ownership (the shell design assumes it, see "World access" in `.kiro/specs/haunwallker/design.md`). The contract suite for it is written (`api/src/contract/world-access.ts`, shell task 3.2); run it against the real routes as shell task 3.3 once they exist, and the `errors.ts` code list that does not match the `world-pipeline` design.
 
 ## Phases
 
@@ -49,13 +57,13 @@ Still open:
 ### Phase 1: Spikes (Nov 16 to 19), run in parallel where possible
 | Spike | Question | Fallback if it fails |
 |---|---|---|
-| A. Workers AI | Do model IDs and input shapes match? Does `flux-2-dev` turn a sketch into a usable photo? | Try `flux-2-max`; else upload-only (sketch becomes a stretch feature) |
-| B. TTS | Is `inworld/tts-2` under 2 s for a 220-token line? | `openai/tts-1`; else text only |
+| A. Workers AI and Images | Do model IDs and input shapes match? Does `flux-2-klein-9b` turn a 512 px sketch into a photo World Labs can build from? Does Scout return the brief and verdict as clean JSON? Is Llama Guard accurate on short text? Does `segment=foreground` cut out a sprite from a Worker? What is the cost per call in neurons? | `flux-2-dev` for images; else upload-only (sketch becomes a stretch feature) |
+| B. Voice and weather | Is Aura-1 under 4 s for a line, and what does it cost? Does Whisper take a short clip? Does Open-Meteo answer from a Worker? (ghost-voice 1.1, conditions 1.1) | MeloTTS, the browser voice, then subtitles; the default sky |
 | C. World Labs | Response fields, asset expiry, orientation, scale (world-pipeline 1.1) | Adapter per what is real |
 | D. Splat in browser | Spark renders a real world on a phone at usable FPS (world-viewer 1) | Pano fallback |
 | E. Party transport | DO WebSocket latency, six phones at 30 Hz (party 1.1) | Lower rate, coalesce input |
 
-Party spikes 1.2 (iOS and Android controls, QR) and 1.3 (pyramid) wait until Phase 4.
+Party spikes 1.2 (iOS and Android controls, QR), 1.3 (pyramid), 1.4 (phone sound) and 1.5 (balance) wait until Phase 4.
 
 **Gallery worlds (Nov 18 to 21).** Generate the six Gallery worlds right after Spike C, through the dev MCP (`worldlabs-dev`) and the `ingest-gallery` script (world-pipeline 9.1). This needs only the Spike C adapter and the spend-capped MCP. It does not need `SpendGuard`, the routes or `WorldJob`. Budget about $18. Nov 21 is the hard date because credits must be spent before the Dec 1 request. Hand-tune the manifests (orientation, scale, spawn, anchors) later, when the viewer runs.
 
@@ -65,13 +73,13 @@ Party spikes 1.2 (iOS and Android controls, QR) and 1.3 (pyramid) wait until Pha
 This is the product. Party mode cannot ship without it.
 
 1. **Pure logic with property tests** (all in `shared/`): world-pipeline 3, world-viewer 2, ghost-creator 1, ghost-engine 2.
-2. **`SpendGuard`** (world-pipeline 4). Everything paid depends on it. Add the TTS meter here.
+2. **`SpendGuard`** (world-pipeline 4). Everything paid depends on it. Add the `tts`, `stt` and `live` meters here.
 3. **Routes**: upload, sketch, brief, confirm gate (world-pipeline 5, 6). Add the ownership checks from the review.
 4. **`WorldJob`** (world-pipeline 7).
 5. **Tune Gallery manifests** (orientation, scale, spawn, anchors) once the viewer renders them. The worlds themselves are generated in Phase 1.
 6. **Viewer** (world-viewer 3 to 6): loader, controls, collision, haunt layer, HUD.
 7. **Ghost creator** (ghost-creator 2 to 4) and **engine** (ghost-engine 3 to 6): `PlaySession`, narrator, chat, journal.
-8. **TTS wiring**: ghost voice on narration lines, text always shown.
+8. **Ghost voice wiring** (ghost-voice 1 to 4): speech on narration lines, text always shown; the sky dome (conditions) is cheap and goes in early.
 9. **Web shell** (`.kiro/specs/haunwallker`): routing, error boundaries, confirm gate UI, sketch pad.
 
 - **Exit (Nov 27):** a visitor opens the deployed URL, picks a Gallery world, designs a ghost, walks, talks, finds three memories, and sees the memory card. Zero paid calls needed.
@@ -92,6 +100,8 @@ Follow the cut line in `docs/PLAN.md`. Each layer must work before the next star
 | 2. Contributions: relic sketch, photo, Zone name, Suspect | party 5, 9.8 | Dec 1 |
 | 3. Display: pyramid page | party 10 | Dec 2 |
 | 4. Print kit: relics, QR plates, holder | party 3, 11 | runs as a parallel hardware track: designed Nov 18, printed Nov 19 to 21 (2 days), tested Nov 22. See `docs/JOURNAL.md` |
+| 5. Waiting play: Cues, Nudges, phone sound, Frames | party 2.59 to 2.71, 4.14 to 4.16, 8.11, 9.14 to 9.16; spikes 1.5 and 1.6 | Dec 2, only if layer 1 is done |
+| 6. Phone extras, cheapest first: the sky dome (conditions), the Spirit lens, the light bar, tilt to look (world-viewer 8), then Rattle and the Becoming, then Stitch | conditions; party 2.72 to 2.105, 4.17 to 4.21, 8.12, 8.13, 9.17 to 9.21, 13; spikes 1.7 to 1.9 | only after the Nov 27 gate and only if layers 1 and 5 are done |
 
 If Phase 2 is not done by Nov 27, **pause party mode** and finish Phase 2 first. Solo with Bots (layer 1) is enough to demo.
 
@@ -116,20 +126,27 @@ The Gallery date (Nov 21) and the credits date (Dec 1) are the only ones the con
 If a date slips, cut from the top of this list first. Each item can go without breaking the ones below it.
 
 1. Enhance (world-pipeline 11)
-2. Party Resolve and Eavesdrop (party 2.55, 2.56, 4.13, 9.11 Eavesdrop part)
-3. Party spoken narration (party 8.8); written narration and TTS audio stay
-4. Print kit parts beyond the QR plates and one relic (party 3.6 standee, holder)
-5. Display page and pyramid (party 10)
-6. TTS audio for the ghost (text stays)
-7. Party contributions: Suspect, photo, Zone name (party 5, 9.8)
-8. Sketch to photo (upload and Gallery stay)
-9. Party Mode as a whole (single player with the Gallery stays)
+2. Ghost live mode (ghost-voice 6)
+3. Stitch (party 18, ghost-voice 5)
+4. Rattle and the Becoming extras (party 19, 2.94 to 2.101)
+5. Spirit lens and light bar (party 16, 17)
+6. Party Frames, House Cues and phone sound (party 2.67 to 2.70, 4.16, 9.14)
+7. Party Cues and Nudges (party 2.59 to 2.62, 4.14, 4.15, 8.11, 9.16)
+8. Party Resolve and Eavesdrop (party 2.55, 2.56, 4.13, 9.11 Eavesdrop part); Nudges spend Resolve, so they go first
+9. Party spoken narration (party 8.8) and the ghost voice in Multiplayer; written narration stays
+10. Real-world conditions beyond the default sky: weather, Memory Day, stars (conditions); the default sky stays
+11. Print kit parts beyond the QR plates and one relic (party 3.6 standee, holder)
+12. Display page and pyramid (party 10)
+13. The ghost's spoken voice in Single player (subtitles and typing stay)
+14. Party contributions: Suspect, photo, Zone name (party 5, 9.8)
+15. Sketch to photo (upload and Gallery stay)
+16. Party Mode as a whole (single player with the Gallery stays)
 
 In Party Mode the Haunt, Residue and Poltergeists are core and stay until Party Mode itself is cut.
 
 Never cut: SpendGuard and the confirm gate, the Gallery path, scripted ghost lines, the content notice and Exit control, property tests for spend and privacy.
 
-Decide at the Nov 27 gate. If Phase 2 is not done, cut items 1 to 3 at once and pause Party Mode.
+Decide at the Nov 27 gate. If Phase 2 is not done, cut items 1 to 9 at once and pause Party Mode. Build order for the extras, cheapest first: the sky dome, the Spirit lens, the light bar and tilt to look; Rattle before Stitch.
 
 ## Definition of done per task
 - Tests green. A task with failing tests is not done.
@@ -153,12 +170,12 @@ Decide at the Nov 27 gate. If Phase 2 is not done, cut items 1 to 3 at once and 
 | Credits or spend run out | Gallery, caps, kill switch, request by Nov 28 |
 | Party mode eats the schedule | Cut line, and the Nov 27 gate |
 | Splats too slow on phones | LOD, adaptive quality, pano fallback |
-| TTS too slow or odd | Text is always shown. Audio is optional |
+| The ghost voice is too slow or odd | Subtitles always show. Audio is optional and falls back to the browser voice |
 | Write-up left to the end | Evidence folder from day one, sections 1 to 4 by Dec 1 |
 | Personal photos from players | Deleted right after generation, never shown, counters only in logs |
 
 ## Open decisions
-1. `inworld/tts-2` or the faster `openai/tts-1` for ghost and host voice (Spike B decides)
-2. Whether `flux-2-dev` or `flux-2-max` is the default (Spike A decides)
+1. Whether Aura-1 is fast and cheap enough for the ghost's voice, or MeloTTS is the default (ghost-voice Spike 1.1 decides)
+2. Whether `flux-2-klein-9b` or `flux-2-dev` is the image model default (Spike A decides)
 3. Domain name and trademark check for "Hauntology"
 4. Eligibility: Luxembourg residency confirmed by you. A written Devpost answer would still be safer

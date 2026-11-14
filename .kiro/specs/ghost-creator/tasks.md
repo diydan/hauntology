@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) and 5.2 (AIClient).
+Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) and 5.2 (WorkersAiClient).
 
 - [ ] 1. Shared logic (`shared/src/creator/`)
   - [ ] 1.1 `TraitsSchema`, `defaultTraits`, `randomTraits`
@@ -43,10 +43,10 @@ Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) a
 
 - [ ] 3. API
   - [ ] 3.1 `POST /api/ghosts/portraits`
-    - Validate traits, sanitise, moderate non-empty detail via guarded AIClient text call (fail closed), reserve `image`, request two candidates, return quota.
+    - Validate traits, sanitise, moderate non-empty detail through the guarded WorkersAiClient, Llama Guard 3 (fail closed), reserve `image`, request two candidates, return quota.
     - _Requirements: 1.5, 2.2, 3.1, 3.2_
   - [ ] 3.2 `POST /api/ghosts/sprite`
-    - Background removal, downscale to ≤ 768 px, validate, retry once with new seed, store RGBA PNG ≤ 1 MB, build Ghost Profile.
+    - Background removal with Cloudflare Images `segment=foreground`, downscale to ≤ 768 px, validate, retry once with new seed, store RGBA PNG ≤ 1 MB, build Ghost Profile.
     - _Requirements: 4.1, 4.2, 4.3_
   - [ ] 3.3 `GET /api/worlds/:id/ghost` and profile persistence
     - _Requirements: 6.2_
