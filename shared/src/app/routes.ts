@@ -1,3 +1,4 @@
+import type { ErrorCode } from "../errors";
 import type { FlowState, GuardResult, Route, ScreenId } from "./types";
 
 /**
@@ -116,3 +117,12 @@ const ALLOW: GuardResult = { allow: true };
 const redirect = (to: Route): GuardResult => ({ allow: false, redirect: to });
 const knowsWorld = (route: Route, flow: FlowState): boolean =>
   route.worldId !== undefined && flow.worldId !== undefined && route.worldId === flow.worldId;
+
+/**
+ * The Screen an API error sends the visitor to, or `null` when the Screen stays and shows the
+ * message. A world that is gone, or a Session that ended, is the `expired` Screen (Requirement 7.6
+ * and 7.7). The server answers `world_not_found` for a missing and a foreign world alike.
+ */
+export function routeForApiError(code: ErrorCode): Route | null {
+  return code === "world_not_found" || code === "session_expired" ? { screen: "expired" } : null;
+}

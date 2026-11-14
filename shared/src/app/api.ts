@@ -36,10 +36,10 @@ export type QuoteResult = {
 export type WorldStatus = {
   id: string;
   status: JobState;
-  title?: string;
-  thumbUrl?: string;
+  title?: string | undefined;
+  thumbUrl?: string | undefined;
   /** Present when `status` is `failed`. */
-  failure?: { code: ErrorCode; quotaReturned: boolean; retryAllowed: boolean };
+  failure?: { code: ErrorCode; quotaReturned: boolean; retryAllowed: boolean } | undefined;
 };
 
 export type JournalEntry = { anchorId: AnchorId; text: string };
@@ -65,7 +65,7 @@ export type PlayTurn = {
 };
 
 /** `voice` names the line the server holds for speech (`speak`); absent when voice is off. */
-export type PlayReply = { text: string; scripted: boolean; voice?: { lineId: string } };
+export type PlayReply = { text: string; scripted: boolean; voice?: { lineId: string } | undefined };
 
 export interface ShellApi {
   session(): Promise<ApiResult<SessionRecord>>;

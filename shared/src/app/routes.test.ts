@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { guardRoute, isWorldId, pathFor, resolveRoute } from "./routes";
+import { ErrorCode } from "../errors";
+import { guardRoute, isWorldId, pathFor, resolveRoute, routeForApiError } from "./routes";
 import { SCREEN_IDS, type FlowState, type Route } from "./types";
 
 const W = "w-AbCdEfGhIjKlMnOpQrSt12";
@@ -163,6 +164,16 @@ describe("guardRoute", () => {
           expect(guardRoute({ screen: "end", worldId: W }, f).allow).toBe(worldId === W && playEnded);
         }
       }
+    }
+  });
+});
+
+describe("routeForApiError", () => {
+  it("sends a missing world and an ended Session to expired, and keeps the Screen for every other code", () => {
+    expect(routeForApiError("world_not_found")).toEqual({ screen: "expired" });
+    expect(routeForApiError("session_expired")).toEqual({ screen: "expired" });
+    for (const code of Object.values(ErrorCode)) {
+      if (code !== "world_not_found" && code !== "session_expired") expect(routeForApiError(code), code).toBeNull();
     }
   });
 });

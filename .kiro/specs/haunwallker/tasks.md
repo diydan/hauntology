@@ -95,29 +95,31 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Blocked until `world-pipeline` 7.4 and 8.1 and `ghost-engine` 5 exist. Call `worldAccessContract(label, makeHarness)` with a harness for the real app. If a route fails, record it in `docs/IMPLEMENTATION.md` under "Security gaps" instead of editing that route here.
     - _Requirements: 3.8, 7.6_
 
-- [ ] 4. Shell infrastructure (`web/src/app/`)
-  - [ ] 4.1 `ApiClient.ts`
+- [x] 4. Shell infrastructure (`web/src/app/`)
+  - [x] 4.1 `ApiClient.ts`
     - Typed same-origin `fetch` with `credentials: 'same-origin'`; every failure becomes a `Result` with an `ErrorCode` (unknown strings become the generic code); reads `Retry-After` on 429 and passes it to `retryGate`; `GET` retries on the `online` event; `POST` is never retried automatically; never reads or returns a server `message` or an upstream host.
     - _Requirements: 7.3, 7.4, 7.5, 9.3_
-  - [ ] 4.2 `QuotaStore.ts`
+  - [x] 4.2 `QuotaStore.ts`
     - One boot request for `GET /api/quota` and `GET /api/session`, shared through context so no Screen makes a second one.
     - _Requirements: 1.4_
-  - [ ] 4.3 Router and `App.tsx`
-    - History-API routes built on `resolveRoute`, `pathFor` and `guardRoute`; the Worker's static asset config serves `index.html` for every non-`/api` path; `resumeTarget` runs only on `/` or a stale route and never overrides a deep link that passes its guard; Play, Creator and Sketch Pad load by dynamic `import()`; on every route change focus moves to the Screen's `h1` (`tabIndex={-1}`) and the title goes to the live region.
+  - [x] 4.3 Router and `App.tsx`
+    - History-API routes built on `resolveRoute`, `pathFor` and `guardRoute`; the Worker's static asset config serves `index.html` for every non-`/api` path; `resumeTarget` runs only on `/` or a stale route and never overrides a deep link that passes its guard (`boot.ts`); Play, Creator and Sketch Pad load by dynamic `import()` (`screens/index.tsx`; their files are stand-ins until 6.1 and 7.1); on every route change focus moves to the Screen's `h1` (`tabIndex={-1}`) and the title goes to the live region.
+    - The Worker's static-asset setting that serves `index.html` for every non-`/api` path (`not_found_handling = "single-page-application"`, with `run_worker_first` so the page gets its Content-Security-Policy) is part of the Worker config in `world-pipeline` task 2, which has no Worker config yet. `web/vite.config.ts` and `web/index.html` are in place and `pnpm --filter @hauntology/web build` works.
     - _Requirements: 1.5, 3.7, 4.5, 5.2, 6.5, 8.1, 10.1_
-  - [ ] 4.4 `ErrorBoundary.tsx`
+  - [x] 4.4 `ErrorBoundary.tsx`
     - A Screen boundary whose fallback shows `errorCopy('shell_crash')`, the code and a Home link, and logs only `(code, screenId)`; a Viewer boundary whose fallback shows the thumbnail and keeps the Chat and Exit.
     - _Requirements: 7.1, 7.2_
-  - [ ] 4.5 `LiveRegion.tsx`, design tokens and layout
+  - [x] 4.5 `LiveRegion.tsx`, design tokens and layout
     - One polite live region for Stage changes, errors and ghost speech; palette and the 4.5:1 contrast rule from `steering/visual-style.md`; visible focus ring in `--lantern`; one `fade` token (300 to 600 ms, 0 to 150 ms under `prefers-reduced-motion`); CSS grid with a container query for the Chat (bottom sheet below 900 px, side panel from 900 px); no horizontal scroll at 320 px.
+    - The tokens, contrast, fade, focus ring, 44 px targets and the Chat container query are checked from the CSS text (`styles.test.ts`). Whether the page really has no horizontal scroll at 320 px is checked by hand in task 10.3.
     - _Requirements: 8.1, 8.2, 8.4, 8.5, 8.6_
-  - [ ] 4.6 Privacy and security guards
+  - [x] 4.6 Privacy and security guards
     - A production logger that accepts only `(code, screenId)`; ESLint rules that ban `dangerouslySetInnerHTML` and `console.*` outside the logger in `web/`; strict CSP headers (no inline script, same-origin only, with `https://challenges.cloudflare.com` in `script-src` and `frame-src` only when Turnstile is configured); no analytics, trackers or third-party fonts.
     - _Requirements: 9.1, 9.2, 9.4, 9.5_
-  - [ ] 4.7 NotFound and Expired screens, offline banner
+  - [x] 4.7 NotFound and Expired screens, offline banner
     - `not_found` and `expired` each link to Home and Gallery; the banner says the network is offline and clears when it returns; local state is kept.
     - _Requirements: 7.4, 7.6, 7.7_
-  - [ ] 4.8 `DebugOverlay.tsx`
+  - [x] 4.8 `DebugOverlay.tsx`
     - With `?debug=1`, show the Quota Snapshot, the current Stage and the Viewer frame rate.
     - _Requirements: 11.4_
 

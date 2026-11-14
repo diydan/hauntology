@@ -36,6 +36,7 @@ export const ERROR_COPY: Record<ErrorCode, ErrorCopy> = {
   timeout: c("That took too long", "The place was not ready in time. Try again, or visit the gallery.", "retry"),
   world_not_found: c("That place is gone", "It may have been deleted, or it ran out of time. Visit the gallery.", "gallery"),
   world_too_small: c("That place is too small for a game", "Pick a bigger place from the gallery.", "gallery"),
+  network_error: c("We could not reach the server", "Check your connection and try again. Nothing was lost.", "retry"),
   shell_crash: c("Something broke on our side", "Your place is safe. Go home and try again.", "home"),
   session_expired: c("Your visit has ended", "Start again from the home page.", "home"),
   conditions_disabled: c("The sky is fixed for now", "Place search is off, so the default sky is used.", "home"),

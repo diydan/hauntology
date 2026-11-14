@@ -1,0 +1,28 @@
+/*
+ * Design tokens (steering/visual-style.md). Text on --ink must be at least 4.5:1; --dust is
+ * below that, so it is for borders and quiet shapes only, never for text (styles.test.ts checks).
+ */
+:root {
+  --ink: #0b0d10;
+  --bone: #e9e4d8;
+  --lantern: #e0a43a;
+  --ghost: #9fe8d0;
+  --dust: #6b6f76;
+  --alarm: #d4604a;
+
+  /* The one fade: 300 to 600 ms, instant under reduced motion. */
+  --fade: 400ms;
+
+  /* Self-hosted fonts come later; until then the system monospace and serif are used. No font is fetched from another origin. */
+  --font-ui: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-ghost: Newsreader, Georgia, "Times New Roman", serif;
+
+  --target: 44px;
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --fade: 0ms;
+  }
+}

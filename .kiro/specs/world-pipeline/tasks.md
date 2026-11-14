@@ -20,7 +20,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - _Requirements: 11.1, 11.2_
 
 - [ ] 2. Scaffold monorepo
-  - pnpm workspace (`shared`, `api`, `web`, `tools/*`), strict tsconfig, Vitest, fast-check, zod, Hono, wrangler config with Durable Object, R2 and cron bindings, `.dev.vars.example` (names only), `.gitignore` (ledger, `.dev.vars`).
+  - pnpm workspace (`shared`, `api`, `web`, `tools/*`), strict tsconfig, Vitest, fast-check, zod, Hono, wrangler config with Durable Object, R2 and cron bindings and static assets from `web/dist` (`not_found_handling = "single-page-application"`, so every non-`/api` path serves `index.html`; `run_worker_first = true`, so the Worker answers `/api/*` and passes every other request to the `ASSETS` binding **through `securityHeadersMiddleware`**, which puts the page's Content-Security-Policy on the HTML; a static `_headers` file could not name Turnstile only when it is configured), `.dev.vars.example` (names only), `.gitignore` (ledger, `.dev.vars`).
   - Add `LICENSE` (MIT) and confirm `/.kiro` is not ignored.
 
 - [ ] 3. Shared pure logic

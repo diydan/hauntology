@@ -1,0 +1,175 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--ink);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+img,
+canvas,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+h1 {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  margin: 0 0 1rem;
+}
+
+h1:focus {
+  outline: none;
+}
+
+a {
+  color: var(--lantern);
+}
+
+/* Every control is reachable from the keyboard and shows where it is. */
+:focus-visible {
+  outline: 3px solid var(--lantern);
+  outline-offset: 2px;
+}
+
+.screen {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  animation: fade-in var(--fade) ease both;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--target);
+  min-width: var(--target);
+  padding: 0 1rem;
+  border: 1px solid var(--lantern);
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--lantern);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--lantern);
+  color: var(--ink);
+}
+
+.button:disabled {
+  border-color: var(--dust);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.banner {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--alarm);
+  background: var(--ink);
+  color: var(--bone);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.debug {
+  position: fixed;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  max-width: calc(100% - 1rem);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--dust);
+  background: var(--ink);
+  color: var(--ghost);
+  font-size: 0.75rem;
+}
+
+.debug dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 0.75rem;
+  margin: 0;
+}
+
+.debug dd {
+  margin: 0;
+}
+
+.viewer-fallback {
+  display: grid;
+  place-items: center;
+  min-height: 12rem;
+  border: 1px solid var(--dust);
+}
+
+/*
+ * Play: the Viewer and the Chat. The Chat is a bottom sheet in a narrow container and a side
+ * panel from 900 px, decided by a container query, not by script.
+ */
+.play-layout {
+  container-type: inline-size;
+  container-name: play;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 100dvh;
+}
+
+.play-layout .chat {
+  grid-row: 2;
+  max-height: 50dvh;
+  overflow-y: auto;
+  border-top: 1px solid var(--dust);
+}
+
+@container play (min-width: 900px) {
+  .play-layout {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .play-layout .chat {
+    grid-row: 1;
+    grid-column: 2;
+    max-height: none;
+    border-top: 0;
+    border-left: 1px solid var(--dust);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

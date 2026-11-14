@@ -8,3 +8,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// Vite's `?raw` import, used by the style tests.
+declare module "*.css?raw" {
+  const css: string;
+  export default css;
+}

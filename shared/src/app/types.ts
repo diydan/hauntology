@@ -45,8 +45,8 @@ export type Capabilities = {
 
 /** The `GET /api/session` payload. Only ids and flags; never photos, sketches or captions. */
 export type SessionRecord = {
-  lastWorldId?: string;
-  lastPlayId?: string;
+  lastWorldId?: string | undefined;
+  lastPlayId?: string | undefined;
   ackNotice: boolean;
   flags: ShellFlags;
 };

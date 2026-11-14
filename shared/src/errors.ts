@@ -34,6 +34,7 @@ export const ErrorCode = {
   world_too_small:         "world_too_small",
   // Web shell
   shell_crash:             "shell_crash",
+  network_error:           "network_error",
   session_expired:         "session_expired",
   bad_origin:              "bad_origin",
   // Conditions
