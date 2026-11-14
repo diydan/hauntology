@@ -1,10 +1,10 @@
 ---
 inclusion: always
 ---
-# Hauntwalk — structure and conventions
+# Hauntology — structure and conventions
 
 ```
-hauntwalk/
+hauntology/
   .kiro/               specs, steering, hooks, settings/mcp.json (all committed)
   shared/src/          pure logic + zod schemas + fixtures loaders. No I/O. Property tests live here.
     party/             Party Mode rules: rooms, deal, turns, suggestions, bots, views

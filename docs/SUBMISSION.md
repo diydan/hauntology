@@ -1,6 +1,6 @@
-# Hauntwalk: product and technical overview
+# Hauntology: product and technical overview
 
-**Kiroween 2026, category: Frankenstein.** Hauntwalk stitches together technology that was never meant to meet: a hand sketch, a diffusion model, a Gaussian-splat world reconstruction, WebGL, an LLM ghost, phones used as game pads, 3D-printed relics and a Pepper's-ghost pyramid.
+**Kiroween 2026, category: Frankenstein.** Hauntology stitches together technology that was never meant to meet: a hand sketch, a diffusion model, a Gaussian-splat world reconstruction, WebGL, an LLM ghost, phones used as game pads, 3D-printed relics and a Pepper's-ghost pyramid.
 
 Read this with `README.md`. Everything under `/.kiro` is the source of truth for what gets built.
 
@@ -14,15 +14,18 @@ Read this with `README.md`. Everything under `/.kiro` is the source of truth for
 5. **Talk**: a text-adventure conversation with the ghost. Find three memories: a sound, a person, a promise. The ending card is shareable.
 
 ### Party mode: a same-room deduction game in the world you just made
-2–6 players in one room. The computer shows the world (Host). Each phone is a PlayStation-style game pad and a private screen (Controller). An optional second screen under a Pepper's-ghost pyramid shows the ghost (Display).
+2–6 players in one room. A laptop or TV only displays the world (Host). Every control lives on a phone, an installable web app that is a game pad and a private screen (Controller). The first player to join is the **Master** and runs the room: world, settings, Bots, start. An optional second screen under a Pepper's-ghost pyramid shows the ghost (Display).
 
 - **One hidden answer**: which ghost, haunting which place, bound to which relic.
 - **Everyone builds the world**: each player contributes a Suspect ghost, a photo and a named Zone; their photos hang in the 3D world.
-- **Timed turns**: players walk the world on a clock, make Suggestions, and get one Accusation. Achievements (visit three Zones, map all six, be quick, be persistent, survive a timeout) earn extra seconds, capped.
+- **Timed turns**: players walk the world on a clock, **Inspect** Zones for hidden **Residue** clues, make Suggestions, and get one Accusation. Achievements (visit three Zones, map all six, be quick, be persistent, survive a timeout) earn extra seconds, capped.
+- **The Haunt pushes back**: a meter rises every Round, on every lost Turn and every wrong Accusation. At levels 3, 6 and 9 it fires an event (a Zone goes cold, a blackout, the ghost moves, a lull). At the maximum the haunting wins.
+- **A wrong guess is not the end**: a Player who accuses wrongly becomes a **Poltergeist**. They keep their hand, take no turns, and choose between the Haunt's events. Players who are waiting earn **Resolve** and can **Eavesdrop** on the category of a card another Player was shown.
 - **Secrets stay private**: the server deals hidden cards; each phone sees only its own hand and notebook.
 - **Six original 3D-printable relics** carry QR tokens. Scanning one is how you name it in a Suggestion. Printing is optional; every scan has an on-screen list fallback.
 - **Premise is "who is haunting this place?"**, not a murder. Relics, not weapons. No real people.
-- **Playable alone**: Bots fill empty seats; one keyboard player can finish a full game with no phones, no printer and no pyramid.
+- **Optional spoken narration** through the browser's speech synthesis, off by default. Text is always shown.
+- **Playable alone**: Bots fill empty seats; one player on the laptop's embedded pad can finish a full game with no other phones, no printer and no pyramid.
 
 ### Principles that override convenience
 1. Never spend without consent. 2. Never dead-end: Gallery worlds, Preset Ghosts and scripted lines let anyone finish with zero quota and zero model calls. 3. Gentle haunting. 4. Personal photos are private. 5. Honest scope: worlds are static, the ghost is a billboard sprite, the pyramid is an optical illusion. 6. Secrets stay on the server. 7. Nothing physical is required.
@@ -71,9 +74,9 @@ Decisions that matter:
 | `world-viewer` | splat rendering, first-person movement, collision, haunt layer, ViewerBridge, performance | 29 | 11 |
 | `ghost-creator` | Persona, portrait, sprite, Preset Ghosts, safety | 21 | 8 |
 | `ghost-engine` | memories, directives, scripted and model modes, validation, caps | 30 | 14 |
-| `party-mode` | rooms, phone controller, contributions, hidden cards, turns and clock, achievements, suggestions and accusations, displays, print kit, solo and bots, cost and privacy | 56 | 24 |
+| `party-mode` | rooms and the Master, phone controller, contributions, the Haunt, Residue and Poltergeists, hidden cards, turns and clock, achievements, suggestions and accusations, displays, print kit, solo and bots, cost and privacy | 69 | 30 |
 
-186 acceptance criteria written in EARS form and 71 correctness properties. Party Mode is deliberately built on the other four: it reuses the pipeline's SpendGuard and Gallery, the viewer's bridge, the creator's Persona and the engine's reply validation, and adds one Durable Object, three pages and a pure `shared/src/party` and `shared/src/print` library.
+199 acceptance criteria written in EARS form and 77 correctness properties. Party Mode is deliberately built on the other four: it reuses the pipeline's SpendGuard and Gallery, the viewer's bridge, the creator's Persona and the engine's reply validation, and adds one Durable Object, three pages and a pure `shared/src/party` and `shared/src/print` library.
 
 ## How Kiro is used
 
@@ -98,7 +101,7 @@ Decisions that matter:
 
 ## Try it without any quota
 - **Gallery**: six pre-built worlds with Preset Ghosts. Play the whole single-player loop with no account, no upload and no model calls.
-- **Party Mode, solo**: open a Gallery World, choose Party, add Bots, play on the keyboard. A hold-to-peek panel appears only when every other seat is a Bot.
+- **Party Mode, solo**: open a Gallery World, choose Party, press "Play on this screen", add Bots, play on the embedded pad. Your hand shows only when every other seat is a Bot.
 - **Party Mode, with phones**: scan the lobby QR code. A second screen is optional; printed relics are optional.
 
 ## Safety, privacy and spend

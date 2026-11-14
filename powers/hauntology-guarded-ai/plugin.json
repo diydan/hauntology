@@ -1,10 +1,10 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "hauntwalk-guarded-ai",
+  "name": "hauntology-guarded-ai",
   "version": "0.1.0",
-  "description": "How to add a spend-guarded Workers AI or World Labs call to Hauntwalk without bypassing SpendGuard.",
+  "description": "How to add a spend-guarded Workers AI or World Labs call to Hauntology without bypassing SpendGuard.",
   "author": {
-    "name": "Hauntwalk"
+    "name": "Hauntology"
   },
   "keywords": ["spendguard", "spend ticket", "workers ai", "guarded call", "world labs", "tts", "narration"],
   "license": "MIT"

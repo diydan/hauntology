@@ -1,4 +1,4 @@
-# How Kiro was used to build Hauntwalk
+# How Kiro was used to build Hauntology
 
 Draft for the Devpost "Kiro write-up" field. It follows the eight questions the judges ask.
 
@@ -14,19 +14,19 @@ Do not submit with any tag left in. Delete a claim you cannot back up.
 
 | Kiro feature | In the repo now | Still to do |
 |---|---|---|
-| Specs | 5 specs: 186 criteria, 71 properties, traceability tool | Mark tasks done as they pass |
+| Specs | 5 specs: 199 criteria, 77 properties, traceability tool | Mark tasks done as they pass |
 | Steering | 9 files: 4 always-on, 5 file-scoped | Update world-pipeline and party steering for Workers AI |
 | Hooks | 5 standalone hooks in `.kiro/hooks/` | Capture one firing for evidence |
 | Custom agents | `spec-reviewer` (read-only), `pbt-writer` (writes tests only) in `.kiro/agents/` | Run each once in the surface you use, capture the result |
-| Powers | `powers/hauntwalk-guarded-ai/` (own power, one skill) | Import it in the Powers panel. Install any third-party power you really use |
+| Powers | `powers/hauntology-guarded-ai/` (own power, one skill) | Import it in the Powers panel. Install any third-party power you really use |
 | MCP | `worldlabs-dev` entry in `.kiro/settings/mcp.json` | **The server is not built yet.** `tools/worldlabs-mcp/` holds only a README. Build it (world-pipeline task 0) before claiming it |
-| PBT | 71 properties specified | **No tests exist yet.** Everything in section 7 is `[AFTER BUILD]` |
+| PBT | 77 properties specified | **No tests exist yet.** Everything in section 7 is `[AFTER BUILD]` |
 
 Changes made while writing this: removed the Nova Canvas MCP entry (the stack moved to Workers AI), and updated the spend-guard hook to audit `env.AI` instead of Bedrock.
 
 ## 1. Which Kiro surfaces, and how they differed
 
-Hauntwalk was planned and reviewed in **Kiro Crew**, the dashboard agent layer. It keeps memory across sessions and can run subagents and scheduled jobs. Specs, steering and hooks are plain files in `.kiro/`, so they work the same in every surface.
+Hauntology was planned and reviewed in **Kiro Crew**, the dashboard agent layer. It keeps memory across sessions and can run subagents and scheduled jobs. Specs, steering and hooks are plain files in `.kiro/`, so they work the same in every surface.
 
 | Surface | What I used it for | What it was good at | What it was bad at |
 |---|---|---|---|
@@ -82,7 +82,7 @@ Structure: five specs, each with `requirements.md` in EARS form, `design.md` wit
 | world-viewer | 29 | 11 |
 | ghost-creator | 21 | 8 |
 | ghost-engine | 30 | 14 |
-| party-mode | 56 | 24 |
+| party-mode | 69 | 30 |
 
 What it bought, with real examples:
 
@@ -121,7 +121,7 @@ Related and real: the World Labs CLI and its skills were installed and used for 
 
 ## 7. Property-based testing
 
-71 properties are specified across five specs. They cover:
+77 properties are specified across five specs. They cover:
 
 - **Hidden information.** Views never leak secrets, using a fuzz that plants unique tokens in every hand and the Solution and checks that none appears in any public output (party Property 8).
 - **Fair play.** The deal is a valid partition. Turn order is fair. Suggestions resolve to the first holder clockwise. Games terminate.
@@ -137,7 +137,7 @@ Status: **no tests exist yet.** `[AFTER BUILD]` Fill in:
 
 ## 8. Powers and third-party tools
 
-Own power: `powers/hauntwalk-guarded-ai/`, a `plugin.json` plus one skill, `add-guarded-call`. It encodes the one procedure that must never be done wrong: how to add a paid call behind `SpendGuard`. Keywords include `spendguard`, `workers ai` and `guarded call`, so it loads when you talk about adding a paid call.
+Own power: `powers/hauntology-guarded-ai/`, a `plugin.json` plus one skill, `add-guarded-call`. It encodes the one procedure that must never be done wrong: how to add a paid call behind `SpendGuard`. Keywords include `spendguard`, `workers ai` and `guarded call`, so it loads when you talk about adding a paid call.
 
 - `[CONFIRM]` Import it through Powers panel, Add Custom Power, Import power from a folder, and say whether it activated.
 - `[CONFIRM]` Any curated power you installed. I could not check the registry. If you installed none, say you built one instead.

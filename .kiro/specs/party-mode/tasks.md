@@ -2,13 +2,15 @@
 
 Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `ghost-engine` 2.5 (anchor placement), 2.7 (`sanitizePose`) and 2.17 (reply validation), `world-pipeline` 4.1 (SpendGuard) and 5.2 (AIClient), and `world-viewer` 6.3 (ViewerBridge). Do the three spikes before any code that depends on their answers. Pure logic first, then the Durable Object, then the three pages, then the Print Kit.
 
+Cut order if time runs short: Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eavesdrop part) first, then spoken narration (8.8), then the Display and Print Kit (see `docs/PLAN.md`). The Haunt, Residue and Poltergeists stay in the core.
+
 - [ ] 1. Spikes (record each in `docs/spikes/party-<n>.md`)
   - [ ] 1.1 Transport and latency
     - Build a throwaway `PartyRoom` with the WebSocket Hibernation API. Connect one Host and six simulated phones sending `input` at 30 Hz. Record p50 and p95 input-to-Host latency on the same network and over a phone hotspot, and whether hibernation drops sockets. Optionally compare an unordered, no-retransmit WebRTC data channel; adopt it only if it clearly helps, with WebSocket as fallback.
     - _Requirements: 1.6, 2.2_
   - [ ] 1.2 Phone capabilities
-    - On a real iPhone (Safari) and a real Android phone (Chrome): multitouch stick with two thumbs, orientation permission flow, vibration availability, camera QR scanning with the built-in detector where present and a JavaScript decoder otherwise, and scan reliability of a single-colour relief QR plate versus a two-colour plate printed on a real printer. Pick the QR encoder and decoder libraries and pin them.
-    - _Requirements: 2.3, 2.4, 2.5, 6.4, 8.2_
+    - On a real iPhone (Safari) and a real Android phone (Chrome): multitouch stick with two thumbs, orientation permission flow, vibration availability, installing the page to the home screen with a manifest, screen wake lock, camera QR scanning with the built-in detector where present and a JavaScript decoder otherwise, and scan reliability of a single-colour relief QR plate versus a two-colour plate printed on a real printer. On a laptop and a TV browser: `speechSynthesis` voices and quality, and wake lock. Pick the QR encoder and decoder libraries and pin them.
+    - _Requirements: 2.3, 2.4, 2.5, 6.4, 7.6, 7.7, 8.2_
   - [ ] 1.3 Pyramid on hardware
     - Cut a pyramid from clear plastic using the default trapezoid, put it on a spare phone or tablet running a throwaway four-view page, and decide: tops inward or outward, mirror or not, how the footprint calibration should work, minimum usable brightness. Photograph the result for the write-up.
     - _Requirements: 7.3, 8.3_
@@ -19,7 +21,7 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
   - [ ]* 2.2 Write property test for room codes
     - **Property 1: Room codes are well formed**
     - **Validates: Requirements 1.1**
-  - [ ] 2.3 `sanitizeNickname`, `seatPlayer`, `canJoin`
+  - [ ] 2.3 `sanitizeNickname`, `seatPlayer` (the first seated Player becomes the Master), `canJoin`
     - _Requirements: 1.2, 1.3_
   - [ ]* 2.4 Write property test for seating and nicknames
     - **Property 2: Seating and nicknames**
@@ -46,16 +48,16 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
   - [ ]* 2.13 Write property test for the case pool
     - **Property 6: The case pool is complete, deterministic and never blocked**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
-  - [ ] 2.14 `dealCase`
+  - [ ] 2.14 `dealCase`: Solution, three Residue cards, 12 dealt cards
     - _Requirements: 4.1_
   - [ ]* 2.15 Write property test for the deal
     - **Property 7: The deal is a valid partition**
     - **Validates: Requirements 4.1**
-  - [ ] 2.16 `publicView`, `privateView` and redacted public events
+  - [ ] 2.16 `publicView`, `privateView` (with found Residue and Resolve) and redacted public events
     - _Requirements: 4.2_
   - [ ] 2.17 `buildPartyPrompt` taking only a Public View
     - _Requirements: 4.3_
-  - [ ]* 2.18 Write property test for leakage, with the token-planting fuzz game
+  - [ ]* 2.18 Write property test for leakage, with the token-planting fuzz game (Hands, Residue and Solution)
     - **Property 8: Views never leak secrets**
     - **Validates: Requirements 4.2, 4.3**
   - [ ] 2.19 Extract `placePoints` from `ghost/anchors.ts` (no behaviour change, ghost-engine Property 1 stays green), then `placeZones`, `validateZones`, `ringZones` and the `world_too_small` rule
@@ -63,32 +65,32 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
   - [ ]* 2.20 Write property test for zones
     - **Property 9: Zones are valid and the world-size rule holds**
     - **Validates: Requirements 4.5**
-  - [ ] 2.21 Notebook `autoMarks` and `markCard`
+  - [ ] 2.21 Notebook `autoMarks` (hand, shown cards, found Residue) and `markCard`
     - _Requirements: 4.4_
   - [ ]* 2.22 Write property test for the notebook
     - **Property 10: Notebook marks are monotone**
     - **Validates: Requirements 4.4**
-  - [ ] 2.23 `nextPlayer` and `advance` with eliminations, skips and rounds
+  - [ ] 2.23 `nextPlayer` and `advance` with Poltergeists, skips and rounds
     - _Requirements: 5.1, 5.7_
   - [ ]* 2.24 Write property test for turn order
     - **Property 11: Turn order is fair**
     - **Validates: Requirements 5.1, 5.7**
-  - [ ] 2.25 `turnBudget`, achievement detectors `earned` and `bonusSeconds`
+  - [ ] 2.25 `turnBudget` (with the Blackout reduction), achievement detectors `earned` and `bonusSeconds`
     - _Requirements: 5.2, 5.4, 5.6_
   - [ ]* 2.26 Write property test for budgets and achievements
     - **Property 12: Turn budgets and achievements are bounded and monotone**
     - **Validates: Requirements 5.2, 5.4, 5.6**
-  - [ ] 2.27 `clockStatus`, `nextWake`, and `onDisconnect`
+  - [ ] 2.27 `clockStatus`, `nextWake` (including the Inspect, Haunt Event choice, Eavesdrop and Master-timeout deadlines), and `onDisconnect`
     - _Requirements: 5.3, 5.5_
   - [ ]* 2.28 Write property test for the clock and nextWake
     - **Property 13: The clock, nextWake, and disconnects end turns exactly once**
     - **Validates: Requirements 5.3, 5.5**
-  - [ ] 2.29 `canSuggest` and `resolveSuggestion`
+  - [ ] 2.29 `canSuggest` (Poltergeist and Cold Spot refusals) and `resolveSuggestion`
     - _Requirements: 6.1, 6.2_
   - [ ]* 2.30 Write property test for suggestions
     - **Property 14: Suggestions resolve to the first holder clockwise**
     - **Validates: Requirements 6.1, 6.2**
-  - [ ] 2.31 `resolveAccusation` and `gameOver`
+  - [ ] 2.31 `resolveAccusation` (a wrong Accusation makes a Poltergeist and raises the Haunt) and `gameOver` (correct Accusation, every Player a Poltergeist, or the Haunt at its maximum)
     - _Requirements: 6.3, 6.5_
   - [ ]* 2.32 Write property test for accusations and termination
     - **Property 15: Accusations decide the game and the game terminates**
@@ -98,7 +100,7 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
   - [ ]* 2.34 Write property test for relic tokens
     - **Property 16: Relic tokens parse strictly**
     - **Validates: Requirements 6.4**
-  - [ ] 2.35 `endingPayload` and `playAgain`
+  - [ ] 2.35 `endingPayload` and `playAgain` (resets the Haunt, Residue, Resolve and Poltergeists)
     - _Requirements: 6.6_
   - [ ]* 2.36 Write property test for endings and replays
     - **Property 17: Endings and replays preserve what they should**
@@ -108,12 +110,12 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
   - [ ]* 2.38 Write property test for the pyramid layout
     - **Property 18: The pyramid layout is symmetric and in bounds**
     - **Validates: Requirements 7.3**
-  - [ ] 2.39 `effectLimits`
+  - [ ] 2.39 `effectLimits` (including Haunt Event reactions and Blackout dimming)
     - _Requirements: 7.4_
   - [ ]* 2.40 Write property test for display effects
     - **Property 19: Display effects respect photosensitivity limits**
     - **Validates: Requirements 7.4**
-  - [ ] 2.41 `botAct` and `peekAllowed`
+  - [ ] 2.41 `botAct` (walk to and Inspect, Suggest, Accuse, Haunt Event choice) and `peekAllowed`
     - _Requirements: 9.2, 9.3_
   - [ ]* 2.42 Write property test for bots
     - **Property 22: Bots are legal and blind to other hands**
@@ -128,10 +130,35 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
   - [ ]* 2.46 Write property test for telemetry and abuse caps
     - **Property 24: Telemetry carries no content and abuse is capped**
     - **Validates: Requirements 10.5, 10.6**
-  - [ ] 2.47 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
+  - [ ] 2.47 `canControl`, `nextMaster` and `handOver` (Master-only room controls, host token may only end, never a Bot as Master)
+    - _Requirements: 1.7_
+  - [ ]* 2.48 Write property test for the Master
+    - **Property 25: Room controls obey the Master**
+    - **Validates: Requirements 1.7**
+  - [ ] 2.49 `placeResidue`, `canInspect` and `inspect` (10 s inside a Zone, once per Zone per Player, private result, Zone-only public event)
+    - _Requirements: 4.6_
+  - [ ]* 2.50 Write property test for Residue and Inspect
+    - **Property 28: Residue is hidden, and inspection is private and once only**
+    - **Validates: Requirements 4.6**
+  - [ ] 2.51 `hauntRise`, `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot, Blackout, Restless, Lull; 15 s choice window)
+    - _Requirements: 11.1, 11.2_
+  - [ ]* 2.52 Write property test for the Haunt
+    - **Property 26: The Haunt rises by the rules and events fire once**
+    - **Validates: Requirements 11.1, 11.2**
+  - [ ] 2.53 Poltergeist transition and refusals: keep seat, nickname and Hand, no Turns, no move, Suggest, Accuse or Inspect, may choose Haunt options
+    - _Requirements: 11.3_
+  - [ ]* 2.54 Write property test for Poltergeists
+    - **Property 27: Poltergeists keep their Hand and never take a Turn**
+    - **Validates: Requirements 11.3**
+  - [ ] 2.55 `gainResolve`, `canEavesdrop` and `eavesdrop` (category only, 10 s window, never for the Player's own Suggestion)
+    - _Requirements: 11.4, 11.5_
+  - [ ]* 2.56 Write property test for Resolve and Eavesdrop
+    - **Property 29: Resolve is bounded and Eavesdrop reveals only a category**
+    - **Validates: Requirements 11.4, 11.5**
+  - [ ] 2.57 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
     - _Requirements: 3.6, 3.7, 3.8_
-  - [ ]* 2.48 Write property test for Photo Prompts
-    - **Property 25: Photo Prompt offers are deterministic, complete and bounded**
+  - [ ]* 2.58 Write property test for Photo Prompts
+    - **Property 30: Photo Prompt offers are deterministic, complete and bounded**
     - **Validates: Requirements 3.6, 3.7, 3.8**
 
 - [ ] 3. Print module (`shared/src/print/`)
@@ -151,26 +178,32 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
     - _Requirements: 8.4_
 
 - [ ] 4. PartyRoom Durable Object
-  - [ ] 4.1 Create, join, seat and token issue; socket `hello` within 5 s; Hibernation API; origin check; zod validation of every message; seed is 128-bit crypto.getRandomValues; register with PartyDirectory on create, unregister on delete
+  - [ ] 4.1 Create a Room with no world, join, seat (the first Player is the Master) and token issue; socket `hello` within 5 s; Hibernation API; origin check; zod validation of every message; seed is 128-bit crypto.getRandomValues; register with PartyDirectory on create, unregister on delete
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6_
   - [ ] 4.2 Lobby: contribution intake and pool build when the lobby closes
     - _Requirements: 3.1, 3.4_
-  - [ ] 4.3 Game start: choose the Solution, deal, place Zones (authored, placed or ring), fan out Public and Private Views
-    - _Requirements: 4.1, 4.2, 4.5_
-  - [ ] 4.4 Turn engine: `nextWake(state, now)` pure function + single DO alarm always set to nextWake; 10-second warning, disconnect pause and skip, host pause and resume, no-clock mode, eliminated players skipped
-    - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7_
+  - [ ] 4.3 Game start (Master only, a valid world required): choose the Solution, set aside and place the Residue, deal 12 cards, place Zones (authored, placed or ring), fan out Public and Private Views
+    - _Requirements: 4.1, 4.2, 4.5, 4.6_
+  - [ ] 4.4 Turn engine: `nextWake(state, now)` and a single DO alarm always set to it; 10-second warning, disconnect pause and skip, Master pause and resume, no-clock mode, Poltergeists skipped, Haunt rise at Round end and on a lost Turn
+    - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7, 11.1_
   - [ ] 4.5 Pose and input pipeline: sanitise host pose at ≤ 4 Hz, relay the active Player's input only, rate limit every token
     - _Requirements: 2.2, 7.2_
   - [ ] 4.6 Suggestion and Accusation handlers, event log, achievement awards, end conditions
     - _Requirements: 5.4, 6.1, 6.2, 6.3, 6.5_
   - [ ] 4.7 Ending payload and Play again
     - _Requirements: 6.6_
-  - [ ] 4.8 Time-to-live alarm, host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
+  - [ ] 4.8 Time-to-live alarm, Master or host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
     - _Requirements: 1.5, 10.4, 10.6, 10.7_
-  - [ ] 4.10 PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
-    - _Requirements: 10.6_
   - [ ] 4.9 Bot runner driven by alarms with think time of 1.5 to 6 s
     - _Requirements: 9.1, 9.2_
+  - [ ] 4.10 PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
+    - _Requirements: 10.6_
+  - [ ] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings, hand-over, 60 s Master timeout, host token limited to `end`
+    - _Requirements: 1.7, 1.5_
+  - [ ] 4.12 Residue, Inspect and Haunt handlers: place the Residue, run the 10 s Inspect timer, private results, Haunt Event choice with the 15 s default, Cold Spot and Blackout effects, Poltergeist transition
+    - _Requirements: 4.6, 11.1, 11.2, 11.3_
+  - [ ] 4.13 Resolve and Eavesdrop handlers: gain at Round end, the 10 s window after a resolved Suggestion, private `heard` message, speech relay from the Master to the Host
+    - _Requirements: 11.4, 11.5, 7.6_
 
 - [ ] 5. Contribution services
   - [ ] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded AIClient text wrapper, fail closed, store privately for the Room
@@ -191,26 +224,32 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
     - _Requirements: 4.3, 10.3_
 
 - [ ] 7. Routes
-  - `POST /api/party/rooms`, `POST /api/party/:code/join`, `GET /api/party/:code/ws`, contribution routes, `DELETE /api/party/:code`; origin and cookie checks for host routes; reason codes; counters only in logs.
-  - _Requirements: 1.1, 1.2, 1.3, 1.5, 10.5, 10.6, 10.7_
+  - `POST /api/party/rooms` (no body, no world), `POST /api/party/:code/join`, `GET /api/party/:code/ws`, contribution routes, `DELETE /api/party/:code` (Master or host token); origin and cookie checks for host routes; reason codes; counters only in logs.
+  - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.7, 10.5, 10.6, 10.7_
 
-- [ ] 8. Web: Host (`web/src/party/host/`)
-  - [ ] 8.1 Party entry from a world, lobby with Room Code and QR, settings (clock, round limit), start
-    - _Requirements: 1.1, 5.2, 5.6, 6.5_
-  - [ ] 8.2 Public HUD: active Player, clock, round, public log, Achievements, eliminations, narrator text in a polite live region
+- [ ] 8. Web: Host (`web/src/party/host/`), display-only
+  - [ ] 8.1 Party page: create a Room, show the Room Code and QR until the game starts, request a screen wake lock, show a reconnect state when the socket drops
+    - _Requirements: 1.1, 7.1_
+  - [ ] 8.2 Public HUD: active Player, clock, round, Haunt level, public log, Achievements, Poltergeists, narrator text in a polite live region
     - _Requirements: 7.1_
-  - [ ] 8.3 Remote movement and look input through the ViewerBridge; keyboard and mouse active only when seat 1 is the active Player; ViewerBridge blocks local input otherwise
+  - [ ] 8.3 Remote movement and look input through the ViewerBridge, the same limits for every Player; the Host takes no other input
     - _Requirements: 7.2, 5.1_
   - [ ] 8.4 Free-standing photo frames near each Zone, facing the spawn, no collision
     - _Requirements: 3.5_
-  - [ ] 8.5 Ending screen and Play again
+  - [ ] 8.5 Ending screen and Play again (Master)
     - _Requirements: 6.6_
-  - [ ] 8.6 Solo mode: keyboard seat 1, add Bots, hold-to-peek panel only when every other seat is a Bot
+  - [ ] 8.6 "Play on this screen": the page joins as the first Player and Master and embeds that Player's pad beside the world; the Master adds Bots; the Private View shows only when every other seat is a Bot
     - _Requirements: 9.1, 9.3_
   - [ ] 8.7 Regression: the single-player game is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
     - _Requirements: 9.4_
+  - [ ] 8.8 Spoken narration: `speechSynthesis` reading each narration line, off by default, text always shown, mute, replay and skip from the Master
+    - _Requirements: 7.6_
+  - [ ] 8.9 Haunt visuals: Haunt level meter, Cold Spot marker on its Zone, Blackout dimming within the photosensitivity limits, Restless ghost Sprite move
+    - _Requirements: 7.1, 7.4, 11.2_
+  - [ ] 8.10 Inspect visuals: a public marker on the Zone being inspected, never what was found
+    - _Requirements: 4.6, 7.1_
 
-- [ ] 9. Web: Controller (`web/src/party/controller/`)
+- [ ] 9. Web: Controller (`web/src/party/controller/`), installable web app
   - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
     - _Requirements: 1.2, 1.4_
   - [ ] 9.2 Pad and panel layouts with switching; 48 px targets, focus, contrast, tap-to-walk pad
@@ -229,6 +268,14 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
     - _Requirements: 3.1_
   - [ ] 9.9 Clock, warning and Achievement display
     - _Requirements: 5.3, 5.4_
+  - [ ] 9.10 Master menu: choose the world, settings (clock, Haunt maximum, speech), Bots, start, pause, end, Play again, hand-over; non-Masters never see it
+    - _Requirements: 1.7, 2.1_
+  - [ ] 9.11 Inspect button with a 10 s progress bar and the private result, found Residue in the notebook, Resolve count and the Eavesdrop reaction after another Player's Suggestion
+    - _Requirements: 2.1, 4.4, 4.6, 11.4, 11.5_
+  - [ ] 9.12 Poltergeist view: a clear "you are haunting now" state, spectating the world, and the Haunt Event choice with a 15 s countdown
+    - _Requirements: 11.2, 11.3_
+  - [ ] 9.13 Installable web app: manifest, service worker with an offline shell that explains how to rejoin, screen wake lock while a game is running
+    - _Requirements: 7.7_
 
 - [ ] 10. Web: Display (`web/src/party/display/`)
   - [ ] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected
@@ -253,4 +300,4 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
   - _Requirements: 4.5, 9.4_
 
 - [ ] 13. Checkpoint
-  - Run tests, typecheck, `node tools/check-traceability.mjs` and `node tools/build-print.mjs --check`. Play one full party game with three Bots and one keyboard player in scripted mode, one with real phones and the model, and one with a Display and printed relics. Record a short clip of each for the write-up. Ask the user if questions arise.
+  - Run tests, typecheck, `node tools/check-traceability.mjs` and `node tools/build-print.mjs --check`. Play one full party game with three Bots and one embedded-pad player in scripted mode, one with real phones and the model, and one with a Display and printed relics. Record a short clip of each for the write-up. Playtest the design numbers (Haunt maximum, thresholds, Resolve cap, Inspect time, choice window, Master timeout) and note changes. Ask the user if questions arise.

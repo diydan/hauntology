@@ -1,4 +1,4 @@
-# Hauntwalk implementation plan
+# Hauntology implementation plan
 
 Written 2026-11-14. Submission target **Thu Dec 3**. Hard deadline **Fri Dec 4, 14:00 PT**. Kiro credits must be requested by **Tue Dec 1, 12:00 PT**.
 
@@ -88,7 +88,7 @@ Follow the cut line in `docs/PLAN.md`. Each layer must work before the next star
 
 | Layer | Tasks | Target date |
 |---|---|---|
-| 1. Core: rooms, join, pad, deal, turns, suggest, accuse, Bots, scripted lines | party 2, 4, 6 to 9, 12 | Nov 30 |
+| 1. Core: rooms and the Master, join, pad, deal and Residue, turns, Inspect, suggest, accuse, the Haunt, Poltergeists, Bots, scripted lines | party 2, 4, 6 to 9, 12 | Nov 30 |
 | 2. Contributions: relic sketch, photo, Zone name, Suspect | party 5, 9.8 | Dec 1 |
 | 3. Display: pyramid page | party 10 | Dec 2 |
 | 4. Print kit: relics, QR plates, holder | party 3, 11 | runs as a parallel hardware track: designed Nov 18, printed Nov 19 to 21 (2 days), tested Nov 22. See `docs/JOURNAL.md` |
@@ -116,12 +116,16 @@ The Gallery date (Nov 21) and the credits date (Dec 1) are the only ones the con
 If a date slips, cut from the top of this list first. Each item can go without breaking the ones below it.
 
 1. Enhance (world-pipeline 11)
-2. Print kit parts beyond the QR plates and one relic (party 3.6 standee, holder)
-3. Display page and pyramid (party 10)
-4. TTS audio (text stays)
-5. Party contributions: Suspect, photo, Zone name (party 5, 9.8)
-6. Sketch to photo (upload and Gallery stay)
-7. Party Mode as a whole (single player with the Gallery stays)
+2. Party Resolve and Eavesdrop (party 2.55, 2.56, 4.13, 9.11 Eavesdrop part)
+3. Party spoken narration (party 8.8); written narration and TTS audio stay
+4. Print kit parts beyond the QR plates and one relic (party 3.6 standee, holder)
+5. Display page and pyramid (party 10)
+6. TTS audio for the ghost (text stays)
+7. Party contributions: Suspect, photo, Zone name (party 5, 9.8)
+8. Sketch to photo (upload and Gallery stay)
+9. Party Mode as a whole (single player with the Gallery stays)
+
+In Party Mode the Haunt, Residue and Poltergeists are core and stay until Party Mode itself is cut.
 
 Never cut: SpendGuard and the confirm gate, the Gallery path, scripted ghost lines, the content notice and Exit control, property tests for spend and privacy.
 
@@ -156,5 +160,5 @@ Decide at the Nov 27 gate. If Phase 2 is not done, cut items 1 to 3 at once and 
 ## Open decisions
 1. `inworld/tts-2` or the faster `openai/tts-1` for ghost and host voice (Spike B decides)
 2. Whether `flux-2-dev` or `flux-2-max` is the default (Spike A decides)
-3. Domain name and trademark check for "Hauntwalk"
+3. Domain name and trademark check for "Hauntology"
 4. Eligibility: Luxembourg residency confirmed by you. A written Devpost answer would still be safer

@@ -1,7 +1,7 @@
 ---
 inclusion: always
 ---
-# Hauntwalk — product
+# Hauntology — product
 
 > Walk into any place. Its ghost remembers three things.
 
@@ -29,7 +29,7 @@ Draw or upload any place (one you miss, one you love, or one you made up), walk 
 7. **Nothing physical is required.** Printed relics, the pyramid and even a second player's phone are optional; a solo judge can finish a full game with Bots.
 
 ## Party Mode (optional, same room)
-Turn the walkable world into a deduction game for 2–6 players. A computer shows the world (Host); each phone is a game pad and a private screen (Controller); an optional second screen under a Pepper's-ghost pyramid shows the ghost (Display). Everyone contributes to the world: a Suspect ghost, a photo, a named Zone. One hidden answer: **which ghost, haunting which place, bound to which relic**. Players take timed turns, earn extra seconds through Achievements, make Suggestions and one Accusation. Six original 3D-printable relics with QR tokens are optional; every physical part has an on-screen fallback. Spec: `.kiro/specs/party-mode`.
+Turn the walkable world into a deduction game for 2–6 players. A laptop or TV only displays the world (Host); every control lives on a phone, an installable web app that is a game pad and a private screen (Controller), and the first player to join is the Master who runs the room; an optional second screen under a Pepper's-ghost pyramid shows the ghost (Display). Everyone contributes to the world: a Suspect ghost, a photo, a named Zone. One hidden answer: **which ghost, haunting which place, bound to which relic**. Players take timed turns, search the world for hidden Residue, earn extra seconds through Achievements, make Suggestions and one Accusation. A Haunt level rises and fires events; a wrong Accusation makes you a Poltergeist who helps steer the haunting instead of leaving the game. Six original 3D-printable relics with QR tokens are optional; every physical part has an on-screen fallback. Spec: `.kiro/specs/party-mode`.
 
 ## Non-goals
 Accounts, online matchmaking or remote play (Party Mode is same-room only), VR/WebXR (Spark supports it; out of scope for Kiroween), user-published public gallery, native apps, video generation, a murder or death-circumstance premise.

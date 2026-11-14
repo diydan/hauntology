@@ -118,7 +118,7 @@ The world pipeline turns a place the user chooses into a stored, walkable 3D wor
 
 ### Requirement 9
 
-**User Story:** As a judge or first-time visitor, I want to play a finished world immediately, so that I can experience Hauntwalk without waiting or spending.
+**User Story:** As a judge or first-time visitor, I want to play a finished world immediately, so that I can experience Hauntology without waiting or spending.
 
 #### Acceptance Criteria
 

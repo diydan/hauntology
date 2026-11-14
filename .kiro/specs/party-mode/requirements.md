@@ -2,26 +2,34 @@
 
 ## Introduction
 
-Party mode turns Hauntwalk into a same-room deduction game for two to six players. One computer shows the shared haunted world; every player's phone is a game pad and a private screen; an optional second device under a Pepper's-ghost pyramid shows the ghost as a hologram-style centrepiece; six original relics can be 3D printed. The premise is gentle: a visitor ghost is rattling the place, and the players work out **which ghost** (Suspect), **where** (Zone) and **with which relic** (Relic). Players take timed turns walking the shared world, earn extra time through achievements, keep their cards secret on their phones, and contribute a suspect, a framed photo and a room name to the world. The server holds every secret, the engine decides every outcome, and a model only narrates. The mode is additive: the single-player game is unchanged, and the whole mode works with no phones, no printer, no Display and no model.
+Party mode turns Hauntology into a same-room deduction game for two to six players. A laptop or TV only displays the shared haunted world. Every control lives on a phone: one player, the **Master**, runs the room, and every player's phone is a game pad and a private screen. An optional second device under a Pepper's-ghost pyramid shows the ghost as a hologram-style centrepiece; six original relics can be 3D printed. The premise is gentle: a visitor ghost is haunting the place, and the players work out **which ghost** (Suspect), **where** (Zone) and **with which relic** (Relic). Players take timed turns walking the shared world, search it for hidden clues, earn extra time through achievements, keep their cards secret on their phones, and contribute a suspect, a framed photo and a room name to the world. Time works against them: a **Haunt** rises as the game goes on, fires events, and ends the game if it reaches its maximum. A player who accuses wrongly stays in the game as a **Poltergeist** and helps steer the haunting. The server holds every secret, the engine decides every outcome, and a model only narrates. The mode is additive: the single-player game is unchanged, and the whole mode works with no printer, no Display and no model, and on one screen with Bots.
 
 ## Glossary
 
 - **Party Service**: the `PartyRoom` Durable Object, its routes in `api/src/routes/party.ts`, and the pure logic in `shared/src/party/`.
-- **Room**: one party game, held by one `PartyRoom` Durable Object, in one world.
+- **Room**: one party game, held by one `PartyRoom` Durable Object, in one world chosen by the Master.
 - **Room Code**: four characters from an alphabet without ambiguous characters, identifying a Room while it is open.
-- **Host**: the computer page that runs the Viewer and shows the Public View. The Host is also the shared screen.
-- **Controller**: the phone page that acts as a game pad (pad layout) and private screen (panel layout).
+- **Host**: the laptop or TV page that runs the Viewer and shows the Public View. It is display-only. It owns the collider and reports the pose of the shared camera.
+- **Master**: the Player who runs the Room. The first Player to join is the Master. Only the Master can pick the world, change settings, start, pause, resume, add Bots, end the game and choose Play again.
+- **Controller**: the phone page that acts as a game pad (pad layout) and private screen (panel layout). It is an installable web app.
 - **Display**: an optional third page that shows the ghost for the pyramid centrepiece.
 - **Player**: a seated participant, human or Bot, with a seat number, nickname and hand.
 - **Bot**: a Player controlled by the Party Service using only its own Private View.
 - **Suspect, Zone, Relic**: the three card categories. There are six of each. A Suspect is a Ghost Profile. A Zone is a named anchor in the world. A Relic comes from a fixed catalogue of six.
 - **Card**: one Suspect, Zone or Relic. There are 18 cards.
 - **Solution**: the one Suspect, one Zone and one Relic that make up the case.
-- **Hand**: the cards dealt to a Player. The 15 non-solution cards are dealt out.
+- **Residue**: three non-Solution cards set aside at the deal and hidden in three different Zones. They are found with Inspect.
+- **Hand**: the cards dealt to a Player. The 12 cards that are neither Solution nor Residue are dealt out.
 - **Public View / Private View**: what the Host and Display may see, versus what one Player's phone may see.
-- **Turn, Round**: one Player's go; one Round is one Turn for every active Player.
+- **Turn, Round**: one Player's go; one Round is one Turn for every Player who is not a Poltergeist.
 - **Turn Clock**: the countdown for a Turn. **Bonus Seconds**: time earned through Achievements.
 - **Suggestion / Accusation**: a guess at a Zone you are standing in, answered by one card; versus a final claim of all three cards.
+- **Inspect**: an action that spends 10 seconds of a Turn in a Zone to look for Residue there.
+- **Haunt**: a level that rises as the game goes on and ends the game when it reaches its maximum.
+- **Haunt Event**: a change to the game that fires once when the Haunt first reaches level 3, 6 and 9.
+- **Poltergeist**: a Player who accused wrongly. They keep their seat, nickname and Hand, take no Turns, and choose between the options of Haunt Events.
+- **Resolve**: a small store a Player fills each Round and spends on Eavesdrop.
+- **Eavesdrop**: a reaction that spends 1 Resolve to learn the category of the card shown to another Player.
 - **Contribution**: a Suspect, a framed photo or a Zone name supplied by a Player.
 - **Photo Prompt**: a short, fixed instruction that suggests which everyday photo to add; each Player is offered three at a time (for example "the view from a window"), with a tip and a source of either `camera_roll` or `take_now`.
 - **Relic Token**: a printed base carrying a QR plate with the payload `hw:<relic id>`.
@@ -31,16 +39,17 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 
 ### Requirement 1
 
-**User Story:** As a host, I want friends to join from their phones with a code or a QR code, so that nobody installs an app or makes an account.
+**User Story:** As a player, I want friends to join from their phones with a code or a QR code, and one of us to run the room, so that nobody installs a native app, makes an account or needs a keyboard.
 
 #### Acceptance Criteria
 
-1. WHEN the host opens Party mode in a world THEN the Party Service SHALL create a Room with a four-character Room Code from an alphabet that excludes ambiguous characters, a join URL, a QR code of that URL and a host token held only by the Host.
-2. WHEN a phone opens the join URL, or enters a Room Code and a nickname, THEN the Room SHALL seat it as a Player with a player token, allow two to six Players including Bots, and sanitise the nickname to at most 16 characters without control characters, markup or URLs.
+1. WHEN a laptop or TV opens the Party page THEN the Party Service SHALL create a Room with a four-character Room Code from an alphabet that excludes ambiguous characters, a join URL, a QR code of that URL and a host token held only by the Host, without choosing a world.
+2. WHEN a phone opens the join URL, or enters a Room Code and a nickname, THEN the Room SHALL seat it as a Player with a player token, allow two to six Players including Bots, make the first Player to join the Master, and sanitise the nickname to at most 16 characters without control characters, markup or URLs.
 3. IF the Room is full, the game has started, or the code is unknown or expired THEN the Room SHALL refuse the join with a specific reason code and SHALL NOT reveal anything about any Room.
 4. WHEN a phone reconnects with its player token THEN the Room SHALL restore the same seat, hand and Private View, and a phone without a token SHALL NOT take a seat after the game has started.
-5. WHEN a Room is idle for its time to live (default 6 hours) or the Host ends it THEN the Party Service SHALL delete the Room together with all of its Contributions.
+5. WHEN a Room is idle for its time to live (default 6 hours), or the Master or the Host ends it, THEN the Party Service SHALL delete the Room together with all of its Contributions.
 6. THE Party Service SHALL serve a Player's Private View only to that Player's token, the Public View only to tokens of the same Room, and SHALL scope every route and socket to the token that owns it.
+7. THE Party Service SHALL accept the room controls (world choice, settings, start, pause, resume, add Bot, end, Play again and hand-over) only from the Master's token, and the host token SHALL carry no game control other than ending the Room. WHEN the Master hands the role over, or has been disconnected for 60 seconds, THEN the Room SHALL pass the role to the next human Player in seat order, never to a Bot, and WHERE no other human is seated THEN the Master SHALL keep the role until the Room expires.
 
 ### Requirement 2
 
@@ -48,7 +57,7 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 
 #### Acceptance Criteria
 
-1. WHEN a phone is seated THEN the Controller SHALL offer a landscape pad layout with a left movement stick, a right look area, four face buttons and a menu, and a portrait panel layout with the hand, notebook and contributions, and SHALL let the Player switch between them. The four face buttons are: **Suggest** (opens the suggest screen when inside a Zone and not yet suggested this Turn), **Accuse** (opens the accuse screen at any time during the Player's Turn), **Map** (toggles an overhead minimap of the Zones), and **Pass** (ends the Turn without a Suggestion or Accusation). These four buttons map directly to the `act {kind:'suggest'}`, `act {kind:'accuse'}`, `act {kind:'pass'}` protocol messages and a local map overlay; no button is left undefined.
+1. WHEN a phone is seated THEN the Controller SHALL offer a landscape pad layout with a left movement stick, a right look area, four face buttons and a menu, and a portrait panel layout with the hand, notebook and contributions, and SHALL let the Player switch between them. The four face buttons are: **Suggest** (opens the suggest screen when inside a Zone and not yet suggested this Turn), **Accuse** (opens the accuse screen at any time during the Player's Turn), **Inspect** (starts an Inspect when inside a Zone), and **Pass** (ends the Turn without a Suggestion or Accusation). The menu holds the map overlay, the Eavesdrop reaction, and, for the Master only, the room controls. Each button maps to a protocol message or a local overlay; no button is left undefined.
 2. WHEN the Player touches the controls THEN the Controller SHALL send input at most 30 times per second with stick values clamped to the unit disc and look deltas clamped, and the Room SHALL discard movement and look input from any Player who is not the active Player and rate limit every token.
 3. WHEN several fingers touch at once THEN the Controller SHALL track them independently, and WHEN the page loses focus or the connection drops THEN the Controller SHALL release all inputs so the stick never sticks.
 4. WHERE the phone supports orientation events and the Player turns on Gyro aim THEN the Controller SHALL request permission from an explicit tap and send aim deltas, and IF permission is denied or unsupported THEN the Controller SHALL fall back to touch look without an error.
@@ -73,15 +82,16 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 
 ### Requirement 4
 
-**User Story:** As a player, I want secrets that only my phone shows, so that deduction matters.
+**User Story:** As a player, I want secrets that only my phone shows, and clues hidden in the world, so that deduction and walking both matter.
 
 #### Acceptance Criteria
 
-1. WHEN the game starts THEN the Room SHALL choose the Solution from the seed and deal the other 15 cards so that every card is in exactly one Hand and Hand sizes differ by at most one.
-2. THE Room SHALL send each phone only its own Private View (its Hand and the cards shown to it) and SHALL send the Host and Display only the Public View, which contains no Hand and no Solution until the game has ended.
-3. WHEN a prompt for the narrator is built THEN the Party Service SHALL include no card from any Hand and not the Solution until the game has ended.
-4. WHEN the Player opens the notebook THEN the Controller SHALL show all 18 cards with three states (unknown, no, maybe), mark the Player's own Hand and every card shown to the Player as no, never remove a mark the Player made, and keep the notebook only on the device.
+1. WHEN the game starts THEN the Room SHALL choose the Solution from the seed, set aside three non-Solution cards as Residue, and deal the other 12 cards so that every card is in exactly one of the Solution, the Residue or one Hand, and Hand sizes differ by at most one.
+2. THE Room SHALL send each phone only its own Private View (its Hand, the cards shown to it and the Residue it has found) and SHALL send the Host and Display only the Public View, which contains no Hand, no Residue and no Solution until the game has ended.
+3. WHEN a prompt for the narrator is built THEN the Party Service SHALL include no card from any Hand, no Residue and not the Solution until the game has ended.
+4. WHEN the Player opens the notebook THEN the Controller SHALL show all 18 cards with three states (unknown, no, maybe), mark the Player's own Hand, every card shown to the Player and every Residue card the Player has found as no, never remove a mark the Player made, and keep the notebook only on the device.
 5. WHEN Zones are placed THEN the Party Service SHALL choose six positions deterministically from the seed on walkable floor, within the walk radius, at least 3 m from the spawn and at least 4 m from each other, using authored Zones where a Gallery World supplies them and a fixed ring layout when validation fails, and IF the world's walk radius is below 7 m and it has no authored Zones THEN the Room SHALL refuse Party mode for that world with the reason `world_too_small` and point to the Gallery.
+6. WHEN the Residue is placed THEN the Room SHALL hide each Residue card in a different Zone, deterministically from the seed. WHEN the active Player inside a Zone starts Inspect and stays for 10 seconds of the Turn, at most once per Zone per Player, THEN the Room SHALL show that Player privately the Residue card in that Zone or that there is none, SHALL add to the public log only the Zone that was inspected, and SHALL refuse Inspect in a Zone under a Cold Spot.
 
 ### Requirement 5
 
@@ -89,13 +99,13 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 
 #### Acceptance Criteria
 
-1. WHEN the game starts THEN the Room SHALL order Turns by seat, one Turn at a time, the active Player SHALL control the shared camera while all other Players see the Public View and their own Private View, and WHEN a Turn starts the camera SHALL be positioned at the spawn point of the world so every Player begins from the same known location; and local keyboard and mouse input SHALL be accepted only for seat 1 when seat 1 is the active Player.
-2. WHEN a Turn starts THEN the Room SHALL set the Turn Clock to the base seconds (host choice of 30, 45, 60 or 90, default 60) plus the active Player's Bonus Seconds, capped at 120, run the clock on the server and send its deadline with the server time so every screen shows the same countdown.
-3. WHEN the clock expires THEN the Room SHALL end the Turn with no penalty beyond the lost Turn, and WHEN 10 seconds remain THEN every screen SHALL show a warning as visible text and the Controller SHALL pulse where supported.
+1. WHEN the game starts THEN the Room SHALL order Turns by seat, one Turn at a time, the active Player SHALL control the shared camera through their own Controller while all other Players see the Public View and their own Private View, and WHEN a Turn starts the camera SHALL be positioned at the spawn point of the world so every Player begins from the same known location.
+2. WHEN a Turn starts THEN the Room SHALL set the Turn Clock to the base seconds (Master choice of 30, 45, 60 or 90, default 60, reduced by any Blackout) plus the active Player's Bonus Seconds, capped at 120, run the clock on the server and send its deadline with the server time so every screen shows the same countdown.
+3. WHEN the clock expires THEN the Room SHALL end the Turn with no penalty beyond the lost Turn and one Haunt level, and WHEN 10 seconds remain THEN every screen SHALL show a warning as visible text and the Controller SHALL pulse where supported.
 4. WHEN a Player earns an Achievement THEN the Room SHALL add its Bonus Seconds to that Player's later Turns once per Achievement per game and announce it on the Public View, where the catalogue is: wanderer (visit three different Zones, +10 s), cartographer (visit all six, +15 s), quick feet (reach a Zone within 20 s of a Turn start, +5 s), persistent (make three Suggestions, +10 s) and second wind (lose two Turns to the clock, +10 s), derived only from the event log.
 5. WHEN the active Player's phone disconnects THEN the Room SHALL pause the Turn Clock for up to 20 seconds and then end the Turn, and a Player who stays disconnected for two consecutive Turns SHALL be skipped until they reconnect.
-6. WHERE the Host selects no clock THEN the Room SHALL run no Turn Clock and a Turn SHALL end by Suggestion, Accusation or pass, and the Host SHALL be able to pause and resume the game at any time.
-7. WHEN a Player has been eliminated THEN the Room SHALL skip them in the Turn order and their Hand SHALL still be used to answer Suggestions.
+6. WHERE the Master selects no clock THEN the Room SHALL run no Turn Clock and a Turn SHALL end by Suggestion, Accusation or pass, and the Master SHALL be able to pause and resume the game at any time.
+7. WHEN a Player has become a Poltergeist THEN the Room SHALL skip them in the Turn order and their Hand SHALL still be used to answer Suggestions.
 
 ### Requirement 6
 
@@ -103,12 +113,12 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 
 #### Acceptance Criteria
 
-1. WHEN the active Player stands inside a Zone THEN the Controller SHALL let them make one Suggestion of a Suspect and a Relic for that Zone, at most one per Turn, and the Suggestion SHALL end the Turn once resolved.
-2. WHEN a Suggestion is made THEN the Room SHALL find the first other Player, clockwise from the suggester, who holds at least one of the three cards (including eliminated players and Bots), show one matching card privately to the suggester only, chosen deterministically from the seed, and announce publicly only that that Player showed a card, or that no one could.
-3. WHEN the active Player makes an Accusation of a Suspect, a Zone and a Relic at any time during their Turn THEN the Room SHALL end the game with that Player as winner and reveal the Solution if all three match, and otherwise eliminate that Player, tell only them it was wrong and announce publicly that they accused wrongly.
+1. WHEN the active Player stands inside a Zone THEN the Controller SHALL let them make one Suggestion of a Suspect and a Relic for that Zone, at most one per Turn, and the Suggestion SHALL end the Turn once resolved, and SHALL refuse a Suggestion in a Zone under a Cold Spot.
+2. WHEN a Suggestion is made THEN the Room SHALL find the first other Player, clockwise from the suggester, who holds at least one of the three cards (including Poltergeists and Bots), show one matching card privately to the suggester only, chosen deterministically from the seed, and announce publicly only that that Player showed a card, or that no one could.
+3. WHEN the active Player makes an Accusation of a Suspect, a Zone and a Relic at any time during their Turn THEN the Room SHALL end the game with that Player as the only winner and reveal the Solution if all three match, and otherwise make that Player a Poltergeist, add one Haunt level, tell only them it was wrong and announce publicly that they accused wrongly.
 4. WHERE the Player scans a Relic Token with the phone camera THEN the Controller SHALL accept the payload `hw:<relic id>` as the Relic selection, reject any other payload, and keep manual selection available at all times.
-5. WHEN every Player has been eliminated, or the round limit (default 12, host choice of 6 to 20) is reached THEN the Room SHALL end the game, reveal the Solution and report that the haunting continues.
-6. WHEN the game ends THEN the Room SHALL return the Solution, the winner if any and a short timeline for the ending screen, and WHEN the Host chooses Play again THEN the Room SHALL start a new game with a new seed, the same world, Players and Contributions.
+5. WHEN every Player has become a Poltergeist, or the Haunt reaches its maximum, THEN the Room SHALL end the game, reveal the Solution and report that the haunting wins, and the game SHALL always end within the Haunt maximum plus 3 Rounds.
+6. WHEN the game ends THEN the Room SHALL return the Solution, the winner if any and a short timeline for the ending screen, and WHEN the Master chooses Play again THEN the Room SHALL start a new game with a new seed, the same world, Players and Contributions, and reset the Haunt, the Residue, Resolve and every Poltergeist.
 
 ### Requirement 7
 
@@ -116,11 +126,13 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 
 #### Acceptance Criteria
 
-1. THE Host SHALL show the shared Viewer with a Public HUD of the active Player, the clock, the round, the public log, Achievements and eliminations, with all ghost and narrator text in a polite live region and never any Hand or Solution.
-2. WHEN a Controller drives the Viewer THEN the Viewer SHALL accept remote movement and look input through the ViewerBridge with the same speed, collision and comfort limits as local input, and keyboard and mouse SHALL keep working.
+1. THE Host SHALL be display-only. It SHALL show the Room Code and QR code until the game starts, request a screen wake lock, show a reconnect state when its connection drops, and then show the shared Viewer with a Public HUD of the active Player, the clock, the round, the Haunt level, the public log, Achievements and Poltergeists, with all ghost and narrator text in a polite live region and never any Hand, Residue or Solution.
+2. WHEN a Controller drives the Viewer THEN the Viewer SHALL accept remote movement and look input through the ViewerBridge with the same speed, collision and comfort limits for every Player, and the Host SHALL offer no other input path than the embedded pad of "Play on this screen".
 3. WHEN a device opens the Display URL of a Room THEN the Party Service SHALL send it only the Public View, and the Display SHALL draw the host ghost's Sprite on black four times at 0, 90, 180 and 270 degrees around the centre, sized from a footprint the user calibrates on screen without assuming any pixel density, with a single-view mode for plain screens and toggles for orientation and mirroring.
-4. WHEN a public event occurs (suggestion, card shown, wrong Accusation, correct Accusation, Achievement, time warning) THEN the Display SHALL react with a scripted animation limited to three flashes per second and a luminance change of at most 20%, SHALL remove flicker when the visitor prefers reduced motion, and on a correct Accusation SHALL reveal the culprit Suspect's Sprite.
+4. WHEN a public event occurs (suggestion, card shown, wrong Accusation, correct Accusation, Achievement, time warning, Haunt Event) THEN the Display SHALL react with a scripted animation limited to three flashes per second and a luminance change of at most 20%, SHALL remove flicker when the visitor prefers reduced motion, and on a correct Accusation SHALL reveal the culprit Suspect's Sprite.
 5. IF no Display is connected THEN the game SHALL be unaffected.
+6. WHERE the Master turns on spoken narration THEN the Host SHALL read each narration line aloud with the browser's speech synthesis, SHALL leave it off by default, SHALL always show the same line as text, and SHALL let the Master mute, replay or skip a line.
+7. THE Controller SHALL be an installable web app with a manifest, an offline shell that explains how to rejoin, and a screen wake lock while a game is running, and no feature SHALL need a native app.
 
 ### Requirement 8
 
@@ -140,9 +152,9 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 
 #### Acceptance Criteria
 
-1. WHERE no phone has joined THEN the Host SHALL let a keyboard-and-mouse human play seat 1 and let the Host add Bots up to the Player limit.
-2. WHEN a Bot has a Turn THEN the Party Service SHALL choose only legal actions using only that Bot's Private View, make a Suggestion at a Zone it stands in, make an Accusation only when its notebook leaves exactly one candidate in each category, and wait between 1.5 and 6 seconds so play is watchable, deterministically from the seed.
-3. WHERE every other seat is a Bot THEN the Host MAY show the human's Private View while the human holds a peek key, WHERE the Party Service determines this condition server-side and sends the peek permission only when every other seated Player is a Bot, and WHERE any other human is seated THEN the Host SHALL NOT show any Private View.
+1. WHERE no phone has joined THEN the Host SHALL offer "Play on this screen", which seats the page itself as the first Player through the normal join flow, makes it the Master and shows that Player's Controller pad beside the world, and the Master SHALL be able to add Bots up to the Player limit.
+2. WHEN a Bot has a Turn THEN the Party Service SHALL choose only legal actions using only that Bot's Private View, walk to and Inspect a Zone it has not inspected, make a Suggestion at a Zone it stands in, make an Accusation only when its notebook leaves exactly one candidate in each category, choose Haunt Event options when it is the next Poltergeist, and wait between 1.5 and 6 seconds so play is watchable, deterministically from the seed.
+3. WHERE every other seat is a Bot THEN the embedded pad MAY show the Master's Private View on the shared screen, WHERE the Party Service determines this condition server-side and sends the permission only when every other seated Player is a Bot, and WHERE any other human is seated THEN the Host SHALL NOT show any Private View.
 4. THE single-player game SHALL be unaffected by Party mode, and WHILE world generation or model quota is exhausted THEN Party mode SHALL still run with Gallery Worlds, Preset Ghosts and scripted narration.
 
 ### Requirement 10
@@ -158,3 +170,15 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 5. THE Party Service SHALL record only counters and error codes (rooms, players seated, turns, suggestions, accusations, timeouts, fallbacks), and SHALL NOT record nicknames, photos, Zone names, details or narration text.
 6. THE Party Service SHALL rate limit join attempts by hashed IP, allow one active Room per host session and at most 20 active Rooms in total by default, and refuse the rest with a reason code.
 7. WHERE `PARTY_ENABLED` is false THEN the Party Service SHALL refuse to create Rooms while the single-player game keeps working.
+
+### Requirement 11
+
+**User Story:** As a player, I want the haunting to push back and every player to stay in the game, so that waiting is never dull and a wrong guess is not the end.
+
+#### Acceptance Criteria
+
+1. THE Room SHALL keep a Haunt level that starts at 0, rises by 1 at the end of every Round, for every Turn lost to the clock and for every wrong Accusation, never exceeds its maximum (8, 10 or 12, Master choice, default 10), and ends the game when it reaches the maximum.
+2. WHEN the Haunt first reaches level 3, 6 or 9 and is below its maximum THEN the Room SHALL fire a Haunt Event once for that level, offering two distinct options chosen from the seed among Cold Spot (one Zone refuses Suggestions and Inspect for one Round), Blackout (the next Turn's base seconds drop by 15, never below 15, and the Host scene dims within the photosensitivity limits), Restless (the ghost Sprite moves to another Zone, narration only) and Lull (the Haunt falls by 1, never below 0), and the next Poltergeist in seat order SHALL pick one within 15 seconds, otherwise the first option, or the first option when no Poltergeist exists.
+3. WHEN a Player becomes a Poltergeist THEN the Room SHALL keep their seat, nickname and Hand (still used to answer Suggestions), give them no Turns, and refuse their movement, Suggestion, Accusation and Inspect, while they remain connected and able to choose Haunt Event options.
+4. WHEN a Round ends THEN the Room SHALL add 1 Resolve to each Player who is not a Poltergeist, up to a maximum of 3.
+5. WHEN another Player's Suggestion has been resolved and a Player who is not a Poltergeist spends 1 Resolve within 10 seconds THEN the Room SHALL show that Player privately only the category (Suspect, Zone or Relic) of the card shown, SHALL NOT show the card, and SHALL refuse Eavesdrop on the Player's own Suggestion, without Resolve, or after the 10 seconds.
