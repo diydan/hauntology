@@ -13,15 +13,17 @@
 <meta property="og:url" content="https://hauntology.app/">
 <meta property="og:title" content="Hauntology: your place is haunted. Work out by whom.">
 <meta property="og:description" content="The spooky detective game that tests your wit and nerve. Turn a photo of somewhere you know into a haunted 3D world, then play it with family and friends.">
-<meta property="og:image" content="https://hauntology.app/assets/og.png">
+<meta property="og:image" content="https://hauntology.app/assets/og.jpg">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="A bare tree under a dark, moonlit sky, and the word Hauntology.">
 <meta name="twitter:card" content="summary_large_image">
 
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="preload" href="/fonts/im-fell-english-Ktk1ALSLW8zDe0rthJysWrnLsAzHEKOYd4xI5g.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/hanken-grotesk-ieVn2YZDLWuGJpnzaiwFXS9tYtpd59CxCis4.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/im-fell-english-sub.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/hanken-grotesk-sub.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/house.glb" as="fetch" crossorigin>
 <link rel="stylesheet" href="/css/fonts.css">
 <link rel="stylesheet" href="/css/site.css">
 <script>document.documentElement.classList.add('js')</script>
@@ -52,7 +54,7 @@
     <div class="hero-fallback" aria-hidden="true">
       <svg viewBox="0 0 520 300" role="presentation"><circle cx="90" cy="60" r="26" fill="#e9e5d8"/><path d="M0 300V250c60-20 120-30 190-24 60 5 110 20 170 12s110-20 160-6v68z" fill="#0e171a"/><g fill="#27313a"><rect x="250" y="170" width="150" height="90"/><rect x="214" y="120" width="52" height="140"/></g><path d="M236 170l89-60 89 60z" fill="#161d24"/><path d="M204 120l36-46 36 46z" fill="#161d24"/><g fill="#ffd391"><rect x="268" y="190" width="26" height="34"/><rect x="356" y="190" width="26" height="34"/><rect x="226" y="150" width="20" height="26"/></g><rect x="313" y="212" width="26" height="48" fill="#6b2a20"/><circle cx="325" cy="146" r="11" fill="#9ad3c9"/></svg>
     </div>
-    <div class="moonlayer" id="moonlayer" aria-hidden="true"><img class="moon" src="assets/moon.jpg" alt="" decoding="async" draggable="false"></div>
+    <div class="moonlayer" id="moonlayer" aria-hidden="true"><img class="moon" src="assets/moon.webp" alt="" decoding="async" draggable="false"></div>
     <canvas class="skylayer" id="skylayer" aria-hidden="true"></canvas>
     <div class="herobg" id="herobg" aria-hidden="true"><video id="bgvid" muted loop playsinline preload="auto" disablepictureinpicture tabindex="-1"></video></div>
     <canvas id="herogl" aria-hidden="true"></canvas>

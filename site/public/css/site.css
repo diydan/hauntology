@@ -417,7 +417,7 @@ footer .credits{flex-basis:100%;font-size:.78rem;opacity:.7;margin:.4rem 0 0}
 footer .credits a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 
 /* hero background video with parallax: oversized so it can travel; --bx/--by/--bs are set from main.js */
-.herobg{position:absolute;inset:-5%;opacity:.66;background:#061719 url(../assets/bg.jpg) center/cover no-repeat;transform:translate3d(var(--bx,0px),var(--by,0px),0) scale(var(--bs,1.02));will-change:transform}
+.herobg{position:absolute;inset:-5%;opacity:.66;background:#061719 url(../assets/bg.webp) center/cover no-repeat;transform:translate3d(var(--bx,0px),var(--by,0px),0) scale(var(--bs,1.02));will-change:transform}
 .herobg video{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 1.2s ease}
 .herobg.ready video{opacity:1}
 .hero.no-gl .hero-fallback{background:none}
