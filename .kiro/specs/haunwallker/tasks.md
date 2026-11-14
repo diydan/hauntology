@@ -9,7 +9,7 @@ This spec owns `world-pipeline` tasks 10.1 to 10.4. Tasks 7.1, 7.2, 8.1 and 9.1 
 Tasks marked `*` are optional test tasks that should still be done before submission.
 
 - [ ] 1. Shared pure logic (`shared/src/app/`)
-  - [ ] 1.1 Reconcile `shared/src/errors.ts`
+  - [x] 1.1 Reconcile `shared/src/errors.ts`
     - Add every code in the `world-pipeline` design code list that `errors.ts` does not already have (`blank_sketch`, `unsafe_image`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `quota_session`, `quota_day`, `quota_total`, `upstream_rate_limited`, `upstream_rejected`, `upstream_no_credits`, `ingest_failed`, `timeout` and any other missing one). Where both lists name one condition, keep the name already in `errors.ts` (`upload_bad_type`, `upload_too_large`, `world_gen_disabled`) and change that one list line in `world-pipeline/design.md` to say `errors.ts` is the source. Add the shell codes `shell_crash` and `session_expired`; `world_not_found` stays.
     - Unit test: every value equals its key, and `shell_crash`, `session_expired` and `world_not_found` exist.
     - _Requirements: 7.3_

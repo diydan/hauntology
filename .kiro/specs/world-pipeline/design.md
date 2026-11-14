@@ -98,7 +98,7 @@ Orientation, scale, spawn, floorY and bounds are computed at ingest with default
 `queued → generating → ingesting → ready`; `failed` reachable from any non-terminal state. `ready` and `failed` are absorbing. Rate-limit events only extend the next poll delay. `timeout` fires at 20 min from start. Every transition into `failed` or on timeout is accompanied by `SpendGuard.release`; `ready` by `commit`.
 
 ## Error handling
-Stable codes in `shared/src/errors.ts`: `bad_type`, `too_large`, `too_small`, `bad_magic`, `blank_sketch`, `quota_session`, `quota_day`, `quota_total`, `gen_disabled`, `unsafe_image`, `moderation_unavailable`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `upstream_rate_limited`, `upstream_rejected`, `upstream_no_credits`, `ingest_failed`, `timeout`. Routes map codes to user-safe copy; upstream bodies are never forwarded.
+Stable codes live in `shared/src/errors.ts`, which is the source of truth; this list only names the ones this pipeline uses: `upload_bad_type`, `upload_too_large`, `upload_too_small`, `upload_bad_magic`, `blank_sketch`, `quota_session`, `quota_day`, `quota_total`, `world_gen_disabled`, `unsafe_image`, `moderation_unavailable`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `upstream_rate_limited`, `upstream_rejected`, `upstream_no_credits`, `ingest_failed`, `timeout`. (`world_too_small` is a different code: a party world whose walk radius is below 7 m.) Routes map codes to user-safe copy; upstream bodies are never forwarded.
 
 ## Testing strategy
 - Property tests (fast-check) for every pure module and a model-based test for SpendGuard (random command sequences vs. a simple counter model).
