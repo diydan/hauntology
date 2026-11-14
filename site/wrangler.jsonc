@@ -1,0 +1,12 @@
+{
+  // Static site for https://hauntology.app. No Worker script, only assets.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hauntology-site",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page"
+  }
+  // Uncomment once hauntology.app is a zone in the Cloudflare account that deploys this:
+  // , "routes": [{ "pattern": "hauntology.app", "custom_domain": true }]
+}

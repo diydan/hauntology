@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hauntology: the spooky detective game that tests your wit and nerve</title>
+<meta name="description" content="The spooky detective game that tests your wit and nerve. Photos, 3D worlds, AI ghosts, 3D-printed game pieces, holograms and tonight's real night sky, stitched together into a haunting night for family and friends.">
+<meta name="theme-color" content="#0e1114">
+<link rel="canonical" href="https://hauntology.app/">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Hauntology">
+<meta property="og:url" content="https://hauntology.app/">
+<meta property="og:title" content="Hauntology: your place is haunted. Work out by whom.">
+<meta property="og:description" content="The spooky detective game that tests your wit and nerve. Turn a photo of somewhere you know into a haunted 3D world, then play it with family and friends.">
+<meta property="og:image" content="https://hauntology.app/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A bare tree under a dark, moonlit sky, and the word Hauntology.">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="/fonts/im-fell-english-Ktk1ALSLW8zDe0rthJysWrnLsAzHEKOYd4xI5g.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/hanken-grotesk-ieVn2YZDLWuGJpnzaiwFXS9tYtpd59CxCis4.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/site.css">
+<script>document.documentElement.classList.add('js')</script>
+<noscript><style>.js [data-r]{opacity:1;translate:none}</style></noscript>
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <div class="wrap top">
+    <a class="brand" href="#top">Hauntology</a>
+    <nav class="mono" aria-label="Sections">
+      <a href="#why">Why play</a>
+      <a href="#sim">A night</a>
+      <a href="#modes">Ways to play</a>
+      <a href="#phones">Phones</a>
+      <a href="#haunt">The Haunt</a>
+      <a href="#machine">Under the hood</a>
+    </nav>
+    <span class="topright"><button class="sound mono" id="sound" type="button" aria-pressed="false" aria-label="Turn the background music on"><svg class="spk" aria-hidden="true" viewBox="0 0 16 14" width="16" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h2.5L8 2v10L4.5 9H2z" fill="currentColor" stroke="none"/><path class="w" d="M10.5 4.5c1 1.2 1 3.8 0 5M12.6 2.8c1.9 2.4 1.9 5.6 0 8.4"/><path class="x" d="M10.5 5l4 4M14.5 5l-4 4"/></svg><span class="lbl">Sound off</span></button></span>
+  </div>
+</header>
+<div class="progress" id="prog" aria-hidden="true"></div>
+<div class="lantern" id="lantern" aria-hidden="true"></div>
+
+<main id="top">
+<div class="hero" id="hero">
+  <div class="hero-pin">
+    <div class="hero-fallback" aria-hidden="true">
+      <svg viewBox="0 0 520 300" role="presentation"><circle cx="90" cy="60" r="26" fill="#e9e5d8"/><path d="M0 300V250c60-20 120-30 190-24 60 5 110 20 170 12s110-20 160-6v68z" fill="#0e171a"/><g fill="#27313a"><rect x="250" y="170" width="150" height="90"/><rect x="214" y="120" width="52" height="140"/></g><path d="M236 170l89-60 89 60z" fill="#161d24"/><path d="M204 120l36-46 36 46z" fill="#161d24"/><g fill="#ffd391"><rect x="268" y="190" width="26" height="34"/><rect x="356" y="190" width="26" height="34"/><rect x="226" y="150" width="20" height="26"/></g><rect x="313" y="212" width="26" height="48" fill="#6b2a20"/><circle cx="325" cy="146" r="11" fill="#9ad3c9"/></svg>
+    </div>
+    <div class="moonlayer" id="moonlayer" aria-hidden="true"><img class="moon" src="assets/moon.jpg" alt="" decoding="async" draggable="false"></div>
+    <canvas class="skylayer" id="skylayer" aria-hidden="true"></canvas>
+    <div class="herobg" id="herobg" aria-hidden="true"><video id="bgvid" muted loop playsinline preload="auto" disablepictureinpicture tabindex="-1"></video></div>
+    <canvas id="herogl" aria-hidden="true"></canvas>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <div class="hero-copy">
+      <div class="wrap">
+        <h1 aria-label="Hauntology"><span aria-hidden="true"><i style="--i:0">H</i><i style="--i:1">a</i><i style="--i:2">u</i><i style="--i:3">n</i><i style="--i:4">t</i><em><i class="flk" style="--i:5">o</i><i style="--i:6">l</i><i style="--i:7">o</i><i style="--i:8">g</i><i style="--i:9">y</i></em></span></h1>
+        <p class="kicker">The spooky detective game that tests your wit and nerve.</p>
+        <div class="rotrow">
+        <p class="rot" id="rot">
+        <span class="rot-item is-on">Your grandmother&rsquo;s kitchen</span>
+        <span class="rot-item" aria-hidden="true">Your old school</span>
+        <span class="rot-item" aria-hidden="true">The villa you still talk about</span>
+        <span class="rot-item" aria-hidden="true">Your first flat</span>
+        <span class="rot-item" aria-hidden="true">Grandad&rsquo;s workshop</span>
+        <span class="rot-item" aria-hidden="true">Your childhood bedroom</span>
+        <span class="rot-item" aria-hidden="true">The caravan at the beach</span>
+        <span class="rot-item" aria-hidden="true">Your nan&rsquo;s front room</span>
+        <span class="rot-item" aria-hidden="true">The campsite from every summer</span>
+        <span class="rot-item" aria-hidden="true">Your favourite café</span>
+        <span class="rot-item" aria-hidden="true">The family farm</span>
+        <span class="rot-item" aria-hidden="true">The treehouse in the garden</span>
+        <span class="rot-item" aria-hidden="true">Your best friend&rsquo;s basement</span>
+        </p>
+      </div>
+        <p class="lede">is haunted. Work out by whom before the house wakes up.</p>
+        <p class="sub">Photos, 3D worlds, AI ghosts, 3D-printed game pieces, holograms and tonight’s real night sky, stitched together into a haunting night for family and friends.</p>
+        <div class="cta">
+          <a class="btn primary" href="#place">Haunt a place you know</a>
+        </div>
+      </div>
+    </div>
+    <p class="herohint mono" aria-hidden="true"><span class="fine">Move to look around &middot; click to wake the ghost</span><span class="touch">Tap to wake the ghost</span></p>
+    <p class="skynote mono" id="skynote" aria-hidden="true"></p>
+    <div class="hero-dark" aria-hidden="true"></div>
+  </div>
+</div>
+
+<section id="place">
+  <div class="wrap place">
+    <div data-r>
+      <p class="eyebrow mono">Start with a photo</p>
+      <h2>Your place, haunted</h2>
+      <p class="lead">Turn a photo of somewhere you know into a 3D world with a ghost in it. Drag the handle to see the same place before and after.</p>
+    </div>
+    <figure class="plate">
+      <div class="tv">
+      <div class="tv-bezel">
+      <div class="stage" id="stage">
+        <canvas id="world" aria-hidden="true"></canvas>
+        <canvas id="photo" aria-hidden="true"></canvas>
+        <span class="tag l mono">Photo</span>
+        <span class="tag r mono">3D world</span>
+        <input id="reveal" type="range" min="0" max="100" value="50" aria-label="Compare the photo with the 3D world">
+        <div class="seam" aria-hidden="true"><span class="knob">&harr;</span></div>
+      </div>
+      </div>
+      <div class="tv-stand" aria-hidden="true"></div><div class="tv-base" aria-hidden="true"></div>
+      </div>
+      <figcaption class="cap">Drag to compare a photo with the haunted world made from it. Drag right to find the ghost already in the photo. Illustration.</figcaption>
+    </figure>
+  </div>
+</section>
+<section id="why">
+  <div class="wrap">
+    <p class="eyebrow mono">Why you'll want to play</p>
+    <div class="feat">
+      <article class="fcard"><div class="ic"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="8" width="36" height="32" rx="4"/><path d="M12 34l9-11 7 8 4-4 6 7"/><circle cx="32" cy="17" r="3"/></svg></div><h3>Your place, your game</h3><p>Turn a photo of any place you know into the haunted house you play in.</p></article>
+      <article class="fcard"><div class="ic"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="21" cy="21" r="13"/><path d="M31 31l11 11"/><path d="M12 21c3-5 6-7 9-7s6 2 9 7c-3 5-6 7-9 7s-6-2-9-7z"/><circle cx="21" cy="21" r="2.5"/></svg></div><h3>Be the detective</h3><p>Collect clues, build your accusation and name who is haunting the place.</p></article>
+      <article class="fcard"><div class="ic"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 19h8l11-9v28l-11-9H7z"/><path d="M33 17c3.5 4 3.5 10 0 14"/><path d="M39 11c6.5 7 6.5 19 0 26"/></svg></div><h3>Always in the game</h3><p>Off your turn, stir up creaks and whispers, then help or hinder whoever is on the clock.</p></article>
+      <article class="fcard"><div class="ic"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 41V22a14 14 0 0128 0v19l-4.7-3.5L28.7 41l-4.7-3.5L19.3 41l-4.6-3.5z"/><circle cx="19" cy="23" r="1.8" fill="currentColor"/><circle cx="29" cy="23" r="1.8" fill="currentColor"/></svg></div><h3>Join the ghost</h3><p>Guess wrong and you join the haunting. You can't win any more, but you haunt your friends instead of sitting out.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="modes">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow mono">Play your way</p>
+      <h2>Single player, or a full house</h2>
+    </div>
+    <div class="modes">
+      <article class="mode">
+        <div class="ic"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="7"/><path d="M10 41c0-8.5 6-14 14-14s14 5.5 14 14"/></svg></div>
+        <p class="mono tagm">You and the ghost</p>
+        <h3>Single player</h3>
+        <p>Walk into your photo, design the ghost that haunts it, and talk to it until it gives up its three memories.</p>
+        <ul><li>Draw or upload the place</li><li>Design the ghost yourself</li><li>Take your time, there is no clock</li></ul>
+      </article>
+      <article class="mode">
+        <div class="ic"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="15" r="6"/><path d="M13 39c0-7.5 5-12 11-12s11 4.5 11 12"/><circle cx="9.5" cy="21" r="4"/><circle cx="38.5" cy="21" r="4"/><path d="M2.5 37c.5-5 3-8 7-8M45.5 37c-.5-5-3-8-7-8"/></svg></div>
+        <p class="mono tagm">Two to six players</p>
+        <h3>Multiplayer</h3>
+        <p>Friends and family around one screen, each on their own phone. Bots fill any empty seat.</p>
+        <ul><li>Scan a code to join</li><li>Everyone has a part to play on every turn</li><li>Spooky, never gory</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="sim" class="sim" aria-labelledby="sim-h">
+  <span class="wisp" aria-hidden="true" data-depth="-0.18" style="left:2%;top:12%"><svg viewBox="0 0 60 80"><path d="M6 78V32C6 14 16 4 30 4s24 10 24 28v46l-8-8-8 8-8-8-8 8-8-8z"/><circle cx="22" cy="30" r="3.4"/><circle cx="38" cy="30" r="3.4"/></svg></span>
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow mono">Watch it play</p>
+      <h2 id="sim-h">A night at the table, with friends</h2>
+      <p class="lead">Six seats, one TV, a phone each. Maya, Dev, Sam, Priya and Leo are people; Ana is a bot. The run is scripted, the rules are the planned ones. Take a seat and use the phone beside the table.</p>
+    </div>
+    <div class="simgrid">
+      <div class="simmain">
+        <div class="simstage" id="simstage">
+          <canvas id="simgl" aria-hidden="true"></canvas>
+          <div class="simhud" aria-hidden="true">
+            <span class="chip mono"><span id="s-round">Round 1</span><span id="s-turn"></span></span>
+            <span class="chip mono pips"><span>Haunt</span><span id="s-pips"></span></span>
+          </div>
+          <p class="simline" id="s-line" aria-hidden="true"></p>
+          <p class="simnote mono" id="s-note"></p>
+          <div class="simend" id="s-end" hidden>
+            <div>
+              <h3 id="s-endtitle">Case closed</h3>
+              <p id="s-endtext"></p>
+              <p class="mono">What the table did in secret</p>
+              <ul id="s-endlist"></ul>
+              <button class="btn primary small" type="button" id="s-again">Watch it again</button>
+            </div>
+          </div>
+        </div>
+        <div class="simctl">
+          <button class="btn small" type="button" id="s-play" aria-pressed="false">Play the night</button>
+          <span class="speed" role="group" aria-label="Speed"><button type="button" data-speed="1" aria-pressed="true">1&times;</button><button type="button" data-speed="2" aria-pressed="false">2&times;</button><button type="button" data-speed="4" aria-pressed="false">4&times;</button></span>
+          <button class="btn small" type="button" id="s-restart">Restart</button>
+          <span class="grow"></span>
+          <span class="hint">Click a player at the table to take their seat.</span>
+        </div>
+      </div>
+      <aside class="simside">
+        <div class="seatwrap">
+          <p class="eyebrow mono" style="margin-bottom:8px">Take a seat</p>
+          <div class="seatpick" id="s-seats" role="group" aria-label="Take a seat"></div>
+        </div>
+        <div class="simphone" id="s-phone">
+          <div class="scr">
+            <div class="ptop"><span id="p-name">Sam</span><span class="clock" id="p-clock"></span></div>
+            <div class="ptabs2" role="tablist"><button type="button" role="tab" id="tab-play" aria-selected="true">Play</button><button type="button" role="tab" id="tab-notes" aria-selected="false">Notes</button></div>
+            <div id="pane-play">
+              <p class="pstate" id="p-state"></p>
+              <div id="p-turn">
+                <p class="plabel">Make a sound on the TV</p>
+                <div class="pads"><button type="button" data-cue="Creak" aria-disabled="true">Creak</button><button type="button" data-cue="Whisper" aria-disabled="true">Whisper</button><button type="button" data-cue="Bell" aria-disabled="true">Bell</button><button type="button" data-cue="Laugh" aria-disabled="true">Laugh</button></div>
+                <p class="plabel" style="margin-top:10px">Help or haunt <span id="p-target">the player on the clock</span></p>
+                <div class="infl"><button type="button" class="good" data-nudge="help" aria-disabled="true">Help <small>+10 s</small></button><button type="button" class="bad" data-nudge="spook" aria-disabled="true">Spook <small>&minus;10 s</small></button></div>
+                <button type="button" class="shake" id="p-rattle" aria-disabled="true">Shake the house</button>
+                <p class="res" id="p-res"><span>Resolve</span><i></i><i></i><i></i></p>
+                <p class="pstate" style="margin-top:2px;font-size:.78rem;min-height:0">Help costs 1 Resolve, Spook costs 2. You gain 1 each round.</p>
+              </div>
+              <div id="p-event" hidden>
+                <p class="pstate" id="p-eventtext"></p>
+                <div id="p-eventbtns"></div>
+              </div>
+              <p class="why" id="p-why" role="status"></p>
+            </div>
+            <div id="pane-notes" hidden>
+              <p class="plabel">Your hand</p>
+              <div class="hand" id="p-hand"></div>
+              <p class="plabel" style="margin-top:10px">Crossed off</p>
+              <div class="chips" id="p-crossed"></div>
+              <p class="plabel" style="margin-top:10px">What you were shown</p>
+              <ul class="notesl" id="p-shown"></ul>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <div class="simlogwrap">
+        <p class="eyebrow mono" style="margin-bottom:10px">What just happened</p>
+        <ol class="simlog" id="s-log" aria-label="What has happened so far"></ol>
+      </div>
+    </div>
+    <p class="hint simhint">A scripted demo of the planned rules, not the finished game. Names, clues and graphics are made up. Priya joins the haunting in round 1: take her seat to shake the house and to choose what the house does. The Notes tab shows what only that player knows.</p>
+  </div>
+</section>
+
+<section id="play">
+  <div class="wrap night">
+    <div>
+      <p class="eyebrow mono">The three screens</p>
+      <h2>Who sees what</h2>
+      <p class="lead">One screen for the room, one phone each. Everyone watches the haunting, only you see your own cards, and nobody just waits.</p>
+      <ul class="legend">
+        <li><b>On the TV</b>Maya walks into the Kitchen. Dev answers her guess. The ghost narrates, and nobody sees which card.</li>
+        <li class="priv"><b>On Maya's phone</b>The card Dev showed her, crossed off in her notebook.</li>
+        <li class="off"><b>On Sam's phone, off turn</b>Make a sound on the TV, or help or haunt Maya while her clock runs.</li>
+      </ul>
+      <p class="hint">Mockups of the planned screens. Names and clues are made up.</p>
+    </div>
+    <div class="devices">
+      <div class="tv" role="img" aria-label="Mockup of the game on a TV: the haunted house, the Haunt meter at 3 of 10, four players and the ghost narrating">
+        <div class="tv-bezel">
+          <div class="tv-screen screen-shot" aria-hidden="true">
+          <div class="tv-ui">
+            <span class="hud hud-round mono">Round 2</span>
+            <span class="hud hud-haunt mono">Haunt <i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <div class="hud-bottom">
+              <div class="hud-players">
+                <span class="pl on"><b>M</b>Maya <em>0:34</em></span><span class="pl"><b>D</b>Dev</span><span class="pl"><b>S</b>Sam</span><span class="pl"><b>B</b>Bot</span>
+              </div>
+              <p class="hud-line">The kettle is still warm. Somebody was here a minute ago.</p>
+            </div>
+          </div>
+          
+        </div>
+        <div class="tv-stand" aria-hidden="true"></div><div class="tv-base" aria-hidden="true"></div>
+      </div>
+      <div class="phones">
+        <figure class="pw">
+          <div class="phone" role="img" aria-label="Mockup of Maya's phone as a controller: a move pad, Suggest, Inspect, Accuse and Pass buttons, a turn clock and her hand of three cards">
+            <div class="pscreen" aria-hidden="true">
+              <div class="ptop"><span>Maya &middot; Kitchen</span><span class="clock">0:34</span></div>
+              <div class="pbar"><i></i></div>
+              <div class="pcontrols">
+                <div class="pad"><i></i></div>
+                <div class="pbtns"><b class="go">Suggest</b><b>Inspect</b><b>Accuse</b><b class="quiet">Pass</b></div>
+              </div>
+              <p class="plabel">Your hand</p>
+              <div class="hand">
+                <span>Music Box<small>Relic</small></span><span>Attic<small>Zone</small></span><span>Cook<small>Suspect</small></span>
+              </div>
+              <div class="ptabs"><span class="on">Play</span><span>Cards</span><span>Notes</span></div>
+            </div>
+          </div>
+          <figcaption class="mono">Maya's controller</figcaption>
+        </figure>
+        <figure class="pw">
+          <div class="phone" role="img" aria-label="Mockup of Maya's private screen: Dev showed her the Silver Key card, and her notebook crosses off the Silver Key, Music Box, Attic and Cook">
+            <div class="pscreen" aria-hidden="true">
+              <div class="ptop"><span>Dev shows you</span></div>
+              <div class="bigcard">
+                <small>Relic</small>
+                <svg viewBox="0 0 40 20" width="46" height="23"><circle cx="8" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 10h22M30 10v6M35 10v5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+                <strong>Silver Key</strong>
+              </div>
+              <p class="plabel">Crossed off</p>
+              <div class="chips"><span class="new">Silver Key</span><span>Music Box</span><span>Attic</span><span>Cook</span></div>
+              <div class="ptabs"><span>Play</span><span>Cards</span><span class="on">Notes</span></div>
+            </div>
+          </div>
+          <figcaption class="mono">Only Maya sees this</figcaption>
+        </figure>
+        <figure class="pw">
+          <div class="phone" role="img" aria-label="Mockup of Sam's phone while it is Maya's turn: sound buttons for Creak, Whisper, Bell and Laugh, a Help button worth plus ten seconds, a Spook button worth minus ten seconds, and two of three Resolve points">
+            <div class="pscreen" aria-hidden="true">
+              <div class="ptop"><span>Maya's turn</span><span class="clock">0:34</span></div>
+              <p class="plabel">Make a sound on the TV</p>
+              <div class="pads"><b>Creak</b><b>Whisper</b><b>Bell</b><b>Laugh</b></div>
+              <p class="plabel">Help or haunt Maya</p>
+              <div class="infl"><b class="good">Help <small>+10 s</small></b><b class="bad">Spook <small>&minus;10 s</small></b></div>
+              <p class="res">Resolve <i class="on"></i><i class="on"></i><i></i></p>
+              <div class="ptabs"><span class="on">Play</span><span>Cards</span><span>Notes</span></div>
+            </div>
+          </div>
+          <figcaption class="mono">Off turn: Sam helps or haunts</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="phones">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <p class="eyebrow mono">More than a controller</p>
+        <h2>The whole table is part of the haunting</h2>
+        <p class="lead">Phones creak, glow and whisper. Everything here is optional, every player says yes for themselves, and none of it ever changes a rule.</p>
+        <p class="lead">Once you have joined the haunting, you can shake your phone and the floorboards creak on the TV and every phone. Your phone nudges you to start, and nudges harder when someone else is already shaking. The more shakes in a turn, the more the house stirs.</p>
+      </div>
+      <div>
+        <div class="meter">
+          <div class="meter-top"><span class="mono">Phones on the table</span><span class="mono" id="shakecount">0 / 6 shakes</span></div>
+          <div class="strip" id="strip" aria-hidden="true"><span class="sp"></span><span class="sp"></span><span class="sp"></span><span class="sp"></span></div>
+          <div class="shakerow">
+            <button class="btn small" type="button" id="shake">Shake the house</button>
+            <button class="btn small" type="button" id="newturn">New turn</button>
+            <span class="lvl" id="lvl" aria-hidden="true"><i></i><i></i><i></i></span>
+          </div>
+          <div class="shakemsg" role="status" aria-live="polite"><b id="shaketag">Waiting</b><p id="shaketext">Tap to try it. In the game, only players who have joined the haunting can shake, and nobody sees who did it until the game ends.</p></div>
+          <p class="hint" style="margin-top:12px">A demo of the light bar. Greys and whites only, slow fades, a pause between shakes, and no animation at all if you ask for reduced motion.</p>
+        </div>
+      </div>
+    </div>
+    <div class="cards3">
+      <article class="fcard"><h3>The table lights up</h3><p>Phones lying in a row glow in turn like one strip of light, in greys and whites like a horror film. A phone that falls out of step is skipped, never played late.</p></article>
+      <article class="fcard"><h3>When you join the ghost</h3><p>Guess wrong and your phone gives a dramatic sting, the lights fade to grey, and you become one of the voices of the house. Your phone then nudges you to shake it.</p></article>
+      <article class="fcard"><h3>Spirit lens</h3><p>Raise your phone and look through it. Your own notebook marks float in the world around you, and only you can see them.</p></article>
+      <article class="fcard"><h3>The real sky</h3><p>The weather, the hour and the moon of the place you chose, and at night the stars that were really overhead. On the hour the house strikes together. Never news, never real events.</p></article>
+      <article class="fcard"><h3>The ghost has a voice</h3><p>It speaks, with subtitles always on. In single player, hold a button and talk to it.</p></article>
+      <article class="fcard"><h3>A line you never said</h3><p>If everyone says yes (a parent or guardian says yes for a child), the ghost cuts a few short words you recorded into a whisper you never said, then shows how at the end. The clips are deleted when the game ends.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="haunt">
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow mono">The Haunt</p>
+      <h2>Get it wrong and you get to haunt your friends</h2>
+      <p class="lead">The Haunt meter climbs every round and every time a turn clock runs out. At 3, 6 and 9 the house does something, and if it fills, the ghost wins.</p>
+      <p class="lead">Accusations are sealed and revealed together at the end of the round, so going first is no advantage. Accuse wrongly and you join the haunting: you keep your seat, shake the house and choose what it does next, but you can no longer win. The best haunter gets a title at the end.</p>
+    </div>
+    <div>
+      <div class="meter" id="meter">
+        <div class="meter-top"><span class="mono">Haunt meter</span><output id="hv">0 / 10</output></div>
+        <div class="track" id="track"></div>
+        <div class="row">
+          <button class="btn small" type="button" data-add data-why="The round ends. The Haunt rises by 1.">End a round</button>
+          <button class="btn small" type="button" data-add data-why="A turn clock runs out. The Haunt rises by 1.">Clock runs out</button>
+          <button class="btn small" type="button" data-add data-why="A wrong accusation, revealed at the end of the round. That player joins the haunting, and the Haunt rises by 1.">Wrong accusation</button>
+        </div>
+        <div class="msg" role="status" aria-live="polite">
+          <p id="msg">Press a button to push the Haunt up.</p>
+          <div id="opts"></div>
+        </div>
+        <div class="hintrow"><p class="hint">Try it. When the house stirs, you get to choose.</p><button class="btn small" type="button" id="reset">Reset</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="together">
+  <div class="wrap split">
+    <div>
+      <p class="eyebrow mono">For family and friends</p>
+      <h2>A haunting for friends and family</h2>
+      <p class="lead">A game you can start in the time it takes to scan a code.</p>
+    </div>
+    <ul class="facts">
+      <li><b>Start from any photo</b><span>A holiday spot, your old school, your living room. A sketch works too.</span></li>
+      <li><b>Two to six players</b><span>Bots fill any empty seat, so a small group still has a full table.</span></li>
+      <li><b>One screen, many phones</b><span>A TV or laptop shows the world. Phones do everything else, with no app store.</span></li>
+      <li><b>Single player?</b><span>It puts you in the place with a ghost to talk to. On a laptop you can also play the party game with Bots.</span></li>
+      <li><b>Spooky, never gory</b><span>The haunting is gentle. The question is who is haunting the place, and nobody is harmed.</span></li>
+      <li><b>Bring a 3D printer</b><span>Printed relics and a hologram pyramid are optional extras.</span></li>
+    </ul>
+  </div>
+</section>
+<section id="machine">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="eyebrow mono">Under the hood</p>
+      <h2>The little things we do so you never have to think about them</h2>
+      <p class="lead">None of this is the game. All of it is why the game is safe to hand to a family.</p>
+      <p class="note">These are promises the build is held to, each one written down with a test before any code.</p>
+    </div>
+    <div class="groups">
+    <div class="group">
+      <h3>Your photos and places<small>Privacy</small></h3>
+      <ul class="facts">
+      <li><b>Cleaned first</b><span>Location and camera data are stripped from a photo before anything else happens. If a photo has a date and time, only that is read, to suggest a day to remember.</span></li>
+      <li><b>Checked, and refused if unsure</b><span>Photos and typed words are checked before use. If the check cannot run, the answer is no.</span></li>
+      <li><b>Short-lived</b><span>Photos are kept 24 hours and worlds 7 days. &ldquo;Delete my place&rdquo; removes everything at once. A party room and everything in it is deleted when the game ends, or after 6 hours.</span></li>
+      <li><b>Blurry places on purpose</b><span>Only a rounded position is kept (two decimals, about a kilometre). It is never shown to other players and never written to a log.</span></li>
+      <li><b>No accounts, no analytics</b><span>Seat tokens are unguessable and work for one seat only. Logs hold ids and counters, never your words, your audio or your photo.</span></li>
+      <li><b>Your words are only words</b><span>Anything typed is treated as plain data in a length-capped block, never as instructions to the ghost.</span></li>
+      </ul>
+    </div>
+    <div class="group">
+      <h3>The ghost<small>Safety</small></h3>
+      <ul class="facts">
+      <li><b>The engine decides, the model narrates</b><span>The rules run in plain code. If the model is slow, fails or says something unsuitable, a scripted line takes its place and the game does not change.</span></li>
+      <li><b>Every line is checked</b><span>Before a line is shown or spoken it is checked for safety. It never mentions news, crime, death or a real person or address.</span></li>
+      <li><b>Always finishable</b><span>Gallery worlds, preset ghosts and scripted lines let anyone play a whole game with no quota and no model calls.</span></li>
+      </ul>
+    </div>
+    <div class="group">
+      <h3>Money and limits<small>Cost</small></h3>
+      <ul class="facts">
+      <li><b>A ticket for every paid call</b><span>Each paid call needs a ticket reserved first, with caps per session, per day and in total, and a kill switch. When a cap is hit, the free parts keep working.</span></li>
+      <li><b>Cached, not repeated</b><span>A spoken line is cached for 30 days. The weather is read once per game. A repeated scripted line costs one call in total.</span></li>
+      <li><b>Budgets for the noisy bits</b><span>A party room speaks at most 20 lines. Each phone gets at most 3 sounds a round, and the table at most 6 cues a turn.</span></li>
+      </ul>
+    </div>
+    <div class="group">
+      <h3>The real world<small>Frozen inputs</small></h3>
+      <ul class="facts">
+      <li><b>One snapshot</b><span>Weather, hour and moon are read once at the start and frozen, so every player sees the same sky. They change looks and the ghost&rsquo;s words, never a rule. If the weather does not arrive within 3 seconds, the sky is clear.</span></li>
+      <li><b>Stars with no service</b><span>The stars are worked out on the device from a built-in list of up to 300, drawn once into a small picture, so the sky costs nothing per frame.</span></li>
+      <li><b>Same seed, same result</b><span>Chance is seeded, so a light show, a sky or a draw can be replayed exactly, which is how it gets tested.</span></li>
+      </ul>
+    </div>
+    <div class="group">
+      <h3>Phones, sound and light<small>Little tech</small></h3>
+      <ul class="facts">
+      <li><b>Light timing</b><span>Each phone measures how far its clock is from the server. A light cue starts half a second ahead, and a phone that is badly out of step is skipped rather than played late. The numbers are tuned on real phones.</span></li>
+      <li><b>Gentle by design</b><span>At most two brightness changes a second, fades only, greys and whites, a peak below full white, and none at all for anyone who asks for reduced motion.</span></li>
+      <li><b>A shake has to be a shake</b><span>It counts after three swings in a second and a half. A bump on the table or a phone in a pocket does not.</span></li>
+      <li><b>Limits belong to the seat</b><span>Your limits stay with you if your phone drops and reconnects. Nobody gets a fresh start by refreshing.</span></li>
+      <li><b>Lens that stays cheap</b><span>The spirit lens draws simple sprites at 30 frames a second at most, and pauses when the phone is face down or the page is hidden.</span></li>
+      <li><b>Bounded input</b><span>Sticks and look controls are clamped, and a phone sends at most 30 messages a second.</span></li>
+      </ul>
+    </div>
+    <div class="group">
+      <h3>Secrets and fairness<small>Trust</small></h3>
+      <ul class="facts">
+      <li><b>Hidden cards never leave the server</b><span>Your phone only ever receives your own cards. A test plants a secret marker in every hidden card and checks that it never reaches anyone else.</span></li>
+      <li><b>The server owns the clock</b><span>Phones show the turn clock but do not decide it. No one can shorten a turn to less than 30 seconds in total, whatever they do.</span></li>
+      <li><b>Your voice stays yours</b><span>Audio is deleted as soon as it is turned into text. The only clips ever kept are the short words for the whisper game, only from players who said yes, and they are deleted when the game ends. A parent or guardian is asked to say yes for a child.</span></li>
+      </ul>
+    </div>
+    <div class="group">
+      <h3>Everyone can play<small>Access</small></h3>
+      <ul class="facts">
+      <li><b>Sound is never the only clue</b><span>Every sound has a written line beside it, and the ghost always has subtitles. The narration is announced politely for screen readers.</span></li>
+      <li><b>Reduced motion is honoured</b><span>Flicker, light shows and motion all switch off or soften for anyone who asks.</span></li>
+      <li><b>Plain words</b><span>&ldquo;Single player&rdquo;, &ldquo;Multiplayer&rdquo; and &ldquo;joined the haunting&rdquo;. No jargon at the table.</span></li>
+      <li><b>No app store</b><span>Phones join by scanning a code and run in the browser. A weaker device gets a lighter world automatically.</span></li>
+      </ul>
+    </div>
+    <div class="group">
+      <h3>How it is built<small>Stack and method</small></h3>
+      <ul class="facts">
+      <li><b>Mostly Cloudflare</b><span>Workers, Durable Objects (one per game room), R2 storage, Workers AI for words, pictures, safety checks and voice, and Cloudflare Images for the ghost cut-out. World Labs makes the 3D world and Open-Meteo supplies the weather.</span></li>
+      <li><b>Specs first</b><span>Seven specs hold 287 promises and 124 correctness properties, each with its own test. A script fails the build if any promise has no task.</span></li>
+      <li><b>Pure rules</b><span>The rules are plain functions with no network, and the clock and the dice are passed in, so every rule can be tested on its own.</span></li>
+      <li><b>Honest limits</b><span>Worlds are static, the ghost is a flat sprite, and the hologram is an optical illusion tuned on real hardware.</span></li>
+      </ul>
+    </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap row">
+    <p><span class="brand">Hauntology</span> &middot; a world that lingers after the place is gone.</p>
+    <p>All characters and relics are original.</p>
+    <p class="credits">House model “Happy Halloween” by <a href="https://sketchfab.com/JessSwynn" rel="noopener">JessSwynn</a> on <a href="https://sketchfab.com/3d-models/happy-halloween-f969f211d8914c12a56cdb4c08829920" rel="noopener">Sketchfab</a>, <a href="http://creativecommons.org/licenses/by/4.0/" rel="noopener">CC BY 4.0</a>, resized and compressed for the web. Background music generated with MiniMax AI.</p>
+  </div>
+</footer>
+
+
+<script src="/js/hero-figure.js" defer></script>
+<script src="/js/phones.js" defer></script>
+<script src="/js/app.js" defer></script>
+</body>
+</html>
