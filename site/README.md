@@ -48,3 +48,4 @@ Then attach `hauntology.app`: uncomment the `routes` line in `wrangler.jsonc` (t
 - Fonts are subset to ASCII plus `· × é ’ “ ” … ↔ −`. Text with any other character falls back to a system font for that character. To add one, re-subset the file with `pyftsubset` (fonttools) from the Google Fonts latin files.
 - `house.glb` is preloaded in `<head>` so it downloads while `app.js` loads. Keep the preload URL identical to the one in `app.js`.
 - `bg.mp4` is H.264, 960x540, 24 fps, no audio, CRF 34. It loads late and sits under a dark overlay, so it can stay small.
+- Window silhouettes live in `js/app.js`: `pw()` draws the five figures into a 5-cell atlas (256 px each, drawn from the sill up and running off the bottom edge), and `gw` sets which window shows which figure and how big. The shader scales the figure by the window's width-to-height ratio, so drawings are not squeezed. Keep every figure one solid piece that reaches the bottom of its cell.
