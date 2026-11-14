@@ -3,6 +3,7 @@ import { useBoot, useRouterState, useShell } from "../context";
 import { useAnnounce } from "../LiveRegion";
 import { RetryButton } from "../RetryButton";
 import { ScreenHeading } from "../RouteFocus";
+import { DeletePlace } from "../haunt/DeletePlace";
 import { Chat } from "../play/Chat";
 import { ContentNotice } from "../play/ContentNotice";
 import { createPlayController, type PlayController, type ViewerPort } from "../play/controller";
@@ -189,6 +190,7 @@ export default function Play() {
               </div>
             ) : null}
             {ui.scripted ? <small className="scripted">scripted ghost</small> : null}
+            <DeletePlace worldId={worldId} leave={() => controller.exit("home")} />
           </>
         ) : null}
         <div ref={container} className="viewer" data-viewer />

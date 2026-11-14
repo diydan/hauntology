@@ -1,7 +1,7 @@
 import { ErrorCode, fail, ok } from "../errors";
 import type { Anchor, AnchorId } from "./events";
 import type { Atmosphere } from "../conditions/types";
-import type { ApiResult, Candidate, GalleryItem, JournalEntry, PlaceMatch, PlayReply, PlayTurn, PlayView, QuoteResult, ShellApi, WorldStatus } from "./api";
+import type { ApiResult, Candidate, GalleryItem, GhostPreset, JournalEntry, PlaceMatch, PlayReply, PlayTurn, PlayView, QuoteResult, ShellApi, WorldStatus } from "./api";
 import type { JobState, QuotaSnapshot, SessionRecord, ShellFlags } from "./types";
 
 /**
@@ -44,6 +44,16 @@ export const GALLERY: readonly GalleryItem[] = [
   { id: "night-platform", title: "A platform at night", description: "A bench, a clock one minute slow, the last train gone.", thumbUrl: "/demo/gallery/night-platform.svg", attribution: "Demo fixture" },
   { id: "greenhouse", title: "The greenhouse", description: "Glass fogged from inside, rows of pots, a watering can left mid-task.", thumbUrl: "/demo/gallery/greenhouse.svg", attribution: "Demo fixture" },
   { id: "library-stairs", title: "Library stairs", description: "A reading lamp left on, spiral stairs, the smell of paper.", thumbUrl: "/demo/gallery/library-stairs.svg", attribution: "Demo fixture" },
+];
+
+/** Six Preset Ghosts for the demo. The real list is `GET /api/ghosts/presets` (ghost-creator). */
+export const GHOST_PRESETS: readonly GhostPreset[] = [
+  { id: "preset-maren", name: "Maren", spriteUrl: "/demo/ghosts/preset-maren.svg" },
+  { id: "preset-alder", name: "Alder", spriteUrl: "/demo/ghosts/preset-alder.svg" },
+  { id: "preset-wick", name: "Wick", spriteUrl: "/demo/ghosts/preset-wick.svg" },
+  { id: "preset-ines", name: "Ines", spriteUrl: "/demo/ghosts/preset-ines.svg" },
+  { id: "preset-tobias", name: "Tobias", spriteUrl: "/demo/ghosts/preset-tobias.svg" },
+  { id: "preset-odile", name: "Odile", spriteUrl: "/demo/ghosts/preset-odile.svg" },
 ];
 
 /** Three authored anchors, the same in every world. */
@@ -271,6 +281,10 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
         if (lastPlayId !== undefined && !plays.has(lastPlayId)) lastPlayId = undefined;
         return ok(null);
       });
+    },
+
+    ghostPresets(_now) {
+      return guarded("ghostPresets", () => ok(GHOST_PRESETS.map((g) => ({ ...g }))));
     },
 
     searchPlaces(_now, q) {

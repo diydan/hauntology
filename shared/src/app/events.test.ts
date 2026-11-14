@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ErrorCode } from "../errors";
-import { parseHostMessage, parseShellMessage, parseViewerMessage, type HostToShell, type ShellToViewer, type ViewerToShell } from "./events";
+import { parseCreatorMessage, parseHostMessage, parseShellMessage, parseViewerMessage, type HostToShell, type ShellToViewer, type ViewerToShell } from "./events";
 
 const anchor = { id: "a1", pos: [1, 0, -2], radius: 2.5 };
 
@@ -84,5 +84,12 @@ describe("HostToShell", () => {
       { t: "started", seed: "abc" }, { t: "ended", solution: ["a", "b", "c"] }, { t: "scripted", line: "hi" }, { t: "refused", code: "world_too_small", note: "x" },
     ];
     for (const m of bad) expect(parseHostMessage(m), JSON.stringify(m)).toBeNull();
+  });
+});
+
+describe("CreatorToShell", () => {
+  it("accepts only chosen, and nothing with extra fields", () => {
+    expect(parseCreatorMessage({ t: "chosen" })).toEqual({ t: "chosen" });
+    for (const bad of [null, "chosen", {}, { t: "pick" }, { t: "chosen", ghostId: "g1" }, { t: "chosen", portrait: "data:image/png;base64,AAAA" }, [], 3]) expect(parseCreatorMessage(bad), JSON.stringify(bad)).toBeNull();
   });
 });

@@ -79,3 +79,16 @@ export const parseHostMessage = (input: unknown): HostToShell | null => {
   const r = HostToShellSchema.safeParse(input);
   return r.success ? r.data : null;
 };
+
+/**
+ * Ghost Creator to Shell, on Haunt (Requirement 4.2; the Creator is the `ghost-creator` spec). The
+ * Creator keeps the profile it made with the API, under the world, so the Shell only needs to know
+ * that a ghost is now chosen. Strict, so nothing else can come through this door.
+ */
+export const CreatorToShellSchema = z.discriminatedUnion("t", [z.object({ t: z.literal("chosen") }).strict()]);
+export type CreatorToShell = z.infer<typeof CreatorToShellSchema>;
+
+export const parseCreatorMessage = (input: unknown): CreatorToShell | null => {
+  const r = CreatorToShellSchema.safeParse(input);
+  return r.success ? r.data : null;
+};

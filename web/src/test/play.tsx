@@ -4,13 +4,14 @@ import { expect, vi } from "vitest";
 import type { PlatformKit } from "../app/platform";
 import type { Recorder } from "../app/play/voice";
 import type { HostModule } from "../app/case/types";
+import type { CreatorModule } from "../app/haunt/creator";
 import type { ViewerModule } from "../app/viewer/types";
 import { renderApp, type Harness } from "./harness";
 import type { FakeApiOptions } from "../app/FakeApi";
 import type { ShellApi } from "@hauntology/shared/app/api";
 
 /** A platform kit for tests: the real stand-in Viewer (so the whole message contract is used), a recorder and a speaker that are only recorded, and a file save that is only a spy. */
-export function testPlatform(over: Partial<PlatformKit> = {}) {
+export function testPlatform(over: Partial<PlatformKit> = {}, options: { disposeMs?: number } = {}) {
   const log: string[] = [];
   const clip = new Blob([new Uint8Array(100)], { type: "audio/webm" });
   const recorder: Recorder = { start: () => { log.push("rec start"); }, stop: async () => { log.push("rec stop"); return clip; }, cancel: () => { log.push("rec cancel"); } };
@@ -26,6 +27,7 @@ export function testPlatform(over: Partial<PlatformKit> = {}) {
           send: (m) => handle.send(m),
           async dispose() {
             log.push("dispose");
+            if (options.disposeMs) await new Promise((r) => setTimeout(r, options.disposeMs));
             await handle.dispose();
             log.push("disposed");
           },
@@ -52,10 +54,30 @@ export function testPlatform(over: Partial<PlatformKit> = {}) {
       },
     };
   });
+  // The real stand-in Creator, logged, so a test can see it unmounted.
+  const loadCreator = vi.fn(async (): Promise<CreatorModule> => {
+    log.push("load creator");
+    const real = await import("../app/haunt/creator-standin");
+    return {
+      async mountCreator(setup) {
+        log.push("creator mount");
+        const handle = await real.mountCreator(setup);
+        return {
+          async dispose() {
+            log.push("creator dispose");
+            await handle.dispose();
+          },
+        };
+      },
+    };
+  });
+  const locate = vi.fn(async () => ({ lat: 51.50735, lon: -0.12776 }));
   const saveFile = vi.fn();
   const kit: Partial<PlatformKit> = {
     loadViewer,
     loadHost,
+    loadCreator,
+    locate,
     voice: {
       recorder: async () => recorder,
       createAudio: (blob) => {
@@ -68,7 +90,7 @@ export function testPlatform(over: Partial<PlatformKit> = {}) {
     saveFile,
     ...over,
   };
-  return { kit, log, loadViewer, loadHost, saveFile, played, recorder };
+  return { kit, log, loadViewer, loadHost, loadCreator, locate, saveFile, played, recorder };
 }
 
 export type Played = ReturnType<typeof testPlatform>;
@@ -79,7 +101,7 @@ export async function enterPlay(options: { api?: ShellApi; fake?: FakeApiOptions
   const h = renderApp("/gallery", { ...(options.api ? { api: options.api } : {}), ...(options.fake ? { fake: options.fake } : {}), platform: options.platform ?? p.kit });
   await screen.findByText("The attic room");
   fireEvent.click(screen.getByRole("button", { name: "Visit The attic room" }));
-  await screen.findByRole("heading", { name: "Your place is coming" });
+  await screen.findByRole("heading", { name: "Your place" });
   act(() => h.router.setFlow({ ghostReady: true }));
   act(() => h.router.navigate({ screen: "play", worldId: "attic-room" }));
   await screen.findByRole("heading", { name: "Wander" });

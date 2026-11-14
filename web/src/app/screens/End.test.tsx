@@ -139,7 +139,7 @@ describe("Ending: when it cannot load", () => {
     const h = renderApp("/gallery", { platform: p.kit });
     await screen.findByText("The attic room");
     fireEvent.click(screen.getByRole("button", { name: "Visit The attic room" }));
-    await screen.findByRole("heading", { name: "Your place is coming" });
+    await screen.findByRole("heading", { name: "Your place" });
     act(() => h.router.setFlow({ ghostReady: true, playEnded: true }));
     act(() => h.router.navigate({ screen: "end", worldId: "attic-room" }));
     await screen.findByText("Your memories are not available any more. You can go home and start again.");

@@ -209,3 +209,34 @@ describe("paths", () => {
     for (const route of routes) expect(createRouter(fakeHistory(pathFor(route))).getSnapshot().route).toEqual(route);
   });
 });
+
+describe("router clearPlace", () => {
+  it("forgets the world, the picked image, the ghost and an ended play, and keeps the notice answer", () => {
+    const r = createRouter(fakeHistory("/"));
+    start(r, { screen: "home" }, { worldId: W, pickedImageId: "img12345", ghostReady: true, noticeAcked: true, playEnded: true });
+    r.clearPlace();
+    expect(r.getSnapshot().flow).toEqual({ ghostReady: false, noticeAcked: true, playEnded: false });
+    expect("worldId" in r.getSnapshot().flow).toBe(false);
+    expect("pickedImageId" in r.getSnapshot().flow).toBe(false);
+  });
+
+  it("does not move a route that needs nothing, and moves one that needs the place to the Gallery, rewriting the address", () => {
+    const home = createRouter(fakeHistory("/"));
+    start(home, { screen: "home" }, { worldId: W, ghostReady: true, noticeAcked: false, playEnded: false });
+    home.clearPlace();
+    expect(home.getSnapshot().route).toEqual({ screen: "home" });
+
+    const h = fakeHistory(`/haunt/${W}`);
+    const r = createRouter(h);
+    start(r, { screen: "haunt", worldId: W }, { worldId: W, ghostReady: false, noticeAcked: false, playEnded: false });
+    r.clearPlace();
+    expect(r.getSnapshot().route).toEqual({ screen: "gallery" });
+    expect(h.stack.at(-1)).toBe("/gallery");
+  });
+
+  it("does nothing to the route before the router has started", () => {
+    const r = createRouter(fakeHistory(`/haunt/${W}`));
+    r.clearPlace();
+    expect(r.getSnapshot()).toMatchObject({ ready: false, route: { screen: "haunt", worldId: W } });
+  });
+});

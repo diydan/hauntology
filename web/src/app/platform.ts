@@ -1,4 +1,6 @@
 import { defaultLoadHost, type LoadHost } from "./case/types";
+import { browserScheduler, type Scheduler } from "./haunt/controller";
+import { defaultLoadCreator, type LoadCreator } from "./haunt/creator";
 import { defaultLoadViewer, type LoadViewer } from "./viewer/types";
 import { browserAudio, browserRecorderFactory, browserUnlock, type RecorderFactory, type VoiceDeps } from "./play/voice";
 
@@ -10,6 +12,14 @@ export type PlatformKit = {
   loadViewer: LoadViewer;
   /** Loads the party Host page for "Play a case". */
   loadHost: LoadHost;
+  /** Loads the Ghost Creator for Haunt. */
+  loadCreator: LoadCreator;
+  /** The visitor's position, asked from the browser only after an explicit tap. Rejects when it is refused or fails. */
+  locate: () => Promise<{ lat: number; lon: number }>;
+  /** The clock: the date and hour of the visitor's own calendar. */
+  now: () => Date;
+  /** Timers for the Stage poll. */
+  scheduler: Scheduler;
   voice: {
     recorder: RecorderFactory | null;
     createAudio: NonNullable<VoiceDeps["createAudio"]>;
@@ -32,10 +42,25 @@ export function browserSaveFile(name: string, blob: Blob): void {
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
+/** One position, from the browser, at low accuracy (two decimals are all that is kept), with a 10 second limit. */
+export function browserLocate(): Promise<{ lat: number; lon: number }> {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      reject(new Error("no geolocation"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition((p) => resolve({ lat: p.coords.latitude, lon: p.coords.longitude }), reject, { enableHighAccuracy: false, timeout: 10_000, maximumAge: 600_000 });
+  });
+}
+
 export function defaultPlatform(): PlatformKit {
   return {
     loadViewer: defaultLoadViewer,
     loadHost: defaultLoadHost,
+    loadCreator: defaultLoadCreator,
+    locate: browserLocate,
+    now: () => new Date(),
+    scheduler: browserScheduler,
     voice: { recorder: browserRecorderFactory(), createAudio: browserAudio, unlockAudio: browserUnlock },
     saveFile: browserSaveFile,
   };

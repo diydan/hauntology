@@ -498,3 +498,84 @@ a {
 .case-host {
   min-width: 0;
 }
+
+/*
+ * Haunt: the Stage display, the ghost choice, the sky card and the delete action. Progress is a
+ * list of steps and a <progress>, never a spinner alone; nothing moves, so reduced motion needs no
+ * special case here.
+ */
+.stage-bar {
+  width: 100%;
+  height: 0.75rem;
+}
+
+.stage-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.5rem 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.stage-steps li {
+  padding: 0.25rem 0.5rem;
+  border-bottom: 2px solid var(--dust);
+  color: var(--bone);
+}
+
+/* A step still to come is plainer; --dust is only the line under it, never the text. */
+.stage-steps li:not([data-done="true"]):not([aria-current="step"]) {
+  font-style: italic;
+}
+
+.stage-steps li[aria-current="step"] {
+  border-bottom-color: var(--lantern);
+  color: var(--lantern);
+}
+
+.ghost-choice,
+.sky-card {
+  margin-top: 1.5rem;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.button.preset {
+  gap: 0.5rem;
+  min-height: 5rem;
+}
+
+.matches {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-day {
+  margin-top: 1rem;
+  border: 1px solid var(--dust);
+}
+
+.memory-day label,
+.sky-body label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: var(--target);
+}
+
+.sky-body input,
+.sky-body select {
+  min-height: var(--target);
+  font: inherit;
+}

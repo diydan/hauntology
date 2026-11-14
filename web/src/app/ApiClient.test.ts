@@ -39,6 +39,16 @@ describe("routes and requests", () => {
     for (const c of s.calls) expect(c.init.credentials).toBe("same-origin");
   });
 
+  it("asks for the Preset Ghosts with a GET, and does not trust a sprite that is not a path on this origin", async () => {
+    const good = [{ id: "preset-maren", name: "Maren", spriteUrl: "/demo/ghosts/preset-maren.svg" }];
+    const s = scripted(json(good), json([{ id: "p", name: "Evil", spriteUrl: "https://elsewhere.example/x.png" }]));
+    const api = createApiClient({ fetch: s.fetch, online: alwaysOnline });
+    expect(await api.ghostPresets()).toEqual({ ok: true, value: good });
+    expect(s.calls[0]!.url).toBe("/api/ghosts/presets");
+    expect(s.calls[0]!.init.method).toBe("GET");
+    expect(failure(await api.ghostPresets()).code).toBe("shell_crash");
+  });
+
   it("encodes ids into paths and sends JSON bodies", async () => {
     const s = scripted(json({ ok: false, code: "world_not_found" }, 404));
     const api = createApiClient({ fetch: s.fetch, online: alwaysOnline });

@@ -33,7 +33,7 @@ describe("Gallery: the main path", () => {
     const h = renderApp("/gallery");
     await screen.findByText("The attic room");
     fireEvent.click(screen.getByRole("button", { name: "Visit The attic room" }));
-    await screen.findByRole("heading", { name: "Your place is coming" });
+    await screen.findByRole("heading", { name: "Your place" });
     expect(h.history.stack).toEqual(["/gallery", "/haunt/attic-room"]);
     expect(h.router.getSnapshot().flow).toMatchObject({ worldId: "attic-room", ghostReady: false, playEnded: false });
   });
@@ -51,7 +51,7 @@ describe("Gallery: the main path", () => {
     await screen.findByText("The attic room");
     act(() => h.router.setFlow({ worldId: "greenhouse", ghostReady: true, playEnded: true }));
     fireEvent.click(screen.getByRole("button", { name: "Visit The attic room" }));
-    await screen.findByRole("heading", { name: "Your place is coming" });
+    await screen.findByRole("heading", { name: "Your place" });
     expect(h.router.getSnapshot().flow).toMatchObject({ worldId: "attic-room", ghostReady: false, playEnded: false });
   });
 

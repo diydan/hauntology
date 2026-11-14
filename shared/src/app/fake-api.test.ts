@@ -264,6 +264,24 @@ describe("making a place", () => {
   });
 });
 
+describe("the Preset Ghosts", () => {
+  it("lists six, each with a name and a sprite on this origin, and can be made to fail once", () => {
+    const b = createFakeBackend();
+    const list = value(b.ghostPresets(0));
+    expect(list).toHaveLength(6);
+    expect(new Set(list.map((g) => g.id)).size).toBe(6);
+    for (const g of list) {
+      expect(g.name.length).toBeGreaterThan(0);
+      expect(g.spriteUrl).toMatch(/^\/demo\/ghosts\/[a-z-]+\.svg$/);
+    }
+    list[0]!.name = "changed";
+    expect(value(b.ghostPresets(0))[0]!.name).not.toBe("changed");
+    b.failNext("ghostPresets", ErrorCode.rate_limited);
+    expect(code(b.ghostPresets(0))).toBe(ErrorCode.rate_limited);
+    expect(value(b.ghostPresets(0))).toHaveLength(6);
+  });
+});
+
 describe("the sky", () => {
   it("searches cities, at most five, with positions already rounded", () => {
     const b = createFakeBackend();

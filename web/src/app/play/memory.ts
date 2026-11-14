@@ -1,5 +1,5 @@
 import type { CaseSetup } from "@hauntology/shared/app/case-setup";
-import type { ConditionsChoice } from "@hauntology/shared/conditions/types";
+import type { ConditionsChoice, MemoryDay } from "@hauntology/shared/conditions/types";
 
 /**
  * What one visit remembers between Screens, in memory only (never storage, a cookie or a URL):
@@ -17,7 +17,11 @@ import type { ConditionsChoice } from "@hauntology/shared/conditions/types";
 export type PlayMemory = {
   playId?: string | undefined;
   ghostPreset?: string | undefined;
+  /** The chosen Preset Ghost's name, only to label the choice on Haunt. */
+  ghostName?: string | undefined;
   conditions?: ConditionsChoice | undefined;
+  /** A Memory Day suggested by a photo's capture date (Requirement 12.2); the sky card offers it and the visitor can change or clear it. */
+  suggestedDay?: MemoryDay | undefined;
   startFresh: boolean;
   caseSetup?: CaseSetup | undefined;
   caseStart: boolean;

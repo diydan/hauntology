@@ -191,6 +191,7 @@ export function createApiClient(options: ApiClientOptions = {}): ShellApi {
     world: (worldId) => json(API_SCHEMAS.world, "GET", `/api/worlds/${idPath(worldId)}`),
     deleteWorld: (worldId) => json(API_SCHEMAS.deleteWorld, "DELETE", `/api/worlds/${idPath(worldId)}`),
 
+    ghostPresets: () => json(API_SCHEMAS.ghostPresets, "GET", "/api/ghosts/presets"),
     searchPlaces: (q) => json(API_SCHEMAS.searchPlaces, "POST", "/api/conditions/search", { q }),
     speak: async (req) => {
       const raw = await send("POST", "/api/voice/speak", { body: JSON.stringify(req), headers: { "Content-Type": "application/json" } }, "audio");

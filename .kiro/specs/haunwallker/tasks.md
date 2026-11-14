@@ -180,24 +180,29 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Quota, moderation, bot-check, kill-switch and `confirm_expired` codes show their own copy, release the disabled state and offer the Gallery; `retry` from `rejected` makes a new quote; a 429 keeps the control disabled until `retryGate` allows it.
     - _Requirements: 3.4, 7.5_
 
-- [ ] 9. Haunt screen (satisfies `world-pipeline` 10.4)
-  - [ ] 9.1 Stage display
+- [x] 9. Haunt screen (satisfies `world-pipeline` 10.4)
+  - [x] 9.1 Stage display
     - Poll `GET /api/worlds/:id` on the schedule from `pollPlan`; show the labelled Stage with calm progress (not a spinner alone); announce changes through the live region; pause while the tab is hidden; past 15 minutes say honestly that it is taking long and offer the Gallery without cancelling the job.
+    - Built as `HauntController` (`web/src/app/haunt/`), which holds no DOM and takes the clock, the timers and the tab's visibility as inputs, and `StagePanel` (steps list plus `<progress>`). The first poll is at once; a rate limit moves the next poll; any other failure keeps the last Stage and says it could not check; a gone world leaves for the Expired Screen. The 15 minutes count from when Haunt opens, because the API does not say when the job started.
     - _Requirements: 4.1, 4.6, 4.7, 8.2, 10.3_
-  - [ ] 9.2 Ghost choice and "Walk in"
+  - [x] 9.2 Ghost choice and "Play a case" / "Wander"
     - While waiting, host the Ghost Creator (ghost-creator 4) and a "Use a preset ghost" action. A Gallery world arrives already `ready` and shows the same choice. When the Stage is ready and a ghost is chosen, say so and offer "Play a case" and "Wander" (task 12.2); never start the Viewer or a Room automatically.
+    - Built as `GhostChoice`: the Creator through a seam (`PlatformKit.loadCreator`, `mountCreator`, a `chosen` message, a stand-in until the `ghost-creator` UI exists) and a preset list from `ShellApi.ghostPresets` (`GET /api/ghosts/presets`). Haunt hosts `PlayChoice` (task 12.2) once the Stage is ready.
     - _Requirements: 4.2, 4.3, 5.2_
-  - [ ] 9.3 Failed state
+  - [x] 9.3 Failed state
     - Show the typed reason, say whether quota was returned, offer the Gallery, and offer retry only if the API says a retry is allowed.
     - _Requirements: 4.4_
-  - [ ] 9.4 Resume after reload
+  - [x] 9.4 Resume after reload
     - On boot, `resumeTarget` returns the Haunt screen for the world id in the Session when the job is still running.
+    - `resumeTarget` and the boot plan were built in group 4; Haunt's test reloads at `/` with a job still running and lands on Haunt for the same world.
     - _Requirements: 4.5_
-  - [ ] 9.5 "Delete my place"
+  - [x] 9.5 "Delete my place"
     - On Haunt, Play and Ending for an own world: an accessible dialog (no `confirm()`), `DELETE /api/worlds/:id`, clear all in-memory state for that place, return to Home. A `world_not_found` or `session_expired` answer shows the Expired screen.
+    - Built as `DeletePlace` on Haunt, Play and the Ending. It leaves for Home first (Play releases the Viewer), then forgets the place (`PlayMemory.clear`, `router.clearPlace`). It is shown only for the visitor's own place, told apart by the public Gallery list.
     - _Requirements: 3.8, 7.6_
-  - [ ] 9.6 "Set the sky" card
+  - [x] 9.6 "Set the sky" card
     - An optional card beside the ghost choice: city search with up to five matches, "Use my location" asked from an explicit tap, a Memory Day (1940 to yesterday, plus a time of day) prefilled from the photo suggestion when there is one, the chosen place shown as a label only. Nothing is stored in the browser, defaults apply when the visitor does nothing, and "Walk in" never waits for it. The choice (a `ConditionsChoice`) stays in memory and goes with `POST /api/play/start`, where the snapshot is frozen once (the `conditions` spec). This line satisfies `conditions` task group 7.
+    - Built as `SkyCard` with the pure rules in `shared/src/app/sky.ts`. The photo's suggested date arrives through `PlayMemory.suggestedDay`, which task 7.1 sets.
     - _Requirements: 12.1_
 
 - [x] 12. Play a case on one screen (added after the checkpoint was numbered; satisfies Requirement 13 and `party-mode` 9.5 and 9.6)

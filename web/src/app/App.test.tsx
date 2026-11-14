@@ -62,7 +62,7 @@ describe("App boot", () => {
     const made = await api.createWorld({ imageId: up.value.imageId, confirmToken: q.value.confirmToken });
     if (!made.ok) throw new Error("create");
     const h = renderApp("/", { api });
-    await screen.findByText("Your place is coming");
+    await screen.findByRole("heading", { name: "Your place" });
     expect(h.history.stack).toEqual([`/haunt/${made.value.worldId}`]);
   });
 

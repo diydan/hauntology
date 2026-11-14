@@ -222,7 +222,7 @@ describe("Play: leaving", () => {
     const h = await enterPlay();
     await goIn();
     act(() => h.history.back());
-    await screen.findByRole("heading", { name: "Your place is coming" });
+    await screen.findByRole("heading", { name: "Your place" });
     await waitFor(() => expect(h.p.log.slice(-2)).toEqual(["dispose", "disposed"]));
   });
 
@@ -287,7 +287,7 @@ describe("Play: when the game cannot start", () => {
     const h = renderApp("/gallery", { api, platform: p.kit });
     await screen.findByText("The attic room");
     fireEvent.click(screen.getByRole("button", { name: "Visit The attic room" }));
-    await screen.findByRole("heading", { name: "Your place is coming" });
+    await screen.findByRole("heading", { name: "Your place" });
     act(() => h.router.setFlow({ ghostReady: true }));
     act(() => h.router.navigate({ screen: "play", worldId: "attic-room" }));
     await screen.findByRole("heading", { name: "That place is gone" });

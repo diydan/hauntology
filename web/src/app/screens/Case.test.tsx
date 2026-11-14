@@ -287,7 +287,7 @@ describe("Haunt: when the world is not ready", () => {
       renderApp("/gallery", { api, platform: testPlatform().kit });
       await screen.findByText("The attic room");
       fireEvent.click(screen.getByRole("button", { name: "Visit The attic room" }));
-      await screen.findByRole("heading", { name: "Your place is coming" });
+      await screen.findByRole("heading", { name: "Your place" });
       await waitFor(() => expect(world).toHaveBeenCalled());
       await act(async () => {});
       expect(screen.queryByRole("heading", { name: "How do you want to play?" })).toBeNull();

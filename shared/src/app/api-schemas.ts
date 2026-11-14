@@ -52,6 +52,8 @@ export const GalleryItemSchema = z.object({
   attribution: Text(300),
 });
 
+export const GhostPresetSchema = z.object({ id: Id, name: Text(60), spriteUrl: OwnPathSchema });
+
 export const CandidateSchema = z.object({ imageId: Id, imageUrl: OwnPathSchema });
 
 export const WorldStatusSchema = z.object({
@@ -93,6 +95,7 @@ export const API_SCHEMAS = {
   createWorld: z.object({ worldId: Id, status: z.enum(JOB_STATES) }),
   world: WorldStatusSchema,
   deleteWorld: z.null(),
+  ghostPresets: z.array(GhostPresetSchema).max(12),
   searchPlaces: z.array(PlaceMatchSchema).max(5),
   listen: z.object({ transcript: Text(1000) }),
   playStart: z.object({ playId: Id, view: PlayViewSchema }),

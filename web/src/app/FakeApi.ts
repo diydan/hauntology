@@ -42,6 +42,7 @@ export function createFakeApi(options: FakeApiOptions = {}): FakeApi {
     createWorld: (req) => call((t) => backend.createWorld(t, req)),
     world: (worldId) => call((t) => backend.world(t, worldId)),
     deleteWorld: (worldId) => call((t) => backend.deleteWorld(t, worldId)),
+    ghostPresets: () => call((t) => backend.ghostPresets(t)),
     searchPlaces: (q) => call((t) => backend.searchPlaces(t, q)),
     speak: (req) => call((t) => backend.speak(t, req)),
     listen: (clip) => call((t) => backend.listen(t, clip)),

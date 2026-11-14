@@ -45,6 +45,8 @@ export type Router = {
   navigate(route: Route, options?: { replace?: boolean }): void;
   /** Merges into the flow state, then moves off the current route if its guard now refuses it. */
   setFlow(patch: Partial<FlowState>): void;
+  /** Forgets the place: no world, no picked image, no ghost, no ended play. The notice answer stays. */
+  clearPlace(): void;
   /** Stops listening to the history. */
   dispose(): void;
 };
@@ -102,6 +104,13 @@ export function createRouter(history: HistoryLike = browserHistory()): Router {
 
     setFlow(patch) {
       const flow = { ...state.flow, ...patch };
+      const shown = state.ready ? settle(state.route, flow) : state.route;
+      if (!sameRoute(shown, state.route)) history.replace(pathFor(shown));
+      set({ ...state, flow, route: shown });
+    },
+
+    clearPlace() {
+      const flow: FlowState = { ghostReady: false, noticeAcked: state.flow.noticeAcked, playEnded: false };
       const shown = state.ready ? settle(state.route, flow) : state.route;
       if (!sameRoute(shown, state.route)) history.replace(pathFor(shown));
       set({ ...state, flow, route: shown });

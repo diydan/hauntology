@@ -4,6 +4,7 @@ import { memoryCardSvg } from "@hauntology/shared/app/memory-card";
 import { routeForApiError } from "@hauntology/shared/app/routes";
 import { useCallback, useEffect, useState } from "react";
 import { useRouterState, useShell } from "../context";
+import { DeletePlace } from "../haunt/DeletePlace";
 import { Link } from "../Link";
 import { useAnnounce } from "../LiveRegion";
 import { RetryButton } from "../RetryButton";
@@ -103,6 +104,7 @@ export default function End() {
           Gallery
         </Link>
       </p>
+      <DeletePlace worldId={worldId} leave={() => router.navigate({ screen: "home" })} />
     </main>
   );
 }
