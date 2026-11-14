@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Hauntology is the product: draw or upload any place, walk into it as a 3D world, and let its ghost lead you to three memories. The existing specs cover the engines (`world-pipeline`, `world-viewer`, `ghost-creator`, `ghost-engine`, `party-mode`). This spec covers the part that joins them: the **web shell** in `web/src/app`. It owns routing, the screen flow from Start to Ending, the sketch pad, the confirm gate UI, error handling, the zero-quota path, and the way the viewer and chat are composed on the Play screen.
+Hauntology is the product: draw or upload any place, walk into it as a 3D world, and either work out who is haunting it (a case, alone against Bots on one screen or with friends' phones) or wander and let its ghost lead you to three memories. The existing specs cover the engines (`world-pipeline`, `world-viewer`, `ghost-creator`, `ghost-engine`, `party-mode`). This spec covers the part that joins them: the **web shell** in `web/src/app`. It owns routing, the screen flow from Start to Ending, the sketch pad, the confirm gate UI, error handling, the zero-quota path, and the way the viewer and chat are composed on the Play screen.
 
 The shell contains no business rules. It calls the API, renders typed results, and sends the visitor to the right screen. It must never start a paid call without an explicit confirmation, and a visitor with no quota and no LLM must still be able to finish the experience.
 
@@ -11,7 +11,7 @@ The spec directory is named `haunwallker` because it was created under that name
 ## Glossary
 
 - **Shell**: the `web/src/app` feature: router, screens, layout, error boundaries, API client wrapper.
-- **Screen**: one routed page: Home, Gallery, Create, Confirm, Creator, Haunt (waiting), Play, Ending.
+- **Screen**: one routed page: Home, Gallery, Create, Confirm, Creator, Haunt (waiting), Play (Wander), Case, Ending.
 - **Place Image**: the single image that will be turned into a world (an uploaded photo or a chosen sketch candidate), as defined in `world-pipeline`.
 - **Sketch Pad**: the drawing surface on the Create screen.
 - **Confirm Gate**: the Confirm screen. It shows the exact Place Image and remaining quota, and is the only place that can start a world creation.
@@ -19,7 +19,9 @@ The spec directory is named `haunwallker` because it was created under that name
 - **Quota Snapshot**: the remaining per-session and per-day allowance returned by the API for worlds, images, LLM calls, spoken lines, heard clips and live-mode minutes.
 - **Zero-Quota Path**: the route through Gallery world + Preset Ghost + scripted ghost lines that needs no paid call and no LLM.
 - **Stage**: a labelled step of world creation: queued, dreaming, stitching, ready, failed.
-- **Play Screen**: the Screen that hosts the Viewer and the Chat together.
+- **Play Screen**: the Screen that hosts the Viewer and the Chat together, for Wander.
+- **Wander**: the memory walk, the original single-player game: walk the place and let the ghost lead you to three memories. In this spec "Single player" means Wander.
+- **Case Screen**: the Screen that hosts a solo case, the deduction game of `party-mode` played alone against Bots on one screen.
 - **Chat**: the text-adventure panel from `ghost-engine`, shown as a bottom sheet below 900 px and a side panel at 900 px and above.
 - **Viewer**: the `web/src/viewer` feature from `world-viewer`.
 - **Session**: the anonymous cookie session. There are no accounts.
@@ -76,7 +78,7 @@ The spec directory is named `haunwallker` because it was created under that name
 
 1. WHEN world creation starts THEN the Shell SHALL navigate to the Haunt screen, show the current Stage with its label, and update the Stage from the job status within 5 seconds of a change.
 2. WHILE the Haunt screen is open THEN the Shell SHALL offer the Ghost Creator so the visitor can design their ghost during the wait, and SHALL show a "Use a preset ghost" action.
-3. WHEN the Stage becomes ready THEN the Shell SHALL tell the visitor and offer "Walk in", and SHALL NOT start the Viewer automatically.
+3. WHEN the Stage becomes ready THEN the Shell SHALL tell the visitor and offer "Play a case" and "Wander" (13.1), and SHALL NOT start the Viewer automatically.
 4. IF the Stage becomes failed THEN the Shell SHALL show the typed failure reason, state whether quota was returned, and offer the Gallery and a retry only if the API says a retry is allowed.
 5. IF the visitor reloads or closes the tab during the wait THEN the Shell SHALL resume the Haunt screen for the same world on return, using the world id kept in the Session.
 6. WHILE waiting THEN the Shell SHALL use calm labelled progress and SHALL NOT rely on a spinner alone.
@@ -89,7 +91,7 @@ The spec directory is named `haunwallker` because it was created under that name
 #### Acceptance Criteria
 
 1. WHEN the visitor chooses "Visit a gallery place" THEN the Shell SHALL list the Gallery worlds with thumbnail, title and a short description, using static data that needs no paid call.
-2. WHEN a Gallery world is chosen THEN the Shell SHALL let the visitor pick a Preset Ghost or create a ghost, and SHALL then open the Play Screen.
+2. WHEN a Gallery world is chosen THEN the Shell SHALL let the visitor pick a Preset Ghost or create a ghost (the ghost of Wander), and SHALL then offer to play a case or to Wander (13.1).
 3. THE Zero-Quota Path SHALL work with the world kill switch on, with every paid quota at zero, and with the LLM unavailable, by using scripted ghost lines.
 4. WHEN the Play Screen runs on scripted lines THEN the Shell SHALL show a small, quiet "scripted ghost" indicator and SHALL NOT present the scripted lines as generated.
 5. IF the Gallery fails to load THEN the Shell SHALL show a retry action and an error message, and SHALL NOT show an empty grid without explanation.
@@ -180,5 +182,16 @@ The spec directory is named `haunwallker` because it was created under that name
 
 1. WHEN the Haunt screen is open THEN the Shell SHALL offer an optional "Set the sky" card with a city search (up to five matches), a "Use my location" action that asks the browser only after an explicit tap, and a Memory Day (a date from 1940 to yesterday and a time of day), SHALL apply the default sky when the visitor does nothing, SHALL show the chosen place only as a label, and SHALL NOT make "Walk in" wait for it.
 2. WHEN the visitor chooses a photo THEN the Shell SHALL read its capture date and time in the browser before the re-encode, offer it as a suggested Memory Day that the visitor can change or clear, and keep no other field of the photo's metadata, location included.
-3. WHEN the Play screen starts THEN the Shell SHALL pass the frozen conditions to the Viewer as `setAtmosphere`, and the Chat SHALL offer a speak switch (on by default in a Single player game), always show the ghost's line as a subtitle in a polite live region and, in Single player, offer a hold-to-talk button with a visible microphone indicator, and SHALL fall back to subtitles and typing without an error screen when a cap, a permission or a failure stops speech or listening.
+3. WHEN the Play screen starts THEN the Shell SHALL pass the frozen conditions to the Viewer as `setAtmosphere`, and the Chat SHALL offer a speak switch (on by default in Wander), always show the ghost's line as a subtitle in a polite live region and, in Wander, offer a hold-to-talk button with a visible microphone indicator, and SHALL fall back to subtitles and typing without an error screen when a cap, a permission or a failure stops speech or listening.
 4. WHERE live mode is available (a stretch) THEN the Shell SHALL show a clear microphone indicator and a stop button whenever it listens, stop it after 10 seconds of silence or when the page is hidden, and fall back to hold-to-talk on any problem.
+
+### Requirement 13
+
+**User Story:** As a visitor, I want to choose between solving a case and wandering, so that I can play the game I came for, alone or with friends, and still finish with no quota.
+
+#### Acceptance Criteria
+
+1. WHEN a world is ready THEN the Haunt screen SHALL offer "Play a case" and "Wander", each with a one-line description ("Work out who is haunting it, against Bots on this screen" and "Walk in and let the ghost lead you to three memories"), SHALL NOT start the Viewer or a Room automatically, and SHALL keep Wander behaving as the existing Play flow.
+2. WHEN the visitor chooses "Play a case" THEN the Shell SHALL show a short setup (a preset: Classic, Relaxed or Quick; Bots: two to five, default two) and a Start action, and WHEN they start THEN the Shell SHALL open the Case Screen at its own address for that world, which hosts the party Host page on one screen as in `party-mode` 9.5 and 9.6, with an always-visible Exit that ends the Room and releases the Viewer before the next Screen mounts.
+3. WHEN the case ends THEN the Case Screen SHALL show the party ending with "Play again", Home and Gallery, WHERE the Zero-Quota Path applies THEN a case SHALL work with a Gallery World, Preset Ghosts and scripted narration, and the scripted indicator of 5.4 SHALL show when lines are scripted.
+4. IF party mode is off (`flags.partyEnabled` is false), or the world is too small for a case (`world_too_small`), or the Room cannot be created THEN the Shell SHALL hide or disable "Play a case" with a one-line reason, keep Wander and the Gallery available, and SHALL NOT show an error screen.

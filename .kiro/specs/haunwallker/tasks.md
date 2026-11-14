@@ -137,7 +137,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Built as `play/controller.ts` (no DOM: starts or restores the game, runs the `playReduce` effects in order, validates Viewer messages, asks for each turn), `screens/Play.tsx`, `play/Chat.tsx` (quick buttons, text box, transcript), `play/Hud.tsx`, `play/Journal.tsx` and `Dialog.tsx`. The Viewer is behind `viewer/types.ts` (`mountViewer`, `send`, `dispose`); `viewer/standin.tsx` is a stand-in until `world-viewer` exists, and it walks the same `pose` and `prompt` messages through the real contract. This covers the shell's side of `ghost-engine` 6.1 and `world-viewer` 6.1; prompt detection, pointer lock and the real renderer stay in those specs. What the visitor chose on Haunt (ghost, sky) reaches Play through `play/memory.ts`, in memory only: task 9.2 and 9.6 set `ghostPreset`, `conditions` and `startFresh: true` there, and `router.setFlow({ ghostReady: true })`.
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 8.6, 10.1_
   - [x] 6.6 Atmosphere and voice in Play
-    - Pass the play view's `atmosphere` to the Viewer as `set_atmosphere` (the contract in `events.ts`). The Chat gets a speak switch (on by default in Single player, hidden when `flags.voiceEnabled` is false), shows each ghost line as a subtitle in the polite live region whether or not it is spoken, asks `ShellApi.speak` for the line named in `reply.voice` after a user gesture has unlocked audio, and in Single player a hold-to-talk button (up to 8 seconds, a visible microphone indicator) that sends the clip through `ShellApi.listen` and treats the transcript exactly like typed text; nothing is stored in the browser. A cap, a refused permission or a failure falls back to subtitles and typing, with no error screen.
+    - Pass the play view's `atmosphere` to the Viewer as `set_atmosphere` (the contract in `events.ts`). The Chat gets a speak switch (on by default in Wander, hidden when `flags.voiceEnabled` is false), shows each ghost line as a subtitle in the polite live region whether or not it is spoken, asks `ShellApi.speak` for the line named in `reply.voice` after a user gesture has unlocked audio, and in Single player a hold-to-talk button (up to 8 seconds, a visible microphone indicator) that sends the clip through `ShellApi.listen` and treats the transcript exactly like typed text; nothing is stored in the browser. A cap, a refused permission or a failure falls back to subtitles and typing, with no error screen.
     - _Requirements: 12.3_
   - [ ] 6.7 Live mode controls (stretch, last)
     - Not started on purpose: it needs the live transport from `ghost-voice` (Spike 1.3 and its group 6) and a route the shell does not have yet; live mode is first in the cut order, and `flags.liveEnabled` is off by default, so nothing in Play changes until then. A clear microphone indicator and a stop button whenever the page listens; stops after 10 seconds of silence or when the page is hidden; falls back to hold-to-talk on any problem.
@@ -185,7 +185,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Poll `GET /api/worlds/:id` on the schedule from `pollPlan`; show the labelled Stage with calm progress (not a spinner alone); announce changes through the live region; pause while the tab is hidden; past 15 minutes say honestly that it is taking long and offer the Gallery without cancelling the job.
     - _Requirements: 4.1, 4.6, 4.7, 8.2, 10.3_
   - [ ] 9.2 Ghost choice and "Walk in"
-    - While waiting, host the Ghost Creator (ghost-creator 4) and a "Use a preset ghost" action. A Gallery world arrives already `ready` and shows the same choice. When the Stage is ready and a ghost is chosen, say so and offer "Walk in"; never start the Viewer automatically.
+    - While waiting, host the Ghost Creator (ghost-creator 4) and a "Use a preset ghost" action. A Gallery world arrives already `ready` and shows the same choice. When the Stage is ready and a ghost is chosen, say so and offer "Play a case" and "Wander" (task 12.2); never start the Viewer or a Room automatically.
     - _Requirements: 4.2, 4.3, 5.2_
   - [ ] 9.3 Failed state
     - Show the typed reason, say whether quota was returned, offer the Gallery, and offer retry only if the API says a retry is allowed.
@@ -200,6 +200,26 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - An optional card beside the ghost choice: city search with up to five matches, "Use my location" asked from an explicit tap, a Memory Day (1940 to yesterday, plus a time of day) prefilled from the photo suggestion when there is one, the chosen place shown as a label only. Nothing is stored in the browser, defaults apply when the visitor does nothing, and "Walk in" never waits for it. The choice (a `ConditionsChoice`) stays in memory and goes with `POST /api/play/start`, where the snapshot is frozen once (the `conditions` spec). This line satisfies `conditions` task group 7.
     - _Requirements: 12.1_
 
+- [ ] 12. Play a case on one screen (added after the checkpoint was numbered; satisfies Requirement 13 and `party-mode` 9.5 and 9.6)
+  - [ ] 12.1 Route and flag
+    - Add `case` to `ScreenId`, `/case/:worldId` to `resolveRoute` and `pathFor` and a guard like Haunt's to `guardRoute`; add `partyEnabled` to `ShellFlags` (`PARTY_ENABLED` in `api/src/http/flags.ts`, `GET /api/session`, `FakeApi`); update the generators and the tests, so Properties 1 to 3 cover the new route.
+    - _Requirements: 13.2, 13.4_
+  - [ ] 12.2 Haunt: "Play a case" and "Wander"
+    - Replace "Walk in" with the two actions and their one-line descriptions; Wander goes to Play as before; "Play a case" opens the setup. Hide or disable "Play a case" with a one-line reason when `flags.partyEnabled` is false or the world is `world_too_small`.
+    - _Requirements: 13.1, 13.4_
+  - [ ] 12.3 Case setup card
+    - A preset (Classic, Relaxed or Quick) and two to five Bots (default two), kept in `PlayMemory.caseSetup`, memory only; "Start" goes to `/case/:worldId`.
+    - _Requirements: 13.2_
+  - [ ] 12.4 Case Screen
+    - Mounts the party Host page in solo mode (party task 8.15); an always-visible Exit that ends the Room and releases the Viewer first; the party ending with "Play again", Home and Gallery; the scripted indicator; a reload returns to the setup.
+    - _Requirements: 13.2, 13.3_
+  - [ ] 12.5 Names and copy
+    - The Play screen is titled and headed "Wander"; the Home premise and facts say that a place can be solved as a case (`shared/src/app/home-copy.ts`); `SCREEN_TITLES` gains the Case Screen.
+    - _Requirements: 1.1_
+  - [ ] 12.6 Tests
+    - Component tests for the Haunt choice, the setup card and the Case Screen against a fake Host, including the Zero-Quota Path through a case and the hidden or disabled action; one main-path and one failure-path test each.
+    - _Requirements: 13.1, 13.2, 13.3, 13.4_
+
 - [ ] 10. Tests and manual checks
   - [ ] 10.1 Component tests (jsdom, Testing Library, `FakeApi`)
     - For each of Home, Gallery, Create, Confirm, Haunt, Play, Ending, NotFound and Expired: one main-path test and one failure-path test; assert focus lands on the `h1` and the live region announces the title or the error.
@@ -208,7 +228,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Fails the build if Home's initial JavaScript exceeds 150 KB gzipped, if `FakeApi` or `console.log` appear in the production build, if an origin outside the allow-list appears in built output, or if `dangerouslySetInnerHTML` appears in `web/`.
     - _Requirements: 9.1, 9.2, 9.4, 9.5, 10.1, 11.3_
   - [ ] 10.3 Playwright smoke on the Zero-Quota Path
-    - Local, fixtures only, never a paid upstream: Home → Gallery → preset ghost → Play → three memories → Ending, once with `?demo=1` and once against `wrangler dev` with fakes, with the world kill switch on and every quota at zero.
+    - Local, fixtures only, never a paid upstream: Home → Gallery → preset ghost → Wander → three memories → Ending, and Home → Gallery → Play a case with two Bots → a case to its ending, once with `?demo=1` and once against `wrangler dev` with fakes, with the world kill switch on and every quota at zero.
     - _Requirements: 5.3, 11.2_
   - [ ] 10.4 Manual checks, recorded in `docs/spikes/shell.md`
     - Keyboard-only run of the whole flow, 320 px width, iOS Safari scroll and zoom inside the pad, a screen-reader pass on Haunt and Play, and a contrast check of the HUD and Screen text tokens.

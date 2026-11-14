@@ -15,6 +15,10 @@ Draw or upload any place (one you miss, one you love, or one you made up), walk 
 4. **Walk** — first-person browser viewer (three.js + Spark) with a haunt layer: grade, fog, flicker, orbs.
 5. **Talk** — text-adventure chat with the ghost. Find 3 memories (sound, person, promise). Ending card is shareable.
 
+## Two ways to play a place
+- **Play a case** (the deduction game): work out which ghost, where, with which relic. Alone against Bots on one screen, with no phone and no account (a **solo case**, which is a Party Room played on the embedded pad), or with friends' phones in the same room (Party Mode, below).
+- **Wander** (the memory walk, the original single-player game): steps 4 and 5 above. Walk the place and let its ghost lead you to three memories. In the specs, "Single player" means Wander.
+
 ## Hackathon context
 - Kiroween 2026, category **Frankenstein**: stitch together tech that was never meant to meet (hand sketch + diffusion + splat reconstruction + WebGL + LLM ghost + phones as game pads + 3D-printed relics + a Pepper's-ghost pyramid).
 - Overview for readers: `docs/SUBMISSION.md`.

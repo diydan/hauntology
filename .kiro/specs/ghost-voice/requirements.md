@@ -7,6 +7,7 @@ The ghost can speak, and in Single player it can listen. The voice is a layer on
 ## Glossary
 
 - **Voice**: the pure logic in `shared/src/voice/`, the services in `api/src/voice/` and `api/src/guarded/workersai/`, and the speak and listen controls in the Play screen and on the Host.
+- **Single player**: in this spec, Wander, the memory walk (see the web shell spec). A solo case (one human with Bots on one screen) is a Party Room and follows the Multiplayer rules for voice: spoken narration off by default, at most 20 spoken lines per room.
 - **Spoken Line**: a line the ghost says that passed `validateGhostReply` (ghost engine) and is handed to speech as at most 240 characters.
 - **Subtitle**: the full text of a line, shown in a polite live region whether or not the line is spoken.
 - **Fallback Chain**: the order of ways to say a line: cached audio, Aura-1, MeloTTS, the browser's own voice, and last the Subtitle alone.

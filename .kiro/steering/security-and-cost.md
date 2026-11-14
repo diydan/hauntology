@@ -27,7 +27,7 @@ inclusion: always
 - Phone sound plays only on a phone whose owner opted in. Cues, Nudges and Frames make no paid call and no model call.
 - Room spend is capped on top of global caps (`PARTY_IMAGE_ROOM_CAP`, `PARTY_LLM_ROOM_CAP`); one narration per public event for the whole room; at the cap the game continues with scripted lines.
 - Photos and names contributed by players are data: moderated (fail closed), downscaled, EXIF-stripped, private to the room, deleted with the room.
-- A room and everything in it is deleted on end, on host request, or after `PARTY_ROOM_TTL_HOURS`. `PARTY_ENABLED=false` stops new rooms and leaves single-player untouched.
+- A room and everything in it is deleted on end, on host request, or after `PARTY_ROOM_TTL_HOURS`. `PARTY_ENABLED=false` stops new rooms, solo cases included, and leaves Wander (the memory walk) untouched.
 
 ## Web
 - Strict CSP, no inline scripts, no `innerHTML` with user text. CORS only to the app origin. All state-changing routes require the session cookie (SameSite=Lax, HttpOnly) plus origin check.

@@ -50,6 +50,7 @@ Log:
 - [x] Master amendment applied: `conditions` and `ghost-voice` specs, party Requirements 12 to 20, world-viewer `setAtmosphere` and tilt to look. 287 criteria, 125 properties. TTS is now the `ghost-voice` spec.
 - [x] Balance changes from section 9 applied: default Haunt maximum 8 and a Quick preset, no win for the Player who tips the Haunt (Property 54), Nudge counters for haunting Players and everyone else. 287 criteria, 125 properties.
 - [x] Multiplayer rules amendment applied to party-mode: sealed Accusations, a wrong guess never wins, a rotating first player, the answer choice, a stronger Eavesdrop, a notebook grid, Bots on botMind, Most Haunting. 291 criteria, 129 properties.
+- [x] D1 specced: Single player becomes "Play a case" (a solo Party Room with Bots on one screen) and the memory walk is renamed Wander. Shell Requirement 13 and group 12, party-mode 9.5 and 9.6 and Property 59. 293 criteria, 130 properties across the seven engine specs.
 - [x] Party Photo Prompts are specced (party requirement 3.6 to 3.9, Property 30).
 - [ ] Decide whether to keep the hidden-photo relic-sketch idea. If yes, spec it with the photo deleted right after generation. If no, drop it.
 - [ ] Close the ownership gaps: `POST /api/play/start`, `GET /api/play/:id`, `POST /api/sketch/select`.

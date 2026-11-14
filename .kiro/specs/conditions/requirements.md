@@ -19,7 +19,7 @@ The conditions feature brings a little of the real world into the haunting: a pl
 - **Open-Meteo**: the outside weather service (forecast, archive and geocoding endpoints). It is free for non-commercial use and not paid per call here.
 - **Atmosphere**: the part of a Snapshot the Viewer may use: no coordinates, no label and no date.
 - **Star Texture**: the one image of the stars and moon drawn once per Snapshot, at most 1024 by 512 pixels.
-- **Host**: the screen that shows the world (the visitor's own screen in Single player).
+- **Host**: the screen that shows the world (the visitor's own screen in Wander and in a solo case).
 - **ViewerBridge**: the Viewer's command and event interface, owned by `world-viewer`.
 
 ## Requirements

@@ -314,6 +314,11 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - **Validates: Requirements 11.6**
   - [ ] 2.111 `tools/balance.mjs`: the statistical balance regression (500 seeded games each at 3 to 6 Players, all Standard Bots: at least 95% solved, mean Rounds between 4 and 7, every seat's win share within 8 points of its fair share), run in CI; a failing run blocks merges that touch `shared/src/party/`
     - _Requirements: 9.2, 5.1_
+  - [ ] 2.112 `solo.ts`: `soloSetup` (the visitor as Master at seat 0, two to five Bots at the level the preset gives, fixed Bot names, `speech` off, every name from the Preset Ghosts and the curated Zone names, and `{error}` for a bad Bot count or a world that is too small)
+    - _Requirements: 9.5_
+  - [ ]* 2.113 Write property test for the solo setup
+    - **Property 59: A solo case is an ordinary Room**
+    - **Validates: Requirements 9.5**
 
 - [ ] 3. Print module (`shared/src/print/`)
   - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
@@ -412,7 +417,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 6.6, 6.8, 11.6, 13.2_
   - [ ] 8.6 "Play on this screen": the page joins as the first Player and Master and embeds that Player's pad beside the world; the Master adds Bots; the Private View shows only when every other seat is a Bot
     - _Requirements: 9.1, 9.3_
-  - [ ] 8.7 Regression: the single-player game is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
+  - [ ] 8.7 Regression: Wander (the memory walk) is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
     - _Requirements: 9.4_
   - [ ] 8.8 Spoken narration through the ghost voice (`ghost-voice`, at most 20 lines per Room), with `speechSynthesis` and then the subtitle as fallbacks; off by default, one tap on the Host to unlock audio, text always shown, mute, replay and skip from the Master
     - _Requirements: 7.6_
@@ -428,6 +433,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 18.4, 19.4, 19.6_
   - [ ] 8.14 Host: the number of Accusations sealed this Round, the end-of-Round reveal sequence, the shared-win ending, "joined the haunting" wording in every player-facing string (never "Poltergeist") and the Most Haunting award
     - _Requirements: 6.5, 11.5, 11.6, 13.2_
+  - [ ] 8.15 Solo case on the Host page: run `soloSetup`, create the Room, join as Master, add the Bots and start with no Room Code or QR; hide Nudge, Frame, Rattle, the light bar, Stitch and the Spirit lens; keep spoken narration off unless turned on; end the Room on Exit, on leaving and on reload (satisfies shell task 12.4)
+    - _Requirements: 9.1, 9.5, 9.6_
 
 - [ ] 9. Web: Controller (`web/src/party/controller/`), installable web app
   - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
