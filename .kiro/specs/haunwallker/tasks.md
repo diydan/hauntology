@@ -1,0 +1,203 @@
+# Implementation Plan
+
+Depends on `world-pipeline` task 2 (scaffold: `web/` and `api/` are empty today), 3.1 (schemas and error codes) and 3.5 (`inkCoverage`). The real API routes (`world-pipeline` 5 to 9, `ghost-engine` 5, `ghost-creator` 3) are not needed to start: every Screen runs against `FakeApi` and recorded fixtures until its route exists, so no task here calls a paid upstream.
+
+Order: pure logic with property tests first, then the fakes, then the **Zero-Quota Path** as a walking skeleton (Home, Gallery, Haunt with a Gallery world, Play, Ending), then Create and Confirm, then hardening and tests. The skeleton comes before Create because the Nov 27 exit is "pick a Gallery world, walk, find three memories, see the card", and the demo cannot be recorded without it.
+
+This spec owns `world-pipeline` tasks 10.1 to 10.4. Tasks 7.1, 7.2, 8.1 and 9.1 below satisfy them; tick those four lines at the checkpoint.
+
+Tasks marked `*` are optional test tasks that should still be done before submission.
+
+- [ ] 1. Shared pure logic (`shared/src/app/`)
+  - [ ] 1.1 Reconcile `shared/src/errors.ts`
+    - Add every code in the `world-pipeline` design code list that `errors.ts` does not already have (`blank_sketch`, `unsafe_image`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `quota_session`, `quota_day`, `quota_total`, `upstream_rate_limited`, `upstream_rejected`, `upstream_no_credits`, `ingest_failed`, `timeout` and any other missing one). Where both lists name one condition, keep the name already in `errors.ts` (`upload_bad_type`, `upload_too_large`, `world_gen_disabled`) and change that one list line in `world-pipeline/design.md` to say `errors.ts` is the source. Add the shell codes `shell_crash` and `session_expired`; `world_not_found` stays.
+    - Unit test: every value equals its key, and `shell_crash`, `session_expired` and `world_not_found` exist.
+    - _Requirements: 7.3_
+  - [ ] 1.2 Test generators `*.arb.ts`
+    - Seeded fast-check arbitraries for paths, routes, flow states, quota snapshots and flags, confirm events, play events, session records, job states and bitmaps. Every property test below passes a seed and runs at least 100 times.
+    - _Requirements: 11.1_
+  - [ ] 1.3 `events.ts`: the Shell-to-Viewer contract
+    - `ViewerToShell` (`pose`, `prompt`, `degraded`) and `ShellToViewer` (`set_input_mode`, `apply_view`) as zod schemas with inferred types, and a `Vec3` type. Reuse `Anchor` and `AnchorId` from `shared/src/ghost/` (ghost-engine 2.5); if that task has not landed, declare the minimal types here and move them when it does. `world-viewer` task 6.3 (`ViewerBridge`) imports this file, not the reverse.
+    - _Requirements: 6.3_
+  - [ ] 1.4 `routes.ts`
+    - `ScreenId`, `Route`, `FlowState`, `resolveRoute`, `pathFor`, `guardRoute` with the redirect rules in the design (a redirect never lands on a route that redirects again).
+    - _Requirements: 1.5, 3.7, 5.2, 6.5, 7.6_
+  - [ ]* 1.5 Write property test for the route table
+    - **Property 1: Routes are total and round-trip**
+    - **Validates: Requirements 1.5, 7.6**
+  - [ ]* 1.6 Write property test for guards
+    - **Property 2: Guards never expose a screen without its prerequisites**
+    - **Validates: Requirements 3.7, 5.2, 6.5**
+  - [ ] 1.7 `confirm.ts`: `confirmReduce`
+    - States, events and effects exactly as in the design, including `challenge` for Turnstile and `retry` only from `rejected`.
+    - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6_
+  - [ ]* 1.8 Write model-based property test for the confirm machine
+    - **Property 3: World creation fires at most once and only after consent**
+    - **Validates: Requirements 3.2, 3.3, 3.4, 3.6**
+  - [ ] 1.9 `errors-copy.ts`: `errorCopy` and `retryGate`
+    - `errorCopy` is a `Record<ErrorCode, …>` (a missing code is a compile error) plus one generic entry for unknown strings; server `message` is never read. `retryGate` clamps to [1 s, 120 s].
+    - _Requirements: 2.7, 3.4, 4.4, 7.3, 7.5_
+  - [ ]* 1.10 Write property test for error copy
+    - **Property 4: Every error code has fixed copy and no raw server text is shown**
+    - **Validates: Requirements 2.7, 3.4, 4.4, 7.3**
+  - [ ]* 1.11 Write property test for the retry gate
+    - **Property 9: Retry gate honours the advised delay**
+    - **Validates: Requirements 7.5**
+  - [ ] 1.12 `capabilities.ts`
+    - `capabilities(quota, flags)` with the fixed `reason` priority.
+    - _Requirements: 1.3, 5.3_
+  - [ ]* 1.13 Write property test for capabilities
+    - **Property 5: Gallery is always available and creation follows quota**
+    - **Validates: Requirements 1.3, 5.3**
+  - [ ] 1.14 `stage.ts`: `stageOf` and `pollPlan`
+    - Poll no sooner than 3 s after the last poll and no later than 5 s; honour `rateLimitedUntil`; `null` when hidden or terminal; `overdue` after 15 minutes.
+    - _Requirements: 4.1, 4.3, 4.4, 4.7, 10.3_
+  - [ ]* 1.15 Write property test for stages and polling
+    - **Property 6: Stage mapping and polling plan are safe**
+    - **Validates: Requirements 4.1, 4.3, 4.4, 4.7, 10.3**
+  - [ ] 1.16 `play.ts`: `playReduce`
+    - Mode, found count, notice gate, degraded rung, `exit` ordering and the single navigation to the Ending.
+    - _Requirements: 6.1, 6.2, 6.4, 6.5, 6.6, 6.7_
+  - [ ]* 1.17 Write model-based property test for the Play reducer
+    - **Property 7: Play reducer keeps input mode and Exit consistent**
+    - **Validates: Requirements 6.1, 6.2, 6.4, 6.5, 6.6**
+  - [ ] 1.18 `resume.ts`: `resumeTarget`
+    - _Requirements: 4.5, 6.8, 7.7_
+  - [ ]* 1.19 Write property test for resume
+    - **Property 10: Resume picks a reachable, correct target**
+    - **Validates: Requirements 4.5, 6.8, 7.7**
+  - [ ] 1.20 `sketch-size.ts`: `downscaleSize` and `inkGate`
+    - `inkGate(bitmap)` returns `{enabled, coverage}` using `inkCoverage` and the 0.5% constant from `shared/src/sketch.ts` (world-pipeline 3.5; export the constant there if it is not exported yet). The pad and the API route share it.
+    - _Requirements: 2.3, 2.4_
+  - [ ]* 1.21 Write property test for downscale
+    - **Property 8: Sketch downscale preserves shape and never enlarges**
+    - **Validates: Requirements 2.3**
+  - [ ]* 1.22 Write property test for the ink gate
+    - **Property 11: The ink floor gate matches the server**
+    - **Validates: Requirements 2.4**
+
+- [ ] 2. Fakes and fixtures
+  - [ ] 2.1 `shared/src/app/fake-api.ts`
+    - A fixture timeline: a Quota Snapshot, a quote, a create call, job states `queued → generating → ingesting → ready` on a short timer, a six-world Gallery list, and a three-memory play run with scripted ghost lines. Pure and clock-injected; makes no network call.
+    - _Requirements: 11.2, 11.3_
+  - [ ] 2.2 `web/src/app/FakeApi.ts` and `?demo=1`
+    - Wires the timeline behind the same `ApiClient` interface. The import sits behind an `import.meta.env.PROD` guard so it is tree-shaken from production builds.
+    - _Requirements: 11.2, 11.3_
+
+- [ ] 3. Session routes (`api/src/routes/session.ts`)
+  - [ ] 3.1 `GET /api/session` and `POST /api/session/ack-notice`
+    - Session record fields `lastWorldId`, `lastPlayId`, `ackNotice`. `GET` returns `{lastWorldId?, lastPlayId?, ackNotice, flags}`. Cookie and origin checks as for every state-changing route. A missing or expired cookie gets a new Session with no ids. `POST /api/worlds` sets `lastWorldId` and `POST /api/play/start` sets `lastPlayId` through two small helpers; if those routes are not built yet, add the helpers and call them when they are. Routes that need earlier state answer `session_expired`.
+    - _Requirements: 4.5, 6.1, 6.8, 7.7_
+  - [ ] 3.2 Contract test for world access
+    - Run after `world-pipeline` 7.4 and 8.1 and `ghost-engine` 5. A foreign world id and a missing world id both answer `world_not_found` on `GET /api/worlds/:id`, `DELETE /api/worlds/:id` and `POST /api/play/start`; Gallery worlds stay readable by any Session. If a route fails the test, record it in `docs/IMPLEMENTATION.md` under "Security gaps" instead of editing that route here.
+    - _Requirements: 3.8, 7.6_
+
+- [ ] 4. Shell infrastructure (`web/src/app/`)
+  - [ ] 4.1 `ApiClient.ts`
+    - Typed same-origin `fetch` with `credentials: 'same-origin'`; every failure becomes a `Result` with an `ErrorCode` (unknown strings become the generic code); reads `Retry-After` on 429 and passes it to `retryGate`; `GET` retries on the `online` event; `POST` is never retried automatically; never reads or returns a server `message` or an upstream host.
+    - _Requirements: 7.3, 7.4, 7.5, 9.3_
+  - [ ] 4.2 `QuotaStore.ts`
+    - One boot request for `GET /api/quota` and `GET /api/session`, shared through context so no Screen makes a second one.
+    - _Requirements: 1.4_
+  - [ ] 4.3 Router and `App.tsx`
+    - History-API routes built on `resolveRoute`, `pathFor` and `guardRoute`; the Worker's static asset config serves `index.html` for every non-`/api` path; `resumeTarget` runs only on `/` or a stale route and never overrides a deep link that passes its guard; Play, Creator and Sketch Pad load by dynamic `import()`; on every route change focus moves to the Screen's `h1` (`tabIndex={-1}`) and the title goes to the live region.
+    - _Requirements: 1.5, 3.7, 4.5, 5.2, 6.5, 8.1, 10.1_
+  - [ ] 4.4 `ErrorBoundary.tsx`
+    - A Screen boundary whose fallback shows `errorCopy('shell_crash')`, the code and a Home link, and logs only `(code, screenId)`; a Viewer boundary whose fallback shows the thumbnail and keeps the Chat and Exit.
+    - _Requirements: 7.1, 7.2_
+  - [ ] 4.5 `LiveRegion.tsx`, design tokens and layout
+    - One polite live region for Stage changes, errors and ghost speech; palette and the 4.5:1 contrast rule from `steering/visual-style.md`; visible focus ring in `--lantern`; one `fade` token (300 to 600 ms, 0 to 150 ms under `prefers-reduced-motion`); CSS grid with a container query for the Chat (bottom sheet below 900 px, side panel from 900 px); no horizontal scroll at 320 px.
+    - _Requirements: 8.1, 8.2, 8.4, 8.5, 8.6_
+  - [ ] 4.6 Privacy and security guards
+    - A production logger that accepts only `(code, screenId)`; ESLint rules that ban `dangerouslySetInnerHTML` and `console.*` outside the logger in `web/`; strict CSP headers (no inline script, same-origin only, with `https://challenges.cloudflare.com` in `script-src` and `frame-src` only when Turnstile is configured); no analytics, trackers or third-party fonts.
+    - _Requirements: 9.1, 9.2, 9.4, 9.5_
+  - [ ] 4.7 NotFound and Expired screens, offline banner
+    - `not_found` and `expired` each link to Home and Gallery; the banner says the network is offline and clears when it returns; local state is kept.
+    - _Requirements: 7.4, 7.6, 7.7_
+  - [ ] 4.8 `DebugOverlay.tsx`
+    - With `?debug=1`, show the Quota Snapshot, the current Stage and the Viewer frame rate.
+    - _Requirements: 11.4_
+
+- [ ] 5. Home and Gallery
+  - [ ] 5.1 Home screen
+    - The one-line premise, "Draw a place", "Upload a photo" and "Visit a gallery place"; plain copy that worlds are static, the ghost is a billboard sprite and personal photos are deleted after 24 hours; the first two actions follow `capabilities` and show a one-line reason when off; after the screen is idle (`requestIdleCallback`, or a 1 s timeout) it prefetches the Gallery list and nothing else.
+    - _Requirements: 1.1, 1.2, 1.3, 10.4_
+  - [ ] 5.2 Gallery screen
+    - Thumbnail, title and short description from `GET /api/gallery` (static, no paid call); on failure an error message with a Retry action, never an empty grid; choosing a world sets `worldId` and goes to `/haunt/:worldId`, where the ghost choice happens (task 9.2). No world asset is fetched before that choice.
+    - _Requirements: 5.1, 5.5, 10.4_
+
+- [ ] 6. Play and Ending
+  - [ ] 6.1 Play screen
+    - Composes the Viewer, the Chat (ghost-engine 6.1) and the HUD (world-viewer 6.1) in the layout from task 4.5. Shows the content notice and calls `POST /api/session/ack-notice`; the Viewer loads by `import()` only after `playReduce` emits `start_viewer`. Runs the effects `playReduce` returns, bridges `ViewerToShell` and `ShellToViewer` messages (validated with the schemas from task 1.3), sends the last pose with each `POST /api/play/:id/turn`, and shows the found count out of three, a journal action and an always-visible Exit.
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 8.6, 10.1_
+  - [ ] 6.2 Scripted and degraded notices
+    - A small, quiet "scripted ghost" indicator when the turn response says scripted lines are used; a one-line notice when the Viewer falls back to a panorama or thumbnail, with the Chat still usable.
+    - _Requirements: 5.4, 6.7_
+  - [ ] 6.3 Exit and release
+    - `exit` closes the Chat, calls `dispose_viewer`, waits for its promise and only then mounts Home or Gallery, without a page reload; a Viewer crash leaves the Chat and Exit working (boundary from task 4.4).
+    - _Requirements: 6.6, 7.2, 10.2_
+  - [ ] 6.4 Reload restore
+    - On load of `/play/:worldId`, read `GET /api/play/:id` and restore the world, ghost and found memories; show the content notice again only if `ackNotice` is false.
+    - _Requirements: 6.8_
+  - [ ] 6.5 Ending screen
+    - The ending card, "Save memory card" (`layoutMemoryCard` from world-viewer 9, hand-off per ghost-engine 6.2) and "Haunt again". Opened only by the single navigation from `playReduce`, or by a URL that passes its guard.
+    - _Requirements: 6.5_
+
+- [ ] 7. Create: photo picker, Sketch Pad, candidates (satisfies `world-pipeline` 10.1 and 10.2)
+  - [ ] 7.1 `PhotoPicker`
+    - Accepts JPEG, PNG and WebP up to the limit in `validateUpload`; shows the retention notice (metadata stripped, kept 24 hours at most) before the file is chosen; shows a preview; re-encodes through a canvas to drop EXIF, GPS and XMP; uploads nothing the visitor did not choose; per-reason error copy from `errorCopy`.
+    - _Requirements: 2.6, 8.3, 9.6_
+  - [ ] 7.2 `SketchPad`
+    - A `<canvas>` with pointer events and `touch-action: none`; the tool rules from `world-pipeline` Requirement 2.1 are not redefined here; targets of at least 44 px; strokes, undo and redo (at least 30 steps) in memory only, never in storage, cookies or analytics; optional caption; "Make it real" disabled with a one-line reason while `inkGate` says no; the pad is labelled as a pointer tool and sits next to the photo picker and Gallery, both reachable by Tab.
+    - _Requirements: 2.1, 2.2, 2.4, 2.8, 8.3_
+  - [ ] 7.3 Make it real and candidates
+    - Downscale with `downscaleSize`, call `POST /api/sketch/render` once, show the candidates with alt text from the caption and the remaining image quota, and allow pick (`POST /api/sketch/select`), redraw, or back to the sketch. On failure or no quota keep the sketch, show the typed message and offer the Gallery.
+    - _Requirements: 2.3, 2.5, 2.7_
+  - [ ] 7.4 Hand-off to Confirm
+    - After an upload or a candidate pick, call `POST /api/places/brief`; `unsafe_image` and `moderation_unavailable` show their copy and keep the visitor on Create. On success set `pickedImageId` in memory and go to `/confirm`.
+    - _Requirements: 2.7, 3.1_
+
+- [ ] 8. Confirm Gate (satisfies `world-pipeline` 10.3)
+  - [ ] 8.1 Confirm screen
+    - Driven by `confirmReduce`: call `POST /api/worlds/quote` on mount, show the exact image from the quote at a readable size with alt text, the remaining quota and "Enter this place?"; "Enter this place" calls `POST /api/worlds` once with the Confirm Token (held in reducer state only, never in a URL, storage or log) and is disabled while the request runs; "Back" and "Pick another" return without consuming quota; a URL without `pickedImageId` redirects to Create. No other Screen calls `POST /api/worlds`.
+    - _Requirements: 3.1, 3.2, 3.3, 3.6, 3.7_
+  - [ ] 8.2 Turnstile
+    - Load the script from Cloudflare's own URL only when the quote says it is required (never proxied, cached or self-hosted), render the widget inside the Gate with a visible loading state, and send its result with the creation call.
+    - _Requirements: 3.5, 9.1_
+  - [ ] 8.3 Rejection and retry
+    - Quota, moderation, bot-check, kill-switch and `confirm_expired` codes show their own copy, release the disabled state and offer the Gallery; `retry` from `rejected` makes a new quote; a 429 keeps the control disabled until `retryGate` allows it.
+    - _Requirements: 3.4, 7.5_
+
+- [ ] 9. Haunt screen (satisfies `world-pipeline` 10.4)
+  - [ ] 9.1 Stage display
+    - Poll `GET /api/worlds/:id` on the schedule from `pollPlan`; show the labelled Stage with calm progress (not a spinner alone); announce changes through the live region; pause while the tab is hidden; past 15 minutes say honestly that it is taking long and offer the Gallery without cancelling the job.
+    - _Requirements: 4.1, 4.6, 4.7, 8.2, 10.3_
+  - [ ] 9.2 Ghost choice and "Walk in"
+    - While waiting, host the Ghost Creator (ghost-creator 4) and a "Use a preset ghost" action. A Gallery world arrives already `ready` and shows the same choice. When the Stage is ready and a ghost is chosen, say so and offer "Walk in"; never start the Viewer automatically.
+    - _Requirements: 4.2, 4.3, 5.2_
+  - [ ] 9.3 Failed state
+    - Show the typed reason, say whether quota was returned, offer the Gallery, and offer retry only if the API says a retry is allowed.
+    - _Requirements: 4.4_
+  - [ ] 9.4 Resume after reload
+    - On boot, `resumeTarget` returns the Haunt screen for the world id in the Session when the job is still running.
+    - _Requirements: 4.5_
+  - [ ] 9.5 "Delete my place"
+    - On Haunt, Play and Ending for an own world: an accessible dialog (no `confirm()`), `DELETE /api/worlds/:id`, clear all in-memory state for that place, return to Home. A `world_not_found` or `session_expired` answer shows the Expired screen.
+    - _Requirements: 3.8, 7.6_
+
+- [ ] 10. Tests and manual checks
+  - [ ] 10.1 Component tests (jsdom, Testing Library, `FakeApi`)
+    - For each of Home, Gallery, Create, Confirm, Haunt, Play, Ending, NotFound and Expired: one main-path test and one failure-path test; assert focus lands on the `h1` and the live region announces the title or the error.
+    - _Requirements: 8.1, 8.2, 11.5_
+  - [ ] 10.2 Bundle test
+    - Fails the build if Home's initial JavaScript exceeds 150 KB gzipped, if `FakeApi` or `console.log` appear in the production build, if an origin outside the allow-list appears in built output, or if `dangerouslySetInnerHTML` appears in `web/`.
+    - _Requirements: 9.1, 9.2, 9.4, 9.5, 10.1, 11.3_
+  - [ ] 10.3 Playwright smoke on the Zero-Quota Path
+    - Local, fixtures only, never a paid upstream: Home → Gallery → preset ghost → Play → three memories → Ending, once with `?demo=1` and once against `wrangler dev` with fakes, with the world kill switch on and every quota at zero.
+    - _Requirements: 5.3, 11.2_
+  - [ ] 10.4 Manual checks, recorded in `docs/spikes/shell.md`
+    - Keyboard-only run of the whole flow, 320 px width, iOS Safari scroll and zoom inside the pad, a screen-reader pass on Haunt and Play, and a contrast check of the HUD and Screen text tokens.
+    - _Requirements: 2.2, 8.1, 8.5, 8.6_
+
+- [ ] 11. Checkpoint
+  - Run `pnpm -r test`, `pnpm -r typecheck` and `node tools/check-traceability.mjs`; walk the Zero-Quota Path in a real browser with the kill switch on; confirm the world-access test (task 3.2) passes or its failures are listed in `docs/IMPLEMENTATION.md`; tick `world-pipeline` tasks 10.1 to 10.4; ask the user if questions arise.
