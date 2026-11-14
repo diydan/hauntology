@@ -6,7 +6,7 @@ Read this with `README.md`. Everything under `/.kiro` is the source of truth for
 
 ## The product
 
-### Single player: walk back into a place you've lost
+### Single player: walk into any place
 1. **Start**: upload a photo, or draw a sketch that FLUX.2 on Workers AI turns into a photo.
 2. **Confirm**: see the exact image and remaining quota, then "Enter this place?" Nothing paid happens before this.
 3. **Build**: World Labs Marble turns the image into a walkable Gaussian-splat world. Meanwhile the player designs a ghost (Ghost Creator).

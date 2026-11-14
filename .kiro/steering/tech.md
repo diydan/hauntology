@@ -6,7 +6,7 @@ inclusion: always
 ## Languages and tooling
 - TypeScript (strict) everywhere. pnpm workspaces. Vitest + fast-check for tests. zod for runtime schemas.
 - `web/`: Vite + React + three.js (r180+) + `@sparkjsdev/spark` + `three-mesh-bvh`.
-- `api/`: Cloudflare Workers + Hono. Durable Objects: `SpendGuard`, `WorldJob`, `PlaySession`, `PartyRoom` (WebSocket Hibernation API). R2 for blobs. KV only for non-critical caches.
+- `api/`: Cloudflare Workers + Hono. Durable Objects: `SpendGuard`, `WorldJob`, `PlaySession`, `PartyRoom` (WebSocket Hibernation API), `PartyDirectory` (singleton for room codes and caps). R2 for blobs. KV only for non-critical caches.
 - `shared/`: pure TypeScript (no I/O, no Date.now/Math.random inside logic; inject clock and rng). This is where property tests live.
 - Pin exact versions in the lockfile at install time; do not guess version numbers.
 

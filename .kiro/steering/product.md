@@ -3,10 +3,10 @@ inclusion: always
 ---
 # Hauntwalk — product
 
-> Walk back into a place you've lost. Its ghost knows three things you forgot.
+> Walk into any place. Its ghost remembers three things.
 
 ## One line
-Draw or upload a place you've lost, walk back into it as a 3D world, and let its ghost lead you to three memories.
+Draw or upload any place (one you miss, one you love, or one you made up), walk into it as a 3D world, and let its ghost lead you to three memories.
 
 ## Core loop
 1. **Start** — upload one photo, or draw a sketch (sketch → FLUX.2 on Workers AI → photoreal image).

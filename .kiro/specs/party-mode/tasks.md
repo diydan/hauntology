@@ -128,6 +128,11 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
   - [ ]* 2.46 Write property test for telemetry and abuse caps
     - **Property 24: Telemetry carries no content and abuse is capped**
     - **Validates: Requirements 10.5, 10.6**
+  - [ ] 2.47 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
+    - _Requirements: 3.6, 3.7, 3.8_
+  - [ ]* 2.48 Write property test for Photo Prompts
+    - **Property 25: Photo Prompt offers are deterministic, complete and bounded**
+    - **Validates: Requirements 3.6, 3.7, 3.8**
 
 - [ ] 3. Print module (`shared/src/print/`)
   - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
@@ -170,6 +175,8 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
 - [ ] 5. Contribution services
   - [ ] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded AIClient text wrapper, fail closed, store privately for the Room
     - _Requirements: 3.2_
+  - [ ] 5.1a Vision verdict returns `{safe, personVisible}`; `personVisible` rejects with `photo_rejected:person_visible`; `POST /api/party/:code/prompt/skip` with up to three skips per Player
+    - _Requirements: 3.8, 3.9_
   - [ ] 5.2 Suspect flow reusing the Ghost Creator, charged to the Room budget, Preset fallback on any failure
     - _Requirements: 3.3_
   - [ ] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement
@@ -218,7 +225,7 @@ Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `g
     - _Requirements: 4.2, 4.4_
   - [ ] 9.7 Suggest and Accuse screens, relic selection by list or by camera scan
     - _Requirements: 6.1, 6.3, 6.4_
-  - [ ] 9.8 Contribution screens for Suspect, photo and Zone name
+  - [ ] 9.8 Contribution screens for Suspect, photo and Zone name; the photo step shows three Photo Prompts with tips to choose from, opens the camera for `take_now` and the picker for `camera_roll`, offers "Show me three more" (up to three times, with the remaining count shown) and "Use my own photo"
     - _Requirements: 3.1_
   - [ ] 9.9 Clock, warning and Achievement display
     - _Requirements: 5.3, 5.4_

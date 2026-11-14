@@ -1,6 +1,6 @@
 # Hauntwalk
 
-Draw or upload a place you've lost. Walk back into it as a 3D world. Let its ghost lead you to three memories.
+Draw or upload any place. Walk into it as a 3D world. Let its ghost lead you to three memories.
 
 Built for **Kiroween 2026 — Frankenstein** (stitching together tech that was never meant to meet).
 

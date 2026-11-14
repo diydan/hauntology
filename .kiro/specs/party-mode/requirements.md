@@ -23,6 +23,7 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 - **Turn Clock**: the countdown for a Turn. **Bonus Seconds**: time earned through Achievements.
 - **Suggestion / Accusation**: a guess at a Zone you are standing in, answered by one card; versus a final claim of all three cards.
 - **Contribution**: a Suspect, a framed photo or a Zone name supplied by a Player.
+- **Photo Prompt**: a short, fixed instruction that suggests which everyday photo to add; each Player is offered three at a time (for example "the view from a window"), with a tip and a source of either `camera_roll` or `take_now`.
 - **Relic Token**: a printed base carrying a QR plate with the payload `hw:<relic id>`.
 - **Print Kit**: the models, generator and checks in `print/` and `shared/src/print/`.
 
@@ -65,6 +66,10 @@ Party mode turns Hauntwalk into a same-room deduction game for two to six player
 3. WHEN a Suspect needs a portrait THEN the Room SHALL use the Ghost Creator flow with its image and model usage charged to the Room's budget, and SHALL substitute a Preset Ghost when quota is exhausted or generation fails.
 4. WHEN the lobby closes THEN the Room SHALL build exactly six Suspects (contributed first, filled from Preset Ghosts), six Zones (named from contributions first, filled from a curated name list) and the six Relics, deterministically from the Room seed.
 5. WHEN the world is entered THEN the Viewer SHALL show each accepted photo in a free-standing frame near its Zone, facing the spawn point, and the frame SHALL NOT block movement.
+6. WHEN a Player opens the photo step THEN the Controller SHALL show three Photo Prompts offered to that Player, drawn from a fixed catalogue of at least 12 everyday subjects that most people already have on a phone or can take in under a minute in the room (for example a meal, a pet, a window view, a street, a mug, shoes, the sky), each with a one-line tip, a "no people or faces" rule, and a statement that the photo will be shown on the shared screen.
+7. WHEN the lobby opens THEN the Room SHALL offer each Player a set of three distinct Photo Prompts derived deterministically from the Room seed and the Player's seat, the Player SHALL choose one of the three, and WHERE the chosen Prompt source is `take_now` THEN the Controller SHALL open the phone camera directly, and WHERE it is `camera_roll` THEN the Controller SHALL open the photo picker.
+8. WHERE a Player likes none of the three Prompts THEN the Controller SHALL let them skip to a fresh set of three, up to three skips, with no Prompt repeating for that Player across the sets, and SHALL also let them pick any photo of their own or leave the photo step, and none of these choices SHALL be required to start the game.
+9. WHEN a contributed photo shows a clearly visible face or person THEN the Room SHALL reject it with the reason `person_visible` as part of the same safety verdict, keep the Player seated, and show the Prompt's tip again.
 
 ### Requirement 4
 

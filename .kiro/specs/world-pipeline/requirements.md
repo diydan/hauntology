@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The world pipeline turns a place the user remembers into a stored, walkable 3D world. It supports two starting paths (upload a photo, or draw a sketch that FLUX.2 on Workers AI turns into a photo), a mandatory confirm gate before any paid world generation, a spend guard that makes cost bounded and predictable, and ingestion of the finished World Labs world into our own storage. A pre-generated Gallery guarantees the full experience with zero quota.
+The world pipeline turns a place the user chooses into a stored, walkable 3D world. It supports two starting paths (upload a photo, or draw a sketch that FLUX.2 on Workers AI turns into a photo), a mandatory confirm gate before any paid world generation, a spend guard that makes cost bounded and predictable, and ingestion of the finished World Labs world into our own storage. A pre-generated Gallery guarantees the full experience with zero quota.
 
 ## Glossary
 
@@ -22,7 +22,7 @@ The world pipeline turns a place the user remembers into a stored, walkable 3D w
 
 ### Requirement 1
 
-**User Story:** As a visitor, I want to upload a photo of a place, so that I can walk back into it.
+**User Story:** As a visitor, I want to upload a photo of a place, so that I can walk into it.
 
 #### Acceptance Criteria
 

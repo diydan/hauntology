@@ -15,7 +15,7 @@
 - [ ] `docs/ATTRIBUTION.md` for Gallery images
 
 ## Devpost pitch (paste)
-> **Category: Frankenstein.** Hauntwalk stitches together technologies that were never meant to meet: a hand-drawn sketch or old photo becomes an image with FLUX.2 on Workers AI, then a walkable 3D Gaussian-splat world via World Labs, rendered in the browser with three.js and Spark. You design a ghost, walk back into the place you've lost, and talk to the ghost to find its three memories. Then play it as a same-room party game: phones become game pads and private screens, 3D-printed relics carry QR tokens, and a Pepper's-ghost pyramid shows the ghost while everyone races the clock to work out who is haunting the place. Built spec-first in Kiro with steering, hooks, a custom MCP server and 71 property-based tests.
+> **Category: Frankenstein.** Hauntwalk stitches together technologies that were never meant to meet: a hand-drawn sketch or old photo becomes an image with FLUX.2 on Workers AI, then a walkable 3D Gaussian-splat world via World Labs, rendered in the browser with three.js and Spark. You design a ghost, walk into the place, and talk to the ghost to find its three memories. Then play it as a same-room party game: phones become game pads and private screens, 3D-printed relics carry QR tokens, and a Pepper's-ghost pyramid shows the ghost while everyone races the clock to work out who is haunting the place. Built spec-first in Kiro with steering, hooks, a custom MCP server and 71 property-based tests.
 
 ## Naming
 Check domain and trademark availability for "Hauntwalk" before publishing. No third-party game names, characters, quotes or art anywhere (app, repo, video, Devpost). Party Mode uses an original relic set and no CLUE or Cluedo names.
@@ -23,8 +23,8 @@ Check domain and trademark availability for "Hauntwalk" before publishing. No th
 ## Timeline
 | Dates | Goal |
 |---|---|
-| Nov 14–20 | Scaffold, worldlabs MCP, spikes 1.1–1.3 (core), pure logic and property tests. Start capturing write-up evidence. |
-| Nov 21–27 | SpendGuard, routes, WorldJob, viewer core. **Generate Gallery worlds.** Engine pure logic. **Party: spikes 1.1–1.3 and `shared/src/party` pure logic.** |
+| Nov 14–21 | Scaffold, worldlabs MCP, spikes 1.1–1.3 (core), pure logic and property tests. **Generate Gallery worlds (right after the World Labs spike, done by Nov 21).** Start capturing write-up evidence. |
+| Nov 22–27 | SpendGuard, routes, WorldJob, viewer core. Engine pure logic. **Party: spikes 1.1–1.3 and `shared/src/party` pure logic.** |
 | Nov 28–Dec 1 | PlaySession + narrator, creator, chat UI. **Request Kiro credits.** Deploy preview. **Party: PartyRoom DO, Host and Controller pages.** Write-up sections 1–4. |
 | Dec 2–3 | Polish, phone perf pass, **Party: Display and print kit if time**, record video, finish write-up, README, submit. |
 | Dec 4 | Buffer. |
