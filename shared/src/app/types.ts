@@ -19,6 +19,8 @@ export type FlowState = {
   playEnded: boolean;
 };
 
+export type GuardResult = { allow: true } | { allow: false; redirect: Route };
+
 /** Remaining count per meter, as returned by `GET /api/quota` (world-pipeline 5.7). */
 export type QuotaSnapshot = { world: number; image: number; llm: number; tts: number };
 

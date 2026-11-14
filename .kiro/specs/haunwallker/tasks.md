@@ -19,8 +19,8 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 1.3 `events.ts`: the Shell-to-Viewer contract
     - `ViewerToShell` (`pose`, `prompt`, `degraded`) and `ShellToViewer` (`set_input_mode`, `apply_view`) as zod schemas with inferred types, and a `Vec3` type. Reuse `Anchor` and `AnchorId` from `shared/src/ghost/` (ghost-engine 2.5); if that task has not landed, declare the minimal types here and move them when it does. `world-viewer` task 6.3 (`ViewerBridge`) imports this file, not the reverse.
     - _Requirements: 6.3_
-  - [ ] 1.4 `routes.ts`
-    - `ScreenId`, `Route`, `FlowState`, `resolveRoute`, `pathFor`, `guardRoute` with the redirect rules in the design (a redirect never lands on a route that redirects again).
+  - [x] 1.4 `routes.ts`
+    - `resolveRoute`, `pathFor`, `guardRoute` and `isWorldId` with the redirect rules in the design (a redirect never lands on a route that redirects again). The types `ScreenId`, `Route` and `FlowState` live in `types.ts` (task 1.2). Unit tests cover the table, the bad paths, and every small flow state against every route.
     - _Requirements: 1.5, 3.7, 5.2, 6.5, 7.6_
   - [ ]* 1.5 Write property test for the route table
     - **Property 1: Routes are total and round-trip**

@@ -17,7 +17,7 @@ Decisions:
 - **The world id survives reload in the Session, not in storage the visitor can lose.** The API keeps `lastWorldId` and `lastPlayId` on the Session record, and `GET /api/session` returns them. The shell never writes photos, sketches or captions to local storage, cookies or IndexedDB.
 - **Lazy Viewer.** three.js, Spark and three-mesh-bvh load by dynamic `import()` when Play mounts. Home ships without them.
 - **Error boundaries per Screen and one around the Viewer.** A Viewer crash leaves the Chat, HUD and Exit alive.
-- **Hash-free client routes** (`/`, `/gallery`, `/create`, `/confirm`, `/haunt/:worldId`, `/play/:worldId`, `/end/:worldId`), served by the Worker with an SPA fallback to `index.html`.
+- **Hash-free client routes** (`/`, `/gallery`, `/create`, `/confirm`, `/haunt/:worldId`, `/play/:worldId`, `/end/:worldId`, `/expired`), served by the Worker with an SPA fallback to `index.html`. A world id is 1 to 64 characters of `A-Z a-z 0-9 _ -`; any other path, including a bad world id, is `not_found`. A query string, a fragment and one trailing slash are ignored.
 
 ## Architecture
 
@@ -116,9 +116,9 @@ type Capabilities = {
 ### Route guards
 `guardRoute(route, flow) → {allow: true} | {allow: false, redirect: Route}`.
 - `confirm` requires `pickedImageId`, else redirect to `create`.
-- `play` requires `worldId` and `ghostReady`, else redirect to `gallery` (no world) or `haunt` (no ghost).
-- `end` requires `playEnded`, else redirect to `play` when `worldId` and `ghostReady` are set, otherwise to the redirect `play` itself would give (`gallery` or `haunt`). A redirect never lands on a route that redirects again.
-- `haunt` requires `worldId`.
+- `haunt`, `play` and `end` are each about one world: the route's world id must equal the flow's `worldId`. A missing or different world redirects to `gallery`.
+- `play` also requires `ghostReady`, else redirect to `haunt` for that world.
+- `end` also requires `playEnded`, else redirect to `play` when `ghostReady` is set, otherwise to the redirect `play` itself would give (`haunt`). A redirect never lands on a route that redirects again.
 - All other screens always allow.
 
 ### Confirm Gate state machine
