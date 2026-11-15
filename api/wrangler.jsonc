@@ -6,8 +6,8 @@
   "main": "src/worker.ts",
   "compatibility_date": "2025-06-01",
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hauntology-worlds" }],
-  "durable_objects": { "bindings": [{ "name": "WORLD_JOB", "class_name": "WorldJob" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WorldJob"] }],
+  "durable_objects": { "bindings": [{ "name": "WORLD_JOB", "class_name": "WorldJob" }, { "name": "SPEND_GUARD", "class_name": "SpendGuard" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WorldJob"] }, { "tag": "v2", "new_sqlite_classes": ["SpendGuard"] }],
   // Hourly: delete uploads past 24 hours and user worlds past 7 days.
   "triggers": { "crons": ["17 * * * *"] },
   "vars": { "WORLD_GEN_ENABLED": "true", "UPLOAD_TTL_HOURS": "24", "WORLD_TTL_DAYS": "7" }

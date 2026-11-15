@@ -1,14 +1,16 @@
 import { retentionFromEnv } from "@hauntology/shared/world/retention";
 import { createApp } from "./app";
+import { SpendGuard } from "./do/spend-guard";
 import { WorldJob } from "./do/world-job";
 import type { Bindings } from "./http/env";
+import { SpendGuardClient } from "./spend/client";
 import { cleanupExpired } from "./worlds/cleanup";
 import { CloudflareImageStore } from "./worlds/cloudflare-images";
 import { CloudflareWorldStore } from "./worlds/cloudflare-store";
 import { CloudflareTurnstile } from "./worlds/turnstile";
 
-/** The bindings of `wrangler.jsonc`: the one R2 bucket and the `WorldJob` Durable Object namespace, besides the vars and secrets. */
-export type WorkerEnv = Bindings & { BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace };
+/** The bindings of `wrangler.jsonc`: the one R2 bucket and the `WorldJob` and `SpendGuard` Durable Object namespaces, besides the vars and secrets. */
+export type WorkerEnv = Bindings & { BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
 
 export const storeFor = (env: WorkerEnv): CloudflareWorldStore => new CloudflareWorldStore({ bucket: env.BUCKET, jobs: env.WORLD_JOB });
 
@@ -19,13 +21,16 @@ export default {
   fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext): Response | Promise<Response> {
     let app = apps.get(env);
     if (app === undefined) {
-      // SpendGuard (world-pipeline 4.1) and the job starter (7.1) are not built, so they are not passed: the Quote shows
-      // no places left and a world cannot be made (`world_gen_disabled`) until they are.
+      // The job starter (world-pipeline 7.1) is not built, so none is passed: the Quote shows the real places left, but a
+      // world cannot be made (`world_gen_disabled`) until there is one.
+      const guard = new SpendGuardClient(env.SPEND_GUARD);
       app = createApp({
+        spend: () => guard.status(),
         worlds: {
           store: storeFor(env),
           creation: {
             images: new CloudflareImageStore(env.BUCKET),
+            guard,
             ...(typeof env.TURNSTILE_SECRET === "string" && env.TURNSTILE_SECRET !== "" ? { turnstile: new CloudflareTurnstile(env.TURNSTILE_SECRET) } : {}),
           },
         },
@@ -41,4 +46,4 @@ export default {
   },
 };
 
-export { WorldJob };
+export { SpendGuard, WorldJob };

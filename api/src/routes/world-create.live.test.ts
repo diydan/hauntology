@@ -24,6 +24,7 @@ describe.skipIf(LIVE_URL === undefined)("world creation on wrangler dev (real R2
     expect(q.status).toBe(200);
     const quote = q.json as { imageUrl: string; confirmToken: string; quota: { world: number } };
     expect(quote.imageUrl).toBe(`/api/images/${imageId}`);
+    expect(quote.quota.world).toBe(2); // the real SpendGuard: a fresh Session has its two worlds
 
     const created = await kit.send("/api/worlds", { method: "POST", headers: a.headers, body: { imageId, confirmToken: quote.confirmToken } });
     expect(created.status).toBe(201);
@@ -35,6 +36,8 @@ describe.skipIf(LIVE_URL === undefined)("world creation on wrangler dev (real R2
     expect((again.json as { worldId: string }).worldId).toBe(worldId);
 
     expect((await kit.send(`/api/worlds/${worldId}`, { headers: a.headers })).json).toEqual({ id: worldId, status: "queued" });
+    const second = await kit.send("/api/worlds/quote", { method: "POST", headers: a.headers, body: { imageId } });
+    expect((second.json as { quota: { world: number } }).quota.world).toBe(1); // one unit is held for the world just made
     for (const headers of [b.headers, kit.anonymous()]) {
       const r = await kit.send(`/api/worlds/${worldId}`, { headers });
       expect(r.status).toBe(404);
@@ -93,6 +96,28 @@ describe.skipIf(LIVE_URL === undefined)("world creation on wrangler dev (real R2
     expect(part.headers.get("Content-Range")).toBe("bytes 2-5/10");
     expect([...new Uint8Array(await part.arrayBuffer())]).toEqual([2, 3, 4, 5]);
     expect((await fetch(`${LIVE_URL}/api/worlds/${id}/assets/splat-500k.spz`, { headers: { ...kit.anonymous(), Range: "bytes=10-20" } })).status).toBe(416);
+  });
+
+  it("closes world creation with the kill switch, shows it on Home, and opens again", async () => {
+    const a = await kit.visitor();
+    const imageId = await pic(a, 41);
+    const flags = async () => ((await kit.send("/api/session", { headers: a.headers })).json as { flags: { worldGenEnabled: boolean } }).flags.worldGenEnabled;
+    expect(await flags()).toBe(true);
+    try {
+      expect((await kit.dev("kill", { on: true })).status).toBe(200);
+      expect(await flags()).toBe(false);
+      const q = await kit.send("/api/worlds/quote", { method: "POST", headers: a.headers, body: { imageId } });
+      const refused = await kit.send("/api/worlds", { method: "POST", headers: a.headers, body: { imageId, confirmToken: (q.json as { confirmToken: string }).confirmToken } });
+      expect(refused.status).toBe(503);
+      expect(refused.json).toEqual({ ok: false, code: "world_gen_disabled" });
+      // The Gallery is not affected.
+      const gallery = kit.unique("gallery");
+      await kit.dev("seed-gallery", { id: gallery });
+      expect((await kit.send(`/api/worlds/${gallery}`, { headers: a.headers })).status).toBe(200);
+    } finally {
+      await kit.dev("kill", { on: false });
+    }
+    expect(await flags()).toBe(true);
   });
 
   it("deletes what is past its time on the cron trigger, and never a Gallery world", async () => {

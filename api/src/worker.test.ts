@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import worker, { WorldJob, storeFor, type WorkerEnv } from "./worker";
-import { FakeJobs, FakeR2 } from "./worlds/fake-cloudflare";
+import worker, { SpendGuard, WorldJob, storeFor, type WorkerEnv } from "./worker";
+import { FakeJobs, FakeNamespace, FakeR2 } from "./worlds/fake-cloudflare";
 import { SECRET, sampleManifest, ORIGIN } from "./worlds/test-kit";
 
 const NOW = 1_800_000_000_000;
@@ -9,8 +9,9 @@ const DAY = 24 * 3_600_000;
 const envWith = () => {
   const bucket = new FakeR2();
   const jobs = new FakeJobs();
-  const env = { HMAC_SECRET: SECRET, BUCKET: bucket, WORLD_JOB: jobs } as unknown as WorkerEnv;
-  return { bucket, jobs, env };
+  const spend = new FakeNamespace((state) => new SpendGuard(state, {}));
+  const env = { HMAC_SECRET: SECRET, BUCKET: bucket, WORLD_JOB: jobs, SPEND_GUARD: spend } as unknown as WorkerEnv;
+  return { bucket, jobs, spend, env };
 };
 const ctx = () => {
   const pending: Promise<unknown>[] = [];
@@ -18,8 +19,9 @@ const ctx = () => {
 };
 
 describe("worker", () => {
-  it("exports the WorldJob Durable Object class", () => {
+  it("exports the WorldJob and SpendGuard Durable Object classes", () => {
     expect(WorldJob).toBeTypeOf("function");
+    expect(SpendGuard).toBeTypeOf("function");
   });
 
   it("serves a Gallery world through the real store, with no cookie", async () => {
@@ -35,6 +37,22 @@ describe("worker", () => {
     const res = await worker.fetch(new Request(`${ORIGIN}/api/worlds/w-nobody`), env, ctx().ctx);
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ ok: false, code: "world_not_found" });
+  });
+
+  it("shows the kill switch on the Home flags, and says world_gen_disabled for it", async () => {
+    const { env, spend } = envWith();
+    const before = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx);
+    expect(((await before.json()) as { flags: { worldGenEnabled: boolean } }).flags.worldGenEnabled).toBe(true);
+    await spend.get("global").fetch("https://spend-guard/kill", { method: "POST", body: JSON.stringify({ on: true }) });
+    const after = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx);
+    expect(((await after.json()) as { flags: { worldGenEnabled: boolean } }).flags.worldGenEnabled).toBe(false);
+  });
+
+  it("closes world creation on the Home flags when SpendGuard cannot be reached", async () => {
+    const { env } = envWith();
+    (env as unknown as { SPEND_GUARD: unknown }).SPEND_GUARD = { idFromName: (n: string) => n, get: () => ({ fetch: async () => { throw new Error("down"); } }) };
+    const res = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx);
+    expect(((await res.json()) as { flags: { worldGenEnabled: boolean; dayCapReached: boolean } }).flags).toMatchObject({ worldGenEnabled: false, dayCapReached: true });
   });
 
   it("runs the cleanup on the cron trigger with the scheduled time and the retention of the env", async () => {
@@ -61,7 +79,7 @@ describe("worker", () => {
     expect(bucket.objects.size).toBe(0);
   });
 
-  it("gives a Quote for a picture the visitor owns, but shows no places left and will not make a world yet", async () => {
+  it("gives a Quote for a picture the visitor owns, with the real places left, but will not make a world until a job starter exists", async () => {
     const { bucket, env } = envWith();
     const first = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx);
     const cookie = (first.headers.get("Set-Cookie") as string).split(";")[0] as string;
@@ -74,7 +92,7 @@ describe("worker", () => {
     expect(quote.status).toBe(200);
     const q = (await quote.json()) as { imageUrl: string; quota: { world: number }; confirmToken: string };
     expect(q.imageUrl).toBe("/api/images/img-1");
-    expect(q.quota.world).toBe(0);
+    expect(q.quota.world).toBe(2);
 
     const create = await worker.fetch(new Request(`${ORIGIN}/api/worlds`, { method: "POST", headers, body: JSON.stringify({ imageId: "img-1", confirmToken: q.confirmToken }) }), env, ctx().ctx);
     expect(create.status).toBe(503);

@@ -1,17 +1,19 @@
 /**
  * A TEST-ONLY Worker for running the world routes on `wrangler dev` (`pnpm exec wrangler dev -c wrangler.check.jsonc`).
  * It is the real app over the real R2 and WorldJob bindings, plus what tests need and a product must never have:
- * `/dev/*` routes that plant worlds and pictures, an in-memory `SpendGuard` and a job starter that only records.
+ * `/dev/*` routes that plant worlds and pictures, and a job starter that only records. The `SpendGuard` is the real Durable Object.
  * It is not deployed: `wrangler.jsonc`, the only config `wrangler deploy` picks up, points at `src/worker.ts`.
  */
 import { createApp } from "../src/app";
+import { SpendGuard } from "../src/do/spend-guard";
 import { WorldJob } from "../src/do/world-job";
 import realWorker, { storeFor, type WorkerEnv } from "../src/worker";
+import { SpendGuardClient } from "../src/spend/client";
 import { CloudflareImageStore } from "../src/worlds/cloudflare-images";
-import { MemorySpendGuard, RecordingStarter } from "../src/worlds/fakes";
+import { RecordingStarter } from "../src/worlds/fakes";
 import { galleryKey, bundleKey, uploadKey } from "../src/worlds/keys";
 
-export { WorldJob };
+export { SpendGuard, WorldJob };
 
 const FILES: Record<string, Uint8Array> = {
   "splat-500k.spz": Uint8Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
@@ -26,7 +28,6 @@ const manifest = (id: string) => ({
   bounds: { min: [-5, 0, -5], max: [5, 3, 5] }, brief: "A place planted by a test.",
 });
 
-const guard = new MemorySpendGuard();
 const starter = new RecordingStarter();
 const apps = new WeakMap<object, ReturnType<typeof createApp>>();
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -38,12 +39,16 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
 async function dev(request: Request, env: WorkerEnv): Promise<Response> {
   const { pathname } = new URL(request.url);
   const store = storeFor(env);
-  if (pathname === "/dev/started" && request.method === "GET") return json({ started: starter.started, reserveCalls: guard.reserveCalls });
+  if (pathname === "/dev/started" && request.method === "GET") return json({ started: starter.started });
   if (pathname === "/dev/starter" && request.method === "POST") {
     starter.fail = ((await request.json()) as { fail: typeof starter.fail }).fail;
     return json({ ok: true });
   }
   if (request.method !== "POST") return json({ ok: false }, 405);
+  if (pathname === "/dev/kill") {
+    await new SpendGuardClient(env.SPEND_GUARD).setKill(((await request.json()) as { on: boolean }).on);
+    return json({ ok: true });
+  }
   const body = (await request.json()) as Record<string, string>;
 
   if (pathname === "/dev/seed-world") {
@@ -79,7 +84,8 @@ export default {
     if (new URL(request.url).pathname.startsWith("/dev/")) return dev(request, env);
     let app = apps.get(env);
     if (app === undefined) {
-      app = createApp({ worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter } } });
+      const guard = new SpendGuardClient(env.SPEND_GUARD);
+      app = createApp({ spend: () => guard.status(), worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter } } });
       apps.set(env, app);
     }
     return app.fetch(request, env, ctx);

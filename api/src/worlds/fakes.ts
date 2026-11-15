@@ -1,8 +1,10 @@
-import { METERS, type Meter, type Remaining, type ReserveResult, type SpendGuard, type SpendTicket } from "@hauntology/shared/world/spend";
+import { MapKv } from "@hauntology/shared/world/map-kv";
+import type { Meter, Remaining, ReserveResult, SpendGuard, SpendTicket } from "@hauntology/shared/world/spend";
+import { DEFAULT_CAPS, SpendLedger, type CapTable } from "@hauntology/shared/world/spend-ledger";
 import type { ErrorCode } from "@hauntology/shared/errors";
 import type { ImageInfo, ImageStore, TurnstileVerifier, WorldStarter } from "./ports";
 
-/** Stand-ins for the parts of world creation that are not built yet (SpendGuard 4.1, the job 7.1, uploads 5.1), for tests and the test-only dev worker. None of them is durable. */
+/** Stand-ins for the parts of world creation that are not built yet (the job 7.1, uploads 5.1) and an in-process `SpendGuard`, for tests and the test-only dev worker. None of them is durable. */
 
 export class MemoryImageStore implements ImageStore {
   readonly images = new Map<string, { info: ImageInfo; bytes: Uint8Array }>();
@@ -19,75 +21,50 @@ export class MemoryImageStore implements ImageStore {
   }
 }
 
-export type Caps = { session: number; day: number; total?: number };
-export const DEFAULT_CAPS: Record<Meter, Caps> = {
-  world: { session: 2, day: 10, total: 30 },
-  image: { session: 8, day: 150 },
-  llm: { session: 40, day: 1500 },
-  tts: { session: 40, day: 1500 },
-  stt: { session: 20, day: 750 },
-  live: { session: 30, day: 180 },
-};
+export { DEFAULT_CAPS };
 
 /**
- * A counter that follows the `SpendGuard` interface for one process: a session cap, a day cap and, for
- * `world`, a total cap, each counting reserved plus committed units; a ticket can be committed or released
- * once and further calls change nothing. It ignores `ipHash` and the 30-minute expiry. The real one is a
- * Durable Object (world-pipeline 4.1).
+ * `SpendGuard` for one process, for tests: the real `SpendLedger` over a `Map`, with a clock the test controls
+ * (`commit`, `release` and `remaining` have no time of their own to pass). The Durable Object is `do/spend-guard.ts`.
  */
 export class MemorySpendGuard implements SpendGuard {
-  killed = false;
-  private next = 0;
-  private readonly tickets = new Map<string, { ticket: SpendTicket; state: "reserved" | "committed" | "released" }>();
+  readonly kv = new MapKv();
+  private readonly ledger: SpendLedger;
+  /** Every `reserve`, as `meter:sessionId`, granted or not. */
   readonly reserveCalls: string[] = [];
-  constructor(private readonly caps: Record<Meter, Caps> = DEFAULT_CAPS) {}
 
-  private used(meter: Meter, sessionId?: string): number {
-    let n = 0;
-    for (const { ticket, state } of this.tickets.values()) {
-      if (state === "released" || ticket.meter !== meter) continue;
-      if (sessionId === undefined || ticket.sessionId === sessionId) n++;
-    }
-    return n;
+  constructor(caps: CapTable = DEFAULT_CAPS, private readonly clock: () => number = Date.now) {
+    this.ledger = new SpendLedger(this.kv, caps, () => crypto.getRandomValues(new Uint8Array(16)));
+  }
+
+  /** The kill switch for new worlds. */
+  set killed(on: boolean) {
+    this.kv.data.set("kill", on);
   }
 
   async reserve(req: { meter: Meter; sessionId: string; ipHash: string; now: number }): Promise<ReserveResult> {
     this.reserveCalls.push(`${req.meter}:${req.sessionId}`);
-    const caps = this.caps[req.meter];
-    if (this.killed) return { ok: false, reason: "killed" };
-    if (this.used(req.meter, req.sessionId) >= caps.session) return { ok: false, reason: "session" };
-    if (this.used(req.meter) >= caps.day) return { ok: false, reason: "day" };
-    if (caps.total !== undefined && this.used(req.meter) >= caps.total) return { ok: false, reason: "total" };
-    const ticket: SpendTicket = { id: `t-${++this.next}`, meter: req.meter, sessionId: req.sessionId, issuedAt: req.now };
-    this.tickets.set(ticket.id, { ticket, state: "reserved" });
-    return { ok: true, ticket };
+    return this.ledger.reserve(req);
+  }
+  commit(ticket: SpendTicket): Promise<void> {
+    return this.ledger.commit(ticket, this.clock());
+  }
+  release(ticket: SpendTicket): Promise<void> {
+    return this.ledger.release(ticket, this.clock());
+  }
+  remaining(sessionId: string, ipHash: string): Promise<Remaining> {
+    return this.ledger.remaining(sessionId, ipHash, this.clock());
+  }
+  status() {
+    return this.ledger.status(this.clock());
   }
 
-  async commit(ticket: SpendTicket): Promise<void> {
-    const t = this.tickets.get(ticket.id);
-    if (t?.state === "reserved") t.state = "committed";
-  }
-
-  async release(ticket: SpendTicket): Promise<void> {
-    const t = this.tickets.get(ticket.id);
-    if (t?.state === "reserved") t.state = "released";
-  }
-
-  async remaining(sessionId: string): Promise<Remaining> {
-    const out = {} as Remaining;
-    for (const m of METERS) {
-      const c = this.caps[m];
-      out[m] = Math.max(0, Math.min(c.session - this.used(m, sessionId), c.day - this.used(m), (c.total ?? Infinity) - this.used(m)));
-    }
-    return out;
-  }
-
-  /** Units used (reserved or committed) on a meter, for tests. */
-  usedOn(meter: Meter, sessionId?: string): number {
-    return this.used(meter, sessionId);
+  /** Units a Session has reserved or committed on a meter, for tests. */
+  usedOn(meter: Meter, sessionId: string): number {
+    return (this.kv.data.get(`ses:${sessionId}`) as { n: Partial<Record<Meter, number>> } | undefined)?.n[meter] ?? 0;
   }
   stateOf(ticketId: string): string | undefined {
-    return this.tickets.get(ticketId)?.state;
+    return (this.kv.data.get(`tk:${ticketId}`) as { state: string } | undefined)?.state;
   }
 }
 

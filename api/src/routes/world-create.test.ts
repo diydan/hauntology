@@ -1,5 +1,6 @@
 import { verifyConfirm } from "@hauntology/shared/world/confirm-token";
 import { describe, expect, it } from "vitest";
+import type { CapTable } from "@hauntology/shared/world/spend-ledger";
 import { FakeTurnstile, MemoryImageStore, MemorySpendGuard, RecordingStarter, DEFAULT_CAPS } from "../worlds/fakes";
 import type { ImageInfo } from "../worlds/ports";
 import { NOW, SECRET, worldsKit, type Visitor } from "../worlds/test-kit";
@@ -7,12 +8,12 @@ import { NOW, SECRET, worldsKit, type Visitor } from "../worlds/test-kit";
 const HASH = "ab".repeat(32);
 const CLOCK = { t: NOW };
 
-type Options = { guard?: boolean; starter?: boolean; turnstile?: FakeTurnstile | null; env?: Record<string, string> };
+type Options = { guard?: boolean; starter?: boolean; turnstile?: FakeTurnstile | null; env?: Record<string, string>; caps?: CapTable };
 
 function setup(opts: Options = {}) {
   CLOCK.t = NOW;
   const images = new MemoryImageStore();
-  const guard = new MemorySpendGuard();
+  const guard = new MemorySpendGuard(opts.caps ?? DEFAULT_CAPS, () => CLOCK.t);
   const starter = new RecordingStarter();
   const turnstile = opts.turnstile === undefined ? new FakeTurnstile() : opts.turnstile;
   const kit = worldsKit(() => CLOCK.t, {
@@ -419,15 +420,13 @@ describe("POST /api/worlds", () => {
       expect(third.status).toBe(429);
       expect(t.kit.store.records.size).toBe(2);
 
-      const day = setup();
-      (day.guard as unknown as { caps: typeof DEFAULT_CAPS }).caps = { ...DEFAULT_CAPS, world: { session: 5, day: 1, total: 30 } };
+      const day = setup({ caps: { ...DEFAULT_CAPS, world: { session: 5, day: 1, total: 30 } } });
       const d = await day.kit.visitor();
       day.addImage(d, "img-1"); day.addImage(d, "img-22");
       await day.enter(d, "img-1");
       expect((await day.enter(d, "img-22")).json).toEqual({ ok: false, code: "quota_day" });
 
-      const total = setup();
-      (total.guard as unknown as { caps: typeof DEFAULT_CAPS }).caps = { ...DEFAULT_CAPS, world: { session: 5, day: 5, total: 1 } };
+      const total = setup({ caps: { ...DEFAULT_CAPS, world: { session: 5, day: 5, total: 1 } } });
       const w = await total.kit.visitor();
       total.addImage(w, "img-1"); total.addImage(w, "img-22");
       await total.enter(w, "img-1");
