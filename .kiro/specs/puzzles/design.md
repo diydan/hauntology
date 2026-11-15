@@ -584,3 +584,24 @@ For every Place and every answer text the game can make, the ink is at least 4.5
 ### Property 31: A clip is blank at its Place
 For every clip that has a Place, every frame of the Place's window carries no mark at the Place, and the clip's entry in `PROVENANCE.md` names its model, date, prompt and take when a model made it.
 **Validates: Requirements 22.3, 22.10**
+
+## Event lines over the Reel (2026-11-15)
+
+The game already speaks at the moments the Reel plays: a Haunt Event fires when the Haunt first reaches 3, 6 or 9 below the maximum (`party-mode` 11.2), and the Whisper says its line (`docs/story/party-lines.md`). The footage gives that line a picture. It adds no voice of its own.
+
+The shot comes from the level (`reelShot`) and the Event kind is drawn from four by the seed, or chosen by a human Poltergeist within 15 seconds, so a shot cannot know which kind it will sit under (twelve pairs for each maximum). So the two are kept apart: the Event shots are **mood shots** that show no kind, and the line carries the kind.
+
+| Event | Whisper line | What the Reel does |
+|---|---|---|
+| Cold Spot | `haunt.cold-spot` | Nothing extra. |
+| Blackout | `haunt.blackout` | The shot dims with the Host scene, by the same amount over the same time. |
+| Restless | `haunt.restless` | Nothing extra. |
+| Lull | `haunt.lull` | The Haunt falls by one: the shot of the lower level is held on its last frame and not played, so the picture lets go with the line. |
+
+Timing: the shot plays when the Haunt reaches the level and the line plays when the Event applies, at once with no human Poltergeist and up to 15 seconds later with one. So every Event shot must look right held on its last frame, which is where most lines will land. Spoken narration is off by default (`party-mode` 7.6), the same line is always in the log, the live region and the captions, and the Master can mute, replay or skip a spoken line, so a Room without narration reads the same.
+
+Not added: a spoken line for the Reel itself; a line that describes the picture; a Lodger line over a shot (the Lodger never speaks before the Accusation, and never tells); lip-sync dubbing of a real actor's face. A line over a held frame may feel late; that is checked on a phone and a TV in spike puzzles 1.7.
+
+### Property 32: An Event line sits under its shot and changes nothing
+For every Event kind and every Event level of each maximum of 8, 10 and 12, the line is the one the Room already speaks for the kind (the Reel adds none), it plays once and only where narration is on, no shot's words name an Event kind, a Blackout dims the shot as it dims the scene, and a Lull shows the shot of the lower level held and not played; with narration or footage off the Event reads the same in the log.
+**Validates: Requirements 20.7, 20.8, 20.9**
