@@ -7,6 +7,8 @@
 // would use WebXR hit-test on Android and this tilt fallback on iPhone, where Safari has no WebXR.
 import * as THREE from './vendor/three.js';
 import { placeFor } from './ar-place.js';
+import { makeChain, stepChain, chainUnrest, deformVertices } from './ar-rag.js';
+import { roomAtPoint, lineupPos, slotPos, applyDrop } from './ar-marks.js';
 
 const $ = (s) => document.querySelector(s);
 const q = new URLSearchParams(location.search);
@@ -17,6 +19,8 @@ const easeOutBack = (t) => { const c = 1.70158; return 1 + (c + 1) * Math.pow(t 
 
 // ------------------------------------------------------------------ sample data
 const W = 0.115, D = 0.095, WALL = 0.004;
+const TRAY_Z = D + 0.017 + 0.0225 + 0.002; // the middle of the tray in front of the board, where the line-up stands
+const LIFT = 0.03; // how high a carried character's feet are
 const ROOMS = [
   { id: 'library', name: 'Library', c: 0, r: 0, floor: 0x35402f, rug: 0x5a2a2a },
   { id: 'study', name: 'Study', c: 1, r: 0, floor: 0x4a2c26, rug: 0x2a3a4a },
@@ -27,13 +31,13 @@ const ROOMS = [
 ];
 const roomAt = (id) => ROOMS.find((r) => r.id === id);
 const roomCenter = (r) => new THREE.Vector3((r.c - 1) * W, 0, (r.r - 0.5) * D);
-const SUSPECTS = [
-  { id: 'cora', name: 'Cora Bell', room: 'library', dx: -0.028, dz: 0.012 },
-  { id: 'vane', name: 'Lady Vane', room: 'hall', dx: -0.03, dz: -0.004 },
-  { id: 'pike', name: 'Dr. Pike', room: 'hall', dx: 0.028, dz: 0.012 },
-  { id: 'thorne', name: 'Thorne', room: 'kitchen', dx: 0.0, dz: 0.012 },
-  { id: 'percy', name: 'Percy', room: 'cellar', dx: 0.0, dz: 0.012 },
-  { id: 'dunmore', name: 'Dunmore', room: 'study', dx: -0.026, dz: 0.014 },
+const SUSPECTS = [ // they start in the line-up: no character has a place in the rules, so none stands in a room until you mark one
+  { id: 'cora', name: 'Cora Bell' },
+  { id: 'vane', name: 'Lady Vane' },
+  { id: 'pike', name: 'Dr. Pike' },
+  { id: 'thorne', name: 'Thorne' },
+  { id: 'percy', name: 'Percy' },
+  { id: 'dunmore', name: 'Dunmore' },
 ];
 const RELICS = [
   { id: 'key', name: 'The brass key', room: 'library', dx: 0.03, dz: 0.022 },
@@ -167,6 +171,8 @@ const relicGroups = [];
   slab.position.y = -0.007; board.add(slab);
   const inlay = new THREE.Mesh(new THREE.BoxGeometry(slabW + 0.006, 0.003, slabD + 0.006), std(0x9a7a3a, { metalness: 0.85, roughness: 0.35 }));
   inlay.position.y = -0.0125; board.add(inlay);
+  const tray = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.014, 0.045), std(0x2b1a10, { roughness: 0.55 })); // the line-up stands on this
+  tray.position.set(0, -0.007, TRAY_Z); board.add(tray);
 
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.42), new THREE.MeshBasicMaterial({
     map: canvasTex(256, 180, (g, w, h) => { g.shadowColor = 'rgba(0,0,0,.95)'; g.shadowBlur = 34; g.fillStyle = '#000'; g.fillRect(w * 0.22, h * 0.22, w * 0.56, h * 0.56); }),
@@ -244,16 +250,19 @@ async function buildFigures() {
   const ringTex = canvasTex(128, 128, (g, w, h) => { g.strokeStyle = 'rgba(185,166,255,.95)'; g.lineWidth = 7; g.shadowColor = 'rgba(185,166,255,1)'; g.shadowBlur = 14; g.beginPath(); g.arc(w / 2, h / 2, w * 0.36, 0, 7); g.stroke(); });
   await Promise.all(SUSPECTS.map(async (s) => {
     const tex = await loadTex(`art/${s.id}.webp`);
-    const h = 0.105, w = h * (tex.image.width / tex.image.height);
+    const h = 0.105, w = h * (tex.image.width / tex.image.height), topY = h + 0.003;
     const g = new THREE.Group();
-    const c0 = roomPos[s.room]; g.position.set(c0.x + s.dx, 0.004, c0.z + s.dz);
+    const lp = lineupPos(SUSPECTS.indexOf(s), SUSPECTS.length, 0.062, TRAY_Z); g.position.set(lp.x, 0, lp.z);
     const base = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.003, 24), std(0x1a1410, { roughness: 0.4, metalness: 0.4 })); base.position.y = 0.0015; g.add(base);
-    const geo = new THREE.PlaneGeometry(w, h); geo.translate(0, h / 2 + 0.003, 0);
+    const geo = new THREE.PlaneGeometry(w, h, 1, 14); geo.translate(0, h / 2 + 0.003, 0); // 14 rows, so the picture can bend when it is carried
     const plane = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.04, side: THREE.DoubleSide, color: 0xdcd7cf, toneMapped: false }));
     plane.userData = { type: 'suspect', id: s.id }; g.add(plane); hit.push(plane);
     const ring = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.05), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false, opacity: 0 }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.0035; g.add(ring);
-    board.add(g); standees.push({ id: s.id, g, plane, ring, s });
+    const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: pillTex('maybe here', '#f2c879'), transparent: true, depthTest: false }));
+    badge.scale.set(0.06, 0.015, 1); badge.position.y = topY + 0.014; badge.renderOrder = 9; badge.visible = false; g.add(badge); // shows only while you have marked this character
+    board.add(g);
+    standees.push({ id: s.id, s, g, plane, ring, badge, w, h, topY, orig: geo.attributes.position.array.slice(), mode: 'idle', tx: lp.x, tz: lp.z, vy: 0, rig: null, phi: 0, settleT: 0, bounced: false });
   }));
 
   const wt = await whisperTex;
@@ -382,16 +391,16 @@ function place() {
 // ------------------------------------------------------------------ the card under the picture
 const cardT = $('#card-t'), cardP = $('#card-p');
 function say(t, p) { cardT.textContent = t; cardP.textContent = p; }
-const peopleIn = (room) => SUSPECTS.filter((s) => s.room === room).map((s) => s.name);
+const peopleIn = (room) => SUSPECTS.filter((s) => marks[s.id] === room).map((s) => s.name);
 function select(hitData) {
   for (const f of Object.values(floors)) f.material.emissive.setHex(0x000000);
   S.sel = hitData || null;
   if (!hitData) return say('Your private table', `Only your phone sees it. ${CLUES.length} clues hang around you: turn round and look for the ? rings.`);
-  if (hitData.type === 'suspect') { const s = SUSPECTS.find((x) => x.id === hitData.id); const note = NOTES.find((n) => n.room === s.room); say(s.name, `Standing in the ${roomAt(s.room).name}. ${note ? 'Your note there: ' + note.text + '.' : 'You have no note there.'}`); }
+  if (hitData.type === 'suspect') { const x = SUSPECTS.find((y) => y.id === hitData.id), r = marks[x.id] && roomAt(marks[x.id]); say(x.name, r ? `Your mark: maybe in the ${r.name}. Drag ${x.name} off the rooms to take it back.` : `In the line-up. Drag ${x.name} onto a room to leave your own mark there.`); }
   else if (hitData.type === 'room') {
     const r = roomAt(hitData.id); floors[r.id].material.emissive.setHex(0x3a2a18);
     const who = peopleIn(r.id), relics = RELICS.filter((x) => x.room === r.id).map((x) => x.name);
-    say(r.name, [who.length ? who.join(' and ') + ' here.' : 'Nobody here.', relics.length ? relics.join(', ') + ' is in this room.' : ''].join(' ').trim());
+    say(r.name, [who.length ? who.join(' and ') + (who.length > 1 ? ' are' : ' is') + ' marked here by you.' : 'No marks here.', relics.length ? relics.join(', ') + ' is in this room.' : ''].join(' ').trim());
   } else if (hitData.type === 'relic') say(RELICS.find((x) => x.id === hitData.id).name, 'A relic. One of these is what holds the ghost here.');
   else if (hitData.type === 'clue') { const o = clueObjs.find((x) => x.c.id === hitData.id); say(o.c.title, `It says ${o.c.text}.`); }
   else if (hitData.type === 'ghost') say('The Whisper', 'She is not on the TV. Only your phone shows her.');
@@ -399,10 +408,15 @@ function select(hitData) {
 
 // ------------------------------------------------------------------ input: drag to look, tap to pick
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
-let drag = null;
-glCanvas.addEventListener('pointerdown', (e) => { glCanvas.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now() }; });
+let drag = null, pick = null;
+glCanvas.addEventListener('pointerdown', (e) => { glCanvas.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t: performance.now() }; pick = carry ? null : standeeAt(e.clientX, e.clientY); });
 glCanvas.addEventListener('pointermove', (e) => {
   if (!drag) return;
+  if (carry) { moveCarry(e.clientX, e.clientY); return; } // a character is in your hand: the finger moves it, not the view
+  if (pick) { // the finger went down on a character: after a few pixels it picks the character up
+    if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 8) { if (startCarry(pick, e.clientX, e.clientY)) { moveCarry(e.clientX, e.clientY); return; } pick = null; }
+    return;
+  }
   const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
   if (S.tilt) return; // the phone itself is the controller
   const k = camera.fov * (Math.PI / 180) / stage.clientHeight;
@@ -410,6 +424,7 @@ glCanvas.addEventListener('pointermove', (e) => {
 });
 glCanvas.addEventListener('pointerup', (e) => {
   if (!drag) return;
+  if (carry) { endCarry(false); drag = null; pick = null; return; }
   const moved = Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy), dt = performance.now() - drag.t; drag = null;
   if (moved > 8 || dt > 500) return;
   const r = glCanvas.getBoundingClientRect();
@@ -421,7 +436,111 @@ glCanvas.addEventListener('pointerup', (e) => {
   const best = hits.find((h) => h.object.userData.type !== 'room') || hits[0];
   select(best ? best.object.userData : null);
 });
-glCanvas.addEventListener('pointercancel', () => { drag = null; });
+glCanvas.addEventListener('pointercancel', () => { if (carry) endCarry(true); drag = null; pick = null; });
+
+// ------------------------------------------------------------------ marks: drag a character onto a room to leave your own "maybe here"
+// The mark is yours alone: it lives on this phone, changes no rule and is never shown to anyone else. Drop a character on a room to mark it,
+// and anywhere else to take the mark back. While it is in your hand it hangs from your finger like a rag doll (rag-doll physics: js/ar-rag.js).
+const marks = {}; // suspect id -> room id
+let carry = null; // { s, grabX, grabZ, hx, hz, hover }
+const roomByCR = (c, r) => ROOMS.find((x) => x.c === c && x.r === r);
+const roomUnder = (x, z) => { const p = roomAtPoint(x, z, W, D); return p ? roomByCR(p.c, p.r) : null; };
+const groundAt = (x, z) => (roomUnder(x, z) ? 0.004 : 0); // the floors are 4 mm thick, the tray is flat
+const haptic = (v) => { if (!reduced && navigator.vibrate) navigator.vibrate(v); };
+const uOf = (s, pos) => pos.x * Math.cos(s.phi) - pos.z * Math.sin(s.phi); // sideways position along the picture's own direction
+function replaceMarks(next) { for (const k of Object.keys(marks)) delete marks[k]; Object.assign(marks, next); }
+function layout() { // where each character should stand: in the room it is marked on, else in the line-up
+  const count = {};
+  [...standees].sort((a, b) => SUSPECTS.findIndex((x) => x.id === a.id) - SUSPECTS.findIndex((x) => x.id === b.id)).forEach((s) => {
+    const r = marks[s.id] && roomAt(marks[s.id]);
+    if (r) { const k = (count[r.id] = count[r.id] || 0); count[r.id]++; const c = roomPos[r.id], o = slotPos(k, W, D); s.tx = c.x + o.x; s.tz = c.z + o.z; }
+    else { const lp = lineupPos(SUSPECTS.findIndex((x) => x.id === s.id), SUSPECTS.length, 0.062, TRAY_Z); s.tx = lp.x; s.tz = lp.z; }
+  });
+}
+function refreshBadges() { standees.forEach((s) => { s.badge.visible = S.notes && !!marks[s.id]; }); }
+const _plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), _inv = new THREE.Matrix4(), _hit = new THREE.Vector3();
+function fingerOnPlane(cx, cy, y) { // where the finger's ray meets a flat plane at height y above the board, in the board's own frame
+  const r = glCanvas.getBoundingClientRect();
+  ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  board.updateWorldMatrix(true, false); _inv.copy(board.matrixWorld).invert();
+  const local = ray.ray.clone().applyMatrix4(_inv); _plane.constant = -y;
+  return local.intersectPlane(_plane, _hit) ? _hit.clone() : null;
+}
+function standeeAt(cx, cy) {
+  const r = glCanvas.getBoundingClientRect();
+  ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(standees.map((s) => s.plane), false);
+  return hits.length ? standees.find((s) => s.plane === hits[0].object) : null;
+}
+const dropRing = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.05), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0.95, map: canvasTex(128, 128, (g, w, h) => {
+  g.strokeStyle = 'rgba(143,227,212,.95)'; g.lineWidth = 8; g.shadowColor = 'rgba(143,227,212,1)'; g.shadowBlur = 12; g.beginPath(); g.arc(w / 2, h / 2, w * 0.34, 0, 7); g.stroke();
+  g.fillStyle = 'rgba(143,227,212,.25)'; g.beginPath(); g.arc(w / 2, h / 2, w * 0.34, 0, 7); g.fill();
+}) }));
+dropRing.rotation.x = -Math.PI / 2; dropRing.visible = false; dropRing.renderOrder = 6; board.add(dropRing); // where the carried character will stand if you let go
+function setHover(room) { for (const f of Object.values(floors)) f.material.emissive.setHex(0); if (room) floors[room.id].material.emissive.setHex(0x2f5a52); }
+function startCarry(s, cx, cy) {
+  const P = fingerOnPlane(cx, cy, 0.004 + LIFT + s.topY); // the finger holds the head, so the body hangs below it
+  if (!P) return false;
+  carry = { s, grabX: s.g.position.x - P.x, grabZ: s.g.position.z - P.z, hx: s.g.position.x, hz: s.g.position.z, hover: null };
+  s.mode = 'held'; s.vy = 0; s.bounced = false;
+  if (!reduced) { s.phi = s.plane.rotation.y; s.rig = makeChain(7, s.h, uOf(s, s.g.position), s.g.position.y + s.topY); } // frozen facing while the body swings
+  haptic(12); select({ type: 'suspect', id: s.id });
+  return true;
+}
+function moveCarry(cx, cy) {
+  const P = fingerOnPlane(cx, cy, 0.004 + LIFT + carry.s.topY); if (!P) return;
+  carry.hx = clamp(P.x + carry.grabX, -1.5 * W - 0.02, 1.5 * W + 0.02); carry.hz = clamp(P.z + carry.grabZ, -D, TRAY_Z + 0.03);
+  const room = roomUnder(carry.hx, carry.hz);
+  if ((room && room.id) !== (carry.hover && carry.hover.id)) { carry.hover = room; setHover(room); haptic(5); }
+}
+function endCarry(cancelled) {
+  const s = carry.s, room = cancelled ? (marks[s.id] && roomAt(marks[s.id])) : roomUnder(carry.hx, carry.hz);
+  setHover(null);
+  replaceMarks(applyDrop(marks, s.id, room ? room.id : null)); layout(); refreshBadges();
+  carry = null; s.vy = 0; s.settleT = 0; s.bounced = false;
+  if (reduced || !s.rig) { s.mode = 'idle'; s.rig = null; s.g.position.set(s.tx, groundAt(s.tx, s.tz), s.tz); } else s.mode = 'falling'; // reduced motion: no fall, no wobble
+  haptic([14, 40, 10]);
+  select({ type: 'suspect', id: s.id });
+}
+function rigStep(s, dt, pinned, restoreK) { // swing the body and bend the picture along it
+  const g = s.g.position, u = uOf(s, g);
+  stepChain(s.rig, dt, { holdX: u, holdY: g.y + s.topY, pinned, restoreK, restTopX: u, restTopY: g.y + s.topY, floorY: groundAt(g.x, g.z) + 0.003 });
+  const pos = s.plane.geometry.attributes.position; deformVertices(s.rig, s.orig, pos.array, s.topY, s.h, u, g.y); pos.needsUpdate = true;
+}
+function updateStandee(s, t, dt) {
+  const g = s.g, on = S.sel && S.sel.type === 'suspect' && S.sel.id === s.id, ease = (k) => Math.min(1, dt * k);
+  s.ring.material.opacity += (((on || s.mode === 'held') ? 0.9 : 0) - s.ring.material.opacity) * ease(10);
+  const face = () => { const local = g.worldToLocal(_w.clone()); s.plane.rotation.y = Math.atan2(local.x, local.z); }; // a standee turns about its up axis only
+  if (s.mode === 'idle') {
+    if (Math.abs(g.position.x - s.tx) > 1e-4 || Math.abs(g.position.z - s.tz) > 1e-4) { g.position.x += (s.tx - g.position.x) * ease(10); g.position.z += (s.tz - g.position.z) * ease(10); } // glide to a new place
+    g.position.y = groundAt(g.position.x, g.position.z);
+    face(); s.plane.position.y += ((on ? 0.006 : 0) - s.plane.position.y) * ease(10);
+    return;
+  }
+  s.plane.position.y = 0;
+  if (s.mode === 'held') {
+    g.position.x += (carry.hx - g.position.x) * ease(s.rig ? 16 : 40); g.position.z += (carry.hz - g.position.z) * ease(s.rig ? 16 : 40);
+    g.position.y += (groundAt(g.position.x, g.position.z) + LIFT - g.position.y) * ease(14);
+    if (s.rig) { s.plane.rotation.y = s.phi; rigStep(s, dt, true, 0); } else face();
+    return;
+  }
+  if (s.mode === 'falling') { // let go: drop, bounce once, go limp
+    g.position.x += (s.tx - g.position.x) * ease(16); g.position.z += (s.tz - g.position.z) * ease(16);
+    s.vy -= 2.4 * dt; g.position.y += s.vy * dt;
+    const floor = groundAt(g.position.x, g.position.z);
+    if (g.position.y <= floor) { g.position.y = floor; if (s.vy < -0.25 && !s.bounced) { s.vy = -s.vy * 0.28; s.bounced = true; } else { s.vy = 0; s.mode = 'settle'; s.settleT = 0; } }
+    rigStep(s, dt, false, 0);
+    return;
+  }
+  // settle: stand back up, with a little wobble, then go back to the flat picture
+  s.settleT += dt;
+  g.position.x += (s.tx - g.position.x) * ease(16); g.position.z += (s.tz - g.position.z) * ease(16); g.position.y = groundAt(g.position.x, g.position.z);
+  rigStep(s, dt, false, Math.min(1, s.settleT / 0.45));
+  const { off, speed } = chainUnrest(s.rig, uOf(s, g.position), g.position.y + s.topY);
+  if (s.settleT > 0.7 && off < 0.0012 && speed < 8e-5) { const pos = s.plane.geometry.attributes.position; pos.array.set(s.orig); pos.needsUpdate = true; s.rig = null; s.mode = 'idle'; }
+}
 
 // ------------------------------------------------------------------ phone sensors
 const _e = new THREE.Euler(), _q1 = new THREE.Quaternion(-Math.SQRT1_2, 0, 0, Math.SQRT1_2), _q0 = new THREE.Quaternion(), _z = new THREE.Vector3(0, 0, 1);
@@ -479,7 +598,7 @@ const sheet = $('#sheet'), card = $('#card'), arrowEl = $('#arrow'), boardArrowE
 function openSheet(on) { sheet.hidden = !on; card.hidden = on; $('#b-clues').setAttribute('aria-pressed', String(on)); }
 $('#b-clues').addEventListener('click', () => openSheet(sheet.hidden));
 $('#sheet-close').addEventListener('click', () => openSheet(false));
-$('#t-notes').addEventListener('click', () => { S.notes = !S.notes; $('#t-notes').setAttribute('aria-pressed', String(S.notes)); $('#t-notes').textContent = S.notes ? 'My marks: on' : 'My marks: off'; notesGroup.visible = S.notes; });
+$('#t-notes').addEventListener('click', () => { S.notes = !S.notes; $('#t-notes').setAttribute('aria-pressed', String(S.notes)); $('#t-notes').textContent = S.notes ? 'My marks: on' : 'My marks: off'; notesGroup.visible = S.notes; refreshBadges(); });
 $('#t-list').addEventListener('click', () => { clueObjs.forEach((o) => markFound(o, true)); say('Every clue is shown as text', 'Open Clues to read them. You did not have to look around.'); });
 
 // ------------------------------------------------------------------ frame loop
@@ -549,12 +668,8 @@ function frame(now) {
 
   // suspects face you (around the up axis only, like a standee), the selected one glows
   camera.getWorldPosition(_w);
-  for (const s of standees) {
-    const local = s.g.worldToLocal(_w.clone()); s.plane.rotation.y = Math.atan2(local.x, local.z);
-    const on = S.sel && S.sel.type === 'suspect' && S.sel.id === s.id;
-    s.ring.material.opacity += ((on ? 0.9 : 0) - s.ring.material.opacity) * Math.min(1, dt * 10);
-    s.plane.position.y += ((on ? 0.006 : 0) - s.plane.position.y) * Math.min(1, dt * 10);
-  }
+  for (const s of standees) updateStandee(s, t, dt);
+  dropRing.visible = !!carry; if (carry) dropRing.position.set(carry.hx, groundAt(carry.hx, carry.hz) + 0.002, carry.hz);
 
   // the Whisper: drifts room to room, bobs, flickers, trails mist
   if (ghost) {
@@ -582,6 +697,9 @@ resize();
 _eu.set(S.pitch, S.yaw, 0, 'YXZ'); camera.quaternion.setFromEuler(_eu);
 place();
 buildFigures().then(() => {
+  layout(); standees.forEach((x) => x.g.position.set(x.tx, 0, x.tz));
+  const mk = q.get('mark'); // ?mark=cora:kitchen,pike:hall puts those marks on at the start (for testing)
+  if (mk) { const next = {}; mk.split(',').forEach((pair) => { const [id, room] = pair.split(':'); if (SUSPECTS.some((x) => x.id === id) && roomAt(room)) next[id] = room; }); replaceMarks(next); layout(); standees.forEach((x) => x.g.position.set(x.tx, groundAt(x.tx, x.tz), x.tz)); refreshBadges(); }
   const want = q.get('sel');
   if (want) { const s = SUSPECTS.find((x) => x.id === want); select(s ? { type: 'suspect', id: s.id } : { type: want === 'ghost' ? 'ghost' : 'room', id: want }); }
 }).catch((err) => say('Could not load the figures', String(err && err.message || err)));
@@ -594,4 +712,5 @@ raf = requestAnimationFrame(frame);
   if (q.get('sheet')) openSheet(true);
 }
 renderClues();
-window.__ar = { place, aim: aimCamera, select, S, camera, anchor, ghost: () => ghost, standees, floors, hit, clues: clueObjs, markFound };
+window.__ar = { step: (dt, n = 1) => { for (let i = 0; i < n; i++) { camera.getWorldPosition(_w); for (const s of standees) updateStandee(s, 0, dt); } }, // test hook: advance the characters without drawing
+  marks, layout, place, aim: aimCamera, select, S, camera, anchor, ghost: () => ghost, standees, floors, hit, clues: clueObjs, markFound };

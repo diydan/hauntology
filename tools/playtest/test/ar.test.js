@@ -21,9 +21,10 @@ test('the vendored three.js exports every name ar.js uses', () => {
 });
 
 test('every art file the page loads exists, and is small enough for a phone', () => {
-  const ids = [...js.matchAll(/\{ id: '([a-z]+)', name: '[^']+', room:/g)].map((m) => m[1]);
+  const block = js.match(/const SUSPECTS = \[([\s\S]*?)\];/)[1];
+  const ids = [...block.matchAll(/id: '([a-z]+)'/g)].map((m) => m[1]);
   assert.ok(ids.length >= 6, 'six Suspects found');
-  for (const id of [...ids.filter((i) => !['key', 'candle', 'locket'].includes(i)), 'whisper']) {
+  for (const id of [...ids, 'whisper']) {
     const f = resolve(root, `art/${id}.webp`);
     assert.ok(existsSync(f), `art/${id}.webp`);
     assert.ok(readFileSync(f).length < 120_000, `art/${id}.webp stays under 120 kB`);
@@ -105,4 +106,15 @@ test('the clue hint is a ring with a question mark that shows on any picture, an
   assert.match(js, /const hintTex = canvasTex/);
   assert.doesNotMatch(js, /map: hintTex[^)]*AdditiveBlending/, 'not an additive glow, which vanishes over a camera picture');
   assert.match(read('ar.html'), /id="arrow-board"/);
+});
+
+test('a character can be dragged onto a room to leave a private mark, with a rag-doll swing that reduced motion leaves out', () => {
+  assert.match(js, /import \{[^}]*makeChain[^}]*\} from '\.\/ar-rag\.js'/);
+  assert.match(js, /import \{[^}]*applyDrop[^}]*\} from '\.\/ar-marks\.js'/);
+  assert.match(js, /replaceMarks\(applyDrop\(marks, s\.id, room \? room\.id : null\)\)/, 'a drop on a room marks it, a drop elsewhere takes the mark back');
+  assert.match(js, /if \(!reduced\) \{ s\.phi/, 'no rag doll under reduced motion');
+  assert.match(js, /if \(reduced \|\| !s\.rig\) \{ s\.mode = 'idle'/, 'no fall or wobble under reduced motion');
+  const block = js.match(/const SUSPECTS = \[([\s\S]*?)\];/)[1];
+  assert.doesNotMatch(block, /room:/, 'no character starts in a room (no Suspect has a place in the rules)');
+  assert.doesNotMatch(js, /localStorage|sessionStorage|fetch\(/, 'a mark is kept on the phone only and nothing is sent or stored');
 });
