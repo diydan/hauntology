@@ -88,7 +88,7 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - **Validates: Requirements 8.1, 8.4**
   - [ ] 5.6 Phone: the carry and the drop in `SpiritTable.tsx` (an 8 pixel threshold, the finger-held head, the lit room, the landing ring, the buzz, the card text, no swing under reduced motion)
     - _Requirements: 8.1, 8.2, 8.4_
-  - [ ] 5.7 The Theory mark in the notebook, drawn as a standee in its room with a "maybe here" tag for its owner only, and the Table list's room choice per Suspect (48 pixel targets)
+  - [ ] 5.7 The Theory mark in the notebook (the notebook side is `party-mode` 4.7 and 4.8, tasks 2.120 and 9.26), drawn as a standee in its room with a "maybe here" tag for its owner only, and the Table list's room choice per Suspect (48 pixel targets)
     - _Requirements: 8.2, 8.3, 8.5_
   - [ ] 5.8 Checks: a Theory mark is never sent or stored by the Room, a real-browser drag at 320 by 568 and 390 by 844 pixels, and a mutation pass on `applyDrop` and `stepChain`
     - _Requirements: 8.3, 8.5_

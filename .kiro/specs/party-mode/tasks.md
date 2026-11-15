@@ -337,6 +337,11 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.119 Write property test for the Seat Portrait look (mono only after joining the haunting, public data only, no Suspect card, speaker badge or narrator ever mono)
     - **Property 62: A Seat Portrait is black and white exactly when its Player has joined the haunting**
     - **Validates: Requirements 19.8, 19.9**
+  - [ ] 2.120 `theory.ts`: `setTheory(theory, suspect, zone | null, zones)` and `theoryOf(notebook)`, kept apart from `autoMarks`, with a source-level check that nothing outside the notebook reads a Theory mark and that no message, view or prompt carries one
+    - _Requirements: 4.7, 4.8_
+  - [ ]* 2.121 Write property test for Theory marks (the player's own, change nothing)
+    - **Property 63: Theory marks are the player's own and change nothing**
+    - **Validates: Requirements 4.7, 4.8**
 
 - [ ] 3. Print module (`shared/src/print/`)
   - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
@@ -507,6 +512,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 3.10, 3.11, 3.12, 3.13, 3.14_
   - [ ] 9.25 Controller, Host HUD and ending screen: draw each Player's Seat Portrait (their contributed Ghost Profile in full colour, or a nickname chip) and cross-fade it to black and white, 0.6 s at most and a cut under reduced motion, when `seatLook` turns `'mono'` after the Becoming; the nickname row says "joined the haunting" in words; Suspect cards, the Lodger badge and the narrators never change colour
     - _Requirements: 19.8, 19.9_
+  - [ ] 9.26 Controller notebook: Theory marks, a choice of the six Zones or "No mark" for each Suspect (48 pixel targets), stored on the device with the grid, shared with the Spirit table through `setTheory`, nothing sent
+    - _Requirements: 4.7, 4.8_
 
 - [ ] 10. Web: Display (`web/src/party/display/`)
   - [ ] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected

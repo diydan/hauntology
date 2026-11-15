@@ -82,7 +82,7 @@ Pictures come from the Seat Portraits and Ghost Profiles the Room already holds,
 | `party-mode` Controller settings | One device switch, "Spirit table", off by default, next to the Spirit lens switch. |
 | `party-mode` Spirit lens (16.4) | None: the lens keeps "neither the camera nor markers". |
 | `puzzles` Requirement 15 | None: the Clue ring only has to hang round the same viewpoint (7.1). |
-| `party-mode` notebook (Controller) | One more local mark: a Theory mark, "this Suspect, maybe in this Zone", at most one per Suspect, never sent. The notebook's existing marks (ruled out, maybe) are unchanged. |
+| `party-mode` notebook (Controller) | **Done 2026-11-15:** `party-mode` Requirements 4.7 and 4.8, Property 63 and tasks 2.120, 2.121 and 9.26 add the Theory mark ("this Suspect, maybe in this Zone", at most one per Suspect, never sent). The grid's own marks (has, lacks, maybe) are unchanged. |
 | `shared/src/app/csp.ts` | `Permissions-Policy` now allows `camera=(self)` (done 2026-11-15, with its tests). |
 | `tech.md` | The unverified assumptions below; `SPIRIT_TABLE_ENABLED`. |
 | `structure.md` | The `shared/src/table/` and `web/src/table/` folders. |
