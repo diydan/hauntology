@@ -34,13 +34,13 @@ module prop_01_lever_arm() {
       }
     }
 
-    // 4. SG90 Horn Pocket on Top Face (0.3 mm clearance for standard single servo arm + M2 screw holes)
+    // 4. SG90 Horn Pocket on Top Face (uses clear_fit for press-fit single servo arm + M2 screw holes)
     translate([0, 0, -0.1])
-      cylinder(h = 6.5, d = 5.2);
+      cylinder(h = 6.5, d = sg90_spline_d);
     translate([0, 0, 3.6])
       hull() {
-        cylinder(h = 3.0, d = 7.6);
-        translate([16.0, 0, 0]) cylinder(h = 3.0, d = 4.6);
+        cylinder(h = 3.0, d = sg90_horn_hub_d);
+        translate([16.0, 0, 0]) cylinder(h = 3.0, d = sg90_horn_tip_d);
       }
     // M2 horn attachment holes
     for (hx = [7.0, 13.0]) {

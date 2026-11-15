@@ -1,8 +1,8 @@
 // Hauntology Tabletop Print Kit — Prop #20: Cut Wires Board (5 Terminal Sockets, 5 Wire Anchors & SET Bezel)
 // Colour: Ink (#0b0d10, matte black)
-// Size: 124 W x 56 D x 14 H mm (11 pieces arranged on one print bed)
+// Size: 138 W x 48 D x 14 H mm (11 separate pieces arranged on one print bed with zero overlap)
 // Mechanism: Press-fit into the Cut Wires Board panel; terminals receive the 5 resistor plug heads
-// Print orientation: Flat on flange base (Z = 0), zero supports.
+// Print orientation: Flat on flange base (Z = 0), zero supports (11 connected components).
 
 include <_common.scad>
 
@@ -42,20 +42,20 @@ module single_wire_anchor() {
 }
 
 module prop_20_terminal_blocks() {
-  // 1. Five Right-Side Terminal Socket Collars (Y = -14, X = -48..48)
+  // 1. Five Right-Side Terminal Socket Collars (Y = -14, X = -54..42)
   for (i = [0 : 4]) {
-    translate([-48.0 + i * 24.0, -14.0, 0])
+    translate([-54.0 + i * 24.0, -14.0, 0])
       single_terminal_socket();
   }
 
-  // 2. Five Left-Side Wire Anchor Blocks (Y = 12, X = -48..32)
+  // 2. Five Left-Side Wire Anchor Blocks (Y = 12, X = -54..26)
   for (i = [0 : 4]) {
-    translate([-48.0 + i * 20.0, 12.0, 0])
+    translate([-54.0 + i * 20.0, 12.0, 0])
       single_wire_anchor();
   }
 
-  // 3. SET Pushbutton Trim Bezel Ring (at X = 44, Y = 12; 24 mm OD, 16.4 mm ID)
-  translate([44.0, 12.0, 0])
+  // 3. SET Pushbutton Trim Bezel Ring (at X = 54, Y = 12; 24 mm OD -> X = 42..66, 9.2 mm clear of 5th wire anchor at X = 26!)
+  translate([54.0, 12.0, 0])
   difference() {
     cylinder(h = 3.6, d1 = 24.0, d2 = 21.6);
     translate([0, 0, -0.5])

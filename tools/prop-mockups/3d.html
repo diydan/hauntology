@@ -188,24 +188,25 @@
 <header>
   <div>
     <h1>Hauntology — 3D Print Kit &amp; Tabletop Props Showcase</h1>
-    <p>42 watertight 2-manifold binary STLs (&le; 180&times;180 mm bed, 1 spool colour per piece) + 7 printable 1:1 SVG sticker sheets</p>
+    <p>42 watertight 2-manifold binary STLs (&le; 180&times;180 mm bed, support-free) + 7 printable 1:1 SVG sticker sheets</p>
   </div>
   <div class="nav-links">
     <a href="./index.html">&larr; Interactive 2D/3D Prop Mockups</a>
+    <a href="./viewer.html">Interactive 3D STL Viewer</a>
     <a href="../../print/README.md">Print Guide &amp; BOM (README.md)</a>
   </div>
 </header>
 
 <main>
   <div class="summary-bar">
-    <div class="stat"><strong>42 STLs</strong><span>All verified watertight, 2-manifold, positive volume</span></div>
+    <div class="stat"><strong>42 STLs</strong><span>All verified watertight, 2-manifold, support-free</span></div>
     <div class="stat"><strong>&le; 180 &times; 180 mm</strong><span>Fits Bambu A1 Mini, Prusa MINI+, Ender 3</span></div>
-    <div class="stat"><strong>6 Spools</strong><span>Dark Iron, Brass, Mint, Bone, Crimson, Wood</span></div>
+    <div class="stat"><strong>6 Core + Seat Colours</strong><span>Iron, Brass, Mint, Bone, Silver, Crimson, Wood + 6 Suspects</span></div>
     <div class="stat"><strong>0.4 mm Pockets</strong><span>Recessed 1:1 SVG stickers never peel at edges</span></div>
-    <div class="stat"><strong>SG90 + ESP32</strong><span>Built-in servo cradles, horn splines &amp; USB-C ports</span></div>
+    <div class="stat"><strong>SG90 + ESP32</strong><span>Built-in servo cradles, keyed horn recesses &amp; DevKitC V4 mounts</span></div>
   </div>
 
-  <h2>1. Six Sculpted Relic Miniatures &amp; the Relic Token Base (7 STLs; the QR is a sticker)</h2>
+  <h2>1. Six Sculpted Relic Miniatures &amp; the Relic Token Base (7 STLs; Keyed Centre Connector)</h2>
   <div class="grid" id="grid-relics"></div>
 
   <h2>2. Pepper's-Ghost Pyramid Holder &amp; Suspect Standees (8 STLs)</h2>
@@ -239,7 +240,7 @@
     <div class="sticker-card">
       <img src="../../print/stickers/stickers-prop-09-curtain-and-12-rattle.svg" alt="Prop 09 and 12 Stickers">
       <h3><a href="../../print/stickers/stickers-prop-09-curtain-and-12-rattle.svg" style="color:var(--mint)">stickers-prop-09-curtain-and-12-rattle.svg</a></h3>
-      <p>Prop #9 Curtain Reveal ("THE LODGER" header, pilasters, gold tassel fringes) &amp; Prop #12 Rattle (bat eyes, doll face).</p>
+      <p>Prop #9 Curtain Reveal ("THE SOLUTION" header, pilasters, gold tassel fringes) &amp; Prop #12 Rattle (bat eyes, doll face).</p>
     </div>
     <div class="sticker-card">
       <img src="../../print/stickers/stickers-prop-15-relic-vault.svg" alt="Prop 15 Stickers">
@@ -256,63 +257,70 @@
 
 <script>
 const SPOOLS = {
-  iron:    { name: "Dark Iron",     bg: "#262229", fg: "#ece5d5" },
-  brass:   { name: "Antique Brass", bg: "#d4a84b", fg: "#181209" },
-  mint:    { name: "Ectoplasm Mint",bg: "#5ce6b8", fg: "#092118" },
-  bone:    { name: "Bone / Ivory",  bg: "#e8dec8", fg: "#1b181f" },
-  crimson: { name: "Crimson",       bg: "#d43838", fg: "#fff5f5" },
-  wood:    { name: "Warm Wood",     bg: "#422818", fg: "#f5eadc" },
+  iron:       { name: "Dark Iron",        bg: "#262229", fg: "#ece5d5" },
+  brass:      { name: "Antique Brass",    bg: "#d4a84b", fg: "#181209" },
+  mint:       { name: "Ectoplasm Mint",   bg: "#5ce6b8", fg: "#092118" },
+  bone:       { name: "Bone / Ivory",     bg: "#e8dec8", fg: "#1b181f" },
+  silver:     { name: "Tarnished Silver", bg: "#c9c9d4", fg: "#181820" },
+  crimson:    { name: "Crimson",          bg: "#d43838", fg: "#fff5f5" },
+  wood:       { name: "Warm Wood",        bg: "#422818", fg: "#f5eadc" },
+  seatRed:    { name: "Seat 1 Crimson",   bg: "#ff6b6b", fg: "#1f0909" },
+  seatBlue:   { name: "Seat 2 Azure",     bg: "#6bb6ff", fg: "#08192b" },
+  seatYellow: { name: "Seat 3 Amber",     bg: "#ffd86b", fg: "#241b05" },
+  seatGreen:  { name: "Seat 4 Emerald",   bg: "#6be39a", fg: "#072112" },
+  seatViolet: { name: "Seat 5 Amethyst",  bg: "#c49bff", fg: "#190d2b" },
+  seatOrange: { name: "Seat 6 Copper",    bg: "#ffb27a", fg: "#261205" },
 };
 
 const RELICS = [
-  ["relic-music-box",    "brass", "38.1 × 33.0 × 49.9 mm", "Relic r1: Open Victorian music box with pinned cylinder, tuning comb, winding key & keyhole pocket."],
-  ["relic-wax-hand",     "bone",  "33.0 × 33.0 × 54.5 mm", "Relic r2: Sculpted fortune-teller palmistry hand with wax drips & recessed palm medallion pocket."],
-  ["relic-locket",       "brass", "33.0 × 33.0 × 50.8 mm", "Relic r3: Ribbed Victorian oval locket with bow bail, hinge barrel & recessed oval cameo pocket."],
-  ["relic-planchette",   "wood",  "33.0 × 33.0 × 45.8 mm", "Relic r4: Heart-shaped spirit-board pointer on 3 caster legs with central magnifier oculus."],
-  ["relic-silver-key",   "bone",  "33.0 × 33.0 × 55.3 mm", "Relic r5: Gothic skeleton key with trefoil clover bow, collared stem & notched ward bit."],
-  ["relic-bell",         "brass", "33.0 × 33.0 × 51.0 mm", "Relic r6: Flared Victorian service bell with gadrooned dome, clapper ball & turned handle."],
-  ["relic-token-pocket", "iron",  "40.0 × 40.0 × 6.0 mm",  "Universal 40×40 mm bevelled token base with 0.4 mm top QR sticker pocket & bottom magnet recess."],
+  ["relic-music-box",    "brass",  "36.4 × 27.1 × 47.9 mm", "Relic r1: Open Victorian music box with pinned cylinder, tuning comb, winding key & Ø13.6 mm keyed centre connector."],
+  ["relic-wax-hand",     "bone",   "26.1 × 24.8 × 52.5 mm", "Relic r2: Sculpted palmistry hand with spread fingers, smooth wrist (add real wax), palm medallion pocket & centre connector."],
+  ["relic-locket",       "brass",  "28.3 × 18.0 × 48.8 mm", "Relic r3: Ribbed Victorian oval locket with bow bail, hinge barrel, oval cameo pocket & centre connector."],
+  ["relic-planchette",   "wood",   "28.8 × 18.4 × 43.8 mm", "Relic r4: Heart-shaped spirit-board pointer on 3 caster legs with magnifier oculus & centre connector."],
+  ["relic-silver-key",   "silver", "20.8 × 18.0 × 53.3 mm", "Relic r5: Gothic skeleton key with trefoil clover bow, collared stem, notched ward bit & centre connector."],
+  ["relic-bell",         "brass",  "28.0 × 28.0 × 49.0 mm", "Relic r6: Flared Victorian service bell with gadrooned dome, clapper ball, turned handle & centre connector."],
+  ["relic-token-pocket", "iron",   "40.0 × 40.0 × 6.0 mm",  "Universal 40×40 mm rounded token base with 0.4 mm top QR sticker pocket, Ø13.9 mm keyed centre Relic socket & magnet recess."],
 ];
 
 const STANDEES = [
-  ["pyramid-holder",     "iron",    "70.4 × 70.4 × 29.0 mm", "Parametric 45° Pepper's-ghost collar frame (60 mm base, 10 mm top) for 4 clear acetate trapezoids."],
-  ["standee-blank",      "bone",    "40.0 × 15.0 × 67.8 mm", "Gothic-arch Suspect standee with 0.4 mm recessed portrait & name strip pockets on both sides."],
-  ["standee-s1-percy",   "crimson", "40.0 × 15.0 × 70.0 mm", "Suspect s1 (Percy) embossed full-body silhouette standee."],
-  ["standee-s2-thorne",  "mint",    "40.0 × 15.0 × 70.0 mm", "Suspect s2 (Captain Thorne) embossed full-body silhouette standee."],
-  ["standee-s3-pike",    "brass",   "40.0 × 15.0 × 70.0 mm", "Suspect s3 (Dr. Pike) embossed full-body silhouette standee."],
-  ["standee-s4-cora",    "bone",    "40.0 × 15.0 × 70.0 mm", "Suspect s4 (Cora Bell) embossed full-body silhouette standee."],
-  ["standee-s5-vane",    "iron",    "40.0 × 15.0 × 70.0 mm", "Suspect s5 (Lady Vane) embossed full-body silhouette standee."],
-  ["standee-s6-dunmore", "wood",    "40.0 × 15.0 × 70.0 mm", "Suspect s6 (Mrs. Dunmore) embossed full-body silhouette standee."],
+  ["pyramid-holder",     "iron",       "70.4 × 70.4 × 29.0 mm", "Parametric 45° Pepper's-ghost collar frame (60 mm base, 10 mm top) for 4 clear acetate trapezoids."],
+  ["standee-blank",      "bone",       "40.0 × 15.0 × 67.8 mm", "Gothic-arch Suspect standee with 0.4 mm recessed portrait & name strip pockets on both sides."],
+  ["standee-s1-percy",   "seatRed",    "40.0 × 15.0 × 68.9 mm", "Suspect s1 (Percy) contoured silhouette standee with dual-layer cameo relief & gothic buttresses."],
+  ["standee-s2-thorne",  "seatBlue",   "40.0 × 15.0 × 69.0 mm", "Suspect s2 (Captain Thorne) contoured silhouette standee with dual-layer cameo relief & gothic buttresses."],
+  ["standee-s3-pike",    "seatYellow", "40.0 × 15.0 × 69.0 mm", "Suspect s3 (Dr. Pike) contoured silhouette standee with dual-layer cameo relief & gothic buttresses."],
+  ["standee-s4-cora",    "seatGreen",  "40.0 × 15.0 × 68.9 mm", "Suspect s4 (Cora Bell) contoured silhouette standee with dual-layer cameo relief & gothic buttresses."],
+  ["standee-s5-vane",    "seatViolet", "40.0 × 15.0 × 68.9 mm", "Suspect s5 (Lady Vane) contoured silhouette standee with dual-layer cameo relief & gothic buttresses."],
+  ["standee-s6-dunmore", "seatOrange", "40.0 × 15.0 × 69.0 mm", "Suspect s6 (Mrs. Dunmore) contoured silhouette standee with dual-layer cameo relief & gothic buttresses."],
 ];
 
 const PROPS = [
-  ["prop-01-chest-body",      "wood",    "163.2 × 99.2 × 70.7 mm", "Prop #1: Chest body with SG90 servo cradle, ESP32 mount, USB-C port & WS2812 LED trough."],
-  ["prop-01-chest-lid",       "wood",    "162.0 × 97.4 × 19.7 mm", "Prop #1: Hinged chest lid with 3.3 mm hinge knuckles & arched side skirts."],
-  ["prop-01-ghost-figure",    "mint",    "68.0 × 118.0 × 8.0 mm",  "Prop #1: Pop-up ghost silhouette with clevis slot & 0.4 mm recessed face sticker pocket."],
-  ["prop-01-lever-arm",       "iron",    "71.7 × 27.0 × 6.0 mm",   "Prop #1: 64 mm clevis push-arm with SG90 horn recess & lid-kicker finger."],
-  ["prop-03-dial-plate",      "iron",    "170.0 × 101.0 × 30.0 mm","Prop #3: Semi-circular Haunt gauge plate with SG90 hub, max-tab notches (8/10/12) & plinth."],
+  ["prop-01-chest-body",      "wood",    "163.2 × 98.2 × 72.2 mm", "Prop #1: Chest body with horizontal-shaft SG90 pedestal, ESP32 DevKitC V4 cradle, USB-C port & latch pocket."],
+  ["prop-01-chest-lid",       "wood",    "162.0 × 97.4 × 24.2 mm", "Prop #1: Hinged chest lid with coaxial Z=68 mm hinge knuckles (when flipped) & arched side skirts."],
+  ["prop-01-ghost-figure",    "mint",    "68.0 × 118.0 × 8.0 mm",  "Prop #1: Pop-up ghost silhouette with clevis slot & 0.4 mm recessed face/eye/mouth sticker pockets."],
+  ["prop-01-lever-arm",       "iron",    "71.7 × 27.0 × 6.0 mm",   "Prop #1: 64 mm vertical-sweep clevis push-arm with clear_fit SG90 horn recess & lid-kicker finger."],
+  ["prop-03-dial-plate",      "iron",    "170.0 × 107.9 × 26.0 mm","Prop #3: Semi-circular Haunt gauge plate with Ø12.4 mm SG90 boss bore, ESP32 cradle & max-tab notches (8/10/12)."],
   ["prop-03-bezel-ring",      "brass",   "166.0 × 100.9 × 4.8 mm", "Prop #3: Snap-fit arched bezel ring with 12 rivet bosses & threshold sight notches."],
-  ["prop-03-needle",          "brass",   "84.9 × 17.6 × 6.6 mm",   "Prop #3: 72 mm gothic spade pointer needle with press-fit SG90 spline hub."],
+  ["prop-03-needle",          "brass",   "84.9 × 17.6 × 6.6 mm",   "Prop #3: 72 mm gothic spade pointer needle with keyed single-arm SG90 horn recess & M2 screw bores."],
   ["prop-03-max-tab",         "crimson", "27.6 × 14.0 × 9.2 mm",   "Prop #3: Clip-on MAX threshold marker tab for 8 (Quick), 10 (Classic), or 12 (Gentle)."],
-  ["prop-05-plinth-2seat",    "iron",    "105.7 × 45.2 × 45.0 mm", "Prop #5: Modular 2-seat dovetail plinth with 2 SG90 bays & 6 Resolve pip windows (print 3×)."],
-  ["prop-05-flap-pawn",       "bone",    "36.0 × 68.3 × 6.4 mm",   "Prop #5: Two-sided portrait flap (Living front / Ghost back) with SG90 pivot boss (print 6×)."],
+  ["prop-05-plinth-2seat",    "iron",    "105.0 × 44.6 × 45.0 mm", "Prop #5: Modular 2-seat dovetail plinth (100.0 mm exact pitch, open diffuser slot, 2 SG90 bays; print 3×)."],
+  ["prop-05-flap-pawn",       "bone",    "36.0 × 67.9 × 6.4 mm",   "Prop #5: Two-sided portrait flap with open bottom SG90 shaft bore & keyed anti-rotation horn slot (print 6×)."],
   ["prop-05-resolve-insert",  "mint",    "36.4 × 14.0 × 2.4 mm",   "Prop #5: Translucent 3-pip Resolve window lens diffuser insert (print 6×)."],
-  ["prop-09-stage-frame",     "wood",    "174.0 × 130.0 × 59.4 mm","Prop #9: Proscenium stage arch with 'THE LODGER' header pocket & 100×88 mm stage opening."],
-  ["prop-09-curtain-panel",   "crimson", "60.0 × 97.5 × 5.2 mm",   "Prop #9: Pleated theatre curtain wing with top T-slider glides & fringe pocket (print 2×)."],
-  ["prop-09-rail-and-pulley", "iron",    "158.0 × 36.2 × 9.0 mm",  "Prop #9: Overhead slider track bar + dual-sheave SG90 pulley drum & idler wheel."],
+  ["prop-09-stage-frame",     "wood",    "174.0 × 130.0 × 59.4 mm","Prop #9: Proscenium stage arch with 'THE SOLUTION' header pocket, 45° corbelled interior step & floor-mounted SG90 cradle."],
+  ["prop-09-curtain-panel",   "crimson", "60.0 × 97.5 × 7.2 mm",   "Prop #9: Pleated theatre curtain wing with top T-slider glides & fringe pocket (print 2×)."],
+  ["prop-09-rail-and-pulley", "iron",    "158.0 × 36.2 × 13.0 mm", "Prop #9: Overhead slider track bar + dual-sheave SG90 pulley drum (with 4 mm extended shaft boss) & idler wheel."],
   ["prop-09-screen-bezel",    "brass",   "114.0 × 102.0 × 12.0 mm","Prop #9: Rear drop-in phone/Waveshare screen cradle with USB-C cable slot."],
-  ["prop-12-beam-bracket",    "wood",    "120.0 × 36.0 × 32.0 mm", "Prop #12: Overhead attic beam bracket with SG90 pocket, eccentric cam horn & 3 eyelets."],
+  ["prop-12-beam-bracket",    "wood",    "120.0 × 42.0 × 32.0 mm", "Prop #12: Overhead attic beam bracket with SG90 pocket, single-piece eccentric cam horn (open eyelet) & 3 eyelets."],
   ["prop-12-bats-mobile",     "iron",    "137.2 × 46.2 × 3.6 mm",  "Prop #12 (Primary): Balance bar + 3 articulated gothic bats with recessed crimson eye pockets."],
   ["prop-12-chandelier",      "brass",   "73.2 × 73.3 × 38.0 mm",  "Prop #12 (Alt A): 4-arm gothic chandelier ring with candle cups & flame tips."],
   ["prop-12-doll",            "bone",    "39.2 × 60.9 × 5.8 mm",   "Prop #12 (Alt B): Articulated porcelain doll pendant with cracked-face sticker pocket."],
-  ["prop-15-vault-chest",     "wood",    "169.2 × 124.2 × 80.9 mm","Prop #15: Relic Vault chest with internal SG90 latch mount, tray ledges & strap pockets."],
-  ["prop-15-vault-lid",       "wood",    "168.0 × 123.6 × 23.9 mm","Prop #15: Hinged vaulted lid with internal locking catch bar & top strap pockets."],
-  ["prop-15-vault-clasp",     "brass",   "66.0 × 24.5 × 5.2 mm",   "Prop #15: Front ornate lock escutcheon with keyhole slot & 30×18 mm sticker pocket."],
+  ["prop-15-vault-chest",     "wood",    "169.2 × 124.2 × 82.4 mm","Prop #15: Relic Vault chest with upper SG90 latch mount (Z=46..64 mm), tray ledges & strap pockets."],
+  ["prop-15-vault-lid",       "wood",    "168.0 × 123.6 × 28.4 mm","Prop #15: Hinged vaulted lid with coaxial Z=78 mm hinge knuckles, internal locking catch loop & strap pockets."],
+  ["prop-15-vault-clasp",     "brass",   "86.8 × 26.9 × 5.2 mm",   "Prop #15: Front ornate lock escutcheon with keyhole slot, 2× M2 mounting bosses & 30×18 mm sticker pocket."],
   ["prop-15-relic-tray",      "iron",    "152.0 × 100.0 × 15.0 mm","Prop #15: Removable 6-bay Relic Token organizer tray with finger scoops & bay icon pockets."],
-  ["prop-15-keypad-pod",      "iron",    "80.4 × 114.0 × 32.0 mm", "Prop #15: Angled desktop keypad console for 3×4 membrane keypad, ESP32 cradle & LED."],
-  ["prop-20-wires-panel",     "iron",    "150.0 × 120.0 × 32.0 mm","Prop #20: Desktop patchbay with 10× 4 mm banana jack holes, 6× 5 mm LED ports & label pockets."],
-  ["prop-20-terminal-blocks", "brass",   "114.0 × 47.0 × 14.0 mm", "Prop #20: 10× screw-terminal turret surrounds + 6× flanged 5 mm LED bezel collars."],
-  ["prop-20-plug-heads",      "crimson", "115.4 × 40.5 × 22.0 mm", "Prop #20: 10× banana plug grip shells with axial resistor cavity & 9.6 mm cap pockets."],
+  ["prop-15-keypad-pod",      "wood",    "92.4 × 124.0 × 33.1 mm", "Prop #15: Angled keypad console with 71×78 mm pocket for a standard 70×77 mm 3×4 keypad & 45° internal ceiling."],
+  ["prop-20-wires-panel",     "iron",    "150.0 × 120.0 × 32.0 mm","Prop #20: Patchbay with 5 left wire anchors, 5 right 8 mm banana jack holes, SET button, PAIRED LED & 45° ESP32 roof."],
+  ["prop-20-terminal-blocks", "brass",   "129.0 × 47.0 × 14.0 mm", "Prop #20: 10× terminal turret surrounds + 1× SET button bezel + 1× flanged 5 mm PAIRED LED collar (12 parts)."],
+  ["prop-20-plug-heads",      "crimson", "115.4 × 40.5 × 22.0 mm", "Prop #20: 5× resistor plug barrels (1.9 mm nose wall, axial resistor grip cavity) + 5× snap-in back caps (10 parts)."],
 ];
 
 function renderCards(targetId, items) {

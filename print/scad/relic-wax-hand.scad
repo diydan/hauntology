@@ -3,6 +3,7 @@
 // Height: ~53 mm on 33 mm stepped token base
 // Sticker details: Recessed oval palm medallion / fortune-line sticker pocket (12 x 15 mm)
 // Print orientation: Flat on pedestal base (Z = 0), zero supports (all angles <= 45 deg).
+// No modelled wax: the owner adds real wax to the saucer after printing.
 
 include <_common.scad>
 
@@ -14,37 +15,26 @@ module wax_finger(p0, r0, p1, r1, p2, r2, p3, r3) {
 }
 
 module relic_wax_hand() {
-  // 1. Stepped circular token pedestal base (z = 0..6.5)
-  relic_pedestal_base(h = 6.5);
+  // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
+  relic_pedestal_base(h = 4.5, top_d = 18.4);
 
-  // 2. Fluted Victorian wax-catcher saucer & melted wax drips around wrist (z = 6.5..15.5)
-  translate([0, 0, 6.5]) {
-    // Saucer dish
-    cylinder(h = 2.8, d1 = 25, d2 = 28);
-    translate([0, 0, 2.8])
-      cylinder(h = 1.6, d1 = 28, d2 = 23);
+  // 2. Wax-catcher saucer and a smooth wrist (z = 4.5..15.0).
+  //    The modelled wax drips were removed on purpose: the owner adds real wax to the saucer after printing.
+  translate([0, 0, 4.5]) {
+    // 45-deg corbelled saucer dish
+    cylinder(h = 3.2, d1 = 18.4, d2 = 24.8);
+    translate([0, 0, 3.2])
+      cylinder(h = 1.6, d1 = 24.8, d2 = 21.6);
 
-    // Sculpted melted wax drip lobes around the wrist column
-    for (i = [0 : 7]) {
-      ang = i * 45 + 15;
-      drip_h = 5.5 + (i % 3) * 1.8;
-      rotate([0, 0, ang])
-        hull() {
-          translate([8.2, 0, 2.0]) sphere(r = 2.4);
-          translate([6.8, 0, 2.0 + drip_h]) sphere(r = 1.8);
-          translate([0, 0, 2.0 + drip_h]) sphere(r = 3.0);
-        }
-    }
-
-    // Wrist column (z = 3.0..11.5)
+    // Wrist column (z = 7.0..15.5), a little wider at the foot so the hand grows out of the dish
     hull() {
-      translate([0, 0, 2.5]) scale([1.15, 0.88, 1]) cylinder(h = 1.0, d = 17.0);
+      translate([0, 0, 2.5]) scale([1.15, 0.88, 1]) cylinder(h = 1.0, d = 18.0);
       translate([0, 0, 10.0]) scale([1.2, 0.82, 1]) cylinder(h = 1.0, d = 15.6);
     }
   }
 
-  // 3. Sculpted Anatomical Palm & Five Fingers (z = 17..53)
-  translate([0, 0, 17.0])
+  // 3. Sculpted Anatomical Palm & Five Fingers (z = 15.0..51.0)
+  translate([0, 0, 15.0])
   difference() {
     union() {
       // Lower palm heel & thenar/hypothenar mounds
@@ -69,8 +59,8 @@ module relic_wax_hand() {
       wax_finger(
         [-5.2, 0.2, 14.8], 3.1,
         [-6.2, -0.4, 22.5], 2.6,
-        [-6.0, -1.6, 28.8], 2.2,
-        [-5.4, -2.6, 33.8], 1.7
+        [-6.8, -1.6, 28.8], 2.2,
+        [-7.2, -2.6, 33.8], 1.7
       );
 
       // Middle finger (tallest, reaching Z = 53 mm total)
@@ -85,16 +75,16 @@ module relic_wax_hand() {
       wax_finger(
         [ 2.0, 0.4, 15.2], 3.0,
         [ 2.5, -0.2, 23.0], 2.5,
-        [ 2.3, -1.5, 29.0], 2.1,
-        [ 1.8, -2.6, 33.4], 1.65
+        [ 3.0, -1.5, 29.0], 2.1,
+        [ 3.3, -2.6, 33.4], 1.65
       );
 
       // Little finger (pinky, poised outward)
       wax_finger(
         [ 5.4, 0.1, 14.0], 2.7,
         [ 6.6, -0.4, 20.2], 2.2,
-        [ 6.8, -1.4, 25.0], 1.85,
-        [ 6.4, -2.2, 28.8], 1.45
+        [ 7.4, -1.4, 25.0], 1.85,
+        [ 8.0, -2.2, 28.8], 1.45
       );
 
       // Raised oval medallion bezel on front of palm (-Y face) for the palm sticker

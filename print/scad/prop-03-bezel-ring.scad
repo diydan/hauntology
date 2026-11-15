@@ -1,7 +1,7 @@
 // Hauntology Tabletop Print Kit — Prop #3: Haunt Needle (Ornate Instrument Bezel Ring)
 // Colour: Lantern (#e0a43a, amber/matte gold)
-// Size: 168 W x 101 H x 5.2 D mm
-// Features: Raised index notches at Haunt 3, 6 and 9; perimeter rivets; snap-fit alignment pegs
+// Size: 166 W x 101 H x 4.8 D mm
+// Features: Raised index notches at Haunt 3, 6 and 9; perimeter rivets; 4 alignment holes matching dial-plate
 // Print orientation: Flat on back (Z = 0), zero supports.
 
 include <_common.scad>
@@ -64,7 +64,13 @@ module prop_03_bezel_ring() {
       }
     }
 
-    // 4. Clearance notches on outer rim at 8, 10, 12 for the hand-clipped red MAX tab
+    // 4. Four 3.2 mm alignment pin/screw holes matching prop-03-dial-plate.scad (accepts 1.75 mm filament or M3 screws)
+    for (pt = [[-76, -10], [76, -10], [-54, 54], [54, 54]]) {
+      translate([pt[0], pt[1], -0.5])
+        cylinder(h = bezel_h + 2.0, d = 3.2);
+    }
+
+    // 5. Clearance notches on outer rim at 8, 10, 12 for the hand-clipped red MAX tab
     for (lv = [8, 10, 12]) {
       ang = haunt_ang(lv);
       rotate([0, 0, ang])

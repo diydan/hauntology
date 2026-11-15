@@ -78,14 +78,21 @@
 const $ = (s, r = document) => r.querySelector(s);
 const STL_BASE = new URLSearchParams(location.search).get('stl') || '../../print/stl/';
 
-// The six spools. Hex values are the ones in print/README.md section 2.
+// Core 6 spools + Silver & 6 Seat/Suspect accent colours from 3D_BRIEF.md section 2.
 const SPOOLS = {
-  iron:    { name: 'Dark Iron',      hex: '#262229' },
-  brass:   { name: 'Antique Brass',  hex: '#d4a84b' },
-  mint:    { name: 'Ectoplasm Mint', hex: '#5ce6b8' },
-  bone:    { name: 'Bone / Ivory',   hex: '#e8dec8' },
-  crimson: { name: 'Crimson',        hex: '#d43838' },
-  wood:    { name: 'Warm Wood',      hex: '#422818' },
+  iron:       { name: 'Dark Iron',        hex: '#262229' },
+  brass:      { name: 'Antique Brass',    hex: '#d4a84b' },
+  mint:       { name: 'Ectoplasm Mint',   hex: '#5ce6b8' },
+  bone:       { name: 'Bone / Ivory',     hex: '#e8dec8' },
+  crimson:    { name: 'Crimson',          hex: '#d43838' },
+  wood:       { name: 'Warm Wood',        hex: '#422818' },
+  silver:     { name: 'Tarnished Silver', hex: '#c9c9d4' },
+  seatRed:    { name: 'Seat Red',         hex: '#ff6b6b' },
+  seatBlue:   { name: 'Seat Blue',        hex: '#6bb6ff' },
+  seatYellow: { name: 'Seat Yellow',      hex: '#ffd86b' },
+  seatGreen:  { name: 'Seat Green',       hex: '#6be39a' },
+  seatViolet: { name: 'Seat Violet',      hex: '#c49bff' },
+  seatOrange: { name: 'Seat Orange',      hex: '#ffb27a' },
 };
 const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics', S: 'Static: no moving or electronic parts' };
 
@@ -93,21 +100,21 @@ const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics',
 const G0 = 'Core game pieces', G1 = '#1 Ghost in the box', G3 = '#3 Haunt needle', G5 = '#5 Haunting flipper',
       G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board';
 const PARTS = [
-  ['relic-music-box',   'Relic r1 music box',      G0, 'brass',   'S', 1],
-  ['relic-wax-hand',    'Relic r2 wax hand',       G0, 'bone',    'S', 1],
-  ['relic-locket',      'Relic r3 locket',         G0, 'brass',   'S', 1],
-  ['relic-planchette',  'Relic r4 planchette',     G0, 'wood',    'S', 1],
-  ['relic-silver-key',  'Relic r5 silver key',     G0, 'bone',    'S', 1],
-  ['relic-bell',        'Relic r6 bell',           G0, 'brass',   'S', 1],
-  ['relic-token-pocket','Relic Token base',        G0, 'iron',    'S', 6],
-  ['pyramid-holder',    'Pyramid holder',          G0, 'iron',    'S', 1],
-  ['standee-blank',     'Blank Suspect standee',   G0, 'bone',    'S', 1],
-  ['standee-s1-percy',  'Standee 1 Percy',         G0, 'crimson', 'S', 1],
-  ['standee-s2-thorne', 'Standee 2 Thorne',        G0, 'mint',    'S', 1],
-  ['standee-s3-pike',   'Standee 3 Pike',          G0, 'brass',   'S', 1],
-  ['standee-s4-cora',   'Standee 4 Cora',          G0, 'bone',    'S', 1],
-  ['standee-s5-vane',   'Standee 5 Vane',          G0, 'iron',    'S', 1],
-  ['standee-s6-dunmore','Standee 6 Dunmore',       G0, 'wood',    'S', 1],
+  ['relic-music-box',   'Relic r1 music box',      G0, 'brass',      'S', 1],
+  ['relic-wax-hand',    'Relic r2 wax hand',       G0, 'bone',       'S', 1],
+  ['relic-locket',      'Relic r3 locket',         G0, 'brass',      'S', 1],
+  ['relic-planchette',  'Relic r4 planchette',     G0, 'wood',       'S', 1],
+  ['relic-silver-key',  'Relic r5 silver key',     G0, 'silver',     'S', 1],
+  ['relic-bell',        'Relic r6 bell',           G0, 'brass',      'S', 1],
+  ['relic-token-pocket','Relic Token base',        G0, 'iron',       'S', 6],
+  ['pyramid-holder',    'Pyramid holder',          G0, 'iron',       'S', 1],
+  ['standee-blank',     'Blank Suspect standee',   G0, 'bone',       'S', 1],
+  ['standee-s1-percy',  'Standee 1 Percy',         G0, 'seatRed',    'S', 1],
+  ['standee-s2-thorne', 'Standee 2 Thorne',        G0, 'seatBlue',   'S', 1],
+  ['standee-s3-pike',   'Standee 3 Pike',          G0, 'seatYellow', 'S', 1],
+  ['standee-s4-cora',   'Standee 4 Cora',          G0, 'seatGreen',  'S', 1],
+  ['standee-s5-vane',   'Standee 5 Vane',          G0, 'seatViolet', 'S', 1],
+  ['standee-s6-dunmore','Standee 6 Dunmore',       G0, 'seatOrange', 'S', 1],
   ['prop-01-chest-body','Chest body',              G1, 'wood',    'E', 1],
   ['prop-01-chest-lid', 'Chest lid',               G1, 'wood',    'M', 1],
   ['prop-01-ghost-figure','Ghost figure',          G1, 'mint',    'M', 1],
@@ -191,17 +198,17 @@ const STAND = [['x', 90]];   // lie-flat part stood up so its flat back faces aw
 const FLIP = [['x', 180]];   // part printed upside down, turned right way up
 const P = (p, at, o = {}) => ({ p, at, rot: o.rot || [], ex: o.ex || [0, 0, 0] });
 const ASSEMBLIES = [
-  { id: 'relics', title: 'Relics on Relic Tokens', note: 'Each Relic stands on a token base. The QR sticker goes in the base pocket.',
+  { id: 'relics', title: 'Relics on Relic Tokens', note: 'Each Relic plugs into the centre socket of a token base (with no Relic base plate). The QR sticker goes in the base pocket.',
     build(S) {
       const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell'], out = [];
-      rel.forEach((r, i) => { const s = S(r); out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [i * 48 + (40 - s[0]) / 2, (40 - s[1]) / 2, 6], { ex: [0, 0, 25] })); });
+      rel.forEach((r, i) => { const s = S(r); out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [i * 48 + (40 - s[0]) / 2, (40 - s[1]) / 2, 4], { ex: [0, 0, 25] })); });
       return out;
     } },
   { id: 'p01', title: '#1 Ghost in the box', note: 'Lid on the body. Slide Explode to lift the lid and see the ghost and lever inside.',
     build(S) {
-      const b = S('prop-01-chest-body'), l = S('prop-01-chest-lid'), g = S('prop-01-ghost-figure', STAND);
+      const b = S('prop-01-chest-body'), l = S('prop-01-chest-lid', FLIP), g = S('prop-01-ghost-figure', STAND);
       return [P('prop-01-chest-body', [0, 0, 0]),
-        P('prop-01-chest-lid', [(b[0] - l[0]) / 2, (b[1] - l[1]) / 2, b[2]], { ex: [0, 0, 60] }),
+        P('prop-01-chest-lid', [(b[0] - l[0]) / 2, (b[1] - l[1]) / 2, b[2] - 4], { rot: FLIP, ex: [0, 0, 60] }),
         P('prop-01-ghost-figure', [(b[0] - g[0]) / 2, (b[1] - g[1]) / 2, 14], { rot: STAND, ex: [0, 0, 80] }),
         P('prop-01-lever-arm', [b[0] / 2 - 36, b[1] - 40, 14], { ex: [0, 0, 20] })];
     } },
@@ -245,7 +252,7 @@ const ASSEMBLIES = [
     build(S) {
       const c = S('prop-15-vault-chest'), l = S('prop-15-vault-lid', FLIP), k = S('prop-15-vault-clasp', STAND), t = S('prop-15-relic-tray');
       return [P('prop-15-vault-chest', [0, 0, 0]),
-        P('prop-15-vault-lid', [(c[0] - l[0]) / 2, (c[1] - l[1]) / 2, c[2]], { rot: FLIP, ex: [0, 0, 60] }),
+        P('prop-15-vault-lid', [(c[0] - l[0]) / 2, (c[1] - l[1]) / 2, c[2] - 4], { rot: FLIP, ex: [0, 0, 60] }),
         P('prop-15-vault-clasp', [(c[0] - k[0]) / 2, -k[1], 50], { rot: STAND, ex: [0, -30, 0] }),
         P('prop-15-relic-tray', [(c[0] - t[0]) / 2, (c[1] - t[1]) / 2, 34], { ex: [0, 0, 35] }),
         P('prop-15-keypad-pod', [c[0] + 20, 5, 0])];

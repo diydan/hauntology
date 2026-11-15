@@ -19,27 +19,27 @@ module planchette_shape_2d(shrink = 0) {
 }
 
 module relic_planchette() {
-  // 1. Stepped circular token pedestal base (z = 0..6.5)
-  relic_pedestal_base(h = 6.5);
+  // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
+  relic_pedestal_base(h = 4.5, top_d = 18.4);
 
   // 2. Three Turned Caster Pillars cradling the planchette at a 72-deg presentation angle
-  translate([0, 0, 6.5]) {
-    cylinder(h = 2.8, d1 = 26, d2 = 22);
+  translate([0, 0, 4.5]) {
+    cylinder(h = 2.4, d1 = 18.4, d2 = 17.6);
     // Two front caster legs + one rear spine pillar
-    for (sx = [-7.2, 7.2]) {
+    for (sx = [-6.2, 6.2]) {
       hull() {
-        translate([sx, -3.5, 2.0]) sphere(r = 2.6);
+        translate([sx, -3.0, 2.0]) sphere(r = 2.6);
         translate([sx, -1.8, 10.5]) sphere(r = 2.4);
       }
     }
     hull() {
-      translate([0, 5.5, 2.0]) sphere(r = 3.0);
+      translate([0, 5.0, 2.0]) sphere(r = 3.0);
       translate([0, 2.2, 16.0]) sphere(r = 2.8);
     }
   }
 
   // 3. Sculpted Planchette Body (tilted 16 deg back from vertical = 74 deg from horizontal, 100% print-safe!)
-  translate([0, 0, 27.5])
+  translate([0, 0, 25.5])
     rotate([74, 0, 0])
     difference() {
       union() {

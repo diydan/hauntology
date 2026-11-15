@@ -398,8 +398,10 @@ function checkBinaryStl(filePath, bedMm = 180) {
 
   const vertMap = new Map();
   const verts = [];
+  const adj = [];
   const halfEdges = new Map();
   let signedVol6 = 0;
+  let bedAreaMm2 = 0;
   let minX = Infinity, minY = Infinity, minZ = Infinity;
   let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
   let degenerate = 0;
@@ -415,6 +417,7 @@ function checkBinaryStl(filePath, bedMm = 180) {
       vertMap.set(key, idx);
       const vx = kx / 1000, vy = ky / 1000, vz = kz / 1000;
       verts.push([vx, vy, vz]);
+      adj.push([]);
       if (vx < minX) minX = vx;
       if (vx > maxX) maxX = vx;
       if (vy < minY) minY = vy;
@@ -453,6 +456,9 @@ function checkBinaryStl(filePath, bedMm = 180) {
     addHalfEdge(i0, i1);
     addHalfEdge(i1, i2);
     addHalfEdge(i2, i0);
+    adj[i0].push(i1, i2);
+    adj[i1].push(i0, i2);
+    adj[i2].push(i0, i1);
     const v0 = verts[i0], v1 = verts[i1], v2 = verts[i2];
     signedVol6 +=
       v0[0] * (v1[1] * v2[2] - v1[2] * v2[1]) -
@@ -460,8 +466,53 @@ function checkBinaryStl(filePath, bedMm = 180) {
       v0[2] * (v1[0] * v2[1] - v1[1] * v2[0]);
   }
 
+  for (let i = 0; i < triCount; i++) {
+    const off = 84 + i * 50;
+    const z0 = buf.readFloatLE(off + 20), z1 = buf.readFloatLE(off + 32), z2 = buf.readFloatLE(off + 44);
+    if (Math.abs(z0 - minZ) < 0.05 && Math.abs(z1 - minZ) < 0.05 && Math.abs(z2 - minZ) < 0.05) {
+      const x0 = buf.readFloatLE(off + 12), y0 = buf.readFloatLE(off + 16);
+      const x1 = buf.readFloatLE(off + 24), y1 = buf.readFloatLE(off + 28);
+      const x2 = buf.readFloatLE(off + 36), y2 = buf.readFloatLE(off + 40);
+      bedAreaMm2 += 0.5 * Math.abs((x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0));
+    }
+  }
+
+  const vis = new Uint8Array(verts.length);
+  let components = 0;
+  for (let i = 0; i < verts.length; i++) {
+    if (vis[i]) continue;
+    components++;
+    const stack = [i];
+    vis[i] = 1;
+    while (stack.length > 0) {
+      const u = stack.pop();
+      for (const v of adj[u]) {
+        if (!vis[v]) {
+          vis[v] = 1;
+          stack.push(v);
+        }
+      }
+    }
+  }
+
+  const EXPECTED_COMPONENTS = {
+    "prop-09-rail-and-pulley.stl": 3,
+    "prop-12-bats-mobile.stl": 4,
+    "prop-15-vault-clasp.stl": 3,
+    "prop-20-plug-heads.stl": 10,
+    "prop-20-terminal-blocks.stl": 11,
+  };
+  const baseName = path.basename(filePath);
+  const expectedComps = EXPECTED_COMPONENTS[baseName] ?? 1;
+
   const errors = [];
   if (degenerate > 0) errors.push(`${degenerate} degenerate triangle(s)`);
+  if (components !== expectedComps) {
+    errors.push(`Expected ${expectedComps} connected component(s), got ${components} (disconnected/floating island check)`);
+  }
+  if (bedAreaMm2 < 100) {
+    errors.push(`Insufficient flat bed contact area at minZ: ${bedAreaMm2.toFixed(1)} mm^2`);
+  }
   let unmatchedEdges = 0;
   for (const [f, b] of halfEdges.values()) {
     if (f !== b || f === 0) unmatchedEdges++;
@@ -485,21 +536,7 @@ function checkBinaryStl(filePath, bedMm = 180) {
 fs.mkdirSync(stlDir, { recursive: true });
 fs.mkdirSync(distDir, { recursive: true });
 
-// 1. Always ensure the 6 Preset Suspect Standees exist
-for (const [sid, rows] of Object.entries(SUSPECT_SILHOUETTES)) {
-  const outName = `${sid}.stl`;
-  const stlPath = path.join(stlDir, outName);
-  const distPath = path.join(distDir, outName);
-  if (!checkOnly || !fs.existsSync(stlPath)) {
-    const buf = buildStandeeStl(rows, `Hauntology Suspect Standee ${sid}`);
-    fs.writeFileSync(stlPath, buf);
-    fs.writeFileSync(distPath, buf);
-  } else if (!fs.existsSync(distPath)) {
-    fs.copyFileSync(stlPath, distPath);
-  }
-}
-
-// 2. Compile print/scad/*.scad when OpenSCAD is present
+// 1. Compile print/scad/*.scad when OpenSCAD is present (covers all 42 STLs including the 6 Ghost Standees)
 const openscad = findOpenscad();
 if (openscad && fs.existsSync(scadDir)) {
   const scadFiles = fs.readdirSync(scadDir).filter((f) => f.endsWith(".scad") && !f.startsWith("_")).sort();
@@ -524,6 +561,20 @@ if (openscad && fs.existsSync(scadDir)) {
     } else if (!fs.existsSync(distPath)) {
       fs.copyFileSync(stlPath, distPath);
     }
+  }
+}
+
+// 2. Fallback: ensure the 6 Preset Suspect Standees exist even if OpenSCAD is absent
+for (const [sid, rows] of Object.entries(SUSPECT_SILHOUETTES)) {
+  const outName = `${sid}.stl`;
+  const stlPath = path.join(stlDir, outName);
+  const distPath = path.join(distDir, outName);
+  if (!fs.existsSync(stlPath)) {
+    const buf = buildStandeeStl(rows, `Hauntology Suspect Standee ${sid}`);
+    fs.writeFileSync(stlPath, buf);
+    fs.writeFileSync(distPath, buf);
+  } else if (!fs.existsSync(distPath)) {
+    fs.copyFileSync(stlPath, distPath);
   }
 }
 

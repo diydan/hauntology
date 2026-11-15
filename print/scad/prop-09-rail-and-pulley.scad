@@ -31,27 +31,31 @@ module prop_09_rail_and_pulley() {
       cylinder(h = 10.0, d = 4.6);
   }
 
-  // 3. SG90 Dual-Groove Thread Capstan Drum (at X = 24, Y = 10; 24 mm OD -> 180 deg pulls 38 mm of thread)
+  // 3. SG90 Dual-Groove Thread Capstan Drum with Extended Shaft Boss (at X = 24, Y = 10; 24 mm OD, 13.0 mm total height)
   translate([24.0, 10.0, 0])
   difference() {
     union() {
-      cylinder(h = 1.8, d1 = 23.0, d2 = 24.4);
-      translate([0, 0, 1.8]) cylinder(h = 2.0, d1 = 24.4, d2 = 20.4);
-      translate([0, 0, 3.8]) cylinder(h = 1.4, d = 23.6);
-      translate([0, 0, 5.2]) cylinder(h = 2.0, d1 = 20.4, d2 = 24.4);
-      translate([0, 0, 7.2]) cylinder(h = 1.8, d1 = 24.4, d2 = 23.0);
+      // Lower extended servo shaft hub boss (Z = 0..4.0) so drum grooves align with idler & curtain rail
+      cylinder(h = 4.0, d1 = 16.0, d2 = 23.0);
+      translate([0, 0, 4.0]) {
+        cylinder(h = 1.8, d1 = 23.0, d2 = 24.4);
+        translate([0, 0, 1.8]) cylinder(h = 2.0, d1 = 24.4, d2 = 20.4);
+        translate([0, 0, 3.8]) cylinder(h = 1.4, d = 23.6);
+        translate([0, 0, 5.2]) cylinder(h = 2.0, d1 = 20.4, d2 = 24.4);
+        translate([0, 0, 7.2]) cylinder(h = 1.8, d1 = 24.4, d2 = 23.0);
+      }
     }
-    // Center SG90 shaft hole + top horn slot
+    // Center SG90 shaft hole + keyed top horn slot (uses clear_fit)
     translate([0, 0, -0.5])
-      cylinder(h = 11.0, d = 5.0);
-    translate([0, 0, 6.2])
+      cylinder(h = 15.0, d = sg90_spline_d);
+    translate([0, 0, 9.8])
       hull() {
-        cylinder(h = 3.5, d = 7.6);
+        cylinder(h = 3.6, d = sg90_horn_hub_d);
         for (sx = [-1, 1])
-          translate([sx * 9.5, 0, 0]) cylinder(h = 3.5, d = 4.4);
+          translate([sx * 9.5, 0, 0]) cylinder(h = 3.6, d = sg90_horn_tip_d);
       }
     // Thread anchor tie hole
-    translate([0, 9.5, -0.5])
+    translate([0, 9.5, 3.5])
       cylinder(h = 11.0, d = 2.2);
   }
 }

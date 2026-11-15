@@ -7,23 +7,23 @@
 include <_common.scad>
 
 module relic_locket() {
-  // 1. Stepped circular token pedestal base (z = 0..6.5)
-  relic_pedestal_base(h = 6.5);
+  // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
+  relic_pedestal_base(h = 4.5, top_d = 18.0);
 
-  // 2. Scrolled Victorian ribbon display cradle (z = 6.5..14.0)
-  translate([0, 0, 6.5]) {
-    cylinder(h = 2.5, d1 = 26, d2 = 20);
+  // 2. Scrolled Victorian ribbon display cradle (z = 4.5..12.0)
+  translate([0, 0, 4.5]) {
+    cylinder(h = 2.5, d1 = 18.0, d2 = 16.0);
     // Side scroll arms cradling the locket body
     for (sx = [-1, 1]) {
       hull() {
-        translate([sx * 5.0, 0, 1.8]) sphere(r = 3.0);
+        translate([sx * 4.5, 0, 1.8]) sphere(r = 3.0);
         translate([sx * 11.2, 0, 8.5]) sphere(r = 2.6);
       }
     }
   }
 
-  // 3. Upright Heirloom Oval Locket Body (z = 11.0..43.0, center at z = 27.0)
-  translate([0, 0, 27.0])
+  // 3. Upright Heirloom Oval Locket Body (z = 9.0..41.0, center at z = 25.0)
+  translate([0, 0, 25.0])
   difference() {
     union() {
       // Main cushion-domed oval locket case (26 W x 32 H x 9.6 D)
@@ -80,8 +80,8 @@ module relic_locket() {
             circle(r = 1.0);
   }
 
-  // 4. Ornate Crown Bail & Top Suspension Ring (z = 42.0..50.5)
-  translate([0, 0, 42.5]) {
+  // 4. Ornate Crown Bail & Top Suspension Ring (z = 40.0..48.5)
+  translate([0, 0, 40.5]) {
     cylinder(h = 3.2, d1 = 8.4, d2 = 5.4);
     translate([0, 0, 4.2])
       rotate([90, 0, 0])

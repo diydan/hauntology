@@ -37,11 +37,17 @@ module prop_03_needle() {
     translate([0, 0, -5.0])
       cube([200, 100, 10.0], center = true);
 
-    // 4. SG90 Horn Mounting Recess (accessed from top under decorative cap or through hub)
+    // 4. Keyed SG90 Single-Arm Horn Recess on Underside (anti-rotation slot + M2 hub & horn screw bores)
     translate([0, 0, -0.1])
-      cylinder(h = 4.2, d = 7.6);
+      hull() {
+        cylinder(h = 3.2, d = sg90_horn_hub_d);
+        translate([14.0, 0, 0])
+          cylinder(h = 3.2, d = sg90_horn_tip_d);
+      }
     translate([0, 0, -0.1])
       cylinder(h = 8.0, d = 2.4);
+    translate([10.0, 0, -0.1])
+      cylinder(h = 6.0, d = 1.8);
   }
 }
 

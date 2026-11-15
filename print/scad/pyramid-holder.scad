@@ -1,7 +1,7 @@
 // Hauntology Tabletop Print Kit — Parametric Pepper's-Ghost Pyramid Holder
 // Colour: Ink (#0b0d10, matte black to eliminate screen glare)
 // Default parameters: base_mm = 60, top_mm = 10, face angle = 45 degrees (height = 25 mm)
-// Print orientation: Flat on base ring (Z = 0), zero supports (all struts are exactly 45 deg!).
+// Print orientation: Flat on base ring (Z = 0), zero supports (all struts are 45 deg, 1 connected component).
 
 include <_common.scad>
 
@@ -31,10 +31,10 @@ module pyramid_holder() {
       // 2. Four 45-degree corner struts rising from base ring to top collar
       for (sx = [-1, 1], sy = [-1, 1]) {
         hull() {
-          translate([sx * (base_mm / 2 + 0.8), sy * (base_mm / 2 + 0.8), base_h - 0.6])
-            cylinder(h = 1.2, d = 6.2);
-          translate([sx * (top_mm / 2 + 1.0), sy * (top_mm / 2 + 1.0), base_h + pyr_h - 1.2])
-            cylinder(h = 1.6, d = 5.0);
+          translate([sx * (base_mm / 2 + 0.8), sy * (base_mm / 2 + 0.8), base_h - 0.8])
+            cylinder(h = 1.4, d = 6.8);
+          translate([sx * (top_mm / 2 + 1.0), sy * (top_mm / 2 + 1.0), base_h + pyr_h - 1.4])
+            cylinder(h = 1.8, d = 5.6);
         }
       }
 
@@ -48,16 +48,16 @@ module pyramid_holder() {
       }
     }
 
-    // 4. Four 45-degree trapezoid pane retention grooves (each holds one clear plastic trapezoid face)
+    // 4. Four 45-degree trapezoid pane retention grooves (blind-stopped inside corner struts so collar stays 1 solid piece!)
     for (rot_z = [0, 90, 180, 270]) {
       rotate([0, 0, rot_z])
         hull() {
-          translate([0, -(base_mm / 2), base_h - 1.4])
+          translate([0, -(base_mm / 2), base_h - 1.2])
             rotate([45, 0, 0])
-              cube([base_mm + 1.2, pane_t, 1.6], center = true);
-          translate([0, -(top_mm / 2), base_h + pyr_h - 0.8])
+              cube([base_mm - 1.6, pane_t, 1.4], center = true);
+          translate([0, -(top_mm / 2), base_h + pyr_h - 1.0])
             rotate([45, 0, 0])
-              cube([top_mm + 1.2, pane_t, 1.6], center = true);
+              cube([top_mm - 1.6, pane_t, 1.4], center = true);
         }
     }
   }

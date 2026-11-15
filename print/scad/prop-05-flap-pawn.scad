@@ -32,12 +32,18 @@ module prop_05_flap_pawn() {
       linear_extrude(height = sticker_depth + 0.5)
         rrect2d(32.0, 52.0, r = 3.0);
 
-    // 4. SG90 Servo Shaft Socket in Bottom Stem (0.3 mm clearance, vertical axis along Y)
-    translate([0, -11.0, 3.2])
+    // 4. Open-Bottom Keyed SG90 Servo Shaft & Horn Socket in Stem (starts at Y = -13.0 so bottom entry at Y = -12.3 is 100% open!)
+    translate([0, -13.0, 3.2])
       rotate([-90, 0, 0]) {
-        cylinder(h = 9.5, d = 5.2);
+        cylinder(h = 11.5, d = sg90_spline_d);
+        // Keyed anti-rotation horn slot at bottom entry (Y = -13.0..-9.5)
+        hull() {
+          cylinder(h = 3.6, d = sg90_horn_hub_d);
+          translate([5.0, 0, 0]) cylinder(h = 3.6, d = 3.2);
+          translate([-5.0, 0, 0]) cylinder(h = 3.6, d = 3.2);
+        }
         // Set-screw / horn pin cross hole
-        translate([0, 0, 4.5])
+        translate([0, 0, 6.5])
           rotate([0, 90, 0])
             cylinder(h = 16.0, d = 2.0, center = true);
       }
