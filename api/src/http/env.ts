@@ -20,6 +20,8 @@ export type Bindings = {
   UPLOAD_TTL_HOURS?: string;
   /** How long a user's world is kept, in days. Default 7. A Gallery world is kept for ever. */
   WORLD_TTL_DAYS?: string;
+  /** The operator's token (a secret of at least 32 characters). Without a valid one the `/admin` routes do not exist. */
+  ADMIN_TOKEN?: string;
   /** Extra allowed `Origin` values, comma-separated (development only). */
   ALLOWED_ORIGINS?: string;
 };

@@ -87,7 +87,16 @@ export class SpendGuardClient implements SpendGuard {
     }
   }
 
-  /** The kill switch, for new worlds. Not reachable from any route: an operator calls it. */
+  /** The same as `status`, but a failure throws instead of reading as closed, for the operator's view, where "closed" and "cannot tell" must not look alike. */
+  async statusStrict(): Promise<SpendStatus> {
+    const res = await this.call("/status", { method: "GET" });
+    if (!res.ok) throw new Error(`SpendGuard refused the status (${res.status})`);
+    const b = (await res.json()) as Partial<Record<keyof SpendStatus, unknown>>;
+    if (typeof b.dayCapReached !== "boolean" || typeof b.totalCapReached !== "boolean" || typeof b.killed !== "boolean") throw new Error("SpendGuard answered a status that does not fit");
+    return { dayCapReached: b.dayCapReached, totalCapReached: b.totalCapReached, killed: b.killed };
+  }
+
+  /** The kill switch, for new worlds. Reached only through the operator's route (`routes/admin.ts`, which needs `ADMIN_TOKEN`). */
   async setKill(on: boolean): Promise<void> {
     const res = await this.call("/kill", { body: { on } });
     if (!res.ok) throw new Error(`SpendGuard refused the kill switch (${res.status})`);

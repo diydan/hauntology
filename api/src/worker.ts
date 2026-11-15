@@ -5,6 +5,7 @@ import { WorldJob } from "./do/live-world-job";
 import { ScoutPlaceBriefer, scoutModelFromEnv, type AiBinding } from "./guarded/workersai/scout";
 import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
 import type { Bindings } from "./http/env";
+import { adminTokenFrom } from "./routes/admin";
 import { SpendGuardClient } from "./spend/client";
 import { cleanupExpired } from "./worlds/cleanup";
 import { CloudflareImageStore } from "./worlds/cloudflare-images";
@@ -34,6 +35,8 @@ export default {
       const guard = new SpendGuardClient(env.SPEND_GUARD);
       app = createApp({
         worldGenAvailable: live,
+        // The operator's routes exist only when `ADMIN_TOKEN` is set to a token of at least 32 characters.
+        ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: live } } : {}),
         // Uploads are taken only where a world can be made from them: with no key there is nothing to keep a picture for.
         ...(live ? { uploads: { store: new CloudflareUploadStore(env.BUCKET) } } : {}),
         spend: () => guard.status(),

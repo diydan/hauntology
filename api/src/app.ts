@@ -6,6 +6,7 @@ import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
 import { sessionRoutes } from "./routes/session";
+import { adminRoutes, type AdminDeps } from "./routes/admin";
 import { placeRoutes } from "./routes/places";
 import { uploadRoutes, type UploadsDeps } from "./routes/uploads";
 import { imageRoutes, worldCreateRoutes, type CreationDeps } from "./routes/world-create";
@@ -19,6 +20,8 @@ export type AppOptions = SessionOptions & {
   worldGenAvailable?: boolean;
   /** What `SpendGuard` knows, once it exists. */
   spend?: (c: Context<AppEnv>) => Promise<SpendStatus> | SpendStatus;
+  /** The operator's routes (`/admin/status`, `/admin/kill`). When given, they are served; otherwise there is no such route. */
+  admin?: AdminDeps;
   /** Where accepted uploads are kept. When given, `POST /api/uploads` is served; it takes no upload while worlds are closed (the world switch). */
   uploads?: Omit<UploadsDeps, "enabled">;
   /** Where worlds are kept. When given, `/api/worlds/:id`, its assets and `DELETE` are served. */
@@ -37,6 +40,8 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   app.use("*", securityHeadersMiddleware());
   app.use("/api/*", originGuard());
   app.use("/api/*", session(options));
+  // Outside `/api`: no Session, no cookie, no origin check (nothing here is reachable by a cookie); the token is the only credential.
+  if (options.admin !== undefined) app.route("/admin", adminRoutes(options.admin));
 
   const flags = async (c: Context<AppEnv>): Promise<ShellFlags> => {
     const f = flagsFrom(c.env, options.spend ? await options.spend(c) : undefined);

@@ -116,6 +116,28 @@ describe("SpendGuardClient fails closed", () => {
   });
 });
 
+describe("SpendGuardClient.statusStrict (the operator's view)", () => {
+  it("reads the real status, and tells closed from cannot-tell", async () => {
+    const { client } = real();
+    expect(await client.statusStrict()).toEqual({ dayCapReached: false, totalCapReached: false, killed: false });
+    await client.setKill(true);
+    expect(await client.statusStrict()).toEqual({ dayCapReached: false, totalCapReached: false, killed: true });
+  });
+
+  it("throws, instead of reading as closed, when the object is down, refuses, or answers with a status that does not fit", async () => {
+    const ok = { dayCapReached: false, totalCapReached: false, killed: false };
+    await expect(throwing().statusStrict()).rejects.toThrow();
+    // A refusal is an error even when its body looks like a status.
+    await expect(answering(() => new Response(JSON.stringify(ok), { status: 500 })).statusStrict()).rejects.toThrow(/refused/);
+    await expect(answering(() => new Response("nope", { status: 500 })).statusStrict()).rejects.toThrow();
+    for (const bad of [{}, { ...ok, killed: "no" }, { ...ok, killed: undefined }, { ...ok, dayCapReached: 0 }, { ...ok, totalCapReached: null }, [], null, "closed"]) {
+      await expect(answering(() => new Response(JSON.stringify(bad), { status: 200 })).statusStrict(), JSON.stringify(bad)).rejects.toThrow();
+    }
+    // The plain `status` still reads the same answers as closed, and does not throw.
+    expect(await throwing().status()).toEqual({ dayCapReached: true, totalCapReached: true, killed: true });
+  });
+});
+
 describe("SpendGuardClient in strict mode", () => {
   const ticket = { id: "t-1", meter: "world" as const, sessionId: "sid-a", issuedAt: T0 };
   const strict = (fetcher: () => Promise<Response> | Response) => new SpendGuardClient({ idFromName: (n) => n, get: () => ({ fetch: async () => fetcher() }) }, { strict: true });

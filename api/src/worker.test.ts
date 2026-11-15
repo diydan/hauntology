@@ -276,6 +276,65 @@ describe("worker: making a world (world-pipeline 6.1, 7.1, 7.3)", () => {
     expect(bucket.objects.size).toBe(0);
   });
 
+  describe("the operator's kill switch (world-pipeline 4.4)", () => {
+    const ADMIN = "op-" + "k".repeat(40);
+    const admin = (env: WorkerEnv, path: string, init: { method?: string; token?: string | null; body?: unknown } = {}) =>
+      worker.fetch(
+        new Request(`${ORIGIN}${path}`, { method: init.method ?? "GET", headers: init.token === null ? {} : { Authorization: `Bearer ${init.token ?? ADMIN}` }, ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}) }),
+        env,
+        ctx().ctx,
+      );
+    const kill = (env: WorkerEnv, on: boolean) => admin(env, "/admin/kill", { method: "POST", body: { on } });
+
+    it("has no operator routes unless ADMIN_TOKEN is set to a token of at least 32 characters", async () => {
+      for (const extra of [{}, { ADMIN_TOKEN: "" }, { ADMIN_TOKEN: "short" }, { ADMIN_TOKEN: "x".repeat(31) }]) {
+        const { env } = envWith({ WLT_API_KEY: KEY, ...extra });
+        for (const token of [ADMIN, "short", "x".repeat(31)]) {
+          expect((await admin(env, "/admin/status", { token })).status, JSON.stringify(extra)).toBe(404);
+          expect((await kill(env, true)).status).toBe(404);
+        }
+      }
+    });
+
+    it("closes new worlds, uploads and the Home screen on a running Worker, leaves the Gallery alone, and opens them again", async () => {
+      const { env, bucket } = envWith({ WLT_API_KEY: KEY, ADMIN_TOKEN: ADMIN });
+      bucket.put("gallery/greenhouse/world.json", JSON.stringify(sampleManifest("greenhouse")));
+      const v = await visit(env);
+      const status = async () => ((await (await admin(env, "/admin/status")).json()) as { worldGen: string; reasons: string[] });
+      expect(await status()).toMatchObject({ worldGen: "open", reasons: [] });
+      expect((await uploadPhoto(env, v.headers)).status).toBe(201);
+
+      const closed = await kill(env, true);
+      expect([closed.status, await closed.json()]).toMatchObject([200, { worldGen: "closed", reasons: ["kill_switch"], killed: true }]);
+      expect((await flags(env)).worldGenEnabled).toBe(false);
+      expect((await uploadPhoto(env, v.headers)).json.code).toBe("world_gen_disabled");
+      expect(await status()).toMatchObject({ worldGen: "closed", reasons: ["kill_switch"] });
+      const gallery = await worker.fetch(new Request(`${ORIGIN}/api/worlds/greenhouse`), env, ctx().ctx);
+      expect(gallery.status).toBe(200);
+
+      const opened = await kill(env, false);
+      expect([opened.status, await opened.json()]).toMatchObject([200, { worldGen: "open", reasons: [], killed: false }]);
+      expect((await flags(env)).worldGenEnabled).toBe(true);
+      expect((await uploadPhoto(env, v.headers)).status).toBe(201);
+    });
+
+    it("refuses a wrong token without changing anything, and says when worlds are closed for lack of a key", async () => {
+      const { env } = envWith({ ADMIN_TOKEN: ADMIN });
+      expect((await admin(env, "/admin/status", { token: "wrong" + ADMIN })).status).toBe(401);
+      expect((await admin(env, "/admin/status", { token: null })).status).toBe(401);
+      expect(await (await admin(env, "/admin/status")).json()).toMatchObject({ worldGen: "closed", reasons: ["no_world_service_key"] });
+    });
+
+    it("says it cannot tell when SpendGuard cannot be reached, and reports nothing as done", async () => {
+      const { env } = envWith({ WLT_API_KEY: KEY, ADMIN_TOKEN: ADMIN });
+      (env as unknown as { SPEND_GUARD: unknown }).SPEND_GUARD = { idFromName: (n: string) => n, get: () => ({ fetch: async () => { throw new Error("down"); } }) };
+      const a = await admin(env, "/admin/status");
+      const b = await kill(env, true);
+      expect([a.status, b.status]).toEqual([502, 502]);
+      expect(await b.json()).toEqual({ ok: false, code: "spend_guard_unavailable" });
+    });
+  });
+
   it("keeps the key out of every answer the Worker gives", async () => {
     globalThis.fetch = (async () => new Response(JSON.stringify(examples.generate), { status: 200 })) as typeof fetch;
     const { env, bucket, jobs } = live();

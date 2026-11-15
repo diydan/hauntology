@@ -16,3 +16,6 @@ HMAC_SECRET=replace-with-at-least-16-random-characters
 # The model for the Place Brief check (a Workers AI catalog id). Unset is @cf/meta/llama-4-scout-17b-16e-instruct. It also needs the AI
 # binding (see wrangler.jsonc): each check is a small paid call, counted against the llm meter (LLM_SESSION_CAP, LLM_DAY_CAP).
 # GHOST_MODEL_ID=@cf/meta/llama-4-scout-17b-16e-instruct
+# The operator's token for /admin/status and /admin/kill (at least 32 printable characters; without it those routes do not exist).
+# Make one in your own shell with `openssl rand -hex 32`. See docs/OPERATIONS.md.
+# ADMIN_TOKEN=
