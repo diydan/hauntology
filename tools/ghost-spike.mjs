@@ -154,8 +154,14 @@ async function main() {
   const get = async (path) => { const r = await fetch(`${base}${path}`, { headers }); return { status: r.status, json: await r.json().catch(() => null) }; };
   const post = async (body) => { const r = await fetch(`${base}/narrate`, { method: 'POST', headers, body: JSON.stringify(body) }); return { status: r.status, json: await r.json().catch(() => null) }; };
 
+  // earlier replies, latest of each call, so a run of some calls sees the history of the others
+  const prior = new Map();
+  for (const f of readdirSync(opts.out).filter((x) => /^results-.*\.jsonl$/.test(x)).sort()) {
+    for (const line of readFileSync(join(opts.out, f), 'utf8').split('\n').filter(Boolean)) { const r = JSON.parse(line); prior.set(r.id, r); }
+  }
+
   const out = await runSpike({
-    plan, get, post, ledger, budgetUsd: opts.budget, only: opts.only,
+    plan, get, post, ledger, budgetUsd: opts.budget, only: opts.only, prior: [...prior.values()],
     onResult: (r) => {
       writeFileSync(resultsFile, `${JSON.stringify(r)}\n`, { flag: 'a' });
       console.log(`${r.id.padEnd(4)} ${r.kind.padEnd(10)} ${String(r.ms).padStart(5)} ms  ${r.inputTokens ?? '-'} in, ${r.outputTokens ?? '-'} out  ${r.valid === null ? '' : r.valid ? 'check ok' : `check: ${r.problem}`}`);

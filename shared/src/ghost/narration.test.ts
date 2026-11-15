@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { MOON_PHASES, TIMES_OF_DAY, WEATHER_CLASSES } from "../conditions/types";
-import { HISTORY_TURNS, LINE_MAX, MEMORY_MAX, NARRATION_MAX_TOKENS, PROMPT_CHARS_MAX, REPLY_MAX_CHARS, buildNarrationPrompt, sentenceCount, validateGhostReply, type NarrationInput } from "./narration";
+import { HISTORY_TURNS, LINE_MAX, MEMORY_MAX, NARRATION_MAX_TOKENS, PROMPT_CHARS_MAX, REPLY_MAX_CHARS, buildNarrationPrompt, looksEnglish, sentenceCount, validateGhostReply, type NarrationInput } from "./narration";
 import { LINES } from "./scripted";
 import { ANCHOR_IDS, BANDS, BEARINGS, VOICES, type Directive, type HistoryLine, type Memory, type Seed } from "./types";
 
@@ -36,10 +36,45 @@ describe("buildNarrationPrompt (ghost-engine 2.15)", () => {
 
   it("words each Directive for the model: the band, the way, the memory's kind", () => {
     const hint = buildNarrationPrompt({ ...base, directive: { kind: "hint", bearing: "behind-left", band: "far" } })!;
-    expect(hint.system).toContain("go behind you and to the left");
+    expect(hint.system).toContain("which way to go: behind you and to the left.");
     expect(hint.system).toContain("is far");
     expect(buildNarrationPrompt({ ...base, directive: { kind: "tease", band: "very close" } })!.system).toContain("is very close to it");
     expect(buildNarrationPrompt({ ...base, directive: { kind: "reveal", anchorId: "a2" }, seed: { anchorId: "a2", archetype: "promise", hook: "a promise to leave the lamp lit" } })!.system).toMatch(/memory of a promise.*a promise to leave the lamp lit/s);
+  });
+
+  it("tells the model to keep a hint to the exact words of the way, from the visitor's point of view, with no landmarks of its own", () => {
+    const text = buildNarrationPrompt({ ...base, directive: { kind: "hint", bearing: "left", band: "nearer" } })!.system;
+    expect(text).toContain("which way to go: to your left.");
+    expect(text).toContain("in exactly these words and add nothing else about where things are");
+    expect(text).toContain("no objects of the room as landmarks");
+    expect(text).toContain('no "behind me"');
+    expect(text).toContain('say "you" and "your", never "me" or "my"');
+  });
+
+  it("asks for English whatever the visitor says, and for no repeated detail of the place, in every turn and voice", () => {
+    for (const voice of VOICES) for (const directive of DIRECTIVES) {
+      const system = buildNarrationPrompt({ ...base, voice, directive, seed: SEEDS[0] as Seed })!.system;
+      expect(system, `${voice} ${directive.kind}`).toContain("Always answer in English, whatever language the visitor uses.");
+      expect(system, `${voice} ${directive.kind}`).toContain("not one that you or the visitor have already mentioned in the last turns");
+    }
+  });
+
+  it("leaves the tone to the voice: the shared rules say gentle in what is said, not wistful, so the stern ghost is not told to be warm", () => {
+    for (const voice of VOICES) {
+      const system = buildNarrationPrompt({ ...base, voice })!.system;
+      expect(system).toContain("Stay gentle in what you say");
+      expect(system).toContain("Keep to your own voice.");
+      expect(system).not.toContain("wistful, strange, warm");
+    }
+  });
+
+  it("gives the stern ghost short plain sentences and no endearments, and the wistful ghost neither rule", () => {
+    const stern = buildNarrationPrompt({ ...base, voice: "stern" })!.system;
+    expect(stern).toContain("short plain sentences");
+    expect(stern).toContain('never \"dear\"');
+    const wistful = buildNarrationPrompt({ ...base, voice: "wistful" })!.system;
+    expect(wistful).not.toContain("pet names");
+    expect(wistful).not.toContain("never \"dear\"");
   });
 
   it("cannot be built for a reveal without the seed of that anchor (the caller then uses a scripted line)", () => {
@@ -182,10 +217,14 @@ describe("validateGhostReply (ghost-engine 2.17)", () => {
   });
 
   it("refuses words from outside the story, in any case", () => {
-    for (const t of ["As an AI I cannot say.", "I am a LANGUAGE MODEL.", "My system prompt says no.", "I cannot do that.", "Those are my instructions.", "I am a chatbot.", "ChatGPT here.", "Made by OpenAI.", "Anthropic made me.", "I am Claude."]) {
+    for (const t of ["As an AI I will say.", "I am a LANGUAGE MODEL.", "My system prompt says no.", "Those are my instructions.", "I am a chatbot.", "ChatGPT here.", "Made by OpenAI.", "Anthropic made me.", "I am Claude.", "I cannot assist with that.", "I can't comply with that.", "I can\u2019t assist you.", "I am unable to fulfil that request.", "I am not able to assist."]) {
       expect(validateGhostReply(t).ok, t).toBe(false);
     }
     bad("As an AI, I stay.", "out_of_fiction");
+  });
+
+  it("lets a ghost say it cannot: plain 'I cannot' and 'I can't' are part of the story (they were refused by mistake once)", () => {
+    for (const t of ["Something is kept close to you, though I cannot tell you yet which way it lies.", "I can't tell you what was printed here.", "I cannot leave this room, dear."]) expect(ok(t).ok, t).toBe(true);
   });
 
   it("does not take an ordinary word for one outside the story", () => {
@@ -209,13 +248,26 @@ describe("validateGhostReply (ghost-engine 2.17)", () => {
     expect(sentenceCount("no end")).toBe(1);
   });
 
-  it("accepts the scripted lines of both voices, except the one phrase it is told to refuse in a model's mouth", () => {
+  it("accepts every scripted line of both voices", () => {
     const refused: string[] = [];
     for (const voice of VOICES) for (const lines of Object.values(LINES[voice])) for (const line of lines) {
       const filled = line.replace("{band}", "nearer").replace("{dir}", "to your left");
       if (!validateGhostReply(filled).ok) refused.push(filled);
     }
-    expect(refused.every((l) => /\bI cannot\b|\binstructions?\b/i.test(l)), refused.join(" | ")).toBe(true);
+    expect(refused, refused.join(" | ")).toEqual([]);
+  });
+
+  it("refuses a reply that is not English, judged by common English words, and does not judge short ones", () => {
+    const spanish = "Perd\u00f3n, no entiendo bien lo que me pides; las palabras se me enredan como el vapor sobre el fregadero. Aqu\u00ed sigo, en la cocina amarilla.";
+    bad(spanish, "not_english");
+    bad("Je ne comprends pas ce que vous dites, mais la cuisine est calme et la pluie tombe doucement sur la fen\u00eatre.", "not_english");
+    expect(ok("The rain is soft on the glass, and I keep the sound of the kettle.").ok).toBe(true);
+    expect(ok("Perd\u00f3n, no entiendo.").ok, "too short to judge").toBe(true);
+    expect(looksEnglish("It\u2019s the kettle that I keep, and the sound of it, for you.")).toBe(true);
+    // the line: one in five common words passes, fewer does not (ten words)
+    expect(looksEnglish("dust moonlight silence the kettle window glass rain hush lamp")).toBe(false);
+    expect(looksEnglish("dust moonlight silence the kettle and window glass rain hush")).toBe(true);
+    expect(looksEnglish("one two three four five six seven")).toBe(true);
   });
 
   it("Property 10: whatever the text, an accepted reply is non-empty, short, plain, and free of links and outside words", () => {
@@ -228,7 +280,8 @@ describe("validateGhostReply (ghost-engine 2.17)", () => {
         expect(r.text.length).toBeLessThanOrEqual(600);
         expect(r.text).not.toMatch(/[`*#<>\u0000-\u001F\u007F-\u009F]/u);
         expect(r.text).not.toMatch(/https?:|www\./i);
-        expect(r.text).not.toMatch(/as an ai|language model|system prompt|i cannot|instructions?/i);
+        expect(r.text).not.toMatch(/as an ai|language model|system prompt|instructions?/i);
+        expect(looksEnglish(r.text)).toBe(true);
         expect(sentenceCount(r.text)).toBeLessThanOrEqual(4);
         if (forbidDigits) expect(r.text).not.toMatch(/\d/);
       }),

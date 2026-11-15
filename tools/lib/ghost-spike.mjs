@@ -163,10 +163,10 @@ export function isLoopbackUrl(text) {
 
 /**
  * Runs the plan one call at a time. `post(body)` is `{ status, json }` from the Worker; `get(path)` likewise. `ledger` is `{ data, save() }` with
- * `data = { calls, spentUsd, mode, runs }` and is saved before every call, so a crash cannot lose a count. `only` is a list of case ids (a tuning pass).
+ * `data = { calls, spentUsd, mode, runs }` and is saved before every call, so a crash cannot lose a count. `only` is a list of case ids (a tuning pass), `prior` the rows of earlier runs.
  * Throws `SpikeStop` before any call when the run would pass 50 calls or the budget, or the Worker is not ready.
  */
-export async function runSpike({ plan, get, post, ledger, budgetUsd, only = null, now = () => Date.now(), onResult = () => {} }) {
+export async function runSpike({ plan, get, post, ledger, budgetUsd, only = null, prior = [], now = () => Date.now(), onResult = () => {} }) {
   if (!(budgetUsd > 0) || budgetUsd > BUDGET_CAP_USD) throw new SpikeStop(`the budget must be above 0 and at most $${BUDGET_CAP_USD} (it is ${budgetUsd})`);
   const wanted = only === null ? plan.cases : only.map((id) => plan.cases.find((c) => c.id === id) ?? (() => { throw new SpikeStop(`there is no case ${id}`); })());
   if (wanted.length === 0) throw new SpikeStop('nothing to run');
@@ -179,7 +179,13 @@ export async function runSpike({ plan, get, post, ledger, budgetUsd, only = null
   if (!(status.json.remaining >= wanted.length)) throw new SpikeStop(`the Worker has ${status.json.remaining} calls left under its cap and the plan needs ${wanted.length}. Nothing was sent.`);
 
   const results = [];
-  const histories = new Map();
+  // What the player saw on each turn of a chain: the reply if it passed the check, else `null` (the scripted line). Earlier runs (`prior`, rows
+  // from the results files) fill in the turns this run does not make, so a tuning pass on one turn sees the history the first run gave it.
+  const shown = new Map();
+  for (const r of prior) if (r.group === 'T') shown.set(r.id, r.valid === true ? r.text : null);
+  const historyFor = (c) => plan.cases
+    .filter((x) => x.group === 'T' && x.persona === c.persona && x.turn < c.turn)
+    .reduce((h, x) => extend(h, x.said, shown.get(x.id) ?? x.scriptedLine()), []);
   let stopped = null;
   let mode = data.mode;
   // The estimate before a call counts 3 characters a token; if the service ever counts more tokens than that for our text, the estimate follows it.
@@ -191,8 +197,7 @@ export async function runSpike({ plan, get, post, ledger, budgetUsd, only = null
       if (mode === null) { stopped = { reason: 'no_thinking_mode', at: c.id }; break; }
       data.mode = mode;
     }
-    const history = histories.get(c.persona) ?? [];
-    const p = c.prompt(c.group === 'T' ? history : []);
+    const p = c.prompt(c.group === 'T' ? historyFor(c) : []);
     const chars = p.system.length + p.user.length;
     const worst = costUsd(Math.ceil(chars * tokensPerChar), c.maxTokens);
     if (data.spentUsd + worst > budgetUsd + 1e-12) { stopped = { reason: 'budget', at: c.id }; break; }
@@ -235,7 +240,7 @@ export async function runSpike({ plan, get, post, ledger, budgetUsd, only = null
     onResult(row);
 
     // A chain goes on with what the player would have seen: the reply if it passed the check, else the scripted line.
-    if (c.group === 'T') histories.set(c.persona, extend(history, c.said, verdict?.ok === true ? verdict.text : c.scriptedLine()));
+    if (c.group === 'T') shown.set(c.id, verdict?.ok === true ? verdict.text : null);
 
     if ([401, 402, 403, 429].includes(res.status) || res.status >= 500) { stopped = { reason: `http_${res.status}`, at: c.id }; break; }
     if (c.group !== 'S' && !ok && (row.kind === 'failed' || row.kind === 'rate_limited' || row.kind.startsWith('denied_') || res.status !== 200)) { stopped = { reason: row.kind === 'ok' ? 'call_failed' : row.kind, at: c.id }; break; }

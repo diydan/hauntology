@@ -222,6 +222,31 @@ test('a tuning pass (--only) needs the mode that was chosen, runs just those cal
   await assert.rejects(run(fakeWorker(() => okAnswer()), await memLedger({ calls: 39, spentUsd: 0, mode: 'low', runs: [] }), { only: [] }), /nothing to run/);
 });
 
+test('a tuning pass on one turn sees the history of the turns before it: earlier replies if they passed the check, else the scripted lines', async () => {
+  const ledger = await memLedger({ calls: 39, spentUsd: 0.004, mode: 'off', runs: [] });
+  const w = fakeWorker(() => okAnswer());
+  const prior = [
+    { id: 'T1', group: 'T', valid: true, text: 'Prior reply one, kept.' },
+    { id: 'T2', group: 'T', valid: false, text: 'Prior reply two, which failed the check.' },
+    { id: 'T11', group: 'T', valid: true, text: 'Stern reply, another ghost.' },
+  ];
+  await run(w, ledger, { only: ['T3'], prior });
+  const user = w.sent[0].user;
+  assert.ok(user.includes('you said: Prior reply one, kept.'));
+  assert.ok(!user.includes('which failed the check'), 'a reply that failed the check is not in the history');
+  assert.ok(user.includes(`you said: ${plan.cases.find((c) => c.id === 'T2').scriptedLine()}`), 'the scripted line the player saw instead');
+  assert.ok(!user.includes('another ghost'), 'the other ghost\'s turns are not in this chain');
+  // with nothing from before, the scripted lines stand in (as the dry plan shows)
+  const w2 = fakeWorker(() => okAnswer());
+  await run(w2, await memLedger({ calls: 39, spentUsd: 0.004, mode: 'off', runs: [] }), { only: ['T3'] });
+  assert.ok(w2.sent[0].user.includes(`you said: ${plan.cases.find((c) => c.id === 'T1').scriptedLine()}`));
+  assert.equal(w2.sent[0].user, dryPlan(plan).find((r) => r.id === 'T3').user, 'the same prompt as the dry plan');
+  // a turn run now replaces the prior one for the turns after it
+  const w3 = fakeWorker((_b, n) => okAnswer({ text: n === 1 ? 'A fresh reply for the second turn.' : 'A fresh reply for the third turn.' }));
+  await run(w3, await memLedger({ calls: 39, spentUsd: 0.004, mode: 'off', runs: [] }), { only: ['T2', 'T3'], prior });
+  assert.ok(w3.sent[1].user.includes('you said: A fresh reply for the second turn.'));
+});
+
 test('a run split after the shape group records the mode it chose, so the next run can go on without it', async () => {
   const ledger = await memLedger();
   const first = await run(fakeWorker(() => okAnswer()), ledger, { only: ['S1', 'S2', 'S3'] });
