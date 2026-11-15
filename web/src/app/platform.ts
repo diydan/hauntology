@@ -1,4 +1,6 @@
 import { defaultLoadHost, type LoadHost } from "./case/types";
+import { browserPhotoKit, type PhotoKit } from "./create/photo-kit";
+import { canvasSurface, type SurfaceFactory } from "./create/surface";
 import { browserScheduler, type Scheduler } from "./haunt/controller";
 import { defaultLoadCreator, type LoadCreator } from "./haunt/creator";
 import { defaultLoadViewer, type LoadViewer } from "./viewer/types";
@@ -20,6 +22,10 @@ export type PlatformKit = {
   now: () => Date;
   /** Timers for the Stage poll. */
   scheduler: Scheduler;
+  /** Reading, measuring and re-encoding a chosen photo (Create). */
+  photo: PhotoKit;
+  /** Paints the Sketch Pad's strokes on a canvas (Create). */
+  surface: SurfaceFactory;
   voice: {
     recorder: RecorderFactory | null;
     createAudio: NonNullable<VoiceDeps["createAudio"]>;
@@ -61,6 +67,8 @@ export function defaultPlatform(): PlatformKit {
     locate: browserLocate,
     now: () => new Date(),
     scheduler: browserScheduler,
+    photo: browserPhotoKit,
+    surface: canvasSurface,
     voice: { recorder: browserRecorderFactory(), createAudio: browserAudio, unlockAudio: browserUnlock },
     saveFile: browserSaveFile,
   };

@@ -155,18 +155,22 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - The ending card, "Save memory card" (`layoutMemoryCard` from world-viewer 9, hand-off per ghost-engine 6.2; until that exists the shell saves `shared/src/app/memory-card.ts`, a self-contained SVG of only the found memories) and "Haunt again". Opened only by the single navigation from `playReduce`, or by a URL that passes its guard.
     - _Requirements: 6.5_
 
-- [ ] 7. Create: photo picker, Sketch Pad, candidates (satisfies `world-pipeline` 10.1 and 10.2)
-  - [ ] 7.1 `PhotoPicker`
+- [x] 7. Create: photo picker, Sketch Pad, candidates (satisfies `world-pipeline` 10.1 and 10.2)
+  - [x] 7.1 `PhotoPicker`
     - Accepts JPEG, PNG and WebP up to the limit in `validateUpload`; shows the retention notice (metadata stripped, kept 24 hours at most) before the file is chosen; shows a preview; reads only the capture date and time (the `conditions` spec's `readCaptureDate`) from the file in the browser and offers it as a suggested Memory Day, then re-encodes through a canvas to drop EXIF, GPS and XMP; uploads nothing the visitor did not choose; per-reason error copy from `errorCopy`.
+    - Built as `PhotoPicker` with the browser parts behind `PhotoKit` (`head`, `inspect`, `reencode`, `previewUrl`), so tests and the demo swap them. `validateUpload` and `readCaptureDate` did not exist yet, so the shell has its own `photoFileError` and `photoSizeError` (`shared/src/app/photo.ts`, the limits of `world-pipeline` 1.1) and `readCaptureDate` landed in `shared/src/conditions/exif.ts`, which finishes `conditions` tasks 2.12 and 2.13. The photo is shown as a preview and nothing is sent until "Use this photo"; the re-encode is a JPEG made from pixels alone, at the best of three qualities that fits 10 MB.
     - _Requirements: 2.6, 8.3, 9.6, 12.2_
-  - [ ] 7.2 `SketchPad`
+  - [x] 7.2 `SketchPad`
     - A `<canvas>` with pointer events and `touch-action: none`; the tool rules from `world-pipeline` Requirement 2.1 are not redefined here; targets of at least 44 px; strokes, undo and redo (at least 30 steps) in memory only, never in storage, cookies or analytics; optional caption; "Make it real" disabled with a one-line reason while `inkGate` says no; the pad is labelled as a pointer tool and sits next to the photo picker and Gallery, both reachable by Tab.
+    - Built as `SketchPad` over a pure stroke history (`shared/src/app/sketch-pad.ts`: brush and eraser, three sizes, 50 undo steps, clear as a step) and a `SketchSurface` seam that paints on a canvas. Upload and the Gallery come before the pad in the page, so Tab reaches them first.
     - _Requirements: 2.1, 2.2, 2.4, 2.8, 8.3_
-  - [ ] 7.3 Make it real and candidates
+  - [x] 7.3 Make it real and candidates
     - Downscale with `downscaleSize`, call `POST /api/sketch/render` once, show the candidates with alt text from the caption and the remaining image quota, and allow pick (`POST /api/sketch/select`), redraw, or back to the sketch. On failure or no quota keep the sketch, show the typed message and offer the Gallery.
+    - Built in `CreateController` and `Candidates`. The sketch is sent once per press at no more than 512 px; a rate limit holds the controls for the advised time.
     - _Requirements: 2.3, 2.5, 2.7_
-  - [ ] 7.4 Hand-off to Confirm
+  - [x] 7.4 Hand-off to Confirm
     - After an upload or a candidate pick, call `POST /api/places/brief`; `unsafe_image` and `moderation_unavailable` show their copy and keep the visitor on Create. On success set `pickedImageId` in memory and go to `/confirm`.
+    - A brief that says the image is not safe counts as `unsafe_image`. The picked image goes into the flow state in memory only, never into a URL.
     - _Requirements: 2.7, 3.1_
 
 - [ ] 8. Confirm Gate (satisfies `world-pipeline` 10.3)

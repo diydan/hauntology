@@ -39,9 +39,10 @@ Order: the spike first, then pure logic with property tests, then the API module
   - [ ]* 2.11 Write property test for Memory Day
     - **Property 6: Memory Day stays in range and uses recorded weather**
     - **Validates: Requirements 3.1, 3.2**
-  - [ ] 2.12 `readCaptureDate` (JPEG EXIF reader for `DateTimeOriginal` only; returns a date and a Time of Day or nothing; never throws)
+  - [x] 2.12 `readCaptureDate` (JPEG EXIF reader for `DateTimeOriginal` only; returns a date and a Time of Day or nothing; never throws)
+    - Built in `shared/src/conditions/exif.ts` by the shell's photo picker (shell task 7.1), with `timeOfDay` in `time.ts`; the rest of `time.ts` is still this spec's.
     - _Requirements: 3.3_
-  - [ ]* 2.13 Write property test for the photo timestamp reader
+  - [x]* 2.13 Write property test for the photo timestamp reader
     - **Property 9: Photo timestamp reading keeps only the capture date**
     - **Validates: Requirements 3.3**
   - [ ] 2.14 `readSnapshot`, `freezeSnapshot`, `cacheKey`, `isFresh`, `toAtmosphere`, `toPromptFields`, `toPublicConditions` (clock, timer, fetch and cache injected; 3000 ms limit; never rejects)
