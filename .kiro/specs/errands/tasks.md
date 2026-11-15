@@ -1,13 +1,13 @@
 # Implementation Plan
 
-- [ ] 1. Errand logic in `shared/src/party/errands.ts`
-  - [ ] 1.1 The object catalogue, `nextErrand` with Target rules and the photo preference
+- [x] 1. Errand logic in `shared/src/party/errands.ts` (tests in `errands.test.ts`; Room and Controller wait for `PartyRoom`)
+  - [x] 1.1 The object catalogue, `nextErrand` with Target rules and the photo preference
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 4.2_
-  - [ ] 1.2 **Property 1: Errands pick only fair Targets**
+  - [x] 1.2 **Property 1: Errands pick only fair Targets**
     - **Validates: Requirements 1.1, 1.2, 1.3**
-  - [ ] 1.3 `settleDone` and `settleCaught`, Scare points and Bonus Seconds
+  - [x] 1.3 `settleDone` and `settleCaught`, Scare points and Bonus Seconds
     - _Requirements: 2.1, 2.2, 2.3, 3.2, 3.3_
-  - [ ] 1.4 **Property 3: Done and Caught settle once**
+  - [x] 1.4 **Property 3: Done and Caught settle once**
     - **Validates: Requirements 2.1, 2.2, 2.3, 3.2, 3.3**
 
 - [ ] 2. Room wiring in `PartyRoom`

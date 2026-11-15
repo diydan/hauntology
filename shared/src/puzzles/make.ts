@@ -9,7 +9,7 @@ export const WIRE_STYLES = 6;
 export const SHELF_ITEMS = 12;
 
 /** A picture drawn from simple shapes; the same picture is the Sight and the pieces. */
-function makePicture(r: Rng): Picture {
+export function makePicture(r: Rng): Picture {
   const hue = randInt(r, 360);
   const shapes = range(9).map((i) => ({
     t: (["circle", "rect", "tri"] as const)[i % 3] as "circle" | "rect" | "tri",

@@ -1,11 +1,11 @@
 # Implementation Plan
 
-- [ ] 1. Placement in `shared/src/puzzles/world-clues.ts`
-  - [ ] 1.1 Signs, `decoyFor`, `placeWorldClues` (at most three real clues and three Decoys)
+- [x] 1. Placement in `shared/src/puzzles/world-clues.ts` (tests in `world-clues.test.ts`; Room, Viewer and Lock wiring wait for `PartyRoom`)
+  - [x] 1.1 Signs, `decoyFor`, `placeWorldClues` (at most three real clues and three Decoys)
     - _Requirements: 1.1, 1.2, 1.3_
-  - [ ] 1.2 **Property 1: World clues are placed fairly**
+  - [x] 1.2 **Property 1: World clues are placed fairly**
     - **Validates: Requirements 1.1, 1.2, 1.3**
-  - [ ] 1.3 **Property 2: The Lock and its World Clue agree**
+  - [x] 1.3 **Property 2: The Lock and its World Clue agree**
     - **Validates: Requirements 1.2, 3.1**
 
 - [ ] 2. Room and Public View

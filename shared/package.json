@@ -14,6 +14,7 @@
     "./conditions/*": "./src/conditions/*.ts",
     "./world/*": "./src/world/*.ts",
     "./puzzles/*": "./src/puzzles/*.ts",
+    "./party/*": "./src/party/*.ts",
     "./voice/*": "./src/voice/*.ts"
   },
   "scripts": {
