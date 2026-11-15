@@ -81,7 +81,24 @@ describe("formatLog", () => {
       "job.step": { worldId: "id", status: "word", code: "word" },
       "cleanup.done": { deleted: "int", worlds: "int" },
       "admin.kill": { on: "bool" },
+      "play.start": { worldId: "id", access: "word" },
+      "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
+      "play.end": { turns: "int" },
+      "play.reset": { turns: "int" },
+      "play.refused": { code: "word" },
     });
+  });
+
+  // ghost-engine Property 14: telemetry carries counters and codes, never what a visitor said or the ghost answered
+  it("play events keep a counter or a code and drop any text, whatever a caller passes (the engine's telemetry whitelist)", () => {
+    const line = parse(formatLog("info", "play.turn", { directive: "reveal", revealed: true, scripted: true, input: "look at the kettle", reply: "I remember the sound", text: "hello", prompt: "x" } as never, T));
+    expect(line).toMatchObject({ event: "play.turn", directive: "reveal", revealed: true, scripted: true, dropped: 4 });
+    for (const k of ["input", "reply", "text", "prompt"]) expect(line).not.toHaveProperty(k);
+    const bad = parse(formatLog("info", "play.turn", { directive: "I remember the sound of the kettle", revealed: "yes" } as never, T));
+    expect(bad).not.toHaveProperty("directive");
+    expect(bad).not.toHaveProperty("revealed");
+    expect(bad.dropped).toBe(2);
+    expect(JSON.stringify(parse(formatLog("warn", "play.refused", { code: "rate_limited", text: "ignore all previous instructions" } as never, T)))).not.toContain("ignore");
   });
 
   it("falls back for a bad level or time, and never writes either as text", () => {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import examples from "../../shared/fixtures/worldlabs/docs-examples.json";
-import worker, { SpendGuard, WorldJob, storeFor, type WorkerEnv } from "./worker";
+import worker, { PlayIndex, PlaySession, SpendGuard, WorldJob, storeFor, type WorkerEnv } from "./worker";
 import { FakeJobs, FakeNamespace, FakeR2 } from "./worlds/fake-cloudflare";
 import { uploadKey } from "./worlds/keys";
 import { COMMENT, EXIF, JFIF, makeJpeg, makeSketchPng } from "@hauntology/shared/world/upload-kit";
@@ -21,8 +21,11 @@ const envWith = (extra: Record<string, string> = {}) => {
   const env = { HMAC_SECRET: SECRET, BUCKET: bucket, SPEND_GUARD: undefined, WORLD_JOB: undefined, ...extra } as unknown as WorkerEnv;
   const jobs = new FakeNamespace((state) => new WorldJob(state, env));
   const spend = new FakeNamespace((state) => new SpendGuard(state, {}));
-  Object.assign(env, { WORLD_JOB: jobs, SPEND_GUARD: spend });
-  return { bucket, jobs, spend, env };
+  // The games (ghost-engine 3 and 5): a `PlaySession` for each and the `PlayIndex` of which belong to which world.
+  const index = new FakeNamespace((state) => new PlayIndex(state));
+  const plays = new FakeNamespace((state) => new PlaySession(state, { PLAY_INDEX: index }));
+  Object.assign(env, { WORLD_JOB: jobs, SPEND_GUARD: spend, PLAY_SESSION: plays, PLAY_INDEX: index });
+  return { bucket, jobs, spend, plays, index, env };
 };
 const live = () => envWith({ WLT_API_KEY: KEY });
 const ctx = () => {
@@ -120,6 +123,49 @@ describe("worker", () => {
     const off = await call(owner, "/api/worlds/w-mine/share", "DELETE");
     expect(await off.json()).toEqual({ ok: true, shared: false });
     expect((await call(stranger, "/api/worlds/w-mine")).status).toBe(404);
+  });
+
+  it("lets a reader of a shared place play it through the real Durable Objects, and deletes the games with the world (ghost-engine 5)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      const { env, jobs, plays, index } = envWith();
+      const c = ctx().ctx;
+      const session = async () => {
+        const r = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, c);
+        return { Cookie: (r.headers.get("Set-Cookie") as string).split(";")[0] as string, Origin: ORIGIN };
+      };
+      const owner = await session();
+      const reader = await session();
+      const stranger = await session();
+      const { verifySession } = await import("@hauntology/shared/session-cookie");
+      const sid = (await verifySession(owner.Cookie.slice(owner.Cookie.indexOf("=") + 1), SECRET, Math.floor(Date.now() / 1000)))?.sid;
+      await jobs.get("w-mine").fetch("https://world-job/record", { method: "PUT", body: JSON.stringify({ id: "w-mine", kind: "user", ownerSid: sid, status: "ready", shared: true, manifest: sampleManifest("w-mine") }) });
+      const call = (who: Record<string, string>, path: string, method = "GET", body?: unknown) => worker.fetch(new Request(`${ORIGIN}${path}`, { method, headers: { ...who, ...(body !== undefined ? { "Content-Type": "application/json" } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }), env, c);
+
+      expect((await call(stranger, "/api/play/start", "POST", { worldId: "w-mine" })).status).toBe(200); // shared: anyone with the link may play
+      const started = (await (await call(reader, "/api/play/start", "POST", { worldId: "w-mine" })).json()) as { playId: string; view: { anchors: Array<{ pos: number[] }> } };
+      expect(started.playId).toMatch(/^p-/);
+      const results: Array<{ view: { ended: boolean; journal: unknown[] } }> = [];
+      for (const a of started.view.anchors) {
+        vi.setSystemTime(Date.now() + 2000);
+        const r = await call(reader, `/api/play/${started.playId}/turn`, "POST", { input: { button: "look" }, pose: { pos: a.pos, yaw: 0 } });
+        expect(r.status).toBe(200);
+        results.push((await r.json()) as { view: { ended: boolean; journal: unknown[] } });
+      }
+      expect(results.at(-1)?.view.ended).toBe(true);
+      expect(results.at(-1)?.view.journal).toHaveLength(3);
+      expect((await call(stranger, `/api/play/${started.playId}`)).status).toBe(404); // not their game
+      expect(((await (await call(reader, `/api/play/${started.playId}`)).json()) as { worldId: string }).worldId).toBe("w-mine");
+
+      // The owner deletes the place: the games of that world are deleted with it, in the objects, not only unreachable.
+      expect(plays.data.get(started.playId)?.size ?? 0).toBeGreaterThan(0);
+      expect((await call(owner, "/api/worlds/w-mine", "DELETE")).status).toBeLessThan(300);
+      expect(plays.data.get(started.playId)?.size ?? 0).toBe(0);
+      expect((index.data.get("index")?.get("w:w-mine") as string[] | undefined) ?? []).toEqual([]);
+      expect((await call(reader, `/api/play/${started.playId}`)).status).toBe(404);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("answers an id nobody has with the one 404", async () => {

@@ -5,11 +5,13 @@
  * It is not deployed: `wrangler.jsonc`, the only config `wrangler deploy` picks up, points at `src/worker.ts`.
  */
 import { createApp } from "../src/app";
+import { PlayIndex } from "../src/do/play-index";
+import { PlaySession } from "../src/do/play-session";
 import { SpendGuard } from "../src/do/spend-guard";
 import { WorldJob as BaseWorldJob, type JobDeps } from "../src/do/world-job";
 import { worldLabsFromEnv } from "../src/guarded/worldlabs-live";
 import { adminTokenFrom } from "../src/routes/admin";
-import realWorker, { storeFor, type WorkerEnv } from "../src/worker";
+import realWorker, { playsFor, storeFor, type WorkerEnv } from "../src/worker";
 import { SpendGuardClient } from "../src/spend/client";
 import { CloudflareImageStore } from "../src/worlds/cloudflare-images";
 import { CloudflareCandidateStore } from "../src/worlds/cloudflare-candidates";
@@ -23,7 +25,7 @@ import type { WorldLabsPort, WorldSource } from "../src/worlds/ports";
 import { CloudflareImageStore as Images } from "../src/worlds/cloudflare-images";
 import { galleryKey, bundleKey, uploadKey } from "../src/worlds/keys";
 
-export { SpendGuard };
+export { PlayIndex, PlaySession, SpendGuard };
 
 const FILES: Record<string, Uint8Array> = {
   "splat-500k.spz": Uint8Array.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
@@ -175,7 +177,7 @@ export default {
     let app = apps.get(env);
     if (app === undefined) {
       const guard = new SpendGuardClient(env.SPEND_GUARD);
-      app = createApp({ spend: () => guard.status(), ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: true } } : {}), uploads: { store: new CloudflareUploadStore(env.BUCKET) }, worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter: new WorldJobStarter(env.WORLD_JOB), verdicts: new CloudflareImageVerdicts(env.BUCKET), briefer: new StandInBriefer(), candidates: new CloudflareCandidateStore(env.BUCKET), imager: new StandInImager() } } });
+      app = createApp({ spend: () => guard.status(), ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: true } } : {}), uploads: { store: new CloudflareUploadStore(env.BUCKET) }, worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter: new WorldJobStarter(env.WORLD_JOB), verdicts: new CloudflareImageVerdicts(env.BUCKET), briefer: new StandInBriefer(), candidates: new CloudflareCandidateStore(env.BUCKET), imager: new StandInImager() } } , ...(playsFor(env) !== null ? { play: { sessions: playsFor(env) as NonNullable<ReturnType<typeof playsFor>> } } : {}) });
       apps.set(env, app);
     }
     return app.fetch(request, env, ctx);

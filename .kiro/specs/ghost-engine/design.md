@@ -42,10 +42,13 @@ sequenceDiagram
 ### Routes
 | Route | Purpose | Req |
 |---|---|---|
-| `POST /api/play/start` `{worldId, anchors?}` | create Session; validate or replace anchors | 1.1–1.5 |
+| `POST /api/play/start` `{worldId, ghostPreset?, anchors?, conditions?}` | create Session; validate or replace anchors; the owner, anyone at a Gallery World, and a reader of a shared place (the `accessOf` rule) may play; any other world is `404 world_not_found` | 1.1–1.5 |
 | `POST /api/play/:id/turn` `{button?|text?, pose}` | one turn → `{reply, view}` | 2.x–6.x |
 | `GET /api/play/:id` | restore view after reload | 1.4, 8.1 |
-| `POST /api/play/:id/reset` | "Haunt again" | 8.3 |
+| `POST /api/play/:id/reset` | "Haunt again": the same id, a fresh seed, new anchors, an empty journal; returns `{playId, view}` | 8.3 |
+
+### Who may play, and whose game it is (built 2026-11-15)
+A game is played in a world the visitor may read: the same `accessOf` rule as the world routes (`api/src/worlds/access.ts`), so the owner, anyone at a Gallery World and a reader of a shared place may play, and nobody else; every refusal for a world is `404 world_not_found`. The rule is checked again on each call, so a world that is unshared or deleted ends a reader's game at once. A game belongs to the Session that started it (`ownerSid`): another Session, even one that may read the world, gets `session_not_found`, the same as for a game that is not there. A game is a `PlaySession` Durable Object named by its id (128 random bits), and a `PlayIndex` lists the games of each world so that deleting a place deletes them (`PlaySessionPurger`). The game itself is the pure `shared/src/ghost/play.ts`; the object and the in-process twin both run it through `PlayCore`.
 
 ### `shared/src/ghost/`
 `parse.ts` (`parseAction`), `rate.ts` (`acceptTurn`), `anchors.ts` (`placeAnchors`, `validateAnchors`, `ringAnchors`), `engine.ts` (`step`), `pose.ts` (`sanitizePose`), `hints.ts` (`relativeBearing`, `distanceBand`, `autoHintDue`), `prompt.ts` (`buildNarrationPrompt` with an optional `sky?: PromptFields` (weather class, time bucket and moon name) from the `conditions` spec, `clientView` carrying `atmosphere`), `validate.ts` (`validateGhostReply`, banned phrases), `scripted.ts` (`pickLine`), `budget.ts` (`narrationMode`), `session.ts` (serialise/parse, expiry), `telemetry.ts` (`event` whitelist).

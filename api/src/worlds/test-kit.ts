@@ -39,9 +39,9 @@ export const BYTES = {
 export function appKit(
   store: WorldStore,
   now: () => number = () => NOW,
-  options: { creation?: NonNullable<AppOptions["worlds"]>["creation"]; uploads?: AppOptions["uploads"]; env?: Record<string, string> } = {},
+  options: { creation?: NonNullable<AppOptions["worlds"]>["creation"]; uploads?: AppOptions["uploads"]; env?: Record<string, string>; play?: AppOptions["play"]; log?: AppOptions["log"] } = {},
 ) {
-  const app = createApp({ worlds: { store, ...(options.creation !== undefined ? { creation: options.creation } : {}) }, ...(options.uploads !== undefined ? { uploads: options.uploads } : {}), now });
+  const app = createApp({ worlds: { store, ...(options.creation !== undefined ? { creation: options.creation } : {}) }, ...(options.uploads !== undefined ? { uploads: options.uploads } : {}), ...(options.play !== undefined ? { play: options.play } : {}), ...(options.log !== undefined ? { log: options.log } : {}), now });
   /** The Worker's variables for each request; a test may change them. */
   const env: Record<string, string> = { HMAC_SECRET: SECRET, ...(options.env ?? {}) };
 

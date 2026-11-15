@@ -14,6 +14,7 @@
     "./session-cookie": "./src/session-cookie.ts",
     "./origin": "./src/origin.ts",
     "./conditions/*": "./src/conditions/*.ts",
+    "./ghost/*": "./src/ghost/*.ts",
     "./world/*": "./src/world/*.ts",
     "./puzzles/*": "./src/puzzles/*.ts",
     "./party/*": "./src/party/*.ts",

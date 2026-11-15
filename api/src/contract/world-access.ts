@@ -31,8 +31,8 @@ export type WorldAccessHarness = {
 };
 
 /**
- * Checks a run may leave out because the route does not exist yet. Each one shows as a todo in the test
- * output, never silently. Only `play` is allowed: `POST /api/play/start` belongs to ghost-engine 5.
+ * Checks a run may leave out because its route is not plugged into that app. Each one shows as a todo in the test
+ * output, never silently. Only `play` is allowed: `POST /api/play/start` (ghost-engine 5, built).
  */
 export type SkippableCheck = "play";
 
@@ -123,7 +123,7 @@ export async function checkWorldAccess(h: WorldAccessHarness, skip: readonly Ski
  * off, or deleting the world, makes it as missing as before. No one but the owner can turn it on, off or find out it exists, and a Gallery
  * or a missing world cannot be shared.
  */
-export async function checkWorldSharing(h: WorldAccessHarness): Promise<string[]> {
+export async function checkWorldSharing(h: WorldAccessHarness, skip: readonly SkippableCheck[] = []): Promise<string[]> {
   const v: string[] = [];
   const A = await h.newVisitor();
   const B = await h.newVisitor();
@@ -137,6 +137,8 @@ export async function checkWorldSharing(h: WorldAccessHarness): Promise<string[]
   const del = (who: Headers_, id: string) => h.request(`/api/worlds/${id}`, { method: "DELETE", headers: who });
   const share = (who: Headers_, id: string, method: "POST" | "DELETE") => h.request(`/api/worlds/${id}/share`, { method, headers: who });
   const asset = (who: Headers_, id: string) => h.request(h.assetPath!(id), { method: "GET", headers: who });
+  const play = (who: Headers_, id: string) => h.request("/api/play/start", { method: "POST", headers: who, body: { worldId: id } });
+  const playChecked = !skip.includes("play");
   const ok2xx = (r: Reply) => r.status >= 200 && r.status < 300;
   const mustLookMissing = (what: string, foreign: Reply, missing: Reply) => {
     if (!isNotFound(foreign)) v.push(`${what}: answered ${describeReply(foreign)}, not 404 world_not_found`);
@@ -147,6 +149,7 @@ export async function checkWorldSharing(h: WorldAccessHarness): Promise<string[]
 
   // Private until the owner says so, and nobody else can say so.
   mustLookMissing("GET before the link is on", await get(B, W), await get(B, M));
+  if (playChecked) mustLookMissing("POST play/start before the link is on", await play(B, W), await play(B, M));
   mustLookMissing("POST share by another visitor", await share(B, W, "POST"), await share(B, M, "POST"));
   mustLookMissing("POST share with no cookie", await share(NONE, W, "POST"), await share(NONE, M, "POST"));
   mustLookMissing("DELETE share by another visitor", await share(B, W, "DELETE"), await share(B, M, "DELETE"));
@@ -161,6 +164,11 @@ export async function checkWorldSharing(h: WorldAccessHarness): Promise<string[]
     if (h.assetPath !== undefined) {
       const a = await asset(who, W);
       if (a.status !== 200) v.push(`GET asset of a shared world (${name}): ${describeReply(a)}`);
+    }
+    // A reader may play the place they were given the link to (ghost-engine 5, through the same access rule).
+    if (playChecked) {
+      const p = await play(who, W);
+      if (p.status !== 200) v.push(`POST play/start in a shared world (${name}): ${describeReply(p)}`);
     }
   }
 
@@ -177,6 +185,11 @@ export async function checkWorldSharing(h: WorldAccessHarness): Promise<string[]
   if (!ok2xx(off)) v.push(`DELETE share by the owner: ${describeReply(off)}`);
   mustLookMissing("GET after the link is off", await get(B, W), await get(B, M));
   mustLookMissing("GET with no cookie after the link is off", await get(NONE, W), await get(NONE, M));
+  if (playChecked) {
+    mustLookMissing("POST play/start after the link is off", await play(B, W), await play(B, M));
+    mustLookMissing("POST play/start with no cookie after the link is off", await play(NONE, W), await play(NONE, M));
+    if ((await play(A, W)).status !== 200) v.push("turning the link off stopped the owner from playing in their own world");
+  }
   if (h.assetPath !== undefined) mustLookMissing("GET asset after the link is off", await asset(B, W), await asset(B, M));
   if ((await get(A, W)).status !== 200) v.push("turning the link off took the world from its owner");
 
@@ -204,8 +217,8 @@ export function worldAccessContract(
       expect(await checkWorldAccess(await makeHarness(), options.skip)).toEqual([]);
     });
     it("shares a world only while its owner's link is on, and changes nothing for a reader", async () => {
-      expect(await checkWorldSharing(await makeHarness())).toEqual([]);
+      expect(await checkWorldSharing(await makeHarness(), options.skip)).toEqual([]);
     });
-    for (const check of options.skip ?? []) it.todo(`${check}: not checked yet, its route does not exist (ghost-engine 5)`);
+    for (const check of options.skip ?? []) it.todo(`${check}: not checked yet`);
   });
 }

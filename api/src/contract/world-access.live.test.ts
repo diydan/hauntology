@@ -4,7 +4,7 @@ import { checkWorldAccess, checkWorldSharing, type WorldAccessHarness } from "./
 
 /**
  * Shell task 3.3 against a running `wrangler dev` (real local R2 and a real Durable Object). Skipped unless
- * `LIVE_URL` is set. The play checks are left out until `POST /api/play/start` exists (ghost-engine 5).
+ * `LIVE_URL` is set. The play checks run too (ghost-engine 5): the check Worker has the real `PlaySession` and `PlayIndex` objects.
  */
 describe.skipIf(LIVE_URL === undefined)("world access contract: wrangler dev with real R2 and WorldJob", () => {
   it("serves an own world only to its Session, and answers a foreign id like a missing one", async () => {
@@ -33,7 +33,7 @@ describe.skipIf(LIVE_URL === undefined)("world access contract: wrangler dev wit
       missingWorldId: kit.unique("w-missing"),
       assetPath: (id) => `/api/worlds/${id}/assets/world.json`,
     };
-    expect(await checkWorldAccess(harness, ["play"])).toEqual([]);
+    expect(await checkWorldAccess(harness)).toEqual([]);
     expect(await checkWorldSharing(harness)).toEqual([]);
   });
 });

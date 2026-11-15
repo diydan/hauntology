@@ -25,13 +25,17 @@
       { "name": "SPEND_GUARD", "class_name": "SpendGuard" },
       // Party mode: one Room per code (sockets hibernate), one directory for the caps.
       { "name": "PARTY_ROOM", "class_name": "PartyRoom" },
-      { "name": "PARTY_DIRECTORY", "class_name": "PartyDirectory" }
+      { "name": "PARTY_DIRECTORY", "class_name": "PartyDirectory" },
+      // The ghost's games: one PlaySession for each game (named by its unguessable id), one PlayIndex listing the games of each world so deleting a place deletes them.
+      { "name": "PLAY_SESSION", "class_name": "PlaySession" },
+      { "name": "PLAY_INDEX", "class_name": "PlayIndex" }
     ]
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["WorldJob"] },
     { "tag": "v2", "new_sqlite_classes": ["SpendGuard"] },
-    { "tag": "v3", "new_sqlite_classes": ["PartyRoom", "PartyDirectory"] }
+    { "tag": "v3", "new_sqlite_classes": ["PartyRoom", "PartyDirectory"] },
+    { "tag": "v4", "new_sqlite_classes": ["PlaySession", "PlayIndex"] }
   ],
   // Hourly: delete uploads past 24 hours and user worlds past 7 days.
   "triggers": { "crons": ["17 * * * *"] },

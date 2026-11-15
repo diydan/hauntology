@@ -20,6 +20,15 @@ export const LOG_SCHEMA = {
   "cleanup.done": { deleted: "int", worlds: "int" },
   /** The operator closed or opened new world creation. */
   "admin.kill": { on: "bool" },
+  /** A game began (ghost-engine 5): which world, and how the visitor reaches it (`owner`, `shared` or `public`). Never a word the visitor said. */
+  "play.start": { worldId: "id", access: "word" },
+  /** One turn was taken: what the ghost was told to do (`reveal`, `echo`, `tease`, `hint`, `ambient`, `ending` or `refuse`) and whether it spoke from the scripted lines. Never the input or the reply. */
+  "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
+  /** A game was finished or played again, with how many turns it took. */
+  "play.end": { turns: "int" },
+  "play.reset": { turns: "int" },
+  /** A play call was refused, with its code (`rate_limited`, `session_expired`, `world_not_found`, ...). */
+  "play.refused": { code: "word" },
 } as const;
 
 export type LogEvent = keyof typeof LOG_SCHEMA;

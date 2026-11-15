@@ -1,16 +1,16 @@
+import { MemoryPlaySessions } from "../play/memory";
 import { worldsKit } from "../worlds/test-kit";
 import { worldAccessContract, type WorldAccessHarness } from "./world-access";
 
 /**
  * Shell task 3.3: the world access contract against the real world routes (`routes/worlds.ts`) over the
- * in-memory store. `POST /api/play/start` belongs to ghost-engine 5 and does not exist, so its checks are
- * listed as a todo until that route can be plugged in.
+ * in-memory store, with `POST /api/play/start` plugged in (ghost-engine 5): the play checks run too, and a reader of a shared world may play it.
  */
 const GALLERY = "greenhouse";
 const MISSING = "w-does-not-exist-123456";
 
 async function realHarness(): Promise<WorldAccessHarness> {
-  const kit = worldsKit();
+  const kit = worldsKit(undefined, { play: { sessions: new MemoryPlaySessions() } });
   kit.readyWorld(GALLERY, null, { kind: "gallery" });
   const visitors = new Map<string, Awaited<ReturnType<typeof kit.visitor>>>();
   let seed = 0;
@@ -38,4 +38,4 @@ async function realHarness(): Promise<WorldAccessHarness> {
   };
 }
 
-worldAccessContract("real world routes over the in-memory store", realHarness, { skip: ["play"] });
+worldAccessContract("real world routes over the in-memory store", realHarness);

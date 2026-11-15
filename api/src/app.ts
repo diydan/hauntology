@@ -6,6 +6,8 @@ import { flagsFrom, type SpendStatus } from "./http/flags";
 import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
+import { playRoutes } from "./routes/play";
+import type { PlaySessions } from "./play/ports";
 import { quotaRoutes } from "./routes/quota";
 import { sessionRoutes } from "./routes/session";
 import { adminRoutes, type AdminDeps } from "./routes/admin";
@@ -29,6 +31,8 @@ export type AppOptions = SessionOptions & {
   spend?: (c: Context<AppEnv>) => Promise<SpendStatus> | SpendStatus;
   /** The operator's routes (`/admin/status`, `/admin/kill`). When given, they are served; otherwise there is no such route. */
   admin?: AdminDeps;
+  /** The games (ghost-engine 5). When given with `worlds`, `/api/play` is served: a visitor may play in a world they own, a Gallery world, or one whose owner shares the link. */
+  play?: { sessions: PlaySessions };
   /** The built web app. When given, a request no route took (a page, a script, a style) is answered from it, the single-page fallback included (world-pipeline task 2); without it such a request is a 404. */
   assets?: AssetsPort;
   /** Where log lines go (world-pipeline 8.2). Default: nowhere, so a test or a caller without one is silent. */
@@ -89,6 +93,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     app.route("/api/worlds", worldRoutes(options.worlds));
     // The Gallery needs the store and nothing else: no key, no quota, no open switch (world-pipeline 9.2, Requirement 9.3).
     app.route("/api/gallery", galleryRoutes({ store: options.worlds.store }));
+    if (options.play !== undefined) app.route("/api/play", playRoutes({ store: options.worlds.store, sessions: options.play.sessions, log, now: options.now ?? Date.now }));
     const creation = options.worlds.creation;
     if (creation !== undefined) {
       app.route("/api/worlds", worldCreateRoutes({ store: options.worlds.store, ...creation, now: options.now ?? Date.now, worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled }));

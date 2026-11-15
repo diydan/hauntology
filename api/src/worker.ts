@@ -2,6 +2,8 @@ import { retentionFromEnv } from "@hauntology/shared/world/retention";
 import { createApp } from "./app";
 import { PartyDirectory } from "./do/party-directory";
 import { PartyRoom } from "./do/party-room";
+import { PlayIndex } from "./do/play-index";
+import { PlaySession } from "./do/play-session";
 import { SpendGuard } from "./do/spend-guard";
 import { WorldJob } from "./do/live-world-job";
 import type { AiBinding } from "./guarded/workersai/call";
@@ -12,6 +14,7 @@ import type { AssetsPort } from "./http/assets";
 import type { Bindings } from "./http/env";
 import { createLogger } from "./log";
 import { adminTokenFrom } from "./routes/admin";
+import { CloudflarePlaySessions } from "./play/cloudflare";
 import { SpendGuardClient } from "./spend/client";
 import { cleanupExpired } from "./worlds/cleanup";
 import { CloudflareCandidateStore } from "./worlds/cloudflare-candidates";
@@ -23,12 +26,19 @@ import { WorldJobStarter } from "./worlds/job-starter";
 import { CloudflareTurnstile } from "./worlds/turnstile";
 
 /** The bindings of `wrangler.jsonc`: the one R2 bucket, the `WorldJob` and `SpendGuard` Durable Object namespaces and the built web app (`ASSETS`), besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
-export type WorkerEnv = Bindings & WorldLabsEnv & { ASSETS?: AssetsPort; AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace; PARTY_ROOM: DurableObjectNamespace; PARTY_DIRECTORY: DurableObjectNamespace };
+export type WorkerEnv = Bindings & WorldLabsEnv & { ASSETS?: AssetsPort; AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace; PARTY_ROOM: DurableObjectNamespace; PARTY_DIRECTORY: DurableObjectNamespace; PLAY_SESSION?: DurableObjectNamespace; PLAY_INDEX?: DurableObjectNamespace };
 
 /** The Worker's one logger: ids, codes and counters only (`shared/src/log.ts`). */
 const logger = createLogger();
 
-export const storeFor = (env: WorkerEnv): CloudflareWorldStore => new CloudflareWorldStore({ bucket: env.BUCKET, jobs: env.WORLD_JOB });
+/** The games (`PlaySession`, one for each, and the `PlayIndex` of which belong to which world), or `null` when the Worker has no such objects. */
+export const playsFor = (env: WorkerEnv): CloudflarePlaySessions | null => (env.PLAY_SESSION !== undefined && env.PLAY_INDEX !== undefined ? new CloudflarePlaySessions(env.PLAY_SESSION, env.PLAY_INDEX) : null);
+
+/** Deleting a world deletes its games with it (`PlaySessionPurger`), so the store is given the games. */
+export const storeFor = (env: WorkerEnv): CloudflareWorldStore => {
+  const plays = playsFor(env);
+  return new CloudflareWorldStore({ bucket: env.BUCKET, jobs: env.WORLD_JOB, ...(plays !== null ? { playSessions: plays } : {}) });
+};
 
 // `env` is the same object for the life of an isolate, so the app is built once per isolate.
 const apps = new WeakMap<object, ReturnType<typeof createApp>>();
@@ -57,6 +67,8 @@ export default {
         spend: () => guard.status(),
         // Party mode (integration 3.2): one `PartyRoom` per Room Code, one `PartyDirectory` for the caps.
         party: { rooms: env.PARTY_ROOM, directory: env.PARTY_DIRECTORY },
+        // The ghost's games (ghost-engine 3 and 5): one `PlaySession` for each, so a reader of a shared place can play it.
+        ...(playsFor(env) !== null ? { play: { sessions: playsFor(env) as CloudflarePlaySessions } } : {}),
         worlds: {
           store: storeFor(env),
           creation: {
@@ -85,4 +97,4 @@ export default {
   },
 };
 
-export { PartyDirectory, PartyRoom, SpendGuard, WorldJob };
+export { PartyDirectory, PartyRoom, PlayIndex, PlaySession, SpendGuard, WorldJob };

@@ -12,7 +12,8 @@ import { checkWorldAccess, checkWorldSharing, worldAccessContract, type WorldAcc
 type Leak =
   | "none" | "foreign-403" | "foreign-readable" | "delete-any" | "play-any" | "echo-id"
   | "anonymous-readable" | "asset-any" | "gallery-deletable" | "owner-locked-out"
-  | "share-default-on" | "share-by-stranger" | "shared-reader-delete" | "reader-unshare" | "unshare-ignored" | "shared-survives-delete" | "share-gallery";
+  | "share-default-on" | "share-by-stranger" | "shared-reader-delete" | "reader-unshare" | "unshare-ignored" | "shared-survives-delete" | "share-gallery"
+  | "reader-play-denied" | "play-survives-unshare" | "play-before-share";
 
 const ORIGIN = "http://app.test";
 const ENV = { HMAC_SECRET: "test-secret-0123456789abcdef-test" };
@@ -23,6 +24,7 @@ function referenceHarness(leak: Leak): WorldAccessHarness {
   const app = createApp();
   const owners = new Map<string, string>(); // world id -> owner's session id
   const shared = new Set<string>(); // ids whose owner turned the share link on
+  const everShared = new Set<string>(); // ids that were ever shared (a leaky app keeps playing in them)
   let seed = 0;
 
   const sid = (c: Context<AppEnv>) => c.get("session").sid;
@@ -89,6 +91,7 @@ function referenceHarness(leak: Leak): WorldAccessHarness {
     const v = visible(c, id, true);
     if (v === "yes" || (leak === "share-by-stranger" && v === "foreign")) {
       shared.add(id);
+      everShared.add(id);
       return c.json({ ok: true, shared: true });
     }
     return notFound(c, id);
@@ -107,8 +110,11 @@ function referenceHarness(leak: Leak): WorldAccessHarness {
 
   app.post("/api/play/start", async (c) => {
     const { worldId } = (await c.req.json()) as { worldId: string };
-    const v = visible(c, worldId);
-    if (v === "yes" || (leak === "play-any" && v === "foreign")) {
+    // A reader of a shared world may play it, like the real route: only the owner may change or delete, not play.
+    const v = leak === "reader-play-denied" ? visible(c, worldId, true) : visible(c, worldId);
+    const keepsPlaying = leak === "play-survives-unshare" && everShared.has(worldId);
+    const unlocked = leak === "play-before-share" && v === "foreign";
+    if (v === "yes" || (leak === "play-any" && v === "foreign") || keepsPlaying || unlocked) {
       setLastPlay(c, "p-1");
       return c.json({ playId: "p-1" });
     }
@@ -176,6 +182,9 @@ describe("the share link contract can disagree", () => {
     ["shared-survives-delete", /GET of a deleted shared world: answered 200/],
     ["share-gallery", /POST share of a Gallery world: answered 200/],
     ["owner-locked-out", /POST share by the owner: 404/],
+    ["reader-play-denied", /POST play\/start in a shared world \(another visitor\): 404/],
+    ["play-survives-unshare", /POST play\/start after the link is off: answered 200/],
+    ["play-before-share", /POST play\/start before the link is on: answered 200/],
   ];
 
   for (const [leak, expected] of cases) {
