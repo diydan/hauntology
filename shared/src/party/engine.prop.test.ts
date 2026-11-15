@@ -32,7 +32,9 @@ function play(seed: number, n: number, max: 8 | 10 | 12, human: boolean, r: Rng,
       continue;
     }
     if (human && s.turn && s.turn.seat !== 1 && r() < 0.15) {
-      const off: ClientMsg[] = [{ t: "nudge", kind: "help" }, { t: "nudge", kind: "spook" }, { t: "eavesdrop", eventId: s.eavesdrop?.eventId ?? 1 }, { t: "pause" }, { t: "resume" }];
+      const off: ClientMsg[] = [{ t: "nudge", kind: "help" }, { t: "nudge", kind: "spook" }, { t: "eavesdrop", eventId: s.eavesdrop?.eventId ?? 1 }, { t: "pause" }, { t: "resume" },
+        { t: "cue", cue: "creak" }, { t: "cue", cue: "bell", place: "phone" }, { t: "sound", consent: r() < 0.5 }, { t: "frame", target: 2, cue: "laugh" }];
+      if (r() < 0.1) { go({ kind: r() < 0.5 ? "disconnect" : "connect", seat: 1 }); continue; }
       go({ kind: "client", seat: 1, msg: off[randInt(r, off.length)] as ClientMsg });
       if (s.pausedSinceMs !== null) { now += 2000; go({ kind: "client", seat: 1, msg: { t: "resume" } }); }
       continue;

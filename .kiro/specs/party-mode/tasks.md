@@ -186,9 +186,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.60 Write property test for Nudges
     - **Property 31: Nudges obey cost, floor and limits**
     - **Validates: Requirements 12.2, 12.3, 12.4**
-  - [ ] 2.61 `CUES` (four: creak, whisper, bell, laugh), `canCue` and `playCue`: one per Player per 4 s, three playing, six per Turn, text-only when sounds are off, no rule effect
+  - [x] 2.61 `CUES` (four: creak, whisper, bell, laugh), `canCue` and `playCue`: one per Player per 4 s, three playing, six per Turn, text-only when sounds are off, no rule effect
     - _Requirements: 12.1_
-  - [ ]* 2.62 Write property test for Cues
+  - [x]* 2.62 Write property test for Cues
     - **Property 32: Cues are rate limited and change no rule**
     - **Validates: Requirements 12.1, 14.1, 14.2**
   - [ ] 2.63 `applyPreset` (Classic 60 s and 10, Gentle 90 s and 12, Quick 45 s and 8, each with its Nudge, Frame, auto-cross and Bot settings), the Nudge (all, help-only, off), Frame and sound switches, and `canControl` extended so that only the Master's token can change them; no Cue, Nudge or Frame calls a model (their lines come from `partyScripted`)
@@ -196,19 +196,19 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.64 Write property test for presets and switches
     - **Property 33: Presets and switches do what they say**
     - **Validates: Requirements 12.5, 14.6**
-  - [ ] 2.65 Seat-owned limits: Resolve, per-Turn Nudges, Cue timing, sounds this Round, Frames sent and received and Sound Consent live on the seat and are unchanged by reconnect, hand-over and serialise-then-parse
+  - [x] 2.65 Seat-owned limits: Resolve, per-Turn Nudges, Cue timing, sounds this Round, Frames sent and received and Sound Consent live on the seat and are unchanged by reconnect, hand-over and serialise-then-parse
     - _Requirements: 12.1, 12.4, 14.4_
-  - [ ]* 2.66 Write property test for seat-owned limits
+  - [x]* 2.66 Write property test for seat-owned limits
     - **Property 34: Per-seat limits survive a reconnect**
     - **Validates: Requirements 12.1, 12.4, 14.4**
-  - [ ] 2.67 `setConsent`, `soundPlan` (play, flash or none; three sounds per phone per Round), `houseCuePhones` (seeded stream `housecue`) and `restlessSchedule` (400 ms steps)
+  - [x] 2.67 `setConsent`, `soundPlan` (play, flash or none; three sounds per phone per Round), `houseCuePhones` (seeded stream `housecue`) and `restlessSchedule` (400 ms steps)
     - _Requirements: 13.1, 14.1, 14.2, 14.3_
-  - [ ]* 2.68 Write property test for phone sound
+  - [x]* 2.68 Write property test for phone sound
     - **Property 35: Phone sound needs consent and always has a fallback**
     - **Validates: Requirements 13.1, 14.1, 14.2**
-  - [ ] 2.69 `canFrame`, `frame` and `phoneCueEvent` (one public event for a House Cue and a Frame, a private `notYou`), the secret `cueSources`, and the ending reveal
+  - [x] 2.69 `canFrame`, `frame` and `phoneCueEvent` (one public event for a House Cue and a Frame, a private `notYou`), the secret `cueSources`, and the ending reveal
     - _Requirements: 14.3, 14.4, 14.5_
-  - [ ]* 2.70 Write property test for House Cues and Frames
+  - [x]* 2.70 Write property test for House Cues and Frames
     - **Property 36: A House Cue and a Frame look the same until the end**
     - **Validates: Requirements 14.3, 14.4, 14.5**
   - [ ] 2.71 Reconcile `shared/src/errors.ts` and `shared/src/app/errors-copy.ts` with every party code in the design (the codes missing today, and `nudge_denied`, `cue_denied` and `frame_denied` with their reasons such as `spook_round_limit`); the copy table is a `Record<ErrorCode, …>`, so the compiler lists what is missing

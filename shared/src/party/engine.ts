@@ -9,6 +9,7 @@ import { buildPool, type Pool } from "./pool";
 import { inspectRefusal, placeResidue, settleInspect, startInspect, type Inspecting } from "./residue";
 import { EAVESDROP_MS, canEavesdrop, eavesdrop, gainResolve, spendResolve, type EavesdropWindow } from "./resolve";
 import { applyNudge, canNudge, type LastSpook, type NudgeKind } from "./nudge";
+import { CUE_PLAY_MS, canCue, canFrame, houseCuePhones, isCue, restlessSchedule, soundPlan, type CueId, type FrameSeat, type PhoneSeat, type SoundPlan } from "./cues";
 import { canSuggest, defaultShown, isBluff, resolveSuggestion, validShow } from "./suggest";
 import { firstPlayer, nextPlayer, type Order } from "./turns";
 
@@ -29,13 +30,19 @@ export const BOT_THINK_MAX_MS = 6_000;
 const BOT_ACTIONS_PER_TURN = 8;
 
 export type EngineSeat = Readonly<{ seat: number; nickname: string; bot: boolean; botLevel: "standard" | "gentle" }>;
-export type EngineSettings = Readonly<{ baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off" }>;
+export type EngineSettings = Readonly<{ baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off"; sounds?: boolean; frames?: boolean }>;
+export const DISCONNECT_GRACE_MS = 20_000;
+export const MASTER_AWAY_MS = 60_000;
+export const MISSED_TO_SKIP = 2;
 
 export type PlayerRec = Readonly<{
   seat: number; poltergeist: boolean; joinedRound: number | null; resolve: number;
   inspected: readonly string[]; shownToMe: readonly Readonly<{ card: string; by: number }>[]; found: readonly string[];
   sealed: Solution | null; hasSealed: boolean; suggestions: number; turnMsUsed: number;
   heard: readonly Readonly<{ eventId: number; card: string }>[];
+  /** Seat-owned, so a reconnect changes none of them (party-mode 12.4, 14.4). */
+  connected: boolean; missed: number; lastCueMs: number | null; soundsThisRound: number;
+  frameSentRound: number | null; framedRound: number | null; soundConsent: boolean; hasAudio: boolean;
 }>;
 
 export type TurnRec = Readonly<{
@@ -47,6 +54,10 @@ export type TurnRec = Readonly<{
   nudges: Readonly<{ help: boolean; spook: boolean }>;
   /** True when the Master's pause (not a Suggestion) paused this clock. */
   masterPausedClock: boolean;
+  cueCount: number;
+  /** The active Player's phone dropped: the clock is paused and the Turn ends at this time unless they come back. */
+  disconnectEndsMs: number | null;
+  disconnectPausedClock: boolean;
 }>;
 
 export type EngineEvent = RecapEvent | Readonly<{ id: number; kind: "visit"; seat: number; zone: string; sinceTurnMs: number }> | Readonly<{ id: number; kind: "haunt-event"; option: HauntOption }>;
@@ -65,6 +76,11 @@ export type EngineState = Readonly<{
   lastSpook: LastSpook | null;
   nudgeCounts: Readonly<{ haunting: number; others: number }>;
   eavesdrop: EavesdropWindow | null;
+  /** When each sounding Cue stops. */
+  playing: readonly number[];
+  masterAwaySinceMs: number | null;
+  /** Messages for one step beyond the views (a Cue to one phone, "not you"); emptied by every step. */
+  outbox: readonly Outbound[];
 }>;
 
 // ---------------------------------------------------------------- actions and messages
@@ -81,8 +97,11 @@ export type ClientMsg =
   | Readonly<{ t: "nudge"; kind: NudgeKind }>
   | Readonly<{ t: "eavesdrop"; eventId: number }>
   | Readonly<{ t: "pause" }>
-  | Readonly<{ t: "resume" }>;
-export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> | Readonly<{ kind: "alarm" }>;
+  | Readonly<{ t: "resume" }>
+  | Readonly<{ t: "cue"; cue: string; place?: "tv" | "phone" }>
+  | Readonly<{ t: "frame"; target: number; cue: string }>
+  | Readonly<{ t: "sound"; consent: boolean; audio?: boolean }>;
+export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> | Readonly<{ kind: "alarm" }> | Readonly<{ kind: "connect"; seat: number }> | Readonly<{ kind: "disconnect"; seat: number }>;
 
 export type PublicSnapshot = Readonly<{
   phase: EngineState["phase"]; round: number; active: number | null; at: string | null;
@@ -99,10 +118,12 @@ export type PrivateSnapshot = Readonly<{
   answer: Readonly<{ eventId: number; options: readonly string[]; deadlineMs: number }> | null;
   heard: readonly Readonly<{ eventId: number; card: string }>[];
   canEavesdrop: number | null;
+  soundConsent: boolean;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
 }>;
 export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> }>
-  | Readonly<{ to: "seat"; seat: number; msg: Readonly<{ t: "private"; view: PrivateSnapshot }> | Readonly<{ t: "refused"; code: string }> }>;
+  | Readonly<{ to: "seat"; seat: number; msg: Readonly<{ t: "private"; view: PrivateSnapshot }> | Readonly<{ t: "refused"; code: string }>
+      | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }> }>;
 export type StepResult = Readonly<{ state: EngineState; out: readonly Outbound[]; wakeAtMs: number | null; refused?: string }>;
 
 // ---------------------------------------------------------------- creating a game
@@ -115,11 +136,12 @@ export function createEngine(o: Readonly<{ seed: number; seats: readonly EngineS
     haunt: { level: 0, max: o.settings.hauntMax, fired: [], pending: null, coldSpot: null, blackoutNext: false }, eventsChosen: 0,
     log: [], nextId: 1, shownLog: {}, bluffs: [], sources: [], botFacts: {}, winners: [], houseWins: false, ending: null,
     pausedSinceMs: null, lastSpook: null, nudgeCounts: { haunting: 0, others: 0 }, eavesdrop: null,
+    playing: [], masterAwaySinceMs: null, outbox: [],
   };
 }
 
 // ---------------------------------------------------------------- helpers
-const order = (s: EngineState): Order => ({ seats: s.seats.map((x) => x.seat), out: s.players.filter((p) => p.poltergeist).map((p) => p.seat) });
+const order = (s: EngineState): Order => ({ seats: s.seats.map((x) => x.seat), out: s.players.filter((p) => p.poltergeist || (!p.connected && p.missed >= MISSED_TO_SKIP)).map((p) => p.seat) });
 const player = (s: EngineState, seat: number): PlayerRec | undefined => s.players.find((p) => p.seat === seat);
 const isBot = (s: EngineState, seat: number): boolean => s.seats.find((x) => x.seat === seat)?.bot ?? false;
 const setPlayer = (s: EngineState, seat: number, f: (p: PlayerRec) => PlayerRec): EngineState => ({ ...s, players: s.players.map((p) => (p.seat === seat ? f(p) : p)) });
@@ -155,9 +177,11 @@ function startTurn(s: EngineState, seat: number, now: number): EngineState {
   const turn: TurnRec = {
     seat, turnNo, startedMs: now, clock: { startedMs: now, budgetMs: budget === null ? null : budget * 1000, pausedMs: 0, pausedSinceMs: null, ended: false },
     at: null, suggested: false, inspecting: null, answering: null, windowUntilMs: null, botDueMs: null, botActions: 0,
-    nudges: { help: false, spook: false }, masterPausedClock: false,
+    nudges: { help: false, spook: false }, masterPausedClock: false, cueCount: 0, disconnectEndsMs: null, disconnectPausedClock: false,
   };
-  const t2 = isBot(s2, seat) ? { ...turn, botDueMs: now + thinkMs(s2, 0) } : turn;
+  const away = !isBot(s2, seat) && (player(s2, seat)?.connected === false);
+  const t1: TurnRec = away ? { ...turn, clock: pause(turn.clock, now), disconnectEndsMs: now + DISCONNECT_GRACE_MS, disconnectPausedClock: true } : turn;
+  const t2 = isBot(s2, seat) ? { ...t1, botDueMs: now + thinkMs(s2, 0) } : t1;
   return { ...s2, turn: t2 };
 }
 
@@ -176,8 +200,29 @@ function fireHaunt(s: EngineState, now: number): EngineState {
 }
 
 function applyChosen(s: EngineState, option: HauntOption, now: number): EngineState {
+  const level = s.haunt.pending?.level ?? s.haunt.level;
   const [s2] = addLog({ ...s, haunt: applyEvent(s.haunt, option, s.pool.zones.map((z) => z.id), s.round, s.seed), eventsChosen: s.eventsChosen + 1 }, { kind: "haunt-event", option });
-  return fireHaunt(s2, now);
+  return fireHaunt(houseCue(s2, level, option === "restless", now), now);
+}
+
+const phoneOf = (s: EngineState, p: PlayerRec): PhoneSeat => ({ seat: p.seat, bot: isBot(s, p.seat), consent: p.soundConsent, hasAudio: p.hasAudio, soundsThisRound: p.soundsThisRound });
+
+/** Play a Cue on one phone: the public event names only the phone; the phone hears it (or flashes) and is told "not you". */
+function cueOnPhone(s: EngineState, target: number, cue: CueId, playAtMs: number, source: { kind: "house-cue" | "frame"; from: number | null }): EngineState {
+  const p = player(s, target) as PlayerRec;
+  const plan = soundPlan(phoneOf(s, p), s.settings.sounds ?? true);
+  let [st, id] = addLog(s, { kind: "phone-cue", target, cue });
+  st = setPlayer(st, target, (q) => ({ ...q, soundsThisRound: plan === "none" ? q.soundsThisRound : q.soundsThisRound + 1 }));
+  return { ...st, sources: [...st.sources, { eventId: id, kind: source.kind, from: source.from }],
+    outbox: [...st.outbox, { to: "seat", seat: target, msg: { t: "cue", eventId: id, cue, playAtMs, plan } }, { to: "seat", seat: target, msg: { t: "notYou", eventId: id } }] };
+}
+
+/** Every Haunt Event plays a House Cue: one seeded phone, or every consenting phone 400 ms apart for Restless. */
+function houseCue(s: EngineState, level: number, restless: boolean, now: number): EngineState {
+  const { cue, seats } = houseCuePhones(s.players.map((p) => phoneOf(s, p)), level, s.seed, restless);
+  let st = s;
+  for (const { seat, playAtMs } of restlessSchedule(seats, now)) st = cueOnPhone(st, seat, cue, playAtMs, { kind: "house-cue", from: null });
+  return st;
 }
 
 function endTurn(s: EngineState, now: number): EngineState {
@@ -200,7 +245,7 @@ function endTurn(s: EngineState, now: number): EngineState {
   for (const r of res.reveals) st = addLog(st, { kind: "accuse", seat: r.seat, right: r.right })[0];
   if (res.state.phase === "ended") return finish({ ...st, winners: res.state.winners, houseWins: res.state.houseWins }, now);
   st = fireHaunt(st, now);
-  st = { ...st, players: st.players.map((p) => ({ ...p, resolve: gainResolve(p.resolve) })) };
+  st = { ...st, players: st.players.map((p) => ({ ...p, resolve: gainResolve(p.resolve), soundsThisRound: 0 })) };
   const first = firstPlayer(order(st), st.first, st.seed);
   if (first === null) return finish({ ...st, houseWins: true }, now);
   return startTurn({ ...st, first }, first, now);
@@ -230,6 +275,7 @@ function deliverShown(s: EngineState, eventId: number, card: string, now: number
 // ---------------------------------------------------------------- one Action
 function apply(s: EngineState, a: Action, now: number): EngineState | string {
   if (a.kind === "alarm") return onAlarm(s, now);
+  if (a.kind === "connect" || a.kind === "disconnect") return connection(s, a.seat, a.kind === "connect", now);
   const { seat, msg } = a;
   if (!s.seats.some((x) => x.seat === seat)) return "bad_token";
   if (msg.t === "start") {
@@ -237,7 +283,8 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     if (s.phase !== "lobby") return "game_started";
     const seatIds = s.seats.map((x) => x.seat);
     const deal = dealCase(s.pool, seatIds, s.seed);
-    const players: PlayerRec[] = seatIds.map((x) => ({ seat: x, poltergeist: false, joinedRound: null, resolve: 1, inspected: [], shownToMe: [], found: [], sealed: null, hasSealed: false, suggestions: 0, turnMsUsed: 0, heard: [] }));
+    const players: PlayerRec[] = seatIds.map((x) => ({ seat: x, poltergeist: false, joinedRound: null, resolve: 1, inspected: [], shownToMe: [], found: [], sealed: null, hasSealed: false, suggestions: 0, turnMsUsed: 0, heard: [],
+      connected: !s.seats.find((y) => y.seat === x)?.bot, missed: 0, lastCueMs: null, soundsThisRound: 0, frameSentRound: null, framedRound: null, soundConsent: false, hasAudio: true }));
     const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(s.pool.zones.map((z) => z.id), deal.residue, s.seed), players, round: 1 };
     const first = firstPlayer(order(st), null, s.seed) as number;
     return startTurn({ ...st, first }, first, now);
@@ -255,7 +302,37 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     if (s.pausedSinceMs === null) return "not_paused";
     return resumeAll(s, now);
   }
+  if (msg.t === "sound") return setPlayer(s, seat, (p) => ({ ...p, soundConsent: msg.consent, hasAudio: msg.audio ?? p.hasAudio }));
   if (s.pausedSinceMs !== null) return "paused";
+  if (msg.t === "cue") {
+    if (!isCue(msg.cue)) return "cue_denied:unknown";
+    const me = player(s, seat) as PlayerRec;
+    const t = s.turn;
+    const ok = canCue({ seat, bot: isBot(s, seat), lastCueMs: me.lastCueMs }, t?.seat ?? null, s.playing, t?.cueCount ?? 0, now);
+    if (!ok.ok) return `cue_denied:${ok.reason}`;
+    const place = msg.place ?? "tv";
+    let st = setPlayer(s, seat, (p) => ({ ...p, lastCueMs: now }));
+    st = { ...st, playing: [...st.playing.filter((e) => e > now), now + CUE_PLAY_MS], turn: t === null ? null : { ...t, cueCount: t.cueCount + 1 } };
+    const [st2, id] = addLog(st, { kind: "cue", seat, cue: msg.cue, place });
+    if (place === "tv") return st2;
+    const plan = soundPlan(phoneOf(st2, player(st2, seat) as PlayerRec), st2.settings.sounds ?? true);
+    const st3 = setPlayer(st2, seat, (p) => ({ ...p, soundsThisRound: plan === "none" ? p.soundsThisRound : p.soundsThisRound + 1 }));
+    return { ...st3, outbox: [...st3.outbox, { to: "seat", seat, msg: { t: "cue", eventId: id, cue: msg.cue, playAtMs: now, plan } }] };
+  }
+  if (msg.t === "frame") {
+    if (!isCue(msg.cue)) return "frame_denied:unknown";
+    const me = player(s, seat) as PlayerRec;
+    const them = player(s, msg.target);
+    if (!them) return "frame_denied:self";
+    const fs = (p: PlayerRec): FrameSeat => ({ ...phoneOf(s, p), lastCueMs: p.lastCueMs, frameSentRound: p.frameSentRound, framedRound: p.framedRound });
+    const t = s.turn;
+    const ok = canFrame(fs(me), fs(them), { framesOn: s.settings.frames ?? true, activeSeat: t?.seat ?? null, round: s.round, playingEnds: s.playing, turnCueCount: t?.cueCount ?? 0, now });
+    if (!ok.ok) return `frame_denied:${ok.reason}`;
+    let st = setPlayer(s, seat, (p) => ({ ...p, lastCueMs: now, frameSentRound: s.round }));
+    st = setPlayer(st, msg.target, (p) => ({ ...p, framedRound: s.round }));
+    st = { ...st, playing: [...st.playing.filter((e) => e > now), now + CUE_PLAY_MS], turn: t === null ? null : { ...t, cueCount: t.cueCount + 1 } };
+    return cueOnPhone(st, msg.target, msg.cue, now, { kind: "frame", from: seat });
+  }
   if (msg.t === "nudge") {
     const t = s.turn;
     const me = player(s, seat) as PlayerRec;
@@ -345,6 +422,25 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
   }
 }
 
+/**
+ * A phone dropped or came back (party-mode 5.5, 1.4, 1.7). Every seat-owned limit stays as it was. The active
+ * Player's clock pauses for up to 20 s; a Master away for 60 s hands the role to the next human.
+ */
+function connection(s: EngineState, seat: number, up: boolean, now: number): EngineState | string {
+  const p = player(s, seat);
+  if (!p || isBot(s, seat)) return "bad_token";
+  if (p.connected === up) return s;
+  let st = setPlayer(s, seat, (q) => ({ ...q, connected: up, missed: up ? 0 : q.missed }));
+  if (seat === s.masterSeat) st = { ...st, masterAwaySinceMs: up ? null : now };
+  const t = st.turn;
+  if (t === null || t.seat !== seat || st.phase !== "playing") return st;
+  if (!up) {
+    const free = t.clock.pausedSinceMs === null;
+    return { ...st, turn: { ...t, clock: free ? pause(t.clock, now) : t.clock, disconnectPausedClock: free, disconnectEndsMs: now + DISCONNECT_GRACE_MS } };
+  }
+  return { ...st, turn: { ...t, clock: t.disconnectPausedClock ? resume(t.clock, now) : t.clock, disconnectPausedClock: false, disconnectEndsMs: null } };
+}
+
 /** The Master resumes: every deadline moves on by the length of the pause, so nothing ran while it was paused. */
 function resumeAll(s: EngineState, now: number): EngineState {
   const d = Math.max(0, now - (s.pausedSinceMs as number));
@@ -354,7 +450,7 @@ function resumeAll(s: EngineState, now: number): EngineState {
     ...t, clock: t.masterPausedClock ? resume(t.clock, now) : t.clock, masterPausedClock: false,
     inspecting: t.inspecting === null ? null : { ...t.inspecting, untilMs: t.inspecting.untilMs + d },
     answering: t.answering === null ? null : { ...t.answering, untilMs: t.answering.untilMs + d },
-    windowUntilMs: shift(t.windowUntilMs), botDueMs: shift(t.botDueMs),
+    windowUntilMs: shift(t.windowUntilMs), botDueMs: shift(t.botDueMs), disconnectEndsMs: shift(t.disconnectEndsMs),
   };
   const p = s.haunt.pending;
   return {
@@ -379,8 +475,16 @@ function tick(s: EngineState, now: number): EngineState {
   if (s.pausedSinceMs !== null) return s;
   const p = s.haunt.pending;
   if (p !== null && p.chooser !== null && now >= p.deadlineMs) return applyChosen(s, defaultOption(p), now);
+  if (s.masterAwaySinceMs !== null && now - s.masterAwaySinceMs >= MASTER_AWAY_MS) {
+    const humans = s.players.filter((q) => !isBot(s, q.seat) && q.connected && q.seat !== s.masterSeat).map((q) => q.seat).sort((a, b) => a - b);
+    const next = humans.find((x) => x > s.masterSeat) ?? humans[0];
+    return next === undefined ? { ...s, masterAwaySinceMs: null } : { ...s, masterSeat: next, masterAwaySinceMs: null };
+  }
   const t = s.turn;
   if (t === null) return s;
+  if (t.disconnectEndsMs !== null && now >= t.disconnectEndsMs) {
+    return endTurn(setPlayer(s, t.seat, (q) => ({ ...q, missed: q.missed + 1 })), now); // a lost Turn, no Haunt rise
+  }
   if (t.answering !== null && now >= t.answering.untilMs) {
     const before = (player(s, t.seat) as PlayerRec).shownToMe.filter((x) => x.by === t.answering?.refuter).map((x) => x.card);
     return deliverShown(s, t.answering.eventId, defaultShown(t.answering.held, before, s.seed, t.answering.eventId) as string, now);
@@ -452,6 +556,7 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
     answer: t?.answering && t.answering.refuter === seat ? { eventId: t.answering.eventId, options: [...t.answering.held], deadlineMs: t.answering.untilMs } : null,
     choose: pend !== null && pend.chooser === seat ? { options: [...pend.options], deadlineMs: pend.deadlineMs } : null,
     heard: p.heard.map((h) => ({ ...h })),
+    soundConsent: p.soundConsent,
     canEavesdrop: s.eavesdrop !== null && s.eavesdrop.suggester !== seat && s.eavesdrop.refuter !== seat && !p.poltergeist && p.resolve >= 1 && !p.heard.some((h) => h.eventId === s.eavesdrop?.eventId) ? s.eavesdrop.eventId : null,
   };
 }
@@ -463,17 +568,21 @@ function wakeOf(s: EngineState, now: number): number | null {
     turn: t?.clock ?? null, inspectUntilMs: t?.inspecting?.untilMs ?? null, answeringUntilMs: t?.answering?.untilMs ?? null,
     windowUntilMs: t?.windowUntilMs ?? null, hauntChoiceMs: s.haunt.pending?.chooser != null ? s.haunt.pending.deadlineMs : null,
     botThinkUntilMs: t === null || t.inspecting !== null || t.answering !== null ? null : t.botDueMs, // a Bot waits for its Inspect or an answer
+    disconnectEndsMs: t?.disconnectEndsMs ?? null,
+    masterTimeoutMs: s.masterAwaySinceMs === null ? null : s.masterAwaySinceMs + MASTER_AWAY_MS,
   }, now);
 }
 
 /** Apply one Action. A refusal returns the same state and tells only the sender. */
 export function step(state: EngineState, action: Action, now: number): StepResult {
-  const res = apply(state, action, now);
+  const applied = apply(state, action, now);
+  const extra = typeof applied === "string" ? [] : applied.outbox;
+  const res = typeof applied === "string" ? applied : (applied.outbox.length === 0 ? applied : { ...applied, outbox: [] });
   if (typeof res === "string") {
     const seat = action.kind === "client" ? action.seat : null;
     return { state, out: seat === null ? [] : [{ to: "seat", seat, msg: { t: "refused", code: res } }], wakeAtMs: wakeOf(state, now), refused: res };
   }
-  const out: Outbound[] = [{ to: "public", msg: { t: "public", view: publicSnapshot(res, now) } }];
+  const out: Outbound[] = [{ to: "public", msg: { t: "public", view: publicSnapshot(res, now) } }, ...extra];
   for (const x of res.seats) if (!x.bot) { const v = privateSnapshot(res, x.seat); if (v) out.push({ to: "seat", seat: x.seat, msg: { t: "private", view: v } }); }
   return { state: res, out, wakeAtMs: wakeOf(res, now) };
 }
