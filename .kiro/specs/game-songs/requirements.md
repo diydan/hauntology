@@ -56,3 +56,14 @@ Game songs are short songs made for one game, about what really happened in it, 
 1. EVERY song SHALL show its words as captions in a polite live region while it plays, and a Clue Song's hint line SHALL also go into the public log.
 2. THE Master SHALL be able to mute songs, skip a song and set the Songs setting; songs SHALL obey the Room's sound settings and phone sound consent.
 3. Songs SHALL change no rule: the Solution, every Hand, the Turn order, the clock and the winners SHALL be the same with the Songs setting on, stock only or off.
+
+### Requirement 5
+
+**User Story:** As a Player, I want the song captions and the Master's song controls to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (the captions, the song controls in the Master's menu and the song line on the ending screen) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE captions SHALL be `ui-speech` lines in a polite live region, and the Songs setting SHALL be `ui-segments` (off, stock only, on) with mute and skip as `ui-button`s of at least 48 CSS pixels.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

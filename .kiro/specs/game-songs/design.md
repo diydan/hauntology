@@ -46,3 +46,15 @@ Lyrics come from templates filled with Lyric Facts, so the words are known and c
 ## Testing
 
 Property tests with fast-check for Properties 1 to 3. Example tests: the Ballad asked for at the last Round or Haunt 8 (1.2), the spend guard refusal and the stock fallback (3.2), what is sent to the service (3.3), captions and the log line (4.1), the Master's controls (4.2), Clue Songs only in empty scenes (2.1). A spike tries Mureka's time to make a song and its price before any wiring.
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Captions while a song plays | `ui-speech ui-hint` in a polite live region |
+| Songs setting, mute and skip (Master menu) | `ui-segments ui-button ui-switch` |
+| The song line on the ending screen | `ui-panel ui-speech ui-hint` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. Nothing of this spec is built yet, so it is built from the elements the first time.
