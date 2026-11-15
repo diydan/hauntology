@@ -143,17 +143,21 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - List endpoint; user worlds exposed at unguessable ids of ≥ 128 bits; Gallery works with generation disabled.
     - _Requirements: 9.2, 9.3, 9.4_
 
-- [ ] 10. Web: start, sketch, confirm, progress
-  - [ ] 10.1 Photo picker with client-side re-encode (strips metadata before upload) and error copy per reason code
+- [x] 10. Web: start, sketch, confirm, progress
+  - [x] 10.1 Photo picker with client-side re-encode (strips metadata before upload) and error copy per reason code
+    - Built by the shell (haunwallker group 7): `web/src/app/create/PhotoPicker.tsx`, with `shared/src/app/photo.ts` for the re-encode rules.
     - _Requirements: 1.1, 1.3_
-  - [ ] 10.2 Sketch pad
+  - [x] 10.2 Sketch pad
     - Canvas with brush, eraser, 3 sizes, undo/redo ≥ 30, clear; mouse/touch/pen; caption input; candidate picker; quota display and Gallery pointer when exhausted.
+    - Built by the shell (haunwallker group 7): `SketchPad.tsx` (50 undo steps), `Candidates.tsx` and the Create screen; the quota note and the Gallery link show when the image quota is zero.
     - _Requirements: 2.1, 2.6_
-  - [ ] 10.3 Confirm screen
+  - [x] 10.3 Confirm screen
     - Exact image preview, remaining quota, "Enter this place?" and Cancel; calls quote then create.
+    - Built by the shell (haunwallker group 8): `ConfirmController` and the Confirm screen; quote, then create, and nothing is spent before "Enter this place".
     - _Requirements: 4.1, 5.7_
-  - [ ] 10.4 Progress screen
+  - [x] 10.4 Progress screen
     - Stage labels from status endpoint (queued, dreaming, stitching, ready), failure copy, link to Gallery while waiting.
+    - Built by the shell (haunwallker group 9): the Stage display (`StagePanel`, `HauntController`) with failure copy and a Gallery link while waiting.
     - _Requirements: 7.3_
 
 - [ ] 11. Enhance (optional, gated by Spike 1.3)
