@@ -106,17 +106,19 @@ test('every control is at least 44 px (the main ones 52 px) and the focus ring i
 test('the transport tools are never narrower than a touch target: they wrap instead of shrinking (a 320 px screen), and from the wide breakpoint the five are a grid', () => {
   const tool = rules.find(([s]) => s === '.ui-tool')[1];
   assert.match(tool, /min-width: var\(--target\)/, 'a tool is at least a touch target wide as well as tall');
-  assert.match(tool, /flex: 1 1 var\(--target\)/, 'the tools share the row equally, from a touch target up');
+  assert.match(tool, /flex: 1 1 auto/, 'a tool starts from the width of its own label (the word Director is wider than a touch target) and the tools share what is left');
   const bar = rules.find(([s]) => s === '.ui-transport')[1];
   assert.match(bar, /display: flex/);
   assert.match(bar, /flex-wrap: wrap/, 'six tools that do not fit wrap onto a second row, so none is squeezed under a touch target');
   assert.ok(!/grid-template-columns/.test(bar), 'six equal columns shrank each tool to 40 px at 320 px');
   assert.match(rawElements, /@media \(min-width: 900px\) \{[\s\S]*?\.ui-tool--narrow-only \{ display: none; \} \.ui-transport \{ display: grid; grid-template-columns: repeat\(5, minmax\(0, 1fr\)\); \}/);
-  // What one row of six needs: six touch targets, five gaps, the bar's padding on both sides and its edge. A screen with less room than that wraps the last tool; it is about 322 px, so a 345 px phone keeps one row.
+  // What one row needs: five touch targets, the Director's label (about 60 px with its padding), five gaps, the bar's padding on both sides and its edge: about 330 px of bar, a screen of about 355 px. Below that the last tool wraps.
   const px = (v) => (v.endsWith('rem') ? parseFloat(v) * 16 : parseFloat(v));
   assert.equal(px(tokens.size.target.value), 44);
   const gap = px(tokens.space['2'].value);
-  assert.ok(6 * 44 + 5 * gap + 2 * gap + 2 <= 330, 'one row of six must fit a 345 px phone');
+  const sidePad = px(tokens.space['1'].value);
+  assert.match(bar, /padding: var\(--space-2\) var\(--space-1\)/, 'the bar keeps its height and gives the row 8 px more width');
+  assert.ok(5 * 44 + 60 + 5 * gap + 2 * sidePad + 2 <= 334, 'one row must fit a 360 px phone, whose bar is 334 px wide, with room to spare');
 });
 
 test('text on the dialogue is readable on every lit surface it can take, and a warning inside it keeps the red to its edge (red words are 4.2 to 1 there)', () => {
