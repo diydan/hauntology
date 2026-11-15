@@ -1,10 +1,12 @@
 import { Hono, type Context } from "hono";
 import type { ShellFlags } from "@hauntology/shared/app/types";
+import { servePage, type AssetsPort } from "./http/assets";
 import type { AppEnv } from "./http/env";
 import { flagsFrom, type SpendStatus } from "./http/flags";
 import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
+import { quotaRoutes } from "./routes/quota";
 import { sessionRoutes } from "./routes/session";
 import { adminRoutes, type AdminDeps } from "./routes/admin";
 import { placeRoutes } from "./routes/places";
@@ -25,6 +27,8 @@ export type AppOptions = SessionOptions & {
   spend?: (c: Context<AppEnv>) => Promise<SpendStatus> | SpendStatus;
   /** The operator's routes (`/admin/status`, `/admin/kill`). When given, they are served; otherwise there is no such route. */
   admin?: AdminDeps;
+  /** The built web app. When given, a request no route took (a page, a script, a style) is answered from it, the single-page fallback included (world-pipeline task 2); without it such a request is a 404. */
+  assets?: AssetsPort;
   /** Where log lines go (world-pipeline 8.2). Default: nowhere, so a test or a caller without one is silent. */
   log?: Logger;
   /** Where accepted uploads are kept. When given, `POST /api/uploads` is served; it takes no upload while worlds are closed (the world switch). */
@@ -72,6 +76,8 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     return options.worldGenAvailable === false ? { ...f, worldGenEnabled: false } : f;
   };
   app.route("/api/session", sessionRoutes({ flags }));
+  // What the visitor has left, asked for by the shell as it opens (world-pipeline 5.7). Needs only the guard; with none it reads as no places.
+  app.route("/api/quota", quotaRoutes({ ...(options.worlds?.creation?.guard !== undefined ? { guard: options.worlds.creation.guard } : {}) }));
   if (options.uploads !== undefined) {
     app.route("/api/uploads", uploadRoutes({ ...options.uploads, enabled: async (c) => (await flags(c)).worldGenEnabled }));
   }
@@ -106,5 +112,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
       );
     }
   }
+  // Last, so every route above wins and `/api` and `/admin` paths that nothing took stay 404s (`servePage`).
+  if (options.assets !== undefined) app.notFound(servePage(options.assets));
   return app;
 }

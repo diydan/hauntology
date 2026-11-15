@@ -6,6 +6,7 @@ import type { AiBinding } from "./guarded/workersai/call";
 import { WorkersAiClient } from "./guarded/workersai/client";
 import type { ImagesBinding } from "./guarded/workersai/cutout";
 import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
+import type { AssetsPort } from "./http/assets";
 import type { Bindings } from "./http/env";
 import { createLogger } from "./log";
 import { adminTokenFrom } from "./routes/admin";
@@ -19,8 +20,8 @@ import { CloudflareImageVerdicts } from "./worlds/cloudflare-verdicts";
 import { WorldJobStarter } from "./worlds/job-starter";
 import { CloudflareTurnstile } from "./worlds/turnstile";
 
-/** The bindings of `wrangler.jsonc`: the one R2 bucket and the `WorldJob` and `SpendGuard` Durable Object namespaces, besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
-export type WorkerEnv = Bindings & WorldLabsEnv & { AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
+/** The bindings of `wrangler.jsonc`: the one R2 bucket, the `WorldJob` and `SpendGuard` Durable Object namespaces and the built web app (`ASSETS`), besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
+export type WorkerEnv = Bindings & WorldLabsEnv & { ASSETS?: AssetsPort; AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
 
 /** The Worker's one logger: ids, codes and counters only (`shared/src/log.ts`). */
 const logger = createLogger();
@@ -44,6 +45,8 @@ export default {
       const ai = new WorkersAiClient(env);
       app = createApp({
         log: logger,
+        // The web app: with the `ASSETS` binding the Worker serves the pages too (`servePage`); without it, only the API.
+        ...(env.ASSETS !== undefined ? { assets: env.ASSETS } : {}),
         worldGenAvailable: live,
         // The operator's routes exist only when `ADMIN_TOKEN` is set to a token of at least 32 characters.
         ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: live } } : {}),

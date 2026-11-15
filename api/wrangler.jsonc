@@ -1,6 +1,11 @@
-// Run locally with `wrangler dev` (4.162.0, local R2 and Durable Object); never deployed. Still to add (world-pipeline task 2):
-// the static assets from web/dist (single-page fallback, Worker first), the secrets (HMAC_SECRET, TURNSTILE_SECRET) in
-// `.dev.vars` (copy `.dev.vars.example`), the other Durable Objects, and `TURNSTILE_SITE_KEY` when Turnstile is on.
+// Run locally with `wrangler dev` (4.162.0, local R2 and Durable Object); never deployed. The secrets (HMAC_SECRET, TURNSTILE_SECRET) go in
+// `.dev.vars` (copy `.dev.vars.example`), and `TURNSTILE_SITE_KEY` when Turnstile is on. The Durable Objects of the other specs (PlaySession, PartyRoom,
+// PartyDirectory) are added with those specs.
+// The web app: the Worker serves `../web/dist` (build it first: `pnpm build:web`, or `pnpm dev:app` to build and run). `run_worker_first` sends every request
+// through the Worker, so every page carries the Content-Security-Policy (naming Turnstile only when it is configured; a static headers file could not) and
+// `/api/*` and `/admin/*` are never answered with a page. The Worker passes every other GET and HEAD to the `ASSETS` binding (`api/src/http/assets.ts`),
+// and `not_found_handling` makes the binding answer `index.html` for a page that is not a file, so a link such as `/shared/<id>` opens the app. Each file
+// request is then a Worker request; that is the price of the policy on the page.
 // The Place Brief check (a photo must pass it before a world can be made from it) and the sketch (drawing a place) need the Workers AI binding, which is NOT declared
 // here: in `wrangler dev` it always reaches the real service (a `wrangler login` and a small charge per check). To turn it on add
 // `"ai": { "binding": "AI" }` below. Without it every check answers `moderation_unavailable` and no photo can pass, and a sketch cannot be rendered.
@@ -12,6 +17,7 @@
   "name": "hauntology",
   "main": "src/worker.ts",
   "compatibility_date": "2025-06-01",
+  "assets": { "directory": "../web/dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": true },
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hauntology-worlds" }],
   "durable_objects": { "bindings": [{ "name": "WORLD_JOB", "class_name": "WorldJob" }, { "name": "SPEND_GUARD", "class_name": "SpendGuard" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WorldJob"] }, { "tag": "v2", "new_sqlite_classes": ["SpendGuard"] }],

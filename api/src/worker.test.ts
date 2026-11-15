@@ -36,6 +36,43 @@ describe("worker", () => {
     expect(SpendGuard).toBeTypeOf("function");
   });
 
+  it("serves the web app from its ASSETS binding, with the page's security headers, and keeps /api for the API (world-pipeline task 2)", async () => {
+    const asked: string[] = [];
+    const ASSETS = { fetch: async (r: Request) => (asked.push(new URL(r.url).pathname), new Response("<html>the app</html>", { headers: { "Content-Type": "text/html; charset=utf-8" } })) };
+    const { bucket, env } = envWith({ TURNSTILE_SECRET: "s3cret" });
+    Object.assign(env, { ASSETS });
+    bucket.put("gallery/greenhouse/world.json", JSON.stringify(sampleManifest("greenhouse")));
+    const page = await worker.fetch(new Request(`${ORIGIN}/shared/w-0123456789abcdef`), env, ctx().ctx);
+    expect(page.status).toBe(200);
+    expect(await page.text()).toBe("<html>the app</html>");
+    // The policy names Turnstile here because the Worker has its secret: only the Worker knows that, which is why the page goes through it.
+    expect(page.headers.get("Content-Security-Policy")).toContain("https://challenges.cloudflare.com");
+    expect(page.headers.get("Set-Cookie")).toBeNull();
+    const api = await worker.fetch(new Request(`${ORIGIN}/api/worlds/greenhouse`), env, ctx().ctx);
+    expect(((await api.json()) as { status: string }).status).toBe("ready");
+    expect((await worker.fetch(new Request(`${ORIGIN}/api/nothing-here`), env, ctx().ctx)).status).toBe(404);
+    expect((await worker.fetch(new Request(`${ORIGIN}/admin/status`), env, ctx().ctx)).status).toBe(404);
+    expect(asked).toEqual(["/shared/w-0123456789abcdef"]);
+  });
+
+  it("answers GET /api/quota from the real SpendGuard object, so the shell can open (world-pipeline 5.7)", async () => {
+    const { env } = envWith();
+    const r = await worker.fetch(new Request(`${ORIGIN}/api/quota`), env, ctx().ctx);
+    expect(r.status).toBe(200);
+    expect(r.headers.get("Set-Cookie")).toBeNull();
+    const q = (await r.json()) as Record<string, number>;
+    expect(Object.keys(q).sort()).toEqual(["image", "live", "llm", "stt", "tts", "world"]);
+    expect(q.world).toBe(2);
+    expect(q.image).toBe(8);
+    for (const n of Object.values(q)) expect(Number.isInteger(n) && n >= 0).toBe(true);
+  });
+
+  it("without an ASSETS binding serves no page: only the API answers, and anything else is a 404", async () => {
+    const { env } = envWith();
+    expect((await worker.fetch(new Request(`${ORIGIN}/`), env, ctx().ctx)).status).toBe(404);
+    expect((await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx)).status).toBe(200);
+  });
+
   it("serves a Gallery world through the real store, with no cookie", async () => {
     const { bucket, env } = envWith();
     bucket.put("gallery/greenhouse/world.json", JSON.stringify(sampleManifest("greenhouse")));

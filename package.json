@@ -10,6 +10,8 @@
     "typecheck": "pnpm -r typecheck",
     "dev:api":  "pnpm --filter api dev",
     "dev:web":  "pnpm --filter web dev",
+    "build:web": "pnpm --filter web build",
+    "dev:app":  "pnpm build:web && pnpm dev:api",
     "check-traceability": "node tools/check-traceability.mjs",
     "build-tokens": "node tools/build-tokens.mjs",
     "check-tokens": "node tools/build-tokens.mjs --check",

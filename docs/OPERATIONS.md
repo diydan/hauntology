@@ -52,3 +52,16 @@ The command sends the token only over https (or http to localhost), never prints
 ## The Gallery
 
 Gallery Worlds are the ones a visitor can walk into with no key and no credits. They are made by you, once, and live in the bucket under `gallery/<id>/`, where nothing in retention or delete can reach them. `tools/ingest-gallery/` (README inside) checks a plan of worlds you already have the files of, builds each `world.json`, and uploads it: to the local bucket by default, to the real one only with `--remote --yes`. It makes no paid call. Making the worlds themselves costs World API credits and is yours to start.
+
+## Run the whole app on your machine
+
+The Worker serves the web app and the API from one address, as it would if it were deployed. It spends nothing: with no `WLT_API_KEY` no world is made, and nothing here calls a paid service.
+
+```
+pnpm dev:app          # builds web/dist, then runs wrangler dev (the address is printed)
+```
+
+- `wrangler dev` needs `web/dist` to exist. To run the Worker alone after one build: `pnpm dev:api`.
+- A link such as `/shared/<id>`, `/gallery` or `/haunt/<id>` opens the app when typed into the address bar or reloaded. A file that is not there (`/assets/old-hash.js`) is a 404.
+- `/api/*` and `/admin/*` are never answered with a page. `/admin` exists only when `ADMIN_TOKEN` is set.
+- For the web app alone, with the fake API and no Worker, run `pnpm dev:web` and add `?demo=1` to the address.

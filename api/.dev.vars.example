@@ -1,6 +1,8 @@
 # Copy to .dev.vars for `wrangler dev`. Never commit real values.
 HMAC_SECRET=replace-with-at-least-16-random-characters
 # TURNSTILE_SECRET=
+# The public site key the widget needs when TURNSTILE_SECRET is set (not a secret).
+# TURNSTILE_SITE_KEY=
 
 # --- Making a world spends real money. Leave these out and no world is made (the Home screen shows worlds closed). ---
 # A World API key from platform.worldlabs.ai (not the Atlas key; credits bought in the Marble app do not work). One world on

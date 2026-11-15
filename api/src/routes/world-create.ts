@@ -50,7 +50,7 @@ const STATUS: Partial<Record<ErrorCode, 400 | 403 | 404 | 422 | 429 | 502 | 503>
 
 /** How many times one picture may be tried again after a failed world, so a loop over attempts is bounded. */
 const MAX_ATTEMPTS = 8;
-const NO_PLACES: QuotaSnapshot = { world: 0, image: 0, llm: 0, tts: 0, stt: 0, live: 0 };
+export const NO_PLACES: QuotaSnapshot = { world: 0, image: 0, llm: 0, tts: 0, stt: 0, live: 0 };
 
 export function refuse(c: Context<AppEnv>, code: ErrorCode, status?: number) {
   c.header("Cache-Control", "no-store");
@@ -86,7 +86,7 @@ const moderationRefusal = (image: ImageInfo): ErrorCode | null =>
 
 const turnstileOn = (c: Context<AppEnv>): boolean => typeof c.env?.TURNSTILE_SECRET === "string" && c.env.TURNSTILE_SECRET !== "";
 
-const asQuota = (r: Remaining): QuotaSnapshot => ({ world: r.world, image: r.image, llm: r.llm, tts: r.tts, stt: r.stt, live: r.live });
+export const asQuota = (r: Remaining): QuotaSnapshot => ({ world: r.world, image: r.image, llm: r.llm, tts: r.tts, stt: r.stt, live: r.live });
 
 /**
  * `POST /api/worlds/quote` and `POST /api/worlds` (world-pipeline 6.1). The Quote shows what will be sent and
