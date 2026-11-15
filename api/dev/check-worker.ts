@@ -11,6 +11,7 @@ import { worldLabsFromEnv } from "../src/guarded/worldlabs-live";
 import realWorker, { storeFor, type WorkerEnv } from "../src/worker";
 import { SpendGuardClient } from "../src/spend/client";
 import { CloudflareImageStore } from "../src/worlds/cloudflare-images";
+import { CloudflareUploadStore } from "../src/worlds/cloudflare-uploads";
 import { WorldJobStarter } from "../src/worlds/job-starter";
 import { WorldIngestor } from "../src/worlds/ingest";
 import type { WorldLabsPort, WorldSource } from "../src/worlds/ports";
@@ -141,7 +142,7 @@ export default {
     let app = apps.get(env);
     if (app === undefined) {
       const guard = new SpendGuardClient(env.SPEND_GUARD);
-      app = createApp({ spend: () => guard.status(), worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter: new WorldJobStarter(env.WORLD_JOB) } } });
+      app = createApp({ spend: () => guard.status(), uploads: { store: new CloudflareUploadStore(env.BUCKET) }, worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter: new WorldJobStarter(env.WORLD_JOB) } } });
       apps.set(env, app);
     }
     return app.fetch(request, env, ctx);

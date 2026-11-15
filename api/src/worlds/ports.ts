@@ -24,6 +24,14 @@ export interface ImageStore {
   read(imageId: string): Promise<{ body: ReadableStream<Uint8Array> | Uint8Array; size: number; contentType: string } | null>;
 }
 
+/**
+ * Where an accepted upload is kept (world-pipeline 5.1): private storage under an opaque id, with the owner, the hash of the
+ * stored bytes and the type it was stored with. `moderation` is left off, which reads as "not yet checked" (5.4 writes it).
+ */
+export interface UploadStore {
+  put(imageId: string, bytes: Uint8Array, meta: { contentType: "image/jpeg" | "image/png" | "image/webp"; ownerSid: string; sha256: string }): Promise<void>;
+}
+
 /** Checks a Turnstile result with Cloudflare. `false` for anything that is not a clear yes. */
 export interface TurnstileVerifier {
   verify(token: string, ip: string | null): Promise<boolean>;

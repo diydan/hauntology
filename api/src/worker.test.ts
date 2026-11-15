@@ -3,6 +3,7 @@ import examples from "../../shared/fixtures/worldlabs/docs-examples.json";
 import worker, { SpendGuard, WorldJob, storeFor, type WorkerEnv } from "./worker";
 import { FakeJobs, FakeNamespace, FakeR2 } from "./worlds/fake-cloudflare";
 import { uploadKey } from "./worlds/keys";
+import { COMMENT, EXIF, JFIF, makeJpeg } from "@hauntology/shared/world/upload-kit";
 import { SECRET, sampleManifest, ORIGIN } from "./worlds/test-kit";
 
 const NOW = 1_800_000_000_000;
@@ -190,6 +191,45 @@ describe("worker: making a world (world-pipeline 6.1, 7.1, 7.3)", () => {
     expect(asked).toEqual([{ url: "https://api.worldlabs.ai/marble/v1/worlds:generate", key: KEY }]);
     const record = (await (await jobs.get(worldId).fetch("https://world-job/record")).json()) as { status: string };
     expect(record.status).toBe("generating");
+  });
+
+  const uploadPhoto = async (env: WorkerEnv, headers: Record<string, string>) => {
+    const form = new FormData();
+    form.append("photo", new File([makeJpeg({ width: 1024, height: 768, head: [JFIF(), EXIF(), COMMENT("12 Elm St")] })], "house.jpg", { type: "image/jpeg" }));
+    const { "Content-Type": _drop, ...rest } = headers;
+    const res = await worker.fetch(new Request(`${ORIGIN}/api/uploads`, { method: "POST", headers: rest, body: form }), env, ctx().ctx);
+    const body = await res.text();
+    let json: { imageId?: string; imageUrl?: string; code?: string } = {};
+    try { json = JSON.parse(body); } catch { /* the route is not there: a plain 404 */ }
+    return { status: res.status, json };
+  };
+
+  it("takes an upload only where a world can be made: with a key it keeps the stripped photo in R2 for its owner, without one the route is not there", async () => {
+    const { env, bucket } = live();
+    const v = await visit(env);
+    const r = await uploadPhoto(env, v.headers);
+    expect(r.status).toBe(201);
+    const stored = bucket.objects.get(`uploads/${r.json.imageId}`)!;
+    expect(stored.contentType).toBe("image/jpeg");
+    expect(stored.customMetadata).toMatchObject({ ownerSid: v.sid, source: "upload" });
+    expect(new TextDecoder("latin1").decode(stored.bytes)).not.toMatch(/Elm St|Exif/);
+    // It is the owner's to read, and it is not yet checked, so the Quote refuses it.
+    expect((await worker.fetch(new Request(`${ORIGIN}${r.json.imageUrl}`, { headers: v.headers }), env, ctx().ctx)).status).toBe(200);
+    const quote = await worker.fetch(new Request(`${ORIGIN}/api/worlds/quote`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId: r.json.imageId }) }), env, ctx().ctx);
+    expect([quote.status, await quote.json()]).toEqual([503, { ok: false, code: "moderation_unavailable" }]);
+
+    const off = envWith();
+    const w = await visit(off.env);
+    expect((await uploadPhoto(off.env, w.headers)).status).toBe(404);
+    expect(off.bucket.objects.size).toBe(0);
+  });
+
+  it("takes no upload while the world switch is off, though a key is set", async () => {
+    const { env, bucket } = envWith({ WLT_API_KEY: KEY, WORLD_GEN_ENABLED: "false" });
+    const v = await visit(env);
+    const r = await uploadPhoto(env, v.headers);
+    expect([r.status, r.json.code]).toEqual([503, "world_gen_disabled"]);
+    expect(bucket.objects.size).toBe(0);
   });
 
   it("keeps the key out of every answer the Worker gives", async () => {

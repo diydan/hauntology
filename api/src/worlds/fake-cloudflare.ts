@@ -14,8 +14,14 @@ export class FakeR2 implements R2BucketLike {
   /** The largest page this fake returns, whatever `limit` says (R2 caps at 1000). */
   pageSize = 1000;
 
-  put(key: string, bytes: Uint8Array | string, uploaded: Date = new Date(), extra: { customMetadata?: Record<string, string>; contentType?: string } = {}): this {
-    this.objects.set(key, { bytes: typeof bytes === "string" ? new TextEncoder().encode(bytes) : bytes, uploaded, ...extra });
+  /**
+   * Stores an object. The third argument is when it was uploaded (a `Date`, for tests of retention) and the fourth its
+   * metadata, or, as with the real bucket, the third is `{ httpMetadata, customMetadata }` and the time is now.
+   */
+  put(key: string, bytes: Uint8Array | string, uploaded: Date | { httpMetadata?: { contentType?: string }; customMetadata?: Record<string, string> } = new Date(), extra: { customMetadata?: Record<string, string>; contentType?: string } = {}): this {
+    const options = uploaded instanceof Date ? null : uploaded;
+    const meta = options === null ? extra : { ...(options.customMetadata !== undefined ? { customMetadata: options.customMetadata } : {}), ...(options.httpMetadata?.contentType !== undefined ? { contentType: options.httpMetadata.contentType } : {}) };
+    this.objects.set(key, { bytes: typeof bytes === "string" ? new TextEncoder().encode(bytes) : bytes, uploaded: uploaded instanceof Date ? uploaded : new Date(), ...meta });
     return this;
   }
 

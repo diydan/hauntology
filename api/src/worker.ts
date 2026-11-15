@@ -7,6 +7,7 @@ import type { Bindings } from "./http/env";
 import { SpendGuardClient } from "./spend/client";
 import { cleanupExpired } from "./worlds/cleanup";
 import { CloudflareImageStore } from "./worlds/cloudflare-images";
+import { CloudflareUploadStore } from "./worlds/cloudflare-uploads";
 import { CloudflareWorldStore } from "./worlds/cloudflare-store";
 import { WorldJobStarter } from "./worlds/job-starter";
 import { CloudflareTurnstile } from "./worlds/turnstile";
@@ -31,6 +32,8 @@ export default {
       const guard = new SpendGuardClient(env.SPEND_GUARD);
       app = createApp({
         worldGenAvailable: live,
+        // Uploads are taken only where a world can be made from them: with no key there is nothing to keep a picture for.
+        ...(live ? { uploads: { store: new CloudflareUploadStore(env.BUCKET) } } : {}),
         spend: () => guard.status(),
         worlds: {
           store: storeFor(env),

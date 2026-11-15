@@ -3,7 +3,7 @@ import type { Meter, Remaining, ReserveResult, SpendGuard, SpendTicket } from "@
 import { DEFAULT_CAPS, SpendLedger, type CapTable } from "@hauntology/shared/world/spend-ledger";
 import type { ErrorCode } from "@hauntology/shared/errors";
 import type { WorldManifest } from "@hauntology/shared/world/manifest";
-import type { ImageInfo, ImageStore, Ingestor, TurnstileVerifier, UpstreamFailure, WorldLabsPort, WorldStarter } from "./ports";
+import type { ImageInfo, ImageStore, Ingestor, TurnstileVerifier, UploadStore, UpstreamFailure, WorldLabsPort, WorldStarter } from "./ports";
 
 /** Stand-ins for the parts of world creation that are not built yet (the job 7.1, uploads 5.1) and an in-process `SpendGuard`, for tests and the test-only dev worker. None of them is durable. */
 
@@ -19,6 +19,24 @@ export class MemoryImageStore implements ImageStore {
   async read(imageId: string): Promise<{ body: Uint8Array; size: number; contentType: string } | null> {
     const o = this.images.get(imageId);
     return o === undefined ? null : { body: o.bytes, size: o.bytes.byteLength, contentType: o.info.contentType };
+  }
+}
+
+/** An `UploadStore` over a `MemoryImageStore`, so what an upload stores can be read back through `GET /api/images/:id` and quoted. */
+export class MemoryUploads implements UploadStore {
+  /** Every `put`, in order. */
+  readonly puts: { imageId: string; bytes: Uint8Array; meta: Parameters<UploadStore["put"]>[2] }[] = [];
+  /** Make the next `put` fail, this many times. */
+  failures = 0;
+  constructor(readonly images: MemoryImageStore = new MemoryImageStore()) {}
+  async put(imageId: string, bytes: Uint8Array, meta: Parameters<UploadStore["put"]>[2]): Promise<void> {
+    if (this.failures > 0) {
+      this.failures--;
+      throw new Error("storage down");
+    }
+    this.puts.push({ imageId, bytes, meta });
+    // Like the real store: not yet checked (`pending`), an upload, no brief.
+    this.images.put({ id: imageId, ownerSid: meta.ownerSid, sha256: meta.sha256, moderation: "pending", contentType: meta.contentType, source: "upload" }, bytes);
   }
 }
 
