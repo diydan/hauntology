@@ -1201,7 +1201,7 @@ function applyShape(refit = true) {
   if (!BONE0) return; SHP = computeShape();
   for (const name of SHP_ORDER) { const b = BONE0[name]; if (b.parent && BONE0[b.parent]) b.bone.position.copy(SHP.Pn.get(name)).applyMatrix4(SHP.inv.get(b.parent)); }
   bodyObj.traverse(o => { if (o.isSkinnedMesh) deformMesh(o); });
-  character.position.y = SHP.dy * 0.01; bodyObj.updateWorldMatrix(true, true); scheduleInset();
+  character.position.y = SHP.dy * 0.01; bodyObj.updateWorldMatrix(true, true); GROUND.base = character.position.y; GROUND.rest = footLow(); scheduleInset();
   if (refit) { if (parts.head) setupHead(parts.head); clearTimeout(shapeTimer); shapeTimer = setTimeout(() => setProps(S.clip), 180); }
 }
 
@@ -1657,6 +1657,11 @@ function levelHead() { // pitch the head about its own side axis until it looks 
   headBone.rotateX(want); headBone.updateWorldMatrix(true, false);
   if (Math.abs(_hf.copy(MOUTH.fwd).transformDirection(headBone.matrixWorld).y - off) > Math.abs(f)) headBone.rotateX(-2 * want);
 }
+/* FEET ON THE FLOOR: the shape changes leg length but the clips were made for the pack's legs, so feet sank (short legs) or floated (long legs, seated).
+   Every frame the whole character moves up or down so the lowest foot or toe bone is as high as it is in the rest pose, where the soles touch the floor. */
+const GROUND = { base: 0, rest: null }, _gv = new THREE.Vector3();
+function footLow() { let lo = Infinity; for (const n of ['CC_BaseFootL', 'CC_BaseFootR', 'CC_BaseToeBaseL', 'CC_BaseToeBaseR']) if (B[n]) { B[n].getWorldPosition(_gv); lo = Math.min(lo, _gv.y); } return lo === Infinity ? null : lo; }
+function groundFeet() { if (GROUND.rest === null || appMode === 'makeover') return; character.position.y = GROUND.base; character.updateMatrixWorld(true); const lo = footLow(); if (lo !== null) character.position.y = GROUND.base + (GROUND.rest - lo); }
 function fixShapeAnimation() {
   if (appMode === 'makeover' && makeoverPose) { if (hipBone) hipBone.position.copy(makeoverPose.hip); if (headBone) headBone.quaternion.copy(makeoverPose.headQ); }
   if (headBone) headBone.scale.setScalar(headScale());
@@ -2984,7 +2989,7 @@ renderer.setAnimationLoop(now => {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
   smoke.update(dt, clock);
   hairLights();
-  if (mixer) { mixer.update(dt); fixShapeAnimation(); character.updateMatrixWorld(true); updateHair(dt); faceUpdate(dt, clock); S.prop = true; if (micNode) micNode.visible = /Singing|Rapping/.test(S.clip) && appMode !== 'makeover'; for (const n of propNodes) n.visible = true; fixMic(dt); updateDrums(dt); }
+  if (mixer) { mixer.update(dt); fixShapeAnimation(); groundFeet(); character.updateMatrixWorld(true); updateHair(dt); faceUpdate(dt, clock); S.prop = true; if (micNode) micNode.visible = /Singing|Rapping/.test(S.clip) && appMode !== 'makeover'; for (const n of propNodes) n.visible = true; fixMic(dt); updateDrums(dt); }
   if (hipBone) { hipBone.getWorldPosition(hipPos); if (auditionSet.visible) { const k2 = 1 - Math.exp(-6 * dt); auditionSet.position.x += (hipPos.x - auditionSet.position.x) * k2; auditionSet.position.z += (hipPos.z - auditionSet.position.z) * k2; } const k = 1 - Math.exp(-5 * dt), dx = (hipPos.x - controls.target.x) * k, dz = (hipPos.z - controls.target.z) * k; controls.target.x += dx; controls.target.z += dz; camera.position.x += dx; camera.position.z += dz; }
   if ($('spin').getAttribute('aria-pressed') === 'true' && !controls._dragging) { const a = dt * 0.3, x = camera.position.x - controls.target.x, z = camera.position.z - controls.target.z; camera.position.x = controls.target.x + x * Math.cos(a) - z * Math.sin(a); camera.position.z = controls.target.z + x * Math.sin(a) + z * Math.cos(a); }
   if (appMode === 'recruit' && !controls._dragging) { const a = Math.sin(clock * 0.55) * 0.5, d = a - swayLast; swayLast = a; const x = camera.position.x - controls.target.x, z = camera.position.z - controls.target.z; camera.position.x = controls.target.x + x * Math.cos(d) - z * Math.sin(d); camera.position.z = controls.target.z + x * Math.sin(d) + z * Math.cos(d); }
@@ -2996,5 +3001,5 @@ initRecruitControls();
 const bootSeed = /seed=(\d+)/.exec(location.hash);
 if (bootSeed) randomLook(+bootSeed[1], true, false);
 const ready = buildAll().catch(e => { console.error(e); status('failed: ' + e.message); });
-window.__cb = { fpHairWave, HC, EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
+window.__cb = { groundFeet, fpHairWave, HC, EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
 </script></body></html>
