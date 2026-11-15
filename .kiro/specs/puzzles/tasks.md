@@ -334,3 +334,33 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - **Validates: Requirements 21.1, 21.2, 21.3**
   - [ ] 14.8 Spike puzzles 1.7 (scenes): on a real phone and a TV, does scrubbing a clip ten times a second keep up (iPhone Safari most of all)? If not, switch the clock shadow to a strip of stills. Is the Reel readable at a glance across a room? Is each Haunt Event seen?
     - _Requirements: 19.5, 20.2_
+
+- [ ] 15. Scene clues: a clue written on the scene (added 2026-11-15; satisfies Requirement 22)
+  - [ ] 15.1 `tools/playtest/js/places.js` (the Place data and a check of its shape: four corners forming a convex shape of the least size, a known surface and ink, `from` before `to`, `to` not past the clip) and `js/scene-clues.js` with the pure rules `placeFor`, `sceneClue`, `inkFor` and `contrastOk`, with tests over every seed in a grid, every shot with a Place and every answer form (a code, a time, a word)
+    - _Requirements: 22.1, 22.2, 22.6, 22.8_
+  - [ ]* 15.2 Write property test for `sceneClue`: public and following its inputs
+    - **Property 27: A Scene clue is public and follows its inputs**
+    - **Validates: Requirements 22.2, 22.8**
+  - [ ]* 15.3 Write property test for the Decoy
+    - **Property 28: A Decoy looks like a clue**
+    - **Validates: Requirements 22.8**
+  - [ ] 15.4 `fitToPlace` (the four-point transform as a CSS `matrix3d`) and `drawClue` (the clip's own pixel size, `multiply` or `screen`, IBM Plex Mono or Newsreader italic from `design/fonts`, ink from the tokens); tests that the four corners of the canvas land exactly on the four corners of the Place and that a flat or crossed shape is refused
+    - _Requirements: 22.4_
+  - [ ] 15.5 `tools/playtest/place-check.mjs`: for each frame of a Place's window, the edge energy at the Place against the clip's own grain, and the Place's brightness written back into `places.js`; tests with a clip that has a mark (must fail) and a blank one (must pass), and a mutation pass on the threshold
+    - _Requirements: 22.3, 22.6, 22.10_
+  - [ ]* 15.6 Add a `check-places` script to the root `package.json` (`node tools/playtest/place-check.mjs --all`, like `check-sounds`) that checks every clip that has a Place, and write a property test over the clips
+    - **Property 31: A clip is blank at its Place**
+    - **Validates: Requirements 22.3, 22.10**
+  - [ ] 15.7 The demo: section 8 of `footage.html`, "A clue written on the scene", on a stand-in Place (a flat patch of a wall in a clip we already have, until a model clip has a real one): the clue on the picture, the film layer over both, the panel and the Clue list, and the footage-off state. Check it in jsdom and in desktop Chrome
+    - _Requirements: 22.4, 22.5, 22.7_
+  - [ ]* 15.8 Write property test for the fallbacks
+    - **Property 29: Nothing is lost when the picture is not shown**
+    - **Validates: Requirements 22.7**
+  - [ ]* 15.9 Write property test for legibility and calm
+    - **Property 30: A Scene clue is readable and calm**
+    - **Validates: Requirements 22.4, 22.5, 22.6**
+  - [ ] 15.10 The Host: draw the Scene clue on the TV over the Reel and ending shots that have a Place, write it to the Clue list and the live region, and ignore it for Bots, phones and the Display (needs `world-clues` and the Host)
+    - _Requirements: 22.2, 22.7, 22.9_
+  - [ ] 15.11 Spike puzzles 1.8 (scene clues): on a real TV at three metres and on a laptop, does the clue read as part of the scene (ask five people, 1 to 5, and where they looked first) and can a 480 pixel frame hold letters of 5 per cent of its height? If not, make the Place larger in the prompts or fall back to the panel only
+    - _Requirements: 22.4, 22.6_
+  - [ ] 15.12 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `sceneClue`, `fitToPlace` and the edge check. Ensure every test passes; ask the user if questions arise.

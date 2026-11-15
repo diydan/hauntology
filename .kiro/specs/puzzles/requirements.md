@@ -30,6 +30,8 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 - **Story clue**: a Spirit clue that no Lock needs: an Address, a Phone number or a Date, always taken from fixed lists of made-up values.
 - **Clue ring**: the sphere 1.5 metres round the Player on which Spirit clues hang, centred on the way the Player faced when it opened.
 - **Clue list**: the notebook page that lists every Spirit clue as text, read or "Not found yet".
+- **Place**: one blank, flat surface of a locked-off footage shot (a brass plate on a door, a misted window pane, a blank page), declared by its four corners, the times it is in view and its brightness, where the Host may write a Scene clue.
+- **Scene clue**: a World Clue or Decoy (`world-clues`) with a text answer, drawn by the Host over the video on a Place while the game runs, and never in a clip file.
 
 ## Requirements
 
@@ -291,3 +293,20 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 4. WHILE an ending shot plays THEN a Skip control of at least 48 CSS pixels SHALL be on screen, and Skip SHALL stop the shot and show the card at once.
 5. WHEN footage is off (reduced motion, data saver, a clip that cannot load) THEN the card SHALL show at once with the still frame, and the ending SHALL read the same in words.
 6. THE shot and the card SHALL show only public state: who won or that the house did, and the nicknames of those who joined the haunting, and never the Solution before the order of the recap allows it.
+
+### Requirement 22
+
+**User Story:** As a Player watching the TV, I want a clue to be written on something in the scene, such as a brass plate on a door or a misted window, so that the film feels like the house and not like a screen with a caption on it. (Scene clues, added 2026-11-15)
+
+#### Acceptance Criteria
+
+1. A Place SHALL be declared in `tools/playtest/js/places.js` for each shot that may carry a Scene clue: the shot, the four corners of one blank surface (shares of the picture's width and height, in order, forming a convex four-sided shape at least 12 per cent of the width and 8 per cent of the height), the surface (`plate`, `pane`, `page` or `plaque`), the ink (`engraved`, `condensation` or `handwritten`), the times from which it is in view and unobstructed (`from`, and `to` up to the last frame) and its measured brightness. A shot with no Place SHALL never carry a Scene clue.
+2. WHERE the Clue place setting is `world` (`world-clues`) THEN the Host MAY draw one Scene clue on a Place: a World Clue or Decoy of the Public View whose answer is text (a code, a time or a word), together with its Sign, and never a Spirit clue, a card, the Solution, a Hand, a Residue position or the answer of a Lock that is not a World Clue.
+3. THE Scene clue SHALL be drawn by the Host over the video while the game runs and never in a clip file, so the same file serves every game, and a clip file SHALL show no mark at its Place (no letter, digit, Sign or line: the Place's pixels carry no more edge energy than the clip's own grain in any frame of the window, checked by `tools/playtest/place-check.mjs`).
+4. THE Scene clue SHALL look like part of the scene: drawn no sharper than the clip (at the clip's own pixel size, then scaled up with the same smoothing), fitted to the Place by a perspective transform of its four corners, blended with `multiply` for dark ink on a light surface and `screen` for light ink on a dark one (the ink being `ink` or `bone` of the tokens, with no hue), set in IBM Plex Mono for `engraved` and in Newsreader italic for `handwritten` and `condensation`, and the grain, flicker and vignette of the film SHALL be laid once over the clip and the Scene clue together, as the last layer, so that no seam shows.
+5. THE Scene clue SHALL be in view only from the Place's `from` time until the shot is replaced (the held last frame included), SHALL fade in over `fade-slow` and out over `fade` and not at all under reduced motion, and SHALL show no flash and no movement of its own (the photosensitivity limits of `party-mode` 7.4).
+6. THE Scene clue SHALL be readable: its ink SHALL be at least 4.5 to 1 against the Place's measured brightness and its letters at least 5 per cent of the picture's height, and a Place that cannot meet both for the clue's text SHALL not be used for it.
+7. EVERY Scene clue SHALL also be in the Clue list as words, with the name of its Sign, in a solid panel at 4.5 to 1, SHALL be said once in the live region (for example "A clue is written on the brass plate: the moon, 3 2 5."), and WHEN footage is off (reduced motion, data saver, a hidden page, a clip that cannot load) or the shot has no Place THEN the panel SHALL show the clue at once and nothing SHALL be lost. This is the one place where words sit on the picture, an exception to 18.5, allowed because the picture is never the only way to read the clue.
+8. THE choice of the World Clue or Decoy a Place shows SHALL be a function of the seed, the shot and the Public View only, SHALL be the same for the same inputs, SHALL be made without reading the Solution, and a Decoy SHALL look the same as a clue in every way (the same Place, ink, timing and size) except its Sign and its answer.
+9. A Bot SHALL ignore Scene clues, a phone SHALL show none on its footage (a Spirit clue is private and a Scene clue is for the table), and the Display under the pyramid SHALL show none in this version.
+10. A clip made by a model SHALL have a Place only after a person has looked at every frame of the Place's window and `place-check.mjs` has passed it, and its `PROVENANCE.md` entry SHALL name the model, the date, the prompt and the take.

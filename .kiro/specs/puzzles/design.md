@@ -261,6 +261,7 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 | `ghost-engine` | `gateReveal` in front of the `reveal` Directive; `WanderLocks` in the Session. |
 | `ghost-voice` | 24 Library lines for the Whisper's board words (`check-voice-library.mjs` will ask for them). |
 | `haunwallker` | The Locks switch on the Play start screen; `puzzleFeel` in `PlatformKit`. |
+| `world-clues` Requirement 2 and glossary | A World Clue or Decoy with a text answer may also be drawn as a Scene clue on a Place of a footage scene (puzzles Requirement 22), from the same Public View; add the term and a pointer. |
 | Camera for Spirit clues | **Decided by the owner on 2026-11-15: the camera is allowed in the real game, as an opt-in backdrop of the Clue ring (15.10).** The party-mode Spirit lens keeps "neither the camera nor markers" (16.4): this decision does not change it. `steering/product.md` puts VR/WebXR out of scope; a flat camera backdrop that tracks nothing is neither, so it needs no change. **Done 2026-11-15:** `shared/src/app/csp.ts` set `Permissions-Policy: camera=()`, which blocked the camera on any page that received it (the party-mode selfie and QR scan need it too); it now says `camera=(self)`, with `csp.test.ts` and `security-headers.test.ts` updated. Check where the app's pages are served, in case a host sets its own header. |
 | `tech.md` | Unverified assumptions 19 to 24 below; `PUZZLES_ENABLED`. |
 | `structure.md` | The `puzzles/` folders. |
@@ -523,3 +524,63 @@ For every maximum of 8, 10 and 12 and every Haunt level, the shot never comes be
 ### Property 26: An ending says who joined the haunting and never says Poltergeist
 For any list of nicknames, the house card says that the haunting continues, that no one won and, when the list has names, who joined the haunting, and no card, string or log line of the scenes says Poltergeist.
 **Validates: Requirements 21.1, 21.2, 21.3**
+
+## Scene clues (overlay on footage, 2026-11-15)
+
+A clip cannot hold a clue: it is the same file in every game (Requirement 18), and a clue is different in every game. But a clue written on a brass plate or a misted window makes the film feel like the house. So the clip holds a **blank place** and the Host writes on it while the game runs.
+
+Layers, from the bottom: the video; a canvas with the Scene clue, moved onto the Place by a perspective transform; one **film layer** (grain, flicker, vignette) over both. The words also go to a solid panel beside the picture (the text twin) and to the Clue list.
+
+```
+film layer   grain, flicker, vignette           (over everything below, one layer)
+clue canvas  the Sign and the words, at the clip's own size, fitted to the Place
+video        the clip, with a blank surface at the Place
+```
+
+What a Place is (`tools/playtest/js/places.js`, made after a clip exists and measured by `place-check.mjs`):
+
+```js
+export const PLACES = {
+  // shot: { corners (shares of width and height), surface, ink, from, to (s), luma (0..1) }
+  hand: { corners: [[0.62, 0.28], [0.71, 0.28], [0.71, 0.35], [0.62, 0.35]], surface: 'plate', ink: 'engraved', from: 9, to: 15, luma: 0.71 },
+};
+```
+
+The pieces (pure, in `tools/playtest/js/scene-clues.js`): `placeFor(shot)`, `sceneClue(seed, shot, publicView)` (returns `{ sign, answer, decoy }` or null), `inkFor(luma)` (`ink` or `bone`, and the blend), `contrastOk(luma, ink)`, `fitToPlace(corners, w, h)` (the four-point transform as a CSS `matrix3d`) and `drawClue(ctx, clue, place)`. The page and the Host both call them.
+
+Why it should not look pasted on:
+
+| Tell | What stops it |
+|---|---|
+| Too sharp | Drawn at the clip's own pixel size, then scaled with the clip's smoothing. |
+| Flat | A perspective fit to the four corners of the surface. |
+| Floating | `multiply` on a light surface, `screen` on a dark one; a mono ink with no hue. |
+| Two layers | One film layer over both, so grain and flicker move together. |
+| Appears from nowhere | It fades in over `fade-slow` after the Place is in view, never before. |
+| Something passes in front | The Place's window ends before anything crosses it; the held last frame is clean. |
+
+The limit, said plainly: this works only on a locked-off shot with a flat surface that nothing passes in front of. The model prompts in `docs/story/ai-scene-prompts.md` ask for exactly that, and a person looks at every frame of the window before a Place is declared.
+
+What a Scene clue is not: it is never a clue baked into a clip; never a private clue (Spirit clues stay on phones); never needed (the Clue list and the panel carry it, so a missing clip loses nothing); not for Bots, phones or the Display in this version; and it is not shown in Wander.
+
+Open: whether the 480 pixel clip and the canvas read as one on a TV at three metres, and whether a Place can be big enough in a 480 pixel frame for letters of 5 per cent of the height (spike puzzles 1.8).
+
+### Property 27: A Scene clue is public and follows its inputs
+For any seed, shot and Public View, the Scene clue is one of the World Clues or Decoys of that view with a text answer and its Sign, never a card, a Hand, a Residue position, the Solution or the answer of a Lock that is not a World Clue; the same inputs give the same clue; and changing only the Solution changes nothing.
+**Validates: Requirements 22.2, 22.8**
+
+### Property 28: A Decoy looks like a clue
+For any clue and any Decoy on the same Place, every drawn property (Place, ink, blend, size, timing) is equal except the Sign and the answer.
+**Validates: Requirements 22.8**
+
+### Property 29: Nothing is lost when the picture is not shown
+For any Scene clue and any footage state (on, reduced motion, data saver, a hidden page, a clip that cannot load, a shot with no Place), the Clue list holds the clue's words and its Sign's name, and the panel shows them at once whenever the overlay is not drawn.
+**Validates: Requirements 22.7**
+
+### Property 30: A Scene clue is readable and calm
+For every Place and every answer text the game can make, the ink is at least 4.5 to 1 against the Place's brightness and the letters at least 5 per cent of the picture's height, the fade is one of the two named tokens (and none under reduced motion), and the clue has no flash and no movement of its own.
+**Validates: Requirements 22.4, 22.5, 22.6**
+
+### Property 31: A clip is blank at its Place
+For every clip that has a Place, every frame of the Place's window carries no mark at the Place, and the clip's entry in `PROVENANCE.md` names its model, date, prompt and take when a model made it.
+**Validates: Requirements 22.3, 22.10**
