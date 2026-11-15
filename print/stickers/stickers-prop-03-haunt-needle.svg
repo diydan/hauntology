@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180mm" height="120mm" viewBox="0 0 180 120">
+  <title>Hauntology 1:1 Sticker Sheet — Prop #3: Haunt Needle</title>
+  <style>
+    text { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+    .cut { fill: none; stroke: #e0a43a; stroke-width: 0.25; stroke-dasharray: 1.5 1; }
+    .lbl { fill: #b3aa97; font-size: 3px; }
+  </style>
+  <rect width="180" height="120" fill="#0b0d10"/>
+  <text x="8" y="8" fill="#e9e4d8" font-size="4.2" font-weight="bold">PROP #3 · HAUNT NEEDLE · 1:1 DIAL FACE &amp; MAX TAB (MM)</text>
+  <rect x="8" y="11" width="50" height="1" fill="#e0a43a"/>
+  <text x="61" y="12" class="lbl">50.0 mm scale check</text>
+
+  <!-- Semi-circular Dial Face Sticker (R = 73.6 mm -> 147.2 mm W x 85.6 mm H, pivot at (82, 92)) -->
+  <g transform="translate(82, 92)">
+    <!-- Outer cut outline matching prop-03-dial-plate sticker_r = 74.0 mm (-0.2 mm fit clearance) -->
+    <path d="M -73.8,11.8 L -73.8,0 A 73.8,73.8 0 0,1 73.8,0 L 73.8,11.8 Z" fill="#050607" stroke="#3d2d1f" stroke-width="0.5"/>
+    <path d="M -74.0,12.0 L -74.0,0 A 74.0,74.0 0 0,1 74.0,0 L 74.0,12.0 Z" class="cut"/>
+
+    <!-- Gauge scale track (radius 56 mm, from 15 deg to 165 deg) -->
+    <path d="M -54.1,-14.5 A 56,56 0 0,1 54.1,-14.5" fill="none" stroke="#21170f" stroke-width="4.5" stroke-linecap="round"/>
+    <!-- Red danger arc from 10 to 12 -->
+    <path d="M 42.9,-36.0 A 56,56 0 0,1 54.1,-14.5" fill="none" stroke="#d4604a" stroke-width="4.5" stroke-linecap="round" opacity="0.85"/>
+
+    <!-- Ticks and Numbers 0 to 12 (each step = 12.5 degrees from 165 down to 15) -->
+    <!-- 0 (165 deg) -->
+    <g transform="rotate(-75)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#6b6f76" stroke-width="0.9"/><text x="0" y="-62" text-anchor="middle" fill="#b3aa97" font-size="4.2">0</text></g>
+    <!-- 1 (152.5 deg) -->
+    <g transform="rotate(-62.5)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#6b6f76" stroke-width="0.9"/><text x="0" y="-62" text-anchor="middle" fill="#b3aa97" font-size="4.2">1</text></g>
+    <!-- 2 (140 deg) -->
+    <g transform="rotate(-50)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#6b6f76" stroke-width="0.9"/><text x="0" y="-62" text-anchor="middle" fill="#b3aa97" font-size="4.2">2</text></g>
+    <!-- 3 (127.5 deg — HAUNT EVENT GOLD NOTCH) -->
+    <g transform="rotate(-37.5)"><line x1="0" y1="-49" x2="0" y2="-59" stroke="#e0a43a" stroke-width="1.8"/><circle cx="0" cy="-46" r="1.5" fill="#e0a43a"/><text x="0" y="-62.5" text-anchor="middle" fill="#e0a43a" font-size="4.8" font-weight="bold">3</text></g>
+    <!-- 4 (115 deg) -->
+    <g transform="rotate(-25)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#6b6f76" stroke-width="0.9"/><text x="0" y="-62" text-anchor="middle" fill="#b3aa97" font-size="4.2">4</text></g>
+    <!-- 5 (102.5 deg) -->
+    <g transform="rotate(-12.5)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#6b6f76" stroke-width="0.9"/><text x="0" y="-62" text-anchor="middle" fill="#b3aa97" font-size="4.2">5</text></g>
+    <!-- 6 (90 deg — HAUNT EVENT GOLD NOTCH) -->
+    <g transform="rotate(0)"><line x1="0" y1="-49" x2="0" y2="-59" stroke="#e0a43a" stroke-width="1.8"/><circle cx="0" cy="-46" r="1.5" fill="#e0a43a"/><text x="0" y="-62.5" text-anchor="middle" fill="#e0a43a" font-size="4.8" font-weight="bold">6</text></g>
+    <!-- 7 (77.5 deg) -->
+    <g transform="rotate(12.5)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#6b6f76" stroke-width="0.9"/><text x="0" y="-62" text-anchor="middle" fill="#b3aa97" font-size="4.2">7</text></g>
+    <!-- 8 (65 deg) -->
+    <g transform="rotate(25)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#6b6f76" stroke-width="0.9"/><text x="0" y="-62" text-anchor="middle" fill="#b3aa97" font-size="4.2">8</text></g>
+    <!-- 9 (52.5 deg — HAUNT EVENT GOLD NOTCH) -->
+    <g transform="rotate(37.5)"><line x1="0" y1="-49" x2="0" y2="-59" stroke="#e0a43a" stroke-width="1.8"/><circle cx="0" cy="-46" r="1.5" fill="#e0a43a"/><text x="0" y="-62.5" text-anchor="middle" fill="#e0a43a" font-size="4.8" font-weight="bold">9</text></g>
+    <!-- 10 (40 deg) -->
+    <g transform="rotate(50)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#d4604a" stroke-width="1.1"/><text x="0" y="-62" text-anchor="middle" fill="#d4604a" font-size="4.2" font-weight="bold">10</text></g>
+    <!-- 11 (27.5 deg) -->
+    <g transform="rotate(62.5)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#d4604a" stroke-width="1.1"/><text x="0" y="-62" text-anchor="middle" fill="#d4604a" font-size="4.2">11</text></g>
+    <!-- 12 (15 deg) -->
+    <g transform="rotate(75)"><line x1="0" y1="-51" x2="0" y2="-58" stroke="#d4604a" stroke-width="1.4"/><text x="0" y="-62" text-anchor="middle" fill="#d4604a" font-size="4.5" font-weight="bold">12</text></g>
+
+    <!-- Ghost icon & "HAUNT" title -->
+    <path d="M -5,-28 V -33 a 5,5 0 0,1 10,0 V -23 l -1.6,-1.6 l -1.7,1.6 l -1.7,-1.6 l -1.7,1.6 l -1.7,-1.6 l -1.6,1.6 Z" fill="#9fe8d0" opacity="0.85"/>
+    <circle cx="-1.6" cy="-32.5" r="0.8" fill="#050607"/><circle cx="1.6" cy="-32.5" r="0.8" fill="#050607"/>
+    <text x="0" y="-17.5" text-anchor="middle" fill="#e9e4d8" font-size="4.2" letter-spacing="1.4" font-weight="bold">HAUNT</text>
+
+    <!-- Pivot shaft cutout (9.2 mm dia) -->
+    <circle cx="0" cy="0" r="4.6" fill="#0b0d10" stroke="#e0a43a" stroke-width="0.25" stroke-dasharray="1 0.8"/>
+  </g>
+
+  <!-- Red MAX Tab Sticker (13.8 x 8.8 mm) -->
+  <g transform="translate(158, 36)">
+    <rect x="0" y="0" width="13.8" height="8.8" rx="0.9" fill="#d4604a" stroke="#e9e4d8" stroke-width="0.3"/>
+    <text x="6.9" y="5.8" text-anchor="middle" fill="#e9e4d8" font-size="4.0" font-weight="bold">MAX</text>
+    <rect x="-0.2" y="-0.2" width="14.2" height="9.2" rx="1.0" class="cut"/>
+    <text x="6.9" y="13.5" text-anchor="middle" class="lbl">MAX Tab</text>
+  </g>
+</svg>
