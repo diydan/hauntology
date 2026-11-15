@@ -173,15 +173,18 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - A brief that says the image is not safe counts as `unsafe_image`. The picked image goes into the flow state in memory only, never into a URL.
     - _Requirements: 2.7, 3.1_
 
-- [ ] 8. Confirm Gate (satisfies `world-pipeline` 10.3)
-  - [ ] 8.1 Confirm screen
+- [x] 8. Confirm Gate (satisfies `world-pipeline` 10.3)
+  - [x] 8.1 Confirm screen
     - Driven by `confirmReduce`: call `POST /api/worlds/quote` on mount, show the exact image from the quote at a readable size with alt text, the remaining quota and "Enter this place?"; "Enter this place" calls `POST /api/worlds` once with the Confirm Token (held in reducer state only, never in a URL, storage or log) and is disabled while the request runs; "Back" and "Pick another" return without consuming quota; a URL without `pickedImageId` redirects to Create. No other Screen calls `POST /api/worlds`.
+    - Built as `ConfirmController` (`web/src/app/confirm/`), which runs `confirmReduce` and holds no DOM, and the Confirm screen. "Back" goes to Create and "Pick another place" to the Gallery, both off while a place is being made. A source-scan test checks that only the Gate's controller calls `createWorld`. After a place is made the quota is asked for again, so Home shows the new count; the picked image stays, so a failed place can try again from here. "Enter this place" is also off, with a line and the Gallery, when the quote itself says no place is left.
     - _Requirements: 3.1, 3.2, 3.3, 3.6, 3.7_
-  - [ ] 8.2 Turnstile
+  - [x] 8.2 Turnstile
     - Load the script from Cloudflare's own URL only when the quote says it is required (never proxied, cached or self-hosted), render the widget inside the Gate with a visible loading state, and send its result with the creation call.
+    - Built behind a seam (`PlatformKit.loadTurnstile`; the real loader injects Cloudflare's script on demand, with a 15 second limit, and forgets a failure so "Try again" loads afresh) and a stand-in for `?demo=1&turnstile=1`. The widget's site key comes from the quote (`QuoteResult.turnstileSiteKey`), so the key and the server's secret cannot disagree.
     - _Requirements: 3.5, 9.1_
-  - [ ] 8.3 Rejection and retry
+  - [x] 8.3 Rejection and retry
     - Quota, moderation, bot-check, kill-switch and `confirm_expired` codes show their own copy, release the disabled state and offer the Gallery; `retry` from `rejected` makes a new quote; a 429 keeps the control disabled until `retryGate` allows it.
+    - Each code shows its own copy; "Try again" is offered only where `errorCopy` says trying again helps, and a 429 holds it for the advised time (`RetryButton`).
     - _Requirements: 3.4, 7.5_
 
 - [x] 9. Haunt screen (satisfies `world-pipeline` 10.4)

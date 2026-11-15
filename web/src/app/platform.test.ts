@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { resetTurnstileLoader, type TurnstileApi } from "./confirm/turnstile";
 import { browserLocate, defaultPlatform } from "./platform";
 
 const original = Object.getOwnPropertyDescriptor(globalThis.navigator, "geolocation");
@@ -47,5 +48,19 @@ describe("defaultPlatform", () => {
     expect(typeof kit.loadCreator).toBe("function");
     expect(typeof kit.loadHost).toBe("function");
     expect(typeof kit.locate).toBe("function");
+  });
+});
+
+describe("defaultPlatform.loadTurnstile", () => {
+  it("is the real loader: it gives the Turnstile that is on the page, and adds no script of its own to find it", async () => {
+    resetTurnstileLoader();
+    const api: TurnstileApi = { render: () => "id", remove: () => {}, reset: () => {} };
+    (window as unknown as { turnstile?: TurnstileApi }).turnstile = api;
+    try {
+      await expect(defaultPlatform().loadTurnstile()).resolves.toBe(api);
+      expect(document.head.querySelectorAll("script")).toHaveLength(0);
+    } finally {
+      delete (window as unknown as { turnstile?: TurnstileApi }).turnstile;
+    }
   });
 });

@@ -91,7 +91,7 @@ export const API_SCHEMAS = {
   sketchRender: z.object({ candidates: z.array(CandidateSchema).max(8), quota: QuotaSnapshotSchema }),
   sketchSelect: z.object({ imageId: Id }),
   placeBrief: z.object({ brief: Text(2000), safe: z.boolean() }),
-  quote: z.object({ imageUrl: OwnPathSchema, quota: QuotaSnapshotSchema, confirmToken: z.string().min(1).max(512), needsTurnstile: z.boolean() }),
+  quote: z.object({ imageUrl: OwnPathSchema, quota: QuotaSnapshotSchema, confirmToken: z.string().min(1).max(512), needsTurnstile: z.boolean(), turnstileSiteKey: z.string().min(1).max(128).optional() }),
   createWorld: z.object({ worldId: Id, status: z.enum(JOB_STATES) }),
   world: WorldStatusSchema,
   deleteWorld: z.null(),

@@ -2,6 +2,7 @@ import { defaultLoadHost, type LoadHost } from "./case/types";
 import { browserPhotoKit, type PhotoKit } from "./create/photo-kit";
 import { canvasSurface, type SurfaceFactory } from "./create/surface";
 import { browserScheduler, type Scheduler } from "./haunt/controller";
+import { loadTurnstileScript, type LoadTurnstile } from "./confirm/turnstile";
 import { defaultLoadCreator, type LoadCreator } from "./haunt/creator";
 import { defaultLoadViewer, type LoadViewer } from "./viewer/types";
 import { browserAudio, browserRecorderFactory, browserUnlock, type RecorderFactory, type VoiceDeps } from "./play/voice";
@@ -22,6 +23,8 @@ export type PlatformKit = {
   now: () => Date;
   /** Timers for the Stage poll. */
   scheduler: Scheduler;
+  /** Loads Cloudflare Turnstile for the Confirm Gate, only when the quote asks for it. */
+  loadTurnstile: LoadTurnstile;
   /** Reading, measuring and re-encoding a chosen photo (Create). */
   photo: PhotoKit;
   /** Paints the Sketch Pad's strokes on a canvas (Create). */
@@ -67,6 +70,7 @@ export function defaultPlatform(): PlatformKit {
     locate: browserLocate,
     now: () => new Date(),
     scheduler: browserScheduler,
+    loadTurnstile: () => loadTurnstileScript(),
     photo: browserPhotoKit,
     surface: canvasSurface,
     voice: { recorder: browserRecorderFactory(), createAudio: browserAudio, unlockAudio: browserUnlock },

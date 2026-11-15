@@ -648,3 +648,42 @@ a {
 .create > .gallery-link {
   margin-top: 1.5rem;
 }
+
+/*
+ * Confirm: the picture the place will be made from, the question, the bot check. The picture is as
+ * large as the page allows so it is readable, and every control is at least 44 px.
+ */
+.confirm-figure {
+  margin: 0 0 1rem;
+}
+
+.confirm-image {
+  display: block;
+  width: 100%;
+  max-width: 40rem;
+  height: auto;
+  border: 1px solid var(--dust);
+}
+
+.confirm-figure figcaption {
+  margin-top: 0.25rem;
+}
+
+.confirm-check,
+.confirm-error {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--dust);
+}
+
+.confirm-error {
+  border-color: var(--alarm);
+}
+
+.turnstile-box {
+  min-height: 4rem;
+}
+
+.confirm-nav {
+  margin-top: 1.5rem;
+}

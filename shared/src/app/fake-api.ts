@@ -46,6 +46,9 @@ export const GALLERY: readonly GalleryItem[] = [
   { id: "library-stairs", title: "Library stairs", description: "A reading lamp left on, spiral stairs, the smell of paper.", thumbUrl: "/demo/gallery/library-stairs.svg", attribution: "Demo fixture" },
 ];
 
+/** Cloudflare's documented dummy site key, which always passes. The demo uses it; the real key comes from the server. */
+export const TURNSTILE_DEMO_SITE_KEY = "1x00000000000000000000AA";
+
 /** Six Preset Ghosts for the demo. The real list is `GET /api/ghosts/presets` (ghost-creator). */
 export const GHOST_PRESETS: readonly GhostPreset[] = [
   { id: "preset-maren", name: "Maren", spriteUrl: "/demo/ghosts/preset-maren.svg" },
@@ -225,6 +228,7 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
           quota: copyQuota(),
           confirmToken,
           needsTurnstile: options.needsTurnstile ?? false,
+          ...(options.needsTurnstile === true ? { turnstileSiteKey: TURNSTILE_DEMO_SITE_KEY } : {}),
         };
         return ok(q);
       });

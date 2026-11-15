@@ -31,6 +31,8 @@ export type QuoteResult = {
   quota: QuotaSnapshot;
   confirmToken: string;
   needsTurnstile: boolean;
+  /** The public site key of the Turnstile widget. Present when `needsTurnstile` is true; the server owns it, so the key and the secret cannot disagree. */
+  turnstileSiteKey?: string | undefined;
 };
 
 export type WorldStatus = {

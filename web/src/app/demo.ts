@@ -1,5 +1,6 @@
 import type { ShellApi } from "@hauntology/shared/app/api";
 import type { FakeApiOptions } from "./FakeApi";
+import type { PlatformKit } from "./platform";
 
 /** `?demo=1` asks for the fake API. */
 export const wantsDemo = (search: string): boolean => new URLSearchParams(search).get("demo") === "1";
@@ -33,6 +34,19 @@ export async function loadDemoApi(search: string): Promise<ShellApi | null> {
   if (!import.meta.env.PROD && wantsDemo(search)) {
     const { createFakeApi } = await import("./FakeApi");
     return createFakeApi(demoOptions(search));
+  }
+  return null;
+}
+
+/**
+ * The parts of the browser kit the demo replaces, when `?demo=1` is set on a non-production build, otherwise
+ * `null`: Turnstile becomes a stand-in with two buttons, so the bot check can be walked without calling
+ * Cloudflare. The import sits inside the `import.meta.env.PROD` guard, so a production build drops it.
+ */
+export async function loadDemoPlatform(search: string): Promise<Partial<PlatformKit> | null> {
+  if (!import.meta.env.PROD && wantsDemo(search)) {
+    const { standinTurnstile } = await import("./confirm/turnstile-standin");
+    return { loadTurnstile: standinTurnstile };
   }
   return null;
 }

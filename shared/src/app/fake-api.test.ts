@@ -2,7 +2,7 @@ import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { ErrorCode } from "../errors";
 import { ShellToViewerSchema } from "./events";
-import { ANCHORS, GALLERY, MEMORIES, createFakeBackend, type FakeBackend, type FakeOptions } from "./fake-api";
+import { ANCHORS, GALLERY, MEMORIES, TURNSTILE_DEMO_SITE_KEY, createFakeBackend, type FakeBackend, type FakeOptions } from "./fake-api";
 import type { ApiResult, PlayView } from "./api";
 import { propParams } from "./prop-config";
 import { isWorldId } from "./routes";
@@ -199,8 +199,17 @@ describe("making a place", () => {
     const { imageId } = value(b.uploadPhoto(0, jpeg));
     const q = value(b.quote(0, imageId));
     expect(q.needsTurnstile).toBe(true);
+    expect(q.turnstileSiteKey).toBe(TURNSTILE_DEMO_SITE_KEY);
     expect(code(b.createWorld(0, { imageId, confirmToken: q.confirmToken }))).toBe(ErrorCode.turnstile_failed);
     expect(code(b.createWorld(0, { imageId, confirmToken: q.confirmToken, turnstile: "cf" }))).toBe("ok");
+  });
+
+  it("gives no site key when no check is needed", () => {
+    const b = createFakeBackend();
+    const { imageId } = value(b.uploadPhoto(0, jpeg));
+    const q = value(b.quote(0, imageId));
+    expect(q.needsTurnstile).toBe(false);
+    expect("turnstileSiteKey" in q).toBe(false);
   });
 
   it("stops at each limit with its own code", () => {
