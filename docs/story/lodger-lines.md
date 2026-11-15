@@ -38,13 +38,15 @@ The Lodger gives no tell. Before the reveal, no `aside` or `stall` confirms or d
 | `lodger.confession.3` | Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good. |
 | `lodger.confession.4` | It was me. There. I feel... lighter. Well... I mean... do not look at me like that. |
 | `lodger.confession.5` | Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it. |
-| `lodger.confession.6` | Is everyone ready? It was me. Now I leave a pause for the gasp. I mean... do make it a good one. |
+| `lodger.confession.6` | Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please. |
 
 ## Checked against the rules
 
 Run on 2026-11-15 with a script: every line is at most 240 characters and at most 4 sentences (an ellipsis is not a sentence end), has a stumble ("..."), and has no digits, no brackets and none of `` ` `` `*` `#` `<` `>`. The `aside` and `stall` lines hold none of: guilty, innocent, confess, did it, not me, wasn't me, nothing to hide, I would never. The first draft had 5 lines over 4 sentences and one without a stumble; they were fixed.
 
 ## Marked REVIEW
+
+- `lodger.confession.6`: **replaced on 2026-11-15.** The first version ("Is everyone ready? It was me. Now I leave a pause for the gasp. I mean... do make it a good one.") was a stage direction, and the voice read it aloud word for word (Dan heard it in the Mrs. Dunmore clip). Three replacements were written and heard in Victoria's voice; **Dan chose A**, now the line above. Not chosen: **B** "Goodness. It was me. Please do not think less of me. Or do... but do think of me often, and fondly." **C** "I would so like to blame someone else. I really do try. It was me. Well... I am a dreadful liar, apparently." Small point on A: it asks the players a question ("am I terribly easy to read?"), which is a slight cue to whoever speaks next; no clash with the Keeper's lines was found. The Mrs. Dunmore clip was remade with A (about $0.28).
 
 - `lodger.aside.5`: "I was only standing here" sounds like an alibi.
 - `lodger.stall.3`: "It is, isn't it" assumes the Suspect is the one named. That is true for a stall (they were accused), so it is fine, but check it reads right when the Accusation is later shown to be wrong.

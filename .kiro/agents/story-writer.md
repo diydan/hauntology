@@ -76,6 +76,7 @@ Each kind is written in one Speaker's voice only. The Lodger is spoken aloud onl
 10. **Original.** No third-party game names, characters, quotes or art, and nothing taken from any other table game.
 11. **Text first.** Every line must work with no sound. It must also read well spoken aloud.
 12. **Every scripted line is rendered ahead of time** as audio and kept. Do not write lines nobody needs. Do not pad a bank past the minimum with near-copies.
+13. **Never write stage directions into the words.** The speech voice reads every word aloud and cannot perform a pause, a gasp, a sigh or a gesture. A line that says "now I leave a pause for the gasp" is spoken as exactly those words, like a script being read out. Do not narrate a sound, a pause, a gesture or the speaker's own voice or body (no pause, gasp, sigh, laugh, whisper, silence, beat, "I clear my throat", "I look away"). Show the mood through what a person would actually say. A pause comes only from an ellipsis. (Learned on `lodger.confession.6`, 2026-11-15.)
 
 ## The Lodger gives no tell
 
@@ -108,7 +109,7 @@ Some lines are already rendered as Inworld audio and as 8 to 12 second talking-h
 | `ending.soft.1` | Whisper | You found all three. Thank you for staying. The door is open whenever you want it. I will be here. | **new, REVIEW**: "all three" is true only if the `ending` kind fires after all three memories are found; check the spec | `demo-n2-whisper-farewell` |
 | `meet.dry.1` | Keeper | Ah. A visitor. I would offer tea, but you can see my difficulty. | in `VOICE.md` | `hero-ashby-welcome` |
 | `end.haunting.dry.1` | Keeper | Well. That is that. I shall keep my secrets, and you may keep the memory of how close you were. | in `VOICE.md` | `hero-ashby-closing` |
-| `lodger.confession.1` to `.6` | Lodger | the six lines in `docs/story/lodger-lines.md` | `.1` to `.5` approved and in clips; `.6` is new, no REVIEW note, in a clip (9.2 s spoken) | Vane `.1`, Cora `.2`, Percy `.3`, Dr. Pike `.4`, Captain Thorne `.5`, Mrs. Dunmore `.6` (`hero-suspect-<name>-confession`) |
+| `lodger.confession.1` to `.6` | Lodger | the six lines in `docs/story/lodger-lines.md` | `.1` to `.5` approved and in clips; `.6` is new (rewritten once to remove a stage direction), no REVIEW note, in a clip (9.6 s spoken) | Vane `.1`, Cora `.2`, Percy `.3`, Dr. Pike `.4`, Captain Thorne `.5`, Mrs. Dunmore `.6` (`hero-suspect-<name>-confession`) |
 
 **Demo only, not for any bank.** Two lines were made for the demo video and are only true in the demo, so they never go into a bank and never into the Library:
 
