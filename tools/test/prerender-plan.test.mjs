@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fileNameFor, hasMp3Header, looksLikeMp3, planPrerender, resolveVoice, tagForVoice, usdFor } from '../lib/prerender-plan.mjs';
+import { fileNameFor, hasMp3Header, looksLikeMp3, planPrerender, resolveVoice, settingsForVoice, tagForVoice, usdFor } from '../lib/prerender-plan.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const manifest = JSON.parse(readFileSync(join(root, 'shared/fixtures/voice-library.json'), 'utf8'));
@@ -82,7 +82,7 @@ test('a voice with no known Steering Tag is refused, so it cannot be priced with
   assert.equal(tagForVoice('inworld:Pippa', manifest), '[whisper] ');
   assert.equal(tagForVoice('inworld:Ronald', manifest), '');
   assert.equal(tagForVoice('inworld:Mark', manifest), '[speak nervously] ');
-  assert.throws(() => tagForVoice('inworld:Nobody', manifest), /Steering Tag/);
+  assert.throws(() => tagForVoice('inworld:Nobody', manifest), /no settings are known/);
 });
 
 test('a key that is not a Library key is refused, so it can never become a path outside the folder', () => {
@@ -129,10 +129,10 @@ test('CLI: the default is a dry run; it prints the table, says nothing was spent
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('CLI: --render, --upload and --reel are refused with exit 2 until they are built, and nothing is written', () => {
+test('CLI: --upload and --reel are refused with exit 2 until they are built, and nothing is written', () => {
   const dir = mkdtempSync(join(tmpdir(), 'prerender-'));
   try {
-    for (const flag of ['--render', '--upload', '--reel']) {
+    for (const flag of ['--upload', '--reel']) {
       const r = run([flag, '--budget-usd', '1', '--out', dir]);
       assert.equal(r.status, 2, flag);
       assert.match(r.stderr, /not built yet/);
@@ -165,4 +165,19 @@ test('CLI: options are checked', () => {
   const r = run(['--voice', 'Chloe', '--budget-usd', '0.01']);
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /a render would stop after \d+ of 11/);
+});
+
+test('the settings match SPEAKERS in shared/src/voice/voices.ts (the numbers Dan approved), so the tool and the product cannot drift', () => {
+  const ts = readFileSync(join(root, 'shared/src/voice/voices.ts'), 'utf8');
+  const row = (speaker) => {
+    const m = new RegExp(`${speaker}:\\s*\\{\\s*inworld:\\s*"(\\w+)",\\s*tag:\\s*"([^"]*)",\\s*rate:\\s*([\\d.]+),\\s*temperature:\\s*([\\d.]+)`).exec(ts);
+    assert.ok(m, `no SPEAKERS row for ${speaker}`);
+    return { voice: `inworld:${m[1]}`, tag: m[2], rate: Number(m[3]), temperature: Number(m[4]) };
+  };
+  for (const speaker of ['whisper', 'keeper', 'lodger']) {
+    const r = row(speaker);
+    assert.deepEqual(settingsForVoice(r.voice, manifest), { tag: r.tag, rate: r.rate, temperature: r.temperature }, speaker);
+  }
+  // and every Lodger Voice gets the Lodger row
+  for (const v of manifest.lodgerVoices) assert.deepEqual(settingsForVoice(v, manifest), settingsForVoice('inworld:Mark', manifest));
 });

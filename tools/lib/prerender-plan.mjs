@@ -3,7 +3,7 @@
 //
 // Cost: $25 per million characters, counting the Steering Tag as sent (docs/VOICE-LIBRARY-PLAN.md). The tag is a fixed
 // function of the voice, never part of a key. A voice with no row below is refused, so a new voice cannot be priced
-// without its tag by accident.
+// or rendered without its tag and settings by accident.
 
 export const PRICE_USD_PER_MILLION_CHARS = 25;
 export const MAX_TAKES = 4;
@@ -12,15 +12,23 @@ export const KEY_PATTERN = /^speech\/lib\/v1\/([0-9a-f]{64})$/;
 /** 0.8 s (the shortest accepted clip) at 8 kbps is 800 bytes: anything smaller is not a real clip. */
 export const MIN_MP3_BYTES = 800;
 
-const NERVOUS = '[speak nervously] ';
-const FIXED_TAGS = { 'inworld:Pippa': '[whisper] ', 'inworld:Ronald': '' };
+// One row per Speaker, the settings approved on 2026-11-15 (the same numbers as SPEAKERS in shared/src/voice/voices.ts; a test
+// compares them). The Lodger Voices share one row and are listed in the manifest itself.
+const LODGER = { tag: '[speak nervously] ', rate: 1.1, temperature: 1.2 };
+const FIXED = {
+  'inworld:Pippa': { tag: '[whisper] ', rate: 0.9, temperature: 1.0 },
+  'inworld:Ronald': { tag: '', rate: 0.9, temperature: 0.7 },
+};
 
-/** The Steering Tag sent with a voice. The Lodger Voices are listed in the manifest itself. */
-export function tagForVoice(voice, manifest) {
-  if (Object.hasOwn(FIXED_TAGS, voice)) return FIXED_TAGS[voice];
-  if (manifest.lodgerVoices.includes(voice)) return NERVOUS;
-  throw new Error(`no Steering Tag is known for voice "${voice}"; add it to tools/lib/prerender-plan.mjs before pricing it`);
+/** The Inworld settings of a voice: Steering Tag, speaking rate, temperature. A voice with no row is refused. */
+export function settingsForVoice(voice, manifest) {
+  if (Object.hasOwn(FIXED, voice)) return FIXED[voice];
+  if (manifest.lodgerVoices.includes(voice)) return LODGER;
+  throw new Error(`no settings are known for voice "${voice}"; add them to tools/lib/prerender-plan.mjs before pricing or rendering it`);
 }
+
+/** The Steering Tag sent with a voice. */
+export const tagForVoice = (voice, manifest) => settingsForVoice(voice, manifest).tag;
 
 export const usdFor = (chars) => Math.round((chars / 1_000_000) * PRICE_USD_PER_MILLION_CHARS * 10_000) / 10_000;
 
@@ -85,7 +93,7 @@ export function planPrerender({ manifest, lookup, takes = 1, voice = null, budge
       const state = lookup(file);
       if (state === 'ok') row.done += 1;
       else if (state === 'bad') { row.bad += 1; bad.push({ key: entry.key, voice: entry.voice, take, file }); }
-      else { row.missing += 1; row.chars += chars; jobs.push({ key: entry.key, voice: entry.voice, take, file, spoken: entry.spoken, chars }); }
+      else { row.missing += 1; row.chars += chars; jobs.push({ key: entry.key, voice: entry.voice, take, file, spoken: entry.spoken, chars, sources: entry.sources ?? [] }); }
     }
   }
 

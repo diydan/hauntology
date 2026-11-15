@@ -32,7 +32,9 @@ Audio for every **spoken, scripted** line, rendered once ahead of time, kept und
 
 ## The prerender tool
 
-**Built so far (2026-11-15): the dry run only.** `pnpm prerender-voice [--voice Chloe] [--takes 2] [--budget-usd 0.05] [--list] [--out DIR]` reads the manifest and a local folder, prints the table and the cost, and writes nothing. The folder is `./.voice-library/` (ignored by git) or `$VOICE_LIBRARY_DIR`; a file is `<hash>.take<n>.mp3`. It checks only that folder, not R2. A file that is empty, under 800 bytes or not an MP3 makes the run fail (exit 1) and is never overwritten. With `--budget-usd` it shows how far that budget would get, in order. Length and silence checks need a decoder and come with `--render`. The planning code is `tools/lib/prerender-plan.mjs` with 16 tests in `tools/test/prerender-plan.test.mjs`.
+**Built so far (2026-11-15): the dry run and the render step, for one voice at a time.** `pnpm prerender-voice [--voice Chloe] [--takes 2] [--budget-usd 0.05] [--list] [--out DIR]` plans and prices and writes nothing. `--render` (with `--voice`, `--budget-usd`, `$VOICE_RENDER_TOKEN` and ffmpeg) renders the missing files through the local Worker in `tools/voice-render/` (start it with the command in its `wrangler.jsonc`; the tool only talks to a loopback address). The rules are tested: one request at a time, no retries (a failure stops the run), the budget checked before every call and a call counted as spent before it is made, every clip checked (MP3 header, 0.8 s to 15 s, not silent) and a failed clip kept as `<file>.rejected`, and an existing file never overwritten. The folder is `./.voice-library/` (ignored by git) or `$VOICE_LIBRARY_DIR`; a file is `<hash>.take<n>.mp3`, and `report.json` lists what was rendered. The tool checks only that folder, not R2. `--upload` and `--reel` are not built: the pilot reel was made by hand. The code is `tools/lib/prerender-plan.mjs`, `prerender-run.mjs` and `audio-check.mjs`, with 49 tests in `tools/test/`.
+
+**Pilot result (2026-11-15): Mark, 11 files, 1,159 characters, about $0.029 counted.** All 11 passed the checks. A call took 2.9 to 6.1 s (the first was slowest), run one at a time; no error and no rate limit appeared in 11 requests. Clips run 6.4 to 11.9 s. Whether the account was billed, and how much, is still unverified (Spike 1.1).
 
 **Default is a dry run.** It prints a table (voice, files missing, characters, estimated cost) and stops. Nothing is spent until the owner adds `--render` and a budget.
 
@@ -59,7 +61,7 @@ Audio for every **spoken, scripted** line, rendered once ahead of time, kept und
 - **Idempotent and ordered.** Fixed order, so a stop resumes cleanly. A key that exists is never overwritten.
 - **One request at a time** to begin with. Inworld's rate limits are unknown.
 - **Download at once.** Inworld returns a temporary signed link; the audio is saved immediately.
-- **Checks on every file:** not empty, a valid MP3 header, a length between 0.8 s and 12 s (the longest Lodger line is about 10 s), not silent. A failed file is not uploaded.
+- **Checks on every file:** not empty, a valid MP3 header, a length between 0.8 s and 15 s (Mark's longest Lodger line is 11.9 s), not silent. A failed file is not uploaded.
 - **Report:** `{key, voice, bytes, durationMs}` written to a local file, not committed. The audio itself is never committed (spec).
 
 **Takes.** The Lodger settings (temperature 1.2) give a different delivery on every render. One take per line is the default. With `--takes 2` the owner listens and writes the winners into `picks.json` before upload. The cost doubles: about $0.35 for the whole Lodger bank.
@@ -85,15 +87,21 @@ The pilot comes first because the Lodger bank is the only one that exists, and i
 - **Billing and rate limits** of `inworld/tts-2` on this account are unverified (Spike 1.1).
 - **`[speak nervously]`** is proven on Mark and heard on the other five; the deployed Worker is not tested.
 - **Real R2 from `wrangler dev`** was not tried; the plan allows a plain upload step instead.
-- **The bucket.** `api/wrangler.jsonc` has one R2 bucket, `hauntology-worlds` (binding `BUCKET`), with an hourly cron that deletes uploads past 24 hours and worlds past 7 days. The speech keys use the prefixes `speech/v1/` (30 days) and `speech/lib/v1/` (never). **Confirm the cron only touches its own prefixes**, or use a separate speech bucket.
+- **The bucket.** Settled: the Library shares `hauntology-worlds`. The hourly cron only touches `uploads/`, `candidates/`, `worlds/` and `sprites/` (checked), so `speech/` is safe from it. Still open: nothing expires the 30-day cache yet (see Decisions).
 - **The Aura-2 fallback is not pre-rendered.** A Library miss falls through to the cache, then a paid call.
 - **Clip audio is not Library audio.** The 17 avatar clips were made from separate renders, so they sound slightly different from the Library files. Only matters if the product ever plays a clip with Library sound.
 - **Losing R2** costs a re-render, about $0.90 for everything. Keep the tool and the manifest in git, and the audio only in R2.
 
-## Decisions for Dan
+## Decisions (answered 2026-11-15; change any of them and the plan follows)
 
-1. **Bucket:** reuse `hauntology-worlds` with the `speech/` prefix (matches the spec), or make a separate `hauntology-speech` bucket (cleaner lifecycle rules)? I lean to the separate bucket if the world cron is blunt, otherwise the shared one.
-2. **Banks as data:** is the markdown the source of truth with generated TypeScript (my proposal), or should the TypeScript be the source?
-3. **Takes:** one take per line (cheaper, faster) or two and pick by ear?
-4. **Render way:** B (local Worker) as recommended, or A (admin route)?
-5. **Who renders:** you run `--render` yourself with your login (the spec says the owner runs it), or I run it for you inside this setup?
+| # | Question | Answer | Why |
+|---|---|---|---|
+| 1 | **Bucket** | **Reuse `hauntology-worlds`**, prefix `speech/lib/v1/` for the Library | Checked in `api/src/worlds/`: the hourly cron lists and deletes only `uploads/`, `candidates/`, `worlds/` and `sprites/`, and `removeObjects` drops any key outside those four. It never touches `speech/`. A second bucket would add a binding and a deploy step for nothing |
+| 2 | **Banks as data** | **Markdown is the source**, generated TypeScript (already built) | A person edits the tables; `pnpm check-voice-library` fails if the two differ |
+| 3 | **Takes** | **One take.** Re-roll a rejected line by deleting its file and running again | 66 clips is about 11 minutes of listening, 132 is 22. A re-roll of one line costs about $0.003, so two takes everywhere buys little |
+| 4 | **Render way** | **B, the local Worker**, then upload with `wrangler r2 object put --remote --content-type audio/mpeg` | No new deployed route and no token to guard. It is how every sample and clip in this project was made. Always pass `--remote`: without it the file may go to the local copy of R2, not the real bucket |
+| 5 | **Who renders** | **I render to the local folder** with a $0.25 budget; **you run the upload** | Rendering costs 17 cents and stays on this machine. The upload changes the shared bucket, so it is yours, with your login (the spec says the owner runs it) |
+
+**Two jobs this answer creates (not built):**
+- **Expire the speech cache, not the Library.** The cron does not expire `speech/v1/` (the 30-day cache). Add one R2 lifecycle rule on that prefix only: `wrangler r2 bucket lifecycle add hauntology-worlds speech-cache speech/v1/ --expire-days 30`. A rule with no prefix would delete the Library, so the prefix is not optional. Optional extra: `wrangler r2 bucket lock add hauntology-worlds --name speech-library --prefix speech/lib/ --retention-indefinite` makes the Library impossible to delete or overwrite by mistake.
+- **A test that the cleanup never removes a `speech/` key**, added with the read path (task 3.12).
