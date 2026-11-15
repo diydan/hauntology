@@ -5,7 +5,7 @@ import { verify } from "@hauntology/shared/puzzles/verify";
 import { createBrowserFeel } from "../feel/create";
 import { useFeelValue } from "../hooks";
 import { PuzzleHost, type AttemptReply } from "../PuzzleHost";
-import { DEFAULT_DEVICE_SETTINGS, PuzzleSettings, type DeviceSettings } from "../PuzzleSettings";
+import { DEFAULT_DEVICE_SETTINGS, PuzzleSettings, type DeviceSettings, type DeviceSettingsControl } from "../PuzzleSettings";
 import { SightsPage } from "../SightsPage";
 import { createBrowserHear } from "../speech";
 
@@ -29,10 +29,13 @@ const href = (c: Config, over: Partial<Config>): string => {
  * Play one Lock on this phone with no Room: the Lock is made here, and the answer is checked here with the shared checker.
  * For trying the screens (touch, tilt, buzz, sound, the mic) on a real device. The Spirit board speaks with this phone's voice.
  */
-export function PuzzleDemo({ search }: { search: string }): ReactNode {
+export function PuzzleDemo({ search, settings }: { search: string; settings?: DeviceSettingsControl }): ReactNode {
   const cfg = useMemo(() => parseConfig(search), [search]);
   const lock = useMemo(() => makeLock(cfg.kind, cfg.level, cfg.seed), [cfg]);
-  const [device, setDevice] = useState<DeviceSettings>({ ...DEFAULT_DEVICE_SETTINGS, assist: cfg.assist });
+  // The device settings are the Controller's to keep (this page is handed them, and keeps them on the phone, in `device/`); on their own they last for this visit.
+  const [own, setOwn] = useState<DeviceSettings>({ ...DEFAULT_DEVICE_SETTINGS, assist: cfg.assist });
+  const device = settings?.device ?? own;
+  const setDevice = settings?.setDevice ?? setOwn;
   const deviceRef = useRef(device);
   deviceRef.current = device;
   const feel = useMemo(() => createBrowserFeel(() => deviceRef.current), []);

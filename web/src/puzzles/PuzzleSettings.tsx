@@ -7,6 +7,8 @@ import "./PuzzleSettings.css";
 
 /** The switches that belong to one device. `tilt` is the Player's wish for tilt (on by default where a sensor answers). */
 export type DeviceSettings = FeelSettings & Readonly<{ tilt: boolean; assist: boolean }>;
+/** The device settings and the way to change them, as a Controller (which keeps them on the phone) hands them to a screen. */
+export type DeviceSettingsControl = Readonly<{ device: DeviceSettings; setDevice: (next: DeviceSettings | ((current: DeviceSettings) => DeviceSettings)) => void }>;
 export const DEFAULT_DEVICE_SETTINGS: DeviceSettings = { touchOnly: false, sensitivity: 1, hapticMode: "auto", dialInvert: false, soundConsent: true, tilt: true, assist: false };
 
 type Switch = Readonly<{ on: boolean; onChange: (on: boolean) => void }>;

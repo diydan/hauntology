@@ -228,7 +228,8 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
 - [ ] 9. Settings, access and docs
   - [x] 9.1 `PuzzleSettings`: the Master row, the Wander switch, the device switches for tilt, vibration, sound and Assist, and the Plain Inspect switch
     - Built in `web/src/puzzles/PuzzleSettings.tsx`: the Master row, the Wander Locks switch, Plain Inspect and the device switches (touch only, tilt, buzz, sound, Assist, tilt strength, flip the twist). It holds no state; the Controller keeps and remembers the settings and passes them in.
-    - _Requirements: 1.4, 2.1, 8.6, 9.4, 12.5_
+    - Remembered on the phone (2026-11-15): the puzzle screens store nothing (`source.test.ts`), so the Controller side keeps the device settings: `web/src/device/device-settings.ts` reads them once from `localStorage` (key `hauntology.puzzles.device`), saves every change, and falls back to the defaults for a missing, damaged or out-of-range value or when the phone's storage is blocked. A Controller calls `useDeviceSettings()` and hands the result to its screens (`PuzzleDemo` takes it as `settings`; `PuzzleSettings` takes `onDevice`, `PuzzleHost` takes `onTiltChoice`), so the tilt choice, Touch only, strength, buzz, sound and Assist come back next time on that phone. `device/PersistedPuzzleDemo.tsx` does this for the demo page; the real Controller (`party/controller/`) is not built yet. Tested in `device/device-settings.test.tsx` (9 deliberate breaks caught).
+    - _Requirements: 1.4, 2.1, 8.1, 8.6, 9.4, 12.5_
   - [x] 9.2 `SightsPage` in the notebook (Assist only) and the longer Sight and Faded times
     - Built in `web/src/puzzles/SightsPage.tsx` (shows the clues the seat saw only with Assist on), `SightClue.tsx` (the shared drawing), and the 8 second times in `shared/src/puzzles/sight.ts`.
     - _Requirements: 6.4, 12.5_
