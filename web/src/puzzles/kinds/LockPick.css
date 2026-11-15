@@ -8,8 +8,7 @@
 .pz-pin-set > i { height: 90%; background: var(--ghost); }
 .pz-heat { min-height: 1.5rem; margin: 0.25rem 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
 .pz-heat[data-heat="hot"] { color: var(--lantern); }
-.pz-track { position: relative; height: 1.25rem; margin: 0.5rem 0.75rem; border-radius: 0.625rem; background: #1c2027; }
-.pz-pick { position: absolute; top: -0.25rem; width: 0.5rem; height: 1.75rem; margin-left: -0.25rem; border-radius: 0.25rem; background: var(--bone); }
+.pz-slider-label { display: block; margin: 0.25rem 0 0; text-align: center; font-size: 0.95rem; }
 .pz-slider { display: block; width: 100%; min-height: var(--pz-target); margin: 0; accent-color: var(--lantern); touch-action: pan-y; }
 .pz-hold { width: 100%; margin-top: 0.5rem; touch-action: none; }
 /* A still frame instead of a fade: the Player's setting (reducedMotion) or the system's. */

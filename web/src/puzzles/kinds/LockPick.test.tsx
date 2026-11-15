@@ -27,7 +27,7 @@ function advance(m: M, ms: number): void {
     act(() => { vi.advanceTimersByTime(16); });
   }
 }
-const slider = (): HTMLInputElement => screen.getByRole("slider", { name: "Pick position" }) as HTMLInputElement;
+const slider = (): HTMLInputElement => screen.getByRole("slider", { name: /^Pick position/ }) as HTMLInputElement;
 const tensionButton = (): Element => screen.getByRole("button", { name: /Tension/ });
 const slideTo = (deg: number): void => { fireEvent.change(slider(), { target: { value: String(deg) } }); };
 const heat = (): string => document.querySelector(".pz-heat")?.textContent ?? "";
@@ -285,7 +285,8 @@ describe("LockPick", () => {
   it("is accessible: the controls are named, and the pin states are text", () => {
     mountKind(LockPick, lockOf("normal", 2).view);
     expect(screen.getByRole("list", { name: "Pins" })).toBeTruthy();
-    expect(slider().getAttribute("aria-label")).toBe("Pick position");
+    expect(screen.getByLabelText("Pick position: slide left or right")).toBe(slider()); // a visible label, not a hidden one
+    expect(document.querySelector(".pz-track")).toBeNull(); // one position control, not two
     expect(tensionButton().textContent).toMatch(/Tension/);
     expect(pinStates().every((s) => s.length > 0)).toBe(true);
   });

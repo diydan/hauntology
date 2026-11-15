@@ -26,7 +26,7 @@ export type PuzzleSettingsProps = Readonly<{
 const LEVEL_NAME: Readonly<Record<PuzzleSetting, string>> = { off: "Off", easy: "Easy", normal: "Normal" };
 
 /** One on/off switch: a button with a name, a visible state and a hint, at least 48 pixels tall. */
-function Row({ label, hint, on, onChange, disabled = false }: { label: string; hint: string; on: boolean; onChange: (on: boolean) => void; disabled?: boolean }): ReactNode {
+function Row({ label, hint, on, onChange, disabled = false }: { label: string; hint: ReactNode; on: boolean; onChange: (on: boolean) => void; disabled?: boolean }): ReactNode {
   const hintId = useId();
   return (
     <div className="pz-setting">
@@ -34,7 +34,7 @@ function Row({ label, hint, on, onChange, disabled = false }: { label: string; h
         <span className="pz-switch-name">{label}</span>
         <span className="pz-switch-state">{on ? "On" : "Off"}</span>
       </button>
-      <p id={hintId} className="pz-setting-hint">{hint}</p>
+      <div id={hintId} className="pz-setting-hint">{hint}</div>
     </div>
   );
 }
@@ -55,6 +55,9 @@ const tiltHint = (state: TiltState, wanted: boolean, touchOnly: boolean): string
 export function PuzzleSettings({ master, wander, plainInspect, device, onDevice, tiltState, canVibrate }: PuzzleSettingsProps): ReactNode {
   const set = (over: Partial<DeviceSettings>): void => onDevice({ ...device, ...over });
   const touchOnly = device.touchOnly;
+  const senses = useId();
+  const help = useId();
+  const strengthId = useId();
   return (
     <section className="pz-settings" aria-label="Puzzle settings">
       <h2 className="pz-title">Puzzles</h2>
@@ -72,18 +75,27 @@ export function PuzzleSettings({ master, wander, plainInspect, device, onDevice,
       {wander && <Row label="Locks" hint="A small puzzle in front of each memory. You can always skip it." on={wander.on} onChange={wander.onChange} />}
       {plainInspect && <Row label="Plain Inspect" hint="Your Inspect always works and always takes the full time. No puzzle. Nobody else is told." on={plainInspect.on} onChange={plainInspect.onChange} />}
 
-      <h3 className="pz-subtitle">This phone</h3>
-      <Row label="Touch only" hint="No tilt, no buzz, no sound and no microphone. Every puzzle can be finished this way." on={touchOnly} onChange={(on) => set({ touchOnly: on })} />
-      <Row label="Tilt" hint={tiltHint(tiltState, device.tilt, touchOnly)} on={device.tilt && !touchOnly && tiltState !== "unsupported"} onChange={(on) => set({ tilt: on })} disabled={touchOnly || tiltState === "unsupported"} />
-      <Row label="Buzz" hint={canVibrate ? "The phone buzzes with the puzzle. Every buzz also shows a glow." : "This phone cannot buzz. You see a glow instead."} on={canVibrate && device.hapticMode !== "visual" && !touchOnly} onChange={(on) => set({ hapticMode: on ? "auto" : "visual" })} disabled={touchOnly || !canVibrate} />
-      <Row label="Sound" hint="Clicks, notes and creaks from your own phone. Every sound is also shown on screen." on={device.soundConsent && !touchOnly} onChange={(on) => set({ soundConsent: on })} disabled={touchOnly} />
-      <Row label="Assist" hint="Keeps the clues you saw on a page, shows them for 8 seconds, and shows the Spirit board's word as text." on={device.assist} onChange={(on) => set({ assist: on })} />
-
-      <div className="pz-setting">
-        <label className="pz-range-label" htmlFor="pz-tilt-strength">Tilt strength: {device.sensitivity.toFixed(1)} times</label>
-        <input id="pz-tilt-strength" type="range" className="pz-range" min={0.4} max={2.5} step={0.1} value={device.sensitivity} disabled={touchOnly || !device.tilt} aria-valuetext={`${device.sensitivity.toFixed(1)} times`} onChange={(e) => set({ sensitivity: Number(e.currentTarget.value) })} />
+      <div role="group" aria-labelledby={senses} className="pz-group">
+        <h3 id={senses} className="pz-subtitle">Senses on this phone</h3>
+        <Row label="Touch only" hint="Turns off tilt, buzz, sound and the microphone. Every puzzle can be finished this way." on={touchOnly} onChange={(on) => set({ touchOnly: on })} />
+        <Row label="Tilt" hint={tiltHint(tiltState, device.tilt, touchOnly)} on={device.tilt && !touchOnly && tiltState !== "unsupported"} onChange={(on) => set({ tilt: on })} disabled={touchOnly || tiltState === "unsupported"} />
+        <div className="pz-setting">
+          <label className="pz-range-label" htmlFor={strengthId}>Tilt strength: {device.sensitivity.toFixed(1)} times</label>
+          <input id={strengthId} type="range" className="pz-range" min={0.4} max={2.5} step={0.1} value={device.sensitivity} disabled={touchOnly || !device.tilt} aria-valuetext={`${device.sensitivity.toFixed(1)} times`} onChange={(e) => set({ sensitivity: Number(e.currentTarget.value) })} />
+        </div>
+        <Row label="Flip the twist" hint="Turn this on if the safe dial and the clock hands turn the wrong way when you twist the phone." on={device.dialInvert} onChange={(on) => set({ dialInvert: on })} disabled={touchOnly || !device.tilt} />
+        <Row label="Buzz" hint={canVibrate ? "The phone buzzes with the puzzle. Every buzz also shows on screen." : "This phone cannot buzz. You see it on screen instead."} on={canVibrate && device.hapticMode !== "visual" && !touchOnly} onChange={(on) => set({ hapticMode: on ? "auto" : "visual" })} disabled={touchOnly || !canVibrate} />
+        <Row label="Sound" hint="Clicks, notes and creaks from your own phone. Every sound is also shown on screen." on={device.soundConsent && !touchOnly} onChange={(on) => set({ soundConsent: on })} disabled={touchOnly} />
       </div>
-      <Row label="Flip the twist" hint="Turn this on if the safe dial and the clock hands turn the wrong way when you twist the phone." on={device.dialInvert} onChange={(on) => set({ dialInvert: on })} disabled={touchOnly || !device.tilt} />
+
+      <div role="group" aria-labelledby={help} className="pz-group">
+        <h3 id={help} className="pz-subtitle">Help</h3>
+        <Row
+          label="Assist"
+          hint={<>Assist does three things:<ul className="pz-assist-list"><li>It keeps the clues you saw on the Clues page, and lets you look at a clue again while you play.</li><li>It shows each clue for 8 seconds.</li><li>It shows the Spirit board's word as text.</li></ul></>}
+          on={device.assist} onChange={(on) => set({ assist: on })}
+        />
+      </div>
     </section>
   );
 }

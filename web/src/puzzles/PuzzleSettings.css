@@ -16,3 +16,5 @@
 .pz-radio { justify-content: center; text-align: center; }
 .pz-range-label { font-size: 0.95rem; }
 .pz-range { display: block; width: 100%; min-height: var(--pz-target); margin: 0; accent-color: var(--lantern); }
+.pz-group { display: grid; gap: 0.75rem; }
+.pz-assist-list { margin: 0.25rem 0 0; padding-left: 1.1rem; }

@@ -157,7 +157,7 @@ export default function Photo({ view, feel, reducedMotion, submit, announce }: K
 
   return (
     <div className="pz-photo">
-      <p className="pz-hint">Drag a piece onto the frame. Or tap a piece to pick it, tap it again to turn it, and tap an empty spot to put it there.</p>
+      <p className="pz-hint">Put the photo you saw back together. Drag pieces onto the frame. Tap a piece to pick it; tap it again to turn it.</p>
       <div ref={board} className={`pz-photo-board${reducedMotion ? " pz-photo-still" : ""}`} data-cols={cols} role="group" aria-label="Torn photo" style={{ aspectRatio: `${W} / ${H}` }}>
         {range(n).map((i) => <span key={`t${i}`} className="pz-photo-cell" style={box(trayAt(i).x + INSET, trayAt(i).y + INSET, CELL - 2 * INSET)} aria-hidden="true" />)}
         {range(n).map((s) => {

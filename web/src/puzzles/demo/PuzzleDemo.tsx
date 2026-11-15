@@ -41,6 +41,7 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
   const [again, setAgain] = useState(0);
   const canVibrate = feel.haptics.supported;
   const faded: Sight | null = cfg.faded && lock.sight !== null ? { kind: cfg.kind, payload: lock.sight, showMs: 8000 } : null;
+  const clue: Sight | null = lock.sight !== null ? { kind: cfg.kind, payload: lock.sight, showMs: 8000 } : null;
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const hear = lock.kind === "board" ? createBrowserHear(lock.secret.word, lock.view.clue) : undefined;
 
@@ -55,7 +56,7 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
     <>
       <PuzzleHost
         key={`${cfg.kind}-${cfg.level}-${cfg.seed}-${again}`}
-        kind={cfg.kind} view={lock.view} faded={faded} capMs={null} attempts={ATTEMPTS} feel={feel} assist={device.assist} reducedMotion={reduced}
+        kind={cfg.kind} view={lock.view} faded={faded} clue={clue} capMs={null} attempts={ATTEMPTS} feel={feel} assist={device.assist} reducedMotion={reduced}
         onAttempt={onAttempt} onGiveUp={() => { tries.current = 0; setAgain((a) => a + 1); }} onFinish={() => { tries.current = 0; setAgain((a) => a + 1); }}
         {...(hear ? { onHear: hear } : {})}
       />
@@ -69,9 +70,12 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
         <button type="button" className="pz-btn pz-btn-quiet" onClick={() => void feel.synth.unlock()}>Sound</button>
       </div>
       <details className="pzd-more">
-        <summary className="pz-btn pz-btn-quiet">Settings and clues</summary>
+        <summary className="pz-btn pz-btn-quiet">Clues you saw</summary>
+        <SightsPage assist={device.assist} sights={clue ? [clue] : []} />
+      </details>
+      <details className="pzd-more">
+        <summary className="pz-btn pz-btn-quiet">Settings</summary>
         <PuzzleSettings device={device} onDevice={setDevice} tiltState={tilt} canVibrate={canVibrate} />
-        <SightsPage assist={device.assist} sights={faded ? [faded] : []} />
       </details>
     </>
   );

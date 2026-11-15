@@ -140,7 +140,7 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey }
 
   return (
     <div className="pz-maze">
-      <p className="pz-hint">Reach the green ring.</p>
+      <p className="pz-hint">Reach the green ring. {tilt === "on" ? "Lean the phone to roll the orb." : "Hold a finger where the orb should go."}</p>
       <canvas
         ref={canvas} className="pz-canvas pz-maze-board" width={Math.round(w * dpr)} height={Math.round(h * dpr)}
         style={{ width: w }} role="application" tabIndex={0} aria-label="Maze. Use the arrow keys, or hold a finger where the orb should go."
@@ -148,7 +148,6 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey }
         onKeyDown={(e) => setKey(e, true)} onKeyUp={(e) => setKey(e, false)} onBlur={onBlur}
       />
       <p className="pz-readout pz-maze-status" role="status">{done ? `You reached the ring. Walls hit: ${hits}` : `Walls hit: ${hits}`}</p>
-      <p className="pz-hint">{tilt === "on" ? "Tilt is on: lean the phone to roll the orb." : "Hold a finger where you want the orb to go."}</p>
     </div>
   );
 }

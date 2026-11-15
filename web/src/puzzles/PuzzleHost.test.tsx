@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeLock } from "@hauntology/shared/puzzles/make";
 import { fadedFor } from "@hauntology/shared/puzzles/sight";
@@ -68,6 +68,8 @@ describe("PuzzleHost", () => {
     await screenReady("clock");
     await send();
     expect(screen.getByText("Opened", { selector: ".pz-result-title" })).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe(""); // not said a second time on screen
+    expect(document.querySelector(".pz-sr")?.textContent).toBe("Opened."); // but said to a screen reader
     expect(h.feel.haptics.buzzes).toContain("thunk");
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
     expect(onFinish).toHaveBeenCalledWith({ outcome: "solved" });
@@ -80,6 +82,8 @@ describe("PuzzleHost", () => {
     await screenReady("clock");
     await send();
     expect(screen.getByText("Nothing came loose", { selector: ".pz-result-title" })).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("");
+    expect(document.querySelector(".pz-sr")?.textContent).toBe("Nothing came loose.");
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
     expect(onFinish).toHaveBeenCalledWith({ outcome: "failed", reason: "attempts" });
   });
@@ -139,7 +143,7 @@ describe("PuzzleHost", () => {
     await wait(300);
     await wait(300);
     expect(onTimeUp).toHaveBeenCalledTimes(1);
-    expect(screen.getByText(/s \/ 1 s/)).toBeTruthy();
+    expect(document.querySelector(".pz-timer")?.textContent).toMatch(/Time .*s of 1 s/);
   });
 
   it("has no clock text of a Cap in Wander, and offers Skip after two wrong Attempts", async () => {
@@ -158,37 +162,61 @@ describe("PuzzleHost", () => {
     const h = host("clock");
     await screenReady("clock");
     fireEvent.click(screen.getByRole("button", { name: "Give up" }));
+    expect(h.props.onGiveUp).not.toHaveBeenCalled(); // it asks first, so a stray tap near Use tilt costs nothing
+    expect(screen.getByText(/Give up on this lock\? Nothing will open\. The time you used still counts\./)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Keep playing" }));
+    expect(screen.queryByText(/Give up on this lock/)).toBeNull();
+    expect(h.props.onGiveUp).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Give up" }));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, give up" }));
     expect(h.props.onGiveUp).toHaveBeenCalledTimes(1);
   });
 
-  it("offers tilt only for a Kind that steers with it, and Hold level and Tilt off once it is on", async () => {
-    const h = host("lockpick");
+  it("says nothing about the clock when the Lock has no clock (Wander), and keeps Give up apart from the tilt controls", async () => {
+    host("lockpick", { capMs: null });
     await act(async () => { await Promise.resolve(); });
-    expect(screen.getByRole("button", { name: "Use tilt" })).toBeTruthy();
-    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Use tilt" })); });
-    expect(h.feel.motion.enabled).toBe(1);
-    fireEvent.click(await screen.findByRole("button", { name: "Hold level" }));
-    expect(h.feel.motion.leveled).toBe(1);
-    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Tilt off" })); });
-    expect(h.feel.motion.state).toBe("off");
-    cleanup();
+    fireEvent.click(screen.getByRole("button", { name: "Give up" }));
+    expect(screen.getByText(/Nothing will open\.$/)).toBeTruthy();
+    const play = document.querySelector(".pz-foot");
+    const give = document.querySelector(".pz-give");
+    expect(play?.contains(screen.getByRole("button", { name: "Use tilt" }))).toBe(true);
+    expect(play?.contains(screen.getByRole("button", { name: "Yes, give up" }))).toBe(false);
+    expect(give?.contains(screen.getByRole("button", { name: "Yes, give up" }))).toBe(true);
+  });
+
+  it("names the tries and the time, so the dots and the counter explain themselves", async () => {
     host("clock");
     await screenReady("clock");
-    expect(screen.queryByRole("button", { name: "Use tilt" })).toBeNull();
+    expect(document.querySelector(".pz-tries")?.textContent).toMatch(/Tries/);
+    expect(document.querySelector(".pz-timer")?.textContent).toMatch(/^Time /);
+  });
+
+  it("keeps what a screen says to a screen reader out of the visible status, which holds the host's own messages", async () => {
+    host("safe");
+    await screen.findByRole("application", { name: "Safe dial" });
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Set" })); });
+    expect(document.querySelector(".pz-sr")?.textContent).toMatch(/Digit 1 of 3 set to 0/);
+    expect(screen.getByRole("status").textContent).toBe(""); // the screen's own text is not drawn a second time
+    expect(document.querySelector(".pz-sr")?.getAttribute("aria-live")).toBe("polite");
+    const h = host("clock", { onAttempt: () => ({ outcome: "wrong", attemptsLeft: 2 }) });
+    await screenReady("clock");
+    await send();
+    expect(screen.getAllByRole("status").at(-1)?.textContent).toBe("Not right. 2 tries left.");
+    h.unmount();
   });
 
   it("shows the visual twin of a buzz and of a muted sound, and glows only without reduced motion", async () => {
     const h = host("clock");
     await screenReady("clock");
     await act(async () => { h.feel.haptics.buzz("tick"); });
-    expect(screen.getByText("buzz · tick")).toBeTruthy();
+    expect(screen.getByText("Buzz: tick")).toBeTruthy();
     expect(document.querySelector(".pz-host")?.className).toMatch(/pz-glow-/);
     cleanup();
     const quiet = host("clock", { reducedMotion: true });
     await screenReady("clock");
     quiet.feel.synth.state = "locked";
     await act(async () => { quiet.feel.synth.play("click"); });
-    expect(screen.getByText("♪ click (muted)")).toBeTruthy();
+    expect(screen.getByText("♪ click · sound is off")).toBeTruthy();
     await act(async () => { quiet.feel.haptics.buzz("thunk"); });
     expect(document.querySelector(".pz-host")?.className).not.toMatch(/pz-glow-/);
   });
@@ -246,5 +274,47 @@ describe("PuzzleHost keeps the screen awake while the Lock is open", () => {
     await send();
     await flush();
     expect(wl.released).toBe(1);
+  });
+});
+
+describe("PuzzleHost and the clue", () => {
+  const sightOf = (kind: Kind) => {
+    const lock = makeLock(kind, "easy", 4);
+    const sight = fadedFor(lock, false);
+    if (sight === null) throw new Error("memory kind");
+    return sight;
+  };
+
+  it("offers the clue again only with Assist on, shows it, keeps the puzzle where it was, and goes back to it", async () => {
+    const clue = sightOf("clock");
+    const off = host("clock", { clue, assist: false });
+    await screenReady("clock");
+    expect(screen.queryByRole("button", { name: "See the clue again" })).toBeNull();
+    off.unmount();
+
+    host("clock", { clue, assist: true });
+    await screenReady("clock");
+    fireEvent.click(screen.getByRole("button", { name: "Hour forward" }));
+    expect(screen.getByRole("img", { name: "The clock shows 1:00" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "See the clue again" }));
+    const dialog = screen.getByRole("dialog", { name: "The clue" });
+    expect(within(dialog).getByRole("img", { name: /A stopped clock showing/ })).toBeTruthy();
+    expect(within(dialog).getByText("The clock keeps running.")).toBeTruthy();
+    expect((document.querySelector(".pz-stage") as HTMLElement).hidden).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Back to the puzzle" }));
+    expect(screen.queryByRole("dialog", { name: "The clue" })).toBeNull();
+    expect((document.querySelector(".pz-stage") as HTMLElement).hidden).toBe(false);
+    expect(screen.getByRole("img", { name: "The clock shows 1:00" })).toBeTruthy(); // the Player's work was kept
+  });
+
+  it("offers no clue to look at when the Lock has none, even with Assist on, and says nothing of a clock in Wander", async () => {
+    host("clock", { assist: true });
+    await screenReady("clock");
+    expect(screen.queryByRole("button", { name: "See the clue again" })).toBeNull();
+    cleanup();
+    host("clock", { clue: sightOf("clock"), assist: true, capMs: null });
+    await screenReady("clock");
+    fireEvent.click(screen.getByRole("button", { name: "See the clue again" }));
+    expect(screen.queryByText("The clock keeps running.")).toBeNull();
   });
 });

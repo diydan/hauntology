@@ -97,7 +97,7 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 1. WHEN a human Player moves into a Zone they have not been in before, or starts a Turn in one, and that Zone holds a Sight THEN the Controller SHALL show the Sight once for 5 seconds (8 with Assist), let the Player close it earlier with a tap, and the seat SHALL record that it was shown, and no other seat SHALL be told.
 2. THE Sight SHALL be a function of the seed, the Kind and its place only, and SHALL carry exactly the clue the Lock needs: the order of the wires, the time on the clock, the code, the shelf or the finished picture.
 3. WHEN a Player opens a Lock whose Sight they never saw THEN the Controller SHALL show the same clue once at the Lock for 4 seconds (8 with Assist) before the Puzzle starts, with no other change, so that a missed Sight never blocks a Lock.
-4. WHERE Assist is on (the Gentle preset turns it on) THEN the notebook SHALL keep a Sights page with every clue shown to that Player, and WHERE Assist is off THEN a clue SHALL never be shown again after it closes.
+4. WHERE Assist is on (the Gentle preset turns it on) THEN the notebook SHALL keep a Sights page with every clue shown to that Player, and the Lock SHALL offer "See the clue again" (the clock keeps running), and WHERE Assist is off THEN a clue SHALL never be shown again after it closes.
 5. THE Sight, its place and the fact that a Player has seen it SHALL never appear in the Public View, the public log, the ending recap, a narrator prompt, a Host or Display screen, or another Player's Private View.
 6. WHEN a phone reconnects THEN the Room SHALL restore the seat's record of shown Sights and SHALL NOT show a Sight a second time.
 
@@ -171,9 +171,9 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 
 1. EVERY Kind SHALL be finishable with touch alone: no motion, no sound, no vibration and no microphone.
 2. THE dimming, the torch and the candle light SHALL be fades only, at most two brightness changes in any second, with a peak below full white and no strobing, and SHALL be replaced by a still image when the Player prefers reduced motion.
-3. EVERY control SHALL have a touch target of at least 48 CSS pixels, a wire, a candle, a piece or an object SHALL never be told apart by colour alone (each has a pattern or a shape), and every state SHALL have a text label for a screen reader.
+3. EVERY Memory Kind's prompt SHALL name what is to be matched (for example "the stopped clock you saw"), every instruction SHALL be shown once, EVERY control SHALL have a touch target of at least 48 CSS pixels, Give up SHALL ask once before it closes the Lock, a wire, a candle, a piece or an object SHALL never be told apart by colour alone (each has a pattern or a shape), and every state SHALL have a text label for a screen reader.
 4. WHEN the Player prefers reduced motion THEN the Controller SHALL turn off screen shake and beam sway, and SHALL leave the Player's own Tilt and buzz settings as they chose.
-5. THE Controller SHALL offer Assist as a device setting (off by default, on under the Gentle preset), which keeps Sights in the notebook, lengthens Sights and Faded clues to 8 seconds and shows text for the Spirit board, and SHALL change no verdict of `verify`.
+5. THE Controller SHALL offer Assist as a device setting (off by default, on under the Gentle preset), which keeps Sights in the notebook, lets the Player look at the clue again while playing, lengthens Sights and Faded clues to 8 seconds and shows text for the Spirit board, and SHALL change no verdict of `verify`.
 
 ### Requirement 13
 

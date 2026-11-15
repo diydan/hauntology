@@ -96,3 +96,19 @@
 
 .pz-wide { width: 100%; margin-top: 0.5rem; }
 .pz-clock-board { width: min(86%, 22rem); margin: 0 auto; }
+
+/* the tries and the time say what they are */
+.pz-tries { display: inline-flex; align-items: center; gap: 0.5rem; }
+.pz-bar-label { opacity: 0.8; font-size: 0.85rem; }
+/* Give up sits apart from the play controls, and asks once */
+.pz-foot-wrap { display: grid; gap: 1.25rem; }
+.pz-give { display: grid; gap: 0.5rem; justify-items: center; margin-top: 0.25rem; }
+.pz-peek { margin: 0.5rem 0; }
+/* controls that line up: equal columns */
+.pz-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+.pz-grid4 > .pz-btn, .pz-grid2 > .pz-btn { min-width: 0; padding: 0 0.25rem; white-space: nowrap; }
+.pz-grid4 > .pz-btn { font-size: 0.85rem; }
+.pz-grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+.pz-twist { display: grid; gap: 0.25rem; justify-items: center; margin: 0.5rem 0; }
+.pz-twist .pz-hint { margin: 0; }
+.pz-stopped { display: block; margin: 0 auto; }

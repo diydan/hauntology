@@ -177,7 +177,7 @@ Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit b
 
 - [ ] 6. First three Kinds, end to end (the demo slice)
   - [x] 6.1 `PuzzleHost`: the full-screen frame with the timer ring, Attempts left, give up, the wrong-Attempt message with no partial count, the touch-path switch, and the Turn or Wander context
-    - Built in `web/src/puzzles/PuzzleHost.tsx`. The Turn or Wander context arrives through its props from the Room. It keeps the screen awake while the Lock is open (`useWakeLock`).
+    - Built in `web/src/puzzles/PuzzleHost.tsx`. The Turn or Wander context arrives through its props from the Room. It keeps the screen awake while the Lock is open (`useWakeLock`). It also labels the tries and the time, says the sound and buzz twins in words, asks once before Give up, and offers "See the clue again" with Assist.
     - _Requirements: 7.3, 12.3, 12.4, 13.1_
   - [x] 6.2 `SightCard` and the Faded clue at a Lock, with the heartbeat buzz
     - Built in `web/src/puzzles/SightCard.tsx`.

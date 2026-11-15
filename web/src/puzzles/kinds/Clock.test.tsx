@@ -115,4 +115,42 @@ describe("Clock", () => {
     await wait(60);
     expect(feel.motion.enabled).toBe(0);
   });
+
+  it("says what to match, and explains Twist where it is used", () => {
+    mountKind(Clock, view);
+    expect(screen.getByText("Set the hands to the time on the stopped clock you saw.")).toBeTruthy();
+    expect(screen.getByText("Twist: turn the phone like a wheel to turn a hand.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Flip it/ })).toBeNull(); // only once Twist is on
+  });
+
+  it("flips the twist direction from the screen itself, when the phone turns the hand the wrong way", async () => {
+    const { feel } = mountKind(Clock, view, { tilt: "on" });
+    feel.motion.dial = 10;
+    fireEvent.click(screen.getByRole("button", { name: "Twist" }));
+    await wait(80);
+    feel.motion.dial = 40; // 30 degrees round: five minutes
+    await wait(80);
+    expect(readout()).toBe("12:05");
+    expect(screen.getByText(/turn it like a wheel to turn the chosen hand/)).toBeTruthy();
+    const flip = screen.getByRole("button", { name: /Flip it/ });
+    expect(flip.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(flip);
+    expect(flip.getAttribute("aria-pressed")).toBe("true");
+    await wait(80);
+    feel.motion.dial = 10; // 30 degrees back for the phone, which now counts as forward
+    await wait(80);
+    expect(readout()).toBe("12:10");
+    fireEvent.click(flip);
+    await wait(80);
+    feel.motion.dial = 40;
+    await wait(80);
+    expect(readout()).toBe("12:15"); // flipping back counts the phone's turn the usual way again: 30 degrees on from 12:10
+  });
+
+  it("lays the controls out in aligned groups: which hand, four steps, then Twist", () => {
+    mountKind(Clock, view);
+    expect(screen.getByRole("group", { name: "Which hand" })).toBeTruthy();
+    expect(document.querySelectorAll(".pz-grid4 > button").length).toBe(4);
+    expect(document.querySelectorAll(".pz-grid2 > button").length).toBe(2);
+  });
 });

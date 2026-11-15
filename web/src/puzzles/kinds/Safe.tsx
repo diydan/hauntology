@@ -16,6 +16,7 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
   const [digit, setDigit] = useState(0);
   const [code, setCode] = useState<number[]>([]);
   const [twist, setTwist] = useState(false);
+  const [flip, setFlip] = useState(false);
   const board = useRef<SVGSVGElement>(null);
   const face = useRef<SVGGElement>(null);
   const theta = useRef(0);
@@ -73,7 +74,7 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
     const dial = feel.motion.dial;
     if (grab.current !== null || dial === null || feel.motion.state !== "on") return;
     if (base.current === null) { base.current = { dial, theta: theta.current }; return; }
-    turnTo(base.current.theta + wrap180(dial - base.current.dial));
+    turnTo(base.current.theta + (flip ? -1 : 1) * wrap180(dial - base.current.dial));
   }, twist);
 
   const toggleTwist = async (): Promise<void> => {
@@ -82,6 +83,7 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
     base.current = null;
     setTwist(true);
   };
+  const toggleFlip = (): void => { base.current = null; setFlip((f) => !f); };
   const nudge = (delta: number): void => { base.current = null; turnTo(-36 * ((digitAt(theta.current) + delta + 10) % 10)); };
 
   const setDigitNow = (): void => {
@@ -103,7 +105,7 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
 
   return (
     <div>
-      <p className="pz-hint">Drag round the dial to turn it. Match the digit under the marker.</p>
+      <p className="pz-hint">Dial the code from the plaque you saw: turn the dial to a digit, then press Set.</p>
       <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-safe-board" role="application" aria-label="Safe dial" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         <circle cx={CLOCK_C} cy={CLOCK_C} r={142} className="pz-safe-ring" />
         <g ref={face} transform={`rotate(0 ${CLOCK_C} ${CLOCK_C})`}>
@@ -125,12 +127,16 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
       <div className="pz-digits" role="img" aria-label={`Code so far: ${code.length} of ${view.digits} digits`}>
         {Array.from({ length: view.digits }, (_, i) => <span key={i}>{i < code.length ? String(code[i]) : "·"}</span>)}
       </div>
-      <div className="pz-row">
+      <div className="pz-grid2">
         <button type="button" className="pz-btn" aria-label="Digit minus" onClick={() => nudge(-1)}>Digit −</button>
         <button type="button" className="pz-btn" aria-label="Digit plus" onClick={() => nudge(1)}>Digit +</button>
-        <button type="button" className="pz-btn" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
       </div>
-      <div className="pz-row">
+      <div className="pz-twist">
+        <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
+        <p className="pz-hint">{twist ? "Hold the phone upright and turn it like a wheel to turn the dial." : "Twist: turn the phone like a wheel to turn the dial."}</p>
+        {twist ? <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={flip} onClick={toggleFlip}>Turns the wrong way? Flip it</button> : null}
+      </div>
+      <div className="pz-grid2">
         <button type="button" className="pz-btn pz-btn-quiet" disabled={code.length === 0} onClick={undo}>Undo</button>
         <button type="button" className="pz-btn pz-btn-primary" onClick={setDigitNow}>Set</button>
       </div>

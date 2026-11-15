@@ -23,7 +23,7 @@
 }
 .pz-candle[data-flame="gutter"] .pz-flame { opacity: 0.25; height: 0.6rem; }
 .pz-candle[data-flame="out"] .pz-flame { opacity: 0; height: 0.2rem; }
-.pz-out-so-far { min-height: 2.2rem; letter-spacing: 0.3em; }
+.pz-out-so-far { font-size: 1rem; font-weight: 600; letter-spacing: normal; min-height: 1.5rem; }
 .pz-mic { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem; border: 1px solid var(--ghost); border-radius: 12px; }
 .pz-mic-icon { color: var(--ghost); }
 .pz-meter { position: relative; flex: 1 1 6rem; min-width: 5rem; height: 0.6rem; border-radius: 3px; background: #1c2027; overflow: hidden; }

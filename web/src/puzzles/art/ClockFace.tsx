@@ -50,7 +50,7 @@ export function ClockHands({ h, m }: { h: number; m: number }): ReactNode {
 /** A still clock showing h:m, for the Sight (a stopped clock in an earlier room). */
 export function StoppedClock({ h, m, size = "70%" }: { h: number; m: number; size?: string }): ReactNode {
   return (
-    <svg viewBox="0 0 300 300" width={size} role="img" aria-label={`A stopped clock showing ${h}:${String(m).padStart(2, "0")}`}>
+    <svg viewBox="0 0 300 300" width={size} className="pz-stopped" role="img" aria-label={`A stopped clock showing ${h}:${String(m).padStart(2, "0")}`}>
       <ClockDial />
       <ClockHands h={h} m={m} />
     </svg>

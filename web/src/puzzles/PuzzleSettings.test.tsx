@@ -151,4 +151,29 @@ describe("PuzzleSettings", () => {
     for (const b of buttons) expect((b.textContent ?? "").trim().length, "named").toBeGreaterThan(0);
     for (const s of screen.getAllByRole("switch")) expect(s.getAttribute("aria-checked")).toMatch(/^(true|false)$/);
   });
+
+  it("groups the settings: the senses together with tilt, its strength and its twist side by side, and Assist under Help", () => {
+    mount();
+    const groups = screen.getAllByRole("group").map((g) => g.getAttribute("aria-labelledby"));
+    expect(groups.length).toBe(2);
+    const senses = screen.getByRole("group", { name: "Senses on this phone" });
+    const help = screen.getByRole("group", { name: "Help" });
+    for (const name of ["Touch only", "Tilt", "Flip the twist", "Buzz", "Sound"]) expect(within(senses).getByRole("switch", { name: new RegExp(`^${name}`) }), name).toBeTruthy();
+    expect(within(senses).getByRole("slider")).toBeTruthy();
+    expect(within(help).getByRole("switch", { name: /^Assist/ })).toBeTruthy();
+    expect(within(senses).queryByRole("switch", { name: /^Assist/ })).toBeNull();
+    const order = [...senses.querySelectorAll("[role=switch], input")].map((el) => el.getAttribute("role") ?? "slider");
+    expect(order).toEqual(["switch", "switch", "slider", "switch", "switch", "switch"]); // touch only, tilt, strength, twist, buzz, sound
+    const labels = [...senses.querySelectorAll(".pz-switch-name")].map((n) => n.textContent);
+    expect(labels).toEqual(["Touch only", "Tilt", "Flip the twist", "Buzz", "Sound"]);
+  });
+
+  it("spells out the three things Assist does", () => {
+    mount();
+    const items = [...document.querySelectorAll(".pz-assist-list li")].map((li) => li.textContent);
+    expect(items).toHaveLength(3);
+    expect(items[0]).toMatch(/keeps the clues you saw on the Clues page.*look at a clue again/);
+    expect(items[1]).toMatch(/8 seconds/);
+    expect(items[2]).toMatch(/Spirit board's word as text/);
+  });
 });

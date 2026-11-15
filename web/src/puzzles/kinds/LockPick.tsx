@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type MouseEvent, type PointerEvent } from "react";
 import { tiltToPosition } from "@hauntology/shared/puzzles/motion";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import type { KindProps } from "./types";
@@ -32,11 +32,10 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
   const inWindow = useRef(false);
   const sets = useRef<Array<{ pin: number; atDeg: number; atMs: number }>>([]);
   const held = useRef<Held>({ button: false, slider: false, latch: false });
-  const pickEl = useRef<HTMLDivElement>(null);
   const slider = useRef<HTMLInputElement>(null);
+  const sliderId = useId();
   const latest = useLatest({ cur, tension, heat });
 
-  const showPick = (): void => { if (pickEl.current) pickEl.current.style.left = `${((pos.current - lo) / (hi - lo)) * 100}%`; };
   const feelHeat = (h: Heat): void => { if (latest.current.heat !== h) { latest.current.heat = h; setHeat(h); } };
   const hold = (key: keyof Held, on: boolean): void => {
     held.current[key] = on;
@@ -65,7 +64,6 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
       pos.current = tiltToPosition(feel.motion.tilt.x, lo, hi);
       if (slider.current) slider.current.value = String(pos.current);
     }
-    showPick();
     if (!L.tension) return;
     const center = view.centers[L.cur];
     if (center === undefined) return;
@@ -105,14 +103,14 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
     }
   }, cur < view.pins);
 
-  const onSlide = (e: ChangeEvent<HTMLInputElement>): void => { pos.current = Number(e.currentTarget.value); showPick(); };
+  const onSlide = (e: ChangeEvent<HTMLInputElement>): void => { pos.current = Number(e.currentTarget.value); };
   // A keyboard or screen-reader press is a click with no pointer (`detail` 0): it latches the tension on or off.
   const onButtonClick = (e: MouseEvent): void => { if (e.detail === 0) hold("latch", !held.current.latch); };
   const onButtonDown = (e: PointerEvent<HTMLButtonElement>): void => { e.currentTarget.setPointerCapture?.(e.pointerId); hold("button", true); };
 
   return (
     <div>
-      <p className="pz-hint">Pins set in order, left to right.</p>
+      <p className="pz-hint">Feel for each pin's sweet spot. Pins set left to right.</p>
       <ol className={`pz-pins${reducedMotion ? " pz-pins-still" : ""}`} aria-label="Pins">
         {Array.from({ length: view.pins }, (_, i) => {
           const state = i < cur ? "set" : i === cur ? "picking" : "waiting";
@@ -120,15 +118,15 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
         })}
       </ol>
       <p className="pz-heat" data-heat={heat}>{HEAT_TEXT[heat]}</p>
-      <div className="pz-track" aria-hidden="true"><div ref={pickEl} className="pz-pick" /></div>
+      <label className="pz-slider-label" htmlFor={sliderId}>Pick position: slide left or right</label>
       <input
-        ref={slider} type="range" className="pz-slider" min={lo} max={hi} step={0.5} defaultValue={0} aria-label="Pick position"
+        id={sliderId} ref={slider} type="range" className="pz-slider" min={lo} max={hi} step={0.5} defaultValue={0}
         onChange={onSlide} onPointerDown={() => hold("slider", true)} onPointerUp={() => hold("slider", false)} onPointerCancel={() => hold("slider", false)}
       />
       <button type="button" className="pz-btn pz-hold" aria-pressed={tension} onClick={onButtonClick} onPointerDown={onButtonDown} onPointerUp={() => hold("button", false)} onPointerCancel={() => hold("button", false)}>
         Tension (hold)
       </button>
-      <p className="pz-hint">{tilt === "on" ? "Tilt is on: hold Tension and lean the phone to move the pick." : "Hold Tension and slide the pick. Or touch the slider: that holds it for you."}</p>
+      <p className="pz-hint">{tilt === "on" ? "Tilt is on: hold Tension and lean the phone to move the pick." : "Touching the slider holds the tension for you. Or hold the Tension button."}</p>
     </div>
   );
 }

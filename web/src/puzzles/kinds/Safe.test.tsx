@@ -178,4 +178,32 @@ describe("Safe", () => {
     await wait(80);
     expect(m.feel.haptics.buzzes.length).toBe(before);
   });
+
+  it("says what to match, and explains Twist where it is used", () => {
+    mountKind(Safe, lockOf("easy", 8).view);
+    expect(screen.getByText("Dial the code from the plaque you saw: turn the dial to a digit, then press Set.")).toBeTruthy();
+    expect(screen.getByText("Twist: turn the phone like a wheel to turn the dial.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Flip it/ })).toBeNull();
+  });
+
+  it("flips the twist direction from the screen itself, when the phone turns the dial the wrong way", async () => {
+    const { feel } = mountKind(Safe, lockOf("easy", 8).view, { tilt: "on" });
+    feel.motion.dial = 20;
+    press("Twist");
+    await wait(80);
+    feel.motion.dial = 56; // 36 degrees round: digit 9 comes under the marker
+    await wait(80);
+    expect(shown()).toBe(9);
+    const flip = screen.getByRole("button", { name: /Flip it/ });
+    fireEvent.click(flip);
+    await wait(80);
+    feel.motion.dial = 20; // 36 degrees back for the phone: with the flip the dial goes on the same way instead of back
+    await wait(80);
+    expect(shown()).toBe(8);
+    fireEvent.click(flip);
+    await wait(80);
+    feel.motion.dial = 56; // flipped back: 36 degrees forward for the phone turns the dial 36 degrees the usual way
+    await wait(80);
+    expect(shown()).toBe(7);
+  });
 });

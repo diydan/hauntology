@@ -16,6 +16,7 @@ export default function Clock({ feel, submit, announce }: KindProps<"clock">) {
   const [time, setTime] = useState({ h: 12, m: 0 });
   const [hand, setHand] = useState<Hand>("minute");
   const [twist, setTwist] = useState(false);
+  const [flip, setFlip] = useState(false);
   const board = useRef<SVGSVGElement>(null);
   const drag = useRef<Hand | null>(null);
   const base = useRef<{ dial: number; angle: number } | null>(null);
@@ -79,7 +80,7 @@ export default function Clock({ feel, submit, announce }: KindProps<"clock">) {
     if (drag.current !== null || dial === null || feel.motion.state !== "on") return;
     const which = latest.current.hand;
     if (base.current === null) { base.current = { dial, angle: handAngle(which) }; return; }
-    setFromAngle(which, wrap360(base.current.angle + wrap180(dial - base.current.dial)));
+    setFromAngle(which, wrap360(base.current.angle + (flip ? -1 : 1) * wrap180(dial - base.current.dial)));
   }, twist);
 
   const toggleTwist = async (): Promise<void> => {
@@ -89,27 +90,33 @@ export default function Clock({ feel, submit, announce }: KindProps<"clock">) {
     setTwist(true);
   };
   const chooseHand = (which: Hand): void => { setHand(which); base.current = null; };
+  const toggleFlip = (): void => { base.current = null; setFlip((f) => !f); };
 
   const { h, m } = time;
   const text = `${h}:${String(m).padStart(2, "0")}`;
   return (
     <div>
-      <p className="pz-hint">Drag a hand round the dial, or use the buttons.</p>
+      <p className="pz-hint">Set the hands to the time on the stopped clock you saw.</p>
       <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-clock-board" role="application" aria-label="Clock to set" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
         <ClockDial />
         <ClockHands h={h} m={m} />
       </svg>
       <p className="pz-readout" role="img" aria-label={`The clock shows ${text}`}>{text}</p>
-      <div className="pz-row">
+      <p className="pz-hint">Drag a hand round the dial, or use the buttons.</p>
+      <div className="pz-grid2" role="group" aria-label="Which hand">
+        <button type="button" className="pz-btn" aria-pressed={hand === "hour"} onClick={() => chooseHand("hour")}>Hour hand</button>
+        <button type="button" className="pz-btn" aria-pressed={hand === "minute"} onClick={() => chooseHand("minute")}>Minute hand</button>
+      </div>
+      <div className="pz-grid4">
         <button type="button" className="pz-btn" aria-label="Hour back" onClick={() => step("hour", -1)}>Hour −</button>
         <button type="button" className="pz-btn" aria-label="Hour forward" onClick={() => step("hour", 1)}>Hour +</button>
         <button type="button" className="pz-btn" aria-label="Minutes back" onClick={() => step("minute", -1)}>Min −</button>
         <button type="button" className="pz-btn" aria-label="Minutes forward" onClick={() => step("minute", 1)}>Min +</button>
       </div>
-      <div className="pz-row">
-        <button type="button" className="pz-btn" aria-pressed={hand === "hour"} onClick={() => chooseHand("hour")}>Hour hand</button>
-        <button type="button" className="pz-btn" aria-pressed={hand === "minute"} onClick={() => chooseHand("minute")}>Minute hand</button>
-        <button type="button" className="pz-btn" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? `Twist: ${hand}` : "Twist"}</button>
+      <div className="pz-twist">
+        <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? `Twist: ${hand}` : "Twist"}</button>
+        <p className="pz-hint">{twist ? "Hold the phone upright and turn it like a wheel to turn the chosen hand." : "Twist: turn the phone like a wheel to turn a hand."}</p>
+        {twist ? <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={flip} onClick={toggleFlip}>Turns the wrong way? Flip it</button> : null}
       </div>
       <button type="button" className="pz-btn pz-btn-primary pz-wide" onClick={() => submit({ h, m })}>Set this time</button>
     </div>

@@ -92,7 +92,7 @@ export default function MusicBox({ view, feel, submit, announce, resetKey }: Kin
   const windText = playing ? "Playing…" : left > 0 ? `Wind (${left} left)` : "No winds left";
   return (
     <div className="pz-musicbox">
-      <p className="pz-hint">A tune of {view.n} notes. Press Wind to hear it, then play it back on the keys.</p>
+      <p className="pz-hint">Press Wind to hear the {view.n}-note tune, then play it back on the keys.</p>
       <div className="pz-row">
         <button type="button" className="pz-btn pz-btn-primary" disabled={playing || left <= 0} onClick={wind}>{windText}</button>
       </div>

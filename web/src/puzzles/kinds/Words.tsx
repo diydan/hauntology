@@ -189,7 +189,7 @@ export default function Words({ view, feel, assist, submit, announce, resetKey }
   const litCh = lit === null ? null : (view.letters[lit]?.ch ?? null);
   return (
     <div className="pz-words">
-      <p className="pz-hint">Aim the torch. Pick the letters in reading order, left to right.</p>
+      <p className="pz-hint">{tilt === "on" ? "Lean the phone to sweep the torch." : "Drag a finger to aim the torch."} Pick the lit letters, left to right.</p>
       <canvas
         ref={canvas} className="pz-canvas pz-wall" width={WALL * Math.min(2, window.devicePixelRatio || 1)} height={WALL * Math.min(2, window.devicePixelRatio || 1)}
         role="application" tabIndex={0} aria-label="Dark wall with hidden letters. Arrow keys aim the torch. Enter picks the lit letter."
@@ -205,7 +205,6 @@ export default function Words({ view, feel, assist, submit, announce, resetKey }
       <div className="pz-row">
         <button type="button" className="pz-btn pz-btn-quiet" disabled={picked.length === 0} onClick={clear}>Clear</button>
       </div>
-      <p className="pz-hint">{tilt === "on" ? "Tilt is on: lean the phone to sweep the torch." : "Drag a finger to aim the torch, then tap a lit letter."}</p>
     </div>
   );
 }
