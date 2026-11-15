@@ -2,7 +2,7 @@
 // Owner-run before a deploy: plans and renders the Voice Library audio (ghost-voice task 3.11; docs/VOICE-LIBRARY-PLAN.md).
 // The default is a DRY RUN: it reads the manifest and a local folder, prints what is missing and what it would cost, and spends
 // nothing. --render spends real money, so it needs a budget, one voice and a token. --upload puts approved files in R2 with YOUR
-// Wrangler login; without --yes it only previews. --reel is not built yet.
+// Wrangler login; without --yes it only previews. --reel builds a listening reel per voice (no network, no spend).
 //
 // Usage: node tools/prerender-voice.mjs [--dry-run] [--voice Chloe] [--takes 2] [--budget-usd 0.25] [--out DIR] [--list]
 //        VOICE_RENDER_TOKEN=... node tools/prerender-voice.mjs --render --voice Mark --budget-usd 0.05 [--worker http://127.0.0.1:8798]
@@ -15,10 +15,13 @@
 //   --worker      the local render Worker (default http://127.0.0.1:8798; only a loopback address is accepted)
 //   The Worker is tools/voice-render/ (see its wrangler.jsonc). Its token is read from $VOICE_RENDER_TOKEN, 16+ characters.
 //        node tools/prerender-voice.mjs --upload (--voice Chloe | --all) [--bucket hauntology-worlds] [--jurisdiction eu] [--yes]
+//        node tools/prerender-voice.mjs --reel (--voice Chloe | --all) [--no-labels]
+//   --reel        build <out>/reels/reel-<voice>.mp3 and a .index.txt: a spoken label, then every rendered line at the same loudness, so you
+//                 can hear a whole voice in one sitting. Needs ffmpeg and ffprobe; labels use macOS `say` (--no-labels to skip). Rebuilt each time.
 //   --upload      put the rendered files of one voice (or all) in R2 under speech/lib/v1/<hash>. Preview unless --yes. Needs the
 //                 bucket to exist and `wrangler login`. Never overwrites; reads every file back; stops at the first problem.
 //                 --jurisdiction eu|fedramp is for a bucket created with one; it is added to every Wrangler call.
-// Exit: 0 ok, 1 a bad file, bad input, or a render or upload that stopped early, 2 an option that is not built yet.
+// Exit: 0 ok, 1 a bad file, bad input, or a render or upload that stopped early.
 import { existsSync, readFileSync, statSync, openSync, readSync, closeSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,12 +29,13 @@ import { hasMp3Header, planPrerender, resolveVoice, MAX_TAKES, MIN_MP3_BYTES } f
 import { renderJobs } from './lib/prerender-run.mjs';
 import { DEFAULT_BUCKET, BUCKET_PATTERN, JURISDICTIONS, planUpload, uploadFiles } from './lib/prerender-upload.mjs';
 import { spawnSync } from 'node:child_process';
+import { buildReel, macSay, planReel, fmtTime } from './lib/reel.mjs';
 import { toolsAvailable } from './lib/audio-check.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const NOT_BUILT = ['--reel'];
+const NOT_BUILT = [];
 const FLAGS_WITH_VALUE = ['--voice', '--takes', '--budget-usd', '--out', '--worker', '--bucket', '--jurisdiction'];
-const FLAGS = ['--list', '--dry-run', '--render', '--upload', '--yes', '--all', '--help', ...FLAGS_WITH_VALUE, ...NOT_BUILT];
+const FLAGS = ['--list', '--dry-run', '--render', '--upload', '--reel', '--no-labels', '--yes', '--all', '--help', ...FLAGS_WITH_VALUE, ...NOT_BUILT];
 const DEFAULT_WORKER = 'http://127.0.0.1:8798';
 
 function fail(message, code = 1) {
@@ -40,7 +44,7 @@ function fail(message, code = 1) {
 }
 
 function parseArgs(argv) {
-  const opts = { list: false, render: false, upload: false, yes: false, all: false };
+  const opts = { list: false, render: false, upload: false, reel: false, noLabels: false, yes: false, all: false };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (!FLAGS.includes(a)) fail(`unknown option ${JSON.stringify(a)} (try --help)`);
@@ -49,6 +53,8 @@ function parseArgs(argv) {
     if (a === '--list') opts.list = true;
     else if (a === '--render') opts.render = true;
     else if (a === '--upload') opts.upload = true;
+    else if (a === '--reel') opts.reel = true;
+    else if (a === '--no-labels') opts.noLabels = true;
     else if (a === '--yes') opts.yes = true;
     else if (a === '--all') opts.all = true;
     else if (FLAGS_WITH_VALUE.includes(a)) {
@@ -60,9 +66,13 @@ function parseArgs(argv) {
   }
   if (opts.render && argv.includes('--dry-run')) fail('--render and --dry-run cannot be used together');
   if (opts.render && opts.upload) fail('--render and --upload cannot be used together; render first, listen, then upload');
-  if ((opts.yes || opts.all || opts.bucket !== undefined || opts.jurisdiction !== undefined) && !opts.upload) fail('--yes, --all, --bucket and --jurisdiction only go with --upload');
-  if (opts.upload && opts.all && opts.voice !== undefined) fail('--upload takes --voice or --all, not both');
+  if ((opts.yes || opts.bucket !== undefined || opts.jurisdiction !== undefined) && !opts.upload) fail('--yes, --bucket and --jurisdiction only go with --upload');
+  if (opts.all && !opts.upload && !opts.reel) fail('--all only goes with --upload or --reel');
+  if (opts.noLabels && !opts.reel) fail('--no-labels only goes with --reel');
+  if (opts.reel && (opts.render || opts.upload)) fail('--reel cannot be combined with --render or --upload; build the reel after rendering, upload after listening');
+  if ((opts.upload || opts.reel) && opts.all && opts.voice !== undefined) fail(`${opts.reel ? '--reel' : '--upload'} takes --voice or --all, not both`);
   if (opts.upload && !opts.all && opts.voice === undefined) fail('--upload needs --voice <name> (one voice you have listened to) or --all');
+  if (opts.reel && !opts.all && opts.voice === undefined) fail('--reel needs --voice <name> or --all');
   return opts;
 }
 
@@ -116,6 +126,25 @@ function lookup(file) {
   const fd = openSync(path, 'r');
   try { readSync(fd, head, 0, 3, 0); } finally { closeSync(fd); }
   return hasMp3Header(head) ? 'ok' : 'bad';
+}
+
+if (opts.reel) {
+  if (opts.takes !== undefined) fail('--reel plays take 1 (one take per line is the decision); --takes does not apply');
+  if (!toolsAvailable()) fail('--reel needs ffmpeg and ffprobe on the PATH');
+  const reels = planReel({ manifest, voice, fileState: lookup });
+  if (reels.every((r) => r.entries.length === 0)) fail(`nothing rendered to put on a reel in ${outDir}`);
+  const say = opts.noLabels ? () => false : macSay;
+  console.log(`Voice Library reels. No network, nothing is spent. Folder: ${outDir}\n`);
+  let problems = 0;
+  for (const r of reels) {
+    for (const m of r.missing) console.log(`  not rendered yet: ${r.voice}  ${m.sources.join(',')}`);
+    for (const b of r.bad) { problems += 1; console.error(`  bad file, left out: ${r.voice}  ${b.sources.join(',')}  ${b.file}`); }
+    if (r.entries.length === 0) { console.log(`${r.voice}: no rendered lines, no reel.`); continue; }
+    const built = await buildReel({ voice: r.voice, entries: r.entries, libDir: outDir, outDir, say });
+    console.log(`${r.voice}: ${built.lines} lines, ${fmtTime(built.durationMs)}${built.labelled ? '' : ', no spoken labels'}  ->  ${built.path}`);
+    console.log(`  index: ${built.indexPath}`);
+  }
+  process.exit(problems > 0 ? 1 : 0);
 }
 
 /** Run `wrangler <args>` with the OWNER's login. $VOICE_WRANGLER replaces the command (tests use a fake). Arguments are an array, never a shell string. */

@@ -11,8 +11,9 @@ Audio for every **spoken, scripted** line, rendered once ahead of time, kept und
 | Bank | Spoken kinds | Voices | Files | Characters sent | About |
 |---|---|---|---|---|---|
 | **The Lodger** (`docs/story/lodger-lines.md`, exists) | `stall` (5 lines), `confession` (6 lines) | Mark, Conrad, Arjun, Chloe, Eleanor, Victoria | 11 x 6 = **66** | 1,159 per voice with the tag, **6,954** in all | **$0.17** |
-| The Whisper and the Keeper (`ghost-lines.md`, `party-lines.md`, **not written yet**) | many, with the finite placeholders expanded | Pippa, Ronald | about 300 lines | about 27,000 (the design's estimate, not measured) | about $0.70 |
-| **All** | | | | | **about $0.90** |
+| **Single-player ghost** (`docs/story/ghost-lines.md`, written 2026-11-15) | `reveal`, `echo`, `tease`, `hint`, `ambient`, `ending`, `refuse`, `meet`; the finite placeholders expanded | Pippa, Ronald | **352** (240 of them from the 10 `hint` lines, 24 each) | about 34,400 (measured by script) | about $0.86 |
+| **Party** (`docs/story/party-lines.md`, written 2026-11-15) | the spoken kinds only: 85 texts (54 of the 139 lines are text only; 31 spoken lines are cut before their `{nick}` or `{zone}` sentence) | Pippa, Ronald | **85** | 8,317 (measured by script) | about $0.21 |
+| **All** | | | **503** (66 + 352 + 85) | about 49,700 | **about $1.24** |
 
 - **Asides are never rendered.** The Lodger `aside` is text only (party-mode 7.8), so its 5 lines are left out. Rendering them in six voices would waste about 3,400 characters ($0.09). (An earlier note in the design counted 15 lines and 90 files; that was wrong and is corrected.)
 - Price is $25 per million characters, counting the Steering Tag as sent. Billing of this third-party model on this account is still unverified (Spike 1.1).
@@ -32,7 +33,7 @@ Audio for every **spoken, scripted** line, rendered once ahead of time, kept und
 
 ## The prerender tool
 
-**Built so far (2026-11-15): the dry run and the render step, for one voice at a time.** `pnpm prerender-voice [--voice Chloe] [--takes 2] [--budget-usd 0.05] [--list] [--out DIR]` plans and prices and writes nothing. `--render` (with `--voice`, `--budget-usd`, `$VOICE_RENDER_TOKEN` and ffmpeg) renders the missing files through the local Worker in `tools/voice-render/` (start it with the command in its `wrangler.jsonc`; the tool only talks to a loopback address). The rules are tested: one request at a time, no retries (a failure stops the run), the budget checked before every call and a call counted as spent before it is made, every clip checked (MP3 header, 0.8 s to 15 s, not silent) and a failed clip kept as `<file>.rejected`, and an existing file never overwritten. The folder is `./.voice-library/` (ignored by git) or `$VOICE_LIBRARY_DIR`; a file is `<hash>.take<n>.mp3`, and `report.json` lists what was rendered. The tool checks only that folder, not R2. `--reel` is not built: the reels were made by hand.
+**Built so far (2026-11-15): the dry run and the render step, for one voice at a time.** `pnpm prerender-voice [--voice Chloe] [--takes 2] [--budget-usd 0.05] [--list] [--out DIR]` plans and prices and writes nothing. `--render` (with `--voice`, `--budget-usd`, `$VOICE_RENDER_TOKEN` and ffmpeg) renders the missing files through the local Worker in `tools/voice-render/` (start it with the command in its `wrangler.jsonc`; the tool only talks to a loopback address). The rules are tested: one request at a time, no retries (a failure stops the run), the budget checked before every call and a call counted as spent before it is made, every clip checked (MP3 header, 0.8 s to 15 s, not silent) and a failed clip kept as `<file>.rejected`, and an existing file never overwritten. The folder is `./.voice-library/` (ignored by git) or `$VOICE_LIBRARY_DIR`; a file is `<hash>.take<n>.mp3`, and `report.json` lists what was rendered. The tool checks only that folder, not R2. **Reels (built):** `pnpm prerender-voice --reel (--voice Chloe | --all) [--no-labels]` makes `<folder>/reels/reel-<voice>.mp3` and a `.index.txt` (start time, line id and text of every line, so "stall three sounds wrong" can be found again). It speaks the voice name and a label before each line (macOS `say`; `--no-labels` skips it, and it falls back to none without `say`), brings every clip to the same loudness and leaves 0.9 s gaps. It reads the Library folder only: no network, no spend, never changes a Library file, and rebuilds the reel each time. Lines not rendered yet are listed, a bad file is left out and fails the run.
 
 **Upload (built, not yet run against real R2):** `pnpm prerender-voice --upload (--voice Chloe | --all) [--bucket NAME] [--jurisdiction eu] [--yes]`. Without `--yes` it is a preview and makes no Wrangler call. With `--yes` it uses **your** Wrangler login (`wrangler r2 object put --remote --content-type audio/mpeg`), so no token is stored. A voice goes up whole or not at all. Before each file it re-checks the clip; it never overwrites (the same audio already there is skipped, different audio stops the run and prints the delete command for you to choose); it reads every upload back and compares SHA-256; one request at a time, no retries, stops at the first problem; `.voice-library/uploaded.json` records what went up. Take 1 only. It is tested against a fake Wrangler (17 tests); I did **not** run it against your account. The code is `tools/lib/prerender-plan.mjs`, `prerender-run.mjs` and `audio-check.mjs`, with 49 tests in `tools/test/`.
 
@@ -46,7 +47,7 @@ Audio for every **spoken, scripted** line, rendered once ahead of time, kept und
 | `--render --budget-usd 0.25` | Render the missing keys. Stop before the estimate passes the budget. A budget is required. |
 | `--voice Chloe` | Only one voice. |
 | `--takes 2` | Render two takes per line so the owner can pick (see "Takes"). Costs twice as much. |
-| `--reel` | Build a listening reel per voice (spoken name, then each line, same loudness), so the owner can hear all of it. |
+| `--reel` | Build a listening reel per voice (spoken name, then each line, same loudness), so the owner can hear all of it. **Built.** |
 | `--upload` | Upload approved files to R2. Never overwrites an existing key. |
 
 **How it renders.** Two ways were considered:
@@ -92,7 +93,7 @@ The pilot comes first because the Lodger bank is the only one that exists, and i
 - **The bucket.** Settled: the Library shares `hauntology-worlds`. The hourly cron only touches `uploads/`, `candidates/`, `worlds/` and `sprites/` (checked), so `speech/` is safe from it. Still open: nothing expires the 30-day cache yet (see Decisions).
 - **The Aura-2 fallback is not pre-rendered.** A Library miss falls through to the cache, then a paid call.
 - **Clip audio is not Library audio.** The 17 avatar clips were made from separate renders, so they sound slightly different from the Library files. Only matters if the product ever plays a clip with Library sound.
-- **Losing R2** costs a re-render, about $0.90 for everything. Keep the tool and the manifest in git, and the audio only in R2.
+- **Losing R2** costs a re-render, about $1.24 for everything. Keep the tool and the manifest in git, and the audio only in R2.
 
 ## Decisions (answered 2026-11-15; change any of them and the plan follows)
 

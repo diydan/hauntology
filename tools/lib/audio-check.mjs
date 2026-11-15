@@ -35,3 +35,10 @@ export function probeClip(path) {
   const max = m === null ? null : m[1] === '-inf' ? -200 : Number.parseFloat(m[1]);
   return { durationMs: Number.isFinite(seconds) ? Math.round(seconds * 1000) : null, maxVolumeDb: max };
 }
+
+/** The length of a file in milliseconds (ffprobe only; cheaper than probeClip), or null when it cannot be read. */
+export function probeDuration(path) {
+  const r = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'default=nw=1:nk=1', path], { encoding: 'utf8' });
+  const seconds = r.status === 0 ? Number.parseFloat(r.stdout.trim()) : Number.NaN;
+  return Number.isFinite(seconds) ? Math.round(seconds * 1000) : null;
+}

@@ -129,17 +129,6 @@ test('CLI: the default is a dry run; it prints the table, says nothing was spent
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('CLI: --reel is refused with exit 2 until it is built, and nothing is written', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'prerender-'));
-  try {
-    const r = run(['--reel', '--budget-usd', '1', '--out', dir]);
-    assert.equal(r.status, 2);
-    assert.match(r.stderr, /not built yet/);
-    assert.match(r.stderr, /Nothing was spent/);
-    assert.deepEqual(readdirSync(dir), []);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
-});
-
 test('CLI: a good file in the folder counts as done; a bad one fails the run with exit 1', () => {
   const dir = mkdtempSync(join(tmpdir(), 'prerender-'));
   try {
