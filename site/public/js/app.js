@@ -3946,7 +3946,7 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
   const FRONT = V(0.157, 0.12, 0.95);          // the ghost's feet just in front of the doorway, dead centre, low: where it lines up to go in
   const GB = [V(0, 0, 0), V(0.157, 0.12, 0.55), V(0.157, 0.12, 0.2), V(0.157, 0.12, -0.15)];
   // ghost size (1 = its usual size); it shrinks so it fits the doorway
-  const GS = [[0.04, 1], [0.14, 0.75], [0.24, 0.48], [0.30, 0.3], [0.34, 0.23], [QH, 0.18], [0.44, 0.16], [0.50, 0.15], [0.56, 0.14]];
+  const GS = [[0.04, 1], [0.14, 0.85], [0.24, 0.6], [0.30, 0.46], [0.34, 0.38], [QH, 0.32], [0.44, 0.28], [0.50, 0.26], [0.56, 0.24]];
 
 
   /* The door leaf is a plain slab, so we dress its outer face: planks, grain, knots, iron straps with rivets, a lock plate,
