@@ -53,6 +53,34 @@ export interface ImageVerdictStore {
   remove(imageId: string): Promise<void>;
 }
 
+/** One picture from the image model: its bytes, or why there is none (`rate_limited` for a busy service, `failed` for anything else). */
+export type RenderAnswer = { ok: true; image: Uint8Array } | { ok: false; kind: "rate_limited" | "failed" };
+
+/**
+ * Makes a photograph from a sketch (world-pipeline 5.3, Requirement 2.4): the sketch goes in as a reference image with a
+ * prompt, and one picture comes out. Every call goes through `api/src/guarded/workersai/image.ts`, which needs a Ticket for
+ * the `image` meter.
+ */
+export interface ImageMaker {
+  render(req: { sketch: Uint8Array; prompt: string; seed: number; width: number; height: number }): Promise<RenderAnswer>;
+}
+
+/** What a candidate (a picture drawn from a sketch, kept 24 hours under `candidates/`) is stored with. */
+export type CandidateMeta = { contentType: "image/jpeg" | "image/png" | "image/webp"; ownerSid: string; sha256: string };
+
+/** Where the candidates of a sketch are kept, and how one becomes a Place Image. */
+export interface CandidateStore {
+  put(candidateId: string, bytes: Uint8Array, meta: CandidateMeta): Promise<void>;
+  /** The candidate's bytes, its type and its owner, or `null`. */
+  read(candidateId: string): Promise<{ body: ReadableStream<Uint8Array> | Uint8Array; size: number; contentType: string; ownerSid: string } | null>;
+  /**
+   * Makes the candidate a Place Image (`uploads/<id>`, from a sketch, not yet checked) for `ownerSid` and answers that id.
+   * The same candidate always gives the same id, and a second call finds the first one's picture as it is. `null` when there
+   * is no such candidate, or it is not that Session's.
+   */
+  promote(candidateId: string, ownerSid: string): Promise<string | null>;
+}
+
 /** Checks a Turnstile result with Cloudflare. `false` for anything that is not a clear yes. */
 export interface TurnstileVerifier {
   verify(token: string, ip: string | null): Promise<boolean>;

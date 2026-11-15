@@ -12,9 +12,11 @@ import { adminTokenFrom } from "../src/routes/admin";
 import realWorker, { storeFor, type WorkerEnv } from "../src/worker";
 import { SpendGuardClient } from "../src/spend/client";
 import { CloudflareImageStore } from "../src/worlds/cloudflare-images";
+import { CloudflareCandidateStore } from "../src/worlds/cloudflare-candidates";
 import { CloudflareUploadStore } from "../src/worlds/cloudflare-uploads";
 import { CloudflareImageVerdicts } from "../src/worlds/cloudflare-verdicts";
-import type { BriefAnswer, PlaceBriefer } from "../src/worlds/ports";
+import type { BriefAnswer, ImageMaker, PlaceBriefer, RenderAnswer } from "../src/worlds/ports";
+import { makeJpeg } from "@hauntology/shared/world/upload-kit";
 import { WorldJobStarter } from "../src/worlds/job-starter";
 import { WorldIngestor } from "../src/worlds/ingest";
 import type { WorldLabsPort, WorldSource } from "../src/worlds/ports";
@@ -109,6 +111,19 @@ class StandInBriefer implements PlaceBriefer {
   }
 }
 
+/**
+ * A stand-in for the image model, so the sketch routes and the candidate store run on the real runtime without one: it
+ * answers a small JPEG of 1024 by 768 whose scan data holds the seed (so two seeds give two different pictures), and the
+ * prompt `BROKEN` in a caption makes the call fail, `BUSY` makes it say it is busy.
+ */
+class StandInImager implements ImageMaker {
+  async render(req: { prompt: string; seed: number }): Promise<RenderAnswer> {
+    if (req.prompt.includes("BROKEN")) return { ok: false, kind: "failed" };
+    if (req.prompt.includes("BUSY")) return { ok: false, kind: "rate_limited" };
+    return { ok: true, image: makeJpeg({ width: 1024, height: 768, scans: [Uint8Array.from(`stand-in picture seed ${req.seed}`, (c) => c.charCodeAt(0))] }) };
+  }
+}
+
 const apps = new WeakMap<object, ReturnType<typeof createApp>>();
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
@@ -160,7 +175,7 @@ export default {
     let app = apps.get(env);
     if (app === undefined) {
       const guard = new SpendGuardClient(env.SPEND_GUARD);
-      app = createApp({ spend: () => guard.status(), ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: true } } : {}), uploads: { store: new CloudflareUploadStore(env.BUCKET) }, worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter: new WorldJobStarter(env.WORLD_JOB), verdicts: new CloudflareImageVerdicts(env.BUCKET), briefer: new StandInBriefer() } } });
+      app = createApp({ spend: () => guard.status(), ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: true } } : {}), uploads: { store: new CloudflareUploadStore(env.BUCKET) }, worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter: new WorldJobStarter(env.WORLD_JOB), verdicts: new CloudflareImageVerdicts(env.BUCKET), briefer: new StandInBriefer(), candidates: new CloudflareCandidateStore(env.BUCKET), imager: new StandInImager() } } });
       apps.set(env, app);
     }
     return app.fetch(request, env, ctx);

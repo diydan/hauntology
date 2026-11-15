@@ -1,6 +1,7 @@
 import { PLACE_BRIEF_SCHEMA, PLACE_BRIEF_SYSTEM, PLACE_BRIEF_USER, parsePlaceBrief } from "@hauntology/shared/world/brief";
 import type { BriefAnswer, PlaceBriefer } from "../../worlds/ports";
 import { toBase64 } from "../base64";
+import { catalogModelFromEnv } from "./model";
 
 /** The part of the Workers AI binding (`env.AI`) this uses. */
 export interface AiBinding {
@@ -9,11 +10,7 @@ export interface AiBinding {
 
 export const DEFAULT_SCOUT_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 /** `GHOST_MODEL_ID`: blank is the default, a Workers AI catalog id (`@cf/<author>/<model>`) is used, and anything else is `null` (no check is made, so no picture passes). */
-export function scoutModelFromEnv(value: string | undefined): string | null {
-  const id = typeof value === "string" ? value.trim() : "";
-  if (id === "") return DEFAULT_SCOUT_MODEL;
-  return /^@cf\/[a-z0-9._-]+\/[a-z0-9._-]+$/i.test(id) ? id : null;
-}
+export const scoutModelFromEnv = (value: string | undefined): string | null => catalogModelFromEnv(value, DEFAULT_SCOUT_MODEL);
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 

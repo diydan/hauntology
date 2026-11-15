@@ -4,7 +4,8 @@ import { DEFAULT_CAPS, SpendLedger, type CapTable } from "@hauntology/shared/wor
 import type { ErrorCode } from "@hauntology/shared/errors";
 import type { WorldManifest } from "@hauntology/shared/world/manifest";
 import type { BriefVerdict } from "@hauntology/shared/world/brief";
-import type { BriefAnswer, ImageInfo, ImageStore, ImageVerdictStore, Ingestor, PlaceBriefer, TurnstileVerifier, UploadStore, UpstreamFailure, WorldLabsPort, WorldStarter } from "./ports";
+import { promotedImageId } from "./cloudflare-candidates";
+import type { BriefAnswer, CandidateMeta, CandidateStore, ImageInfo, ImageMaker, ImageStore, ImageVerdictStore, Ingestor, PlaceBriefer, RenderAnswer, TurnstileVerifier, UploadStore, UpstreamFailure, WorldLabsPort, WorldStarter } from "./ports";
 
 /** Stand-ins for the parts of world creation that are not built yet (the job 7.1, uploads 5.1) and an in-process `SpendGuard`, for tests and the test-only dev worker. None of them is durable. */
 
@@ -181,5 +182,51 @@ export class FakeBriefer implements PlaceBriefer {
       throw new Error("model down");
     }
     return this.script.shift() ?? this.fallback;
+  }
+}
+
+/** An `ImageMaker` the test controls: answers from a queue (or makes a small picture of its own), records what it was asked, and can fail. It never calls anything. */
+export class FakeImager implements ImageMaker {
+  readonly asked: { sketch: Uint8Array; prompt: string; seed: number; width: number; height: number }[] = [];
+  /** Answers, used in order; when empty, `fallback`. */
+  script: RenderAnswer[] = [];
+  fallback: ((n: number) => RenderAnswer) | null = null;
+  /** Make the call throw this many times. */
+  throws = 0;
+  async render(req: { sketch: Uint8Array; prompt: string; seed: number; width: number; height: number }): Promise<RenderAnswer> {
+    this.asked.push(req);
+    if (this.throws > 0) {
+      this.throws--;
+      throw new Error("model down");
+    }
+    const scripted = this.script.shift();
+    if (scripted !== undefined) return scripted;
+    return this.fallback !== null ? this.fallback(this.asked.length) : { ok: false, kind: "failed" };
+  }
+}
+
+/** A `CandidateStore` in memory, whose promoted pictures go into a `MemoryImageStore` so the Place Brief check and the Quote find them. */
+export class MemoryCandidates implements CandidateStore {
+  readonly candidates = new Map<string, { bytes: Uint8Array; meta: CandidateMeta }>();
+  /** Make the next `put` fail, this many times. */
+  failures = 0;
+  constructor(readonly images: MemoryImageStore = new MemoryImageStore()) {}
+  async put(candidateId: string, bytes: Uint8Array, meta: CandidateMeta): Promise<void> {
+    if (this.failures > 0) {
+      this.failures--;
+      throw new Error("storage down");
+    }
+    this.candidates.set(candidateId, { bytes, meta });
+  }
+  async read(candidateId: string) {
+    const c = this.candidates.get(candidateId);
+    return c === undefined ? null : { body: c.bytes, size: c.bytes.byteLength, contentType: c.meta.contentType, ownerSid: c.meta.ownerSid };
+  }
+  async promote(candidateId: string, ownerSid: string): Promise<string | null> {
+    const c = this.candidates.get(candidateId);
+    if (c === undefined || c.meta.ownerSid !== ownerSid) return null;
+    const id = await promotedImageId(candidateId);
+    if ((await this.images.find(id)) === null) this.images.put({ id, ownerSid, sha256: c.meta.sha256, moderation: "pending", contentType: c.meta.contentType, source: "sketch" }, c.bytes);
+    return id;
   }
 }

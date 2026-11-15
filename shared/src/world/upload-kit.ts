@@ -134,3 +134,78 @@ export function makeWebp(o: WebpOptions): Uint8Array {
   const body = join(...chunks);
   return join(bytesOf("RIFF", le32(body.length + 4 + (o.riffSizeDelta ?? 0)), "WEBP"), body);
 }
+
+// ---- PNG that really decodes (for the sketch) ----
+
+export type PngColor = "gray" | "graya" | "rgb" | "rgba" | "palette";
+const COLOR_TYPE: Record<PngColor, number> = { gray: 0, rgb: 2, palette: 3, graya: 4, rgba: 6 };
+const CHANNEL_COUNT: Record<PngColor, number> = { gray: 1, rgb: 3, palette: 1, graya: 2, rgba: 4 };
+
+async function deflate(data: Uint8Array): Promise<Uint8Array> {
+  const stream = new CompressionStream("deflate");
+  const writer = stream.writable.getWriter();
+  void writer.write(data as unknown as Uint8Array<ArrayBuffer>).then(() => writer.close());
+  return new Uint8Array(await new Response(stream.readable).arrayBuffer());
+}
+
+const paethOf = (a: number, b: number, c: number): number => {
+  const p = a + b - c;
+  const pa = Math.abs(p - a);
+  const pb = Math.abs(p - b);
+  const pc = Math.abs(p - c);
+  return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+};
+
+export type RealPngOptions = {
+  width: number;
+  height: number;
+  color?: PngColor;
+  /** The samples of the pixel at x, y: as many numbers as the colour has channels (palette: one index). */
+  pixel: (x: number, y: number) => number[];
+  /** The filter of each row (0 to 4); default 0. A number is used for every row. */
+  filter?: number | ((y: number) => number);
+  /** Palette entries as `[r, g, b]`, for `palette`. */
+  palette?: [number, number, number][];
+  /** Palette alpha values. */
+  transparency?: number[];
+  /** Split the compressed data over this many IDAT chunks. */
+  idatChunks?: number;
+};
+
+/** A PNG a decoder can read: real zlib data, real row filters, correct CRCs. */
+export async function makeRealPng(o: RealPngOptions): Promise<Uint8Array> {
+  const color = o.color ?? "rgba";
+  const bpp = CHANNEL_COUNT[color];
+  const stride = o.width * bpp;
+  const rows: number[][] = [];
+  for (let y = 0; y < o.height; y++) rows.push(Array.from({ length: o.width }, (_, x) => o.pixel(x, y)).flat());
+  const raw = new Uint8Array((stride + 1) * o.height);
+  for (let y = 0; y < o.height; y++) {
+    const filter = typeof o.filter === "function" ? o.filter(y) : (o.filter ?? 0);
+    raw[y * (stride + 1)] = filter;
+    for (let x = 0; x < stride; x++) {
+      const v = (rows[y] as number[])[x] as number;
+      const a = x >= bpp ? ((rows[y] as number[])[x - bpp] as number) : 0;
+      const b = y > 0 ? ((rows[y - 1] as number[])[x] as number) : 0;
+      const c = x >= bpp && y > 0 ? ((rows[y - 1] as number[])[x - bpp] as number) : 0;
+      const sub = filter === 1 ? a : filter === 2 ? b : filter === 3 ? (a + b) >> 1 : filter === 4 ? paethOf(a, b, c) : 0;
+      raw[y * (stride + 1) + 1 + x] = (v - sub) & 0xff;
+    }
+  }
+  const z = await deflate(raw);
+  const parts = Math.max(1, o.idatChunks ?? 1);
+  const size = Math.ceil(z.length / parts);
+  const idats: Uint8Array[] = [];
+  for (let i = 0; i < z.length; i += size) idats.push(pngChunk("IDAT", z.subarray(i, i + size)));
+  return join(
+    bytesOf(0x89, "PNG\r\n", 0x1a, "\n"),
+    pngChunk("IHDR", bytesOf(u32(o.width), u32(o.height), 8, COLOR_TYPE[color], 0, 0, 0)),
+    ...(color === "palette" ? [pngChunk("PLTE", (o.palette ?? [[0, 0, 0]]).flat()), ...(o.transparency ? [pngChunk("tRNS", o.transparency)] : [])] : []),
+    ...idats,
+    pngChunk("IEND"),
+  );
+}
+
+/** A sketch as a canvas makes it: white page (or transparent), black ink where `ink(x, y)` is true. */
+export const makeSketchPng = (width: number, height: number, ink: (x: number, y: number) => boolean, transparent = false): Promise<Uint8Array> =>
+  makeRealPng({ width, height, color: "rgba", filter: 1, pixel: (x, y) => (ink(x, y) ? [0, 0, 0, 255] : transparent ? [0, 0, 0, 0] : [255, 255, 255, 255]) });

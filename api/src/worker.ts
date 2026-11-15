@@ -2,12 +2,15 @@ import { retentionFromEnv } from "@hauntology/shared/world/retention";
 import { createApp } from "./app";
 import { SpendGuard } from "./do/spend-guard";
 import { WorldJob } from "./do/live-world-job";
+import { DEFAULT_IMAGE_MODEL, FluxImageMaker } from "./guarded/workersai/image";
+import { catalogModelFromEnv } from "./guarded/workersai/model";
 import { ScoutPlaceBriefer, scoutModelFromEnv, type AiBinding } from "./guarded/workersai/scout";
 import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
 import type { Bindings } from "./http/env";
 import { adminTokenFrom } from "./routes/admin";
 import { SpendGuardClient } from "./spend/client";
 import { cleanupExpired } from "./worlds/cleanup";
+import { CloudflareCandidateStore } from "./worlds/cloudflare-candidates";
 import { CloudflareImageStore } from "./worlds/cloudflare-images";
 import { CloudflareUploadStore } from "./worlds/cloudflare-uploads";
 import { CloudflareWorldStore } from "./worlds/cloudflare-store";
@@ -16,7 +19,7 @@ import { WorldJobStarter } from "./worlds/job-starter";
 import { CloudflareTurnstile } from "./worlds/turnstile";
 
 /** The bindings of `wrangler.jsonc`: the one R2 bucket and the `WorldJob` and `SpendGuard` Durable Object namespaces, besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
-export type WorkerEnv = Bindings & WorldLabsEnv & { AI?: AiBinding; GHOST_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
+export type WorkerEnv = Bindings & WorldLabsEnv & { AI?: AiBinding; GHOST_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
 
 export const storeFor = (env: WorkerEnv): CloudflareWorldStore => new CloudflareWorldStore({ bucket: env.BUCKET, jobs: env.WORLD_JOB });
 
@@ -48,6 +51,9 @@ export default {
             ...(live ? { starter: new WorldJobStarter(env.WORLD_JOB) } : {}),
             // The Place Brief check (5.4) needs the Workers AI binding (`AI`, which the owner adds to the Worker's configuration)
             // and a model id it accepts; without either, no picture can pass and the route says `moderation_unavailable`.
+            // The sketch (5.3) needs the same binding and a model id it accepts (`IMAGE_MODEL_ID`); without either, a sketch cannot be rendered.
+            candidates: new CloudflareCandidateStore(env.BUCKET),
+            ...(live && env.AI !== undefined && catalogModelFromEnv(env.IMAGE_MODEL_ID, DEFAULT_IMAGE_MODEL) !== null ? { imager: new FluxImageMaker(env.AI, catalogModelFromEnv(env.IMAGE_MODEL_ID, DEFAULT_IMAGE_MODEL) as string) } : {}),
             verdicts: new CloudflareImageVerdicts(env.BUCKET),
             ...(live && env.AI !== undefined && scoutModelFromEnv(env.GHOST_MODEL_ID) !== null ? { briefer: new ScoutPlaceBriefer(env.AI, scoutModelFromEnv(env.GHOST_MODEL_ID) as string) } : {}),
             ...(typeof env.TURNSTILE_SECRET === "string" && env.TURNSTILE_SECRET !== "" ? { turnstile: new CloudflareTurnstile(env.TURNSTILE_SECRET) } : {}),

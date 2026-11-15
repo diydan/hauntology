@@ -8,7 +8,7 @@ import { toBase64Url } from "@hauntology/shared/session-cookie";
 import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
 import { setLastWorld } from "../http/session";
-import type { ImageInfo, ImageStore, ImageVerdictStore, PlaceBriefer, TurnstileVerifier, WorldStarter } from "../worlds/ports";
+import type { CandidateStore, ImageInfo, ImageMaker, ImageStore, ImageVerdictStore, PlaceBriefer, TurnstileVerifier, WorldStarter } from "../worlds/ports";
 import type { WorldStore } from "../worlds/store";
 
 export type CreationDeps = {
@@ -20,6 +20,10 @@ export type CreationDeps = {
   starter?: WorldStarter;
   /** Checks a Turnstile token. Needed when `TURNSTILE_SECRET` is set; without it that check fails closed. */
   turnstile?: TurnstileVerifier;
+  /** The image model, for a sketch (5.3). Without it, or without `candidates`, a sketch cannot be rendered. */
+  imager?: ImageMaker;
+  /** Where the candidates of a sketch are kept (5.3). */
+  candidates?: CandidateStore;
   /** The Place Brief check (5.4). Without it, or without `verdicts`, a picture cannot be checked and the route answers `moderation_unavailable`. */
   briefer?: PlaceBriefer;
   /** Where the result of that check is written (5.4). */
@@ -219,17 +223,26 @@ export function worldCreateRoutes(deps: CreationDeps): Hono<AppEnv> {
   return routes;
 }
 
-/** `GET /api/images/:id`: the Place Image, to the Session that owns it and to nobody else. */
-export function imageRoutes(images: ImageStore): Hono<AppEnv> {
+/**
+ * `GET /api/images/:id`: the Place Image, or a candidate drawn from the visitor's sketch, to the Session that owns it and to
+ * nobody else. A candidate is only to be looked at: it is not a Place Image until it has been chosen (`POST /api/sketch/select`).
+ */
+export function imageRoutes(images: ImageStore, candidates?: CandidateStore): Hono<AppEnv> {
   const routes = new Hono<AppEnv>();
   routes.get("/:id", async (c) => {
     c.header("Cache-Control", "private, no-store");
+    const sid = c.get("session").sid;
     const info = await images.find(c.req.param("id"));
-    if (info === null || info.ownerSid !== c.get("session").sid) return c.json({ ok: false, code: "upload_rejected" }, 404);
-    const object = await images.read(info.id);
+    let object: { body: ReadableStream<Uint8Array> | Uint8Array; size: number; contentType: string } | null = null;
+    if (info !== null) {
+      if (info.ownerSid !== sid) return c.json({ ok: false, code: "upload_rejected" }, 404);
+      object = await images.read(info.id);
+    } else if (candidates !== undefined) {
+      const candidate = await candidates.read(c.req.param("id"));
+      if (candidate !== null && candidate.ownerSid === sid) object = candidate;
+    }
     if (object === null) return c.json({ ok: false, code: "upload_rejected" }, 404);
-    const type = object.contentType;
-    return new Response(object.body, { status: 200, headers: { "Content-Type": type, "Content-Length": String(object.size), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
+    return new Response(object.body, { status: 200, headers: { "Content-Type": object.contentType, "Content-Length": String(object.size), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
   });
   return routes;
 }

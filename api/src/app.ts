@@ -8,6 +8,7 @@ import { session, type SessionOptions } from "./http/session";
 import { sessionRoutes } from "./routes/session";
 import { adminRoutes, type AdminDeps } from "./routes/admin";
 import { placeRoutes } from "./routes/places";
+import { sketchRoutes } from "./routes/sketch";
 import { uploadRoutes, type UploadsDeps } from "./routes/uploads";
 import { imageRoutes, worldCreateRoutes, type CreationDeps } from "./routes/world-create";
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
@@ -56,7 +57,17 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     const creation = options.worlds.creation;
     if (creation !== undefined) {
       app.route("/api/worlds", worldCreateRoutes({ store: options.worlds.store, ...creation, now: options.now ?? Date.now, worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled }));
-      app.route("/api/images", imageRoutes(creation.images));
+      app.route("/api/images", imageRoutes(creation.images, creation.candidates));
+      app.route(
+        "/api/sketch",
+        sketchRoutes({
+          ...(creation.candidates !== undefined ? { candidates: creation.candidates } : {}),
+          ...(creation.imager !== undefined ? { imager: creation.imager } : {}),
+          ...(creation.guard !== undefined ? { guard: creation.guard } : {}),
+          worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled,
+          now: options.now ?? Date.now,
+        }),
+      );
       app.route(
         "/api/places",
         placeRoutes({

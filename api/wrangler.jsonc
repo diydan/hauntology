@@ -1,9 +1,9 @@
 // Run locally with `wrangler dev` (4.162.0, local R2 and Durable Object); never deployed. Still to add (world-pipeline task 2):
 // the static assets from web/dist (single-page fallback, Worker first), the secrets (HMAC_SECRET, TURNSTILE_SECRET) in
 // `.dev.vars` (copy `.dev.vars.example`), the other Durable Objects, and `TURNSTILE_SITE_KEY` when Turnstile is on.
-// The Place Brief check (a photo must pass it before a world can be made from it) needs the Workers AI binding, which is NOT declared
+// The Place Brief check (a photo must pass it before a world can be made from it) and the sketch (drawing a place) need the Workers AI binding, which is NOT declared
 // here: in `wrangler dev` it always reaches the real service (a `wrangler login` and a small charge per check). To turn it on add
-// `"ai": { "binding": "AI" }` below. Without it every check answers `moderation_unavailable` and no photo can pass.
+// `"ai": { "binding": "AI" }` below. Without it every check answers `moderation_unavailable` and no photo can pass, and a sketch cannot be rendered.
 // World making is off until `WLT_API_KEY` is set (a secret: `.dev.vars` locally, `wrangler secret put` if ever deployed; see `.dev.vars.example`).
 {
   "name": "hauntology",

@@ -3,7 +3,7 @@ import examples from "../../shared/fixtures/worldlabs/docs-examples.json";
 import worker, { SpendGuard, WorldJob, storeFor, type WorkerEnv } from "./worker";
 import { FakeJobs, FakeNamespace, FakeR2 } from "./worlds/fake-cloudflare";
 import { uploadKey } from "./worlds/keys";
-import { COMMENT, EXIF, JFIF, makeJpeg } from "@hauntology/shared/world/upload-kit";
+import { COMMENT, EXIF, JFIF, makeJpeg, makeSketchPng } from "@hauntology/shared/world/upload-kit";
 import { SECRET, sampleManifest, ORIGIN } from "./worlds/test-kit";
 
 const NOW = 1_800_000_000_000;
@@ -266,6 +266,94 @@ describe("worker: making a world (world-pipeline 6.1, 7.1, 7.3)", () => {
     none.bucket.put("uploads/x", Uint8Array.from([1]), new Date(), { customMetadata: { ownerSid: v.sid, sha256: "ab".repeat(32) } });
     const res = await worker.fetch(new Request(`${ORIGIN}/api/places/brief`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId: "x" }) }), none.env, ctx().ctx);
     expect([res.status, await res.json()]).toEqual([503, { ok: false, code: "world_gen_disabled" }]);
+  });
+
+  describe("a sketch (world-pipeline 5.3)", () => {
+    const b64 = (b: Uint8Array) => btoa(String.fromCharCode(...b));
+    const picture = makeJpeg({ width: 1024, height: 768, head: [JFIF(), EXIF("Exif\0\0made by a model")], scans: [Uint8Array.from([1, 2, 3])] });
+    /** The Workers AI binding for both models: the image model answers a picture, the vision model a brief. */
+    const fakeAi = () => {
+      const calls: { model: string; input: Record<string, any> }[] = [];
+      const AI = {
+        run: async (model: string, input: Record<string, any>) => {
+          calls.push({ model, input });
+          return model.includes("flux") ? { image: b64(picture) } : { response: JSON.stringify({ brief: "A narrow kitchen with a blue door.", safe: true }) };
+        },
+      };
+      return { AI, calls };
+    };
+    const post = (env: WorkerEnv, path: string, headers: Record<string, string>, body: unknown) =>
+      worker.fetch(new Request(`${ORIGIN}${path}`, { method: "POST", headers, body: JSON.stringify(body) }), env, ctx().ctx);
+
+    it("renders two candidates through the image model, keeps them for their owner, and the chosen one goes through the check to the Quote", async () => {
+      const { AI, calls } = fakeAi();
+      const { env, bucket } = envWith({ WLT_API_KEY: KEY });
+      (env as unknown as { AI: unknown }).AI = AI;
+      const v = await visit(env);
+      const sketch = await makeSketchPng(256, 192, (x, y) => (x + y) % 11 === 0);
+
+      const rendered = await post(env, "/api/sketch/render", v.headers, { sketchPng: b64(sketch), caption: "my grandmother's kitchen" });
+      expect(rendered.status).toBe(200);
+      const body = (await rendered.json()) as { candidates: { imageId: string; imageUrl: string }[]; quota: { image: number } };
+      expect(body.candidates).toHaveLength(2);
+      expect(body.quota.image).toBe(7);
+      const flux = calls.filter((c) => c.model === "@cf/black-forest-labs/flux-2-klein-9b");
+      expect(flux).toHaveLength(2);
+      const form = await new Response(flux[0]!.input.multipart.body, { headers: { "Content-Type": flux[0]!.input.multipart.contentType } }).formData();
+      expect(form.get("prompt")).toContain("my grandmother's kitchen");
+      expect(new Uint8Array(await (form.get("input_image_0") as unknown as File).arrayBuffer())).toEqual(sketch);
+      for (const c of body.candidates) {
+        const stored = bucket.objects.get(`candidates/${c.imageId}`)!;
+        expect(stored.customMetadata).toMatchObject({ ownerSid: v.sid, source: "sketch" });
+        expect(new TextDecoder("latin1").decode(stored.bytes)).not.toContain("made by a model");
+        expect((await worker.fetch(new Request(`${ORIGIN}${c.imageUrl}`, { headers: v.headers }), env, ctx().ctx)).status).toBe(200);
+      }
+
+      const picked = await post(env, "/api/sketch/select", v.headers, { imageId: body.candidates[0]!.imageId });
+      const { imageId } = (await picked.json()) as { imageId: string };
+      expect(bucket.objects.get(`uploads/${imageId}`)!.customMetadata).toMatchObject({ ownerSid: v.sid, source: "sketch" });
+      expect((await post(env, "/api/worlds/quote", v.headers, { imageId })).status).toBe(503); // not yet checked
+      expect((await post(env, "/api/places/brief", v.headers, { imageId })).status).toBe(200);
+      expect((await post(env, "/api/worlds/quote", v.headers, { imageId })).status).toBe(200);
+    });
+
+    it("cannot render when the Worker has no Workers AI binding, a model id it does not accept, or no key", async () => {
+      const sketch = await makeSketchPng(256, 192, (x, y) => (x + y) % 11 === 0);
+      for (const extra of [{ WLT_API_KEY: KEY }, { WLT_API_KEY: KEY, IMAGE_MODEL_ID: "not-a-model" }]) {
+        const { env } = envWith(extra);
+        const { AI, calls } = fakeAi();
+        (env as unknown as { AI?: unknown }).AI = extra.IMAGE_MODEL_ID === undefined ? undefined : AI;
+        const v = await visit(env);
+        const res = await post(env, "/api/sketch/render", v.headers, { sketchPng: b64(sketch) });
+        expect([res.status, await res.json()], JSON.stringify(extra)).toEqual([503, { ok: false, code: "world_gen_disabled" }]);
+        expect(calls).toHaveLength(0);
+      }
+      const none = envWith();
+      const { AI, calls } = fakeAi();
+      (none.env as unknown as { AI: unknown }).AI = AI;
+      const v = await visit(none.env);
+      expect((await post(none.env, "/api/sketch/render", v.headers, { sketchPng: b64(sketch) })).status).toBe(503);
+      expect(calls).toHaveLength(0);
+    });
+
+    it("uses IMAGE_MODEL_ID when it is a catalog id", async () => {
+      const { AI, calls } = fakeAi();
+      const { env } = envWith({ WLT_API_KEY: KEY, IMAGE_MODEL_ID: "@cf/black-forest-labs/flux-2-dev" });
+      (env as unknown as { AI: unknown }).AI = AI;
+      const v = await visit(env);
+      await post(env, "/api/sketch/render", v.headers, { sketchPng: b64(await makeSketchPng(256, 192, (x, y) => (x + y) % 11 === 0)) });
+      expect(new Set(calls.map((c) => c.model))).toEqual(new Set(["@cf/black-forest-labs/flux-2-dev"]));
+    });
+
+    it("spends no image unit, and calls nothing, for a blank page", async () => {
+      const { AI, calls } = fakeAi();
+      const { env } = envWith({ WLT_API_KEY: KEY });
+      (env as unknown as { AI: unknown }).AI = AI;
+      const v = await visit(env);
+      const r = await post(env, "/api/sketch/render", v.headers, { sketchPng: b64(await makeSketchPng(256, 192, () => false)) });
+      expect([r.status, await r.json()]).toEqual([422, { ok: false, code: "blank_sketch" }]);
+      expect(calls).toHaveLength(0);
+    });
   });
 
   it("takes no upload while the world switch is off, though a key is set", async () => {

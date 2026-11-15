@@ -19,3 +19,6 @@ HMAC_SECRET=replace-with-at-least-16-random-characters
 # The operator's token for /admin/status and /admin/kill (at least 32 printable characters; without it those routes do not exist).
 # Make one in your own shell with `openssl rand -hex 32`. See docs/OPERATIONS.md.
 # ADMIN_TOKEN=
+# The model that turns a sketch into a photograph (a Workers AI catalog id). Unset is @cf/black-forest-labs/flux-2-klein-9b. It needs the AI
+# binding too, and each render is two paid calls against the image meter (IMAGE_SESSION_CAP, IMAGE_DAY_CAP).
+# IMAGE_MODEL_ID=@cf/black-forest-labs/flux-2-klein-9b

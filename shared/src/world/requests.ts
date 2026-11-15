@@ -10,6 +10,18 @@ export type QuoteRequest = z.infer<typeof QuoteRequestSchema>;
 export const PlaceBriefRequestSchema = z.object({ imageId: ImageId });
 export type PlaceBriefRequest = z.infer<typeof PlaceBriefRequestSchema>;
 
+/** The body of `POST /api/sketch/render`: the sketch as a base64 PNG, and the caption (which may be empty or left out). */
+export const SKETCH_BODY_MAX = 1_500_000;
+export const SketchRenderRequestSchema = z.object({
+  sketchPng: z.string().min(1).max(SKETCH_BODY_MAX),
+  caption: z.string().max(2000).optional(),
+});
+export type SketchRenderRequest = z.infer<typeof SketchRenderRequestSchema>;
+
+/** The body of `POST /api/sketch/select`. */
+export const SketchSelectRequestSchema = z.object({ imageId: ImageId });
+export type SketchSelectRequest = z.infer<typeof SketchSelectRequestSchema>;
+
 export const CreateWorldRequestSchema = z.object({
   imageId: ImageId,
   confirmToken: z.string().min(1).max(512),
