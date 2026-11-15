@@ -34,8 +34,8 @@ hauntology/
     check-voice-library.mjs   fails the build when a scripted spoken line has no Library entry, an entry has no line, or a text holds a Steering Tag
     build-banks.mjs   generates the typed story banks in shared/src/voice/banks/ from the markdown in docs/story/ (`--check` fails when one is out of date)
     voice-render/      the local Worker (never deployed) that prerender-voice.mjs calls for Inworld audio; token-guarded, allow-listed
-    lib/               helpers shared by the tools above (story-banks.mjs, voice-library-check.mjs, prerender-plan.mjs, prerender-run.mjs, audio-check.mjs); test/ holds their `node --test` tests
-    prerender-voice.mjs   owner-run before a deploy: renders the missing Library audio (ghost-voice) into R2 with a manual budget; audio is never committed (dry run and `--render` for one voice are built; `--upload` and `--reel` are not; see docs/VOICE-LIBRARY-PLAN.md)
+    lib/               helpers shared by the tools above (story-banks.mjs, voice-library-check.mjs, prerender-plan.mjs, prerender-run.mjs, prerender-upload.mjs, audio-check.mjs); test/ holds their `node --test` tests
+    prerender-voice.mjs   owner-run before a deploy: renders the missing Library audio (ghost-voice) into R2 with a manual budget; audio is never committed (dry run, `--render` for one voice and `--upload` to R2 are built; `--reel` is not; see docs/VOICE-LIBRARY-PLAN.md)
   docs/                SUBMISSION.md (overview for readers), PLAN.md (internal), SOUNDS.md (sourcing brief), sounds/CREDITS.md, spikes/
 ```
 

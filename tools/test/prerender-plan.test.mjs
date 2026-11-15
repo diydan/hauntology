@@ -129,15 +129,13 @@ test('CLI: the default is a dry run; it prints the table, says nothing was spent
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('CLI: --upload and --reel are refused with exit 2 until they are built, and nothing is written', () => {
+test('CLI: --reel is refused with exit 2 until it is built, and nothing is written', () => {
   const dir = mkdtempSync(join(tmpdir(), 'prerender-'));
   try {
-    for (const flag of ['--upload', '--reel']) {
-      const r = run([flag, '--budget-usd', '1', '--out', dir]);
-      assert.equal(r.status, 2, flag);
-      assert.match(r.stderr, /not built yet/);
-      assert.match(r.stderr, /Nothing was spent/);
-    }
+    const r = run(['--reel', '--budget-usd', '1', '--out', dir]);
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /not built yet/);
+    assert.match(r.stderr, /Nothing was spent/);
     assert.deepEqual(readdirSync(dir), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
@@ -157,14 +155,19 @@ test('CLI: a good file in the folder counts as done; a bad one fails the run wit
 });
 
 test('CLI: options are checked', () => {
-  assert.equal(run(['--takes', '9']).status, 1);
-  assert.equal(run(['--budget-usd', 'lots']).status, 1);
-  assert.equal(run(['--voice', 'Loretta']).status, 1);
-  assert.equal(run(['--nonsense']).status, 1);
-  assert.equal(run(['--takes']).status, 1);
-  const r = run(['--voice', 'Chloe', '--budget-usd', '0.01']);
-  assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /a render would stop after \d+ of 11/);
+  // an empty folder of its own, so the real .voice-library/ never changes what these tests see
+  const dir = mkdtempSync(join(tmpdir(), 'prerender-'));
+  try {
+    const go = (args) => run([...args, '--out', dir]);
+    assert.equal(go(['--takes', '9']).status, 1);
+    assert.equal(go(['--budget-usd', 'lots']).status, 1);
+    assert.equal(go(['--voice', 'Loretta']).status, 1);
+    assert.equal(go(['--nonsense']).status, 1);
+    assert.equal(go(['--takes']).status, 1);
+    const r = go(['--voice', 'Chloe', '--budget-usd', '0.01']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /a render would stop after \d+ of 11/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('the settings match SPEAKERS in shared/src/voice/voices.ts (the numbers Dan approved), so the tool and the product cannot drift', () => {

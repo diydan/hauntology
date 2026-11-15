@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Owner-run before a deploy: plans and renders the Voice Library audio (ghost-voice task 3.11; docs/VOICE-LIBRARY-PLAN.md).
 // The default is a DRY RUN: it reads the manifest and a local folder, prints what is missing and what it would cost, and spends
-// nothing. --render spends real money, so it needs a budget, one voice and a token. --upload and --reel are not built yet.
+// nothing. --render spends real money, so it needs a budget, one voice and a token. --upload puts approved files in R2 with YOUR
+// Wrangler login; without --yes it only previews. --reel is not built yet.
 //
 // Usage: node tools/prerender-voice.mjs [--dry-run] [--voice Chloe] [--takes 2] [--budget-usd 0.25] [--out DIR] [--list]
 //        VOICE_RENDER_TOKEN=... node tools/prerender-voice.mjs --render --voice Mark --budget-usd 0.05 [--worker http://127.0.0.1:8798]
@@ -13,18 +14,24 @@
 //   --render      render the missing files, one at a time, in order, with no retries (needs ffmpeg and ffprobe)
 //   --worker      the local render Worker (default http://127.0.0.1:8798; only a loopback address is accepted)
 //   The Worker is tools/voice-render/ (see its wrangler.jsonc). Its token is read from $VOICE_RENDER_TOKEN, 16+ characters.
-// Exit: 0 ok, 1 a bad file, bad input, or a render that stopped early, 2 an option that is not built yet.
+//        node tools/prerender-voice.mjs --upload (--voice Chloe | --all) [--bucket hauntology-worlds] [--jurisdiction eu] [--yes]
+//   --upload      put the rendered files of one voice (or all) in R2 under speech/lib/v1/<hash>. Preview unless --yes. Needs the
+//                 bucket to exist and `wrangler login`. Never overwrites; reads every file back; stops at the first problem.
+//                 --jurisdiction eu|fedramp is for a bucket created with one; it is added to every Wrangler call.
+// Exit: 0 ok, 1 a bad file, bad input, or a render or upload that stopped early, 2 an option that is not built yet.
 import { existsSync, readFileSync, statSync, openSync, readSync, closeSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hasMp3Header, planPrerender, resolveVoice, MAX_TAKES, MIN_MP3_BYTES } from './lib/prerender-plan.mjs';
 import { renderJobs } from './lib/prerender-run.mjs';
+import { DEFAULT_BUCKET, BUCKET_PATTERN, JURISDICTIONS, planUpload, uploadFiles } from './lib/prerender-upload.mjs';
+import { spawnSync } from 'node:child_process';
 import { toolsAvailable } from './lib/audio-check.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const NOT_BUILT = ['--upload', '--reel'];
-const FLAGS_WITH_VALUE = ['--voice', '--takes', '--budget-usd', '--out', '--worker'];
-const FLAGS = ['--list', '--dry-run', '--render', '--help', ...FLAGS_WITH_VALUE, ...NOT_BUILT];
+const NOT_BUILT = ['--reel'];
+const FLAGS_WITH_VALUE = ['--voice', '--takes', '--budget-usd', '--out', '--worker', '--bucket', '--jurisdiction'];
+const FLAGS = ['--list', '--dry-run', '--render', '--upload', '--yes', '--all', '--help', ...FLAGS_WITH_VALUE, ...NOT_BUILT];
 const DEFAULT_WORKER = 'http://127.0.0.1:8798';
 
 function fail(message, code = 1) {
@@ -33,7 +40,7 @@ function fail(message, code = 1) {
 }
 
 function parseArgs(argv) {
-  const opts = { list: false, render: false };
+  const opts = { list: false, render: false, upload: false, yes: false, all: false };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (!FLAGS.includes(a)) fail(`unknown option ${JSON.stringify(a)} (try --help)`);
@@ -41,6 +48,9 @@ function parseArgs(argv) {
     if (a === '--help') { console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').filter((l) => l.startsWith('//')).map((l) => l.slice(3)).join('\n')); process.exit(0); }
     if (a === '--list') opts.list = true;
     else if (a === '--render') opts.render = true;
+    else if (a === '--upload') opts.upload = true;
+    else if (a === '--yes') opts.yes = true;
+    else if (a === '--all') opts.all = true;
     else if (FLAGS_WITH_VALUE.includes(a)) {
       const v = argv[i + 1];
       if (v === undefined || v.startsWith('--')) fail(`${a} needs a value`);
@@ -49,6 +59,10 @@ function parseArgs(argv) {
     }
   }
   if (opts.render && argv.includes('--dry-run')) fail('--render and --dry-run cannot be used together');
+  if (opts.render && opts.upload) fail('--render and --upload cannot be used together; render first, listen, then upload');
+  if ((opts.yes || opts.all || opts.bucket !== undefined || opts.jurisdiction !== undefined) && !opts.upload) fail('--yes, --all, --bucket and --jurisdiction only go with --upload');
+  if (opts.upload && opts.all && opts.voice !== undefined) fail('--upload takes --voice or --all, not both');
+  if (opts.upload && !opts.all && opts.voice === undefined) fail('--upload needs --voice <name> (one voice you have listened to) or --all');
   return opts;
 }
 
@@ -71,7 +85,7 @@ if (opts.voice !== undefined) {
   if (voice === null) fail(`no voice called ${JSON.stringify(opts.voice)}. The manifest has: ${[...new Set(manifest.entries.map((e) => e.voice))].join(', ')}`);
 }
 
-// Everything --render needs is checked BEFORE anything is planned or spent.
+/* Everything --render needs is checked BEFORE anything is planned or spent. */
 let workerUrl = null;
 let token = null;
 if (opts.render) {
@@ -89,6 +103,7 @@ if (opts.render) {
   if (!toolsAvailable()) fail('--render needs ffmpeg and ffprobe on the PATH, to check the length and the silence of every clip');
 }
 
+const num = (n) => n.toLocaleString('en-US');
 const outDir = resolve(opts.out ?? process.env.VOICE_LIBRARY_DIR ?? join(root, '.voice-library'));
 
 /** The state of one local file: ok (looks like an MP3), bad (there, but empty, too small or not an MP3), or missing. */
@@ -103,6 +118,53 @@ function lookup(file) {
   return hasMp3Header(head) ? 'ok' : 'bad';
 }
 
+/** Run `wrangler <args>` with the OWNER's login. $VOICE_WRANGLER replaces the command (tests use a fake). Arguments are an array, never a shell string. */
+function runWrangler(args) {
+  const custom = process.env.VOICE_WRANGLER;
+  const [cmd, pre] = custom ? [custom, []] : ['pnpm', ['--filter', 'api', 'exec', 'wrangler']];
+  const r = spawnSync(cmd, [...pre, ...args], { encoding: 'utf8', cwd: root, timeout: 180_000 });
+  return { status: r.status, stdout: r.stdout ?? '', stderr: `${r.stderr ?? ''}${r.error ? String(r.error) : ''}` };
+}
+
+if (opts.upload) {
+  if (opts.takes !== undefined) fail('--upload sends take 1 (one take per line is the decision); --takes does not apply');
+  const bucket = opts.bucket ?? DEFAULT_BUCKET;
+  if (!BUCKET_PATTERN.test(bucket)) fail(`"${bucket}" is not a valid bucket name`);
+  const jurisdiction = opts.jurisdiction ?? null;
+  if (jurisdiction !== null && !JURISDICTIONS.includes(jurisdiction)) fail(`--jurisdiction must be one of ${JURISDICTIONS.join(', ')}`);
+  let up;
+  try { up = planUpload({ manifest, voice, bucket, fileState: lookup }); } catch (e) { fail(e.message); }
+
+  console.log(opts.yes ? 'Voice Library upload: UPLOAD. This writes to R2 with your Wrangler login.' : 'Voice Library upload: PREVIEW. Nothing is uploaded. Add --yes to upload.');
+  console.log(`Bucket: ${bucket}${jurisdiction === null ? '' : ` (jurisdiction ${jurisdiction})`}   Prefix: ${manifest.prefix}   Folder: ${outDir}   Voice: ${voice ?? 'all'}\n`);
+  console.log(`Ready to upload: ${up.entries.length} file(s).  Missing locally: ${up.missing.length}.  Bad locally: ${up.bad.length}.`);
+  if (up.missing.length > 0 || up.bad.length > 0) {
+    for (const m of up.missing) console.error(`  missing  ${m.voice}  ${m.sources.join(',')}  ${m.file}`);
+    for (const b of up.bad) console.error(`  bad      ${b.voice}  ${b.sources.join(',')}  ${b.file}`);
+    fail('a voice goes up whole or not at all. Render the missing files (or delete the bad ones and render again), then upload.');
+  }
+  if (up.entries.length === 0) fail('nothing to upload for that voice');
+  const bytes = up.entries.reduce((n, e) => n + statSync(join(outDir, e.file)).size, 0);
+  console.log(`Total: ${num(bytes)} bytes. Each goes to <bucket>/${manifest.prefix}<hash> as audio/mpeg, is never overwritten, and is read back and compared.`);
+
+  if (!opts.yes) {
+    console.log('\nFirst and last objects:');
+    for (const e of [up.entries[0], up.entries[up.entries.length - 1]]) console.log(`  ${e.object}   (${e.voice} ${e.sources.join(',')})`);
+    console.log('\nNothing was uploaded. Add --yes to do it.');
+    process.exit(0);
+  }
+  if (!toolsAvailable()) fail('--upload --yes needs ffmpeg and ffprobe on the PATH, to check every clip once more before it is sent');
+  console.log('\nUploading one file at a time, no retries. Stops at the first problem.\n');
+  const result = await uploadFiles({ entries: up.entries, outDir, bucket, jurisdiction, run: runWrangler, log: (l) => console.log(l) });
+  console.log(`\nUploaded ${result.uploaded.length}, already there and identical ${result.already.length}, of ${up.entries.length}.${result.ledgerPath ? `  Ledger: ${result.ledgerPath}  (not committed)` : ''}`);
+  if (result.stopped) {
+    console.error(`\nERROR${result.stopped.entry ? ` at ${result.stopped.entry.voice} ${result.stopped.entry.sources.join(',')}` : ''}: ${result.stopped.message}`);
+    console.error('Starting again skips what is done and checks the rest first.');
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
 let plan;
 try {
   plan = planPrerender({ manifest, lookup, takes, voice, budgetUsd });
@@ -110,7 +172,6 @@ try {
   fail(e.message);
 }
 
-const num = (n) => n.toLocaleString('en-US');
 const usd = (n) => `$${n.toFixed(4)}`;
 const pad = (s, n) => String(s).padEnd(n);
 const lpad = (s, n) => String(s).padStart(n);
