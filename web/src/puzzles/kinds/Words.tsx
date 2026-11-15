@@ -247,7 +247,7 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
         <div className="pz-digits" role="img" aria-label={`Letters so far: ${picked.length} of ${view.n}`}>
           {Array.from({ length: view.n }, (_, i) => <span key={i}>{picked[i] === undefined ? "·" : (view.letters[picked[i] as number]?.ch ?? "·")}</span>)}
         </div>
-        <div className="ui-row ui-row--center">
+        <div className="ui-row ui-row--center pz-btnrow">
           <button type="button" className="ui-button" disabled={picked.length === 0} onClick={clear}>Clear</button>
           {tiltButtons}
         </div>

@@ -137,7 +137,7 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey, 
         />
         <p className="pz-readout pz-maze-status" role="status">{done ? `You reached the ring. Walls hit: ${hits}` : `Walls hit: ${hits}`}</p>
       </div>
-      {tiltButtons ? <div className="ui-row ui-row--center">{tiltButtons}</div> : null}
+      {tiltButtons ? <div className="ui-row ui-row--center pz-btnrow">{tiltButtons}</div> : null}
     </div>
   );
 }

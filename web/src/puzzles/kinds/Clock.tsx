@@ -116,7 +116,7 @@ export default function Clock({ view, feel, submit, announce }: KindProps<"clock
         </svg>
         <p className="pz-readout pz-ck-readout" role="img" aria-label={`The clock shows ${text}`}>{text}</p>
       </div>
-      <p className="ui-hint pz-hint">Drag a hand round the dial, or use the buttons.</p>
+      <p className="ui-hint pz-hint pz-more">Drag a hand round the dial, or use the buttons.</p>
       <div className="pz-field">
         <div className={twist ? "pz-grid4" : "pz-grid3"}>
           <div className="pz-contents" role="group" aria-label="Which hand">

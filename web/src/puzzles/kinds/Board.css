@@ -18,3 +18,8 @@
 @media (orientation: landscape) and (max-height: 32rem) {
   .pz-board-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
+
+/* The smallest screen held upright (320 x 568): "Hear (2)" and the four buttons still share a row. */
+@media (orientation: portrait) and (max-height: 36rem) {
+  .pz-left { display: none; }
+}

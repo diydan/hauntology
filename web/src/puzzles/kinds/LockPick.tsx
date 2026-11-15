@@ -149,13 +149,13 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
           onChange={onSlide} onPointerDown={() => hold("slider", true)} onPointerUp={() => hold("slider", false)} onPointerCancel={() => hold("slider", false)}
         />
       </div>
-      <div className="ui-row ui-row--center">
+      <div className="ui-row ui-row--center pz-btnrow">
         <button type="button" className="ui-button pz-hold" aria-pressed={tension} onClick={onButtonClick} onPointerDown={onButtonDown} onPointerUp={() => hold("button", false)} onPointerCancel={() => hold("button", false)}>
           Tension (hold)
         </button>
         {tiltButtons}
       </div>
-      <p className="ui-hint pz-hint">{tilt === "on" ? "Tilt is on: hold Tension and lean the phone to move the pick." : "Touching the slider holds the tension for you. Or hold the Tension button."}</p>
+      <p className="ui-hint pz-hint pz-more">{tilt === "on" ? "Tilt is on: hold Tension and lean the phone to move the pick." : "Touching the slider holds the tension for you. Or hold the Tension button."}</p>
     </div>
   );
 }

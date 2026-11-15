@@ -125,9 +125,10 @@
  * Fit. The picture of a puzzle takes the height the screen has left, so a puzzle shows whole without scrolling the page where it can.
  * --pz-rest is the height of everything else on that puzzle (the header, the words, the buttons, the message and Give up), measured at 390 px
  * wide; --pz-min is the smallest the picture may get (a dial can shrink, a board you point at must stay big enough for a finger). If it does
- * not fit even then, the page scrolls. 100dvh is the screen as it is now, with the browser bars in or out.
+ * not fit even then, the page scrolls. 100dvh is the screen as it is now, with the browser bars in or out. --pz-chrome is what a page that
+ * hosts the puzzle puts above and below it (the Controller's header and padding): the host sets it, 0 when the puzzle is the whole page.
  */
-.pz-host { --pz-min: 15rem; --pz-h: max(var(--pz-min), calc(100dvh - var(--pz-rest, 0px))); }
+.pz-host { --pz-min: 15rem; --pz-h: max(var(--pz-min), calc(100dvh - var(--pz-rest, 0px) - var(--pz-chrome, 0px))); }
 .pz-host[data-kind='safe'] { --pz-rest: 35.5rem; --pz-min: 11rem; }
 .pz-host[data-kind='clock'] { --pz-rest: 38rem; --pz-min: 11rem; }
 .pz-host[data-kind='wires'] { --pz-rest: 25rem; --pz-min: 17.5rem; }
@@ -164,11 +165,27 @@
 }
 
 /*
+ * A very small screen held upright (a 320 x 568 phone). The explaining lines (the how-to under the heading of a puzzle, which the ? button
+ * also gives) are out of sight, still read aloud; the clue of the Spirit board and the status lines stay. The buttons of a tilt row share one row. Under this height the pictures may
+ * shrink a little further; they never go under a size a finger can use.
+ */
+@media (orientation: portrait) and (max-height: 36rem) {
+  .pz-more, .pz-stage .pz-hint:not(.pz-clue-line, [role='status']) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .pz-host[data-kind='safe'], .pz-host[data-kind='clock'] { --pz-min: 8rem; }
+  .pz-host[data-kind='photo'] { --pz-min: 16rem; }
+  .pz-host[data-kind='words'] { --pz-min: 12rem; }
+  .pz-digits > span { height: 2.75rem; }
+  .pz-under, .pz-lit { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } /* the Pick button says the same: Pick E */
+  .pz-btnrow { flex-wrap: nowrap; }
+  .pz-btnrow > .ui-button { flex: 1 1 auto; min-width: 0; padding: 0 var(--space-1); white-space: nowrap; font-size: var(--text-small); }
+}
+
+/*
  * A phone held sideways has width and no height. The picture goes on the left and the controls beside it; the header, the message and
  * Give up go in a narrow column on the right. Each puzzle marks its picture with .pz-visual.
  */
 @media (orientation: landscape) and (max-height: 32rem) {
-  .pz-host { --pz-h: max(9rem, calc(100dvh - 5.5rem)); max-width: none; grid-template-columns: minmax(0, 1fr) 11rem; grid-template-areas: "stage bar" "stage feedback" "stage foot"; grid-template-rows: auto auto 1fr; align-items: start; column-gap: var(--space-3); row-gap: var(--space-2); }
+  .pz-host { --pz-h: max(9rem, calc(100dvh - 5.5rem - var(--pz-chrome, 0px))); max-width: none; grid-template-columns: minmax(0, 1fr) 11rem; grid-template-areas: "stage bar" "stage feedback" "stage foot"; grid-template-rows: auto auto 1fr; align-items: start; column-gap: var(--space-3); row-gap: var(--space-2); }
   .pz-host > .pz-bar-row { grid-area: bar; flex-direction: column; align-items: stretch; }
   .pz-host > .pz-stage { grid-area: stage; min-height: 0; padding: var(--space-2); }
   .pz-host > .pz-feedback { grid-area: feedback; }

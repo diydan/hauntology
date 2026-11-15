@@ -116,7 +116,7 @@ export default function MusicBox({ view, feel, submit, announce, resetKey }: Kin
       <div className="ui-row ui-row--center">
         <button type="button" className="ui-button" disabled={notes.length === 0} onClick={clear}>Clear</button>
       </div>
-      <p className="ui-hint pz-hint">No sound? Watch the keys light up: the tune is shown by the shapes.</p>
+      <p className="ui-hint pz-hint pz-more">No sound? Watch the keys light up: the tune is shown by the shapes.</p>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import { defaultWorld, makeStepper, newBall, type Ball } from "@hauntology/shared/puzzles/tilt-ball";
 import { layer } from "../art/canvas-paint";
 import { CANVAS } from "../art/palette";
@@ -213,7 +213,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
 
   const left = view.plays - heard;
   const hearText = !hear ? "No voice here" : left > 0 ? `Hear the word (${left} left)` : "No more whispers";
-  const hearShort = !hear ? hearText : `Hear (${Math.max(0, left)} left)`; // short enough that Clear, Hear, Tilt and Level share one row on a phone
+  const hearShort: ReactNode = !hear ? hearText : <>Hear ({Math.max(0, left)}<span className="pz-left"> left</span>)</>; // short enough that Clear, Hear, Tilt and Level share one row on a phone (the word "left" goes on the smallest screens)
   return (
     <div className="pz-board-kind">
       <p className="pz-hint pz-clue-line">Clue: {view.clue} · {view.length} letters</p>

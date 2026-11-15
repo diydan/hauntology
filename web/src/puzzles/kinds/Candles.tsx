@@ -171,7 +171,7 @@ export default function Candles({ view, feel, reducedMotion, submit, announce, r
         </div>
         <p className="pz-readout pz-out-so-far" role="img" aria-label={`Out so far: ${out.length === 0 ? "none" : out.map((c) => c + 1).join(", ")}`}>{out.length === 0 ? "Out so far: none" : `Out so far: ${out.map((c) => c + 1).join(" then ")}`}</p>
       </div>
-      <p className="ui-hint pz-hint">Or blow them out: tap Blow to snuff, tap a candle, then blow on the phone. The microphone is optional and only measures loudness. Nothing is recorded.</p>
+      <p className="ui-hint pz-hint pz-more">Or blow them out: tap Blow to snuff, tap a candle, then blow on the phone. The microphone is optional and only measures loudness. Nothing is recorded.</p>
       <div className="ui-row ui-row--center">
         <button type="button" className="ui-button" disabled={showing || out.length === 0} onClick={relight}>Relight</button>
         <button type="button" className="ui-button" aria-pressed={listening} onClick={() => void toggleMic()}>Blow to snuff</button>
