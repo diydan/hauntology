@@ -71,8 +71,14 @@ Faded flow for memory puzzles, and a result card to copy. Add `#seed=12345&level
 ## Run and deploy
 
 ```
-node build.mjs            # copies the public files into dist/ (and design/ to dist/design/); leaves dist/puzzles alone
+node build.mjs            # copies the public files into dist/ (and design/ to dist/design/); empties dist/ except dist/puzzles
+node build-apps.mjs       # builds the web app's two phone pages with vite: dist/puzzles/ and dist/controller/ (run it after build.mjs)
 wrangler deploy           # Worker + assets + Durable Object, custom domain mtest.hauntology.app
+```
+
+In one line: `node build.mjs && node build-apps.mjs && wrangler deploy`. `/controller/` is the phone Controller with a stand-in Room (the Room Code K7M2 joins as the Master; MAX6 is full, STR4 has started). Any session that deploys the lab should run `build-apps.mjs` first, or the live puzzles are the last ones built.
+
+```
 node serve.mjs            # local static server on 127.0.0.1:8787 (no lab, no https: tilt will not work)
 node serve.mjs 8791 --dist  # the same, but serving the built dist/ (has /design/ and /media/), with byte ranges for Safari video
 ```

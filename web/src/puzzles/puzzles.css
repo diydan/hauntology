@@ -171,12 +171,16 @@
  */
 @media (orientation: portrait) and (max-height: 36rem) {
   .pz-more, .pz-stage .pz-hint:not(.pz-clue-line, [role='status']) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .pz-host[data-kind='safe'], .pz-host[data-kind='clock'] { --pz-min: 8rem; }
-  .pz-host[data-kind='photo'] { --pz-min: 16rem; }
-  .pz-host[data-kind='words'] { --pz-min: 12rem; }
   .pz-digits > span { height: 2.75rem; }
   .pz-under, .pz-lit { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } /* the Pick button says the same: Pick E */
   .pz-btnrow { flex-wrap: nowrap; }
+  /* Give up sits on the row of the status line, not on a row of its own (it is 48 px tall, so that is 56 px given back). The confirmation, and a row of more than one button, still take a whole row. */
+  .pz-host { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .pz-host > * { grid-column: 1 / -1; }
+  .pz-host > .pz-feedback { grid-column: 1; min-width: 0; }
+  .pz-host > .pz-foot-wrap { grid-column: 2; }
+  .pz-host > .pz-foot-wrap:has(.pz-give, .pz-foot > :nth-child(2)) { grid-column: 1 / -1; }
+  .pz-host[data-kind='board'] { --pz-min: 12rem; }
   .pz-btnrow > .ui-button { flex: 1 1 auto; min-width: 0; padding: 0 var(--space-1); white-space: nowrap; font-size: var(--text-small); }
 }
 

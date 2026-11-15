@@ -72,20 +72,25 @@ describe("puzzle fit", () => {
     expect(band).toMatch(/\.pz-lit \{ min-height: 1\.5rem; \}/);
   });
 
-  it("gives the smallest screen held upright (320 x 568) its own band: the how-to lines out of sight, the tilt buttons in one row, lower floors for four pictures", () => {
+  it("gives the smallest screen held upright (320 x 568) its own band: the how-to lines out of sight, the tilt buttons in one row, Give up on the status row, a 12 rem board", () => {
     const tiny = /@media \(orientation: portrait\) and \(max-height: 36rem\) \{([\s\S]*?)\n\}/.exec(puzzlesCss)![1]!;
     expect(tiny).toMatch(/\.pz-stage \.pz-hint:not\(\.pz-clue-line, \[role='status'\]\) \{ position: absolute;/); // out of sight, still read aloud; the Spirit board's clue and the status lines stay
     expect(tiny).toMatch(/\.pz-btnrow \{ flex-wrap: nowrap; \}/);
     expect(tiny).toMatch(/\.pz-btnrow > \.ui-button \{[^}]*flex: 1 1 auto;[^}]*white-space: nowrap;/);
-    expect(tiny).toMatch(/\.pz-host\[data-kind='safe'\], \.pz-host\[data-kind='clock'\] \{ --pz-min: 8rem; \}/);
-    expect(tiny).toMatch(/\.pz-host\[data-kind='photo'\] \{ --pz-min: 16rem; \}/); // the tray pieces stay 48 px or more
-    expect(tiny).toMatch(/\.pz-host\[data-kind='words'\] \{ --pz-min: 12rem; \}/);
     expect(tiny).toMatch(/\.pz-under, \.pz-lit \{ position: absolute;/); // the Pick button says the same
+    // Give up goes on the row of the status line; the confirmation and a row of more than one button take a row of their own
+    expect(tiny).toMatch(/\.pz-host \{ grid-template-columns: minmax\(0, 1fr\) auto;/);
+    expect(tiny).toMatch(/\.pz-host > \* \{ grid-column: 1 \/ -1; \}/);
+    expect(tiny).toMatch(/\.pz-host > \.pz-feedback \{ grid-column: 1;/);
+    expect(tiny).toMatch(/\.pz-host > \.pz-foot-wrap \{ grid-column: 2; \}/);
+    expect(tiny).toMatch(/\.pz-foot-wrap:has\(\.pz-give, \.pz-foot > :nth-child\(2\)\) \{ grid-column: 1 \/ -1; \}/);
+    expect(tiny).toMatch(/\.pz-host\[data-kind='board'\] \{ --pz-min: 12rem; \}/);
     // the rows and the lines the band speaks of are marked in the screens
     for (const k of ["LockPick", "Words", "Maze"]) expect(sources[`./kinds/${k}.tsx`], k).toMatch(/ui-row ui-row--center pz-btnrow/);
     for (const k of ["LockPick", "Candles", "MusicBox", "Clock"]) expect(sources[`./kinds/${k}.tsx`], k).toMatch(/ui-hint pz-hint pz-more/);
     expect(sources["./kinds/Board.tsx"]).toMatch(/<span className="pz-left"> left<\/span>/); // "Hear (2)" on the smallest screen, so the four buttons share a row
-    expect(kindCss["./kinds/Board.css"]).toMatch(/\(max-height: 36rem\) \{\s*\.pz-left \{ display: none; \}/);
+    expect(sources["./kinds/Board.tsx"]).toMatch(/<span className="pz-n"> · \{view\.length\} letters<\/span>/); // the clue is one line there: the letters boxes say how many
+    expect(kindCss["./kinds/Board.css"]).toMatch(/\(max-height: 36rem\) \{\s*\.pz-left \{ display: none; \}\s*\.pz-n \{ position: absolute;/);
   });
 
   it("lays a phone held sideways out in two columns: the picture left, the controls beside it, the header, the message and Give up in a narrow column", () => {

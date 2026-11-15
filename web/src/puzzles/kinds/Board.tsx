@@ -216,7 +216,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
   const hearShort: ReactNode = !hear ? hearText : <>Hear ({Math.max(0, left)}<span className="pz-left"> left</span>)</>; // short enough that Clear, Hear, Tilt and Level share one row on a phone (the word "left" goes on the smallest screens)
   return (
     <div className="pz-board-kind">
-      <p className="pz-hint pz-clue-line">Clue: {view.clue} · {view.length} letters</p>
+      <p className="pz-hint pz-clue-line">Clue: {view.clue}<span className="pz-n"> · {view.length} letters</span></p>
       <canvas
         ref={canvas} className="pz-canvas pz-spirit pz-visual" width={BOARD_W * Math.min(2, window.devicePixelRatio || 1)} height={BOARD_H * Math.min(2, window.devicePixelRatio || 1)}
         role="application" tabIndex={0} aria-label="Spirit board. Arrow keys jump between letters. Enter picks the letter."

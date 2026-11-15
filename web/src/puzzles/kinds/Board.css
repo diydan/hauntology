@@ -22,4 +22,5 @@
 /* The smallest screen held upright (320 x 568): "Hear (2)" and the four buttons still share a row. */
 @media (orientation: portrait) and (max-height: 36rem) {
   .pz-left { display: none; }
+  .pz-n { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } /* the letters boxes say how many: the clue is one line */
 }
