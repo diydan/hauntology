@@ -262,7 +262,8 @@ section{position:relative;overflow-x:clip}
 .hero-fallback svg{position:absolute;right:4%;bottom:0;width:min(62%,620px);height:auto}
 .hero.no-gl #herogl{display:none}.hero.no-gl .hero-fallback{display:block}
 .hero-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(10,13,17,.86) 0%,rgba(10,13,17,.5) 36%,rgba(10,13,17,0) 62%),linear-gradient(0deg,rgba(14,17,20,.92) 0%,rgba(14,17,20,0) 44%)}
-.hero-dark{position:absolute;inset:0;background:var(--ink);opacity:calc((var(--hp,0) - .8) * 5.5);pointer-events:none}
+.hero-dark{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 78% 74% at 50% 54%,rgba(14,17,20,0) calc(62% - var(--hp,0) * 55%),var(--ink) calc(100% - var(--hp,0) * 25%));opacity:calc((var(--hp,0) - .42) * 4)}
+.hero-dark::after{content:"";position:absolute;inset:0;background:var(--ink);opacity:calc((var(--hp,0) - .9) * 10)}
 .hero-copy{position:absolute;left:0;right:0;bottom:0;padding-bottom:clamp(22px,5vh,56px);pointer-events:none;opacity:calc(1 - var(--hp,0) * 6.4);translate:0 calc(var(--hp,0) * -150px)}
 .hero-copy a,.hero-copy button{pointer-events:auto}
 .hero h1{font-size:clamp(3.5rem,12.5vw,10.2rem);line-height:.86;letter-spacing:-.025em;margin:0 0 clamp(10px,1.8vw,22px);text-shadow:0 4px 40px rgba(0,0,0,.55)}
