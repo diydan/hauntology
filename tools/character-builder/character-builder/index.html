@@ -753,7 +753,7 @@ async function makeMat(keyName, side) {
     if (isSkin) {
       Object.assign(sh.uniforms, { uSkDet: SK.det, uSkStr: SK.str, uSkInv: SK.inv });
       sh.vertexShader = 'attribute vec3 aInset; attribute float aHide; varying vec3 vSkP, vSkN; varying float vSkHide;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vSkP = position; vSkN = normal; vSkHide = aHide; transformed += aInset; // aInset: skin that would poke through a garment is pushed back under it (insetBody)');
-      sh.fragmentShader = SK_GLSL + '\nvarying float vSkHide;\n' + sh.fragmentShader.replace(anchor, anchor + '\n' + SK_FRAG).replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n if ( vSkHide > 0.02 ) discard; // skin a garment fully covers is not drawn, so it cannot poke through in any pose');
+      sh.fragmentShader = SK_GLSL + '\nvarying float vSkHide;\n' + sh.fragmentShader.replace(anchor, anchor + '\n' + SK_FRAG).replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n if ( vSkHide > 0.5 ) discard; // skin a garment fully covers is not drawn, so it cannot poke through in any pose');
     }
     if (isHair) {
       Object.assign(sh.uniforms, { uHrDet: HR.det, uHrStr: HR.str, uHrM: HR.m, uHrShine: HR.shine, uHrRoot: HR.root, uHrFlip: HR.flip, uHrKey: HR.key, uHrRim1: HR.rim1, uHrRim2: HR.rim2 });
@@ -963,7 +963,7 @@ function insetBody() {
       const mn = [Math.min(v[0], v[3], v[6]), Math.min(v[1], v[4], v[7]), Math.min(v[2], v[5], v[8])], mx = [Math.max(v[0], v[3], v[6]), Math.max(v[1], v[4], v[7]), Math.max(v[2], v[5], v[8])];
       for (let k = 0; k < 3; k++) { lo[k] = Math.min(lo[k], mn[k]); hi[k] = Math.max(hi[k], mx[k]); }
       for (let x = Math.floor(mn[0] / CELL); x <= Math.floor(mx[0] / CELL); x++) for (let y = Math.floor(mn[1] / CELL); y <= Math.floor(mx[1] / CELL); y++) for (let z = Math.floor(mn[2] / CELL); z <= Math.floor(mx[2] / CELL); z++) { const k = x + ',' + y + ',' + z; let l = grid.get(k); if (!l) grid.set(k, l = []); l.push(ti); } } }
-  const MAXD = 2.6, STEP = 0.7, pad = 3, hidden = new Set(), depth = new Map(), nrm = new Map(), qk = (x, y, z) => Math.round(x * 50) + ',' + Math.round(y * 50) + ',' + Math.round(z * 50);
+  const MAXD = 2.6, STEP = 0.7, pad = 6, hidden = new Set(), depth = new Map(), nrm = new Map(), qk = (x, y, z) => Math.round(x * 50) + ',' + Math.round(y * 50) + ',' + Math.round(z * 50);
   const hit = (ox, oy, oz, dx, dy, dz, maxd = MAXD) => { let best = Infinity; const seen = new Set();
     for (let s = 0; s <= maxd; s += STEP) { const k = key3(ox + dx * s, oy + dy * s, oz + dz * s), l = grid.get(k); if (!l) continue;
       for (const ti of l) { if (seen.has(ti)) continue; seen.add(ti); const v = tris[ti], e1x = v[3] - v[0], e1y = v[4] - v[1], e1z = v[5] - v[2], e2x = v[6] - v[0], e2y = v[7] - v[1], e2z = v[8] - v[2];
@@ -986,11 +986,29 @@ function insetBody() {
       if (best > 0) add.set(k, best); }
     for (const [k, v] of add) depth.set(k, v); }
   // long skirts and dresses: every bit of leg inside the skirt's outline (per height and direction, as worn after the hem fit) is hidden down to the hem, so knees can't show through when seated
-  const skirtIn = []; for (const g of garments) { if (!g.userData.skirt) continue; const P = g.geometry.attributes.position, G = g.geometry.attributes.aGarm, SL = 2, NA = 24; let hemY = Infinity, topY = -Infinity, cx = 0, cz = 0, n = 0;
+  const skirtIn = []; for (const g of garments) { if (!g.userData.skirt) continue; { const P0 = g.geometry.attributes.position, G0 = g.geometry.attributes.aGarm; let lo0 = Infinity, hi0 = -Infinity; for (let i = 0; i < P0.count; i++) { const y = P0.getY(i) + (G0 ? G0.getY(i) : 0); lo0 = Math.min(lo0, y); hi0 = Math.max(hi0, y); } if (hi0 - lo0 < 45) continue; } /* long skirts only: a short skirt's legs are mostly out */ const P = g.geometry.attributes.position, G = g.geometry.attributes.aGarm, SL = 2, NA = 24; let hemY = Infinity, topY = -Infinity, cx = 0, cz = 0, n = 0;
     for (let i = 0; i < P.count; i++) { const y = P.getY(i) + (G ? G.getY(i) : 0); hemY = Math.min(hemY, y); topY = Math.max(topY, y); cx += P.getX(i); cz += P.getZ(i); n++; } cx /= n; cz /= n;
     const rad = new Map(); for (let i = 0; i < P.count; i++) { const y = P.getY(i) + (G ? G.getY(i) : 0), dx = P.getX(i) - cx, dz = P.getZ(i) - cz, k = Math.floor(y / SL) + ',' + (((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA); rad.set(k, Math.max(rad.get(k) || 0, Math.hypot(dx, dz))); }
-    skirtIn.push({ hemY, topY, inside: (x, y, z) => { if (y < hemY + 1 || y > topY - 12) return false; const dx = x - cx, dz = z - cz, a0 = ((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA; let r = 0; for (const da of [-1, 0, 1]) for (const dy of [-1, 0, 1]) r = Math.max(r, rad.get((Math.floor(y / SL) + dy) + ',' + ((a0 + da + NA) % NA)) || 0); return Math.hypot(dx, dz) < r - 0.3; } }); }
+    skirtIn.push({ hemY, topY, inside: (x, y, z) => { if (y < hemY + 5 || y > topY - 12) return false; const dx = x - cx, dz = z - cz, a0 = ((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA; let r = 0; for (const da of [-1, 0, 1]) for (const dy of [-1, 0, 1]) r = Math.max(r, rad.get((Math.floor(y / SL) + dy) + ',' + ((a0 + da + NA) % NA)) || 0); return Math.hypot(dx, dz) < r - 0.3; } }); }
   if (skirtIn.length) for (const [k, nn] of nrm) if (skirtIn.some(sk => sk.inside(nn[3], nn[4], nn[5]))) hidden.add(k);
+  // keep only skin WELL inside a garment: skin within ER cm of a garment's OPENING (hem, cuff, collar, shoe top: edges with one triangle) stays drawn,
+  // because a moving leg or foot brings it out past the opening (holes at knees and ankles). Distance to the opening, not to bare skin: inner thighs are bare but deep inside a skirt
+  if (hidden.size) { const ER = 4, CK = 9, cell = new Map(), ck = (x, y, z) => Math.floor(x / CK) + ',' + Math.floor(y / CK) + ',' + Math.floor(z / CK), pk = (x, y, z) => Math.round(x * 20) + ',' + Math.round(y * 20) + ',' + Math.round(z * 20);
+    for (const m of garments) { const P = m.geometry.attributes.position, I = m.geometry.index, G = m.geometry.attributes.aGarm, n = I ? I.count : P.count, at = j => [P.getX(j), P.getY(j) + (G ? G.getY(j) : 0), P.getZ(j)], edges = new Map();
+      for (let t = 0; t + 2 < n; t += 3) { const v = [I ? I.getX(t) : t, I ? I.getX(t + 1) : t + 1, I ? I.getX(t + 2) : t + 2].map(j => [pk(...at(j)), at(j)]);
+        for (const [a, b] of [[v[0], v[1]], [v[1], v[2]], [v[2], v[0]]]) { const k = a[0] < b[0] ? a[0] + '|' + b[0] : b[0] + '|' + a[0], e = edges.get(k); if (e) e.n++; else edges.set(k, { n: 1, p: a[1], q: b[1] }); } }
+      let y0 = Infinity, y1 = -Infinity, x1 = 0; for (let j = 0; j < P.count; j++) { const o = at(j); y0 = Math.min(y0, o[1]); y1 = Math.max(y1, o[1]); x1 = Math.max(x1, Math.abs(o[0])); }
+      const shoe = /shoe|boot/i.test(m.name), real = o => shoe ? o[1] > y1 - 3 : (o[1] < y0 + 4 || Math.abs(o[0]) > x1 - 4); // the real openings only: a hem or trouser cuff (bottom), a sleeve end (the far ends of the arms in the bind pose), a shoe's top; panel seams don't count
+      for (const e of edges.values()) if (e.n === 1) for (const o of [e.p, e.q]) if (real(o)) { const r = !shoe && o[1] < y0 + 4 ? 9 : ER, c = ck(...o); (cell.get(c) || cell.set(c, []).get(c)).push([o[0], o[1], o[2], r]); } } // a bottom hem keeps 9 cm: legs spread and step far out from under a skirt or shorts
+    // bottom hems by column: under each bit of skin, the lowest point of any (non-shoe) garment within 6 cm sideways; skin less than 9 cm above it stays drawn (works for hems with no open edge, like a doubled skirt hem)
+    const COL = 2, colMin = new Map(); for (const m of garments) { if (/shoe|boot/i.test(m.name)) continue; const P = m.geometry.attributes.position, G = m.geometry.attributes.aGarm;
+      for (let j = 0; j < P.count; j++) { const k2 = Math.floor(P.getX(j) / COL) + ',' + Math.floor(P.getZ(j) / COL), y = P.getY(j) + (G ? G.getY(j) : 0); if (!(colMin.get(k2) <= y)) colMin.set(k2, y); } }
+    const hemBelow = (x, y, z) => { let lo = Infinity; const cx = Math.floor(x / COL), cz = Math.floor(z / COL); for (let a = -3; a <= 3; a++) for (let c = -3; c <= 3; c++) { const v = colMin.get((cx + a) + ',' + (cz + c)); if (v !== undefined && v < lo) lo = v; } return lo; };
+    const drop = []; for (const k of hidden) { const nn = nrm.get(k), cx = Math.floor(nn[3] / CK), cy = Math.floor(nn[4] / CK), cz = Math.floor(nn[5] / CK); let near = false;
+      for (let a = -1; a <= 1 && !near; a++) for (let b = -1; b <= 1 && !near; b++) for (let c = -1; c <= 1 && !near; c++) { const l = cell.get((cx + a) + ',' + (cy + b) + ',' + (cz + c)); if (l) for (const o of l) if (Math.hypot(o[0] - nn[3], o[1] - nn[4], o[2] - nn[5]) < o[3]) { near = true; break; } }
+      if (!near) { const up = nn[4] - hemBelow(nn[3], nn[4], nn[5]); if (up >= 0 && up < 9) near = true; } // only skin ABOVE the hem it is under (feet below a trouser cuff are the shoes' business)
+      if (near) drop.push(k); }
+    for (const k of drop) hidden.delete(k); }
   for (const m of bodies) { const P = m.geometry.attributes.position, arr = new Float32Array(P.count * 3);
     for (let i = 0; i < P.count; i++) { const k = qk(P.getX(i), P.getY(i), P.getZ(i)), d = depth.get(k); if (d) { const nn = nrm.get(k); arr[3 * i] = -nn[0] * d; arr[3 * i + 1] = -nn[1] * d; arr[3 * i + 2] = -nn[2] * d; } }
     setAll(m, arr);
@@ -1925,6 +1943,21 @@ async function fpClassMask(img, N, cls, blur = 0) {
 async function fpHairMask(img, N) { return fpClassMask(img, N, 1, 3); }
 /* The photo with its hair pixels bled outward: every pixel the mask calls "not hair" takes the colour of the nearest hair pixel (a two-pass nearest-seed sweep), fading to the hair's average far
    from any hair. Printing this everywhere is what lets the hair blend: same colours, same strand direction, no seam between the printed front and the sides. */
+/* How wavy the photo's hair is: in small blocks inside the hair, how strongly the brightness edges agree on ONE direction (structure-tensor coherence).
+   Straight hair: long parallel strands, high coherence. Wavy or curly: the direction turns within a block, low coherence. Returns 0 (straight) .. 1 (very wavy). */
+function fpHairWave(img, mask) {
+  const W = mask.W, H = mask.H, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
+  const d = g.getImageData(0, 0, W, H).data, a = mask.a, L = new Float32Array(W * H); for (let i = 0; i < W * H; i++) L[i] = 0.2126 * d[4 * i] + 0.7152 * d[4 * i + 1] + 0.0722 * d[4 * i + 2];
+  const B = Math.max(8, Math.round(W / 48)); let cs = 0, ws = 0, nb = 0;
+  for (let by = 1; by + B < H - 1; by += B) for (let bx = 1; bx + B < W - 1; bx += B) {
+    let jxx = 0, jyy = 0, jxy = 0, inside = 0;
+    for (let y = by; y < by + B; y++) for (let x = bx; x < bx + B; x++) { const i = y * W + x; if (a[i] > 0.6) inside++; const gx = L[i + 1] - L[i - 1], gy = L[i + W] - L[i - W]; jxx += gx * gx; jyy += gy * gy; jxy += gx * gy; }
+    if (inside < B * B * 0.9) continue; const tr = jxx + jyy; if (tr < B * B * 20) continue; // only blocks fully inside the hair, with visible strands
+    const coh = Math.sqrt((jxx - jyy) ** 2 + 4 * jxy * jxy) / tr; cs += coh * tr; ws += tr; nb++;
+  }
+  if (nb < 6) return null; const coh = cs / ws;
+  return { coh: +coh.toFixed(3), blocks: nb, wave: +Math.max(0, Math.min(1, (0.5 - coh) / 0.25)).toFixed(2) };
+}
 function fpHairBleed(img, mask) {
   const W = mask.W, H = mask.H, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
   const src = g.getImageData(0, 0, W, H), d = src.data, a = mask.a, n = W * H, seed = new Int32Array(n).fill(-1), dist = new Float32Array(n).fill(1e9);
@@ -2108,7 +2141,7 @@ async function setFacePrint(id, custom) {
   FP.skinMask = await fpClassMask(tex.image, cfg.size, [1, 2, 3], 8); /* skin AND hair: the scalp under the hair shell is printed with the photo's hair colour, so a gap between locks shows hair, not bare skin */ FP.u.uFpSkinMask.value = FP.skinMask ? FP.skinMask.tex : BLACK; // the photo's skin (face + neck), softly edged: the neck is printed where it shows
   // 3. the hair mask: print the photo's hair on the hair shell and bend the shell to the photo's hair outline
   let hairFit = null; FP.hairMask = null; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0;
-  if (FP.matchHair && parts.hair && !cfg.noHairPrint) { FP.hairMask = await fpHairMask(tex.image, cfg.size); if (FP.hairMask) { HP.mask.value = FP.hairMask.tex; HP.texE.value = fpHairBleed(tex.image, FP.hairMask) || WHITE; { const fm = await fpClassMask(tex.image, cfg.size, [3], 4); HP.face.value = fm ? fm.tex : BLACK; } hairFit = fitHair(c, FP.hairMask); } }
+  if (FP.matchHair && parts.hair && !cfg.noHairPrint) { FP.hairMask = await fpHairMask(tex.image, cfg.size); if (FP.hairMask) { HP.mask.value = FP.hairMask.tex; HP.texE.value = fpHairBleed(tex.image, FP.hairMask) || WHITE; FP.hairWave = fpHairWave(tex.image, FP.hairMask); { const fm = await fpClassMask(tex.image, cfg.size, [3], 4); HP.face.value = fm ? fm.tex : BLACK; } hairFit = fitHair(c, FP.hairMask); } }
   // 4. body shape from the full-body picture (before the colour loops, which look at the finished body)
   let bodyFit = null; if (FP.matchBody && cfg.full) { bodyFit = await fpBodyFit(cfg.full); if (!bodyFit && FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; } }
   FP.hairMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace); applyBeauty(); fpApply(); applyEverything(); const cal = calibrateSkin(); const hcal = cal && cal.length ? calibrateHair(cal[cal.length - 1].face) : null; if (hcal) applyEverything(); // 5. clothes from the shoulders picture, at the exposure the printed face shows
@@ -2914,5 +2947,5 @@ initRecruitControls();
 const bootSeed = /seed=(\d+)/.exec(location.hash);
 if (bootSeed) randomLook(+bootSeed[1], true, false);
 const ready = buildAll().catch(e => { console.error(e); status('failed: ' + e.message); });
-window.__cb = { EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
+window.__cb = { fpHairWave, HC, EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
 </script></body></html>
