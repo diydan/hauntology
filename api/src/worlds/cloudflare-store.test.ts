@@ -232,3 +232,45 @@ describe("removeObjects", () => {
     expect(bucket.deletes).toHaveLength(2);
   });
 });
+
+describe("create and update", () => {
+  const record = (over: Record<string, unknown> = {}) => ({ id: "w-1", kind: "user" as const, ownerSid: "sid-a", status: "queued" as const, ...over });
+
+  it("makes a record once and says no to a second with the same id", async () => {
+    const { store, jobs } = setup();
+    expect(await store.create(record())).toBe(true);
+    expect(await store.create(record({ ownerSid: "sid-thief" }))).toBe(false);
+    expect(await store.find("w-1")).toMatchObject({ ownerSid: "sid-a", status: "queued" });
+    expect(jobs.asked).toContain("w-1");
+  });
+
+  it("throws, rather than pretend, when the WorldJob refuses a record", async () => {
+    const { store } = setup();
+    await expect(store.create(record({ ownerSid: "" }))).rejects.toThrow(/refused/);
+    await expect(store.create({ ...record(), kind: "gallery" })).rejects.toThrow(/refused/);
+  });
+
+  it("changes a record, and never its owner, kind or id", async () => {
+    const { store } = setup();
+    await store.create(record());
+    expect(await store.update("w-1", { status: "failed", failure: { code: "timeout", quotaReturned: true, retryAllowed: true } })).toMatchObject({ status: "failed", ownerSid: "sid-a" });
+    const sneaky = { status: "ready", ownerSid: "sid-thief", id: "w-other", kind: "gallery" } as unknown as Parameters<typeof store.update>[1];
+    expect(await store.update("w-1", sneaky)).toMatchObject({ id: "w-1", ownerSid: "sid-a", kind: "user", status: "ready" });
+  });
+
+  it("answers null for a record that is not there, or a change that does not fit", async () => {
+    const { store } = setup();
+    expect(await store.update("w-none", { status: "ready" })).toBeNull();
+    await store.create(record());
+    expect(await store.update("w-1", { status: "weird" } as unknown as Parameters<typeof store.update>[1])).toBeNull();
+    expect((await store.find("w-1"))?.status).toBe("queued");
+  });
+
+  it("throws when the WorldJob fails for another reason", async () => {
+    const { store, jobs } = setup();
+    jobs.get = () => ({ fetch: async () => new Response("boom", { status: 500 }) });
+    await expect(store.update("w-1", { status: "ready" })).rejects.toThrow(/refused/);
+    await expect(store.create(record())).rejects.toThrow(/refused/);
+  });
+});
+

@@ -1,0 +1,3 @@
+# Copy to .dev.vars for `wrangler dev`. Never commit real values.
+HMAC_SECRET=replace-with-at-least-16-random-characters
+# TURNSTILE_SECRET=

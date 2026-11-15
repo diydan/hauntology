@@ -20,5 +20,7 @@ export const StoredWorldSchema = z.object({
   manifest: WorldManifestSchema.optional(),
   imageId: Id.optional(),
   candidateIds: z.array(Id).max(16).optional(),
+  /** A short name for the Confirm Token that started this world, so the same token cannot start another (Requirement 4.4). */
+  confirmId: z.string().regex(/^[A-Za-z0-9_-]{22}$/).optional(),
 });
 export type StoredWorld = z.infer<typeof StoredWorldSchema>;

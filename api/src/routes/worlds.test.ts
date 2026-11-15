@@ -145,6 +145,20 @@ describe("GET /api/worlds/:id/assets/:name", () => {
     expect(r.headers.get("Cache-Control")).toBe("public, max-age=31536000, immutable");
   });
 
+  it("writes no Session cookie on a response anyone may cache, even for a visitor with no Session", async () => {
+    const kit = worldsKit();
+    kit.readyWorld(GALLERY, null, { kind: "gallery" });
+    const whole = await bytesOf(kit, `/api/worlds/${GALLERY}/assets/thumb.jpg`, kit.anonymous());
+    expect(whole.headers.get("Cache-Control")).toMatch(/^public/);
+    expect(whole.headers.get("Set-Cookie")).toBeNull();
+    const part = await bytesOf(kit, `/api/worlds/${GALLERY}/assets/splat-500k.spz`, kit.anonymous(), { Range: "bytes=0-1" });
+    expect(part.status).toBe(206);
+    expect(part.headers.get("Set-Cookie")).toBeNull();
+    // A page that is not cacheable still gives a new visitor a Session.
+    const status = await kit.app.request("http://app.test/api/worlds/" + GALLERY, { headers: kit.anonymous() }, { HMAC_SECRET: "test-secret-0123456789abcdef-test" });
+    expect(status.headers.get("Set-Cookie")).toMatch(/^hw_session=/);
+  });
+
   it("answers a range with 206 and the bytes asked for", async () => {
     const { kit, owner } = await setup();
     const r = await bytesOf(kit, `/api/worlds/${ID}/assets/splat-500k.spz`, owner.headers, { Range: "bytes=2-5" });

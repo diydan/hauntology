@@ -22,14 +22,23 @@ export type WorldRecord = {
   /** The Place Image and the sketch candidates, so that deleting the world can delete them too. */
   imageId?: string;
   candidateIds?: string[];
+  /** The Confirm Token that started this world (a short name for it). */
+  confirmId?: string;
 };
 
 /** An inclusive byte range, as in an HTTP `Range` header. */
 export type ByteRange = { start: number; end: number };
 
+/** The fields a job may change on a world's record. `id`, `kind` and `ownerSid` never change. */
+export type WorldPatch = Partial<Pick<WorldRecord, "status" | "title" | "failure" | "manifest" | "imageId" | "candidateIds">>;
+
 export interface WorldStore {
   /** The record of a world, or `null` when there is none. */
   find(id: string): Promise<WorldRecord | null>;
+  /** Makes a user world's record. `false` when a record with that id exists already (nothing is changed). */
+  create(record: WorldRecord): Promise<boolean>;
+  /** Changes a record. `null` when there is none, or when the result would not fit. */
+  update(id: string, patch: WorldPatch): Promise<WorldRecord | null>;
   /**
    * The size of one file of a world's bundle, or `null` when it is not there. It takes the record, not
    * the id, because a Gallery bundle and a user's bundle are kept in different places.

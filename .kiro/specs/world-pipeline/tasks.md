@@ -47,15 +47,18 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
   - [ ]* 3.7 Write property test for blank-sketch rejection
     - **Property 4: Blank sketches are rejected**
     - **Validates: Requirements 2.2**
-  - [ ] 3.8 Confirm token sign/verify (WebCrypto HMAC-SHA-256)
+  - [x] 3.8 Confirm token sign/verify (WebCrypto HMAC-SHA-256)
+    - Built in `shared/src/world/confirm-token.ts`: `c1.<payload>.<mac>` binding image id, image hash and Session id, valid for exactly 10 minutes (`CONFIRM_TTL_MS`), the MAC covers a context line so a Session cookie can never pass as one, `confirmIdOf(token)` names a token for the world it started.
     - _Requirements: 4.2, 4.3_
-  - [ ]* 3.9 Write property test for confirm tokens
+  - [x]* 3.9 Write property test for confirm tokens
+    - In `shared/src/world/confirm-token.test.ts` (100 seeded runs: any change of the tuple, the time, or one character of the token fails).
     - **Property 5: Confirm tokens bind their inputs**
     - **Validates: Requirements 4.2, 4.3**
-  - [ ] 3.10 Dedup key
-    - `worldKey(imageHash, options)`.
+  - [x] 3.10 Dedup key
+    - `worldKey(imageHash, options)`, and `deriveWorldId(sid, key, attempt, secret)` in `shared/src/world/dedup.ts`. **Decision for you to review:** the world id is an HMAC of the Session id, the key and an attempt number (`w-` and 132 bits), not a random id, so a repeat request finds the world it already has and no index is needed. Dedup is per Session, because a world is private to the Session that made it (handing Session B the world of Session A for the same picture would give B a world B cannot open); this narrows Requirement 6.1, which says "a ready world with the same image hash and options".
     - _Requirements: 6.1_
-  - [ ]* 3.11 Write property test for dedup key
+  - [x]* 3.11 Write property test for dedup key
+    - In `shared/src/world/dedup.test.ts`.
     - **Property 10: Dedup key is a function of image and options**
     - **Validates: Requirements 6.1**
   - [ ] 3.12 Job reducer
@@ -85,6 +88,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 - [ ] 4. SpendGuard Durable Object
   - [ ] 4.1 Implement reserve, commit, release, expiry alarm, remaining, kill switch
     - Meters `world`, `image`, `llm`, `tts`, `stt` and `live` (caps from the `ghost-voice` spec; `PARTY_TTS_ROOM_CAP` is replaced by `VOICE_ROOM_LINE_CAP`); caps session / ip-day / global-day / global-total from env; denial leaves state unchanged.
+    - The interface the routes use is `SpendGuard` and `SpendTicket` in `shared/src/world/spend.ts` (`reserve`, `commit`, `release`, `remaining`, and the reasons `session`, `day`, `total`, `killed`). `api/src/worlds/fakes.ts` has a one-process `MemorySpendGuard` that follows it, for tests and the test-only dev worker; the Durable Object is still to do, and until it exists the Worker passes no guard, so a Quote shows no places left and a world cannot be made.
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7_
   - [ ]* 4.2 Write model-based property test for SpendGuard bounds
     - **Property 7: SpendGuard never exceeds a cap**
@@ -99,7 +103,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 - [ ] 5. Upload, sketch and brief routes
   - [ ] 5.1 `POST /api/uploads`
     - Multipart parse, validate, strip metadata, store in R2 with 24 h expiry under opaque id; reject listing.
-    - Keys come from `api/src/worlds/keys.ts` (`uploads/<imageId>`, and `candidates/<imageId>` for 5.3), because retention and "Delete my place" find objects by key alone; the `WorldJob` record carries `imageId` and `candidateIds` so a delete can reach them.
+    - Keys come from `api/src/worlds/keys.ts` (`uploads/<imageId>`, and `candidates/<imageId>` for 5.3), because retention and "Delete my place" find objects by key alone; the `WorldJob` record carries `imageId` and `candidateIds` so a delete can reach them. **Each `uploads/<imageId>` object must carry custom metadata `ownerSid`, `sha256` (lowercase hex of the stored bytes) and, once checked, `moderation` (`safe` or `unsafe`), and an image content type (`image/jpeg`, `image/png` or `image/webp`)**: `CloudflareImageStore` refuses an image without an owner and a hash, and treats a missing `moderation` as not yet checked. The picture is served to its owner at `GET /api/images/:id` (`imageUrl` is `/api/images/<imageId>`), built in 6.1.
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
   - [ ] 5.2 `WorkersAiClient` (wraps `env.AI.run` and the Images call, per Spike 1.2) and its guarded wrappers: image model, Scout text and vision, Llama Guard, cut-out
     - All wrappers live in `api/src/guarded/workersai/` and require a `SpendTicket`. Model ids come from `IMAGE_MODEL_ID`, `GHOST_MODEL_ID` and `GUARD_MODEL_ID`; no route hard-codes one.
@@ -109,13 +113,17 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - _Requirements: 2.2, 2.3, 2.4, 2.5, 2.6_
   - [ ] 5.4 `POST /api/places/brief`
     - Scout vision with the image → `{brief ≤ 80 words, safe}`; unsafe → delete image; failure → fail closed; persist brief.
+    - The result of the check is stored as the upload's `moderation` metadata (`safe` or `unsafe`); the Quote and the create call refuse a picture that is not `safe` (`unsafe_image`, or `moderation_unavailable` when it has not been checked).
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
 - [ ] 6. Confirm gate and world creation
   - [ ] 6.1 `POST /api/worlds/quote` and `POST /api/worlds`
     - Issue/verify Confirm Token, optional Turnstile, dedup (ready world and in-flight job), reserve `world`, start WorldJob; single-use token returns existing job.
+    - **Routes built, two dependencies not.** `api/src/routes/world-create.ts`: the Quote (`imageUrl`, `quota`, `confirmToken`, `needsTurnstile`, and `turnstileSiteKey` from `TURNSTILE_SITE_KEY`) and the create call, which stops at the first no in this order: the picture is the visitor's, the token verifies, a world this Session already has for the picture is returned (no spend, no new Turnstile), generation is on, Turnstile (`CloudflareTurnstile`, fails closed), moderation, `SpendGuard.reserve('world')`, the record, the job. After the reserve every failure releases the Ticket; a job that will not start marks the world failed. Also `GET /api/images/:id` (owner only). It needs `SpendGuard` (4.1) and a `WorldStarter` (7.1: starts the job and hands it the Ticket to commit or release); until both are passed in, the real Worker answers `world_gen_disabled` and the Quote shows no places left. Tested over the in-memory store and fakes, and on `wrangler dev` with real local R2 and a real Durable Object (`api/dev/check-worker.ts`, `pnpm dev:check`, then `LIVE_URL=<address> pnpm test`).
+    - **Decisions for you to review:** (1) a world's id is derived (see 3.10) and dedup is per Session; (2) a token that started a world which then failed returns that failed world, and a new Quote (a new token) tries again with the next attempt, at most 8 times, after which the last failed world is returned; (3) a job that throws is reported as `upstream_rejected`; (4) the Quote and create answer a missing picture and someone else's alike (`upload_rejected`); (5) `GET /api/images/:id` and the `imageUrl` convention are mine, the spec names none; (6) the hash of the visitor's address that goes to `SpendGuard` is an HMAC of `CF-Connecting-IP`, never the address.
     - _Requirements: 4.2, 4.3, 4.4, 4.5, 6.1, 6.2, 5.1_
-  - [ ]* 6.2 Write property test for idempotent creation
+  - [x]* 6.2 Write property test for idempotent creation
+    - In `api/src/routes/world-create.test.ts`: 60 seeded random runs of requests for one picture (same token, new token, two at once) always give one world, one job, one reserved unit. It is a seeded loop, not fast-check, because `api` has no fast-check dependency.
     - **Property 6: Creation is idempotent**
     - **Validates: Requirements 4.4, 6.2**
 

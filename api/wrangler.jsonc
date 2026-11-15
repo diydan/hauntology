@@ -1,6 +1,6 @@
-// Not yet run: `wrangler` is not installed in this repo (world-pipeline task 2 adds it with the rest of the scaffold).
-// Still to add there: the static assets from web/dist (single-page fallback, Worker first), the secrets
-// (HMAC_SECRET, TURNSTILE_SECRET) in .dev.vars, and the other Durable Objects.
+// Run locally with `wrangler dev` (4.162.0, local R2 and Durable Object); never deployed. Still to add (world-pipeline task 2):
+// the static assets from web/dist (single-page fallback, Worker first), the secrets (HMAC_SECRET, TURNSTILE_SECRET) in
+// `.dev.vars` (copy `.dev.vars.example`), the other Durable Objects, and `TURNSTILE_SITE_KEY` when Turnstile is on.
 {
   "name": "hauntology",
   "main": "src/worker.ts",

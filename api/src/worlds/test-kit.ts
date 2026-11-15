@@ -1,6 +1,6 @@
 import { verifySession } from "@hauntology/shared/session-cookie";
 import type { WorldManifest } from "@hauntology/shared/world/manifest";
-import { createApp } from "../app";
+import { createApp, type AppOptions } from "../app";
 import { MemoryWorldStore } from "./memory-store";
 import type { WorldRecord, WorldStore } from "./store";
 
@@ -36,12 +36,18 @@ export const BYTES = {
 } as const;
 
 /** An app over any `WorldStore`, with visitors that have a Session. */
-export function appKit(store: WorldStore, now: () => number = () => NOW) {
-  const app = createApp({ worlds: { store }, now });
+export function appKit(
+  store: WorldStore,
+  now: () => number = () => NOW,
+  options: { creation?: NonNullable<AppOptions["worlds"]>["creation"]; env?: Record<string, string> } = {},
+) {
+  const app = createApp({ worlds: { store, ...(options.creation !== undefined ? { creation: options.creation } : {}) }, now });
+  /** The Worker's variables for each request; a test may change them. */
+  const env: Record<string, string> = { HMAC_SECRET: SECRET, ...(options.env ?? {}) };
 
   const send = async (path: string, init: { method?: string; headers?: Record<string, string>; body?: unknown } = {}): Promise<Sent> => {
     const headers = { ...(init.headers ?? {}), ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}) };
-    const res = await app.request(`${ORIGIN}${path}`, { method: init.method ?? "GET", headers, ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}) }, { HMAC_SECRET: SECRET });
+    const res = await app.request(`${ORIGIN}${path}`, { method: init.method ?? "GET", headers, ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}) }, env);
     const text = await res.text();
     let json: unknown = null;
     try { json = JSON.parse(text); } catch { /* not JSON */ }
@@ -59,13 +65,13 @@ export function appKit(store: WorldStore, now: () => number = () => NOW) {
   /** A request with no cookie at all. */
   const anonymous = (): Record<string, string> => ({ Origin: ORIGIN });
 
-  return { app, send, visitor, anonymous };
+  return { app, send, visitor, anonymous, env };
 }
 
 /** The same over a `MemoryWorldStore`, with a way to make a ready world. */
-export function worldsKit(now: () => number = () => NOW) {
+export function worldsKit(now: () => number = () => NOW, options: Parameters<typeof appKit>[2] = {}) {
   const store = new MemoryWorldStore();
-  const kit = appKit(store, now);
+  const kit = appKit(store, now, options);
 
   /** A ready user world with its files, owned by `owner`. */
   const readyWorld = (id: string, owner: Visitor | null, extra: Partial<WorldRecord> = {}): WorldRecord => {

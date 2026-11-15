@@ -6,13 +6,17 @@ import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
 import { sessionRoutes } from "./routes/session";
+import { imageRoutes, worldCreateRoutes, type CreationDeps } from "./routes/world-create";
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
 
 export type AppOptions = SessionOptions & {
   /** What `SpendGuard` knows, once it exists. */
   spend?: (c: Context<AppEnv>) => Promise<SpendStatus> | SpendStatus;
   /** Where worlds are kept. When given, `/api/worlds/:id`, its assets and `DELETE` are served. */
-  worlds?: WorldsDeps;
+  worlds?: WorldsDeps & {
+    /** What the Quote and the create call need. Without it neither route exists. */
+    creation?: Omit<CreationDeps, "store" | "now" | "worldGenEnabled">;
+  };
 };
 
 /**
@@ -28,6 +32,13 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   const flags = async (c: Context<AppEnv>): Promise<ShellFlags> =>
     flagsFrom(c.env, options.spend ? await options.spend(c) : undefined);
   app.route("/api/session", sessionRoutes({ flags }));
-  if (options.worlds !== undefined) app.route("/api/worlds", worldRoutes(options.worlds));
+  if (options.worlds !== undefined) {
+    app.route("/api/worlds", worldRoutes(options.worlds));
+    const creation = options.worlds.creation;
+    if (creation !== undefined) {
+      app.route("/api/worlds", worldCreateRoutes({ store: options.worlds.store, ...creation, now: options.now ?? Date.now, worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled }));
+      app.route("/api/images", imageRoutes(creation.images));
+    }
+  }
   return app;
 }

@@ -35,7 +35,8 @@ export const session = (options: SessionOptions = {}): MiddlewareHandler<AppEnv>
   await next();
 
   const current = c.get("session");
-  if (c.get("sessionFresh") || c.get("sessionDirty") || current.exp - nowSec < SESSION_TTL_SEC / 2) {
+  // A response anyone may cache never carries a cookie: a shared cache could hand one visitor's Session to the next.
+  if (c.get("sessionNoCookie") !== true && (c.get("sessionFresh") || c.get("sessionDirty") || current.exp - nowSec < SESSION_TTL_SEC / 2)) {
     setCookie(c, SESSION_COOKIE, await signSession(touchSession(current, nowSec), secret), {
       httpOnly: true,
       sameSite: "Lax",

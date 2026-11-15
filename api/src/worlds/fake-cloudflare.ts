@@ -3,7 +3,7 @@ import type { JobNamespaceLike, R2BucketLike } from "./cloudflare-store";
 
 /** Fakes of R2 and a Durable Object namespace, for tests of `CloudflareWorldStore` and the Worker. They follow the documented behaviour; they are not the real services. */
 
-type Held = { bytes: Uint8Array; uploaded: Date };
+type Held = { bytes: Uint8Array; uploaded: Date; customMetadata?: Record<string, string>; contentType?: string };
 
 export class FakeR2 implements R2BucketLike {
   readonly objects = new Map<string, Held>();
@@ -14,14 +14,14 @@ export class FakeR2 implements R2BucketLike {
   /** The largest page this fake returns, whatever `limit` says (R2 caps at 1000). */
   pageSize = 1000;
 
-  put(key: string, bytes: Uint8Array | string, uploaded: Date = new Date()): this {
-    this.objects.set(key, { bytes: typeof bytes === "string" ? new TextEncoder().encode(bytes) : bytes, uploaded });
+  put(key: string, bytes: Uint8Array | string, uploaded: Date = new Date(), extra: { customMetadata?: Record<string, string>; contentType?: string } = {}): this {
+    this.objects.set(key, { bytes: typeof bytes === "string" ? new TextEncoder().encode(bytes) : bytes, uploaded, ...extra });
     return this;
   }
 
   async head(key: string) {
     const o = this.objects.get(key);
-    return o === undefined ? null : { size: o.bytes.byteLength };
+    return o === undefined ? null : { size: o.bytes.byteLength, ...(o.customMetadata ? { customMetadata: o.customMetadata } : {}) };
   }
 
   async get(key: string, options?: { range?: { offset: number; length: number } }) {
@@ -33,6 +33,7 @@ export class FakeR2 implements R2BucketLike {
       key,
       size: o.bytes.byteLength,
       uploaded: o.uploaded,
+      ...(o.contentType ? { httpMetadata: { contentType: o.contentType } } : {}),
       body: new Response(bytes).body as ReadableStream<Uint8Array>,
       text: async () => new TextDecoder().decode(bytes),
     };

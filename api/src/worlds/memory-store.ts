@@ -1,6 +1,6 @@
 import type { ObjectKind, StoredObject } from "@hauntology/shared/world/retention";
 import { bundleKey } from "./keys";
-import type { ByteRange, WorldRecord, WorldStore } from "./store";
+import type { ByteRange, WorldPatch, WorldRecord, WorldStore } from "./store";
 
 type Stored = { bytes: Uint8Array; kind: ObjectKind; createdAt: number; worldId?: string };
 
@@ -38,6 +38,20 @@ export class MemoryWorldStore implements WorldStore {
 
   async find(id: string): Promise<WorldRecord | null> {
     return this.records.get(id) ?? null;
+  }
+
+  async create(record: WorldRecord): Promise<boolean> {
+    if (this.records.has(record.id)) return false;
+    this.records.set(record.id, record);
+    return true;
+  }
+
+  async update(id: string, patch: WorldPatch): Promise<WorldRecord | null> {
+    const current = this.records.get(id);
+    if (current === undefined) return null;
+    const next = { ...current, ...patch } as WorldRecord;
+    this.records.set(id, next);
+    return next;
   }
 
   async stat(world: WorldRecord, name: string): Promise<{ size: number } | null> {

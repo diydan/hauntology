@@ -103,6 +103,7 @@ export function worldRoutes(deps: WorldsDeps): Hono<AppEnv> {
     // Asset names never change content within a world and a world id is never reused: cache for good.
     // A user's world is private to its owner, so only the browser may keep it.
     const cache = `${access === "public" ? "public" : "private"}, max-age=31536000, immutable`;
+    if (access === "public") c.set("sessionNoCookie", true);
     const base = { "Content-Type": typeOf(name), "Accept-Ranges": "bytes", "Cache-Control": cache };
 
     const range = parseRange(c.req.header("Range"), stat.size);

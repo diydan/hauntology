@@ -3,12 +3,12 @@ import type { StoredObject } from "@hauntology/shared/world/retention";
 import { MANIFEST_NAME } from "@hauntology/shared/world/manifest";
 import { USER_PREFIXES, bundleKey, bundlePrefix, candidateKey, describeKey, galleryKey, spriteKey, uploadKey } from "./keys";
 import { parseStoredWorld } from "./record";
-import type { ByteRange, WorldRecord, WorldStore } from "./store";
+import type { ByteRange, WorldPatch, WorldRecord, WorldStore } from "./store";
 
 /** The part of an R2 bucket this store uses. The real `R2Bucket` fits it; tests use a fake. */
 export interface R2BucketLike {
-  head(key: string): Promise<{ size: number } | null>;
-  get(key: string, options?: { range?: { offset: number; length: number } }): Promise<(R2ObjectLike & { body: ReadableStream<Uint8Array>; text(): Promise<string> }) | null>;
+  head(key: string): Promise<{ size: number; customMetadata?: Record<string, string> } | null>;
+  get(key: string, options?: { range?: { offset: number; length: number } }): Promise<(R2ObjectLike & { body: ReadableStream<Uint8Array>; text(): Promise<string>; httpMetadata?: { contentType?: string } }) | null>;
   list(options: { prefix: string; cursor?: string; limit?: number }): Promise<{ objects: R2ObjectLike[]; truncated: boolean; cursor?: string }>;
   delete(keys: string | string[]): Promise<void>;
 }
@@ -64,6 +64,20 @@ export class CloudflareWorldStore implements WorldStore {
     const record = parseStoredWorld(await res.json());
     // The Durable Object is addressed by name; make sure it holds this very world.
     return record !== null && record.id === id ? record : null;
+  }
+
+  async create(record: WorldRecord): Promise<boolean> {
+    const res = await this.job(record.id).fetch(RECORD_URL, { method: "PUT", body: JSON.stringify(record) });
+    if (res.status === 201) return true;
+    if (res.status === 409) return false;
+    throw new Error(`WorldJob refused a new record (${res.status})`);
+  }
+
+  async update(id: string, patch: WorldPatch): Promise<WorldRecord | null> {
+    const res = await this.job(id).fetch(RECORD_URL, { method: "PATCH", body: JSON.stringify(patch) });
+    if (res.status === 404 || res.status === 400) return null;
+    if (!res.ok) throw new Error(`WorldJob refused a change (${res.status})`);
+    return parseStoredWorld(await res.json());
   }
 
   private keyOf(world: WorldRecord, name: string): string {

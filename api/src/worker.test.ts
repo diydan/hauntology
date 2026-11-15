@@ -60,4 +60,28 @@ describe("worker", () => {
     await done();
     expect(bucket.objects.size).toBe(0);
   });
+
+  it("gives a Quote for a picture the visitor owns, but shows no places left and will not make a world yet", async () => {
+    const { bucket, env } = envWith();
+    const first = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx);
+    const cookie = (first.headers.get("Set-Cookie") as string).split(";")[0] as string;
+    const { verifySession } = await import("@hauntology/shared/session-cookie");
+    const sid = ((await verifySession(cookie.slice(cookie.indexOf("=") + 1), SECRET, Math.floor(Date.now() / 1000))) as { sid: string }).sid;
+    bucket.put("uploads/img-1", Uint8Array.from([1, 2, 3]), new Date(), { customMetadata: { ownerSid: sid, sha256: "ef".repeat(32), moderation: "safe" }, contentType: "image/png" });
+    const headers = { Cookie: cookie, Origin: ORIGIN, "Content-Type": "application/json" };
+
+    const quote = await worker.fetch(new Request(`${ORIGIN}/api/worlds/quote`, { method: "POST", headers, body: JSON.stringify({ imageId: "img-1" }) }), env, ctx().ctx);
+    expect(quote.status).toBe(200);
+    const q = (await quote.json()) as { imageUrl: string; quota: { world: number }; confirmToken: string };
+    expect(q.imageUrl).toBe("/api/images/img-1");
+    expect(q.quota.world).toBe(0);
+
+    const create = await worker.fetch(new Request(`${ORIGIN}/api/worlds`, { method: "POST", headers, body: JSON.stringify({ imageId: "img-1", confirmToken: q.confirmToken }) }), env, ctx().ctx);
+    expect(create.status).toBe(503);
+    expect(await create.json()).toEqual({ ok: false, code: "world_gen_disabled" });
+
+    const image = await worker.fetch(new Request(`${ORIGIN}/api/images/img-1`, { headers }), env, ctx().ctx);
+    expect(image.status).toBe(200);
+    expect(image.headers.get("Content-Type")).toBe("image/png");
+  });
 });
