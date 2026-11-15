@@ -1,10 +1,10 @@
-// The checks on a rendered clip (docs/VOICE-LIBRARY-PLAN.md, "Checks on every file"): a real MP3, between 0.8 s and 15 s,
+// The checks on a rendered clip (docs/VOICE-LIBRARY-PLAN.md, "Checks on every file"): a real MP3, between 0.8 s and 20 s,
 // and not silent. `judgeClip` is pure; `probeClip` asks ffprobe and ffmpeg (no shell, arguments as an array).
 import { spawnSync } from 'node:child_process';
 
 export const MIN_MS = 800;
-/** Mark's longest line is 11.9 s, and the other voices pace differently; a runaway clip is far longer than this. */
-export const MAX_MS = 15_000;
+/** Measured: Mark's longest clip is 11.9 s (rate 1.1) and Pippa's 11.4 s (rate 0.9). 20 s leaves room for a slower voice or a longer line; a runaway clip is far longer. */
+export const MAX_MS = 20_000;
 /** A clip whose loudest sample is below this is silence (speech peaks far above it). */
 export const SILENT_BELOW_DB = -50;
 

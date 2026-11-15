@@ -2,7 +2,7 @@
 //   - one request at a time, in the plan's order;
 //   - NO retries: a failure of any kind stops the run and names the file (a retry would be billed again);
 //   - the budget is checked before every call, and a call counts as spent before it is made (a failed call may still be billed);
-//   - a clip is checked (MP3 header, 0.8 s to 15 s, not silent) before it gets its final name; a failed clip is kept as
+//   - a clip is checked (MP3 header, 0.8 s to 20 s, not silent) before it gets its final name; a failed clip is kept as
 //     `<file>.rejected` and never counts as done;
 //   - an existing file is never overwritten.
 import { link, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';

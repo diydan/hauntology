@@ -122,7 +122,7 @@ test('a clip that fails a check is kept as .rejected, never as done, and stops t
     ['not an MP3 (a JSON error body with status 200)', () => mp3Response(Buffer.from('{"error":"x"}'.repeat(200))), /not an MP3/],
     ['too short', () => mp3Response(makeMp3({ seconds: 0.3 })), /too short/],
     ['silent', () => mp3Response(makeMp3({ kind: 'silence', seconds: 2 })), /silent/],
-    ['too long', () => mp3Response(makeMp3({ seconds: 16 })), /too long/],
+    ['too long', () => mp3Response(makeMp3({ seconds: 22 })), /too long/],
   ];
   for (const [what, answer, pattern] of cases) {
     const dir = tmp();

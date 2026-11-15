@@ -3,7 +3,7 @@
 //   - nothing is uploaded unless the caller passes `yes`; without it the plan is only a preview;
 //   - an existing object is NEVER overwritten: a key that is already there with the same audio is skipped, one with different
 //     audio stops the run and prints the delete command the owner would have to choose to run;
-//   - every local file is checked again (MP3 header, 0.8 s to 15 s, not silent) just before it is sent;
+//   - every local file is checked again (MP3 header, 0.8 s to 20 s, not silent) just before it is sent;
 //   - every upload is read back and compared (size and SHA-256); a mismatch stops the run;
 //   - one request at a time, no retries, stops at the first problem; starting again skips what is done;
 //   - only keys of the manifest, under `speech/lib/v1/`, are ever named.

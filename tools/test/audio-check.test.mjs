@@ -33,7 +33,7 @@ test('probeClip reads a real tone, a short tone, silence, a long tone and garbag
     assert.deepEqual(judgeClip(ok), []);
     assert.match(judgeClip(probeClip(put('short.mp3', makeMp3({ seconds: 0.3 })))).join(), /too short/);
     assert.match(judgeClip(probeClip(put('silent.mp3', makeMp3({ kind: 'silence', seconds: 2 })))).join(), /silent/);
-    assert.match(judgeClip(probeClip(put('long.mp3', makeMp3({ seconds: 16 })))).join(), /too long/);
+    assert.match(judgeClip(probeClip(put('long.mp3', makeMp3({ seconds: 22 })))).join(), /too long/);
     assert.match(judgeClip(probeClip(put('junk.mp3', Buffer.from('{"error":"quota"}'.repeat(100))))).join(), /not a playable MP3|could not be measured/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
