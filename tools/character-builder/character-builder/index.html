@@ -2028,13 +2028,14 @@ async function fpEars(img, c, N) {
    so the moved position of any vertex is linear in the weights: solve the small least-squares problem (with a pull toward 0), clamped to each slider's range. */
 function fitShape(c) {
   if (!faceMesh) return null; const L = meshLandmarks(), f = fpFrame(c), feats = [];
+  const ratio = Math.max(0.7, Math.min(1.3, (L.chin[1] - EYE.y) / Math.min(-1, f.Y(c.chin[1]) - EYE.y))); // the fit is linear about the UNSTRETCHED face: a photo row at 80% of eye-to-chin is matched to the mesh row at 80% of ITS eye-to-chin (the face-length morph then carries that row down to the photo's height)
   // the resting expression moves some of these vertices already: measure from where they will be, not from the neutral mesh
   const shift = (p, axis) => Object.entries(FP.expr).reduce((s, [n, w]) => s + L.delta(n, p, axis) * Math.min(1, w * FP.exprK), 0);
   const add = (name, p, axis, target, w, clamp = 99) => feats.push({ name, p, axis, delta: Math.max(-clamp, Math.min(clamp, target - (p[axis] + shift(p, axis)))), w });
   add('mouth height', L.mouth, 1, f.Y(c.mouth[1]), 1.0);
   add('chin height', L.chin, 1, f.Y(c.chin[1]), 1.0);
   add('nose height', L.nose, 1, f.Y(c.nose[1]), 0.5);
-  for (const [name, [py, l, r]] of Object.entries(c.rows)) { const y0 = f.Y(py), v = L.edgeAt(y0); if (v) add('face edge ' + name, v, 0, (r - l) / 2 * f.s, 1.0); }
+  for (const [name, [py, l, r]] of Object.entries(c.rows)) { const y0 = EYE.y + (f.Y(py) - EYE.y) * ratio, v = L.edgeAt(y0); if (v) add('face edge ' + name, v, 0, (r - l) / 2 * f.s, 1.0); }
   if (c.noseW && L.noseAla) add('nose width', L.noseAla, 0, c.noseW * f.s, 0.7, 1.2);
   if (c.eyeOutHalf && L.eyeOut) add('eye width', L.eyeOut, 0, c.eyeOutHalf * f.s, 0.3, 1.5);
   if (c.mouthHalf) add('mouth width', [2.4, L.mouth[1], 8.8], 0, c.mouthHalf * f.s, 0.8, 1.2);
@@ -2055,7 +2056,7 @@ function fitShape(c) {
   const res = feats.map((ft, k) => { const rounded = M.reduce((s, m, j) => s + Math.round(w[j] * 20) / 20 * D[k][j], 0); return { name: ft.name, want: +ft.delta.toFixed(2), got: +rounded.toFixed(2), left: +(ft.delta - rounded).toFixed(2) }; });
   M.forEach((m, i) => { S.face[m.id] = Math.round(w[i] * 20) / 20; });
   if (presetSel) presetSel.value = ''; syncSlidersUI(); applySculptMorphs();
-  return res;
+  res.rowRatio = +ratio.toFixed(3); return res;
 }
 async function setFacePrint(id, custom) {
   if (!id) {
