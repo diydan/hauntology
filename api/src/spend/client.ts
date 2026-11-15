@@ -14,7 +14,8 @@ const NO_PLACES = Object.fromEntries(METERS.map((m) => [m, 0])) as Remaining;
  * dropped: the reservation runs out by itself after 30 minutes and the unit comes back.
  */
 export class SpendGuardClient implements SpendGuard {
-  constructor(private readonly namespace: JobNamespaceLike) {}
+  /** With `strict`, a commit or release that cannot be delivered throws, so a job can try again; the default drops it. */
+  constructor(private readonly namespace: JobNamespaceLike, private readonly options: { strict?: boolean } = {}) {}
 
   private call(path: string, init?: { body?: unknown; method?: string }): Promise<Response> {
     const stub = this.namespace.get(this.namespace.idFromName("global"));
@@ -38,11 +39,21 @@ export class SpendGuardClient implements SpendGuard {
   }
 
   async commit(ticket: SpendTicket): Promise<void> {
-    try { await this.call("/commit", { body: { id: ticket.id } }); } catch { /* the reservation runs out by itself */ }
+    await this.settle("/commit", ticket);
   }
 
   async release(ticket: SpendTicket): Promise<void> {
-    try { await this.call("/release", { body: { id: ticket.id } }); } catch { /* the reservation runs out by itself */ }
+    await this.settle("/release", ticket);
+  }
+
+  private async settle(path: "/commit" | "/release", ticket: SpendTicket): Promise<void> {
+    try {
+      const res = await this.call(path, { body: { id: ticket.id } });
+      if (!res.ok && this.options.strict === true) throw new Error(`SpendGuard refused ${path} (${res.status})`);
+    } catch (e) {
+      if (this.options.strict === true) throw e;
+      // The reservation runs out by itself after 30 minutes.
+    }
   }
 
   async remaining(sessionId: string, ipHash: string): Promise<Remaining> {

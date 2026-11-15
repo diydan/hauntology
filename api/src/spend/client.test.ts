@@ -115,3 +115,26 @@ describe("SpendGuardClient fails closed", () => {
     await expect(answering(() => new Response(null, { status: 500 })).setKill(true)).rejects.toThrow(/kill switch/);
   });
 });
+
+describe("SpendGuardClient in strict mode", () => {
+  const ticket = { id: "t-1", meter: "world" as const, sessionId: "sid-a", issuedAt: T0 };
+  const strict = (fetcher: () => Promise<Response> | Response) => new SpendGuardClient({ idFromName: (n) => n, get: () => ({ fetch: async () => fetcher() }) }, { strict: true });
+
+  it("throws when a commit or release is refused or cannot be delivered, so the job can try again", async () => {
+    for (const bad of [() => new Response(null, { status: 500 }), () => { throw new Error("down"); }]) {
+      await expect(strict(bad).commit(ticket)).rejects.toThrow();
+      await expect(strict(bad).release(ticket)).rejects.toThrow();
+    }
+  });
+
+  it("does not throw when they are delivered", async () => {
+    await expect(strict(() => new Response(null, { status: 204 })).commit(ticket)).resolves.toBeUndefined();
+    await expect(strict(() => new Response(null, { status: 204 })).release(ticket)).resolves.toBeUndefined();
+  });
+
+  it("is not the default: the plain client drops what it cannot deliver", async () => {
+    const plain = new SpendGuardClient({ idFromName: (n) => n, get: () => ({ fetch: async () => new Response(null, { status: 500 }) }) });
+    await expect(plain.commit(ticket)).resolves.toBeUndefined();
+    await expect(plain.release(ticket)).resolves.toBeUndefined();
+  });
+});

@@ -15,6 +15,23 @@ describe.skipIf(LIVE_URL === undefined)("world creation on wrangler dev (real R2
     return imageId;
   };
 
+  /** Polls a world's status as its owner until `done` says yes, or 12 seconds pass. */
+  const waitFor = async (owner: { headers: Record<string, string> }, worldId: string, done: (s: { status: string }) => boolean) => {
+    let last: { status: string } = { status: "?" };
+    for (let i = 0; i < 40; i++) {
+      last = (await kit.send(`/api/worlds/${worldId}`, { headers: owner.headers })).json as { status: string };
+      if (done(last)) return last;
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    return last;
+  };
+  const enter = async (owner: { headers: Record<string, string> }, imageId: string) => {
+    const q = await kit.send("/api/worlds/quote", { method: "POST", headers: owner.headers, body: { imageId } });
+    return kit.send("/api/worlds", { method: "POST", headers: owner.headers, body: { imageId, confirmToken: (q.json as { confirmToken: string }).confirmToken } });
+  };
+  const places = async (owner: { headers: Record<string, string> }, imageId: string) =>
+    ((await kit.send("/api/worlds/quote", { method: "POST", headers: owner.headers, body: { imageId } })).json as { quota: { world: number } }).quota.world;
+
   it("quotes, creates once, answers a repeat with the same world, and hides it from everyone else", async () => {
     const a = await kit.visitor();
     const b = await kit.visitor();
@@ -29,13 +46,13 @@ describe.skipIf(LIVE_URL === undefined)("world creation on wrangler dev (real R2
     const created = await kit.send("/api/worlds", { method: "POST", headers: a.headers, body: { imageId, confirmToken: quote.confirmToken } });
     expect(created.status).toBe(201);
     const { worldId, status } = created.json as { worldId: string; status: string };
-    expect(status).toBe("queued");
+    expect(["queued", "generating", "ingesting", "ready"]).toContain(status);
 
     const again = await kit.send("/api/worlds", { method: "POST", headers: a.headers, body: { imageId, confirmToken: quote.confirmToken } });
     expect(again.status).toBe(200);
     expect((again.json as { worldId: string }).worldId).toBe(worldId);
 
-    expect((await kit.send(`/api/worlds/${worldId}`, { headers: a.headers })).json).toEqual({ id: worldId, status: "queued" });
+    expect(["queued", "generating", "ingesting", "ready"]).toContain(((await kit.send(`/api/worlds/${worldId}`, { headers: a.headers })).json as { status: string }).status);
     const second = await kit.send("/api/worlds/quote", { method: "POST", headers: a.headers, body: { imageId } });
     expect((second.json as { quota: { world: number } }).quota.world).toBe(1); // one unit is held for the world just made
     for (const headers of [b.headers, kit.anonymous()]) {
@@ -43,8 +60,6 @@ describe.skipIf(LIVE_URL === undefined)("world creation on wrangler dev (real R2
       expect(r.status).toBe(404);
       expect(r.json).toEqual({ ok: false, code: "world_not_found" });
     }
-    const started = (await kit.send("/dev/started")).json as { started: { worldId: string }[] };
-    expect(started.started.filter((s) => s.worldId === worldId)).toHaveLength(1);
 
     // The picture is the owner's: the owner sees it, nobody else does, and nobody else can quote it.
     const mine = await fetch(`${LIVE_URL}${quote.imageUrl}`, { headers: a.headers });
@@ -60,29 +75,66 @@ describe.skipIf(LIVE_URL === undefined)("world creation on wrangler dev (real R2
     expect(((await kit.dev("exists", { key: `uploads/${imageId}` })).json as { exists: boolean }).exists).toBe(false);
   });
 
-  it("stops at the session cap, and gives the unit back when the job will not start", async () => {
+  it("runs the job on the real Durable Object alarm: queued, generating, ingesting, ready, and the unit stays spent", async () => {
     const a = await kit.visitor();
-    const enter = async (imageId: string) => {
-      const q = await kit.send("/api/worlds/quote", { method: "POST", headers: a.headers, body: { imageId } });
-      return kit.send("/api/worlds", { method: "POST", headers: a.headers, body: { imageId, confirmToken: (q.json as { confirmToken: string }).confirmToken } });
-    };
-    expect((await enter(await pic(a, 21))).status).toBe(201);
-    expect((await enter(await pic(a, 22))).status).toBe(201);
-    const third = await enter(await pic(a, 23));
+    const imageId = await pic(a, 51);
+    const created = await enter(a, imageId);
+    expect(created.status).toBe(201);
+    const { worldId } = created.json as { worldId: string };
+    const ready = await waitFor(a, worldId, (s) => s.status === "ready");
+    expect(ready.status).toBe("ready");
+    const full = (await kit.send(`/api/worlds/${worldId}`, { headers: a.headers })).json as { manifest: { title: string }; thumbUrl: string };
+    expect(full.manifest.title).toBe("A planted place");
+    const thumb = await fetch(`${LIVE_URL}${full.thumbUrl}`, { headers: a.headers });
+    expect(thumb.status).toBe(200);
+    expect([...new Uint8Array(await thumb.arrayBuffer())]).toEqual([20, 21, 22]);
+    expect(await places(a, imageId)).toBe(1); // committed: one of the two worlds is used
+  });
+
+  it("stops at the session cap once two worlds are made", async () => {
+    const a = await kit.visitor();
+    for (const salt of [61, 62]) expect((await enter(a, await pic(a, salt))).status).toBe(201);
+    const third = await enter(a, await pic(a, 63));
     expect(third.status).toBe(429);
     expect(third.json).toEqual({ ok: false, code: "quota_session" });
-
-    const b = await kit.visitor();
-    await kit.dev("starter", { fail: { code: "upstream_rejected" } });
-    const imageId = await pic(b, 31);
-    const q = await kit.send("/api/worlds/quote", { method: "POST", headers: b.headers, body: { imageId } });
-    const failed = await kit.send("/api/worlds", { method: "POST", headers: b.headers, body: { imageId, confirmToken: (q.json as { confirmToken: string }).confirmToken } });
-    await kit.dev("starter", { fail: null });
-    expect(failed.status).toBe(502);
-    expect(failed.json).toEqual({ ok: false, code: "upstream_rejected" });
-    // The unit came back: b can still make two worlds.
-    expect(((await kit.send("/api/worlds/quote", { method: "POST", headers: b.headers, body: { imageId } })).json as { quota: { world: number } }).quota.world).toBe(2);
   });
+
+  it("fails a world the service refuses, gives the unit back and offers no retry", async () => {
+    const a = await kit.visitor();
+    const imageId = await pic(a, 201);
+    const { worldId } = (await enter(a, imageId)).json as { worldId: string };
+    const failed = (await waitFor(a, worldId, (s) => s.status === "failed")) as { status: string; failure?: { code: string; quotaReturned: boolean; retryAllowed: boolean } };
+    expect(failed.status).toBe("failed");
+    expect(failed.failure).toEqual({ code: "upstream_rejected", quotaReturned: true, retryAllowed: false });
+    expect(await places(a, imageId)).toBe(2);
+  });
+
+  it("fails a world that never finishes with a timeout, and gives the unit back", async () => {
+    const a = await kit.visitor();
+    const imageId = await pic(a, 204);
+    const { worldId } = (await enter(a, imageId)).json as { worldId: string };
+    expect(await places(a, imageId)).toBe(1); // held while the job runs
+    const failed = (await waitFor(a, worldId, (s) => s.status === "failed")) as { failure?: { code: string; retryAllowed: boolean } };
+    expect(failed.failure).toMatchObject({ code: "timeout", retryAllowed: true });
+    expect(await places(a, imageId)).toBe(2);
+  }, 30000);
+
+  it("closes world creation when the service is out of credits", async () => {
+    const a = await kit.visitor();
+    const flags = async () => ((await kit.send("/api/session", { headers: a.headers })).json as { flags: { worldGenEnabled: boolean } }).flags.worldGenEnabled;
+    try {
+      const imageId = await pic(a, 202);
+      const { worldId } = (await enter(a, imageId)).json as { worldId: string };
+      const failed = (await waitFor(a, worldId, (s) => s.status === "failed")) as { failure?: { code: string; retryAllowed: boolean } };
+      expect(failed.failure).toMatchObject({ code: "upstream_no_credits", retryAllowed: false });
+      expect(await flags()).toBe(false);
+      const refused = await enter(a, await pic(a, 71));
+      expect(refused.json).toEqual({ ok: false, code: "world_gen_disabled" });
+    } finally {
+      await kit.dev("kill", { on: false });
+    }
+    expect(await flags()).toBe(true);
+  }, 30000);
 
   it("serves a Gallery world with ranges, and never sets a cookie on its cacheable files", async () => {
     const id = kit.unique("gallery");

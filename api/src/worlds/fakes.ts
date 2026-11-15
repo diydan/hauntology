@@ -2,7 +2,8 @@ import { MapKv } from "@hauntology/shared/world/map-kv";
 import type { Meter, Remaining, ReserveResult, SpendGuard, SpendTicket } from "@hauntology/shared/world/spend";
 import { DEFAULT_CAPS, SpendLedger, type CapTable } from "@hauntology/shared/world/spend-ledger";
 import type { ErrorCode } from "@hauntology/shared/errors";
-import type { ImageInfo, ImageStore, TurnstileVerifier, WorldStarter } from "./ports";
+import type { WorldManifest } from "@hauntology/shared/world/manifest";
+import type { ImageInfo, ImageStore, Ingestor, TurnstileVerifier, UpstreamFailure, WorldLabsPort, WorldStarter } from "./ports";
 
 /** Stand-ins for the parts of world creation that are not built yet (the job 7.1, uploads 5.1) and an in-process `SpendGuard`, for tests and the test-only dev worker. None of them is durable. */
 
@@ -87,5 +88,45 @@ export class RecordingStarter implements WorldStarter {
     if (this.fail !== null) return { ok: false as const, code: this.fail.code };
     this.started.push(job);
     return { ok: true as const };
+  }
+}
+
+type Scripted<T> = T | UpstreamFailure | (() => Promise<T | UpstreamFailure>);
+
+/**
+ * A scriptable world service. Each call takes the next scripted answer (the last one repeats); a function answer may
+ * throw. It records every call and never leaves the process.
+ */
+export class FakeWorldLabs implements WorldLabsPort {
+  readonly generated: { image: Uint8Array; contentType: string; name: string }[] = [];
+  readonly polled: string[] = [];
+  generateScript: Scripted<{ ok: true; operationId: string }>[] = [{ ok: true, operationId: "op-1" }];
+  pollScript: Scripted<{ ok: true; state: "pending" | "done" | "failed" }>[] = [{ ok: true, state: "done" }];
+
+  private next<T>(script: Scripted<T>[], calls: number): Promise<T | UpstreamFailure> {
+    const a = script[Math.min(calls, script.length - 1)] as Scripted<T>;
+    return typeof a === "function" ? (a as () => Promise<T | UpstreamFailure>)() : Promise.resolve(a);
+  }
+  generate(req: { image: Uint8Array; contentType: string; name: string }) {
+    this.generated.push(req);
+    return this.next(this.generateScript, this.generated.length - 1);
+  }
+  poll(operationId: string) {
+    this.polled.push(operationId);
+    return this.next(this.pollScript, this.polled.length - 1);
+  }
+}
+
+/** A scriptable ingest step that makes a manifest, or says no. */
+export class FakeIngestor implements Ingestor {
+  readonly calls: { worldId: string; operationId: string; ownerSid: string }[] = [];
+  script: Scripted<{ ok: true; manifest: WorldManifest }>[] | null = null;
+  constructor(private readonly manifestFor: (worldId: string) => WorldManifest) {}
+  async ingest(job: { worldId: string; operationId: string; ownerSid: string }) {
+    this.calls.push(job);
+    if (this.script === null) return { ok: true as const, manifest: this.manifestFor(job.worldId) };
+    const a = this.script[Math.min(this.calls.length - 1, this.script.length - 1)] as Scripted<{ ok: true; manifest: WorldManifest }>;
+    const r = typeof a === "function" ? await (a as () => Promise<{ ok: true; manifest: WorldManifest } | UpstreamFailure>)() : a;
+    return r as { ok: true; manifest: WorldManifest } | { ok: false; code: "ingest_failed" } | UpstreamFailure;
   }
 }

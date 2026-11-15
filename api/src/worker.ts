@@ -21,8 +21,10 @@ export default {
   fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext): Response | Promise<Response> {
     let app = apps.get(env);
     if (app === undefined) {
-      // The job starter (world-pipeline 7.1) is not built, so none is passed: the Quote shows the real places left, but a
-      // world cannot be made (`world_gen_disabled`) until there is one.
+      // No job starter is passed, so a world cannot be made yet (`world_gen_disabled`), and the Quote shows the real places left.
+      // `WorldJobStarter` and the job in `do/world-job.ts` exist (7.1); what is missing is the real adapter for the world
+      // service (Spike 1.1 has to record its answers first) and ingest (7.3). Passing the starter before then would only
+      // reserve a unit and fail it.
       const guard = new SpendGuardClient(env.SPEND_GUARD);
       app = createApp({
         spend: () => guard.status(),

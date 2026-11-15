@@ -1,5 +1,6 @@
 import type { ErrorCode } from "@hauntology/shared/errors";
 import type { SpendTicket } from "@hauntology/shared/world/spend";
+import type { WorldManifest } from "@hauntology/shared/world/manifest";
 
 /** What the world routes know about a stored Place Image. The bytes are never needed to decide anything. */
 export type ImageInfo = {
@@ -26,4 +27,31 @@ export interface TurnstileVerifier {
 /** Starts the job that makes the world. The Ticket goes with it: the job commits it when the world is ready and releases it when it fails (world-pipeline 7.1). */
 export interface WorldStarter {
   start(job: { worldId: string; imageId: string; ownerSid: string; ticket: SpendTicket }): Promise<{ ok: true } | { ok: false; code: ErrorCode }>;
+}
+
+/**
+ * Why a call to the world service did not give an answer: it said slow down (`rate_limited`, with how long if it
+ * told us), it is out of credits (`no_credits`), it refused the request for good (`rejected`), or it failed in a
+ * way that may pass (`transient`: a timeout, a server fault, no network).
+ */
+export type UpstreamFailure = { ok: false; kind: "rate_limited" | "no_credits" | "rejected" | "transient"; retryAfterMs?: number };
+
+/**
+ * The world service (World Labs), as the job sees it. The real HTTP adapter is not built: its request and response
+ * shapes are unverified until Spike 1.1 records them. Every call goes through `api/src/guarded/worldlabs.ts`, which
+ * needs a Ticket, so nothing else may spend.
+ */
+export interface WorldLabsPort {
+  /** Starts the making of a world from a picture. */
+  generate(req: { image: Uint8Array; contentType: string; name: string }): Promise<{ ok: true; operationId: string } | UpstreamFailure>;
+  /** Asks how far an operation is. `failed` means the service gave up on it. */
+  poll(operationId: string): Promise<{ ok: true; state: "pending" | "done" | "failed" } | UpstreamFailure>;
+}
+
+/**
+ * Fetches a finished world, copies its files into our storage under `worlds/<worldId>/` and says what the manifest is
+ * (world-pipeline 7.3, not built). It never returns an upstream address.
+ */
+export interface Ingestor {
+  ingest(job: { worldId: string; operationId: string; ownerSid: string }): Promise<{ ok: true; manifest: WorldManifest } | { ok: false; code: "ingest_failed" } | UpstreamFailure>;
 }

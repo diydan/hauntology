@@ -61,10 +61,12 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - In `shared/src/world/dedup.test.ts`.
     - **Property 10: Dedup key is a function of image and options**
     - **Validates: Requirements 6.1**
-  - [ ] 3.12 Job reducer
+  - [x] 3.12 Job reducer
     - `jobReducer(state, event, now)` returning next state plus effects (`release`, `commit`, `scheduleNext`, `tripKill`).
+    - Built in `shared/src/world/job.ts`: `jobReducer(job, event, now, rnd, timing)` returns the new state and the effects (`commit`, `release`, `tripKill`, `scheduleNext`). The poll delay is 10 seconds spread by 20 percent either way; after a rate limit or a fault the wait doubles from 20 seconds to a ceiling of 120, and honours a longer `Retry-After`; a wake is never set past the 20-minute deadline. A 402 fails the job as out of credits (release, trip the kill switch, no retry offered), another client error as rejected, a 408, 429 or server fault only pauses.
     - _Requirements: 7.2, 7.3, 7.4, 7.5, 7.6_
-  - [ ]* 3.13 Write property test for the job state machine
+  - [x]* 3.13 Write property test for the job state machine
+    - In `shared/src/world/job.prop.test.ts` (100 seeded runs of random events and time): only the allowed edges, `ready` and `failed` absorbing, a wake never after the deadline, a ticket settled exactly once (one commit or one release, never both), a kill only with out-of-credits, and a timeout from any unfinished state.
     - **Property 9: Job state machine is safe**
     - **Validates: Requirements 7.2, 7.6, 5.2**
   - [ ] 3.14 Manifest builder
@@ -101,7 +103,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - **Validates: Requirements 5.2, 5.3**
   - [ ] 4.4 Kill switch wiring
     - `WORLD_GEN_ENABLED`, upstream 402, manual `setKill`; Gallery routes unaffected.
-    - Done: `WORLD_GEN_ENABLED` (already in `flagsFrom`), the manual switch (`SpendGuardClient.setKill`, the object's `/kill`, no HTTP surface on purpose), and the Home flags read the switch, the day cap and the total cap from the object; the Gallery is not affected (checked on `wrangler dev`). Still to do: the upstream 402 trips it (7.2), and a way for the operator to call `setKill` on a deployed Worker.
+    - Done: `WORLD_GEN_ENABLED` (already in `flagsFrom`), the manual switch (`SpendGuardClient.setKill`, the object's `/kill`, no HTTP surface on purpose), and the Home flags read the switch, the day cap and the total cap from the object; the Gallery is not affected (checked on `wrangler dev`). The upstream 402 trips it (done in 7.2). Still to do: a way for the operator to call `setKill` on a deployed Worker.
     - _Requirements: 5.4, 9.3_
 
 - [ ] 5. Upload, sketch and brief routes
@@ -135,13 +137,18 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
   - [ ] 7.1 Generate and poll
     - Call guarded World Labs client, store operation id, alarm polling ~10 s with jitter, rate-limit backoff, 20-minute timeout, all transitions via `jobReducer`.
     - The record side of the `WorldJob` class exists in `api/src/do/world-job.ts` (`/record`: `GET`, `PUT` to create, `PATCH` for `status`, `title`, `failure`, `manifest`, `imageId` and `candidateIds`, `DELETE`; `id`, `kind` and `ownerSid` never change). `start`, `alarm` and `jobReducer` are still to do, and write through that record. The owner is the Session id taken when `POST /api/worlds` (6.1) creates the record.
+    - **Built (the machine), not the adapter.** `api/src/do/world-job.ts`: `/start` records the job and wakes it at once (202; the create request is not held up); each wake makes one step (generate, then poll, then hand the finished world to ingest), feeds the answer to `jobReducer`, saves the job and the record together, and only then commits or releases the Ticket and sets the next wake; effects that could not be delivered stay in storage and are retried 30 seconds later, so a Ticket is settled once. Every call to the world service goes through `api/src/guarded/worldlabs.ts`, which refuses to run without a Ticket for the world meter. `WorldJobStarter` is the `WorldStarter` the create route uses. Tested over a fake Durable Object and a scriptable service, and on `wrangler dev` with the real alarm (queued, generating, ingesting, ready; refused; out of credits; a timeout; with a test-only stand-in for the service in `api/dev/check-worker.ts`).
+    - **Still to do:** the real HTTP adapter for World Labs (`WorldLabsPort`). Its request and response shapes are unverified until Spike 1.1 records them, so none is written; until then the Worker has no job dependencies and `/start` answers 503, and the create route gets no starter (`world_gen_disabled`). Known gap: if the object stops between a `generate` call returning and the job being saved, the next wake asks for a second operation.
+    - **Decisions for you to review:** (1) deleting a world whose job has not yet asked the service for anything gives its unit back; deleting one that has asked keeps the unit spent, because the service may already have charged; (2) the name sent to the service is the world's own id and nothing the visitor wrote; (3) a picture that has gone by the time the job needs it fails the job as rejected; (4) an operation the service reports as failed is treated as rejected.
     - _Requirements: 7.1, 7.2, 7.3_
-  - [ ] 7.2 Error mapping and kill switch
+  - [x] 7.2 Error mapping and kill switch
     - Client errors → `failed` with safe message and release; 402 → release and `tripKill`.
+    - Done in the reducer and the job: a client error fails the job with a stable code (`upstream_rejected`, or `ingest_failed` while ingesting; copy for the shell is by code), the unit is released, and a 402 also trips the kill switch through `SpendGuard` (`/kill`), with no retry offered. Checked on `wrangler dev`: after a 402 the Home flags show worlds closed.
     - _Requirements: 7.4, 7.5, 7.6_
   - [ ] 7.3 Ingest
     - Fetch world, copy assets to R2, verify non-empty, write manifest, commit ticket; splat missing → fail and release; optional assets degrade.
     - Store the bundle under `worlds/<worldId>/<name>` and write `world.json` last, using `api/src/worlds/keys.ts`; `PATCH` the `WorldJob` record to `ready` with the validated manifest (`WorldManifestSchema`).
+    - The job calls ingest through the `Ingestor` port in `api/src/worlds/ports.ts`: `ingest({worldId, operationId, ownerSid})` returns the manifest (the job validates it with `WorldManifestSchema` and stores it on the record) or `ingest_failed`, or says the service is rate limited, out of credits or down, which the job waits out. The port copies the files itself.
     - _Requirements: 8.1, 8.2, 8.3, 5.3_
   - [x] 7.4 `GET /api/worlds/:id` and asset streaming
     - Status payload, manifest when ready, range requests, immutable cache headers, no upstream URLs or keys.

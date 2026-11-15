@@ -1,4 +1,4 @@
-// TEST-ONLY config for dev/check-worker.ts (planting routes, an in-memory SpendGuard and a recording job starter). Never deployed:
+// TEST-ONLY config for dev/check-worker.ts (planting routes and a stand-in world service). Never deployed:
 // `wrangler deploy` reads wrangler.jsonc. Run: `pnpm exec wrangler dev -c wrangler.check.jsonc`, then `LIVE_URL=<its address> pnpm test`.
 {
   "name": "hauntology-check",
