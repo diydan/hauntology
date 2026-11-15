@@ -93,4 +93,4 @@ The samples used Inworld TTS 2 (`voice_id`). Descriptions below are Inworld's ow
 
 **Locked:** `dry` (the Keeper) = Inworld Ronald. See `docs/story/CHARACTERS.md` for the three-character cast.
 
-**Third character:** the Lodger (the Suspects) = Inworld Mark, locked 2026-11-15, chosen over Alex, Timothy, Avery, James, Rupert and Gemini, for the men Suspects and as the default; the three women Suspects have their own voices, Chloe (Cora Bell), Eleanor (Lady Vane) and Victoria (Mrs. Dunmore), chosen 2026-11-15. Always with `[speak nervously]`. See `docs/story/CHARACTERS.md`.
+**Third character:** the Lodger (the Suspects) = Inworld Mark, locked 2026-11-15, chosen over Alex, Timothy, Avery, James, Rupert and Gemini, for Percy and as the default; Captain Thorne is Conrad, Dr. Pike is Arjun, and the three women Suspects have their own voices, Chloe (Cora Bell), Eleanor (Lady Vane) and Victoria (Mrs. Dunmore), all chosen 2026-11-15. Always with `[speak nervously]`. See `docs/story/CHARACTERS.md`.

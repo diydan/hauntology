@@ -54,7 +54,7 @@ type Persona = { name: string; voice: Traits['voice']; styleRules: string[]; wan
                  archetypes: ['sound', 'person', 'promise'] };
 type GhostProfile = { id: string; traits: Traits; spriteUrl: string; persona: Persona; preset?: boolean;
                       monoUrl?: string /* a Preset Ghost's pre-made black and white picture, used when its Player joins the haunting (party-mode 19.8) */;
-                      lodgerVoice?: 'mark' | 'chloe' | 'eleanor' | 'victoria' /* the Lodger Voice this Suspect speaks with (ghost-voice 1.11); a Preset's is fixed, a made-up Suspect's is its Player's pick, else mark */ };
+                      lodgerVoice?: 'mark' | 'conrad' | 'arjun' | 'chloe' | 'eleanor' | 'victoria' /* the Lodger Voice this Suspect speaks with (ghost-voice 1.11); a Preset's is fixed, a made-up Suspect's is its Player's pick, else mark */ };
 type AlphaMask = { width: number; height: number; alpha: Uint8Array };
 ```
 

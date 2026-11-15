@@ -1,6 +1,6 @@
 # The Lodger line bank (DRAFT, 2026-11-15)
 
-Speaker: **the Lodger** (Inworld voice per Suspect: Mark, Chloe, Eleanor or Victoria, see `docs/story/CHARACTERS.md`; tag `[speak nervously]` added by the speech code, never written here). One bank for all six Suspects, the same lines in every voice. Written to the `story-writer` brief and `docs/story/CHARACTERS.md`.
+Speaker: **the Lodger** (Inworld voice per Suspect: Mark, Conrad, Arjun, Chloe, Eleanor or Victoria, see `docs/story/CHARACTERS.md`; tag `[speak nervously]` added by the speech code, never written here). One bank for all six Suspects, the same lines in every voice. Written to the `story-writer` brief and `docs/story/CHARACTERS.md`.
 
 How it is used:
 - `aside`: text only, shown when a Suspect is named in a Suggestion. Never spoken.

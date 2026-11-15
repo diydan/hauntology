@@ -23,7 +23,7 @@ AI models (all on Cloudflare):
 | Sprite cut-out | Cloudflare Images `segment=foreground` | none |
 | Narration, place brief, photo moderation (image in) | `llama-4-scout-17b-16e-instruct` | `GHOST_MODEL_ID` |
 | Moderation of free text (ghost detail, nicknames, Zone names) | `llama-guard-3-8b` | `GUARD_MODEL_ID` |
-| Ghost voice (speech): three characters (Whisper = Pippa, Keeper = Ronald, Lodger = Mark, Chloe, Eleanor or Victoria by Suspect) | `inworld/tts-2`, fallback `@cf/deepgram/aura-2-en` (MeloTTS is retired on 2026-11-20 and not used) | `VOICE_TTS_MODEL_ID`, `VOICE_TTS_FALLBACK_MODEL_ID` |
+| Ghost voice (speech): three characters (Whisper = Pippa, Keeper = Ronald, Lodger = Mark, Conrad, Arjun, Chloe, Eleanor or Victoria by Suspect) | `inworld/tts-2`, fallback `@cf/deepgram/aura-2-en` (MeloTTS is retired on 2026-11-20 and not used) | `VOICE_TTS_MODEL_ID`, `VOICE_TTS_FALLBACK_MODEL_ID` |
 | Listening and the Stitch word check | `openai/whisper-large-v3-turbo` | `VOICE_STT_MODEL_ID` |
 | Real weather, hour and moon | Open-Meteo (not Workers AI) | `WEATHER_BASE_URL`, `CONDITIONS_ENABLED` |
 

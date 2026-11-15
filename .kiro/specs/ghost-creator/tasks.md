@@ -38,7 +38,7 @@ Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) a
     - **Validates: Requirements 6.2, 4.3**
 
 - [ ] 2. Presets
-  - Produce six Preset Ghosts and `GET /api/ghosts/presets`. The art is already made, one set of three crops per Suspect in `docs/story/art/` (colour by default, plus a black and white version and a transparent cut-out of each); ship the colour cut-out as `spriteUrl` and the black and white one as `monoUrl`, compressed (WebP) under `web/public/ghosts/` with a licence note. Give each Preset its `lodgerVoice`: Percy, Captain Thorne and Dr. Pike `mark`, Cora Bell `chloe`, Lady Vane `eleanor`, Mrs. Dunmore `victoria`.
+  - Produce six Preset Ghosts and `GET /api/ghosts/presets`. The art is already made, one set of three crops per Suspect in `docs/story/art/` (colour by default, plus a black and white version and a transparent cut-out of each); ship the colour cut-out as `spriteUrl` and the black and white one as `monoUrl`, compressed (WebP) under `web/public/ghosts/` with a licence note. Give each Preset its `lodgerVoice`: Percy `mark`, Captain Thorne `conrad`, Dr. Pike `arjun`, Cora Bell `chloe`, Lady Vane `eleanor`, Mrs. Dunmore `victoria`.
   - _Requirements: 3.3, 4.2_
 
 - [ ] 3. API

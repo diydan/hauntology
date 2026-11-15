@@ -7,6 +7,7 @@ includePowers: false
 resources:
   - file://docs/story/CHARACTERS.md
   - file://docs/story/VOICE.md
+  - file://docs/DEMO.md
   - file://.kiro/steering/ghost-safety.md
   - file://.kiro/steering/visual-style.md
   - file://.kiro/steering/party-mode.md
@@ -34,7 +35,7 @@ The one rule behind all of it: **the engine decides, the model narrates.** A lin
 |---|---|---|
 | **The Whisper** | The ghost of the place. Lonely in a patient way. Wants to be found and to keep you a little longer. Close and kind, a little too kind. | Pippa |
 | **The Keeper** | The house's old caretaker. Long past alarm. Dry, unhurried, amused but never laughing. Teases kindly. | Ronald |
-| **The Lodger** | Any Suspect. One shared bank of lines, spoken in the Suspect's own voice. A ghost with something to hide: flustered, theatrical, a little vain, fear covered by talk. | Mark, Chloe, Eleanor or Victoria |
+| **The Lodger** | Any Suspect. One shared bank of lines, spoken in the Suspect's own voice. A ghost with something to hide: flustered, theatrical, a little vain, fear covered by talk. | Mark, Conrad, Arjun, Chloe, Eleanor or Victoria |
 
 Steering tags (`[whisper]`, `[speak nervously]`) are added by the speech code and never by you. Never write a bracketed cue in a line.
 
@@ -87,10 +88,37 @@ This is the most important rule for `docs/story/lodger-lines.md`. The Lodger is 
 - Nerves live in the words as well as the voice. Stumbles work well: `Well... I mean... I would say that, wouldn't I?` Keep them in every Lodger line alike, so no line sounds more nervous than the rest.
 - The Lodger is theatrical and vain, never menacing, and never a child or a cartoon.
 
+## Lines already spoken in the talking-head clips (fixed)
+
+Some lines are already rendered as Inworld audio and as 8 to 12 second talking-head clips (`docs/story/art/clips/`, listed in `docs/story/CHARACTERS.md` and `docs/DEMO.md`). Changing the words means a new audio file and a remade clip (about $0.20 to $0.30 each), so:
+
+- **Keep these lines word for word.** When you write the bank they belong to, put each one in as a variant under the id shown. Do not reword it, shorten it or "improve" it.
+- **Do not rewrite a line to fix a problem. Mark it `REVIEW:` and say why.** A person decides whether the clip is remade.
+- **Match them.** Write new variants of the same kind in the same shape and tone. They run 90 to 130 characters, 3 or 4 short sentences, 6 to 10 seconds spoken.
+- A line meant for a clip has no placeholder, and contains no number, count or place that is only true in one game.
+
+| Id | Speaker | Line | Status | Clip |
+|---|---|---|---|---|
+| `meet.soft.1` | Whisper | Hello. I was waiting. I did not mind. I am very good at waiting. | in `VOICE.md` | `hero-whisper-meet` |
+| `haunt.cold-spot.soft.1` | Whisper | Did you feel that? A cold place, just there. It is only me, standing very close. I do not mean to chill you. | **new, REVIEW** | `hero-whisper-haunt-cold-spot` |
+| `haunt.blackout.soft.1` | Whisper | Shh. I am putting the light out for a moment. Keep your hands where I can hear them. | in `VOICE.md`, REVIEW note stands | `hero-whisper-haunt-blackout` |
+| `haunt.restless.soft.1` | Whisper | I cannot keep still tonight. Everything in the house is stirring. Forgive me. I get like this when someone is listening. | **new, REVIEW** | `hero-whisper-haunt-restless` |
+| `end.haunting.soft.1` | Whisper | It is quiet now. Nobody found me in time. Stay a little longer, all of you. The door can wait. | in `VOICE.md`, REVIEW note stands | `hero-whisper-end-haunting` |
+| `poltergeist.soft.1` | Whisper | Welcome. You are one of us now. It is quieter on this side, and I am glad of the company. | **new, REVIEW** (spoken when a Player joins the haunting; no nickname) | `demo-n4-whisper-welcome` |
+| `ending.soft.1` | Whisper | You found all three. Thank you for staying. The door is open whenever you want it. I will be here. | **new, REVIEW**: "all three" is true only if the `ending` kind fires after all three memories are found; check the spec | `demo-n2-whisper-farewell` |
+| `meet.dry.1` | Keeper | Ah. A visitor. I would offer tea, but you can see my difficulty. | in `VOICE.md` | `hero-ashby-welcome` |
+| `end.haunting.dry.1` | Keeper | Well. That is that. I shall keep my secrets, and you may keep the memory of how close you were. | in `VOICE.md` | `hero-ashby-closing` |
+| `lodger.confession.1` to `.5` | Lodger | the five lines in `docs/story/lodger-lines.md` | approved | Vane `.1`, Cora `.2`, Percy `.3`, Dr. Pike `.4`, Captain Thorne `.5`, Mrs. Dunmore `.5` (`hero-suspect-<name>-confession`) |
+
+**Demo only, not for any bank.** Two lines were made for the demo video and are only true in the demo, so they never go into a bank and never into the Library:
+
+- "Do you hear that? A kettle, just before it sings. I used to count the seconds. I am still counting." (the Whisper's first memory in the demo kitchen; `demo-n1-whisper-memory`)
+- "Three accusations, sealed and sworn. I do enjoy this part. Shall we see who was brave, and who was merely loud?" (the Keeper at a reveal with exactly three Accusations; `demo-n3-ashby-reveal`). A bank `reveal` line for the Keeper must not say how many.
+
 ## Procedure
 
 1. Read `docs/story/CHARACTERS.md`, the steering files, then the spec text for the bank you were asked for. If a Directive kind, Haunt Event or Trait list is missing from the spec, stop and say so. Do not invent it.
-2. If the file already exists, read it and add to it. Do not rewrite lines a person has edited.
+2. If the file already exists, read it and add to it. Do not rewrite lines a person has edited, and keep every fixed line of the clip table above word for word.
 3. Write the bank as one markdown table per kind: `id | line`. Use ids like `reveal.whisper.3` or `lodger.stall.2` so a test can address each line.
 4. Check each line against the hard rules, one by one, before you finish: length, characters, placeholders (player text last and alone), banned words, and for the Lodger the guilt words. Count the variants.
 5. Mark any line you are unsure about with `REVIEW:` and the reason.
