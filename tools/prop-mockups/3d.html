@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Hauntology — 3D Print Kit &amp; Tabletop Prop Assets (48 STLs + 7 Sticker Sheets)</title>
+<title>Hauntology — 3D Print Kit &amp; Tabletop Prop Assets (42 STLs + 7 Sticker Sheets)</title>
 <link rel="stylesheet" href="../../design/tokens.css">
 <style>
   :root {
@@ -188,7 +188,7 @@
 <header>
   <div>
     <h1>Hauntology — 3D Print Kit &amp; Tabletop Props Showcase</h1>
-    <p>48 watertight 2-manifold binary STLs (&le; 180&times;180 mm bed, 1 spool colour per piece) + 7 printable 1:1 SVG sticker sheets</p>
+    <p>42 watertight 2-manifold binary STLs (&le; 180&times;180 mm bed, 1 spool colour per piece) + 7 printable 1:1 SVG sticker sheets</p>
   </div>
   <div class="nav-links">
     <a href="./index.html">&larr; Interactive 2D/3D Prop Mockups</a>
@@ -198,14 +198,14 @@
 
 <main>
   <div class="summary-bar">
-    <div class="stat"><strong>48 STLs</strong><span>All verified watertight, 2-manifold, positive volume</span></div>
+    <div class="stat"><strong>42 STLs</strong><span>All verified watertight, 2-manifold, positive volume</span></div>
     <div class="stat"><strong>&le; 180 &times; 180 mm</strong><span>Fits Bambu A1 Mini, Prusa MINI+, Ender 3</span></div>
     <div class="stat"><strong>6 Spools</strong><span>Dark Iron, Brass, Mint, Bone, Crimson, Wood</span></div>
     <div class="stat"><strong>0.4 mm Pockets</strong><span>Recessed 1:1 SVG stickers never peel at edges</span></div>
     <div class="stat"><strong>SG90 + ESP32</strong><span>Built-in servo cradles, horn splines &amp; USB-C ports</span></div>
   </div>
 
-  <h2>1. Six Sculpted Relic Miniatures &amp; Scannable QR Token Bases (13 STLs)</h2>
+  <h2>1. Six Sculpted Relic Miniatures &amp; the Relic Token Base (7 STLs; the QR is a sticker)</h2>
   <div class="grid" id="grid-relics"></div>
 
   <h2>2. Pepper's-Ghost Pyramid Holder &amp; Suspect Standees (8 STLs)</h2>
@@ -219,7 +219,7 @@
     <div class="sticker-card">
       <img src="../../print/stickers/stickers-relics-and-standees.svg" alt="Relics and Standees Stickers">
       <h3><a href="../../print/stickers/stickers-relics-and-standees.svg" style="color:var(--mint)">stickers-relics-and-standees.svg</a></h3>
-      <p>6 Relic miniature detail stickers + 6 gothic-arch Suspect portraits &amp; name strips + 6 QR token pocket labels.</p>
+      <p>6 Relic miniature detail stickers + 6 gothic-arch Suspect portraits &amp; name strips.</p>
     </div>
     <div class="sticker-card">
       <img src="../../print/stickers/stickers-prop-01-ghost-in-box.svg" alt="Prop 01 Stickers">
@@ -261,7 +261,7 @@ const SPOOLS = {
   mint:    { name: "Ectoplasm Mint",bg: "#5ce6b8", fg: "#092118" },
   bone:    { name: "Bone / Ivory",  bg: "#e8dec8", fg: "#1b181f" },
   crimson: { name: "Crimson",       bg: "#d43838", fg: "#fff5f5" },
-  wood:    { name: "Warm Wood",     bg: "#5e3a24", fg: "#f5eadc" },
+  wood:    { name: "Warm Wood",     bg: "#422818", fg: "#f5eadc" },
 };
 
 const RELICS = [
@@ -272,12 +272,6 @@ const RELICS = [
   ["relic-silver-key",   "bone",  "33.0 × 33.0 × 55.3 mm", "Relic r5: Gothic skeleton key with trefoil clover bow, collared stem & notched ward bit."],
   ["relic-bell",         "brass", "33.0 × 33.0 × 51.0 mm", "Relic r6: Flared Victorian service bell with gadrooned dome, clapper ball & turned handle."],
   ["relic-token-pocket", "iron",  "40.0 × 40.0 × 6.0 mm",  "Universal 40×40 mm bevelled token base with 0.4 mm top QR sticker pocket & bottom magnet recess."],
-  ["relic-token-r1",     "bone",  "36.0 × 36.0 × 4.0 mm",  "3D-printed raised-relief QR plate for hw:r1 (Music Box) — swap filament at z=3.0 mm."],
-  ["relic-token-r2",     "bone",  "36.0 × 36.0 × 4.0 mm",  "3D-printed raised-relief QR plate for hw:r2 (Wax Hand) — swap filament at z=3.0 mm."],
-  ["relic-token-r3",     "bone",  "36.0 × 36.0 × 4.0 mm",  "3D-printed raised-relief QR plate for hw:r3 (Locket) — swap filament at z=3.0 mm."],
-  ["relic-token-r4",     "bone",  "36.0 × 36.0 × 4.0 mm",  "3D-printed raised-relief QR plate for hw:r4 (Planchette) — swap filament at z=3.0 mm."],
-  ["relic-token-r5",     "bone",  "36.0 × 36.0 × 4.0 mm",  "3D-printed raised-relief QR plate for hw:r5 (Silver Key) — swap filament at z=3.0 mm."],
-  ["relic-token-r6",     "bone",  "36.0 × 36.0 × 4.0 mm",  "3D-printed raised-relief QR plate for hw:r6 (Séance Bell) — swap filament at z=3.0 mm."],
 ];
 
 const STANDEES = [

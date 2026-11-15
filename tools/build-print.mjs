@@ -3,7 +3,7 @@
 // (party-mode Requirement 8.1 to 8.5 and tools/prop-mockups/3D_BRIEF.md).
 //
 // Usage:
-//   node tools/build-print.mjs           # generates QR plates, Suspect standees, compiles print/scad/*.scad, checks all STLs
+//   node tools/build-print.mjs           # generates the Suspect standees, compiles print/scad/*.scad, checks all STLs
 //   node tools/build-print.mjs --check   # validates every STL (watertight, manifold, positive volume, <= 180 mm bed)
 import fs from "node:fs";
 import path from "node:path";
@@ -16,147 +16,6 @@ const scadDir = path.join(root, "print", "scad");
 const stlDir = path.join(root, "print", "stl");
 const distDir = path.join(root, "dist", "print");
 const checkOnly = process.argv.includes("--check");
-
-const RELIC_QR_ROWS = {
-  r1: [
-    "111111100010001111111",
-    "100000101000001000001",
-    "101110100010001011101",
-    "101110101100101011101",
-    "101110101001101011101",
-    "100000100111001000001",
-    "111111101010101111111",
-    "000000001011000000000",
-    "010111101010111011010",
-    "001110001111001011110",
-    "010110111101011010011",
-    "101001010100000001100",
-    "111010101001101000010",
-    "000000001011000000010",
-    "111111100100011110000",
-    "100000101101110011111",
-    "101110101011101100011",
-    "101110101101100011100",
-    "101110100010001111011",
-    "100000101000011100111",
-    "111111100001000111000",
-  ],
-  r2: [
-    "111111101011001111111",
-    "100000100010101000001",
-    "101110100011001011101",
-    "101110100100101011101",
-    "101110101011101011101",
-    "100000101001001000001",
-    "111111101010101111111",
-    "000000000011000000000",
-    "011111110110000110001",
-    "100011011001000101111",
-    "110000100101010011010",
-    "000100010000100110100",
-    "011010110110110011001",
-    "000000001100111100001",
-    "111111101010001100010",
-    "100000101111011101110",
-    "101110101110000101010",
-    "101110101110100100100",
-    "101110101011010100000",
-    "100000101100000110100",
-    "111111100111010101010",
-  ],
-  r3: [
-    "111111100100001111111",
-    "100000101100001000001",
-    "101110100011001011101",
-    "101110101110101011101",
-    "101110101110101011101",
-    "100000100000101000001",
-    "111111101010101111111",
-    "000000001001000000000",
-    "010111101000111011010",
-    "011100011110101011110",
-    "110000111101011010011",
-    "101101001011000001100",
-    "010000110010001000010",
-    "000000001101100000010",
-    "111111100110011110000",
-    "100000101001110011111",
-    "101110101000001100011",
-    "101110101111100011100",
-    "101110100100001111011",
-    "100000101100011110111",
-    "111111100101000111000",
-  ],
-  r4: [
-    "111111100111001111111",
-    "100000101101001000001",
-    "101110101110001011101",
-    "101110100010101011101",
-    "101110100111101011101",
-    "100000100010101000001",
-    "111111101010101111111",
-    "000000000111100000000",
-    "011101100110100000110",
-    "110000010001000101111",
-    "001010110100011110111",
-    "001110000110110000010",
-    "001101110101110011001",
-    "000000001000110001100",
-    "111111100010011010100",
-    "100000101010011101110",
-    "101110100100101000111",
-    "101110101110010010010",
-    "101110101011010100000",
-    "100000101001101001001",
-    "111111100011100111100",
-  ],
-  r5: [
-    "111111100011001111111",
-    "100000101111101000001",
-    "101110101100001011101",
-    "101110100110101011101",
-    "101110100011101011101",
-    "100000100100001000001",
-    "111111101010101111111",
-    "000000000001100000000",
-    "011101100010000000110",
-    "000001011000100101111",
-    "000011100101011110111",
-    "100000011010010000010",
-    "011100101010010011001",
-    "000000001101110001100",
-    "111111100100011010100",
-    "100000101010111101110",
-    "101110100011101000111",
-    "101110101000010010010",
-    "101110101111010100000",
-    "100000101101101101001",
-    "111111100011100111100",
-  ],
-  r6: [
-    "111111100101001111111",
-    "100000100000101000001",
-    "101110101010001011101",
-    "101110100011001011101",
-    "101110101001001011101",
-    "100000101111101000001",
-    "111111101010101111111",
-    "000000000011100000000",
-    "010010101110010110100",
-    "111110011100111001100",
-    "100010111010010000110",
-    "011111001100100101000",
-    "111011110010001111010",
-    "000000001111100000010",
-    "111111100101001111110",
-    "100000100101111110010",
-    "101110101110111001001",
-    "101110100110111000111",
-    "101110100110110111100",
-    "100000101011100101000",
-    "111111100101001101001",
-  ],
-};
 
 const snap = (v) => Math.round(v * 1000) / 1000;
 
@@ -187,70 +46,6 @@ function writeMeshStl(vertices, faces, headerText = "Hauntology Print Kit STL") 
     buf.writeUInt16LE(0, off + 48);
   }
   return buf;
-}
-
-function buildQrPlateStl(rows, headerText) {
-  const nRows = rows.length;
-  const quiet = 2;
-  const total = nRows + 2 * quiet;
-  const moduleMm = 1.44; // 25 * 1.44 = 36.0 mm (<= 40 mm plate, >= 1.2 mm module)
-  const baseMm = 3.0;
-  const reliefMm = 1.0;
-  const zTop = snap(baseMm + reliefMm);
-  const inset = 0.02;
-
-  const vertMap = new Map();
-  const vertices = [];
-  const faces = [];
-  const vIdx = (x, y, z) => {
-    const sx = snap(x), sy = snap(y), sz = snap(z);
-    const key = `${Math.round(sx * 1000)},${Math.round(sy * 1000)},${Math.round(sz * 1000)}`;
-    let idx = vertMap.get(key);
-    if (idx === undefined) {
-      idx = vertices.length;
-      vertMap.set(key, idx);
-      vertices.push([sx, sy, sz]);
-    }
-    return idx;
-  };
-  const addQuad = (a, b, c, d) => { faces.push([a, b, c], [a, c, d]); };
-  const xs = Array.from({ length: total + 1 }, (_, i) => snap(i * moduleMm));
-  const pMax = xs[total];
-
-  for (let gy = 0; gy < total; gy++) {
-    for (let gx = 0; gx < total; gx++) {
-      addQuad(vIdx(xs[gx], xs[gy], 0), vIdx(xs[gx], xs[gy + 1], 0), vIdx(xs[gx + 1], xs[gy + 1], 0), vIdx(xs[gx + 1], xs[gy], 0));
-    }
-  }
-  for (let i = 0; i < total; i++) {
-    const u0 = xs[i], u1 = xs[i + 1];
-    addQuad(vIdx(u0, 0, 0), vIdx(u1, 0, 0), vIdx(u1, 0, baseMm), vIdx(u0, 0, baseMm));
-    addQuad(vIdx(u1, pMax, 0), vIdx(u0, pMax, 0), vIdx(u0, pMax, baseMm), vIdx(u1, pMax, baseMm));
-    addQuad(vIdx(0, u1, 0), vIdx(0, u0, 0), vIdx(0, u0, baseMm), vIdx(0, u1, baseMm));
-    addQuad(vIdx(pMax, u0, 0), vIdx(pMax, u1, 0), vIdx(pMax, u1, baseMm), vIdx(pMax, u0, baseMm));
-  }
-  for (let gy = 0; gy < total; gy++) {
-    const y0 = xs[gy], y1 = xs[gy + 1];
-    const mr = total - 1 - gy - quiet;
-    for (let gx = 0; gx < total; gx++) {
-      const x0 = xs[gx], x1 = xs[gx + 1];
-      const mc = gx - quiet;
-      const dark = mr >= 0 && mr < nRows && mc >= 0 && mc < nRows && rows[mr][mc] === "1";
-      const b00 = vIdx(x0, y0, baseMm), b10 = vIdx(x1, y0, baseMm), b11 = vIdx(x1, y1, baseMm), b01 = vIdx(x0, y1, baseMm);
-      if (!dark) {
-        addQuad(b00, b10, b11, b01);
-      } else {
-        const t00 = vIdx(x0 + inset, y0 + inset, zTop), t10 = vIdx(x1 - inset, y0 + inset, zTop);
-        const t11 = vIdx(x1 - inset, y1 - inset, zTop), t01 = vIdx(x0 + inset, y1 - inset, zTop);
-        addQuad(b00, b10, t10, t00);
-        addQuad(b10, b11, t11, t10);
-        addQuad(b11, b01, t01, t11);
-        addQuad(b01, b00, t00, t01);
-        addQuad(t00, t10, t11, t01);
-      }
-    }
-  }
-  return writeMeshStl(vertices, faces, headerText);
 }
 
 const SUSPECT_SILHOUETTES = {
@@ -690,20 +485,7 @@ function checkBinaryStl(filePath, bedMm = 180) {
 fs.mkdirSync(stlDir, { recursive: true });
 fs.mkdirSync(distDir, { recursive: true });
 
-// 1. Always ensure the 6 Relic Token QR relief plates and 6 Preset Suspect Standees exist
-for (const [rid, rows] of Object.entries(RELIC_QR_ROWS)) {
-  const outName = `relic-token-${rid}.stl`;
-  const stlPath = path.join(stlDir, outName);
-  const distPath = path.join(distDir, outName);
-  if (!checkOnly || !fs.existsSync(stlPath)) {
-    const buf = buildQrPlateStl(rows, `Hauntology Relic Token hw:${rid}`);
-    fs.writeFileSync(stlPath, buf);
-    fs.writeFileSync(distPath, buf);
-  } else if (!fs.existsSync(distPath)) {
-    fs.copyFileSync(stlPath, distPath);
-  }
-}
-
+// 1. Always ensure the 6 Preset Suspect Standees exist
 for (const [sid, rows] of Object.entries(SUSPECT_SILHOUETTES)) {
   const outName = `${sid}.stl`;
   const stlPath = path.join(stlDir, outName);
@@ -750,8 +532,7 @@ const files = fs.readdirSync(stlDir).filter((f) => f.endsWith(".stl")).sort();
 let failed = 0;
 for (const f of files) {
   const full = path.join(stlDir, f);
-  const maxBed = f.startsWith("relic-token-r") ? 40 : 180;
-  const res = checkBinaryStl(full, maxBed);
+  const res = checkBinaryStl(full, 180);
   if (!res.ok) {
     failed++;
     console.error(`FAIL ${f}: ${res.errors.join("; ")}`);

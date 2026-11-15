@@ -156,7 +156,7 @@
     </g>
   </g>
 
-  <!-- Suspect 6 + 6 Relic Token Base Identification Stickers (36.0 x 36.0 mm) -->
+  <!-- Suspect 6 -->
   <g transform="translate(10, 128)">
     <!-- Suspect 6: Lady Evelyn Dunmore (Emerald) -->
     <g transform="translate(0, 0)">
@@ -170,65 +170,7 @@
       <rect class="cut" x="0" y="49" width="33.6" height="5.4" rx="0.8"/>
     </g>
 
-    <!-- 6 Relic Token Pocket Stickers (36.0 x 36.0 mm) with QR mounting frame for hw:r1..hw:r6 -->
-    <g transform="translate(44, 0)">
-      <text class="sub" x="0" y="-2">3. Relic Token Pocket Stickers (6x 36.0 x 36.0 mm) — fits relic-token-pocket.stl (or use 3D-printed QR plates relic-token-r1..r6.stl)</text>
-
-      <!-- r1 -->
-      <g transform="translate(0, 2)">
-        <rect x="0" y="0" width="36" height="36" rx="2.0" fill="#ffffff" stroke="#262229" stroke-width="0.5"/>
-        <rect x="4" y="4" width="28" height="24" fill="none" stroke="#262229" stroke-width="0.4" stroke-dasharray="1,1"/>
-        <text class="sub" x="18" y="16" text-anchor="middle">PASTE / PRINT</text>
-        <text class="sub" x="18" y="20" text-anchor="middle">qr-r1.png HERE</text>
-        <text class="relic-txt" x="18" y="33" fill="#262229">hw:r1 MUSIC BOX</text>
-        <rect class="cut" x="0" y="0" width="36" height="36" rx="2.0"/>
-      </g>
-      <!-- r2 -->
-      <g transform="translate(40, 2)">
-        <rect x="0" y="0" width="36" height="36" rx="2.0" fill="#ffffff" stroke="#262229" stroke-width="0.5"/>
-        <rect x="4" y="4" width="28" height="24" fill="none" stroke="#262229" stroke-width="0.4" stroke-dasharray="1,1"/>
-        <text class="sub" x="18" y="16" text-anchor="middle">PASTE / PRINT</text>
-        <text class="sub" x="18" y="20" text-anchor="middle">qr-r2.png HERE</text>
-        <text class="relic-txt" x="18" y="33" fill="#262229">hw:r2 WAX HAND</text>
-        <rect class="cut" x="0" y="0" width="36" height="36" rx="2.0"/>
-      </g>
-      <!-- r3 -->
-      <g transform="translate(80, 2)">
-        <rect x="0" y="0" width="36" height="36" rx="2.0" fill="#ffffff" stroke="#262229" stroke-width="0.5"/>
-        <rect x="4" y="4" width="28" height="24" fill="none" stroke="#262229" stroke-width="0.4" stroke-dasharray="1,1"/>
-        <text class="sub" x="18" y="16" text-anchor="middle">PASTE / PRINT</text>
-        <text class="sub" x="18" y="20" text-anchor="middle">qr-r3.png HERE</text>
-        <text class="relic-txt" x="18" y="33" fill="#262229">hw:r3 LOCKET</text>
-        <rect class="cut" x="0" y="0" width="36" height="36" rx="2.0"/>
-      </g>
-      <!-- r4 -->
-      <g transform="translate(0, 42)">
-        <rect x="0" y="0" width="36" height="36" rx="2.0" fill="#ffffff" stroke="#262229" stroke-width="0.5"/>
-        <rect x="4" y="4" width="28" height="24" fill="none" stroke="#262229" stroke-width="0.4" stroke-dasharray="1,1"/>
-        <text class="sub" x="18" y="16" text-anchor="middle">PASTE / PRINT</text>
-        <text class="sub" x="18" y="20" text-anchor="middle">qr-r4.png HERE</text>
-        <text class="relic-txt" x="18" y="33" fill="#262229">hw:r4 PLANCHETTE</text>
-        <rect class="cut" x="0" y="0" width="36" height="36" rx="2.0"/>
-      </g>
-      <!-- r5 -->
-      <g transform="translate(40, 42)">
-        <rect x="0" y="0" width="36" height="36" rx="2.0" fill="#ffffff" stroke="#262229" stroke-width="0.5"/>
-        <rect x="4" y="4" width="28" height="24" fill="none" stroke="#262229" stroke-width="0.4" stroke-dasharray="1,1"/>
-        <text class="sub" x="18" y="16" text-anchor="middle">PASTE / PRINT</text>
-        <text class="sub" x="18" y="20" text-anchor="middle">qr-r5.png HERE</text>
-        <text class="relic-txt" x="18" y="33" fill="#262229">hw:r5 SILVER KEY</text>
-        <rect class="cut" x="0" y="0" width="36" height="36" rx="2.0"/>
-      </g>
-      <!-- r6 -->
-      <g transform="translate(80, 42)">
-        <rect x="0" y="0" width="36" height="36" rx="2.0" fill="#ffffff" stroke="#262229" stroke-width="0.5"/>
-        <rect x="4" y="4" width="28" height="24" fill="none" stroke="#262229" stroke-width="0.4" stroke-dasharray="1,1"/>
-        <text class="sub" x="18" y="16" text-anchor="middle">PASTE / PRINT</text>
-        <text class="sub" x="18" y="20" text-anchor="middle">qr-r6.png HERE</text>
-        <text class="relic-txt" x="18" y="33" fill="#262229">hw:r6 SEANCE BELL</text>
-        <rect class="cut" x="0" y="0" width="36" height="36" rx="2.0"/>
-      </g>
-    </g>
+    <text class="sub" x="44" y="-2">Relic Token QR stickers: print tools/prop-mockups/qr/qr-sticker-sheet-A4.pdf (a separate sheet, 36 x 36 mm each)</text>
   </g>
 
   <!-- Scale Bar -->

@@ -13,13 +13,13 @@ Every model in `print/scad/` and `print/stl/` is authored to print cleanly on a 
 - **Walls & Infill:** `3` perimeter walls (`>= 1.6 mm` minimum wall thickness across all structural models), `15%` gyroid or grid infill, `4` top / `4` bottom solid layers.
 - **Moving Clearances:** `0.30 mm` radial/sliding clearance on all hinges, levers, dovetails, and snap tabs; `0.15 mm` press-fit interference on SG90 servo horns.
 - **One Solid Spool Colour per STL:** No multi-material AMS/MMU required. All lettering, dial ticks, wood planks, portraits, and resistor bands live on the **1:1 scale printable SVG sticker sheets** in [`print/stickers/`](./stickers/), which sit inside **`0.4 mm` recessed pockets** on the 3D prints so sticker edges never peel.
-- **Validation Command:** Run `node tools/build-print.mjs --check` at any time to verify that all **48 STL files** in `print/stl/` and `dist/print/` are binary STLs, watertight 2-manifolds (`0` open/non-manifold edges, `0` degenerate triangles), positive volume, and within bed bounds.
+- **Validation Command:** Run `node tools/build-print.mjs --check` at any time to verify that all **42 STL files** in `print/stl/` and `dist/print/` are binary STLs, watertight 2-manifolds (`0` open/non-manifold edges, `0` degenerate triangles), positive volume, and within bed bounds.
 
 ---
 
 ## 2. Six-Spool Filament Palette
 
-The entire 48-piece collection prints from a core palette of **six PLA / Matte PLA spools**. These hex values are this print set's own colours. They are **not** the hex values in `design/tokens.json`. Each spool takes the same job as one game colour, shown in the second column. Buy the nearest spool you can find; the game never reads these colours.
+The entire 42-piece collection prints from a core palette of **six PLA / Matte PLA spools**. These hex values are this print set's own colours. They are **not** the hex values in `design/tokens.json`. Each spool takes the same job as one game colour, shown in the second column. Buy the nearest spool you can find; the game never reads these colours.
 
 (The preview colours inside `scad/_common.scad` are the `design/tokens.json` ones, so a raw OpenSCAD preview looks a little different from the renders in `renders/`.)
 
@@ -28,17 +28,17 @@ The entire 48-piece collection prints from a core palette of **six PLA / Matte P
 | **Dark Iron** | ink `#0b0d10` | `#262229` | Matte Charcoal / Galaxy Black PLA | Enclosures, dial plate, 2-seat flipper plinth, curtain rail, bat mobile, relic tray, keypad pod, cut-wires panel, pyramid holder, relic token pocket |
 | **Antique Brass** | lantern `#e0a43a` | `#d4a84b` | Silk Brass / Antique Gold PLA | Music box, locket, séance bell, dial bezel & needle, stage screen bezel, chandelier, vault clasp, terminal blocks, Dr. Pike standee |
 | **Ectoplasm Mint** | ghost `#9fe8d0` | `#5ce6b8` | Translucent Mint / Glow Green PLA | Pop-up ghost figure (#1), translucent Resolve pip window inserts (#5), Captain Thorne standee |
-| **Bone / Ivory** | bone `#e9e4d8` | `#e8dec8` | Matte Bone White / Warm Ivory PLA | Wax hand, silver key, QR relief plates (`r1`–`r6`), haunting flipper pawns, porcelain doll, blank & Cora standees |
+| **Bone / Ivory** | bone `#e9e4d8` | `#e8dec8` | Matte Bone White / Warm Ivory PLA | Wax hand, silver key, haunting flipper pawns, porcelain doll, blank & Cora standees |
 | **Crimson** | alarm `#d4604a` | `#d43838` | Matte Crimson Red PLA | Curtain panels (#9), Haunt max-tab (#3), banana plug heads (#20), Percy standee |
 | **Warm Wood** | leather `#6b4d33` | `#422818` | Wood-Fill PLA or Matte Walnut Brown PLA | Ghost chest body & lid (#1), planchette (`r4`), stage proscenium frame (#9), beam bracket (#12), relic vault chest & lid (#15), Mrs. Dunmore standee |
 
 ---
 
-## 3. Complete Bill of Materials & Print Orientation Table (48 STLs)
+## 3. Complete Bill of Materials & Print Orientation Table (42 STLs)
 
-All 48 compiled binary STL files live in [`print/stl/`](./stl/) (and are mirrored to `dist/print/` for static distribution), with matching coloured preview renders in [`print/renders/`](./renders/).
+All 42 compiled binary STL files live in [`print/stl/`](./stl/) (and are mirrored to `dist/print/` for static distribution), with matching coloured preview renders in [`print/renders/`](./renders/).
 
-### 3A. Core Game Pieces (21 STLs)
+### 3A. Core Game Pieces (15 STLs)
 
 | STL File | Piece Description | Dimensions (`X × Y × Z mm`) | Spool | Print Orientation | Supports | Sticker Sheet / Notes |
 |---|---|---|---|---|---|---|
@@ -48,8 +48,7 @@ All 48 compiled binary STL files live in [`print/stl/`](./stl/) (and are mirrore
 | `relic-planchette.stl` | Relic `r4`: Heart-shaped spirit-board pointer on 3 brass caster legs with magnifier oculus | `33.0 × 33.0 × 45.8` | Warm Wood | Base flat on bed (`+Z` up) | None (angled display struts bridge cleanly) | `stickers-relics-and-standees.svg` (`22×26` sun/moon scroll border) |
 | `relic-silver-key.stl` | Relic `r5`: Gothic skeleton key with trefoil clover bow, collared stem & notched ward bit | `33.0 × 33.0 × 55.3` | Bone / Ivory | Base flat on bed (`+Z` up) | None (`45°` chamfer under bit & bow) | `stickers-relics-and-standees.svg` (`13.6×7.6` oval crest) |
 | `relic-bell.stl` | Relic `r6`: Flared Victorian service bell with gadrooned dome, clapper ball & turned handle | `33.0 × 33.0 × 51.0` | Antique Brass | Base flat on bed (`+Z` up) | None (self-supporting internal bell arch) | `stickers-relics-and-standees.svg` (`13.6×5.6` `"AWAKE"` band) |
-| `relic-token-pocket.stl` | Universal `40×40 mm` bevelled token base with `36.4×36.4×0.4 mm` top sticker pocket & `22.3 mm` bottom magnet/weight recess | `40.0 × 40.0 × 6.0` | Dark Iron | Bottom flat on bed (`+Z` up); print `6×` | None | Fits `qr-r1.png`..`qr-r6.png` or `stickers-relics-and-standees.svg` |
-| `relic-token-r1.stl` .. `relic-token-r6.stl` (6 files) | 3D-printed raised-relief QR plates (`hw:r1`..`hw:r6`, Version 1-Q `21×21` + 2-cell quiet zone, `1.44 mm` module, `1.0 mm` relief) | `36.0 × 36.0 × 4.0` | Bone / Ivory (+ Dark Iron swap at `z=3.0 mm`) | Base flat on bed (`+Z` up) | None | Pause at layer `3.20 mm` to swap from Bone White to Dark Iron for high-contrast camera scanning |
+| `relic-token-pocket.stl` | Universal `40×40 mm` bevelled token base with `36.4×36.4×0.4 mm` top sticker pocket & `22.3 mm` bottom magnet/weight recess | `40.0 × 40.0 × 6.0` | Dark Iron | Bottom flat on bed (`+Z` up); print `6×` | None | Blank sticker spot: stick one QR sticker (36 × 36 mm) from `tools/prop-mockups/qr/` here. The QR holds the text `hw:r1` to `hw:r6`, not a web address |
 | `pyramid-holder.stl` | Parametric 45° Pepper's-ghost collar frame (`60 mm` base, `10 mm` top) with 4 corner alignment slots & phone resting lip | `70.4 × 70.4 × 29.0` | Dark Iron | Bottom collar flat on bed (`+Z` up) | None (45° struts print support-free) | Holds 4 trapezoidal clear acetate faces (`60 mm` bottom, `10 mm` top, `35.36 mm` slant height) |
 | `standee-blank.stl` | Gothic-arch Suspect standee with `0.4 mm` recessed portrait & name strip pockets on both sides | `40.0 × 15.0 × 67.8` | Bone / Ivory | Base flat on bed (`+Z` up) or flat on back | None | `stickers-relics-and-standees.svg` (6 Suspect portraits + name strips) |
 | `standee-s1-percy.stl` .. `standee-s6-dunmore.stl` (6 files) | Embossed silhouette Suspect standees generated from the 6 Preset Suspect cutouts (`percy`, `thorne`, `pike`, `cora`, `vane`, `dunmore`) | `40.0 × 15.0 × 70.0` | Seat / Suspect colour | Base flat on bed (`+Z` up) | None (`0.6 mm` front silhouette relief) | Ready to use straight off the print bed with zero stickers required |
