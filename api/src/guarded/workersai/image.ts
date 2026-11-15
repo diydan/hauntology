@@ -1,7 +1,7 @@
 import type { SpendTicket } from "@hauntology/shared/world/spend";
 import type { ImageMaker, RenderAnswer } from "../../worlds/ports";
 import { assertTicket } from "../ticket";
-import type { AiBinding } from "./scout";
+import { failureKind, withTimeout, type AiBinding } from "./call";
 
 /**
  * The only door to the image model (`.kiro/steering/security-and-cost.md`). It needs a Ticket for the `image` meter and refuses
@@ -14,16 +14,6 @@ export function renderCandidate(maker: ImageMaker, ticket: SpendTicket, req: Par
 
 export const DEFAULT_IMAGE_MODEL = "@cf/black-forest-labs/flux-2-klein-9b";
 const MAX_IMAGE_BYTES = 16 * 1024 * 1024;
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("timeout")), ms);
-    promise.then(
-      (v) => { clearTimeout(timer); resolve(v); },
-      (e) => { clearTimeout(timer); reject(e); },
-    );
-  });
-}
 
 function fromBase64(text: string): Uint8Array | null {
   if (text.length === 0 || text.length > MAX_IMAGE_BYTES * 1.4 || !/^[A-Za-z0-9+/]+={0,2}$/.test(text.replace(/\s+/g, ""))) return null;
@@ -65,8 +55,7 @@ export class FluxImageMaker implements ImageMaker {
     try {
       answer = await withTimeout(this.ai.run(this.modelId, { multipart: { body: serialized.body, contentType: serialized.headers.get("content-type") } }), this.options.timeoutMs ?? 60_000);
     } catch (e) {
-      const message = e instanceof Error ? e.message : "";
-      return { ok: false, kind: /\b429\b|rate.?limit|too many|capacity|busy|overload/i.test(message) ? "rate_limited" : "failed" };
+      return { ok: false, kind: failureKind(e) };
     }
     const image = typeof answer === "object" && answer !== null && typeof (answer as { image?: unknown }).image === "string" ? fromBase64((answer as { image: string }).image) : null;
     return image === null ? { ok: false, kind: "failed" } : { ok: true, image };

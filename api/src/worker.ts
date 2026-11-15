@@ -2,9 +2,9 @@ import { retentionFromEnv } from "@hauntology/shared/world/retention";
 import { createApp } from "./app";
 import { SpendGuard } from "./do/spend-guard";
 import { WorldJob } from "./do/live-world-job";
-import { DEFAULT_IMAGE_MODEL, FluxImageMaker } from "./guarded/workersai/image";
-import { catalogModelFromEnv } from "./guarded/workersai/model";
-import { ScoutPlaceBriefer, scoutModelFromEnv, type AiBinding } from "./guarded/workersai/scout";
+import type { AiBinding } from "./guarded/workersai/call";
+import { WorkersAiClient } from "./guarded/workersai/client";
+import type { ImagesBinding } from "./guarded/workersai/cutout";
 import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
 import type { Bindings } from "./http/env";
 import { adminTokenFrom } from "./routes/admin";
@@ -19,7 +19,7 @@ import { WorldJobStarter } from "./worlds/job-starter";
 import { CloudflareTurnstile } from "./worlds/turnstile";
 
 /** The bindings of `wrangler.jsonc`: the one R2 bucket and the `WorldJob` and `SpendGuard` Durable Object namespaces, besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
-export type WorkerEnv = Bindings & WorldLabsEnv & { AI?: AiBinding; GHOST_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
+export type WorkerEnv = Bindings & WorldLabsEnv & { AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
 
 export const storeFor = (env: WorkerEnv): CloudflareWorldStore => new CloudflareWorldStore({ bucket: env.BUCKET, jobs: env.WORLD_JOB });
 
@@ -36,6 +36,8 @@ export default {
       // from `SpendGuard` and starts the `WorldJob`, which makes the world through the guarded calls (world-pipeline 6.1, 7.1, 7.3).
       const live = worldLabsFromEnv(env) !== null;
       const guard = new SpendGuardClient(env.SPEND_GUARD);
+      // Every Workers AI and Images adapter (world-pipeline 5.2), each `null` without its binding or with a model id it does not accept.
+      const ai = new WorkersAiClient(env);
       app = createApp({
         worldGenAvailable: live,
         // The operator's routes exist only when `ADMIN_TOKEN` is set to a token of at least 32 characters.
@@ -53,9 +55,9 @@ export default {
             // and a model id it accepts; without either, no picture can pass and the route says `moderation_unavailable`.
             // The sketch (5.3) needs the same binding and a model id it accepts (`IMAGE_MODEL_ID`); without either, a sketch cannot be rendered.
             candidates: new CloudflareCandidateStore(env.BUCKET),
-            ...(live && env.AI !== undefined && catalogModelFromEnv(env.IMAGE_MODEL_ID, DEFAULT_IMAGE_MODEL) !== null ? { imager: new FluxImageMaker(env.AI, catalogModelFromEnv(env.IMAGE_MODEL_ID, DEFAULT_IMAGE_MODEL) as string) } : {}),
+            ...(live && ai.imager !== null ? { imager: ai.imager } : {}),
             verdicts: new CloudflareImageVerdicts(env.BUCKET),
-            ...(live && env.AI !== undefined && scoutModelFromEnv(env.GHOST_MODEL_ID) !== null ? { briefer: new ScoutPlaceBriefer(env.AI, scoutModelFromEnv(env.GHOST_MODEL_ID) as string) } : {}),
+            ...(live && ai.briefer !== null ? { briefer: ai.briefer } : {}),
             ...(typeof env.TURNSTILE_SECRET === "string" && env.TURNSTILE_SECRET !== "" ? { turnstile: new CloudflareTurnstile(env.TURNSTILE_SECRET) } : {}),
           },
         },

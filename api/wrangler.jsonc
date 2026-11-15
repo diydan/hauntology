@@ -4,6 +4,9 @@
 // The Place Brief check (a photo must pass it before a world can be made from it) and the sketch (drawing a place) need the Workers AI binding, which is NOT declared
 // here: in `wrangler dev` it always reaches the real service (a `wrangler login` and a small charge per check). To turn it on add
 // `"ai": { "binding": "AI" }` below. Without it every check answers `moderation_unavailable` and no photo can pass, and a sketch cannot be rendered.
+// The ghost's text, the free-text check (Llama Guard) and the portrait cut-out are built too (`WorkersAiClient`), with no route to use them yet. The first two use
+// the same `AI` binding; the cut-out needs the Images binding, `"images": { "binding": "IMAGES" }` (an Images Paid subscription, and `wrangler dev --remote`:
+// the default offline copy of the binding cannot remove a background). Neither binding is declared until you decide to spend (`docs/spikes/1.2.md`).
 // World making is off until `WLT_API_KEY` is set (a secret: `.dev.vars` locally, `wrangler secret put` if ever deployed; see `.dev.vars.example`).
 {
   "name": "hauntology",

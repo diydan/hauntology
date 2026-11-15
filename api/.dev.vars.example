@@ -22,3 +22,6 @@ HMAC_SECRET=replace-with-at-least-16-random-characters
 # The model that turns a sketch into a photograph (a Workers AI catalog id). Unset is @cf/black-forest-labs/flux-2-klein-9b. It needs the AI
 # binding too, and each render is two paid calls against the image meter (IMAGE_SESSION_CAP, IMAGE_DAY_CAP).
 # IMAGE_MODEL_ID=@cf/black-forest-labs/flux-2-klein-9b
+# The model that checks free text a visitor wrote (a Workers AI catalog id). Unset is @cf/meta/llama-guard-3-8b. It needs the AI binding too,
+# and each check is a small paid call against the llm meter. Nothing calls it yet (the ghost and party specs will).
+# GUARD_MODEL_ID=@cf/meta/llama-guard-3-8b

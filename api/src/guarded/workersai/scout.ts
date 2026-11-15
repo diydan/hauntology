@@ -1,28 +1,16 @@
 import { PLACE_BRIEF_SCHEMA, PLACE_BRIEF_SYSTEM, PLACE_BRIEF_USER, parsePlaceBrief } from "@hauntology/shared/world/brief";
 import type { BriefAnswer, PlaceBriefer } from "../../worlds/ports";
 import { toBase64 } from "../base64";
+import { withTimeout, type AiBinding } from "./call";
 import { catalogModelFromEnv } from "./model";
 
-/** The part of the Workers AI binding (`env.AI`) this uses. */
-export interface AiBinding {
-  run(model: string, input: Record<string, unknown>): Promise<unknown>;
-}
+export type { AiBinding } from "./call";
 
 export const DEFAULT_SCOUT_MODEL = "@cf/meta/llama-4-scout-17b-16e-instruct";
 /** `GHOST_MODEL_ID`: blank is the default, a Workers AI catalog id (`@cf/<author>/<model>`) is used, and anything else is `null` (no check is made, so no picture passes). */
 export const scoutModelFromEnv = (value: string | undefined): string | null => catalogModelFromEnv(value, DEFAULT_SCOUT_MODEL);
 
 const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("timeout")), ms);
-    promise.then(
-      (v) => { clearTimeout(timer); resolve(v); },
-      (e) => { clearTimeout(timer); reject(e); },
-    );
-  });
-}
 
 /**
  * The Place Brief check with Llama 4 Scout on Workers AI (`GHOST_MODEL_ID`). The request is the OpenAI-style chat shape the model
