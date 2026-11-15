@@ -27,13 +27,15 @@ export type WorldRecord = {
   /** The Place Brief and the origin of the picture, copied from it when the world is made. */
   brief?: string;
   source?: "upload" | "sketch";
+  /** The owner has turned the share link on (world-pipeline 9.2): anyone with the id may read the world. Never true for a Gallery world, which is public anyway. */
+  shared?: boolean;
 };
 
 /** An inclusive byte range, as in an HTTP `Range` header. */
 export type ByteRange = { start: number; end: number };
 
 /** The fields a job may change on a world's record. `id`, `kind` and `ownerSid` never change. */
-export type WorldPatch = Partial<Pick<WorldRecord, "status" | "title" | "failure" | "manifest" | "imageId" | "candidateIds">>;
+export type WorldPatch = Partial<Pick<WorldRecord, "status" | "title" | "failure" | "manifest" | "imageId" | "candidateIds" | "shared">>;
 
 export interface WorldStore {
   /** The record of a world, or `null` when there is none. */
@@ -54,6 +56,11 @@ export interface WorldStore {
    * sprite and its play sessions. Safe to call for a world that is already gone.
    */
   purge(id: string): Promise<void>;
+  /**
+   * The manifests of the Gallery Worlds (world-pipeline 9.2): each one `gallery/<id>/world.json` that fits the schema and names the same id, in no
+   * particular order, at most 50. Never a user's world. Reads nothing when there is no Gallery.
+   */
+  galleryManifests(): Promise<WorldManifest[]>;
   /** Every stored object with its kind and age, for retention. */
   inventory(): Promise<StoredObject[]>;
   /** Deletes objects by key. A key that is already gone is not an error. */

@@ -4,6 +4,7 @@ import {
 } from "@hauntology/shared/world/job";
 import type { SpendTicket } from "@hauntology/shared/world/spend";
 import { THROWN, generateWorld, ingestWorld, pollWorld } from "../guarded/worldlabs";
+import type { Logger } from "../log";
 import type { ImageStore, Ingestor, UpstreamFailure, WorldLabsPort } from "../worlds/ports";
 
 const RECORD = "record";
@@ -21,7 +22,7 @@ export interface JobGuard {
   setKill(on: boolean): Promise<void>;
 }
 
-export type JobDeps = { upstream: WorldLabsPort; ingestor: Ingestor; images: ImageStore; guard: JobGuard; timing?: JobTiming };
+export type JobDeps = { upstream: WorldLabsPort; ingestor: Ingestor; images: ImageStore; guard: JobGuard; timing?: JobTiming; /** Where a step of the job is logged (world-pipeline 8.2): the world, its new state, and the code of a failure. Default: nowhere. */ log?: Logger };
 
 /** The job as it is kept in storage: the state machine's data, the Ticket, the picture, and effects not yet settled. */
 type Stored = { data: JobData; ticket: SpendTicket; imageId: string; pending: JobEffect[] };
@@ -183,7 +184,9 @@ export class WorldJob {
     if (!record.success) return;
     const { failure: _old, ...rest } = record.data;
     const next = StoredWorldSchema.safeParse({ ...rest, status: data.status, ...(data.failure !== undefined ? { failure: data.failure } : {}) });
-    if (next.success) await this.state.storage.put(RECORD, next.data);
+    if (!next.success) return;
+    await this.state.storage.put(RECORD, next.data);
+    this.deps?.log?.info("job.step", { worldId: next.data.id, status: data.status, ...(data.failure !== undefined ? { code: data.failure.code } : {}) });
   }
 
   /** Runs the Ticket effects still owed. `true` when all are done; otherwise they stay and the job wakes again soon. */

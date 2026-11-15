@@ -7,6 +7,7 @@ import { WorkersAiClient } from "./guarded/workersai/client";
 import type { ImagesBinding } from "./guarded/workersai/cutout";
 import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
 import type { Bindings } from "./http/env";
+import { createLogger } from "./log";
 import { adminTokenFrom } from "./routes/admin";
 import { SpendGuardClient } from "./spend/client";
 import { cleanupExpired } from "./worlds/cleanup";
@@ -20,6 +21,9 @@ import { CloudflareTurnstile } from "./worlds/turnstile";
 
 /** The bindings of `wrangler.jsonc`: the one R2 bucket and the `WorldJob` and `SpendGuard` Durable Object namespaces, besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
 export type WorkerEnv = Bindings & WorldLabsEnv & { AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
+
+/** The Worker's one logger: ids, codes and counters only (`shared/src/log.ts`). */
+const logger = createLogger();
 
 export const storeFor = (env: WorkerEnv): CloudflareWorldStore => new CloudflareWorldStore({ bucket: env.BUCKET, jobs: env.WORLD_JOB });
 
@@ -39,6 +43,7 @@ export default {
       // Every Workers AI and Images adapter (world-pipeline 5.2), each `null` without its binding or with a model id it does not accept.
       const ai = new WorkersAiClient(env);
       app = createApp({
+        log: logger,
         worldGenAvailable: live,
         // The operator's routes exist only when `ADMIN_TOKEN` is set to a token of at least 32 characters.
         ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: live } } : {}),
@@ -69,7 +74,7 @@ export default {
 
   /** The cron trigger: delete what is past its retention (world-pipeline 8.1). */
   async scheduled(controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(cleanupExpired(storeFor(env), controller.scheduledTime, retentionFromEnv(env)));
+    ctx.waitUntil(cleanupExpired(storeFor(env), controller.scheduledTime, retentionFromEnv(env)).then((done) => logger.info("cleanup.done", { deleted: done.objects, worlds: done.worlds })));
   },
 };
 

@@ -2,7 +2,7 @@ import { ASSET_NAME, MANIFEST_NAME, WorldManifestSchema, assetNames, type WorldM
 import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
 import { forgetWorld } from "../http/session";
-import { accessOf, mayDelete, mayRead } from "../worlds/access";
+import { accessOf, mayDelete, mayRead, mayShare, type Access } from "../worlds/access";
 import { parseRange } from "../worlds/range";
 import type { WorldRecord, WorldStore } from "../worlds/store";
 
@@ -42,7 +42,7 @@ const assetUrl = (worldId: string, name: string): string => `/api/worlds/${world
  * fields can reach the browser. A world marked ready whose manifest does not fit is reported as a failed
  * ingest, not as a place that cannot be entered.
  */
-function statusOf(w: WorldRecord): Record<string, unknown> {
+function statusOf(w: WorldRecord, access: Access): Record<string, unknown> {
   const manifest = readyManifest(w);
   if (w.status === "ready" && manifest === null) {
     return { id: w.id, status: "failed", failure: { code: "ingest_failed", quotaReturned: false, retryAllowed: false } };
@@ -57,6 +57,8 @@ function statusOf(w: WorldRecord): Record<string, unknown> {
       ? { failure: { code: w.failure.code, quotaReturned: w.failure.quotaReturned, retryAllowed: w.failure.retryAllowed } }
       : {}),
     ...(manifest !== null ? { manifest } : {}),
+    // Only the owner is told whether the share link is on.
+    ...(access === "owner" && w.shared === true ? { shared: true } : {}),
   };
 }
 
@@ -75,9 +77,11 @@ export function worldRoutes(deps: WorldsDeps): Hono<AppEnv> {
 
   routes.get("/:id", async (c) => {
     const w = await find(c.req.param("id"));
-    if (w === null || !mayRead(accessOf(w, c.get("session").sid))) return notFound(c);
+    if (w === null) return notFound(c);
+    const access = accessOf(w, c.get("session").sid);
+    if (!mayRead(access)) return notFound(c);
     c.header("Cache-Control", "no-store");
-    return c.json(statusOf(w));
+    return c.json(statusOf(w, access));
   });
 
   routes.get("/:id/assets/:name", async (c) => {
@@ -101,7 +105,7 @@ export function worldRoutes(deps: WorldsDeps): Hono<AppEnv> {
     if (stat === null) return notFound(c);
 
     // Asset names never change content within a world and a world id is never reused: cache for good.
-    // A user's world is private to its owner, so only the browser may keep it.
+    // A user's world, shared or not, is not for a shared cache: only the browser may keep it, so a world the owner stops sharing or deletes is not served from one.
     const cache = `${access === "public" ? "public" : "private"}, max-age=31536000, immutable`;
     if (access === "public") c.set("sessionNoCookie", true);
     const base = { "Content-Type": typeOf(name), "Accept-Ranges": "bytes", "Cache-Control": cache };
@@ -119,6 +123,24 @@ export function worldRoutes(deps: WorldsDeps): Hono<AppEnv> {
       headers: { ...base, "Content-Range": `bytes ${part.start}-${part.end}/${stat.size}`, "Content-Length": String(part.end - part.start + 1) },
     });
   });
+
+  /**
+   * The share link (world-pipeline 9.2, Requirement 9.4). A world's id is 128 bits of a keyed MAC, so it cannot be guessed; while the
+   * owner has the link on, anyone who has the id may read the world (`shared` access) and nobody but the owner may change or delete it.
+   * It is off until the owner turns it on, and only a ready world can be shared. Turning it off, deleting the world or its expiry ends
+   * the link. Everyone else, and a world that is not ready, gets the answer for a world nobody has.
+   */
+  const setShared = async (c: Context<AppEnv>, on: boolean) => {
+    const id = c.req.param("id") ?? "";
+    const w = await find(id);
+    if (w === null || !mayShare(accessOf(w, c.get("session").sid))) return notFound(c);
+    if (on && readyManifest(w) === null) return notFound(c);
+    if ((await store.update(id, { shared: on })) === null) return notFound(c);
+    c.header("Cache-Control", "no-store");
+    return c.json({ ok: true, shared: on });
+  };
+  routes.post("/:id/share", (c) => setShared(c, true));
+  routes.delete("/:id/share", (c) => setShared(c, false));
 
   routes.delete("/:id", async (c) => {
     const id = c.req.param("id");

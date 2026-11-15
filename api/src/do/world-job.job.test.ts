@@ -1,8 +1,9 @@
 import { JOB_TIMEOUT_MS, POLL_MS } from "@hauntology/shared/world/job";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FakeIngestor, FakeWorldLabs, MemoryImageStore, MemorySpendGuard } from "../worlds/fakes";
 import { fakeState } from "../worlds/fake-cloudflare";
 import { sampleManifest } from "../worlds/test-kit";
+import { createLogger } from "../log";
 import { WorldJob, type JobDeps } from "./world-job";
 
 const T0 = Date.UTC(2026, 10, 15, 12, 0, 0);
@@ -394,5 +395,48 @@ describe("a job with no wiring", () => {
     const t = setup({ deps: false });
     await t.job.alarm();
     expect(t.parts.data.size).toBe(0);
+  });
+});
+
+describe("the job logs each step, and only the world, its state and a failure code (world-pipeline 8.2)", () => {
+  it("writes a job.step line for each state, with the code of a failure, and nothing the visitor wrote", async () => {
+    const lines: string[] = [];
+    const t = setup();
+    (t.deps as { log?: unknown }).log = createLogger((l) => lines.push(l), () => T0);
+    // A title and a brief the visitor wrote sit on the record; neither may reach a line.
+    await t.call("/record", "PUT", { id: WORLD, kind: "user", ownerSid: OWNER, status: "queued", imageId: "img-1", title: "My grandmother's kitchen", brief: "A kitchen at 12 Elm Street" });
+    const r = await t.guard.reserve({ meter: "world", sessionId: OWNER, ipHash: "ip", now: T0 });
+    if (!r.ok) throw new Error("reserve refused");
+    await t.call("/start", "POST", { ticket: r.ticket, imageId: "img-1", ownerSid: OWNER });
+    await t.run();
+    const steps = lines.map((l) => JSON.parse(l) as Record<string, unknown>);
+    expect(steps.length).toBeGreaterThanOrEqual(3);
+    expect(steps.every((s) => s.event === "job.step" && s.level === "info" && s.worldId === WORLD && typeof s.status === "string")).toBe(true);
+    expect(steps.map((s) => s.status)).toEqual(expect.arrayContaining(["generating", "ingesting", "ready"]));
+    expect(lines.join("\n")).not.toMatch(/grandmother|Elm|kitchen|OWNER|sid-owner/);
+    expect(steps.every((s) => !("code" in s) && !("dropped" in s))).toBe(true);
+  });
+
+  it("writes the failure code when the job fails", async () => {
+    const lines: string[] = [];
+    const t = setup();
+    (t.deps as { log?: unknown }).log = createLogger((l) => lines.push(l), () => T0);
+    t.upstream.generateScript = [{ ok: false, kind: "no_credits" }];
+    await t.begin();
+    await t.run();
+    const last = JSON.parse(lines.at(-1) as string) as Record<string, unknown>;
+    expect(last).toMatchObject({ event: "job.step", worldId: WORLD, status: "failed", code: expect.stringMatching(/^[a-z][a-z0-9_]*$/) });
+  });
+
+  it("writes nothing when no logger is given", async () => {
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const t = setup();
+      await t.begin();
+      await t.run();
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 });

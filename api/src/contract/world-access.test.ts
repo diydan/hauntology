@@ -3,7 +3,7 @@ import type { Context } from "hono";
 import { createApp } from "../app";
 import type { AppEnv } from "../http/env";
 import { forgetWorld, setLastPlay, setLastWorld } from "../http/session";
-import { checkWorldAccess, worldAccessContract, type WorldAccessHarness } from "./world-access";
+import { checkWorldAccess, checkWorldSharing, worldAccessContract, type WorldAccessHarness } from "./world-access";
 
 /**
  * A reference app that follows the contract (`none`), and apps that each break one rule. They are
@@ -11,7 +11,8 @@ import { checkWorldAccess, worldAccessContract, type WorldAccessHarness } from "
  */
 type Leak =
   | "none" | "foreign-403" | "foreign-readable" | "delete-any" | "play-any" | "echo-id"
-  | "anonymous-readable" | "asset-any" | "gallery-deletable" | "owner-locked-out";
+  | "anonymous-readable" | "asset-any" | "gallery-deletable" | "owner-locked-out"
+  | "share-default-on" | "share-by-stranger" | "shared-reader-delete" | "reader-unshare" | "unshare-ignored" | "shared-survives-delete" | "share-gallery";
 
 const ORIGIN = "http://app.test";
 const ENV = { HMAC_SECRET: "test-secret-0123456789abcdef-test" };
@@ -21,6 +22,7 @@ const MISSING = "w-does-not-exist-123456";
 function referenceHarness(leak: Leak): WorldAccessHarness {
   const app = createApp();
   const owners = new Map<string, string>(); // world id -> owner's session id
+  const shared = new Set<string>(); // ids whose owner turned the share link on
   let seed = 0;
 
   const sid = (c: Context<AppEnv>) => c.get("session").sid;
@@ -28,13 +30,18 @@ function referenceHarness(leak: Leak): WorldAccessHarness {
   const notFound = (c: Context<AppEnv>, id: string, leakId = false) =>
     c.json(leakId ? { ok: false, code: "world_not_found", id } : { ok: false, code: "world_not_found" }, 404);
 
-  /** May this request see the world? Gallery worlds are public; own worlds belong to the Session. */
-  const visible = (c: Context<AppEnv>, id: string): "yes" | "foreign" | "missing" => {
+  /**
+   * May this request see the world? Gallery worlds are public; own worlds belong to the Session; a shared world is also seen by a reader.
+   * `write` asks for what only the owner may do (delete, share), for which a reader is a foreigner.
+   */
+  const visible = (c: Context<AppEnv>, id: string, write = false): "yes" | "foreign" | "missing" => {
     if (id === GALLERY) return "yes";
     const owner = owners.get(id);
-    if (owner === undefined) return "missing";
+    const open = shared.has(id) && (owner !== undefined || leak === "shared-survives-delete");
+    if (owner === undefined && !open) return "missing";
     if (leak === "owner-locked-out") return "foreign";
     if (owner === sid(c)) return "yes";
+    if (!write && open) return "yes";
     if (leak === "foreign-readable") return "yes";
     if (leak === "anonymous-readable" && fresh(c)) return "yes";
     return "foreign";
@@ -43,6 +50,7 @@ function referenceHarness(leak: Leak): WorldAccessHarness {
   app.post("/api/test/seed", (c) => {
     const id = `w-own-${String(++seed).padStart(8, "0")}-abcdef`;
     owners.set(id, sid(c));
+    if (leak === "share-default-on") shared.add(id);
     setLastWorld(c, id);
     return c.json({ id });
   });
@@ -65,11 +73,34 @@ function referenceHarness(leak: Leak): WorldAccessHarness {
   app.delete("/api/worlds/:id", (c) => {
     const id = c.req.param("id");
     if (id === GALLERY) return leak === "gallery-deletable" ? c.body(null, 204) : notFound(c, id);
-    const v = visible(c, id);
+    const v = visible(c, id, leak !== "shared-reader-delete");
     if (v === "yes" || (leak === "delete-any" && v === "foreign")) {
       owners.delete(id);
+      if (leak !== "shared-survives-delete") shared.delete(id);
       forgetWorld(c, id);
       return c.body(null, 204);
+    }
+    return notFound(c, id);
+  });
+
+  app.post("/api/worlds/:id/share", (c) => {
+    const id = c.req.param("id");
+    if (id === GALLERY) return leak === "share-gallery" ? c.json({ ok: true, shared: true }) : notFound(c, id);
+    const v = visible(c, id, true);
+    if (v === "yes" || (leak === "share-by-stranger" && v === "foreign")) {
+      shared.add(id);
+      return c.json({ ok: true, shared: true });
+    }
+    return notFound(c, id);
+  });
+
+  app.delete("/api/worlds/:id/share", (c) => {
+    const id = c.req.param("id");
+    if (id === GALLERY) return leak === "share-gallery" ? c.json({ ok: true, shared: false }) : notFound(c, id);
+    const v = visible(c, id, leak !== "reader-unshare");
+    if (v === "yes" || (leak === "share-by-stranger" && v === "foreign")) {
+      if (leak !== "unshare-ignored") shared.delete(id);
+      return c.json({ ok: true, shared: false });
     }
     return notFound(c, id);
   });
@@ -132,5 +163,30 @@ describe("the contract can disagree", () => {
 
   it("passes the compliant app with no violations at all", async () => {
     expect(await checkWorldAccess(referenceHarness("none"))).toEqual([]);
+  });
+});
+
+describe("the share link contract can disagree", () => {
+  const cases: [Leak, RegExp][] = [
+    ["share-default-on", /GET before the link is on: answered 200/],
+    ["share-by-stranger", /POST share by another visitor: answered 200/],
+    ["shared-reader-delete", /DELETE of a shared world by a reader: answered 204/],
+    ["reader-unshare", /DELETE share by a reader: answered 200/],
+    ["unshare-ignored", /GET after the link is off: answered 200/],
+    ["shared-survives-delete", /GET of a deleted shared world: answered 200/],
+    ["share-gallery", /POST share of a Gallery world: answered 200/],
+    ["owner-locked-out", /POST share by the owner: 404/],
+  ];
+
+  for (const [leak, expected] of cases) {
+    it(`reports a leak: ${leak}`, async () => {
+      const violations = await checkWorldSharing(referenceHarness(leak));
+      expect(violations.length).toBeGreaterThan(0);
+      expect(violations.join("\n")).toMatch(expected);
+    });
+  }
+
+  it("passes the compliant app with no violations at all", async () => {
+    expect(await checkWorldSharing(referenceHarness("none"))).toEqual([]);
   });
 });

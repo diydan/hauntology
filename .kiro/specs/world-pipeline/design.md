@@ -57,7 +57,8 @@ sequenceDiagram
 | `GET /api/worlds/:id` | status + manifest when ready | 7.3, 8.2 |
 | `GET /api/worlds/:id/assets/:name` | range-capable asset stream | 8.4 |
 | `DELETE /api/worlds/:id` | delete my place | 10.2 |
-| `GET /api/gallery` | list Gallery Worlds | 9.2 |
+| `POST` / `DELETE /api/worlds/:id/share` | the owner turns the share link of a ready world on or off → `{ok, shared}`; while on, anyone with the id may read it | 9.4 |
+| `GET /api/gallery` | list Gallery Worlds as `[{id, title, description, thumbUrl, attribution}]`, public, no key or quota needed | 9.2, 9.3 |
 | `GET /api/quota` | remaining per meter (`world`, `image`, `llm`, `tts`, `stt`, `live`) and the flags `voice`, `stitch` and `live` | 5.7 |
 
 ### `shared/` pure modules

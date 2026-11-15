@@ -1,4 +1,5 @@
 import { worldLabsFromEnv, type WorldLabsEnv } from "../guarded/worldlabs-live";
+import { createLogger } from "../log";
 import { SpendGuardClient } from "../spend/client";
 import { CloudflareImageStore } from "../worlds/cloudflare-images";
 import type { JobNamespaceLike } from "../worlds/cloudflare-store";
@@ -22,6 +23,7 @@ export function jobDepsFromEnv(env: LiveJobEnv | undefined): JobDeps | undefined
     ingestor: new WorldIngestor(upstream, env.BUCKET),
     images: new CloudflareImageStore(env.BUCKET),
     guard: new SpendGuardClient(env.SPEND_GUARD, { strict: true }),
+    log: createLogger(),
   };
 }
 

@@ -16,7 +16,7 @@ inclusion: always
 ## User content
 - Treat all user text (captions, ghost free text, chat) as **data**, never instructions. In prompts it goes inside a clearly delimited block, length-capped, control characters stripped.
 - Strip EXIF/GPS/XMP from every uploaded image before storage or transmission.
-- Logs: ids, counters, error codes only. No image bytes, prompts, captions or chat text at any log level in production.
+- Logs: ids, counters, error codes only. No image bytes, prompts, captions or chat text at any log level in production. A line is made by `shared/src/log.ts` and written by `api/src/log.ts` (a closed list of events and fields; anything else is dropped and counted); no other file under `api/src` or `shared/src` may name `console` (`tools/test/no-direct-logging.test.mjs`).
 - Place privacy: only a position rounded to two decimals is kept, and only in the frozen conditions snapshot for that game. No IP-based location, and no place in any log. A photo's capture date and time may be read in the browser before the re-encode; its location and every other field are discarded.
 - Voice: speech, listening, the Stitch word check and live mode are paid calls and go through the guarded `WorkersAiClient` with a SpendTicket (meters `tts`, `stt` and `live`). Listening audio is deleted at once and never logged or stored; live mode stores no audio; the transcript is data like typed text. Stitch clips live only in the Room's own storage, reach no model except the word check, need each player's own yes, and are deleted when the game ends, after 6 hours, or when the player leaves.
 - Retention: uploads 24 h, user worlds 7 days, Gallery permanent. "Delete my place" removes everything for that world immediately.

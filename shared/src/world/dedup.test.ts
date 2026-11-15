@@ -40,6 +40,18 @@ describe("Property 10: dedup key is a function of image and options", () => {
 });
 
 describe("deriveWorldId", () => {
+  it("is 128 bits: 16 bytes of the MAC in 22 characters, so a share link cannot be guessed (Requirement 9.4)", async () => {
+    const ids = new Set<string>();
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const id = await deriveWorldId("sid-a", await worldKey(H1), attempt, SECRET);
+      const bytes = Uint8Array.from(atob(id.slice(2).replace(/-/g, "+").replace(/_/g, "/") + "=="), (c) => c.charCodeAt(0));
+      expect(bytes.length * 8).toBeGreaterThanOrEqual(128);
+      expect(id).toMatch(/^w-[A-Za-z0-9_-]{22}$/);
+      ids.add(id);
+    }
+    expect(ids.size).toBe(50);
+  });
+
   it("is w- and 22 URL-safe characters", async () => {
     expect(await deriveWorldId("sid", await worldKey(H1), 0, SECRET)).toMatch(/^w-[A-Za-z0-9_-]{22}$/);
   });

@@ -1,4 +1,5 @@
-import { WorldManifestSchema } from "@hauntology/shared/world/manifest";
+import { GALLERY_ID } from "@hauntology/shared/world/gallery";
+import { WorldManifestSchema, type WorldManifest } from "@hauntology/shared/world/manifest";
 import type { StoredObject } from "@hauntology/shared/world/retention";
 import { MANIFEST_NAME } from "@hauntology/shared/world/manifest";
 import { USER_PREFIXES, bundleKey, bundlePrefix, candidateKey, describeKey, galleryKey, spriteKey, uploadKey } from "./keys";
@@ -25,7 +26,14 @@ export interface PlaySessionPurger {
   deleteForWorld(worldId: string): Promise<void>;
 }
 
-export type CloudflareStoreDeps = { bucket: R2BucketLike; jobs: JobNamespaceLike; playSessions?: PlaySessionPurger };
+export type CloudflareStoreDeps = { bucket: R2BucketLike; jobs: JobNamespaceLike; playSessions?: PlaySessionPurger; now?: () => number };
+
+/** The Gallery list is read from R2 at most this often per isolate: one listing and one read per world, for a public route. */
+export const GALLERY_TTL_MS = 30_000;
+/** At most this many Gallery Worlds are listed. */
+const GALLERY_MAX = 50;
+/** Reads of manifests in flight at once. */
+const GALLERY_READS = 6;
 
 const RECORD_URL = "https://world-job/record";
 const BATCH = 1000;
@@ -42,6 +50,8 @@ const MAX_PAGES = 100;
  * - `purge` and `removeObjects` can never reach `gallery/`: they only act on the four user prefixes.
  */
 export class CloudflareWorldStore implements WorldStore {
+  private galleryMemo: { at: number; manifests: WorldManifest[] } | null = null;
+
   constructor(private readonly deps: CloudflareStoreDeps) {}
 
   private job(id: string) {
@@ -110,6 +120,41 @@ export class CloudflareWorldStore implements WorldStore {
     await this.deps.playSessions?.deleteForWorld(id);
     // The record goes last, so a purge that failed half way can be run again.
     await this.job(id).fetch(RECORD_URL, { method: "DELETE" });
+  }
+
+  /**
+   * The Gallery Worlds' manifests: every `gallery/<id>/world.json` under a plain Gallery id, read and checked as `find` checks one (it must
+   * fit the schema and name the same id), at most 50, six reads at a time. The answer is kept for 30 seconds, because the route is public.
+   * A failed read is not kept and is not hidden.
+   */
+  async galleryManifests(): Promise<WorldManifest[]> {
+    const now = (this.deps.now ?? Date.now)();
+    if (this.galleryMemo !== null && now - this.galleryMemo.at >= 0 && now - this.galleryMemo.at < GALLERY_TTL_MS) return this.galleryMemo.manifests;
+
+    const ids: string[] = [];
+    for await (const o of this.listAll("gallery/")) {
+      if (!o.key.endsWith(`/${MANIFEST_NAME}`)) continue;
+      const id = o.key.slice("gallery/".length, o.key.length - MANIFEST_NAME.length - 1);
+      if (GALLERY_ID.test(id)) ids.push(id);
+      if (ids.length >= GALLERY_MAX) break;
+    }
+
+    const manifests: WorldManifest[] = [];
+    for (let i = 0; i < ids.length; i += GALLERY_READS) {
+      const read = await Promise.all(
+        ids.slice(i, i + GALLERY_READS).map(async (id) => {
+          const object = await this.deps.bucket.get(galleryKey(id, MANIFEST_NAME));
+          if (object === null) return null;
+          let parsed: unknown;
+          try { parsed = JSON.parse(await object.text()); } catch { return null; }
+          const manifest = WorldManifestSchema.safeParse(parsed);
+          return manifest.success && manifest.data.id === id ? manifest.data : null;
+        }),
+      );
+      for (const m of read) if (m !== null) manifests.push(m);
+    }
+    this.galleryMemo = { at: now, manifests };
+    return manifests;
   }
 
   async inventory(): Promise<StoredObject[]> {

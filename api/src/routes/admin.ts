@@ -2,6 +2,7 @@ import { Hono, type Context } from "hono";
 import type { SpendStatus } from "@hauntology/shared/world/spend-ledger";
 import { flagsFrom } from "../http/flags";
 import type { AppEnv } from "../http/env";
+import { SILENT, type Logger } from "../log";
 
 /** The part of `SpendGuard` the operator's routes use. `SpendGuardClient` fits it. */
 export interface AdminSpend {
@@ -15,6 +16,8 @@ export type AdminDeps = {
   spend: AdminSpend;
   /** Whether anything is set up to make a world at all (a key for the world service). */
   worldGenAvailable: boolean;
+  /** Where the operator's actions are logged (world-pipeline 8.2). Default: nowhere. */
+  log?: Logger;
 };
 
 export const ADMIN_TOKEN_MIN = 32;
@@ -98,6 +101,7 @@ export function adminRoutes(deps: AdminDeps): Hono<AppEnv> {
     if (typeof on !== "boolean") return c.json({ ok: false, code: "bad_request" }, 400);
     try {
       await deps.spend.setKill(on);
+      (deps.log ?? SILENT).info("admin.kill", { on });
       return c.json(await report(c));
     } catch {
       return unavailable(c);

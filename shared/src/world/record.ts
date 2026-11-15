@@ -25,5 +25,7 @@ export const StoredWorldSchema = z.object({
   /** The Place Brief and where the picture came from, kept for the manifest the ingest writes. */
   brief: z.string().max(2000).optional(),
   source: z.enum(["upload", "sketch"]).optional(),
+  /** The owner has turned the share link on: anyone with the id may read the world (world-pipeline 9.2). Off unless set. */
+  shared: z.boolean().optional(),
 });
 export type StoredWorld = z.infer<typeof StoredWorldSchema>;

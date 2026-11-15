@@ -117,6 +117,82 @@ export async function checkWorldAccess(h: WorldAccessHarness, skip: readonly Ski
   return v;
 }
 
+/**
+ * The share link contract (world-pipeline 9.2, Requirement 9.4). A world is private until its owner turns the link on; then anyone who has
+ * the id, with or without a cookie, may read it and its files, and nobody but the owner may delete it or change the link. Turning the link
+ * off, or deleting the world, makes it as missing as before. No one but the owner can turn it on, off or find out it exists, and a Gallery
+ * or a missing world cannot be shared.
+ */
+export async function checkWorldSharing(h: WorldAccessHarness): Promise<string[]> {
+  const v: string[] = [];
+  const A = await h.newVisitor();
+  const B = await h.newVisitor();
+  const NONE = h.anonymous();
+  const W = await h.seedOwnWorld(A);
+  const W2 = await h.seedOwnWorld(A);
+  const M = h.missingWorldId;
+  const G = h.galleryWorldId;
+
+  const get = (who: Headers_, id: string) => h.request(`/api/worlds/${id}`, { method: "GET", headers: who });
+  const del = (who: Headers_, id: string) => h.request(`/api/worlds/${id}`, { method: "DELETE", headers: who });
+  const share = (who: Headers_, id: string, method: "POST" | "DELETE") => h.request(`/api/worlds/${id}/share`, { method, headers: who });
+  const asset = (who: Headers_, id: string) => h.request(h.assetPath!(id), { method: "GET", headers: who });
+  const ok2xx = (r: Reply) => r.status >= 200 && r.status < 300;
+  const mustLookMissing = (what: string, foreign: Reply, missing: Reply) => {
+    if (!isNotFound(foreign)) v.push(`${what}: answered ${describeReply(foreign)}, not 404 world_not_found`);
+    if (!isNotFound(missing)) v.push(`${what}: a missing world answered ${describeReply(missing)}, not 404 world_not_found`);
+    if (!same(foreign, missing)) v.push(`${what}: differs from a missing world (${describeReply(foreign)} vs ${describeReply(missing)})`);
+  };
+  const readers = [["another visitor", B], ["no cookie", NONE]] as const;
+
+  // Private until the owner says so, and nobody else can say so.
+  mustLookMissing("GET before the link is on", await get(B, W), await get(B, M));
+  mustLookMissing("POST share by another visitor", await share(B, W, "POST"), await share(B, M, "POST"));
+  mustLookMissing("POST share with no cookie", await share(NONE, W, "POST"), await share(NONE, M, "POST"));
+  mustLookMissing("DELETE share by another visitor", await share(B, W, "DELETE"), await share(B, M, "DELETE"));
+  if ((await get(B, W)).status === 200) v.push("a request to share the owner's world by someone else turned the link on");
+
+  // The owner turns it on: anyone with the id reads it and its files.
+  const on = await share(A, W, "POST");
+  if (!ok2xx(on)) v.push(`POST share by the owner: ${describeReply(on)}`);
+  for (const [name, who] of readers) {
+    const r = await get(who, W);
+    if (r.status !== 200) v.push(`GET shared world (${name}): ${describeReply(r)}`);
+    if (h.assetPath !== undefined) {
+      const a = await asset(who, W);
+      if (a.status !== 200) v.push(`GET asset of a shared world (${name}): ${describeReply(a)}`);
+    }
+  }
+
+  // A reader through the link changes nothing.
+  mustLookMissing("DELETE of a shared world by a reader", await del(B, W), await del(B, M));
+  mustLookMissing("DELETE of a shared world with no cookie", await del(NONE, W), await del(NONE, M));
+  mustLookMissing("DELETE share by a reader", await share(B, W, "DELETE"), await share(B, M, "DELETE"));
+  mustLookMissing("POST share by a reader", await share(B, W, "POST"), await share(B, M, "POST"));
+  if ((await get(A, W)).status !== 200) v.push("a reader's request removed or changed the owner's world");
+  if ((await get(B, W)).status !== 200) v.push("a reader's request turned the link off");
+
+  // The owner turns it off: it is missing again, and still the owner's.
+  const off = await share(A, W, "DELETE");
+  if (!ok2xx(off)) v.push(`DELETE share by the owner: ${describeReply(off)}`);
+  mustLookMissing("GET after the link is off", await get(B, W), await get(B, M));
+  mustLookMissing("GET with no cookie after the link is off", await get(NONE, W), await get(NONE, M));
+  if (h.assetPath !== undefined) mustLookMissing("GET asset after the link is off", await asset(B, W), await asset(B, M));
+  if ((await get(A, W)).status !== 200) v.push("turning the link off took the world from its owner");
+
+  // Deleting the world ends the link.
+  if (!ok2xx(await share(A, W2, "POST"))) v.push("POST share of a second world by the owner failed");
+  if ((await get(B, W2)).status !== 200) v.push("GET of a second shared world failed");
+  if (!ok2xx(await del(A, W2))) v.push("DELETE of a shared world by its owner failed");
+  mustLookMissing("GET of a deleted shared world", await get(B, W2), await get(B, M));
+
+  // A Gallery world or a missing one cannot be shared, not even by someone who owns other worlds.
+  mustLookMissing("POST share of a Gallery world", await share(A, G, "POST"), await share(A, M, "POST"));
+  mustLookMissing("DELETE share of a Gallery world", await share(A, G, "DELETE"), await share(A, M, "DELETE"));
+
+  return v;
+}
+
 /** Registers the contract as a test for one app. Used by every route set that serves worlds. */
 export function worldAccessContract(
   label: string,
@@ -126,6 +202,9 @@ export function worldAccessContract(
   describe(`world access contract: ${label}`, () => {
     it("serves an own world only to its Session, and answers a foreign id like a missing one", async () => {
       expect(await checkWorldAccess(await makeHarness(), options.skip)).toEqual([]);
+    });
+    it("shares a world only while its owner's link is on, and changes nothing for a reader", async () => {
+      expect(await checkWorldSharing(await makeHarness())).toEqual([]);
     });
     for (const check of options.skip ?? []) it.todo(`${check}: not checked yet, its route does not exist (ghost-engine 5)`);
   });

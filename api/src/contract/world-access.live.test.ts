@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { LIVE_URL, liveKit, type LiveVisitor } from "./live-kit";
-import { checkWorldAccess, type WorldAccessHarness } from "./world-access";
+import { checkWorldAccess, checkWorldSharing, type WorldAccessHarness } from "./world-access";
 
 /**
  * Shell task 3.3 against a running `wrangler dev` (real local R2 and a real Durable Object). Skipped unless
@@ -34,5 +34,6 @@ describe.skipIf(LIVE_URL === undefined)("world access contract: wrangler dev wit
       assetPath: (id) => `/api/worlds/${id}/assets/world.json`,
     };
     expect(await checkWorldAccess(harness, ["play"])).toEqual([]);
+    expect(await checkWorldSharing(harness)).toEqual([]);
   });
 });

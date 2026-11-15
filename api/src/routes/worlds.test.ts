@@ -314,3 +314,157 @@ describe("DELETE /api/worlds/:id", () => {
     expect(kit.store.records.has(ID)).toBe(true);
   });
 });
+
+describe("the share link: POST and DELETE /api/worlds/:id/share (world-pipeline 9.2, Requirement 9.4)", () => {
+  const share = (kit: ReturnType<typeof worldsKit>, id: string, who: { headers: Record<string, string> }, method: "POST" | "DELETE" = "POST") => kit.send(`/api/worlds/${id}/share`, { method, headers: who.headers });
+  const NOT_FOUND = { ok: false, code: "world_not_found" };
+
+  it("is off until the owner turns it on: a stranger gets the answer for a world nobody has", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    const stranger = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    const r = await kit.send(`/api/worlds/${ID}`, { headers: stranger.headers });
+    expect(r.status).toBe(404);
+    expect(r.json).toEqual(NOT_FOUND);
+  });
+
+  it("lets the owner turn it on, and then a stranger, and a request with no cookie, read the world and its files", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    const stranger = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    const on = await share(kit, ID, owner);
+    expect(on.status).toBe(200);
+    expect(on.json).toEqual({ ok: true, shared: true });
+    expect(on.headers.get("Cache-Control")).toBe("no-store");
+    for (const who of [stranger, { headers: { Origin: "http://app.test" } }]) {
+      const r = await kit.send(`/api/worlds/${ID}`, { headers: who.headers });
+      expect(r.status).toBe(200);
+      expect(WorldStatusSchema.parse(r.json)).toMatchObject({ id: ID, status: "ready", title: "The kitchen" });
+      expect(r.json).not.toHaveProperty("shared");
+      expect(r.text).not.toContain(owner.sid);
+      const asset = await bytesOf(kit, `/api/worlds/${ID}/assets/splat-500k.spz`, who.headers, { Range: "bytes=2-4" });
+      expect(asset.status).toBe(206);
+      expect([...asset.bytes]).toEqual([2, 3, 4]);
+    }
+  });
+
+  it("keeps a shared world out of every shared cache: its files are private, and a reader is given a Session like any visitor", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    kit.readyWorld(ID, owner, { shared: true });
+    const r = await bytesOf(kit, `/api/worlds/${ID}/assets/thumb.jpg`, { Origin: "http://app.test" });
+    expect(r.status).toBe(200);
+    expect(r.headers.get("Cache-Control")).toBe("private, max-age=31536000, immutable");
+    expect(r.headers.get("Set-Cookie")).not.toBeNull();
+  });
+
+  it("tells only the owner that the link is on", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    kit.readyWorld(ID, owner, { shared: true });
+    expect((await kit.send(`/api/worlds/${ID}`, { headers: owner.headers })).json).toMatchObject({ id: ID, shared: true });
+    const off = worldsKit();
+    const o2 = await off.visitor();
+    off.readyWorld(ID, o2);
+    expect((await off.send(`/api/worlds/${ID}`, { headers: o2.headers })).json).not.toHaveProperty("shared");
+  });
+
+  it("lets nobody but the owner delete a shared world or change its link; each refusal is the answer for a world nobody has", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    const stranger = await kit.visitor();
+    kit.readyWorld(ID, owner, { shared: true });
+    const missing = await share(kit, MISSING, stranger);
+    for (const r of [await kit.send(`/api/worlds/${ID}`, { method: "DELETE", headers: stranger.headers }), await share(kit, ID, stranger), await share(kit, ID, stranger, "DELETE"), await share(kit, ID, { headers: { Origin: "http://app.test" } })]) {
+      expect(r.status).toBe(404);
+      expect(r.json).toEqual(NOT_FOUND);
+      expect(r.json).toEqual(missing.json);
+    }
+    expect(kit.store.records.get(ID)).toMatchObject({ shared: true });
+    expect(kit.store.objects.size).toBeGreaterThan(0);
+  });
+
+  it("ends when the owner turns it off: the stranger gets the 404 again, the owner keeps the world", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    const stranger = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    await share(kit, ID, owner);
+    expect((await kit.send(`/api/worlds/${ID}`, { headers: stranger.headers })).status).toBe(200);
+    const off = await share(kit, ID, owner, "DELETE");
+    expect(off.status).toBe(200);
+    expect(off.json).toEqual({ ok: true, shared: false });
+    expect((await kit.send(`/api/worlds/${ID}`, { headers: stranger.headers })).status).toBe(404);
+    expect((await bytesOf(kit, `/api/worlds/${ID}/assets/thumb.jpg`, stranger.headers)).status).toBe(404);
+    expect((await kit.send(`/api/worlds/${ID}`, { headers: owner.headers })).status).toBe(200);
+  });
+
+  it("ends when the owner deletes the world", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    const stranger = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    await share(kit, ID, owner);
+    expect((await kit.send(`/api/worlds/${ID}`, { method: "DELETE", headers: owner.headers })).status).toBe(204);
+    expect((await kit.send(`/api/worlds/${ID}`, { headers: stranger.headers })).json).toEqual(NOT_FOUND);
+  });
+
+  it("can be turned on and off again and again, with the same answer", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    for (const [method, shared] of [["POST", true], ["POST", true], ["DELETE", false], ["DELETE", false], ["POST", true]] as const) {
+      const r = await share(kit, ID, owner, method);
+      expect(r.json).toEqual({ ok: true, shared });
+    }
+  });
+
+  it("shares only a ready world, and never a Gallery world", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    for (const status of ["queued", "generating", "ingesting", "failed"] as const) {
+      kit.store.putWorld({ id: `w-${status}-0000000000000`, kind: "user", ownerSid: owner.sid, status, manifest: sampleManifest(`w-${status}-0000000000000`) });
+      const r = await share(kit, `w-${status}-0000000000000`, owner);
+      expect(r.status, status).toBe(404);
+      expect(kit.store.records.get(`w-${status}-0000000000000`)).not.toHaveProperty("shared");
+    }
+    kit.store.putWorld({ id: "w-nomanifest-0000000000", kind: "user", ownerSid: owner.sid, status: "ready" });
+    expect((await share(kit, "w-nomanifest-0000000000", owner)).status).toBe(404);
+    kit.store.putWorld({ id: GALLERY, kind: "gallery", status: "ready", manifest: sampleManifest(GALLERY) });
+    expect((await share(kit, GALLERY, owner)).status).toBe(404);
+    expect(kit.store.records.get(GALLERY)).not.toHaveProperty("shared");
+  });
+
+  it("answers a missing world, a bad id and a request that comes from another origin without touching anything", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    expect((await share(kit, MISSING, owner)).status).toBe(404);
+    expect((await share(kit, "bad%20id", owner)).status).toBe(404);
+    const foreign = await kit.send(`/api/worlds/${ID}/share`, { method: "POST", headers: { ...owner.headers, Origin: "https://evil.example" } });
+    expect(foreign.status).toBeGreaterThanOrEqual(400);
+    expect(kit.store.records.get(ID)).not.toHaveProperty("shared");
+  });
+
+  it("answers the 404 when the record is gone between the check and the change", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    kit.store.update = async () => null;
+    for (const method of ["POST", "DELETE"] as const) {
+      const r = await share(kit, ID, owner, method);
+      expect(r.status, method).toBe(404);
+      expect(r.json).toEqual(NOT_FOUND);
+    }
+  });
+
+  it("never lists a shared world in the Gallery", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    await share(kit, ID, owner);
+    expect((await kit.send("/api/gallery")).json).toEqual([]);
+  });
+});

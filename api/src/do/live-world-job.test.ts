@@ -32,6 +32,7 @@ describe("jobDepsFromEnv", () => {
     expect(deps!.images).toBeInstanceOf(CloudflareImageStore);
     expect(deps!.guard).toBeInstanceOf(SpendGuardClient);
     expect(deps!.timing).toBeUndefined(); // the real timing: a 10 second poll and 20 minutes
+    expect(typeof deps!.log?.info).toBe("function"); // a step of the job is logged: ids and codes only (world-pipeline 8.2)
   });
 
   it("builds nothing without a usable key or a binding, so the object spends nothing", () => {

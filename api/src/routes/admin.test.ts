@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createApp } from "../app";
+import { createLogger } from "../log";
 import { MemorySpendGuard } from "../worlds/fakes";
 import { MemoryWorldStore } from "../worlds/memory-store";
 import { BYTES, SECRET, sampleManifest } from "../worlds/test-kit";
@@ -281,5 +282,28 @@ describe("the operator's routes", () => {
     expect(await guard.reserve({ meter: "world", sessionId: "s", ipHash: "i", now: 1 })).toEqual({ ok: false, reason: "killed" });
     await app.request(`${ORIGIN}/admin/kill`, { method: "POST", headers: auth(), body: '{"on":false}' }, { HMAC_SECRET: SECRET });
     expect((await guard.reserve({ meter: "world", sessionId: "s", ipHash: "i", now: 1 })).ok).toBe(true);
+  });
+});
+
+describe("the operator's actions are logged without anything but the switch (world-pipeline 8.2)", () => {
+  it("writes one admin.kill line for each change, with only whether worlds were closed", async () => {
+    const lines: string[] = [];
+    const spend = new Spend();
+    const app = createApp({ admin: { token: TOKEN, spend, worldGenAvailable: true }, spend: async () => spend.statusStrict(), log: createLogger((l) => lines.push(l), () => 1_800_000_000_000) });
+    const env = { HMAC_SECRET: SECRET };
+    const kill = (on: boolean) => app.request(`${ORIGIN}/admin/kill`, { method: "POST", headers: { ...auth(), "Content-Type": "application/json" }, body: JSON.stringify({ on }) }, env);
+    expect((await kill(true)).status).toBe(200);
+    expect((await kill(false)).status).toBe(200);
+    expect(lines.map((l) => JSON.parse(l))).toEqual([
+      { t: 1_800_000_000_000, level: "info", event: "admin.kill", on: true },
+      { t: 1_800_000_000_000, level: "info", event: "admin.kill", on: false },
+    ]);
+    // A refused call, a bad body and a failed change are not logged as a change.
+    spend.down = true;
+    expect((await kill(true)).status).toBeGreaterThanOrEqual(500);
+    expect((await app.request(`${ORIGIN}/admin/kill`, { method: "POST", headers: auth(), body: "{" }, env)).status).toBe(400);
+    expect((await app.request(`${ORIGIN}/admin/kill`, { method: "POST", headers: { Authorization: "Bearer wrong" }, body: "{}" }, env)).status).toBe(401);
+    expect(lines).toHaveLength(2);
+    expect(lines.join("")).not.toContain(TOKEN);
   });
 });

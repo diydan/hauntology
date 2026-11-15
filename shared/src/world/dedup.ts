@@ -7,7 +7,7 @@ import { toBase64Url } from "../session-cookie";
  * options always has the same key. `deriveWorldId` turns (Session, key, attempt) into the world's id: the
  * same Session asking for the same world gets the same id, so a repeat request finds the world it already
  * has instead of starting another. The id is an HMAC, so it cannot be worked out without the secret, and it
- * has 132 bits (Requirement 9.4).
+ * has 128 bits (16 bytes of the MAC, written as 22 characters; Requirement 9.4 asks for at least 128).
  *
  * Dedup is per Session on purpose: a world is private to the Session that made it (shell "World access"),
  * so handing Session B the world of Session A for the same picture would give B a world B cannot open.
@@ -27,7 +27,7 @@ export async function worldKey(imageHash: string, options?: Partial<WorldOptions
   return hex(new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(`world/v1|${imageHash}|enhance=${o.enhance ? 1 : 0}`))));
 }
 
-/** `w-` and 22 URL-safe characters. `attempt` is 0 for the first try and goes up after a failed world. */
+/** `w-` and 22 URL-safe characters (the first 16 bytes of the MAC: 128 bits). `attempt` is 0 for the first try and goes up after a failed world. */
 export async function deriveWorldId(sid: string, key: string, attempt: number, secret: string): Promise<string> {
   if (secret.length < 16) throw new RangeError("world id secret is too short");
   if (!Number.isInteger(attempt) || attempt < 0) throw new RangeError("attempt must be a non-negative integer");

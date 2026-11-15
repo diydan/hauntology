@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import examples from "../../shared/fixtures/worldlabs/docs-examples.json";
 import worker, { SpendGuard, WorldJob, storeFor, type WorkerEnv } from "./worker";
 import { FakeJobs, FakeNamespace, FakeR2 } from "./worlds/fake-cloudflare";
@@ -44,6 +44,47 @@ describe("worker", () => {
     expect(((await res.json()) as { id: string; status: string }).status).toBe("ready");
   });
 
+  it("lists the Gallery through the real store with no key, no cookie and worlds closed, and never a user's world (world-pipeline 9.2)", async () => {
+    const { bucket, env, jobs } = envWith({ WORLD_GEN_ENABLED: "false" });
+    bucket.put("gallery/greenhouse/world.json", JSON.stringify({ ...sampleManifest("greenhouse"), source: "gallery", attribution: { credit: "Self-made", licence: "CC0" } }));
+    bucket.put("gallery/greenhouse/thumb.jpg", Uint8Array.from([1, 2, 3]));
+    bucket.put("worlds/w-user/world.json", JSON.stringify(sampleManifest("w-user")));
+    await jobs.get("w-user").fetch("https://world-job/record", { method: "PUT", body: JSON.stringify({ id: "w-user", kind: "user", ownerSid: "sid-a", status: "ready", shared: true, manifest: sampleManifest("w-user") }) });
+    const res = await worker.fetch(new Request(`${ORIGIN}/api/gallery`), env, ctx().ctx);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Set-Cookie")).toBeNull();
+    expect(await res.json()).toEqual([{ id: "greenhouse", title: "The kitchen", description: "A narrow kitchen with a window over the sink.", thumbUrl: "/api/worlds/greenhouse/assets/thumb.jpg", attribution: "Self-made · CC0" }]);
+  });
+
+  it("turns a user world's share link on and off through the real Durable Object, for the owner only", async () => {
+    const { env, jobs, bucket } = envWith();
+    const c = ctx().ctx;
+    const session = async () => {
+      const r = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, c);
+      return { Cookie: (r.headers.get("Set-Cookie") as string).split(";")[0] as string, Origin: ORIGIN };
+    };
+    const owner = await session();
+    const stranger = await session();
+    // The owner's Session id is read back from the cookie, as the routes read it.
+    const { verifySession } = await import("@hauntology/shared/session-cookie");
+    const sid = (await verifySession(owner.Cookie.slice(owner.Cookie.indexOf("=") + 1), SECRET, Math.floor(Date.now() / 1000)))?.sid;
+    expect(typeof sid).toBe("string");
+    await jobs.get("w-mine").fetch("https://world-job/record", { method: "PUT", body: JSON.stringify({ id: "w-mine", kind: "user", ownerSid: sid, status: "ready", manifest: sampleManifest("w-mine") }) });
+    bucket.put("worlds/w-mine/thumb.jpg", Uint8Array.from([1, 2, 3]));
+    const call = (who: Record<string, string>, path: string, method = "GET") => worker.fetch(new Request(`${ORIGIN}${path}`, { method, headers: who }), env, c);
+    expect((await call(stranger, "/api/worlds/w-mine")).status).toBe(404);
+    expect((await call(stranger, "/api/worlds/w-mine/share", "POST")).status).toBe(404);
+    const on = await call(owner, "/api/worlds/w-mine/share", "POST");
+    expect(await on.json()).toEqual({ ok: true, shared: true });
+    expect((await call(stranger, "/api/worlds/w-mine")).status).toBe(200);
+    expect((await call(stranger, "/api/worlds/w-mine/assets/thumb.jpg")).status).toBe(200);
+    expect((await call(stranger, "/api/worlds/w-mine", "DELETE")).status).toBe(404);
+    expect(await (await call(owner, "/api/gallery")).json()).toEqual([]);
+    const off = await call(owner, "/api/worlds/w-mine/share", "DELETE");
+    expect(await off.json()).toEqual({ ok: true, shared: false });
+    expect((await call(stranger, "/api/worlds/w-mine")).status).toBe(404);
+  });
+
   it("answers an id nobody has with the one 404", async () => {
     const { env } = envWith();
     const res = await worker.fetch(new Request(`${ORIGIN}/api/worlds/w-nobody`), env, ctx().ctx);
@@ -79,6 +120,45 @@ describe("worker", () => {
     await done();
     expect([...bucket.objects.keys()].sort()).toEqual(["gallery/greenhouse/world.json", "uploads/new"]);
     expect(await storeFor(env).find("w-1")).toBeNull();
+  });
+
+  it("logs one cleanup.done line after the cron run, with the counts and nothing else (world-pipeline 8.2)", async () => {
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const { bucket, jobs, env } = envWith();
+      bucket.put("uploads/old", "x", new Date(NOW - 25 * 3_600_000)).put("uploads/new", "x", new Date(NOW - 3_600_000));
+      bucket.put("worlds/w-1/world.json", "x", new Date(NOW - 8 * DAY));
+      await jobs.get("w-1").fetch("https://world-job/record", { method: "PUT", body: JSON.stringify({ id: "w-1", kind: "user", ownerSid: "s", status: "ready", title: "My grandmother's kitchen" }) });
+      const { ctx: c, done } = ctx();
+      await worker.scheduled({ scheduledTime: NOW } as ScheduledController, env, c);
+      await done();
+      expect(spy).toHaveBeenCalledTimes(1);
+      const line = JSON.parse(spy.mock.calls[0]![0] as string) as Record<string, unknown>;
+      expect(line).toMatchObject({ level: "info", event: "cleanup.done", deleted: 2, worlds: 1 });
+      expect(Object.keys(line).sort()).toEqual(["deleted", "event", "level", "t", "worlds"]);
+      expect(spy.mock.calls[0]![0]).not.toMatch(/grandmother|w-1|uploads/);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it("answers an error nothing handled with a plain 500 and writes only one request.error line, never what the error said", async () => {
+    const spies = { log: vi.spyOn(console, "log").mockImplementation(() => {}), error: vi.spyOn(console, "error").mockImplementation(() => {}) };
+    try {
+      const { env } = envWith();
+      (env as unknown as { BUCKET: unknown }).BUCKET = { get: async () => { throw new Error("R2 said: my grandmother's kitchen"); }, head: async () => null, list: async () => ({ objects: [], truncated: false }), delete: async () => {} };
+      const res = await worker.fetch(new Request(`${ORIGIN}/api/worlds/greenhouse`), env, ctx().ctx);
+      expect(res.status).toBe(500);
+      expect(await res.text()).toBe("Internal Server Error");
+      expect(spies.error).not.toHaveBeenCalled();
+      expect(spies.log).toHaveBeenCalledTimes(1);
+      const line = spies.log.mock.calls[0]![0] as string;
+      expect(JSON.parse(line)).toMatchObject({ level: "error", event: "request.error", route: "/api/worlds/:id", errorName: "Error", status: 500 });
+      expect(line).not.toMatch(/grandmother|R2 said|greenhouse/);
+    } finally {
+      spies.log.mockRestore();
+      spies.error.mockRestore();
+    }
   });
 
   it("uses UPLOAD_TTL_HOURS and WORLD_TTL_DAYS on the cron trigger", async () => {

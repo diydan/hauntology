@@ -1,3 +1,4 @@
+import type { WorldManifest } from "@hauntology/shared/world/manifest";
 import type { ObjectKind, StoredObject } from "@hauntology/shared/world/retention";
 import { bundleKey } from "./keys";
 import type { ByteRange, WorldPatch, WorldRecord, WorldStore } from "./store";
@@ -69,6 +70,10 @@ export class MemoryWorldStore implements WorldStore {
     this.records.delete(id);
     this.playSessions.delete(id);
     for (const [key, o] of [...this.objects]) if (o.worldId === id) this.objects.delete(key);
+  }
+
+  async galleryManifests(): Promise<WorldManifest[]> {
+    return [...this.records.values()].filter((r) => r.kind === "gallery" && r.manifest !== undefined && r.manifest.id === r.id).map((r) => r.manifest as WorldManifest).slice(0, 50);
   }
 
   async inventory(): Promise<StoredObject[]> {

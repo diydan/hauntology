@@ -274,3 +274,116 @@ describe("create and update", () => {
   });
 });
 
+describe("galleryManifests (world-pipeline 9.2)", () => {
+  const withClock = () => {
+    const bucket = new FakeR2();
+    const jobs = new FakeJobs();
+    let t = NOW;
+    const store = new CloudflareWorldStore({ bucket, jobs, now: () => t });
+    const put = (id: string, manifest: unknown = sampleManifest(id)) => bucket.put(`gallery/${id}/world.json`, typeof manifest === "string" ? manifest : JSON.stringify(manifest));
+    return { bucket, jobs, store, put, tick: (ms: number) => { t += ms; } };
+  };
+
+  it("reads each Gallery world's manifest, and nothing else: not its files, not a user's world", async () => {
+    const { bucket, store, put } = withClock();
+    put("greenhouse");
+    put("attic-room");
+    bucket.put("gallery/greenhouse/thumb.jpg", Uint8Array.from([1]));
+    bucket.put("gallery/greenhouse/splat-500k.spz", Uint8Array.from([1]));
+    bucket.put("worlds/w-1/world.json", JSON.stringify(sampleManifest("w-1")));
+    bucket.put("uploads/abc", Uint8Array.from([1]));
+    const list = await store.galleryManifests();
+    expect(list.map((m) => m.id).sort()).toEqual(["attic-room", "greenhouse"]);
+  });
+
+  it("is empty when there is no Gallery", async () => {
+    const { store } = withClock();
+    expect(await store.galleryManifests()).toEqual([]);
+  });
+
+  it("does not trust a manifest that names another world, is not JSON, or does not fit, or a folder that is not a plain Gallery id", async () => {
+    const { store, put, bucket } = withClock();
+    put("good-world");
+    put("liar", sampleManifest("someone-else"));
+    put("broken", "{ not json");
+    put("misfit", { ...sampleManifest("misfit"), assets: { splat: [] } });
+    for (const bad of ["Bad_Id", "ab", "-lead", "trail-", "a/b", "UPPER"]) bucket.put(`gallery/${bad}/world.json`, JSON.stringify(sampleManifest(bad)));
+    bucket.put("gallery/world.json", JSON.stringify(sampleManifest("world")));
+    bucket.put("gallery//world.json", JSON.stringify(sampleManifest("x")));
+    expect((await store.galleryManifests()).map((m) => m.id)).toEqual(["good-world"]);
+  });
+
+  it("lists at most 50 worlds", async () => {
+    const { store, put } = withClock();
+    for (let i = 0; i < 60; i++) put(`world-${String(i).padStart(3, "0")}`);
+    expect(await store.galleryManifests()).toHaveLength(50);
+  });
+
+  it("keeps the answer for 30 seconds: a second call reads nothing, a call at 30 seconds reads again and sees a new world", async () => {
+    const { bucket, store, put, tick } = withClock();
+    put("greenhouse");
+    expect((await store.galleryManifests()).length).toBe(1);
+    const lists = bucket.lists.length;
+    put("attic-room");
+    tick(29_999);
+    expect((await store.galleryManifests()).length).toBe(1);
+    expect(bucket.lists.length).toBe(lists);
+    tick(1);
+    expect((await store.galleryManifests()).length).toBe(2);
+    expect(bucket.lists.length).toBe(lists + 1);
+  });
+
+  it("does not keep a failed read, and does not hide it", async () => {
+    const { bucket, store, put } = withClock();
+    put("greenhouse");
+    const get = bucket.get.bind(bucket);
+    let fail = true;
+    bucket.get = (async (key: string) => { if (fail) throw new Error("R2 is down"); return get(key); }) as typeof bucket.get;
+    await expect(store.galleryManifests()).rejects.toThrow("R2 is down");
+    fail = false;
+    expect((await store.galleryManifests()).length).toBe(1);
+  });
+
+  it("reads again when the clock has gone backwards, rather than trust a time it cannot compare", async () => {
+    const { bucket, store, put, tick } = withClock();
+    put("greenhouse");
+    await store.galleryManifests();
+    const lists = bucket.lists.length;
+    tick(-1000);
+    await store.galleryManifests();
+    expect(bucket.lists.length).toBe(lists + 1);
+  });
+
+  it("reads only manifests: a stray file under gallery/ is never taken for one", async () => {
+    const { bucket, store, put } = withClock();
+    put("greenhouse");
+    bucket.put("gallery/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Uint8Array.from([1]));
+    bucket.put("gallery/greenhouse/thumb.jpg", Uint8Array.from([1]));
+    bucket.put("gallery/greenhouse/notworld.json", Uint8Array.from([1]));
+    const keys: string[] = [];
+    const get = bucket.get.bind(bucket);
+    bucket.get = (async (key: string, o?: never) => { keys.push(key); return get(key, o); }) as typeof bucket.get;
+    await store.galleryManifests();
+    expect(keys).toEqual(["gallery/greenhouse/world.json"]);
+  });
+
+  it("reads each manifest by its own key, so a user world with a Gallery-like id is never read as one", async () => {
+    const { bucket, store, put } = withClock();
+    put("greenhouse");
+    const keys: string[] = [];
+    const get = bucket.get.bind(bucket);
+    bucket.get = (async (key: string, o?: never) => { keys.push(key); return get(key, o); }) as typeof bucket.get;
+    await store.galleryManifests();
+    expect(keys).toEqual(["gallery/greenhouse/world.json"]);
+  });
+});
+
+describe("the share flag", () => {
+  it("is kept by the WorldJob when the owner sets it, and read back", async () => {
+    const { store, putRecord } = setup();
+    await putRecord("w-1");
+    expect((await store.update("w-1", { shared: true }))?.shared).toBe(true);
+    expect((await store.find("w-1"))?.shared).toBe(true);
+    expect((await store.update("w-1", { shared: false }))?.shared).toBe(false);
+  });
+});
