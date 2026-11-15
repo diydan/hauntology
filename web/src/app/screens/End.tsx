@@ -49,6 +49,14 @@ export default function End() {
 
   useEffect(() => load(), [load]);
 
+  // Memories that cannot be read are said aloud as well as shown (Requirement 8.2).
+  const failedCode = state.k === "failed" ? state.code : null;
+  useEffect(() => {
+    if (failedCode === null) return;
+    const copy = errorCopy(failedCode);
+    announce(`${copy.title}. ${copy.body}`);
+  }, [failedCode, announce]);
+
   const save = (view: PlayView) => {
     const svg = memoryCardSvg(view.journal.map((j) => ({ anchorId: j.anchorId, text: j.text })));
     platform.saveFile("hauntology-memory-card.svg", new Blob([svg], { type: "image/svg+xml" }));

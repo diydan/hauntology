@@ -52,6 +52,7 @@ Log:
 - [x] Multiplayer rules amendment applied to party-mode: sealed Accusations, a wrong guess never wins, a rotating first player, the answer choice, a stronger Eavesdrop, a notebook grid, Bots on botMind, Most Haunting. 291 criteria, 129 properties.
 - [x] D1 specced: Single player becomes "Play a case" (a solo Party Room with Bots on one screen) and the memory walk is renamed Wander. Shell Requirement 13 and group 12, party-mode 9.5 and 9.6 and Property 59. 293 criteria, 130 properties across the seven engine specs.
 - [x] Shell group 12 built: the `case` route and `partyEnabled` flag, "Play a case" and "Wander" on Haunt, the setup card, the Case Screen on a Host seam with a stand-in Host, Play renamed Wander. Tests: shared 231, api 36, web 299.
+- [x] Shell group 10 partly done: a test of every Screen's focus and announcements, and a production-build test. The browser smoke run is written but not run, and the manual checks wait for a person with a phone. See docs/spikes/shell.md.
 - [x] Shell group 8 built: the Confirm Gate (quote, picture, places left, Enter this place), rejection and retry, and Turnstile behind a seam. Only the Gate starts a world.
 - [x] Shell group 7 built: the photo picker (with the capture date for the sky), the Sketch Pad, the candidates and the hand-off to the Confirm Gate. `readCaptureDate` landed for the conditions spec.
 - [x] Shell group 9 built: the Haunt screen with the Stage display, the ghost choice (Creator seam, Preset Ghosts), the sky card and "Delete my place". Tests: shared 248, api 36, web 358.

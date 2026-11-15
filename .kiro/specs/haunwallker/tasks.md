@@ -233,17 +233,21 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - _Requirements: 13.1, 13.2, 13.3, 13.4_
 
 - [ ] 10. Tests and manual checks
-  - [ ] 10.1 Component tests (jsdom, Testing Library, `FakeApi`)
+  - [x] 10.1 Component tests (jsdom, Testing Library, `FakeApi`)
     - For each of Home, Gallery, Create, Confirm, Haunt, Play, Ending, NotFound and Expired: one main-path test and one failure-path test; assert focus lands on the `h1` and the live region announces the title or the error.
+    - The matrix is `web/src/app/screens/screens.test.tsx` (nine Screens, main and failure path); each Screen's longer flows stay in its own file. It found two gaps, now fixed: Play and the Ending showed a failure without saying it aloud.
     - _Requirements: 8.1, 8.2, 11.5_
-  - [ ] 10.2 Bundle test
+  - [x] 10.2 Bundle test
     - Fails the build if Home's initial JavaScript exceeds 150 KB gzipped, if `FakeApi` or `console.log` appear in the production build, if an origin outside the allow-list appears in built output, or if `dangerouslySetInnerHTML` appears in `web/`.
+    - Built as `web/checks/bundle.test.mjs`, which runs in `pnpm test`: it builds with `NODE_ENV=production` into a temporary folder and reads the result (Home's first JavaScript, the lazy Screens, the demo, `console.log`, origins, inline script and style, `eval`, and `dangerouslySetInnerHTML` in the source). It found a real bug, fixed: the plugin that drops the demo assets hard-coded `dist/demo`, so any other output folder shipped them.
     - _Requirements: 9.1, 9.2, 9.4, 9.5, 10.1, 11.3_
   - [ ] 10.3 Playwright smoke on the Zero-Quota Path
     - Local, fixtures only, never a paid upstream: Home → Gallery → preset ghost → Wander → three memories → Ending, and Home → Gallery → Play a case with two Bots → a case to its ending, once with `?demo=1` and once against `wrangler dev` with fakes, with the world kill switch on and every quota at zero.
+    - Written and not run: `web/playwright.config.ts` and `web/e2e/zero-quota.spec.ts` (a desktop and a 320 px project, no request to `/api/`, focus and sideways-scroll checks). Running it needs `@playwright/test` as a dependency of `web`, which needs the owner's say; the `wrangler dev` half waits for shell task 3.3. See `docs/spikes/shell.md`.
     - _Requirements: 5.3, 11.2_
   - [ ] 10.4 Manual checks, recorded in `docs/spikes/shell.md`
     - Keyboard-only run of the whole flow, 320 px width, iOS Safari scroll and zoom inside the pad, a screen-reader pass on Haunt and Play, and a contrast check of the HUD and Screen text tokens.
+    - The contrast check is done and recorded in `docs/spikes/shell.md`. The keyboard-only run, the 320 px check, the iOS Safari pad check and the screen-reader pass are written out there as steps and need a person with a browser and a phone.
     - _Requirements: 2.2, 8.1, 8.5, 8.6_
 
 - [ ] 11. Checkpoint

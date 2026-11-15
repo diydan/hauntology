@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   esbuild: { jsx: "automatic" },
   test: {
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "checks/**/*.test.mjs"],
     globals: false,
     // The style tests read the CSS files as text (`?raw`); by default vitest turns CSS into an empty string.
     css: { include: [/\.css/] },

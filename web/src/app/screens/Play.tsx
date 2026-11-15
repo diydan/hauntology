@@ -107,6 +107,14 @@ export default function Play() {
     if (voiceUi.mic === "recording") announce("Listening.");
   }, [voiceUi.mic, announce]);
 
+  // A game that could not start or be restored is said aloud as well as shown (Requirement 8.2).
+  const failure = ui.phase === "failed" ? ui.failure : null;
+  useEffect(() => {
+    if (failure === null) return;
+    const copy = errorCopy(failure.code);
+    announce(`${copy.title}. ${copy.body}`);
+  }, [failure, announce]);
+
   // A still picture of the place, when the Viewer cannot show it.
   const [thumb, setThumb] = useState<string | null>(null);
   useEffect(() => {

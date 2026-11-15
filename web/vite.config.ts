@@ -1,16 +1,24 @@
 import { rmSync } from "node:fs";
+import { resolve } from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { demoPlaceholderSvg } from "./src/app/demo-assets";
 
 // The demo Gallery thumbnails (`public/demo`) are for `?demo=1` in development only; they do not ship.
-const dropDemoAssets = (): Plugin => ({
-  name: "drop-demo-assets",
-  apply: "build",
-  closeBundle() {
-    rmSync("dist/demo", { recursive: true, force: true });
-  },
-});
+// It removes them from the folder the build wrote to, whatever `--outDir` says.
+const dropDemoAssets = (): Plugin => {
+  let demo = "";
+  return {
+    name: "drop-demo-assets",
+    apply: "build",
+    configResolved(config) {
+      demo = resolve(config.root, config.build.outDir, "demo");
+    },
+    closeBundle() {
+      rmSync(demo, { recursive: true, force: true });
+    },
+  };
+};
 
 // In development, the pictures `?demo=1` makes up (uploads, candidates, places) get a placeholder drawing.
 const demoPlaceholders = (): Plugin => ({
