@@ -72,7 +72,7 @@ export default function Confirm() {
             <img className="confirm-image" src={quote.imageUrl} alt={CONFIRM_IMAGE_ALT} />
             <figcaption>{CONFIRM_IMAGE_CAPTION}</figcaption>
           </figure>
-          <p data-places-left>{placesLeftLine(quote.quota)}</p>
+          <p className="ui-hint" data-places-left>{placesLeftLine(quote.quota)}</p>
           <p>{CONFIRM_NOTHING_YET}</p>
         </>
       ) : null}
@@ -133,10 +133,10 @@ export default function Confirm() {
       ) : null}
 
       <p className="confirm-nav ui-row">
-        <button className="ui-button" type="button" disabled={busy} onClick={() => controller.back()}>
+        <button className="ui-button ui-button--quiet" type="button" disabled={busy} onClick={() => controller.back()}>
           Back
         </button>{" "}
-        <button className="ui-button" type="button" disabled={busy} onClick={() => controller.pickAnother()}>
+        <button className="ui-button ui-button--quiet" type="button" disabled={busy} onClick={() => controller.pickAnother()}>
           Pick another place
         </button>
       </p>

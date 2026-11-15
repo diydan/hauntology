@@ -92,6 +92,15 @@ describe("Create", () => {
     expect(live()).toBe(SCREEN_TITLES.create);
   });
 
+  it("is built from the shared elements (world-pipeline 13.1): one yellow button, the pad's controls and the picker's are shared buttons, and the page has no old look class", async () => {
+    const h = await fromGallery();
+    await goTo(h, { screen: "create" });
+    await screen.findByRole("heading", { name: "Make a place" });
+    expect([...document.querySelectorAll(".ui-button--primary")].map((b) => b.textContent)).toEqual(["Make it real"]);
+    for (const b of document.querySelectorAll("main button, main a[role=button]")) expect(b.classList.contains("ui-button"), b.textContent ?? "").toBe(true);
+    expect(document.querySelector(".button, .banner, .card, .notice, .dialog")).toBeNull();
+  });
+
   it("failure path: a file that cannot be used is refused with its own message, shown and said aloud", async () => {
     const h = await fromGallery();
     await goTo(h, { screen: "create" });
@@ -165,6 +174,10 @@ describe("Haunt", () => {
     await act(async () => { await w.c.advance(3000); });
     await screen.findByRole("heading", { name: "Dreaming" });
     expect(live()).toMatch(/^Dreaming\./);
+    // The progress is a gauge with its steps in a panel, made of shared elements, and no yellow button on a screen that only waits.
+    expect(document.querySelector("section.ui-panel progress.ui-gauge")).not.toBeNull();
+    expect(document.querySelectorAll("ol.ui-steps > li.ui-step")).toHaveLength(4);
+    expect(document.querySelectorAll(".ui-button--primary")).toHaveLength(0);
   });
 
   it("failure path: a place that did not work shows the reason and says so aloud", async () => {
@@ -176,6 +189,8 @@ describe("Haunt", () => {
     await screen.findByRole("heading", { name: "It did not work" });
     expect(live()).toMatch(/^It did not work\./);
     expect(screen.getByText(errorCopy("upstream_rejected").title, { exact: false })).toBeTruthy();
+    expect(document.querySelector("section.ui-panel")).not.toBeNull();
+    expect(document.querySelectorAll(".ui-button--primary")).toHaveLength(0);
   });
 });
 

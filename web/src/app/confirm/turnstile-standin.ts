@@ -17,12 +17,12 @@ export const standinTurnstile: LoadTurnstile = async () => {
       box.dataset.standinTurnstile = id;
       const pass = document.createElement("button");
       pass.type = "button";
-      pass.className = "button";
+      pass.className = "ui-button";
       pass.textContent = "Pass the check (demo)";
       pass.addEventListener("click", () => options.callback(DEMO_TURNSTILE_TOKEN));
       const fail = document.createElement("button");
       fail.type = "button";
-      fail.className = "button";
+      fail.className = "ui-button";
       fail.textContent = "Fail the check (demo)";
       fail.addEventListener("click", () => options["error-callback"]?.());
       box.append(pass, " ", fail);

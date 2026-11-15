@@ -67,6 +67,21 @@ describe("Confirm: opening it", () => {
     expect(document.title).toBe("Confirm · Hauntology");
   });
 
+  it("is built from the shared elements (world-pipeline 13.1): the places left is a hint, Enter is the one yellow button, and Back and Pick another are quiet", async () => {
+    await openGate();
+    expect(document.querySelector("[data-places-left]")?.classList.contains("ui-hint")).toBe(true);
+    const primary = [...document.querySelectorAll(".ui-button--primary")];
+    expect(primary.map((b) => b.textContent)).toEqual(["Enter this place"]);
+    for (const name of ["Back", "Pick another place"]) {
+      const b = screen.getByRole("button", { name });
+      expect(b.classList.contains("ui-button"), name).toBe(true);
+      expect(b.classList.contains("ui-button--quiet"), name).toBe(true);
+      expect(b.classList.contains("ui-button--primary"), name).toBe(false);
+    }
+    // The picture is a figure and its caption, and the page's own style is layout only: every class here is a shared element or a layout hook.
+    expect(document.querySelector("figure.ui-figure img")).not.toBeNull();
+  });
+
   it("shows that it is looking while the quote is on its way, and does not offer Enter yet", async () => {
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));

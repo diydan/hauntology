@@ -274,13 +274,13 @@ test('the elements have a switch (a button with aria-checked), a segmented row, 
   assert.ok(!declarations.some((d) => /^\.ui-switch/.test(d.sel) && /background/.test(d.prop)), 'an on switch is a yellow edge, not a yellow block');
 });
 
-test('the old look classes are gone from the screens: no className="button", no pz-btn or pz-help-btn in web/src', () => {
-  const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx$/.test(e.name) && !/\.test\./.test(e.name) ? [`${dir}/${e.name}`] : []));
+test('the old look classes are gone from the screens: no className="button" (in a .tsx or in a .ts that makes elements, such as the demo Turnstile stand-in), no pz-btn or pz-help-btn in web/src', () => {
+  const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx?$/.test(e.name) && !/\.test\.|\.d\.ts$/.test(e.name) ? [`${dir}/${e.name}`] : []));
   const files = walk('web/src');
   assert.ok(files.length > 40);
   for (const f of files) {
     const text = read(f);
-    assert.ok(!/className="button[ "]/.test(text), `${f} uses the old button`);
+    assert.ok(!/className="button[ "]/.test(text) && !/className\s*=\s*["']button["']/.test(text) && !/classList\.add\(\s*["']button["']/.test(text), `${f} uses the old button`);
     assert.ok(!/\bpz-btn(-[a-z]+)?\b|\bpz-help-btn\b/.test(text), `${f} uses an old puzzle button class`);
   }
   for (const f of files) for (const c of classesIn(read(f))) assert.ok(defined.has(c), `${f} uses ${c}, which design/elements.css does not define`);

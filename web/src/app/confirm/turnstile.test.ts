@@ -119,4 +119,16 @@ describe("the demo stand-in", () => {
     api.reset(id);
     box.remove();
   });
+
+  it("draws its buttons with the shared button element, not the retired `button` class (world-pipeline 13.4)", async () => {
+    const api = await standinTurnstile();
+    const box = document.createElement("div");
+    document.body.append(box);
+    api.render(box, { sitekey: "k", callback: vi.fn() });
+    for (const b of box.querySelectorAll("button")) {
+      expect(b.className).toBe("ui-button");
+      expect(b.classList.contains("button")).toBe(false);
+    }
+    box.remove();
+  });
 });

@@ -171,10 +171,10 @@ The screens of this spec are built from `design/elements.css`, with the values o
 
 | Part of this spec | Elements |
 |---|---|
-| Photo picker, caption, error copy | `ui-card ui-field ui-field-label ui-button ui-notice` |
-| Sketch Pad (canvas and its controls) | `ui-panel`, `ui-button--quiet` in `ui-choices`; a sketch tool piece that does not exist is added first |
-| Candidates | `ui-stories ui-story ui-story-title` |
-| Confirm Gate | `ui-card ui-hint ui-button--primary ui-button--quiet` |
-| Progress and failure | `ui-progress ui-dots ui-dot ui-progress-label ui-status ui-notice` |
+| Photo picker, caption, error copy | `ui-stack ui-heading ui-input ui-button ui-note` (`is-warn`) `ui-panel--danger` |
+| Sketch Pad (canvas and its controls) | `ui-figure` (the frame), `ui-button` in a `ui-row`, `ui-input` (the caption); the pad's own style is its size and `touch-action: none` |
+| Candidates | `ui-figure` and a `ui-button` for each; `ui-stack` |
+| Confirm Gate | `ui-figure ui-hint ui-button--primary ui-button--quiet ui-panel ui-panel--danger` |
+| Progress and failure | `ui-panel ui-heading ui-gauge ui-steps ui-step ui-note` |
 
-A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The screens already built by the shell (`web/src/app/create/*`, `web/src/app/screens/*`) still use `app.css` (`.button`, `.banner`, `.screen`); each moves onto the elements when it is next changed, in the same change (`design-system` task 4).
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The screens built by the shell (`web/src/app/create/*`, `web/src/app/screens/*`, `web/src/app/haunt/*`, `web/src/app/confirm/*`) were moved onto the elements by `design-system` task 4 (2026-11-15); `app.css` is layout only. The element names in this table were checked against the markup and the catalogue on 2026-11-15 (task 13): `ui-story` is a choice that starts something and `ui-progress` and `ui-dots` are the pips of the play-through, so a Candidate is a picture with a button and the stages are a gauge with labelled steps.
