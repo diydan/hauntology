@@ -209,7 +209,9 @@ test('the commands exist: build-tokens, check-tokens, and the traceability check
 
 // ---- the specs and steering say: build from these ---------------------------------------------------------------------------------------------
 /** The specs that have a screen of their own: each one carries the shared look requirement, a design section and a task. */
-const SCREEN_SPECS = ['haunwallker', 'puzzles', 'party-mode', 'world-viewer', 'spirit-table', 'ghost-voice', 'integration', 'ghost-creator'];
+const SCREEN_SPECS = ['haunwallker', 'puzzles', 'party-mode', 'world-viewer', 'spirit-table', 'ghost-voice', 'integration', 'ghost-creator', 'world-pipeline', 'conditions', 'ghost-engine', 'errands', 'world-clues'];
+/** The specs that have no screen, with the reason. A new folder under .kiro/specs/ goes in one of these two lists, or the test below fails. */
+const NO_SCREEN_SPECS = { 'design-system': 'it is the design system itself: the source of the look, not a user of it' };
 
 test('the design-system spec exists with its requirements, design and tasks', () => {
   for (const f of ['requirements', 'design', 'tasks']) assert.ok(existsSync(join(root, `.kiro/specs/design-system/${f}.md`)), f);
@@ -246,6 +248,16 @@ test('every spec that has a screen says its screens are built from the design sy
     assert.match(tasks, new RegExp(`- \\[[ x]\\] \\d+\\. Shared look[^\\n]*Requirement ${m[1]}\\b`), `${name}: a task builds the screens from the shared elements`);
     for (let i = 1; i <= 4; i++) assert.ok(tasks.includes(`_Requirements: ${m[1]}.`), `${name}: tasks cover Requirement ${m[1]}`);
   }
+});
+
+test('every folder under .kiro/specs is a screen spec or says why it has no screen, so a new spec cannot skip the question', () => {
+  const folders = readdirSync(join(root, '.kiro/specs'), { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
+  const known = new Set([...SCREEN_SPECS, ...Object.keys(NO_SCREEN_SPECS)]);
+  const unknown = folders.filter((f) => !known.has(f));
+  assert.deepEqual(unknown, [], `a new spec folder must carry the Shared look requirement, design section and task and be added to SCREEN_SPECS, or be added to NO_SCREEN_SPECS with a reason: ${unknown.join(', ')}`);
+  const gone = [...known].filter((f) => !folders.includes(f));
+  assert.deepEqual(gone, [], `listed here but no such spec folder: ${gone.join(', ')}`);
+  for (const [name, why] of Object.entries(NO_SCREEN_SPECS)) assert.ok(why.length >= 10 && !SCREEN_SPECS.includes(name), `${name} has a reason and is not also a screen spec`);
 });
 
 test('a hook rebuilds the generated token files when the token file is saved', () => {

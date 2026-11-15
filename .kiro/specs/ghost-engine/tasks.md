@@ -111,3 +111,11 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
 
 - [ ] 8. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; play each Gallery World to completion in Scripted Mode and once with the model; ask the user if questions arise.
+
+- [ ] 9. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 10 and the `design-system` spec)
+  - [ ] 9.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 10.1, 10.3_
+  - [ ] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 10.2_
+  - [ ] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 10.4_

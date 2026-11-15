@@ -22,6 +22,11 @@ The look is written once. Do not invent a colour, a size, a gap, a corner or a t
 7. A new piece? Add it to `design/elements.css` **and** `design/catalogue.html` in the same change, from tokens, then use it. A new value? `design/tokens.json`. Do not copy an element into a screen.
 8. In production the style policy is `style-src 'self'`: no `style=""` and no `<style>` in HTML. State is a class (`is-on`); a moving number goes through the CSSOM (`el.style.transform`).
 
+## New specs and new screens
+- A spec whose feature has a screen carries a **Shared look** requirement, a `## Shared look (design system, ...)` section in its design (a table of which elements each part uses) and a task, as the specs listed in `SCREEN_SPECS` do. Copy them from one of those, change the screens and the elements, keep criteria 1, 2 and 4 as they are.
+- A new folder under `.kiro/specs/` must be added to `SCREEN_SPECS` or to `NO_SCREEN_SPECS` (with the reason) in `tools/test/design-system.test.mjs`; the test fails until it is. A spec that gains a screen later adds the three parts in the same change.
+- New code builds from the elements the first time. Old code (a screen built before this) moves onto them the next time it is changed, in the same change; do not mix a raw colour, gap, corner or time into either.
+
 ## Checks that fail the build
 `pnpm check-tokens`, `tools/test/design-tokens.test.mjs`, `tools/test/design-system.test.mjs`, and the web app's `styles.test.ts`. Run them after touching `design/`.
 

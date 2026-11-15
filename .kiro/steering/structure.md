@@ -49,4 +49,5 @@ hauntology/
 - File names kebab-case; types PascalCase; zod schema named `FooSchema` with `type Foo = z.infer<...>`.
 - Errors: return typed results (`{ok:false, code}`) from pure logic; map to HTTP in routes. Error codes are stable strings listed in `shared/src/errors.ts`.
 - Every spec task ends with its tests green. Do not mark a task done with failing tests.
+- A spec whose feature has a screen carries a "Shared look" requirement, a design section and a task (copy them from any spec in `SCREEN_SPECS` in `tools/test/design-system.test.mjs`), and its screens are built from `design/` (see `design-system.md`). A new folder under `.kiro/specs/` is listed there as a screen spec or as one with no screen, with the reason, or that test fails.
 - Commit messages: conventional commits; mention spec task id (e.g. `feat(pipeline): 5.1 spend guard reserve`).

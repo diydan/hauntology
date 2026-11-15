@@ -238,3 +238,13 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 
 - [ ] 12. Checkpoint
   - Run `pnpm -r test`, `pnpm -r typecheck` and `node tools/check-traceability.mjs`; ensure all pass, ask the user if questions arise.
+
+- [ ] 13. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 12 and the `design-system` spec)
+  - [ ] 13.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 12.1, 12.3_
+  - [ ] 13.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 12.2_
+  - [ ] 13.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 12.4_
+  - [ ] 13.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 12.1_

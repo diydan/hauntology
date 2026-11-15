@@ -49,6 +49,8 @@
     - _Requirements: 6.2_
   - [x] 5.2 A "Shared look" requirement, a design section and a task in each spec that has a screen
     - _Requirements: 6.1_
+  - [x] 5.3 Every spec folder is a screen spec or says why it has no screen; the test fails for a new folder that is neither; the five specs that had a screen part and no Shared look (`world-pipeline`, `conditions`, `ghost-engine`, `errands`, `world-clues`) now carry it
+    - _Requirements: 6.1, 6.3, 6.4_
 
 - [ ] 6. Checkpoint
   - Run `pnpm check-tokens`, `node tools/check-traceability.mjs`, `node --test tools/test/design-tokens.test.mjs tools/test/design-system.test.mjs tools/test/voice-demo.test.mjs`, `pnpm --filter web test` and `pnpm typecheck`; open `/design/` and the play-through on a real phone. Open: tasks 4.1 to 4.4.

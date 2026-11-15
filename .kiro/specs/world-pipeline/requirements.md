@@ -146,3 +146,14 @@ The world pipeline turns a place the user chooses into a stored, walkable 3D wor
 1. WHERE the enhance feature is enabled and the user supplied a single photo THEN the Pipeline SHALL create extra views of the same scene by outpainting and submit them with the original as a multi-image prompt with distinct azimuths.
 2. THE enhance feature SHALL default to disabled unless the recorded A/B spike shows it improves worlds over the single-image path.
 3. IF any enhance step fails or exceeds its image quota THEN the Pipeline SHALL fall back to the single-image path using the original photo.
+
+### Requirement 12
+
+**User Story:** As a visitor, I want the start, sketch, confirm and progress screens to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Create, the Confirm Gate and the progress screen, built by the shell: `haunwallker` groups 7 to 9) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Create screen SHALL use `ui-card`, `ui-field`, `ui-button` and `ui-notice` for the photo picker, the sketch controls and their error copy, and `ui-story` cards for the Candidates; THE Confirm Gate SHALL show the exact Place Image in a `ui-card` with the remaining quota in `ui-hint`, ONE solid yellow `ui-button--primary` ("Enter this place?") and a `ui-button--quiet` Cancel; THE progress screen SHALL show the stages with `ui-progress`, `ui-dots` and `ui-progress-label`, and its failure copy and the "worlds are closed" message with `ui-notice`, in the neutral words of Requirement 3.2.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

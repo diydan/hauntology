@@ -58,3 +58,14 @@ Haunting errands give a Player who has joined the haunting (a Poltergeist) a sma
 2. EVERY Errand Object SHALL be soft or unbreakable or ordinary to hold, SHALL be in reach in a normal home, and no Errand SHALL ask anyone to touch another person, take something from a person or a bag, leave the room, or use anything hot, sharp or a medicine.
 3. THE Controller SHALL let any Player opt out of being a Target at any time without saying why, and SHALL show every Errand with a line "Ask, trick or tempt. Never grab or push."
 4. AN Errand SHALL change no card, Hand, Solution, Turn order, Turn Clock (other than the Bonus Seconds of 3.2) or win, a Bot SHALL never be a Target or hold an Errand, and the Public View SHALL contain no open Errand.
+
+### Requirement 5
+
+**User Story:** As a Player, I want the Errand screens to look and behave like the rest of the game, so that they feel like part of one evening. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (the Controller's Errand card, Caught picker and opt-out) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Poltergeist's Errand card SHALL be a `ui-card` with its `ui-button` Done and the line "Ask, trick or tempt. Never grab or push." in `ui-hint`; THE Caught picker SHALL be two `ui-select` fields (the Poltergeist and the Errand Object) with ONE solid yellow `ui-button--primary`; THE opt-out SHALL be a `ui-check` with its words as part of the target; and no Errand SHALL show a colour that is not a role.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

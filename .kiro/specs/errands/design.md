@@ -36,3 +36,15 @@ Property tests with fast-check for Properties 1 to 3; example tests for the phot
 ## Integration notes (2026-11-15)
 
 Errands join in Phase 7 of the `integration` spec, through the Engine, behind the `errands` setting. The messages are listed in the `party-mode` design's integration notes.
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Errand card and the safety line | `ui-card ui-hint ui-button` |
+| Caught picker | `ui-field ui-field-label ui-select ui-button--primary` |
+| Opt out of being a Target | `ui-field--check ui-check` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The Controller screens are not built yet, so they are built from the elements the first time.

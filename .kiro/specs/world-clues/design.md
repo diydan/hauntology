@@ -33,3 +33,15 @@ Property tests for Properties 1 and 2. Example tests for the `phone` setting (1.
 ## Integration notes (2026-11-15)
 
 World Clues join in Phase 7 of the `integration` spec, through the Engine. The placed clues and Decoys go into the Public View as `worldClues` (Zone, Sign, Sight) only when `cluePlace` is `world`; the Viewer draws them as props by the `world-viewer` rules for anchors, and the clue props must fit that spec's budget for objects in the world.
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Lock prompt and Sign | `ui-prompt ui-chip ui-hint` |
+| Notebook | `ui-panel ui-log ui-log-row` |
+| Clue props in the world | no element: drawn in the Viewer with colours from `shared/src/design/tokens.ts` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The Lock and the notebook are not built yet, so they are built from the elements the first time.

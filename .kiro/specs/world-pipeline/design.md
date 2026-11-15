@@ -163,3 +163,17 @@ Stable codes live in `shared/src/errors.ts`, which is the source of truth; this 
 ### Property 14: Enhance plans overlap and fall back
 *For any* image dimensions, `planEnhance` returns a set of views with pairwise-distinct azimuths and each extension overlapping the original by at least 40%; and for any failure injected at any step the final prompt is the single-image prompt with the original photo.
 **Validates: Requirements 11.1, 11.3**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Photo picker, caption, error copy | `ui-card ui-field ui-field-label ui-button ui-notice` |
+| Sketch Pad (canvas and its controls) | `ui-panel`, `ui-button--quiet` in `ui-choices`; a sketch tool piece that does not exist is added first |
+| Candidates | `ui-stories ui-story ui-story-title` |
+| Confirm Gate | `ui-card ui-hint ui-button--primary ui-button--quiet` |
+| Progress and failure | `ui-progress ui-dots ui-dot ui-progress-label ui-status ui-notice` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The screens already built by the shell (`web/src/app/create/*`, `web/src/app/screens/*`) still use `app.css` (`.button`, `.banner`, `.screen`); each moves onto the elements when it is next changed, in the same change (`design-system` task 4).

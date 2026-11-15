@@ -147,3 +147,16 @@ Codes: `rate_limited`, `session_expired`, `bad_anchors` (handled by ring fallbac
 ### Property 14: Telemetry carries no content
 *For any* play-through with random visitor strings, every emitted telemetry event uses only whitelisted counter names and error codes and contains none of the visitor's input, prompt or reply text.
 **Validates: Requirements 9.1**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Chat panel | `ui-sheet ui-sheet-head ui-sheet-title ui-log ui-log-row ui-log-who ui-field` |
+| Quick buttons | `ui-choices ui-button--quiet` |
+| The ghost's reply | `ui-dialogue ui-speech ui-nameplate ui-portrait` |
+| Journal | `ui-panel ui-log` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The chat is not built yet, so it is built from the elements the first time.

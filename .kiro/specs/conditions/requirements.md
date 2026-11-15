@@ -88,3 +88,14 @@ The conditions feature brings a little of the real world into the haunting: a pl
 1. WHEN the Time of Day is dusk or night and a Place is set THEN the Conditions service SHALL compute the stars and the moon above the Place for that date and hour from a built-in list of at most 300 bright stars, using simple low-precision formulas.
 2. WHEN the stars have been computed THEN the Viewer SHALL draw them once into a Star Texture of at most 1024 by 512 pixels, so that no star is drawn per frame.
 3. WHEN the weather is cloud THEN the Viewer SHALL dim the stars, and WHEN the weather is fog, rain, storm or snow THEN the Viewer SHALL hide them.
+
+### Requirement 7
+
+**User Story:** As a Player, I want the sky card to look and behave like the rest of the game, so that setting the sky feels like part of one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (the sky card on the Haunt screen, built by the shell: `haunwallker` task 9.6) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE sky card SHALL use `ui-card` with `ui-field` and `ui-field-label` for the city search and the Memory Day date and time, `ui-select` for the time of day, a list of `ui-button--quiet` choices (`ui-choices`) for at most five matching places, `ui-button--quiet` for "Use this table's location" and for clearing a suggested date, and `ui-hint` for the photo-timestamp suggestion and the weather note; it SHALL hold no solid yellow button of its own, and nothing the weather or the stars draw in the Viewer SHALL take a colour that is not in `shared/src/design/tokens.ts`.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

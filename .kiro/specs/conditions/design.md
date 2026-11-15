@@ -232,3 +232,16 @@ New stable codes in `shared/src/errors.ts`: `conditions_disabled` (search while 
 ### Property 11: Scripted lines and the narrator prompt carry no news, crime, death or real events
 *For any* Snapshot (including hostile place labels, coordinates and dates), the narrator prompt contains only the three enum values for weather, time bucket and moon and none of the label, coordinates or date, and is identical to a prompt with no sky fields when the source is the Default; every scripted line, weather line and star line passes `mentionsRealWorld`; any model reply that fails it is replaced by a scripted line; and across any sequence of turns at most one star is named.
 **Validates: Requirements 5.1, 5.2, 5.3**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| City search and matches | `ui-card ui-field ui-field-label ui-choices ui-button--quiet` |
+| Use this table's location | `ui-button--quiet`, `ui-hint` |
+| Memory Day, time of day, suggested date | `ui-field ui-select ui-hint ui-button--quiet` |
+| Sky in the Viewer (weather, stars) | no element: drawn in the Viewer with colours from `shared/src/design/tokens.ts` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The sky card is not built yet, so it is built from the elements the first time.

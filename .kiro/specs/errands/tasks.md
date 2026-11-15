@@ -25,3 +25,11 @@
     - _Requirements: 3.1, 4.3_
   - [ ] 3.2 Checkpoint: playtest one evening with Errands on; note any object people could not find or felt unsafe with
     - _Requirements: 4.2_
+
+- [ ] 4. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 5 and the `design-system` spec)
+  - [ ] 4.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 5.1, 5.3_
+  - [ ] 4.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 5.2_
+  - [ ] 4.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 5.4_

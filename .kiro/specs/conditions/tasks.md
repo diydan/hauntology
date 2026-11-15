@@ -121,3 +121,11 @@ Order: the spike first, then pure logic with property tests, then the API module
 
 - [ ] 8. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; play one game with conditions off, one with a city, one with a Memory Day, and one with the weather call failing; confirm each looks right and that the game state is the same in all four; ask the user if questions arise.
+
+- [ ] 9. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
+  - [ ] 9.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 7.1, 7.3_
+  - [ ] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 7.2_
+  - [ ] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 7.4_

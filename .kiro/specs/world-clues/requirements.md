@@ -45,3 +45,14 @@ World clues move some puzzle clues out of the phone and into the shared haunted 
 2. WHERE Assist is on THEN the notebook SHALL keep a picture of each World Clue and Decoy that was within reach of the shared camera during that Player's own Turn, and the Lock SHALL offer "See the clue again" for those only.
 3. WHERE a Player opens a Lock whose World Clue was never in view during the game THEN the Lock SHALL run Faded, as the `puzzles` spec says.
 4. A Bot SHALL never use a World Clue, and its Inspect SHALL stay a plain Inspect.
+
+### Requirement 4
+
+**User Story:** As a Player, I want the Lock, the notebook and the clues in the world to look and behave like the rest of the game, so that they feel like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (the Lock and the notebook on the Controller; the clues drawn in the Viewer) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Lock SHALL show the Sign it needs and its prompt with `ui-prompt` and the Sign's name in words (`ui-chip`) beside its mark, THE notebook SHALL list each kept clue picture in a `ui-panel` with `ui-log` rows, and THE clues drawn in the Viewer SHALL take their colours and glow from `shared/src/design/tokens.ts`, never from a value of their own, and SHALL still show their answer by more than colour.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.
