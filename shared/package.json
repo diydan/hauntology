@@ -13,7 +13,8 @@
     "./origin": "./src/origin.ts",
     "./conditions/*": "./src/conditions/*.ts",
     "./world/*": "./src/world/*.ts",
-    "./puzzles/*": "./src/puzzles/*.ts"
+    "./puzzles/*": "./src/puzzles/*.ts",
+    "./voice/*": "./src/voice/*.ts"
   },
   "scripts": {
     "test":     "vitest run",

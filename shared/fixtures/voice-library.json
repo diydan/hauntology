@@ -1,0 +1,543 @@
+{
+  "version": 1,
+  "prefix": "speech/lib/v1/",
+  "lodgerVoices": [
+    "inworld:Mark",
+    "inworld:Conrad",
+    "inworld:Arjun",
+    "inworld:Chloe",
+    "inworld:Eleanor",
+    "inworld:Victoria"
+  ],
+  "count": 66,
+  "entries": [
+    {
+      "key": "speech/lib/v1/81b1a026963778949bd1992a490ca3197dc59deb3e8e99d9020ae46d38e5167e",
+      "voice": "inworld:Mark",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/806dbd5692b0d2ec7f99611701a9f337d496b263d82eb484ab47bb9afe961cf1",
+      "voice": "inworld:Conrad",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b579bac7f23d62449db24bea4c9e51e71df7991ed4375c9d31bfde561eb3f348",
+      "voice": "inworld:Arjun",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/57bee1df4ef2d6ff9b96fe39682d147872e6964c5bca0fe0e438603cc0abde03",
+      "voice": "inworld:Chloe",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/481810c0fe2bd9f0d91e1c52ebcab6a31b48e15e358846339c07c269187630b9",
+      "voice": "inworld:Eleanor",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f2204f48978b3d9848623d888ffa3104f00a7c3b0930e1b14de30e4a2f065bc4",
+      "voice": "inworld:Victoria",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7f09bfa775de1d767c7f434c973d346a1d603152677cd96600c05016d34957b8",
+      "voice": "inworld:Mark",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/008e14b13b0b5fa5ee547627d41db4399008e9cda4016c9d6f74df00d6d90bfd",
+      "voice": "inworld:Conrad",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d9b1d0998fc2c9b538f07499e2d96ca5839d64e7656610c98b871f843229e085",
+      "voice": "inworld:Arjun",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6278c372b34a7d9c6a8043a2b857e7e1e01f7374d54e0f38631bb55cd54b79ab",
+      "voice": "inworld:Chloe",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b4a8944551ec91232683fb425fda9506dbed952d05060793a1b6d58a9fb3b485",
+      "voice": "inworld:Eleanor",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/aa1bc4fe7645182ff98652c4616ef95f15aaa7e87d187bd7dd3e254110172b0f",
+      "voice": "inworld:Victoria",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ae913765bd833bd6e435afb62f88c247f76f9f03e3999f3c1740faca63bba8eb",
+      "voice": "inworld:Mark",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e2449ad7c28e44ea4ba5c39f75b02957f901d40ed620c63a4554bbaaee541fa1",
+      "voice": "inworld:Conrad",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/57c7b1ac8aa1edcabcfc7ba4f295afe65823d6f6a8f419d53cc0e2b9ac18e08f",
+      "voice": "inworld:Arjun",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7610b3c33ac4c72a104612bd3bec14ed5ea7721b2727f7a431cf041ab61ed831",
+      "voice": "inworld:Chloe",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f3817847c6f112ff5f07df6693a17ffb58b886efe8dc3f2369786c9ea3303d9f",
+      "voice": "inworld:Eleanor",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/31b46e870a747344d5edc01c20ae5dcd188e58fd724d3e692054ee71d4ec4229",
+      "voice": "inworld:Victoria",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0638e8489c2f11b01c4ba24ae288027c8d864b035f7cabbb7ef3c675ac61bb7f",
+      "voice": "inworld:Mark",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5ff148bb2ec3468378e506a252991a4ff9d784775e9a8bdaae42d96ab2277d42",
+      "voice": "inworld:Conrad",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/62dee20d35cf4256bb2c253964b3ec49a57aa6724a7b5e000ec819c1cc8875b9",
+      "voice": "inworld:Arjun",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b3728c8a7cf4ffb2e1fe6aedaef0b2b53a48bc23b86962e30f0c04f72e754abf",
+      "voice": "inworld:Chloe",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8419e26f8e6dc393396a70752445c2bf6a401aa99f7b8884b41007589144559a",
+      "voice": "inworld:Eleanor",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c3ced85738f25b822c24e09dd466fb607a9acca19b572763953763d86c6d8189",
+      "voice": "inworld:Victoria",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/700e0491c88e338e21d052a0365936d42f79c11bbd0cc606d0cf13f36ea70a4e",
+      "voice": "inworld:Mark",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/857a5fa7aed353191658bfc4b25edd66595fe62b348c5d0bc7f01ceeb67ac380",
+      "voice": "inworld:Conrad",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/337a0d649beb39bd742631cc3f8e083511ddf955590bab327238b30a3fbbff8e",
+      "voice": "inworld:Arjun",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1790dba0ef6cfbadd406696b31872f623785671d7724f995fcc21500bda1127d",
+      "voice": "inworld:Chloe",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ed356220f35cf1afb780f176874dcd4147ca6f3a4ad64629d8042ec1479505ed",
+      "voice": "inworld:Eleanor",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1120eb370b93ef74f2c2c1aa596bd58c418593c9264fe9f8a4c7372e65bcf272",
+      "voice": "inworld:Victoria",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/63d3ed8753164a9ab471aa0116093d2050ef6fa8c1ec0d08b328490a339eaa84",
+      "voice": "inworld:Mark",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3c8646fd47a1af13153de49427d5c648caed0a6e995dcf4fc10b8af262957a12",
+      "voice": "inworld:Conrad",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/94cef53c2f540b45d8a2dca4da4c4f2fe505b5fb710cd15178d32a9a907477d7",
+      "voice": "inworld:Arjun",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9a5bb51dc0f5651ccc0030f25a982e86b7b4714296cf75f046b4ee97a0125b2b",
+      "voice": "inworld:Chloe",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e95cb22b541502d5066468a4490850dd243e3859569fad3375719fd535e9d949",
+      "voice": "inworld:Eleanor",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e89ec2bd159b3fa2c1346d9ba4339b264aedf975f5f6a4d5e96b717593ed48cb",
+      "voice": "inworld:Victoria",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d161c1996e248bb26c915e7fafdb57f0727c5b5c80b0a5dc457b29d899d8ad97",
+      "voice": "inworld:Mark",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9e5626b05c3ee72d6341bcf471d0bb92d425d4781bf9220bb60614ccf5e3dc6a",
+      "voice": "inworld:Conrad",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/50575b4b12a897f2c0288fa7f9a2621f16d0d08f4d48a850cda9f335e11cd0b6",
+      "voice": "inworld:Arjun",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/93e613060ff4ee8c474af827ddf3698e2187f544f1bc5a97b50b102148ab1488",
+      "voice": "inworld:Chloe",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/668f5f413cd6fd9d1ddefd2e05f34d5a187f414d1f5119fc5428ade32547a2f6",
+      "voice": "inworld:Eleanor",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d6fa9ecbd2db1a081f803fbb5c1bd737dff2626251317a298d86dcd92921533b",
+      "voice": "inworld:Victoria",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fe1489040c08ec05471e1f39e434cfa1689b2a9cfdf9a74ea0b8a28932464bd4",
+      "voice": "inworld:Mark",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9db0f602e3fcce28a97b03365183985b00519ee9b630eccda04829c89059abe0",
+      "voice": "inworld:Conrad",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c6cf2e1bb08e4ca85525d0e29a3a63b58c0790cd3db78809f1ec12185d652c8e",
+      "voice": "inworld:Arjun",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f8bc4c27801e81cec6c2bae67c23d94f41e0ef4428ce5c6bf3e3d190769e9c48",
+      "voice": "inworld:Chloe",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cb87486a8bfe5d0c018e2f060d6f17219ff026b40f4984472f63befdbc1b9b04",
+      "voice": "inworld:Eleanor",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/606d95fb2a8d8d12d53b8ec3935660c6d2de05f43bc91f406cc63b6dc25979bf",
+      "voice": "inworld:Victoria",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/57fd734300e478aff28944e9124fb59ebab4ee96b9498111771abcd59c197cd1",
+      "voice": "inworld:Mark",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4a8d66941bdb25e817c69ef2d115978fa25536e95f38c98a588a7228379c9b82",
+      "voice": "inworld:Conrad",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ac9a93a5a035311a01c1dc092b2276741a5b93b118b5df8d0517a6da0c06b0f2",
+      "voice": "inworld:Arjun",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b024aa80d963d87c290879c59cadb86134f5f1adfe57b60e45ba47557b24696a",
+      "voice": "inworld:Chloe",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/dbebf60da1a0835216a8e919a97f20003eba3b5850c071c9f2c2ec4e66de26c2",
+      "voice": "inworld:Eleanor",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c164bbbffb50568f10599c77f6303d7e51222d6a8a555f7af0abf2030bb0fdc8",
+      "voice": "inworld:Victoria",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4bdadee4f13d698d833ff282bdacf51d2246e7f9d79b2cc2dab5bb55bf946db7",
+      "voice": "inworld:Mark",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/534f4d25a67f4bbe3d2ecab19179130190258842bee483c5988da763ca4afa05",
+      "voice": "inworld:Conrad",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ab945812adde8562cb713cd593a6b08655bbaabde5970deb7057ce0bc4064500",
+      "voice": "inworld:Arjun",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a0cb08d73896181a8ce6b16ada1526512d92a512b3681dcafed30aa73af952c8",
+      "voice": "inworld:Chloe",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3e90cc0dd7ce3ea850d07cdbfcb2f0381c336ec0958f73d2ed57c7d02035f3e9",
+      "voice": "inworld:Eleanor",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1f34a36a2de275d19fbd5a4455078faddab6064c473f2f88359455262e07d963",
+      "voice": "inworld:Victoria",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/814e4506989da606cf229d6e32961195cb612dca7cdef132ba7eb0d17389e882",
+      "voice": "inworld:Mark",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/389d94c9ad246edbb09d9f0c64032a967feb6b0c08adc3518b222a4a60770e98",
+      "voice": "inworld:Conrad",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/61aa53b5f31bc0f8fa73171f5d71b5fe5f4cd90f0fdd3784c14769590a27bd3d",
+      "voice": "inworld:Arjun",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/25e7d7b3a60cdbc5cb27dccf4cd9bd8b3ddc5e5ebdd9791a05c19b5a2bf2c708",
+      "voice": "inworld:Chloe",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3f7ad47c58adcb97a75a92c598260d8e7ffde4a9e790d4d27959ef0269a5f2c6",
+      "voice": "inworld:Eleanor",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0ac378e62469ba0bdbaf1fa141841ecb16f476ccbf26ac34cbfc882e60aed167",
+      "voice": "inworld:Victoria",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    }
+  ]
+}

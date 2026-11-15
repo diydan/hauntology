@@ -10,7 +10,9 @@
     "typecheck": "pnpm -r typecheck",
     "dev:api":  "pnpm --filter api dev",
     "dev:web":  "pnpm --filter web dev",
-    "check-traceability": "node tools/check-traceability.mjs"
+    "check-traceability": "node tools/check-traceability.mjs",
+    "check-voice-library": "node tools/build-banks.mjs --check && node tools/check-voice-library.mjs",
+    "test:tools": "node --test tools/test/*.test.mjs"
   },
   "workspaces": ["shared", "api", "web"]
 }

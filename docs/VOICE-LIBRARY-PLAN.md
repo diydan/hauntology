@@ -1,6 +1,6 @@
 # Voice Library tool: plan (draft, 2026-11-15)
 
-Status: **plan for Dan to change; nothing here is built.** It turns `ghost-voice` tasks 2.18, 2.19, 3.11 and 3.12 into steps, with the Lodger's six voices as the first thing to render. Requirements 1.8 and 1.9, Property 14, and the "Reuse and pre-generation" rules in `.kiro/specs/ghost-voice/design.md` are the source; where this plan adds something, it says so.
+Status: **steps 1 to 3 of the table below are built (2026-11-15): the banks as data, `buildLibrary` and the key functions with 44 tests, the manifest (66 entries) and the offline check tool. The prerender tool and the read path are not built.** The open decisions at the end are still open. It turns `ghost-voice` tasks 2.18, 2.19, 3.11 and 3.12 into steps, with the Lodger's six voices as the first thing to render. Requirements 1.8 and 1.9, Property 14, and the "Reuse and pre-generation" rules in `.kiro/specs/ghost-voice/design.md` are the source; where this plan adds something, it says so.
 
 ## What the Library is
 
