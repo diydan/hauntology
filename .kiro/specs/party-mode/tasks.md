@@ -54,21 +54,21 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.8 Write property test for the room lifecycle
     - **Property 4: Room lifecycle round-trips and deletes completely**
     - **Validates: Requirements 1.5, 10.4**
-  - [ ] 2.9 `sanitizeInput`, `coalesceInput`, `releaseAll`
+  - [x] 2.9 `sanitizeInput`, `coalesceInput`, `releaseAll`
     - _Requirements: 2.2, 2.3_
-  - [ ]* 2.10 Write property test for controller input
+  - [x]* 2.10 Write property test for controller input
     - **Property 5: Controller input is bounded and never sticks**
     - **Validates: Requirements 2.2, 2.3**
-  - [ ] 2.11 `buildPool` with contributed-first ordering and Preset and curated-name fill
+  - [x] 2.11 `buildPool` with contributed-first ordering and Preset and curated-name fill
     - _Requirements: 3.1, 3.4_
-  - [ ] 2.12 Contribution fallback rules for rejected photos and failed portraits
+  - [x] 2.12 Contribution fallback rules for rejected photos and failed portraits
     - _Requirements: 3.2, 3.3_
-  - [ ]* 2.13 Write property test for the case pool
+  - [x]* 2.13 Write property test for the case pool
     - **Property 6: The case pool is complete, deterministic and never blocked**
     - **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
-  - [ ] 2.14 `dealCase`: Solution, three Residue cards, 12 dealt cards
+  - [x] 2.14 `dealCase`: Solution, three Residue cards, 12 dealt cards
     - _Requirements: 4.1_
-  - [ ]* 2.15 Write property test for the deal
+  - [x]* 2.15 Write property test for the deal
     - **Property 7: The deal is a valid partition**
     - **Validates: Requirements 4.1**
   - [ ] 2.16 `publicView`, `privateView` (with found Residue, Resolve and the seat's own sound consent) and redacted public events (a House Cue and a Frame produce the same `phone-cue` event)
