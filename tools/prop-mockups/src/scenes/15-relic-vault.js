@@ -2,6 +2,7 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', ''];
 const kx = (i) => 530 + (i % 3) * 34, ky = (i) => 186 + Math.floor(i / 3) * 34;
 const lerp = (a, b, t) => a + (b - a) * t;
 const poly = (t) => '250,252 450,252 ' + lerp(470, 445, t).toFixed(1) + ',' + lerp(272, 176, t).toFixed(1) + ' ' + lerp(230, 255, t).toFixed(1) + ',' + lerp(272, 176, t).toFixed(1);
+const PHONES = [['Mina', 18], ['Joe', 106], ['Ravi', 194]];
 async function press(x, d) {
   const s = x.state;
   if (s.open || s.busy) return;
@@ -22,16 +23,16 @@ const typeCode = async (x, code) => { for (const d of code) { await press(x, d);
 Mock({
   num: 15, title: 'Relic vault', group: 'Lock boxes', leak: 'None', effort: 'Medium',
   trigger: 'Players type the PIN from a phone',
-  summary: 'A keypad box holding the six 3D-printed Relics. The Master’s phone shows a 4-digit PIN. Someone types it on the box and the servo latch lets the spring lid open.',
-  stageNote: 'Lock box idea B with the PIN on a phone. The PIN opens a box of toys, not the game, so it is not a game secret, but it is private to that phone until the Master chooses to show it. Click Show PIN, then click the keypad to type.',
+  summary: 'A keypad box holding the six 3D-printed Relics. Every seated phone can show the same 4-digit PIN. Someone types it on the box and the servo latch lets the spring lid open.',
+  stageNote: 'Lock box idea B with the PIN on every phone. The PIN opens a box of toys, not the game, so it is not a game secret. Every seated player can read it, and a phone with no seat cannot. Tap a phone to show or hide its PIN, then click the keypad to type.',
   servos: { latch: { label: 'Latch servo', rest: 0, max: 90 } },
   svg: `
     <rect x="0" y="352" width="640" height="68" fill="#15111d"/>
-    <rect x="40" y="30" width="124" height="170" rx="20" fill="#0a070f" stroke="#3d3557" stroke-width="3"/>
-    <text x="102" y="54" text-anchor="middle" font-size="8.5" fill="#9b92ae" letter-spacing="1.2">MASTER’S PHONE</text>
-    <text x="102" y="78" text-anchor="middle" font-size="13" fill="#cfc7e0">Box PIN</text>
-    <text id="v15code" x="102" y="116" text-anchor="middle" font-size="22" fill="#e8c36a" font-weight="700" letter-spacing="2">• • • •</text>
-    <g id="v15show" style="cursor:pointer"><rect x="58" y="140" width="88" height="34" rx="10" fill="#3a3158" stroke="#6a5f86" stroke-width="2"/><text id="v15showt" x="102" y="162" text-anchor="middle" font-size="13" fill="#ebe6f5" font-weight="600" pointer-events="none">Show PIN</text></g>
+    ${PHONES.map((p, i) => `<g id="v15p${i}" style="cursor:pointer"><rect x="${p[1]}" y="26" width="80" height="124" rx="14" fill="#0a070f" stroke="#3d3557" stroke-width="3"/>
+      <text x="${p[1] + 40}" y="46" text-anchor="middle" font-size="10" fill="#9b92ae" pointer-events="none">${p[0]}</text>
+      <text x="${p[1] + 40}" y="68" text-anchor="middle" font-size="12" fill="#cfc7e0" pointer-events="none">Box PIN</text>
+      <text id="v15code${i}" x="${p[1] + 40}" y="100" text-anchor="middle" font-size="16" fill="#e8c36a" font-weight="700" pointer-events="none">• • • •</text>
+      <text id="v15tap${i}" x="${p[1] + 40}" y="132" text-anchor="middle" font-size="10" fill="#9b92ae" pointer-events="none">tap to show</text></g>`).join('')}
     <ellipse cx="350" cy="356" rx="160" ry="12" fill="#000" opacity=".5" filter="url(#blur6)"/>
     <polygon id="v15lidB" fill="url(#gWoodD)" stroke="#2a1a12" stroke-width="2" style="display:none"/>
     <polygon points="250,252 450,252 470,272 230,272" fill="#0a070f"/>
@@ -55,10 +56,10 @@ Mock({
     ${KEYS.map((k, i) => k === '' ? '' : `<g id="v15k_${k}" style="cursor:pointer"><circle cx="${kx(i)}" cy="${ky(i) + 8}" r="14" fill="#3a3158" stroke="#6a5f86" stroke-width="2"/><text x="${kx(i)}" y="${ky(i) + 14}" text-anchor="middle" font-size="14" fill="#ebe6f5" pointer-events="none">${k}</text></g>`).join('')}
     <text x="558" y="334" text-anchor="middle" font-size="10" fill="#9b92ae">PIN checked on the ESP32</text>
     <text id="v15wrong" x="558" y="348" text-anchor="middle" font-size="10" fill="#9b92ae"></text>`,
-  state: () => ({ code: '4719', shown: false, entry: '', open: false, busy: false, err: 0, wrong: 0 }),
+  state: () => ({ code: '4719', shown: [false, false, false], entry: '', open: false, busy: false, err: 0, wrong: 0 }),
   init(s, X) {
     KEYS.forEach((k) => { if (k) X.el('v15k_' + k).addEventListener('click', () => X.run((x) => press(x, k), { queue: false })); });
-    X.el('v15show').addEventListener('click', () => X.run(async (x) => { x.state.shown = !x.state.shown; if (x.state.shown) x.priv('The PIN is on that phone only. It is not on the Host screen.'); }, { queue: false }));
+    PHONES.forEach((p, i) => X.el('v15p' + i).addEventListener('click', () => X.run(async (x) => { x.state.shown[i] = !x.state.shown[i]; }, { queue: false })));
   },
   render(a, s, X) {
     const t = X.clamp((a.latch - 45) / 45, 0, 1), pts = poly(t);
@@ -66,24 +67,27 @@ Mock({
     X.show('v15lidB', t > 0.55); X.show('v15lidF', t <= 0.55);
     X.op('v15clasp', (1 - t * 2 > 0 ? 1 - t * 2 : 0).toFixed(2)); X.op('v15relics', t.toFixed(2));
     X.tr('v15bolt', -(a.latch / 90) * 20, 0);
-    X.txt('v15code', s.shown ? s.code.split('').join(' ') : '• • • •');
-    X.txt('v15showt', s.shown ? 'Hide PIN' : 'Show PIN');
+    PHONES.forEach((p, i) => {
+      X.txt('v15code' + i, s.shown[i] ? s.code.split('').join(' ') : '• • • •');
+      X.txt('v15tap' + i, s.shown[i] ? 'tap to hide' : 'tap to show');
+    });
     X.txt('v15disp', s.err ? 'WRONG' : s.entry.padEnd(4, '_').split('').join(' '));
     X.fill('v15disp', s.err ? '#ff7a7a' : '#9fe8be');
     X.txt('v15wrong', s.wrong ? 'wrong PINs so far: ' + s.wrong : '');
   },
   events: [
-    { id: 'show', group: 'On the Master’s phone', label: 'The Master taps “Show PIN”', sub: 'The PIN is private to that phone. It is not on the Host screen.', run: async (x) => { x.state.shown = true; x.priv('The Room created this PIN when the room opened and sent it to the box and to the Master’s phone only.'); } },
-    { id: 'type', group: 'At the box', label: 'Type the PIN from the phone', sub: 'Or click the keypad yourself', run: async (x) => { x.state.shown = true; await typeCode(x, x.state.code); } },
+    { id: 'show', group: 'On the players’ phones', label: 'Players open “Box PIN” on their phones', sub: 'Every seated phone shows the same PIN. It is not on the Host screen.', run: async (x) => { x.state.shown = [true, true, true]; x.note('The Room made this PIN when the room opened and sent it to the box and to every seated phone.'); } },
+    { id: 'type', group: 'At the box', label: 'Type the PIN from a phone', sub: 'Or click the keypad yourself', run: async (x) => { x.state.shown = [true, true, true]; await typeCode(x, x.state.code); } },
     { id: 'wrong', label: 'Type a wrong PIN', run: (x) => typeCode(x, '0000') },
+    { id: 'late', label: 'Someone with no seat asks for the PIN', sub: 'A phone with no token cannot take a seat once the game has started', run: async (x) => { x.note('No seat means no PIN card. The PIN reaches seated phones only.'); } },
     { id: 'start', label: 'The Master starts the game without opening it', sub: 'Nothing changes', run: async (x) => { x.pub('The Master started the game.'); x.note('The box is garnish. The game never waits for it and works with no printer.'); } },
-    { id: 'new', group: 'Between games', label: 'New room: a new PIN reaches the phone and the box', run: async (x) => { const s = x.state; s.code = String(Math.floor(1000 + Math.random() * 9000)); s.wrong = 0; s.shown = false; x.priv('New PIN sent to the box and the Master’s phone.'); if (s.open) { s.open = false; await x.move('latch', 0, 900); } } },
+    { id: 'new', group: 'Between games', label: 'New room: a new PIN reaches every phone and the box', run: async (x) => { const s = x.state; s.code = String(Math.floor(1000 + Math.random() * 9000)); s.wrong = 0; s.shown = [false, false, false]; x.note('New PIN sent to the box and to every seated phone.'); if (s.open) { s.open = false; await x.move('latch', 0, 900); } } },
     { id: 'again', label: 'Play again: relock the box', sub: 'Someone presses the lid down', run: async (x) => { x.pub('New game.'); x.state.open = false; await x.move('latch', 0, 900); } }
   ],
-  listens: ['A PIN the Room creates for the room and sends to the box and to the Master’s phone', 'Play again (relock)'],
+  listens: ['A PIN the Room creates for the room and sends to the box and to every seated phone', 'Play again (relock)'],
   never: ['Any game secret: the PIN opens a box of toys, not the game', 'Anything about the Solution, a Hand or a Residue position'],
-  parts: '1 servo as a latch, a spring-loaded lid hinged at the back, a 3x4 keypad on 7 GPIO pins, a 4-digit display (optional). The 6 printed Relics sit inside. The Room makes the PIN when the room opens and sends it to the box over Wi-Fi and to the Master’s phone. The box checks the typed digits itself, so it keeps working if the Wi-Fi drops afterwards. It never gates the game.',
-  spec: ['party-mode: the Master’s menu holds the room controls', 'party-mode intro: relics can be 3D printed, the mode needs no printer'],
-  ask: ['PIN on the Master’s phone only, or on every player’s phone?', 'Or should the phone send the PIN straight to the box, so the box needs no keypad?', 'Lock the keypad for 10 s after 3 wrong PINs, or never?'],
+  parts: '1 servo as a latch, a spring-loaded lid hinged at the back, a 3x4 keypad on 7 GPIO pins, a 4-digit display (optional). The 6 printed Relics sit inside. The Room makes the PIN when the room opens and sends it to the box over Wi-Fi and to every seated phone (a "Box PIN" card in the menu). The box checks the typed digits itself, so it keeps working if the Wi-Fi drops afterwards. It never gates the game.',
+  spec: ['party-mode: a phone without a token cannot take a seat after the game has started (1.4)', 'party-mode intro: relics can be 3D printed, the mode needs no printer'],
+  ask: ['Should the "Box PIN" card be in the lobby only, or also in the menu during play?', 'Or should a phone send the PIN straight to the box, so the box needs no keypad?', 'Lock the keypad for 10 s after 3 wrong PINs, or never?'],
   shot: { before: ['show'], event: 'type', wait: 3300 }
 });

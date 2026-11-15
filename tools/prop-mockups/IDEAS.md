@@ -13,7 +13,7 @@ Every prop follows one rule: it reacts only to what the Display shows (the publi
 | 5 | Haunting flipper | Accusations sealed, then wrong ones revealed |
 | 9 | Curtain reveal | The game ends |
 | 12 | Rattle prop: three bats (chosen 2026-11-15; chandelier and doll kept in the mockup to compare) | Rattles (see the creak Cue below) |
-| 15 | Relic vault | A PIN shown on the Master's phone, typed on the box |
+| 15 | Relic vault | A PIN shown on every seated phone, typed on the box |
 | 20 | Cut wires board | The Wires puzzle (a real-button input) |
 
 ## Printed and static pieces (from the game spec and the seven props)

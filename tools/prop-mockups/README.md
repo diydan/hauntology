@@ -17,4 +17,4 @@ node tools/prop-mockups/shoot.mjs sheets     # 4-up contact sheets
 
 `shoot.mjs` needs the headless Chrome that Playwright caches under `~/Library/Caches/ms-playwright` (or set `CHROME`).
 
-Seven mockups remain, numbered as they were first drawn (numbers are not reused): 1 ghost in the box, 3 Haunt needle, 5 haunting flipper, 9 curtain reveal, 12 rattle chandelier, 15 relic vault (PIN shown on the Master’s phone) and 20 cut wires board. On 2026-11-15 the owner dropped 2, 4, 6, 7, 8, 10, 11, 13, 14, 16, 17, 18 and 19. A box that opens when a puzzle Lock is solved is not drawn: it would make a solved Lock public, which puzzles 1.2 forbids.
+Seven mockups remain, numbered as they were first drawn (numbers are not reused): 1 ghost in the box, 3 Haunt needle, 5 haunting flipper, 9 curtain reveal, 12 rattle chandelier, 15 relic vault (PIN shown on every seated phone) and 20 cut wires board. On 2026-11-15 the owner dropped 2, 4, 6, 7, 8, 10, 11, 13, 14, 16, 17, 18 and 19. A box that opens when a puzzle Lock is solved is not drawn: it would make a solved Lock public, which puzzles 1.2 forbids.

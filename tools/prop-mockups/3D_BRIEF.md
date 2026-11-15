@@ -73,8 +73,7 @@ Colours come from the game's own palette (`design/tokens.json`) so the table mat
 1. **Exact models and sizes** of the servo, ESP32 board, 3 x 4 keypad, 1.8 inch screen and LED strip.
 2. **Our printer:** bed size, nozzle and which spools we have.
 3. **#9 screen:** yes or no. A printed card cannot be the Solution, because the box does not know it until the game ends.
-4. **#15 PIN:** Master's phone only or every phone. We assume a keypad on the box.
-5. **Sizes above** are our guess.
+4. **Sizes above** are our guess. (Decided: the #15 PIN is shown on every seated phone and typed on a keypad on the box.)
 
 ## 6. Later (not in the first batch)
 
