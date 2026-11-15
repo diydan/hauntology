@@ -1,6 +1,7 @@
 /** The part of the Workers AI binding (`env.AI`) the guarded wrappers use. */
 export interface AiBinding {
-  run(model: string, input: Record<string, unknown>): Promise<unknown>;
+  /** The third argument is only for a third-party model: it names the AI Gateway that carries the call and bills it (`narrator.ts`). */
+  run(model: string, input: Record<string, unknown>, options?: { gateway: { id: string } }): Promise<unknown>;
 }
 
 /** Why a call to the model or the image service gave nothing: it was busy or limiting (`rate_limited`), or anything else (`failed`). Neither is charged. */

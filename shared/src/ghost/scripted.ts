@@ -104,7 +104,7 @@ export const LINES: Readonly<Record<Voice, Readonly<Record<Kind, readonly string
   },
 };
 
-const BEARING_PHRASE: Readonly<Record<Bearing, string>> = {
+export const BEARING_PHRASE: Readonly<Record<Bearing, string>> = {
   ahead: "ahead of you",
   "ahead-right": "ahead and to the right",
   right: "to your right",

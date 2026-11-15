@@ -34,3 +34,16 @@ export async function loadShared(root = defaultRoot) {
     throw new Error(`could not load the shared TypeScript (this needs Node 22.18 or newer; this is ${process.version}): ${error.message}`);
   }
 }
+
+/** Any other shared modules a tool needs, by path under `shared/src/` (for example `ghost/narration.ts`), in the order given. */
+export async function loadSharedFiles(paths, root = defaultRoot) {
+  if (!registered) {
+    register(`data:text/javascript,${encodeURIComponent(HOOK)}`, import.meta.url);
+    registered = true;
+  }
+  try {
+    return await Promise.all(paths.map((path) => import(pathToFileURL(join(root, 'shared', 'src', path)).href)));
+  } catch (error) {
+    throw new Error(`could not load the shared TypeScript (this needs Node 22.18 or newer; this is ${process.version}): ${error.message}`);
+  }
+}

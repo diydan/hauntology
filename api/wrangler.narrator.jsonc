@@ -1,0 +1,15 @@
+// LOCAL-ONLY config for dev/narrator-spike.ts (ghost-engine spike 1, docs/spikes/4.1.md). NEVER deployed: `wrangler deploy` reads wrangler.jsonc.
+// Run it ONLY after you have loaded AI Gateway credits and said "go" (the AI binding reaches the real, billed service). From the repo root:
+//   RUN_TOKEN=<random, 16+ characters> pnpm --filter api exec wrangler dev -c wrangler.narrator.jsonc --ip 127.0.0.1 --port 8799 \
+//     --persist-to ../.ghost-spike/state --var RUN_TOKEN:$RUN_TOKEN --var AI_GATEWAY_ID:default
+// The Durable Object keeps the call count in ../.ghost-spike/state, so a restart does not reset the cap of 50.
+{
+  "name": "hauntology-narrator-spike",
+  "main": "dev/narrator-spike.ts",
+  "compatibility_date": "2025-06-01",
+  "ai": { "binding": "AI" },
+  "durable_objects": { "bindings": [{ "name": "SPEND_GUARD", "class_name": "SpendGuard" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SpendGuard"] }],
+  // At most 50 narrator calls for the one session called "spike", and at most 50 a day.
+  "vars": { "LLM_SESSION_CAP": "50", "LLM_DAY_CAP": "50" }
+}

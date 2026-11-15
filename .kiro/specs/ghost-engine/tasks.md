@@ -5,6 +5,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
 - [ ] 1. Spike: narration tone and cost
   - Add one weather case per persona (a rainy dusk, a snowy night). Run two personas (soft/wistful, dry/stern) for ten turns each through `llama-4-scout-17b-16e-instruct` (`GHOST_MODEL_ID`) using the guarded WorkersAiClient text wrapper. Record latency, tokens, validation failure rate, and whether the rules in `steering/ghost-safety.md` hold against 10 jailbreak attempts. Tune prompt wording. Write `docs/spikes/4.1.md`.
   - _Requirements: 5.1, 5.5, 5.6_
+  - **Built 2026-11-15 for that plan, no spend:** the adapter (4.1, above), the prompt builder and reply check (2.15, 2.17), a local Worker with a cap of 50 calls in the real `SpendGuard` object (`api/src/spike/`, `api/dev/narrator-spike.ts`, `api/wrangler.narrator.jsonc`) and a runner that is a dry run unless you pass `--run` (`tools/ghost-spike.mjs`). Rehearsed end to end over a canned stand-in for the model (no `ai` binding): 50 calls, no temperature sent, the cap kept across a restart. **The paid run itself has not been made.**
   - **Plan written 2026-11-15, for you to approve (nothing called, nothing spent):** the model to test is now proposed as Haiku 5.5 (`anthropic/claude-haiku-5.5`, var `NARRATOR_MODEL_ID`) instead of Scout, and Scout stays for the Place Brief and the photo check. `docs/spikes/4.1.md` is the plan, **approved by you 2026-11-15**: 50 calls, a hard cap of $0.05 (worst case about 1.1 cents by the listed price), the guarded adapter built over fakes first, a dry-run-by-default runner, stop rules and pass marks. The paid run still needs you to load the credits and say "go". The steering row is proposed in `.kiro/steering/tech.md` (assumption 20). The wording above (Scout, ten jailbreak attempts, the tuning) stands for whichever model you pick.
 
 - [ ] 2. Pure engine logic (`shared/src/ghost/`)
@@ -50,17 +51,20 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - [x]* 2.14 Write property test for automatic hints
     - **Property 8: Automatic hints trigger on idleness**
     - **Validates: Requirements 4.2**
-  - [ ] 2.15 `buildNarrationPrompt` (with the optional `sky?: PromptFields`: weather class, time bucket and moon name) and `clientView` (carrying `atmosphere`)
-    - Partly built: `clientView` (`view.ts`): the anchors, what is found, the journal of found memories, `ended`, the look of the place; built from the state's found memories only, and the seeds are not a parameter. `buildNarrationPrompt` waits for the model narrator (task 4).
+  - [x] 2.15 `buildNarrationPrompt` (with the optional `sky?: PromptFields`: weather class, time bucket and moon name) and `clientView` (carrying `atmosphere`)
+    - `clientView` (`view.ts`): the anchors, what is found, the journal of found memories, `ended`, the look of the place; built from the state's found memories only, and the seeds are not a parameter.
+    - **`buildNarrationPrompt` built 2026-11-15** (`narration.ts`): the persona of the voice, the Place Brief phrase, the sky as closed words, the memories already told (at most three), the one seed being told and only for the reveal of its own anchor, the Directive worded for the model, the fixed rules, and the last two turns. The visitor's words go in a `<player>` block with no angle bracket in them, and a `refuse` turn never shows them. It returns `null` for a reveal without its seed (the caller uses a scripted line). A prompt never passes 4,500 characters. For you to review: the wording of the rules and of each Directive is mine, and the model is only proposed (`steering/tech.md`, assumption 20).
     - _Requirements: 1.1, 5.1, 5.2_
-  - [ ]* 2.16 Write property test for leakage
-    - The property is tested over whole games for what reaches the client today (replies and the view, with unique tokens planted in every seed: `play.test.ts`); it covers `buildNarrationPrompt` when that exists.
+  - [x]* 2.16 Write property test for leakage
+    - The property is tested over whole games for what reaches the client (replies and the view, with unique tokens planted in every seed: `play.test.ts`), and for the prompt (`narration.test.ts`: over every Directive, voice and seed, a token reaches the prompt only for the reveal of its own anchor).
     - **Property 9: No leakage of unrevealed memories**
     - **Validates: Requirements 1.1, 5.2**
   - [ ] 2.17 `validateGhostReply` (it calls the `conditions` spec's `mentionsRealWorld` and replaces a reply that mentions news, crime, death or real events with a scripted line) and scripted line library (≥ 5 variants per Directive kind per voice, plus scripted weather lines and star lines)
-    - Partly built: the scripted library (`scripted.ts`): at least five lines for every Directive in each of two voices (wistful, stern), two to four first-person scripted memories for each kind grounded in the Place Brief (`memoryText`, `briefPhrase`), no digit, address or markup in any line (tested over every line). `validateGhostReply` and its `mentionsRealWorld` check are for model replies: they come with the narrator (task 4).
+    - Partly built: the scripted library (`scripted.ts`): at least five lines for every Directive in each of two voices (wistful, stern), two to four first-person scripted memories for each kind grounded in the Place Brief (`memoryText`, `briefPhrase`), no digit, address or markup in any line (tested over every line).
+    - **`validateGhostReply` built 2026-11-15** (`narration.ts`): empty, over 600 characters, a link (also `//host`), markup (`` ` * # < > ``), a control or hidden character (newlines and tabs are folded into a space), a phrase from outside the story, news, crime or death, a digit in a hint or a tease, and more than four sentences all fail. **Not ticked:** the real-world check is a stand-in word list inside the file, because the `conditions` spec's `mentionsRealWorld` is not built; swap it in when it is.
     - _Requirements: 5.3, 5.4_
   - [ ]* 2.18 Write property test for reply safety
+    - Written for the validator (`narration.test.ts`: whatever the text, an accepted reply is non-empty, short, plain and free of links and outside words). Not ticked: "always" also needs the fallback to a scripted line when a reply fails, which comes with `narrationMode` (2.19) and the narrator wiring.
     - **Property 10: Replies are always safe and non-empty**
     - **Validates: Requirements 5.3, 5.4**
   - [ ] 2.19 `narrationMode`
@@ -100,6 +104,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
 
 - [ ] 4. Narrator
   - [ ] 4.1 Guarded WorkersAiClient text call (Scout) with persona and rules, `llm` reserve per turn, 6 s timeout, one retry, scripted fallback
+    - **Adapter built 2026-11-15, over fakes, not run** (proposed model: Haiku 5.5, `steering/tech.md` assumption 20): `HaikuNarrator` and the door `generateNarration` (a `SpendTicket` for the `llm` meter or it throws) in `api/src/guarded/workersai/narrator.ts`, wired as `WorkersAiClient.narrator` (off until `AI_GATEWAY_ID` is set). It never sends a temperature, asks for no or the lowest thinking, names the gateway, and answers `rate_limited`, `failed` (neither charged), `unusable` or `refused` (both charged). **Not built:** the per-turn reserve and commit around it, the one retry, and the scripted fallback wiring in `play.ts` (those need the model to be accepted, after `docs/spikes/4.1.md`).
     - _Requirements: 5.1, 5.3, 6.1_
   - [ ] 4.2 Memory reveal narration
     - Two to four first-person sentences grounded in the brief and archetype; validate and store as the Memory; scripted memory templates per archetype as fallback.

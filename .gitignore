@@ -29,6 +29,9 @@ worldlabs-credentials*
 # Rendered Voice Library audio (tools/prerender-voice.mjs). Audio lives in R2 only; never commit it.
 /.voice-library/
 
+# The narrator spike's replies, ledger and Durable Object state (tools/ghost-spike.mjs, docs/spikes/4.1.md). Local only.
+/.ghost-spike/
+
 # Dev MCP ledger and recorded raw responses with keys
 tools/worldlabs-mcp/.ledger.json
 
