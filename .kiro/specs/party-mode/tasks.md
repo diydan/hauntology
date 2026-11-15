@@ -34,24 +34,24 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 20.1, 20.2_
 
 - [ ] 2. Pure logic (`shared/src/party/`)
-  - [ ] 2.1 `generateRoomCode` and `normalizeCode`
+  - [x] 2.1 `generateRoomCode` and `normalizeCode`
     - _Requirements: 1.1_
-  - [ ]* 2.2 Write property test for room codes
+  - [x]* 2.2 Write property test for room codes
     - **Property 1: Room codes are well formed**
     - **Validates: Requirements 1.1**
-  - [ ] 2.3 `sanitizeNickname`, `seatPlayer` (the first seated Player becomes the Master), `canJoin`
+  - [x] 2.3 `sanitizeNickname`, `seatPlayer` (the first seated Player becomes the Master), `canJoin`
     - _Requirements: 1.2, 1.3_
-  - [ ]* 2.4 Write property test for seating and nicknames
+  - [x]* 2.4 Write property test for seating and nicknames
     - **Property 2: Seating and nicknames**
     - **Validates: Requirements 1.2, 1.3**
-  - [ ] 2.5 `authorize` for host, player and display tokens
+  - [x] 2.5 `authorize` for host, player and display tokens
     - _Requirements: 1.4, 1.6_
-  - [ ]* 2.6 Write property test for token ownership
+  - [x]* 2.6 Write property test for token ownership
     - **Property 3: Tokens grant exactly their own data**
     - **Validates: Requirements 1.4, 1.6, 9.3**
-  - [ ] 2.7 Room serialise, parse, expiry and delete
+  - [x] 2.7 Room serialise, parse, expiry and delete
     - _Requirements: 1.5, 10.4_
-  - [ ]* 2.8 Write property test for the room lifecycle
+  - [x]* 2.8 Write property test for the room lifecycle
     - **Property 4: Room lifecycle round-trips and deletes completely**
     - **Validates: Requirements 1.5, 10.4**
   - [ ] 2.9 `sanitizeInput`, `coalesceInput`, `releaseAll`
