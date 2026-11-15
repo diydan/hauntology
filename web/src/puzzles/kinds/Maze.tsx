@@ -142,7 +142,7 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey, 
   return (
     <div className="pz-maze">
       <p className="ui-hint pz-hint">Reach the green ring. {tilt === "on" ? "Lean the phone to roll the orb." : "Hold a finger where the orb should go."}</p>
-      <div className="pz-field">
+      <div className="pz-field pz-visual">
         <canvas
           ref={canvas} className="pz-canvas pz-maze-board" width={Math.round(w * dpr)} height={Math.round(h * dpr)}
           style={{ width: w }} role="application" tabIndex={0} aria-label="Maze. Use the arrow keys, or hold a finger where the orb should go."

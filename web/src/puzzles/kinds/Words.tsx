@@ -192,7 +192,7 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
     <div className="pz-words">
       <p className="ui-hint pz-hint">{tilt === "on" ? "Lean the phone to sweep the torch." : "Drag a finger to aim the torch."} Pick the lit letters, left to right.</p>
       <canvas
-        ref={canvas} className="pz-canvas pz-wall" width={WALL * Math.min(2, window.devicePixelRatio || 1)} height={WALL * Math.min(2, window.devicePixelRatio || 1)}
+        ref={canvas} className="pz-canvas pz-wall pz-visual" width={WALL * Math.min(2, window.devicePixelRatio || 1)} height={WALL * Math.min(2, window.devicePixelRatio || 1)}
         role="application" tabIndex={0} aria-label="Dark wall with hidden letters. Arrow keys aim the torch. Enter picks the lit letter."
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel} onKeyDown={onKey}
       />

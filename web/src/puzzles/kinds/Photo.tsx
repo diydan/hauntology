@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from "react";
 import { hash, mulberry32, range, shuffle } from "@hauntology/shared/puzzles/rng";
 import { CELL, PictureSvg } from "../art/Picture";
 import { useLatest } from "../hooks";
@@ -158,8 +158,8 @@ export default function Photo({ view, feel, reducedMotion, submit, announce }: K
   return (
     <div className="pz-photo">
       <p className="ui-hint pz-hint">{view.turning ? "Put the photo you saw back together. Drag pieces onto the frame. Tap a piece to pick it; tap it again to turn it." : "Put the photo you saw back together. Drag pieces onto the frame, or tap a piece and then an empty spot."}</p>
-      <div className="pz-field">
-        <div ref={board} className={`pz-photo-board${reducedMotion ? " pz-photo-still" : ""}`} data-cols={cols} role="group" aria-label="Torn photo" style={{ aspectRatio: `${W} / ${H}` }}>
+      <div className="pz-field pz-visual">
+        <div ref={board} className={`pz-photo-board${reducedMotion ? " pz-photo-still" : ""}`} data-cols={cols} role="group" aria-label="Torn photo" style={{ aspectRatio: `${W} / ${H}`, "--pz-ratio": H / W } as CSSProperties}>
           {range(n).map((i) => <span key={`t${i}`} className="pz-photo-cell" style={box(trayAt(i).x + INSET, trayAt(i).y + INSET, CELL - 2 * INSET)} aria-hidden="true" />)}
           {range(n).map((s) => {
             const open = !m.slot.includes(s);

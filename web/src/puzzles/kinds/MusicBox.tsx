@@ -96,7 +96,7 @@ export default function MusicBox({ view, feel, submit, announce, resetKey }: Kin
       <div className="ui-row ui-row--center">
         <button type="button" className="ui-button ui-button--primary" disabled={playing || left <= 0} onClick={wind}>{windText}</button>
       </div>
-      <div className="pz-field">
+      <div className="pz-field pz-visual">
         <div className="pz-keys" role="group" aria-label="Keys">
           {KEYS.map((i) => (
             <button key={i} type="button" className="pz-key" disabled={playing} aria-label={`Key ${i + 1}, ${SHAPE_NAMES[i]}`} data-lit={lit === i ? "true" : "false"} onClick={() => press(i)}>

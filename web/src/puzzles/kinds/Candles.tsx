@@ -161,7 +161,7 @@ export default function Candles({ view, feel, reducedMotion, submit, announce, r
       <div className="ui-row ui-row--center">
         <button type="button" className="ui-button ui-button--primary" disabled={showing || left <= 0} onClick={watch}>{watchText}</button>
       </div>
-      <div className="pz-field">
+      <div className="pz-field pz-visual">
         <div className="pz-candle-row" role="group" aria-label="Candles">
           {Array.from({ length: view.n }, (_, i) => {
             const isOut = out.includes(i);

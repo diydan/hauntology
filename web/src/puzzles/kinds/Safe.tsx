@@ -106,7 +106,7 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
   return (
     <div>
       <p className="ui-hint pz-hint">Dial the code from the plaque you saw: turn the dial to a digit, then press Set.</p>
-      <div className="pz-field">
+      <div className="pz-field pz-visual">
         <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-safe-board" role="application" aria-label="Safe dial" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           <circle cx={CLOCK_C} cy={CLOCK_C} r={142} className="pz-safe-ring" />
           <g ref={face} transform={`rotate(0 ${CLOCK_C} ${CLOCK_C})`}>

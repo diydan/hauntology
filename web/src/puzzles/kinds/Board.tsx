@@ -224,12 +224,9 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
   const hearText = !hear ? "No voice here" : left > 0 ? `Hear the word (${left} left)` : "No more whispers";
   return (
     <div className="pz-board-kind">
-      <div className="ui-row ui-row--center">
-        <button type="button" className="ui-button" disabled={!hear || left <= 0} onClick={() => void speak()}>{hearText}</button>
-      </div>
       <p className="pz-hint pz-clue-line">Clue: {view.clue} · {view.length} letters</p>
       <canvas
-        ref={canvas} className="pz-canvas pz-spirit" width={BOARD_W * Math.min(2, window.devicePixelRatio || 1)} height={BOARD_H * Math.min(2, window.devicePixelRatio || 1)}
+        ref={canvas} className="pz-canvas pz-spirit pz-visual" width={BOARD_W * Math.min(2, window.devicePixelRatio || 1)} height={BOARD_H * Math.min(2, window.devicePixelRatio || 1)}
         role="application" tabIndex={0} aria-label="Spirit board. Arrow keys jump between letters. Enter picks the letter."
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel} onKeyDown={onKey}
       />
@@ -245,6 +242,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
         </div>
         <div className="ui-row ui-row--center">
           <button type="button" className="ui-button" disabled={spelled.length === 0} onClick={clear}>Clear</button>
+          <button type="button" className="ui-button" disabled={!hear || left <= 0} onClick={() => void speak()}>{hearText}</button>
           {tiltButtons}
         </div>
       </div>

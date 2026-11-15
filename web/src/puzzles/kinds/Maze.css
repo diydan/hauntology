@@ -1,4 +1,4 @@
 /* Marble maze. The canvas keeps its shape and is scaled by CSS, so it fits from 320 px wide. */
-.pz-maze-board { max-width: 100%; height: auto; max-height: 60vh; margin: 0 auto; background: var(--surface-sunk); touch-action: none; outline-offset: var(--stroke-ring); }
+.pz-maze-board { max-width: 100%; height: auto; max-height: 60vh; max-height: min(60dvh, var(--pz-h)); margin: 0 auto; background: var(--surface-sunk); touch-action: none; outline-offset: var(--stroke-ring); }
 .pz-maze-board:focus-visible { outline: var(--stroke-frame) solid var(--focus); }
 .pz-maze-status { min-height: 1.75rem; font-size: var(--text-title); }

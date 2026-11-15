@@ -13,7 +13,7 @@
  */
 
 /* ---- the page ------------------------------------------------------------------------------------------------------------------------ */
-.ui-page { margin: 0; min-height: 100vh; background: radial-gradient(ellipse at 50% -25%, var(--ember) 0%, var(--surface-page) 62%) fixed; color: var(--text); font: var(--text-body) / 1.55 var(--font-ui); -webkit-text-size-adjust: 100%; }
+.ui-page { margin: 0; min-height: 100vh; min-height: 100dvh; background: radial-gradient(ellipse at 50% -25%, var(--ember) 0%, var(--surface-page) 62%) fixed; color: var(--text); font: var(--text-body) / 1.55 var(--font-ui); -webkit-text-size-adjust: 100%; }
 .ui-page.is-locked { overflow: hidden; }
 .ui-page, .ui-page *, .ui-page *::before, .ui-page *::after { box-sizing: border-box; }
 .ui-page [hidden] { display: none !important; }
@@ -58,17 +58,13 @@
 
 /* ---- buttons: every one at least 44 px ------------------------------------------------------------------------------------------------ */
 .ui-button { min-height: var(--target); padding: var(--space-2) var(--space-3); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); font: inherit; font-size: var(--text-control); cursor: pointer; transition: border-color var(--fade-quick) var(--ease), background var(--fade-quick) var(--ease), color var(--fade-quick) var(--ease); }
-.ui-button:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--accent); background: var(--surface-hover); }
 .ui-button:disabled { opacity: 0.4; cursor: default; }
 .ui-button[aria-disabled='true'] { opacity: 0.4; cursor: not-allowed; }
 .ui-button[aria-pressed='true']:not(.ui-button--danger), .ui-button[aria-checked='true']:not(.ui-button--danger) { border-color: var(--accent); color: var(--accent); }
 a.ui-button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; } /* a link used as a button is as tall as the target, like a <button> */
 .ui-button--primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 500; }
-.ui-button--primary:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--accent-hi); background: var(--accent-hi); }
 .ui-button--danger { border-color: var(--danger); background: var(--surface-page); color: var(--danger); }
-.ui-button--danger:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--danger); background: var(--surface-page); }
 .ui-button--quiet { border-color: transparent; background: transparent; color: var(--text-quiet); }
-.ui-button--quiet:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--line); background: transparent; color: var(--accent); }
 .ui-button--main { min-height: var(--target-main); padding: var(--space-3) var(--space-4); text-align: left; }
 .ui-button--block { width: 100%; }
 .ui-switch { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; padding: 0 var(--space-4); text-align: left; }
@@ -82,10 +78,17 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-story { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-0); padding: var(--space-3); border-left: var(--stroke-edge) solid var(--accent); text-align: left; }
 .ui-story-title { color: var(--text); font-size: var(--text-control); font-weight: 500; }
 .ui-story-sub { color: var(--text-quiet); font-size: var(--text-small); }
-.ui-story:hover .ui-story-title { color: var(--accent); }
 .ui-stories { display: grid; gap: var(--space-2); margin: var(--space-2) 0 var(--space-3); }
 .ui-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-bottom: var(--space-3); }
 .ui-grid--one { grid-template-columns: 1fr; }
+/* Hover only where a pointer can hover. On a phone a tap would leave the button lit until the next tap (sticky hover). */
+@media (hover: hover) {
+  .ui-button:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--accent); background: var(--surface-hover); }
+  .ui-button--primary:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--accent-hi); background: var(--accent-hi); }
+  .ui-button--danger:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--danger); background: var(--surface-page); }
+  .ui-button--quiet:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--line); background: transparent; color: var(--accent); }
+  .ui-story:hover .ui-story-title { color: var(--accent); }
+}
 
 /* ---- pictures, lists and progress ------------------------------------------------------------------------------------------------------------ */
 .ui-figure { margin: 0; overflow: hidden; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunk); }
@@ -113,7 +116,7 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-line-who { color: var(--text-quiet); font-size: var(--text-small); }
 
 /* ---- form fields ---------------------------------------------------------------------------------------------------------------------- */
-.ui-select, .ui-range, .ui-input { width: 100%; min-height: var(--target); padding: var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); font: inherit; font-size: var(--text-control); accent-color: var(--accent); }
+.ui-select, .ui-range, .ui-input { width: 100%; min-height: var(--target); padding: var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); font: inherit; font-size: var(--text-input); accent-color: var(--accent); }
 .ui-input::placeholder { color: var(--text-quiet); }
 .ui-choice { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target); color: var(--text); }
 .ui-choice > input { flex: 0 0 auto; width: 1.375rem; height: 1.375rem; accent-color: var(--accent); }
@@ -211,7 +214,7 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-dot.is-current { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 var(--glow-sm) var(--accent); transform: scale(1.3); }
 
 /* ---- the sheet: a bottom sheet on a phone, a side panel from 900 px (steering/visual-style.md) --------------------------------------------- */
-.ui-sheet { position: fixed; right: 0; bottom: 0; left: 0; z-index: var(--z-sheet); max-height: 82vh; padding: var(--space-3) var(--space-4) var(--space-5); overflow: auto; border-top: var(--stroke-ring) solid var(--accent); border-radius: var(--radius-xl) var(--radius-xl) 0 0; background: var(--surface-panel); transform: translateY(105%); visibility: hidden; transition: transform var(--fade) var(--ease), visibility 0s linear var(--fade); }
+.ui-sheet { position: fixed; right: 0; bottom: 0; left: 0; z-index: var(--z-sheet); max-height: 82vh; max-height: 82dvh; padding: var(--space-3) var(--space-4) var(--space-5); overflow: auto; border-top: var(--stroke-ring) solid var(--accent); border-radius: var(--radius-xl) var(--radius-xl) 0 0; background: var(--surface-panel); transform: translateY(105%); visibility: hidden; transition: transform var(--fade) var(--ease), visibility 0s linear var(--fade); }
 .ui-sheet.is-open { transform: none; visibility: visible; transition: transform var(--fade) var(--ease), visibility 0s; }
 .ui-sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
 .ui-sheet-title { margin: 0; color: var(--accent); font-size: var(--text-control); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }

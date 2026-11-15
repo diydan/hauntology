@@ -51,6 +51,16 @@
     - Done 2026-11-15. The puzzle settings were checked in a headless browser at 390 px; the new pieces are on the catalogue.
     - _Requirements: 4.4, 5.3_
 
+- [x] 7. Phone fixes (added 2026-11-15, after an audit of the live puzzles in an emulated phone at 320, 360, 375, 390 and 430 px wide and sideways)
+  - [x] 7.1 Hover only where a pointer can hover; text boxes and menus at 16 px (`--text-input`); `dvh` heights with a `vh` fallback; `theme-color` on every whole-screen page
+    - Checked by `design-system.test.mjs`; four deliberate breaks of each rule are caught.
+    - _Requirements: 3.5_
+  - [x] 7.2 The puzzles fit the screen: the host knows its kind (`data-kind`), each picture is marked `pz-visual` and capped by `--pz-h` (the screen height minus what else is on that puzzle, never below `--pz-min`); a short portrait screen packs closer; a phone held sideways gets two columns and a narrow right-hand column
+    - Done 2026-11-15. At 375x667, 390x664, 360x740, 390x844, 430x932 and sideways every puzzle fits without scrolling the page, except the spirit board (it has the most controls: it scrolls by about 90 px on a short screen and 4 px sideways). No control under 48 px, no sideways scroll, no console errors. `web/src/puzzles/fit.test.ts` keeps the pieces in place.
+    - _Requirements: 3.2, 3.5_
+  - [x] 7.3 The spirit board: the Hear the word button moves into the Clear row
+    - _Requirements: 3.5_
+
 - [x] 5. Specs and steering
   - [x] 5.1 `.kiro/steering/design-system.md`, `visual-style.md` and `structure.md` updated
     - _Requirements: 6.2_

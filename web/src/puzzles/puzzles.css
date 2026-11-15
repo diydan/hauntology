@@ -86,13 +86,9 @@
 @media (prefers-reduced-motion: reduce) {
   .pz-glow-a, .pz-glow-b { animation: none; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--text) 15%, transparent); }
 }
-@media (orientation: landscape) and (max-height: 32rem) {
-  .pz-host { max-width: 44rem; }
-  .pz-host .pz-stage { min-height: 14rem; }
-}
 
 .pz-wide { width: 100%; }
-.pz-clock-board { width: min(86%, 22rem); margin: 0 auto; }
+.pz-clock-board { width: min(86%, 22rem, var(--pz-h)); margin: 0 auto; }
 
 /* the tries and the time say what they are */
 .pz-bar-label { color: var(--text-quiet); font-size: var(--text-small); }
@@ -133,3 +129,58 @@
 /* what the puzzle says back: the host's message, and the buzz or sound twin, in a place of their own */
 .pz-feedback { display: grid; gap: 0; }
 .pz-foot:empty { display: none; } /* no play controls for this puzzle: no empty row, and no extra gap above Give up */
+
+/*
+ * Fit. The picture of a puzzle takes the height the screen has left, so a puzzle shows whole without scrolling the page where it can.
+ * --pz-rest is the height of everything else on that puzzle (the header, the words, the buttons, the message and Give up), measured at 390 px
+ * wide; --pz-min is the smallest the picture may get (a dial can shrink, a board you point at must stay big enough for a finger). If it does
+ * not fit even then, the page scrolls. 100dvh is the screen as it is now, with the browser bars in or out.
+ */
+.pz-host { --pz-min: 15rem; --pz-h: max(var(--pz-min), calc(100dvh - var(--pz-rest, 0px))); }
+.pz-host[data-kind='safe'] { --pz-rest: 35.5rem; --pz-min: 11rem; }
+.pz-host[data-kind='clock'] { --pz-rest: 38rem; --pz-min: 11rem; }
+.pz-host[data-kind='wires'] { --pz-rest: 25rem; --pz-min: 17.5rem; }
+.pz-host[data-kind='maze'] { --pz-rest: 24rem; }
+.pz-host[data-kind='board'] { --pz-rest: 41.5rem; }
+.pz-host[data-kind='words'] { --pz-rest: 32rem; }
+.pz-host[data-kind='photo'] { --pz-rest: 25.6rem; --pz-min: 19rem; }
+
+/* A short screen held upright: the same blocks, a little closer together. */
+@media (orientation: portrait) and (max-height: 47rem) {
+  .pz-host { gap: var(--space-2); }
+  .pz-host .pz-stage { padding: var(--space-2); }
+  .pz-stage > div:not(.pz-skeleton) { gap: var(--space-2); }
+  .pz-twin { min-height: 0; }
+}
+
+/* A very short screen held upright (a small phone, or a tall one with the browser bars showing): the picture may get smaller still. */
+@media (orientation: portrait) and (max-height: 42rem) {
+  .pz-host { --pz-min: 13rem; }
+  .pz-host[data-kind='safe'], .pz-host[data-kind='clock'] { --pz-min: 9rem; }
+  .pz-host[data-kind='photo'] { --pz-min: 17rem; }
+  .pz-host[data-kind='wires'] { --pz-min: 17.5rem; } /* the six terminals stay at least 48 px apart */
+  .pz-feedback .pz-status { min-height: 1.25rem; }
+  /* The tilt explanation is out of sight (still read aloud): the Twist button says what it is. */
+  .pz-twist .ui-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/*
+ * A phone held sideways has width and no height. The picture goes on the left and the controls beside it; the header, the message and
+ * Give up go in a narrow column on the right. Each puzzle marks its picture with .pz-visual.
+ */
+@media (orientation: landscape) and (max-height: 32rem) {
+  .pz-host { --pz-h: max(9rem, calc(100dvh - 5.5rem)); max-width: none; grid-template-columns: minmax(0, 1fr) 11rem; grid-template-areas: "stage bar" "stage feedback" "stage foot"; grid-template-rows: auto auto 1fr; align-items: start; column-gap: var(--space-3); row-gap: var(--space-2); }
+  .pz-host > .pz-bar-row { grid-area: bar; flex-direction: column; align-items: stretch; }
+  .pz-host > .pz-stage { grid-area: stage; min-height: 0; padding: var(--space-2); }
+  .pz-host > .pz-feedback { grid-area: feedback; }
+  .pz-host > .pz-foot-wrap { grid-area: foot; }
+  .pz-host > :not(.pz-bar-row, .pz-stage, .pz-feedback, .pz-foot-wrap) { grid-column: 1 / -1; }
+  .pz-host .pz-stage > div:not(.pz-skeleton) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto) 1fr; column-gap: var(--space-3); row-gap: 0; margin-top: calc(var(--space-2) * -1); }
+  .pz-host .pz-stage > div > * { grid-column: 2; margin-top: var(--space-2); }
+  .pz-host .pz-stage > div > .pz-visual { grid-column: 1; grid-row: 1 / 8; }
+  .pz-host .pz-confirm { grid-template-columns: 1fr; }
+  .pz-twin { min-height: 0; }
+  .pz-host .pz-readout, .pz-host .pz-clue-line { font-size: var(--text-body); }
+  .pz-host .pz-under, .pz-host .pz-lit { font-size: var(--text-body); }
+  .pz-digits > span { height: 2.75rem; }
+}

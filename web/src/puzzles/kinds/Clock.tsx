@@ -99,7 +99,7 @@ export default function Clock({ view, feel, submit, announce }: KindProps<"clock
   return (
     <div>
       <p className="ui-hint pz-hint">Set the hands to the time on the stopped clock you saw.</p>
-      <div className="pz-field">
+      <div className="pz-field pz-visual">
         <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-clock-board" role="application" aria-label="Clock to set" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           <ClockDial />
           <ClockHands h={h} m={m} />

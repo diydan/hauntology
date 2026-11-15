@@ -49,6 +49,7 @@ Hauntology has one look: black, dark brown, yellow as the main colour and a litt
 2. EVERY control SHALL be at least 44 CSS pixels tall (the main controls at least 52 on a phone), the words of a tick box SHALL be a target too, and the focus ring SHALL be the lantern.
 3. EVERY transition SHALL use one of the three fade tokens (300, 400 and 600 ms), every fade SHALL be 0 ms WHEN the Player prefers reduced motion, the looping orb SHALL stop, and no element SHALL shake, flash or flicker.
 4. TEXT sizes SHALL be in rem so the Player's own text size works, the interface SHALL be IBM Plex Mono and what a ghost says SHALL be Newsreader, both self-hosted in `design/fonts/` with their licences, and no screen SHALL request a font from another origin.
+5. ON a phone THEN hover styles SHALL apply only where a pointer can hover (`@media (hover: hover)`), text boxes and menus SHALL be at least 16 px (so an iPhone does not zoom the page), a height that means "the screen" SHALL be written in `dvh` with `vh` as the fallback, a whole-screen page SHALL set `theme-color` to the page black, and a puzzle SHALL fit the screen where it can: its picture takes the height the screen has left and never shrinks below a size a finger can use (the wires keep their six terminals 48 px apart), and a phone held sideways SHALL get the picture on the left, the controls beside it and the header, the message and Give up in a narrow column.
 
 ### Requirement 4
 

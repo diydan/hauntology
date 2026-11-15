@@ -111,7 +111,7 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
   return (
     <div>
       <p className="ui-hint pz-hint">Feel for each pin's sweet spot. Pins set left to right.</p>
-      <div className="pz-field">
+      <div className="pz-field pz-visual">
         <ol className={`pz-pins${reducedMotion ? " pz-pins-still" : ""}`} aria-label="Pins">
           {Array.from({ length: view.pins }, (_, i) => {
             const state = i < cur ? "set" : i === cur ? "picking" : "waiting";

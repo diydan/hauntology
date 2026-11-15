@@ -123,7 +123,7 @@ export default function Wires({ view, feel, submit, announce }: KindProps<"wires
   return (
     <div>
       <p className="ui-hint pz-hint">Match each wire to its place in the fuse box you saw. Drag it to a terminal, or tap the wire and then a terminal.</p>
-      <div className="pz-field">
+      <div className="pz-field pz-visual">
         <svg ref={board} viewBox={`0 0 ${W} ${H}`} className="pz-board pz-wires-board" role="group" aria-label="Wires board" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>
           {Object.entries(conn).filter(([w]) => Number(w) !== dragging).map(([w, t]) => {
             const look = wireLook(Number(w));

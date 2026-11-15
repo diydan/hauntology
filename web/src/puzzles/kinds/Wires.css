@@ -1,5 +1,5 @@
 /* Cut wires board. The wire colours are the game's own content (art/wires.tsx); the board around them is the design system. */
-.pz-wires-board { width: 100%; max-width: 26rem; margin: 0 auto; }
+.pz-wires-board { width: min(100%, 26rem, calc(var(--pz-h) * 1.07)); margin: 0 auto; }
 .pz-wire-line { fill: none; stroke-width: 7; stroke-linecap: round; pointer-events: none; }
 .pz-wire-ghost { opacity: 0.8; }
 .pz-wire-disc { fill: var(--surface-sunk); }

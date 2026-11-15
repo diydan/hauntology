@@ -68,7 +68,7 @@ export default function Moved({ view, feel, reducedMotion, submit, announce, res
       <div className="pz-moved" data-phase="dark">
         <p className="pz-hint pz-moved-note" role="status">The lights go out…</p>
         {/* the shelf in the dark: only the empty spots, so nothing of the answer shows */}
-        <div className={`pz-moved-dark${reducedMotion ? " pz-moved-still" : ""}`} style={{ opacity: lum, gridTemplateColumns: `repeat(${cols}, 1fr)` }} aria-hidden="true">
+        <div className={`pz-moved-dark pz-visual${reducedMotion ? " pz-moved-still" : ""}`} style={{ opacity: lum, gridTemplateColumns: `repeat(${cols}, 1fr)` }} aria-hidden="true">
           {Array.from({ length: view.slots }, (_, i) => <span key={i} className="pz-slot pz-slot-empty" />)}
         </div>
       </div>

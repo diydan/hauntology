@@ -134,6 +134,25 @@ test('the stage is lit by whoever speaks, in the speaker\'s colour, and a portra
   assert.match(body('.ui-portrait--suspect'), /--halo: var\(--speaker-suspect\)/);
 });
 
+test('phone behaviour: hover only where a pointer can hover, text boxes at 16 px so an iPhone does not zoom, heights in dvh, and the browser bar takes the page black', () => {
+  // every :hover rule is inside @media (hover: hover), so a tap on a phone does not leave a button lit
+  const outside = rawElements.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@media \(hover: hover\) \{[\s\S]*?\n\}\n/g, '');
+  assert.ok(!/:hover/.test(outside), 'a :hover rule is outside @media (hover: hover)');
+  assert.ok((rawElements.match(/:hover/g) ?? []).length >= 5, 'the hover rules are there');
+  // text boxes and menus: 16 px or more
+  const input = tokens['text-size'].input.value;
+  assert.ok(/^1(\.\d+)?rem$/.test(input) && parseFloat(input) >= 1, `--text-input is ${input}: under 16px an iPhone zooms the page on focus`);
+  assert.match(rules.find(([s]) => s === '.ui-select, .ui-range, .ui-input')[1], /font-size: var\(--text-input\)/);
+  // a vh height always has the dvh height after it (the old unit is only the fallback)
+  for (const d of declarations.filter((x) => /vh$/.test(x.value) && !/dvh$/.test(x.value))) {
+    const re = new RegExp(`${d.prop}: ${d.value};\\s*${d.prop}: ${d.value.replace('vh', 'dvh')};`);
+    assert.match(rawElements, re, `${d.sel} { ${d.prop}: ${d.value} } has no dvh version`);
+  }
+  // the browser bar (theme-color) is the page black, on every page that is a whole screen
+  const ink = tokens.color.ink.value;
+  for (const f of ['web/index.html', 'web/puzzles-demo.html', 'design/catalogue.html', 'tools/voice-demo/index.html']) assert.match(read(f), new RegExp(`<meta name="theme-color" content="${ink}"`), `${f} sets theme-color to ink`);
+});
+
 test('the breakpoints in the media queries are the ones in the token file, and the sheet is a bottom sheet below the wide one', () => {
   const found = [...rawElements.matchAll(/@media \(min-width: (\d+)px\)/g)].map((m) => Number(m[1]));
   assert.ok(found.length >= 3);
@@ -213,12 +232,18 @@ test('the commands exist: build-tokens, check-tokens, and the traceability check
 function cssFiles(dir) {
   return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? cssFiles(`${dir}/${e.name}`) : e.name.endsWith('.css') ? [`${dir}/${e.name}`] : []));
 }
-const SCREEN_CSS = ['web/src/styles/app.css', ...cssFiles('web/src/puzzles').filter((f) => !f.includes('/demo/'))];
-/** Variables a screen sets for itself (like --pz-target on the puzzle host), in any screen stylesheet. */
-const localScreenProps = new Set(SCREEN_CSS.flatMap((f) => [...read(f).matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1])));
+// Every stylesheet of a screen under web/src, so the 3D viewer (web/src/viewer) and the party screens (web/src/party) are held to the same rules
+// the moment they exist. Only the generated tokens.css (which is where the colours are written) and the dev-only demo styles are left out.
+const SCREEN_CSS = cssFiles('web/src').filter((f) => f !== 'web/src/styles/tokens.css' && !f.includes('/demo/'));
+/** Variables a screen sets for itself (like --pz-target on the puzzle host), in any screen stylesheet, or inline from its code (like --pz-ratio on the photo board). */
+const screenTsx = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? screenTsx(`${dir}/${e.name}`) : /\.tsx$/.test(e.name) && !/\.test\./.test(e.name) ? [`${dir}/${e.name}`] : []));
+const localScreenProps = new Set([
+  ...SCREEN_CSS.flatMap((f) => [...read(f).matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1])),
+  ...screenTsx('web/src').flatMap((f) => [...read(f).matchAll(/"(--[a-z0-9-]+)":/g)].map((m) => m[1])),
+]);
 
-test('the web app and the puzzle screens write no colour of their own: no hex, no rgb(), and no palette name where a role exists', () => {
-  assert.ok(SCREEN_CSS.length >= 12, `${SCREEN_CSS.length} screen stylesheets found`);
+test('every screen stylesheet (the web app, the puzzles, and the 3D viewer and party screens once they exist) writes no colour of its own: no hex, no rgb(), and no palette name where a role exists', () => {
+  assert.ok(SCREEN_CSS.length >= 12 && SCREEN_CSS.includes('web/src/styles/app.css'), `${SCREEN_CSS.length} screen stylesheets found`);
   const palette = entries(tokens, 'color').map(([k]) => k);
   for (const file of SCREEN_CSS) {
     const css = read(file).replace(/\/\*[\s\S]*?\*\//g, '');
@@ -230,10 +255,10 @@ test('the web app and the puzzle screens write no colour of their own: no hex, n
   }
 });
 
-test('puzzle code writes no hex colour: the wire and shelf-item hues are the art-* tokens, written once in the token file', () => {
+test('screen code writes no hex colour (puzzles, and the 3D viewer and party screens once they exist): game-art hues are the art-* tokens, written once in the token file', () => {
   const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx?$/.test(e.name) && !/\.test\./.test(e.name) ? [`${dir}/${e.name}`] : []));
-  const files = walk('web/src/puzzles');
-  assert.ok(files.length > 30);
+  const files = ['web/src/puzzles', 'web/src/viewer', 'web/src/party'].filter((d) => existsSync(join(root, d))).flatMap(walk);
+  assert.ok(files.filter((f) => f.startsWith('web/src/puzzles/')).length > 30, 'the puzzle code is there');
   for (const f of files) assert.ok(!/#[0-9a-fA-F]{6}\b/.test(read(f).replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')), `${f} writes a hex colour`);
   for (const f of ['web/src/puzzles/art/wires.tsx', 'web/src/puzzles/art/shelf.tsx']) assert.match(read(f), /from "@hauntology\/shared\/design\/tokens"/, `${f} takes its hues from the tokens`);
   const art = entries(tokens, 'color').filter(([, v]) => v.use === 'art');

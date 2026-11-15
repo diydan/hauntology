@@ -153,7 +153,7 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
     );
   }
   return (
-    <section className={`pz-host${glow === 0 ? "" : glow % 2 === 1 ? " pz-glow-a" : " pz-glow-b"}`} aria-label="Puzzle">
+    <section className={`pz-host${glow === 0 ? "" : glow % 2 === 1 ? " pz-glow-a" : " pz-glow-b"}`} data-kind={kind} aria-label="Puzzle">
       <header className="pz-bar-row">
         <div className="pz-bar-left">
           <button ref={helpButton} type="button" className="ui-button ui-button--round" aria-label="How this puzzle works" aria-expanded={helping} onClick={() => { setPeeking(false); setHelping((h) => !h); }}>?</button>
