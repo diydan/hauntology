@@ -71,16 +71,16 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.15 Write property test for the deal
     - **Property 7: The deal is a valid partition**
     - **Validates: Requirements 4.1**
-  - [ ] 2.16 `publicView`, `privateView` (with found Residue, Resolve and the seat's own sound consent) and redacted public events (a House Cue and a Frame produce the same `phone-cue` event)
+  - [x] 2.16 `publicView`, `privateView` (with found Residue, Resolve and the seat's own sound consent) and redacted public events (a House Cue and a Frame produce the same `phone-cue` event)
     - _Requirements: 4.2_
-  - [ ] 2.17 `buildPartyPrompt` taking only a Public View
+  - [x] 2.17 `buildPartyPrompt` taking only a Public View
     - _Requirements: 4.3_
-  - [ ]* 2.18 Write property test for leakage, with the token-planting fuzz game (Hands, Residue, Solution, the source of every Frame, House Cue and Rattle, and the content of every Stitch clip)
+  - [x]* 2.18 Write property test for leakage, with the token-planting fuzz game (Hands, Residue, Solution, the source of every Frame, House Cue and Rattle, and the content of every Stitch clip)
     - **Property 8: Views never leak secrets**
     - **Validates: Requirements 4.2, 4.3, 14.5, 19.5**
-  - [ ] 2.19 Extract `placePoints` from `ghost/anchors.ts` (no behaviour change, ghost-engine Property 1 stays green), then `placeZones`, `validateZones`, `ringZones` and the `world_too_small` rule
+  - [x] 2.19 Extract `placePoints` from `ghost/anchors.ts` (no behaviour change, ghost-engine Property 1 stays green), then `placeZones`, `validateZones`, `ringZones` and the `world_too_small` rule — note: `ghost/anchors.ts` does not exist yet, so `placePoints` was written new in `shared/src/party/zones.ts`; `placeAnchors` should reuse it when it lands
     - _Requirements: 4.5_
-  - [ ]* 2.20 Write property test for zones
+  - [x]* 2.20 Write property test for zones
     - **Property 9: Zones are valid and the world-size rule holds**
     - **Validates: Requirements 4.5**
   - [ ] 2.21 Notebook `autoMarks` (Hand, shown cards, found Residue and, with `autoCross`, the passes) as a grid of the 18 cards against every Player and the Residue, the Residue counter, and `markCard`
