@@ -118,9 +118,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.34 Write property test for relic tokens
     - **Property 16: Relic tokens parse strictly**
     - **Validates: Requirements 6.4**
-  - [ ] 2.35 `endingPayload` (with the Frame and House Cue reveal, the winners ranked by `firstDetective` or none when the house wins, the Residue placements, the Most Haunting award, the two Nudge counters and the recap) and `playAgain` (resets the Haunt, Residue, Resolve, Poltergeists, Cue and Nudge counters, Round limits, Cue sources, sealed Accusations, the Bluff ids and the recap), and `buildRecap(publicLog, players, solution, reveal, bluffs)` in `recap.ts`, taking only the redacted public log and the Bluff ids and returning the entries, the per-Player counts, the Solution and the reveal list
+  - [x] 2.35 `endingPayload` (with the Frame and House Cue reveal, the winners ranked by `firstDetective` or none when the house wins, the Residue placements, the Most Haunting award, the two Nudge counters and the recap) and `playAgain` (resets the Haunt, Residue, Resolve, Poltergeists, Cue and Nudge counters, Round limits, Cue sources, sealed Accusations, the Bluff ids and the recap), and `buildRecap(publicLog, players, solution, reveal, bluffs)` in `recap.ts`, taking only the redacted public log and the Bluff ids and returning the entries, the per-Player counts, the Solution and the reveal list
     - _Requirements: 6.6, 6.8, 11.6_
-  - [ ]* 2.36 Write property test for endings and replays, with the recap checked in the token-planting fuzz game (no planted Hand, shown card, unfound Residue, Inspect, Eavesdrop or Stitch token), counts equal to the matching public events, Bluff marks on exactly the Suggestions whose Suspect or Relic was in the suggester's Hand (Bots included), and no recap before the game ends
+  - [x]* 2.36 Write property test for endings and replays, with the recap checked in the token-planting fuzz game (no planted Hand, shown card, unfound Residue, Inspect, Eavesdrop or Stitch token), counts equal to the matching public events, Bluff marks on exactly the Suggestions whose Suspect or Relic was in the suggester's Hand (Bots included), and no recap before the game ends
     - **Property 17: Endings and replays preserve what they should**
     - **Validates: Requirements 6.6, 6.8, 11.6**
   - [ ] 2.37 `pyramidLayout` and `fitTile`
@@ -133,9 +133,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.40 Write property test for display effects
     - **Property 19: Display effects respect photosensitivity limits**
     - **Validates: Requirements 7.4**
-  - [ ] 2.41 `botAct` on `botMind` (walk to and Inspect, Suggest from the candidates, seal when Standard certain or Gentle at 50%, the default answer and Eavesdrop; never a Cue, Nudge, Frame, Rattle or Haunt Event choice) and `peekAllowed`
+  - [x] 2.41 `botAct` on `botMind` (walk to and Inspect, Suggest from the candidates, seal when Standard certain or Gentle at 50%, the default answer and Eavesdrop; never a Cue, Nudge, Frame, Rattle or Haunt Event choice) and `peekAllowed`
     - _Requirements: 9.2, 9.3_
-  - [ ]* 2.42 Write property test for bots
+  - [x]* 2.42 Write property test for bots
     - **Property 22: Bots are legal and blind to other hands**
     - **Validates: Requirements 9.2, 9.3**
   - [ ] 2.43 `roomCaps`, `narrationRequests`, spend accounting, and a scripted line library with at least five variants per party directive kind in its Speaker's voice (`partyScripted(kind, speaker, rng)`)
@@ -298,9 +298,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.106 Write property test for a wrong guess never winning
     - **Property 54: A wrong guess never wins**
     - **Validates: Requirements 6.5, 11.3**
-  - [ ] 2.107 `botMind`: `observe`, `propagate`, `candidates` and `chance`, from a Bot's own Hand, the cards shown to it, its found Residue, every pass, every showing, the public Hand sizes and its own Eavesdrop hints
+  - [x] 2.107 `botMind`: `observe`, `propagate`, `candidates` and `chance`, from a Bot's own Hand, the cards shown to it, its found Residue, every pass, every showing, the public Hand sizes and its own Eavesdrop hints
     - _Requirements: 9.2_
-  - [ ]* 2.108 Write property test for Bot inference soundness, by brute force over small cases
+  - [x]* 2.108 Write property test for Bot inference soundness, by brute force over small cases
     - **Property 57: Bot inference is sound**
     - **Validates: Requirements 9.2**
   - [ ] 2.109 `awards`: `scarePoints(log, reveal)` (one per Frame sent, one per Rattle accepted, two per Spook applied, three for each Turn that ended by the clock while the Poltergeist had Spooked or Rattled during it) and `firstDetective` (fewest Suggestions, then least Turn time; a tie shares the title)
@@ -314,9 +314,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - **Validates: Requirements 11.6**
   - [ ] 2.111 `tools/balance.mjs`: the statistical balance regression (500 seeded games each at 3 to 6 Players, all Standard Bots: at least 95% solved, mean Rounds between 4 and 7, every seat's win share within 8 points of its fair share), run in CI; a failing run blocks merges that touch `shared/src/party/`
     - _Requirements: 9.2, 5.1_
-  - [ ] 2.112 `solo.ts`: `soloSetup` (the visitor as Master at seat 0, two to five Bots at the level the preset gives, fixed Bot names, `speech` off, every name from the Preset Ghosts and the curated Zone names, and `{error}` for a bad Bot count or a world that is too small)
+  - [x] 2.112 `solo.ts`: `soloSetup` (the visitor as Master at seat 1, the Room's first seat; seats run 1 to 6, two to five Bots at the level the preset gives, fixed Bot names, `speech` off, every name from the Preset Ghosts and the curated Zone names, and `{error}` for a bad Bot count or a world that is too small)
     - _Requirements: 9.5_
-  - [ ]* 2.113 Write property test for the solo setup
+  - [x]* 2.113 Write property test for the solo setup
     - **Property 59: A solo case is an ordinary Room**
     - **Validates: Requirements 9.5**
   - [ ] 2.114 `speakerFor(kind)` and the Lodger bank: the first split of kinds to the Keeper, the Whisper and the Lodger, a Lodger bank shared by all six Suspects whose lines take no Solution, Hand or guilt flag, the text-only aside, the stall, and the confession built only after `solution` is public and only for the Suspect in it; `PartyRoom` passes `lodgerVoiceFor(profile)` to `toVoiceLine` so each Suspect speaks in the Lodger Voice of its profile; lines written from `docs/story/CHARACTERS.md` (the story-writer agent drafts them in `docs/story/`)

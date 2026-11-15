@@ -6,9 +6,9 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
   - _Requirements: 1.1_
 
 - [ ] 1. Phase 1: the last core rules (pure, in `shared/src/party/`)
-  - [ ] 1.1 Residue and Inspect (party-mode `residue.ts`), Haunt Events with `fireEvent` and the four options (`haunt.ts`), the ending payload and Play again (party-mode 2.35, 2.36), Resolve and Eavesdrop
+  - [x] 1.1 Residue and Inspect (party-mode `residue.ts`), Haunt Events with `fireEvent` and the four options (`haunt.ts`), the ending payload and Play again (party-mode 2.35, 2.36), Resolve and Eavesdrop
     - _Requirements: 1.1, 1.3_
-  - [ ] 1.2 `soloSetup` and the Bot mind (party-mode Bot tasks, Properties 57 and 59)
+  - [x] 1.2 `soloSetup` and the Bot mind (party-mode Bot tasks, Properties 57 and 59)
     - _Requirements: 1.1, 4.1_
   - [ ] 1.3 Checkpoint: every party-mode property for these modules green
     - _Requirements: 1.2_
