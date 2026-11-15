@@ -130,6 +130,16 @@ class PartBuilder {
     const col = geom.col ? geom.col : color;
     this.addRaw(mat, pos, norm, col, idx, alpha);
   }
+  scaleShift(s, tx = 0, ty = 0, tz = 0) {
+    for (const b of this.buckets.values()) {
+      for (let i = 0; i < b.pos.length; i += 3) {
+        b.pos[i] = b.pos[i] * s + tx;
+        b.pos[i + 1] = b.pos[i + 1] * s + ty;
+        b.pos[i + 2] = b.pos[i + 2] * s + tz;
+      }
+    }
+    return this;
+  }
 }
 
 function flipTris(idx) {
@@ -709,63 +719,70 @@ function bakePartAO(part, maxDist = 0.028, groundY = 0, strength = 0.52) {
 // ------------------------------------------------------------------ 1. Gothic Cutaway Dollhouse + Line-up + Relic Shelf
 function buildDollhouse() {
   const p = new PartBuilder('dollhouse_chassis');
-  const W = 0.115, D = 0.095, WALL = 0.0045;
-  const slabW = 3 * W + 0.036, slabD = 2 * D + 0.036;
-  const TRAY_Z = D + 0.017 + 0.0225 + 0.002;
-  const SHELF_X = 1.5 * W + 0.038;
+  const W = 0.3, D = 0.25, WALL = 0.0075;
+  const slabW = 3 * W + 0.07, slabD = 2 * D + 0.07;
+  const TRAY_Z = D + 0.115;
+  const LINEUP_SPACING = 0.142;
+  const SHELF_X = 1.5 * W + 0.122;
 
-  // Stepped moulded walnut maquette plinth (y = -0.016 .. 0)
-  p.addMesh(MAT.wood_dark, bevelBox(slabW + 0.01, 0.004, slabD + 0.01, 0.001), C.ebony, 0, -0.016, 0);
-  p.addMesh(MAT.brass_aged, bevelBox(slabW + 0.006, 0.0022, slabD + 0.006, 0.0005), C.brass, 0, -0.012, 0);
-  p.addMesh(MAT.wood_dark, bevelBox(slabW, 0.012, slabD, 0.0012), C.walnutDark, 0, -0.012, 0);
+  // Stepped moulded walnut maquette plinth (y = -0.020 .. 0)
+  p.addMesh(MAT.wood_dark, bevelBox(slabW + 0.02, 0.006, slabD + 0.02, 0.0014), C.ebony, 0, -0.02, 0);
+  p.addMesh(MAT.brass_aged, bevelBox(slabW + 0.01, 0.003, slabD + 0.01, 0.0007), C.brass, 0, -0.014, 0);
+  p.addMesh(MAT.wood_dark, bevelBox(slabW, 0.014, slabD, 0.0015), C.walnutDark, 0, -0.014, 0);
 
   // 4 Mitered Brass Corner Brackets + Rivets on the maquette slab
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    const cx = sx * (slabW / 2 - 0.008), cz = sz * (slabD / 2 - 0.008);
-    p.addMesh(MAT.brass_aged, bevelBox(0.022, 0.0135, 0.004, 0.0005), C.brass, cx, -0.0125, sz * (slabD / 2 - 0.001));
-    p.addMesh(MAT.brass_aged, bevelBox(0.004, 0.0135, 0.022, 0.0005), C.brass, sx * (slabW / 2 - 0.001), -0.0125, cz);
-    p.addMesh(MAT.brass_aged, uvSphere(0.0016, 0.0016, 0.0016, 10, 8), C.brass, cx, 0.0008, sz * (slabD / 2 - 0.003));
+    const cx = sx * (slabW / 2 - 0.017), cz = sz * (slabD / 2 - 0.017);
+    p.addMesh(MAT.brass_aged, bevelBox(0.044, 0.016, 0.006, 0.0007), C.brass, cx, -0.0145, sz * (slabD / 2 - 0.002));
+    p.addMesh(MAT.brass_aged, bevelBox(0.006, 0.016, 0.044, 0.0007), C.brass, sx * (slabW / 2 - 0.002), -0.0145, cz);
+    p.addMesh(MAT.brass_aged, uvSphere(0.0026, 0.0026, 0.0026, 10, 8), C.brass, cx, 0.0012, sz * (slabD / 2 - 0.005));
   }
 
-  // Front Line-up Gallery Tray with 6 brass-rimmed Suspect sockets
-  p.addMesh(MAT.wood_dark, bevelBox(slabW, 0.011, 0.048, 0.0012), C.walnutDark, 0, -0.011, TRAY_Z);
-  p.addMesh(MAT.brass_aged, bevelBox(slabW - 0.008, 0.0015, 0.04, 0.0004), C.brassDark, 0, -0.0008, TRAY_Z);
-  p.addMesh(MAT.wood_dark, bevelBox(slabW - 0.012, 0.0016, 0.036, 0.0004), C.ebony, 0, -0.0007, TRAY_Z);
-  const socketRing = lathe([[0.014, 0], [0.0165, 0], [0.016, 0.0016], [0.014, 0.0016]], 20);
+  // Front Line-up Gallery Tray with 6 wide-spaced brass-rimmed Suspect sockets
+  p.addMesh(MAT.wood_dark, bevelBox(slabW, 0.014, 0.09, 0.0015), C.walnutDark, 0, -0.014, TRAY_Z);
+  p.addMesh(MAT.brass_aged, bevelBox(slabW - 0.014, 0.002, 0.076, 0.0006), C.brassDark, 0, -0.001, TRAY_Z);
+  p.addMesh(MAT.wood_dark, bevelBox(slabW - 0.022, 0.0022, 0.068, 0.0006), C.ebony, 0, -0.0008, TRAY_Z);
+  const socketRing = lathe([[0.0225, 0], [0.0268, 0], [0.026, 0.0025], [0.0225, 0.0025]], 24);
   for (let i = 0; i < 6; i++) {
-    const lx = (i - 2.5) * 0.062;
+    const lx = (i - 2.5) * LINEUP_SPACING;
     p.addMesh(MAT.brass_aged, socketRing, C.brass, lx, 0, TRAY_Z);
-    p.addMesh(MAT.fabric_velvet, cylY(0.0138, 0.0138, 0.0007, 18), C.velvetRed, lx, 0, TRAY_Z);
+    p.addMesh(MAT.fabric_velvet, cylY(0.0222, 0.0222, 0.001, 20), C.velvetRed, lx, 0, TRAY_Z);
   }
 
-  // Side 6-Alcove Relic Curio Shelf (right side of dollhouse, 2 columns x 3 rows of velvet-lined sockets!)
-  const shelfW = 0.066, shelfD = 2 * D + 0.024;
-  p.addMesh(MAT.wood_dark, bevelBox(shelfW, 0.014, shelfD, 0.0012), C.walnutDark, SHELF_X, -0.014, 0);
-  p.addMesh(MAT.brass_aged, bevelBox(shelfW + 0.003, 0.002, shelfD + 0.003, 0.0004), C.brassDark, SHELF_X, -0.013, 0);
-  // Raised back curio rail on outer edge of shelf
-  p.addMesh(MAT.wood_dark, bevelBox(0.004, 0.022, shelfD - 0.006, 0.0006), C.walnut, SHELF_X + shelfW / 2 - 0.003, 0, 0);
+  // Side 6-Alcove Relic Curio Shelf (right side of dollhouse, wide 2 columns x 3 rows of velvet-lined sockets!)
+  const shelfW = 0.18, shelfD = 2 * D + 0.055;
+  p.addMesh(MAT.wood_dark, bevelBox(shelfW, 0.016, shelfD, 0.0015), C.walnutDark, SHELF_X, -0.016, 0);
+  p.addMesh(MAT.brass_aged, bevelBox(shelfW + 0.006, 0.0028, shelfD + 0.006, 0.0006), C.brassDark, SHELF_X, -0.015, 0);
+  // Raised back curio rail, brass gallery rod & turned finials
+  p.addMesh(MAT.wood_dark, bevelBox(0.007, 0.032, shelfD - 0.012, 0.0009), C.walnut, SHELF_X + shelfW / 2 - 0.0055, 0, 0);
+  p.addMesh(MAT.brass_aged, bevelBox(0.0026, 0.0026, shelfD - 0.08, 0.0004), C.brass, SHELF_X + shelfW / 2 - 0.0055, 0.038, 0);
   for (const sz of [-1, 0, 1]) {
-    p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.0028, 0], [0.0018, 0.006], [0.0026, 0.009], [0, 0.011]], 12), C.brass, SHELF_X + shelfW / 2 - 0.003, 0.022, sz * (shelfD * 0.42));
+    p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.0046, 0], [0.0028, 0.01], [0.0042, 0.014], [0, 0.018]], 12), C.brass, SHELF_X + shelfW / 2 - 0.0055, 0.032, sz * (shelfD * 0.42));
   }
   for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++) {
-    const rx = SHELF_X - 0.014 + c * 0.026, rz = (r - 1) * 0.062;
-    p.addMesh(MAT.wood_dark, bevelBox(0.024, 0.0035 * (c + 1), 0.024, 0.0005), C.ebony, rx, 0, rz);
-    p.addMesh(MAT.fabric_velvet, bevelBox(0.02, 0.001, 0.02, 0.0003), C.velvetRed, rx, 0.0035 * (c + 1), rz);
+    const rx = SHELF_X - 0.039 + c * 0.078, rz = (r - 1) * 0.168;
+    const rh = 0.0055 * (c + 1);
+    p.addMesh(MAT.wood_dark, bevelBox(0.052, rh, 0.052, 0.0008), C.ebony, rx, 0, rz);
+    p.addMesh(MAT.brass_aged, bevelBox(0.048, 0.0012, 0.048, 0.0003), C.brassDark, rx, rh - 0.0002, rz);
+    p.addMesh(MAT.fabric_velvet, bevelBox(0.044, 0.0014, 0.044, 0.0004), C.velvetRed, rx, rh, rz);
   }
 
-  // Tall Exterior Back & Side Cutaway Walls with Wainscoting, Cornice & 3 Gothic Lancet Windows
-  const wallH = 0.062, baseY = 0.004;
-  // Back wall built in segments around 3 Gothic lancet window openings (centered behind Library, Study, Nursery)
-  const winW = 0.032, winSill = 0.018, winTop = 0.05;
+  // Tall Exterior Back & Side Cutaway Walls with Fluted Pilasters, Wainscoting & 3 Gothic Lancet Windows
+  const wallH = 0.112, baseY = 0.004;
+  const winW = 0.082, winSill = 0.03, winTop = 0.092;
   const totalBackW = 3 * W + 2 * WALL;
-  // Continuous lower wainscot band & upper frieze band across back wall
-  p.addMesh(MAT.wood_dark, bevelBox(totalBackW, winSill, WALL, 0.0005), C.walnutDark, 0, baseY, -D - WALL / 2);
-  p.addMesh(MAT.wood_dark, bevelBox(totalBackW, wallH - winTop, WALL, 0.0005), C.walnutDark, 0, baseY + winTop, -D - WALL / 2);
-  // Crown cornice moulding & chair rail along back wall
-  p.addMesh(MAT.wood_dark, bevelBox(totalBackW + 0.004, 0.0045, WALL + 0.004, 0.0006), C.mahogany, 0, baseY + wallH - 0.002, -D - WALL / 2);
-  p.addMesh(MAT.wood_dark, bevelBox(totalBackW + 0.002, 0.0022, WALL + 0.002, 0.0004), C.leather, 0, baseY + 0.016, -D - WALL / 2);
+  p.addMesh(MAT.wood_dark, bevelBox(totalBackW, winSill, WALL, 0.0007), C.walnutDark, 0, baseY, -D - WALL / 2);
+  p.addMesh(MAT.wood_dark, bevelBox(totalBackW, wallH - winTop, WALL, 0.0007), C.walnutDark, 0, baseY + winTop, -D - WALL / 2);
+  // Moulded crown cornice & chair rail along back wall
+  p.addMesh(MAT.wood_dark, bevelBox(totalBackW + 0.008, 0.007, WALL + 0.007, 0.0009), C.mahogany, 0, baseY + wallH - 0.0035, -D - WALL / 2);
+  p.addMesh(MAT.wood_dark, bevelBox(totalBackW + 0.004, 0.0038, WALL + 0.004, 0.0006), C.leather, 0, baseY + 0.027, -D - WALL / 2);
+  // Vertical bay pilasters separating the 3 upper galleries
+  for (const px of [-1.5 * W, -0.5 * W, 0.5 * W, 1.5 * W]) {
+    p.addMesh(MAT.wood_dark, bevelBox(0.011, wallH - 0.004, WALL + 0.004, 0.0007), C.mahogany, px, baseY, -D - WALL / 2);
+    p.addMesh(MAT.brass_aged, bevelBox(0.013, 0.004, WALL + 0.006, 0.0004), C.brassDark, px, baseY + wallH - 0.01, -D - WALL / 2);
+  }
 
-  // Piers between the 3 windows + leaded glass panes & mullions
+  // Piers between the 3 windows + pointed Gothic lancet hoods & diamond leaded glass panes
   const winCenters = [-W, 0, W];
   const pierEdges = [
     [-totalBackW / 2, winCenters[0] - winW / 2],
@@ -774,60 +791,66 @@ function buildDollhouse() {
     [winCenters[2] + winW / 2, totalBackW / 2],
   ];
   for (const [x0, x1] of pierEdges) {
-    p.addMesh(MAT.wood_dark, bevelBox(x1 - x0, winTop - winSill, WALL, 0.0004), C.walnutDark, (x0 + x1) / 2, baseY + winSill, -D - WALL / 2);
+    p.addMesh(MAT.wood_dark, bevelBox(x1 - x0, winTop - winSill, WALL, 0.0006), C.walnutDark, (x0 + x1) / 2, baseY + winSill, -D - WALL / 2);
   }
+  const archHood = extrude2D([
+    [-winW * 0.56, 0], [winW * 0.56, 0], [winW * 0.52, 0.007], [0, 0.018], [-winW * 0.52, 0.007],
+  ], WALL + 0.005, 0.0005);
   for (const wx of winCenters) {
-    // Window frame & mullions + pale moonlight glass
-    p.addMesh(MAT.wood_dark, bevelBox(winW + 0.004, 0.0025, WALL + 0.003, 0.0004), C.oak, wx, baseY + winSill - 0.001, -D - WALL / 2);
-    p.addMesh(MAT.silver_tarnished, bevelBox(0.0014, winTop - winSill, 0.0018, 0.0002), C.silver, wx, baseY + winSill, -D - WALL / 2);
-    p.addMesh(MAT.silver_tarnished, bevelBox(winW, 0.0014, 0.0018, 0.0002), C.silver, wx, baseY + winSill + (winTop - winSill) * 0.55, -D - WALL / 2);
-    p.addMesh(MAT.glass_spectral, bevelBox(winW - 0.001, winTop - winSill - 0.001, 0.0008, 0.0001), C.frost, wx, baseY + winSill, -D - WALL / 2, 0, 0, 0, 1, 1, 1, 0.34);
+    p.addMesh(MAT.wood_dark, bevelBox(winW + 0.008, 0.004, WALL + 0.006, 0.0006), C.oak, wx, baseY + winSill - 0.0015, -D - WALL / 2);
+    p.addMesh(MAT.wood_dark, archHood, C.mahogany, wx, baseY + winTop - 0.002, -D - WALL / 2);
+    p.addMesh(MAT.silver_tarnished, bevelBox(0.0022, winTop - winSill, 0.0028, 0.0003), C.silver, wx, baseY + winSill, -D - WALL / 2);
+    for (const sx of [-1, 1]) {
+      p.addMesh(MAT.silver_tarnished, bevelBox(0.0015, winTop - winSill, 0.0024, 0.0002), C.silver, wx + sx * winW * 0.25, baseY + winSill, -D - WALL / 2);
+    }
+    p.addMesh(MAT.silver_tarnished, bevelBox(winW, 0.0022, 0.0028, 0.0003), C.silver, wx, baseY + winSill + (winTop - winSill) * 0.55, -D - WALL / 2);
+    p.addMesh(MAT.glass_spectral, bevelBox(winW - 0.002, winTop - winSill - 0.002, 0.0012, 0.0001), C.frost, wx, baseY + winSill, -D - WALL / 2, 0, 0, 0, 1, 1, 1, 0.34);
   }
   // Recessed wainscot panels along back wall interior
   for (let i = 0; i < 9; i++) {
     const px = (i - 4) * (3 * W / 9);
-    p.addMesh(MAT.wood_dark, bevelBox(0.028, 0.011, 0.0012, 0.0003), C.mahogany, px, baseY + 0.003, -D + 0.0004);
+    p.addMesh(MAT.wood_dark, bevelBox(0.072, 0.02, 0.002, 0.0005), C.mahogany, px, baseY + 0.0045, -D + 0.0008);
   }
 
-  // Stepped cutaway Left & Right Exterior Side Walls (tall in back row, stepping down in front row so view stays open!)
+  // Stepped cutaway Left & Right Exterior Side Walls (tall in back row, stepping down in front row!)
   for (const sx of [-1, 1]) {
     const wx = sx * (1.5 * W + WALL / 2);
-    p.addMesh(MAT.wood_dark, bevelBox(WALL, wallH, D, 0.0005), C.walnutDark, wx, baseY, -D / 2);
-    p.addMesh(MAT.wood_dark, bevelBox(WALL + 0.003, 0.004, D + 0.002, 0.0005), C.mahogany, wx, baseY + wallH - 0.002, -D / 2);
-    p.addMesh(MAT.wood_dark, bevelBox(WALL, 0.032, D, 0.0005), C.walnutDark, wx, baseY, D / 2);
-    p.addMesh(MAT.wood_dark, bevelBox(WALL + 0.0025, 0.003, D + 0.002, 0.0005), C.mahogany, wx, baseY + 0.03, D / 2);
-    // Turned brass finial at the cutaway step
-    p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.0032, 0], [0.002, 0.005], [0.003, 0.008], [0, 0.011]], 12), C.brass, wx, baseY + 0.033, 0.002);
+    p.addMesh(MAT.wood_dark, bevelBox(WALL, wallH, D, 0.0007), C.walnutDark, wx, baseY, -D / 2);
+    p.addMesh(MAT.wood_dark, bevelBox(WALL + 0.005, 0.0068, D + 0.004, 0.0007), C.mahogany, wx, baseY + wallH - 0.0035, -D / 2);
+    p.addMesh(MAT.wood_dark, bevelBox(WALL, 0.052, D, 0.0007), C.walnutDark, wx, baseY, D / 2);
+    p.addMesh(MAT.wood_dark, bevelBox(WALL + 0.0045, 0.005, D + 0.004, 0.0007), C.mahogany, wx, baseY + 0.049, D / 2);
+    p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.0052, 0], [0.0032, 0.009], [0.0046, 0.014], [0, 0.018]], 12), C.brass, wx, baseY + 0.054, 0.004);
   }
 
-  // Front Cutaway Sill + Carved Hall Entrance Threshold & Gateposts
-  p.addMesh(MAT.wood_dark, bevelBox(1.12 * W, 0.007, WALL, 0.0005), C.walnut, -W * 0.94, baseY, D + WALL / 2);
-  p.addMesh(MAT.wood_dark, bevelBox(1.12 * W, 0.007, WALL, 0.0005), C.walnut, W * 0.94, baseY, D + WALL / 2);
-  // Stone front doorstep + twin carved entrance piers flanking the Hall doorway
-  p.addMesh(MAT.stone_slate, bevelBox(0.068, 0.0035, 0.014, 0.0005), C.stone, 0, baseY - 0.001, D + 0.005);
+  // Front Cutaway Sill + Carved Hall Entrance Threshold, Gateposts & Twin Brass Coach Lanterns
+  p.addMesh(MAT.wood_dark, bevelBox(1.16 * W, 0.011, WALL, 0.0007), C.walnut, -W * 0.92, baseY, D + WALL / 2);
+  p.addMesh(MAT.wood_dark, bevelBox(1.16 * W, 0.011, WALL, 0.0007), C.walnut, W * 0.92, baseY, D + WALL / 2);
+  p.addMesh(MAT.stone_slate, bevelBox(0.16, 0.0055, 0.03, 0.0007), C.stone, 0, baseY - 0.001, D + 0.012);
   for (const sx of [-1, 1]) {
-    p.addMesh(MAT.wood_dark, bevelBox(0.009, 0.022, 0.009, 0.0007), C.mahogany, sx * 0.036, baseY, D + WALL / 2);
-    p.addMesh(MAT.brass_aged, uvSphere(0.0032, 0.0036, 0.0032, 12, 10), C.brass, sx * 0.036, baseY + 0.025, D + WALL / 2);
+    const px = sx * 0.084;
+    p.addMesh(MAT.wood_dark, bevelBox(0.014, 0.04, 0.014, 0.0009), C.mahogany, px, baseY, D + WALL / 2);
+    p.addMesh(MAT.brass_aged, bevelBox(0.017, 0.003, 0.017, 0.0005), C.brassDark, px, baseY + 0.04, D + WALL / 2);
+    p.addMesh(MAT.glass_spectral, bevelBox(0.009, 0.011, 0.009, 0.0004), C.wax, px, baseY + 0.043, D + WALL / 2, 0, 0, 0, 1, 1, 1, 0.72);
+    p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.007, 0], [0.002, 0.005], [0, 0.008]], 10), C.brass, px, baseY + 0.054, D + WALL / 2);
   }
 
-  // Interior Partitions with Framed Doorways & Wooden Thresholds
+  // Interior Partitions with Framed Doorways, Brass Knobs & Oak Thresholds
   for (const x of [-0.5 * W, 0.5 * W]) for (const r of [0, 1]) {
-    const cz = (r - 0.5) * D, ph = r === 0 ? 0.034 : 0.024;
-    p.addMesh(MAT.wood_dark, bevelBox(WALL, ph, D * 0.31, 0.0004), C.walnut, x, baseY, cz - D * 0.345);
-    p.addMesh(MAT.wood_dark, bevelBox(WALL, ph, D * 0.31, 0.0004), C.walnut, x, baseY, cz + D * 0.345);
-    // Door jamb posts + wooden threshold
-    for (const sz of [-1, 1]) p.addMesh(MAT.wood_dark, bevelBox(WALL + 0.002, ph + 0.002, 0.0035, 0.0004), C.mahogany, x, baseY, cz + sz * D * 0.19);
-    p.addMesh(MAT.wood_dark, bevelBox(0.008, 0.0012, D * 0.36, 0.0003), C.oak, x, baseY, cz);
+    const cz = (r - 0.5) * D, ph = r === 0 ? 0.058 : 0.041;
+    p.addMesh(MAT.wood_dark, bevelBox(WALL, ph, D * 0.31, 0.0006), C.walnut, x, baseY, cz - D * 0.345);
+    p.addMesh(MAT.wood_dark, bevelBox(WALL, ph, D * 0.31, 0.0006), C.walnut, x, baseY, cz + D * 0.345);
+    for (const sz of [-1, 1]) p.addMesh(MAT.wood_dark, bevelBox(WALL + 0.004, ph + 0.0035, 0.006, 0.0006), C.mahogany, x, baseY, cz + sz * D * 0.19);
+    p.addMesh(MAT.wood_dark, bevelBox(0.014, 0.0018, D * 0.36, 0.0005), C.oak, x, baseY, cz);
   }
   for (const c of [-1, 0, 1]) {
     const cx = c * W;
-    p.addMesh(MAT.wood_dark, bevelBox(W * 0.31, 0.02, WALL, 0.0004), C.walnut, cx - W * 0.345, baseY, 0);
-    p.addMesh(MAT.wood_dark, bevelBox(W * 0.31, 0.02, WALL, 0.0004), C.walnut, cx + W * 0.345, baseY, 0);
-    for (const sx of [-1, 1]) p.addMesh(MAT.wood_dark, bevelBox(0.0035, 0.022, WALL + 0.002, 0.0004), C.mahogany, cx + sx * W * 0.19, baseY, 0);
-    p.addMesh(MAT.wood_dark, bevelBox(W * 0.36, 0.0012, 0.008, 0.0003), C.oak, cx, baseY, 0);
+    p.addMesh(MAT.wood_dark, bevelBox(W * 0.31, 0.036, WALL, 0.0006), C.walnut, cx - W * 0.345, baseY, 0);
+    p.addMesh(MAT.wood_dark, bevelBox(W * 0.31, 0.036, WALL, 0.0006), C.walnut, cx + W * 0.345, baseY, 0);
+    for (const sx of [-1, 1]) p.addMesh(MAT.wood_dark, bevelBox(0.006, 0.039, WALL + 0.004, 0.0006), C.mahogany, cx + sx * W * 0.19, baseY, 0);
+    p.addMesh(MAT.wood_dark, bevelBox(W * 0.36, 0.0018, 0.014, 0.0005), C.oak, cx, baseY, 0);
   }
 
-  bakePartAO(p, 0.032, -0.016, 0.5);
+  bakePartAO(p, 0.06, -0.02, 0.5);
   return p;
 }
 
@@ -835,15 +858,15 @@ function buildDollhouse() {
 function buildRelicToken() {
   const p = new PartBuilder('relic_token');
   // Stepped square-chamfered ink plinth with brass border bezel and ivory QR plate
-  p.addMesh(MAT.iron_cast, bevelBox(0.022, 0.0032, 0.022, 0.0008), C.ink, 0, 0, 0);
-  p.addMesh(MAT.brass_aged, bevelBox(0.019, 0.001, 0.019, 0.0004), C.brassDark, 0, 0.0032, 0);
-  p.addMesh(MAT.bone_wax, bevelBox(0.0165, 0.0006, 0.0165, 0.0002), C.bone, 0, 0.004, 0);
-  bakePartAO(p, 0.012, 0, 0.4);
+  p.addMesh(MAT.iron_cast, bevelBox(0.04, 0.0052, 0.04, 0.0011), C.ink, 0, 0, 0);
+  p.addMesh(MAT.brass_aged, bevelBox(0.035, 0.0016, 0.035, 0.0006), C.brassDark, 0, 0.0052, 0);
+  p.addMesh(MAT.bone_wax, bevelBox(0.03, 0.0009, 0.03, 0.0003), C.bone, 0, 0.0066, 0);
+  bakePartAO(p, 0.018, 0, 0.4);
   return p;
 }
 
-function buildCanonicalRelic(name, stlFile, targetTris, classifyTri) {
-  const raw = readBinaryStl(path.join(stlDir, stlFile), 0.00062); // ~50mm -> ~31mm miniature scale
+function buildCanonicalRelic(name, stlFile, scaleMeters, targetTris, classifyTri) {
+  const raw = readBinaryStl(path.join(stlDir, stlFile), scaleMeters);
   const simp = simplifyQEM(raw.pos, raw.idx, targetTris);
   const smooth = computeCreaseNormals(simp.pos, simp.idx, 42);
   const p = new PartBuilder(name);
@@ -872,15 +895,15 @@ function buildCanonicalRelic(name, stlFile, targetTris, classifyTri) {
     }
     p.addRaw(g.mat, sp, sn, g.col, si);
   }
-  bakePartAO(p, 0.016, 0, 0.56);
+  bakePartAO(p, 0.022, 0, 0.56);
   return p;
 }
 
 function buildAllRelics() {
-  const s = 0.00062;
+  const s = 0.00105; // ~50mm -> ~52.5mm museum-grade tabletop display scale
   return [
     buildRelicToken(),
-    buildCanonicalRelic('relic_music_box', 'relic-music-box.stl', 1500, (x, y, z) => {
+    buildCanonicalRelic('relic_music_box', 'relic-music-box.stl', s, 1800, (x, y, z) => {
       if (y < 4.6 * s) return { mat: MAT.iron_cast, col: C.ebony };
       if (x > 8.6 * s) return { mat: MAT.brass_aged, col: C.brass }; // side winding key
       if (y > 14.5 * s && y < 18.2 * s && Math.abs(x) < 6.8 * s && Math.abs(z) < 4.2 * s) {
@@ -890,13 +913,13 @@ function buildAllRelics() {
       if (y > 20.5 * s && z > -5.2 * s && Math.abs(x) < 6.0 * s) return { mat: MAT.bone_wax, col: C.parchment }; // inner lid song label
       return { mat: MAT.wood_dark, col: C.mahogany };
     }),
-    buildCanonicalRelic('relic_wax_hand', 'relic-wax-hand.stl', 1500, (x, y, z) => {
+    buildCanonicalRelic('relic_wax_hand', 'relic-wax-hand.stl', s, 1800, (x, y, z) => {
       if (y < 4.6 * s) return { mat: MAT.iron_cast, col: C.ebony };
       if (y < 9.5 * s) return { mat: MAT.brass_aged, col: C.brassDark }; // brass wax-catcher saucer
       if (z > 3.1 * s && y > 18 * s && y < 27.5 * s && Math.abs(x) < 4.5 * s) return { mat: MAT.fabric_velvet, col: C.alarm }; // crimson palm seal
       return { mat: MAT.bone_wax, col: C.wax };
     }),
-    buildCanonicalRelic('relic_locket', 'relic-locket.stl', 1400, (x, y, z) => {
+    buildCanonicalRelic('relic_locket', 'relic-locket.stl', s, 1650, (x, y, z) => {
       if (y < 4.6 * s) return { mat: MAT.iron_cast, col: C.ebony };
       if (z > 2.4 * s && y > 17 * s && y < 33 * s) {
         const rx = x / (8.2 * s), ry = (y - 25 * s) / (11.2 * s), r2 = rx * rx + ry * ry;
@@ -905,18 +928,18 @@ function buildAllRelics() {
       }
       return { mat: MAT.brass_aged, col: C.brass };
     }),
-    buildCanonicalRelic('relic_planchette', 'relic-planchette.stl', 1300, (x, y, z) => {
+    buildCanonicalRelic('relic_planchette', 'relic-planchette.stl', s, 1550, (x, y, z) => {
       if (y < 4.6 * s) return { mat: MAT.iron_cast, col: C.ebony };
       if (y < 14 * s) return { mat: MAT.brass_aged, col: C.brassDark }; // turned brass caster legs
       const dy = y - 23.2 * s;
       if (z > 0.6 * s && Math.hypot(x, dy) < 7.4 * s && Math.hypot(x, dy) > 4.2 * s) return { mat: MAT.brass_aged, col: C.brass }; // brass viewing oculus
       return { mat: MAT.wood_dark, col: C.leather };
     }),
-    buildCanonicalRelic('relic_silver_key', 'relic-silver-key.stl', 1300, (x, y, z) => {
+    buildCanonicalRelic('relic_silver_key', 'relic-silver-key.stl', s, 1600, (x, y, z) => {
       if (y < 13.4 * s) return z > 3.8 * s ? { mat: MAT.brass_aged, col: C.brassDark } : { mat: MAT.wood_dark, col: C.ebony };
       return { mat: MAT.silver_tarnished, col: C.silver };
     }),
-    buildCanonicalRelic('relic_bell', 'relic-bell.stl', 1300, (x, y) => {
+    buildCanonicalRelic('relic_bell', 'relic-bell.stl', s, 1600, (x, y) => {
       if (y < 4.6 * s) return { mat: MAT.iron_cast, col: C.ebony };
       if (y < 12.2 * s && y > 6.8 * s) return { mat: MAT.iron_cast, col: C.iron }; // iron clapper & arch
       if (y > 31.2 * s) return { mat: MAT.wood_dark, col: C.walnut }; // turned baluster handle
@@ -928,28 +951,27 @@ function buildAllRelics() {
 // ------------------------------------------------------------------ 3. The Whisper 3D Draped Shroud & Cold Spot Frost
 function buildWhisperShroud() {
   const p = new PartBuilder('whisper_shroud');
-  const H = 0.205;
-  // Sculpted hooded cowl + draped shoulders + pleated billowing shroud with jagged tattered hem (open front arc so portrait gleams within!)
-  const shroud = surfaceSheet(34, 24, false, (u, v) => {
-    // Wrap 250 degrees around the back & sides (-125 deg .. +125 deg), framing the Whisper portrait inside a 3D spectral cowl!
-    const ang = (u - 0.5) * Math.PI * 1.48;
+  const H = 0.265;
+  // Sculpted hooded cowl + draped shoulders + 42x28 pleated billowing shroud with multi-harmonic tattered hem
+  const shroud = surfaceSheet(42, 28, false, (u, v) => {
+    const ang = (u - 0.5) * Math.PI * 1.5;
     const t = v; // 0 = crown of hood, 1 = tattered hem
     let r;
-    if (t < 0.22) r = 0.004 + Math.sin((t / 0.22) * (Math.PI / 2)) * 0.026; // rounded hood cowl
-    else if (t < 0.36) r = 0.024 + ((t - 0.22) / 0.14) * 0.018; // neck to draped shoulders
-    else r = 0.042 + Math.pow((t - 0.36) / 0.64, 1.25) * 0.036; // flaring ghostly veil
-    const pleats = Math.sin(u * Math.PI * 11) * 0.0045 * Math.pow(t, 1.3) + Math.cos(u * Math.PI * 5 + t * 4) * 0.0025 * t;
-    const tatters = t > 0.72 ? Math.sin(u * Math.PI * 13) * 0.016 * ((t - 0.72) / 0.28) : 0;
+    if (t < 0.22) r = 0.0055 + Math.sin((t / 0.22) * (Math.PI / 2)) * 0.034; // rounded hood cowl
+    else if (t < 0.36) r = 0.032 + ((t - 0.22) / 0.14) * 0.025; // neck to draped shoulders
+    else r = 0.056 + Math.pow((t - 0.36) / 0.64, 1.25) * 0.048; // flaring ghostly veil
+    const pleats = Math.sin(u * Math.PI * 13) * 0.0058 * Math.pow(t, 1.25) + Math.cos(u * Math.PI * 5 + t * 4.5) * 0.0034 * t;
+    const tatters = t > 0.7 ? (Math.sin(u * Math.PI * 13) * 0.018 + Math.cos(u * Math.PI * 19) * 0.007) * ((t - 0.7) / 0.3) : 0;
     const rr = r + pleats;
     const y = H * (1 - t) + tatters;
     const x = Math.sin(ang) * rr;
-    const z = -Math.cos(ang) * rr * 0.78 - 0.004;
+    const z = -Math.cos(ang) * rr * 0.78 - 0.006;
     const edgeFade = Math.sin(u * Math.PI);
     const hemFade = t > 0.7 ? 1 - ((t - 0.7) / 0.3) * 0.75 : 1;
     const shade = 0.55 + 0.45 * edgeFade;
     return {
       x, y, z,
-      col: [C.ghost[0] * shade, C.ghost[1] * shade, C.ghost[2] * shade, Math.max(0.08, 0.52 * hemFade * (0.45 + 0.55 * edgeFade))],
+      col: [C.ghost[0] * shade, C.ghost[1] * shade, C.ghost[2] * shade, Math.max(0.08, 0.54 * hemFade * (0.45 + 0.55 * edgeFade))],
     };
   });
   p.addRaw(MAT.glass_spectral, shroud.pos, shroud.norm, shroud.col, shroud.idx);
@@ -958,11 +980,11 @@ function buildWhisperShroud() {
   for (let k = 0; k < 4; k++) {
     const a0 = (k / 4) * Math.PI * 2 + 0.4;
     const pts = [];
-    for (let s = 0; s <= 10; s++) {
-      const u = s / 10, a = a0 + u * 2.4, r = 0.018 + u * 0.034;
-      pts.push([Math.cos(a) * r, 0.095 * (1 - u), Math.sin(a) * r, 0.0024 * (1 - u * 0.8)]);
+    for (let s = 0; s <= 12; s++) {
+      const u = s / 12, a = a0 + u * 2.5, r = 0.025 + u * 0.048;
+      pts.push([Math.cos(a) * r, 0.125 * (1 - u), Math.sin(a) * r, 0.0032 * (1 - u * 0.8)]);
     }
-    p.addMesh(MAT.glass_spectral, tube(pts, 7, true), C.ghostDeep, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0.42);
+    p.addMesh(MAT.glass_spectral, tube(pts, 7, true), C.ghostDeep, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0.44);
   }
   return p;
 }
@@ -970,14 +992,14 @@ function buildWhisperShroud() {
 function buildColdSpotFrost() {
   const p = new PartBuilder('cold_spot_frost');
   const rng = makeRng(404);
-  // Radial crystalline ice-rime shards creeping flat across a room's floorboards
-  for (let i = 0; i < 18; i++) {
-    const a = (i / 18) * Math.PI * 2 + (rng() - 0.5) * 0.18;
-    const len = 0.026 + rng() * 0.022, w = 0.004 + rng() * 0.003;
-    const shard = extrude2D([[0, -w * 0.5], [len * 0.65, -w], [len, 0], [len * 0.65, w], [0, w * 0.5]], 0.0012, 0.0003);
-    p.addMesh(MAT.glass_spectral, shard, C.frost, Math.cos(a) * 0.008, 0.0007, Math.sin(a) * 0.008, Math.PI / 2, a, 0, 1, 1, 1, 0.48);
+  // Radial crystalline ice-rime shards creeping flat across a 30 x 25 cm Nursery's floorboards
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2 + (rng() - 0.5) * 0.16;
+    const len = 0.062 + rng() * 0.05, w = 0.0075 + rng() * 0.0052;
+    const shard = extrude2D([[0, -w * 0.5], [len * 0.65, -w], [len, 0], [len * 0.65, w], [0, w * 0.5]], 0.0016, 0.0003);
+    p.addMesh(MAT.glass_spectral, shard, C.frost, Math.cos(a) * 0.018, 0.0008, Math.sin(a) * 0.018, Math.PI / 2, a, 0, 1, 1, 1, 0.5);
   }
-  p.addMesh(MAT.glass_spectral, lathe([[0.016, 0], [0.034, 0.0008], [0.044, 0.0002], [0.016, 0]], 24), C.ghost, 0, 0.0002, 0, 0, 0, 0, 1, 1, 1, 0.35);
+  p.addMesh(MAT.glass_spectral, lathe([[0.032, 0], [0.078, 0.0012], [0.104, 0.0003], [0.032, 0]], 32), C.ghost, 0, 0.0002, 0, 0, 0, 0, 1, 1, 1, 0.36);
   return p;
 }
 
@@ -986,58 +1008,56 @@ function buildSuspectPlinth() {
   const p = new PartBuilder('suspect_plinth');
   // Stepped Victorian ebony standee base with twin brass rings & portrait clasp jaws
   const body = lathe([
-    [0, 0], [0.0155, 0], [0.0155, 0.0014], [0.0138, 0.0024], [0.0126, 0.0042], [0.0112, 0.0052], [0, 0.0052],
+    [0, 0], [0.0222, 0], [0.0222, 0.002], [0.0198, 0.0034], [0.018, 0.0058], [0.016, 0.007], [0, 0.007],
   ], 24, 42);
   p.addMesh(MAT.wood_dark, body, C.ebony);
-  const brassCollar = lathe([[0.0124, 0.0022], [0.0143, 0.0022], [0.0141, 0.0032], [0.0124, 0.0032]], 24, 42);
+  const brassCollar = lathe([[0.0178, 0.003], [0.0205, 0.003], [0.0202, 0.0044], [0.0178, 0.0044]], 24, 42);
   p.addMesh(MAT.brass_aged, brassCollar, C.brass);
   // Slotted brass portrait clasp jaws + front angled nameplate plaque
   for (const sz of [-1, 1]) {
-    p.addMesh(MAT.brass_aged, bevelBox(0.014, 0.0032, 0.0016, 0.0003), C.brassDark, 0, 0.0046, sz * 0.0016);
+    p.addMesh(MAT.brass_aged, bevelBox(0.021, 0.0042, 0.0022, 0.0003), C.brassDark, 0, 0.0062, sz * 0.0022);
   }
-  p.addMesh(MAT.brass_aged, bevelBox(0.015, 0.0024, 0.004, 0.0004), C.brass, 0, 0.0012, 0.0128, -0.45, 0, 0);
-  bakePartAO(p, 0.012, 0, 0.45);
+  p.addMesh(MAT.brass_aged, bevelBox(0.022, 0.0034, 0.0056, 0.0004), C.brass, 0, 0.0018, 0.0182, -0.45, 0, 0);
+  bakePartAO(p, 0.018, 0, 0.45);
   return p;
 }
 
 function buildPawnLiving() {
   const p = new PartBuilder('pawn_living');
-  // Carved Staunton-meets-lantern investigator pawn (~46 mm tall)
+  // Carved Staunton-meets-lantern investigator pawn (~64 mm tall)
   const wood = lathe([
-    [0, 0], [0.0115, 0], [0.0115, 0.002], [0.0095, 0.004], [0.0068, 0.009],
-    [0.0052, 0.02], [0.0074, 0.024], [0.0062, 0.027], [0.0082, 0.034], [0.0055, 0.041], [0, 0.044],
-  ], 20, 46);
+    [0, 0], [0.0164, 0], [0.0164, 0.0028], [0.0136, 0.0056], [0.0098, 0.013],
+    [0.0075, 0.0285], [0.0106, 0.034], [0.0088, 0.0385], [0.0118, 0.049], [0.008, 0.0585], [0, 0.063],
+  ], 22, 46);
   p.addMesh(MAT.wood_dark, wood, C.mahogany);
-  const collar = lathe([[0.005, 0.0225], [0.0082, 0.0235], [0.0082, 0.0252], [0.005, 0.026]], 20, 42);
+  const collar = lathe([[0.0072, 0.032], [0.0118, 0.0335], [0.0118, 0.036], [0.0072, 0.0372]], 22, 42);
   p.addMesh(MAT.brass_aged, collar, C.brass);
-  // Brass lantern cage crown at top
-  p.addMesh(MAT.brass_aged, uvSphere(0.0025, 0.003, 0.0025, 12, 10), C.brass, 0, 0.0455, 0);
-  bakePartAO(p, 0.015, 0, 0.48);
+  p.addMesh(MAT.brass_aged, uvSphere(0.0036, 0.0044, 0.0036, 12, 10), C.brass, 0, 0.0655, 0);
+  bakePartAO(p, 0.02, 0, 0.48);
   return p;
 }
 
 function buildPawnPoltergeist() {
   const p = new PartBuilder('pawn_poltergeist');
-  // Weathered, fractured monochrome ash-stone effigy pawn (tilted & jagged, Req 2.2)
+  // Weathered, fractured monochrome ash-stone effigy pawn (~62 mm tall, tilted & jagged, Req 2.2)
   const stone = lathe([
-    [0, 0], [0.0118, 0], [0.0112, 0.0025], [0.0088, 0.005], [0.0062, 0.012],
-    [0.0048, 0.021], [0.0072, 0.026], [0.0054, 0.032], [0.0068, 0.038], [0, 0.042],
-  ], 9, 28); // 9-faceted chiselled stone silhouette!
+    [0, 0], [0.0168, 0], [0.0158, 0.0036], [0.0124, 0.0072], [0.0088, 0.017],
+    [0.0068, 0.0295], [0.0102, 0.037], [0.0078, 0.0455], [0.0096, 0.054], [0, 0.06],
+  ], 9, 28);
   p.addMesh(MAT.stone_slate, stone, C.ashMono, 0, 0, 0, 0.05, 0.2, -0.09);
-  // Dark fissure shards jutting from shoulder
-  p.addMesh(MAT.stone_slate, bevelBox(0.005, 0.012, 0.004, 0.0005), C.stoneDark, 0.004, 0.022, 0.002, 0.2, 0.3, -0.35);
-  p.addMesh(MAT.stone_slate, bevelBox(0.004, 0.009, 0.004, 0.0005), C.stoneDark, -0.004, 0.016, -0.002, -0.15, 0.1, 0.3);
-  bakePartAO(p, 0.015, 0, 0.55);
+  p.addMesh(MAT.stone_slate, bevelBox(0.0072, 0.017, 0.0056, 0.0006), C.stoneDark, 0.0056, 0.0315, 0.0028, 0.2, 0.3, -0.35);
+  p.addMesh(MAT.stone_slate, bevelBox(0.0056, 0.013, 0.0056, 0.0006), C.stoneDark, -0.0056, 0.023, -0.0028, -0.15, 0.1, 0.3);
+  bakePartAO(p, 0.02, 0, 0.55);
   return p;
 }
 
 function buildPawnTurnRing() {
   const p = new PartBuilder('pawn_turn_ring');
-  const ring = lathe([[0.0135, 0], [0.0175, 0], [0.017, 0.0018], [0.014, 0.0018], [0.0135, 0]], 24, 42);
+  const ring = lathe([[0.0195, 0], [0.0252, 0], [0.0245, 0.0025], [0.0202, 0.0025], [0.0195, 0]], 24, 42);
   p.addMesh(MAT.brass_aged, ring, C.brass);
   for (let i = 0; i < 4; i++) {
     const a = (i / 4) * Math.PI * 2;
-    p.addMesh(MAT.brass_aged, bevelBox(0.0032, 0.0026, 0.005, 0.0004), C.brass, Math.cos(a) * 0.016, 0, Math.sin(a) * 0.016, 0, -a, 0);
+    p.addMesh(MAT.brass_aged, bevelBox(0.0046, 0.0036, 0.007, 0.0005), C.brass, Math.cos(a) * 0.023, 0, Math.sin(a) * 0.023, 0, -a, 0);
   }
   return p;
 }
@@ -1045,91 +1065,99 @@ function buildPawnTurnRing() {
 // ------------------------------------------------------------------ 5. Physicalized Séance Hatpins & Inspected Magnifying Lens
 function buildMarkHatpin() {
   const p = new PartBuilder('mark_hatpin');
-  // Tapered steel needle (y = 0 .. 0.152) + faceted dark bead + brass collar & crossbar
-  p.addMesh(MAT.silver_tarnished, lathe([[0.0002, 0], [0.0009, 0.02], [0.0011, 0.152], [0, 0.152]], 10, 50), C.steel);
-  p.addMesh(MAT.brass_aged, lathe([[0, 0.15], [0.0028, 0.152], [0.0018, 0.156], [0.0038, 0.16], [0, 0.164]], 14, 42), C.brass);
-  p.addMesh(MAT.iron_cast, uvSphere(0.0042, 0.0046, 0.0042, 12, 10), C.ebony, 0, 0.168, 0);
-  p.addMesh(MAT.brass_aged, cylY(0.0012, 0.0006, 0.004, 10), C.brass, 0, 0.172, 0);
+  // Tapered steel needle (y = 0 .. 0.215) + faceted dark bead + brass filigree collar & crossbar
+  p.addMesh(MAT.silver_tarnished, lathe([[0.0003, 0], [0.0013, 0.028], [0.0015, 0.215], [0, 0.215]], 10, 50), C.steel);
+  p.addMesh(MAT.brass_aged, lathe([[0, 0.213], [0.004, 0.215], [0.0026, 0.221], [0.0054, 0.227], [0, 0.232]], 14, 42), C.brass);
+  p.addMesh(MAT.iron_cast, uvSphere(0.0058, 0.0064, 0.0058, 12, 10), C.ebony, 0, 0.238, 0);
+  p.addMesh(MAT.brass_aged, cylY(0.0016, 0.0008, 0.0055, 10), C.brass, 0, 0.244, 0);
   // Horizontal brass crossbar holding the parchment pennant
-  p.addMesh(MAT.brass_aged, bevelBox(0.072, 0.0018, 0.0018, 0.0004), C.brass, 0, 0.153, 0);
-  for (const sx of [-1, 1]) p.addMesh(MAT.brass_aged, uvSphere(0.0018, 0.0018, 0.0018, 8, 6), C.brass, sx * 0.037, 0.153, 0);
-  // Slightly curled 3D parchment backing card hanging from the crossbar (y = 0.132 .. 0.153)
-  const card = surfaceSheet(10, 4, false, (u, v) => ({
-    x: (u - 0.5) * 0.068,
-    y: 0.153 - v * 0.02,
-    z: Math.sin(u * Math.PI * 1.5) * 0.0016 + v * v * 0.0018,
+  p.addMesh(MAT.brass_aged, bevelBox(0.106, 0.0026, 0.0026, 0.0005), C.brass, 0, 0.216, 0);
+  for (const sx of [-1, 1]) p.addMesh(MAT.brass_aged, uvSphere(0.0026, 0.0026, 0.0026, 8, 6), C.brass, sx * 0.054, 0.216, 0);
+  // Slightly curled 3D parchment backing card hanging from the crossbar (y = 0.188 .. 0.216)
+  const card = surfaceSheet(12, 4, false, (u, v) => ({
+    x: (u - 0.5) * 0.102,
+    y: 0.216 - v * 0.028,
+    z: Math.sin(u * Math.PI * 1.5) * 0.0024 + v * v * 0.0026,
   }));
-  p.addMesh(MAT.bone_wax, card, C.parchment, 0, 0, -0.0008);
+  p.addMesh(MAT.bone_wax, card, C.parchment, 0, 0, -0.001);
   return p;
 }
 
 function buildInspectedLens() {
   const p = new PartBuilder('inspected_lens');
-  // Miniature Victorian brass magnifying glass resting slightly tilted on an inspected room's floorboards
   const rim = lathe([[0.0068, 0], [0.0086, 0], [0.0086, 0.0022], [0.0068, 0.0022], [0.0068, 0]], 20, 42);
   p.addMesh(MAT.brass_aged, rim, C.brass, 0, 0.0008, 0);
   p.addMesh(MAT.glass_spectral, cylY(0.0069, 0.0069, 0.0008, 18), C.frost, 0, 0.0015, 0, 0, 0, 0, 1, 1, 1, 0.45);
   p.addMesh(MAT.wood_dark, bevelBox(0.0024, 0.0022, 0.013, 0.0006), C.ebony, 0, 0.0008, 0.0145);
   p.addMesh(MAT.brass_aged, bevelBox(0.003, 0.0026, 0.003, 0.0004), C.brass, 0, 0.0007, 0.0092);
-  bakePartAO(p, 0.01, 0, 0.4);
+  p.scaleShift(1.75);
+  bakePartAO(p, 0.018, 0, 0.4);
   return p;
 }
 
-// ------------------------------------------------------------------ 6. Six Sculpted Room Vignette Kits (+ animatable rocking horse & clock pendulum!)
+// ------------------------------------------------------------------ 6. Sculpted Room Vignette Kits (+ animatable rocking horse & clock pendulum!)
+// Each room is 30 cm x 25 cm (x in [-0.15, +0.15], z in [-0.125, +0.125]); furniture hugs back & side walls so center rugs stay clear!
 function buildRoomLibrary() {
   const p = new PartBuilder('room_library');
   const rng = makeRng(101);
-  // Arched triple-bay Gothic walnut bookcase against back wall (z = -0.038)
-  p.addMesh(MAT.wood_dark, bevelBox(0.072, 0.044, 0.012, 0.0006), C.walnutDark, -0.008, 0, -0.038);
-  // Crown pediment + arched crest
-  p.addMesh(MAT.wood_dark, bevelBox(0.076, 0.0035, 0.014, 0.0005), C.mahogany, -0.008, 0.044, -0.038);
+  // Arched triple-bay Gothic walnut bookcase against back wall (after 1.85x -> z = -0.096)
+  p.addMesh(MAT.wood_dark, bevelBox(0.072, 0.044, 0.012, 0.0006), C.walnutDark, -0.006, 0, -0.052);
+  p.addMesh(MAT.wood_dark, bevelBox(0.076, 0.0035, 0.014, 0.0005), C.mahogany, -0.006, 0.044, -0.052);
   const arch = extrude2D([[-0.026, 0], [0.026, 0], [0.018, 0.005], [0, 0.009], [-0.018, 0.005]], 0.012, 0.0005);
-  p.addMesh(MAT.wood_dark, arch, C.mahogany, -0.008, 0.047, -0.038);
-  // 3 shelves + 22 varied leather book spines
+  p.addMesh(MAT.wood_dark, arch, C.mahogany, -0.006, 0.047, -0.052);
   const bookCols = [C.velvetRed, C.velvetGreen, C.velvetBlue, C.leather, C.mahogany, C.brassDark];
   for (let sh = 0; sh < 3; sh++) {
     const sy = 0.004 + sh * 0.013;
-    p.addMesh(MAT.wood_dark, bevelBox(0.068, 0.0018, 0.0125, 0.0003), C.oak, -0.008, sy, -0.0375);
-    let bx = -0.038;
-    while (bx < 0.02) {
+    p.addMesh(MAT.wood_dark, bevelBox(0.068, 0.0018, 0.0125, 0.0003), C.oak, -0.006, sy, -0.0515);
+    let bx = -0.036;
+    while (bx < 0.022) {
       const bw = 0.0028 + rng() * 0.0022, bh = 0.0085 + rng() * 0.0028;
       const col = bookCols[Math.floor(rng() * bookCols.length)];
-      p.addMesh(MAT.fabric_velvet, bevelBox(bw, bh, 0.008, 0.0003), col, bx + bw / 2, sy + 0.0018, -0.0355, 0, 0, (rng() - 0.5) * 0.08);
+      p.addMesh(MAT.fabric_velvet, bevelBox(bw, bh, 0.008, 0.0003), col, bx + bw / 2, sy + 0.0018, -0.0495, 0, 0, (rng() - 0.5) * 0.08);
       bx += bw + 0.0005;
     }
   }
-  // Terrestrial Brass & Parchment Floor Globe in Meridian Stand (left side)
-  const gx = -0.034, gz = 0.006;
+  // Terrestrial Brass & Parchment Floor Globe in Meridian Stand (back-left corner)
+  const gx = -0.055, gz = -0.026;
   p.addMesh(MAT.wood_dark, lathe([[0, 0], [0.0085, 0], [0.007, 0.002], [0.0022, 0.01], [0, 0.01]], 16), C.walnut, gx, 0, gz);
   p.addMesh(MAT.bone_wax, uvSphere(0.0085, 0.0085, 0.0085, 16, 12), C.parchment, gx, 0.018, gz, 0.2, 0.4, -0.4);
   p.addMesh(MAT.brass_aged, tube(Array.from({ length: 13 }, (_, i) => {
     const a = -Math.PI * 0.65 + (i / 12) * Math.PI * 1.3;
     return [gx + Math.sin(a) * 0.0102, 0.018 - Math.cos(a) * 0.0102, gz, 0.0009];
   }), 7), C.brass);
-  // Tufted Wingback Reading Armchair (right-back)
-  const cx = 0.032, cz = -0.018;
+  // Side reading pedestal table with open leather folio & brass candlestick
+  p.addMesh(MAT.wood_dark, lathe([[0, 0], [0.007, 0], [0.005, 0.002], [0.0018, 0.014], [0.0095, 0.015], [0.0095, 0.017], [0, 0.017]], 16), C.mahogany, 0.027, 0, -0.036);
+  p.addMesh(MAT.bone_wax, bevelBox(0.011, 0.0016, 0.0085, 0.0002), C.parchment, 0.025, 0.0172, -0.036, 0, 0.22, 0);
+  p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.0022, 0], [0.001, 0.004], [0, 0.005]], 10), C.brass, 0.032, 0.0172, -0.038);
+  // Tufted Wingback Reading Armchair (back-right corner)
+  const cx = 0.052, cz = -0.038;
   p.addMesh(MAT.fabric_velvet, bevelBox(0.02, 0.009, 0.018, 0.0012), C.velvetRed, cx, 0.003, cz);
   p.addMesh(MAT.fabric_velvet, bevelBox(0.02, 0.024, 0.005, 0.0012), C.velvetRed, cx, 0.008, cz - 0.007, -0.12, 0, 0);
   for (const sx of [-1, 1]) {
     p.addMesh(MAT.fabric_velvet, bevelBox(0.0045, 0.014, 0.018, 0.001), C.velvetRed, cx + sx * 0.009, 0.007, cz);
     p.addMesh(MAT.fabric_velvet, bevelBox(0.004, 0.013, 0.008, 0.0008), C.velvetRed, cx + sx * 0.0095, 0.019, cz - 0.005);
   }
-  bakePartAO(p, 0.024, 0, 0.55);
+  p.scaleShift(1.85);
+  bakePartAO(p, 0.044, 0, 0.55);
   return p;
 }
 
 function buildRoomStudy() {
   const p = new PartBuilder('room_study');
-  // Victorian Roll-Top Desk with tambour curve, drawers, blotter & brass desk candlestick
-  const dx = 0.004, dz = -0.024;
-  for (const sx of [-1, 1]) p.addMesh(MAT.wood_dark, bevelBox(0.013, 0.017, 0.022, 0.0006), C.walnutDark, dx + sx * 0.016, 0, dz);
+  // Victorian Roll-Top Desk against back wall (after 1.85x -> dz = -0.085)
+  const dx = 0.004, dz = -0.046;
+  for (const sx of [-1, 1]) {
+    p.addMesh(MAT.wood_dark, bevelBox(0.013, 0.017, 0.022, 0.0006), C.walnutDark, dx + sx * 0.016, 0, dz);
+    for (const dy of [0.0045, 0.0105]) p.addMesh(MAT.brass_aged, bevelBox(0.004, 0.0012, 0.0012, 0.0002), C.brass, dx + sx * 0.016, dy, dz + 0.0112);
+  }
   p.addMesh(MAT.wood_dark, bevelBox(0.046, 0.0025, 0.024, 0.0005), C.mahogany, dx, 0.017, dz);
-  // Tambour curved hood
   const hood = extrude2D([[-0.011, 0], [0.011, 0], [0.011, 0.005], [0.008, 0.01], [0.002, 0.012], [-0.011, 0.012]], 0.044, 0.0005);
   p.addMesh(MAT.wood_dark, hood, C.walnut, dx, 0.019, dz - 0.001, 0, Math.PI / 2, 0);
-  // Green leather blotter + open ledger + brass candlestick
   p.addMesh(MAT.fabric_velvet, bevelBox(0.018, 0.0008, 0.01, 0.0002), C.velvetGreen, dx, 0.0195, dz + 0.005);
   p.addMesh(MAT.bone_wax, bevelBox(0.011, 0.0014, 0.008, 0.0002), C.parchment, dx - 0.002, 0.0202, dz + 0.005, 0, 0.14, 0);
+  p.addMesh(MAT.fabric_velvet, cylY(0.0014, 0.0014, 0.0005, 10), C.alarm, dx - 0.005, 0.0214, dz + 0.007); // red wax seal
+  p.addMesh(MAT.brass_aged, cylY(0.0014, 0.0011, 0.0022, 10), C.brassDark, dx + 0.012, 0.0195, dz + 0.004); // inkwell
+  p.addMesh(MAT.bone_wax, bevelBox(0.0008, 0.009, 0.0016, 0.0002), C.bone, dx + 0.013, 0.021, dz + 0.004, -0.2, 0, -0.35); // quill plume
   p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.0035, 0], [0.0014, 0.005], [0.0026, 0.006], [0, 0.006]], 12), C.brass, dx + 0.016, 0.031, dz - 0.005);
   p.addMesh(MAT.bone_wax, cylY(0.0012, 0.0011, 0.007, 10), C.wax, dx + 0.016, 0.037, dz - 0.005);
   // Turned Captain's Chair pulled out slightly crooked
@@ -1144,16 +1172,18 @@ function buildRoomStudy() {
     const a = -1.9 + (i / 8) * 3.8;
     return [cx + Math.sin(a) * 0.008, 0.019, cz + Math.cos(a) * 0.008, 0.0011];
   }), 7), C.mahogany);
-  bakePartAO(p, 0.022, 0, 0.54);
+  p.scaleShift(1.85);
+  bakePartAO(p, 0.04, 0, 0.54);
   return p;
 }
 
 function buildRoomNursery() {
   const p = new PartBuilder('room_nursery');
-  // Wrought-Iron Victorian Spindle Crib with brass finials & rumpled bedding
-  const cx = 0.022, cz = -0.025, cw = 0.042, cd = 0.024;
+  // Wrought-Iron Victorian Spindle Crib in back-right corner (after 1.85x -> cx = 0.063, cz = -0.081)
+  const cx = 0.034, cz = -0.044, cw = 0.042, cd = 0.024;
   p.addMesh(MAT.bone_wax, bevelBox(cw - 0.004, 0.005, cd - 0.004, 0.0012), C.bone, cx, 0.007, cz);
-  p.addMesh(MAT.fabric_velvet, bevelBox(0.011, 0.0035, cd - 0.006, 0.001), C.velvetBlue, cx + 0.012, 0.0115, cz, 0, 0, 0.08);
+  p.addMesh(MAT.fabric_velvet, bevelBox(0.018, 0.0024, cd - 0.005, 0.0008), C.velvetGreen, cx - 0.007, 0.0112, cz); // wool quilt
+  p.addMesh(MAT.fabric_velvet, bevelBox(0.011, 0.0038, cd - 0.006, 0.001), C.velvetBlue, cx + 0.012, 0.0115, cz, 0, 0, 0.08);
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     const px = cx + sx * (cw / 2), pz = cz + sz * (cd / 2);
     p.addMesh(MAT.iron_cast, cylY(0.0011, 0.0011, 0.024, 8), C.iron, px, 0, pz);
@@ -1168,17 +1198,18 @@ function buildRoomNursery() {
     p.addMesh(MAT.iron_cast, bevelBox(0.0014, 0.0014, cd, 0.0003), C.iron, cx + sx * (cw / 2), 0.022, cz);
     for (let i = -1; i <= 1; i++) p.addMesh(MAT.iron_cast, cylY(0.0006, 0.0006, 0.015, 6), C.iron, cx + sx * (cw / 2), 0.007, cz + i * 0.006);
   }
-  // Scattered wooden toy blocks
-  p.addMesh(MAT.wood_dark, bevelBox(0.0065, 0.0065, 0.0065, 0.0006), C.alarm, -0.008, 0, 0.016, 0, 0.35, 0);
-  p.addMesh(MAT.bone_wax, bevelBox(0.006, 0.006, 0.006, 0.0006), C.bone, -0.001, 0, 0.02, 0, -0.2, 0);
-  p.addMesh(MAT.brass_aged, bevelBox(0.0058, 0.0058, 0.0058, 0.0006), C.brass, -0.005, 0.0065, 0.018, 0, 0.7, 0);
-  bakePartAO(p, 0.022, 0, 0.5);
+  // Scattered wooden toy blocks tucked near the crib
+  p.addMesh(MAT.wood_dark, bevelBox(0.0065, 0.0065, 0.0065, 0.0006), C.alarm, -0.008, 0, -0.034, 0, 0.35, 0);
+  p.addMesh(MAT.bone_wax, bevelBox(0.006, 0.006, 0.006, 0.0006), C.bone, -0.001, 0, -0.03, 0, -0.2, 0);
+  p.addMesh(MAT.brass_aged, bevelBox(0.0058, 0.0058, 0.0058, 0.0006), C.brass, -0.005, 0.0065, -0.032, 0, 0.7, 0);
+  p.scaleShift(1.85);
+  bakePartAO(p, 0.04, 0, 0.5);
   return p;
 }
 
 function buildNurseryHorse() {
   const p = new PartBuilder('nursery_horse');
-  // Carved Victorian Rocking Horse on curved runners (pivot at bottom of runners y = 0 so it rocks in place!)
+  // Carved Victorian Rocking Horse on curved runners (pivot at bottom of runners y = 0!)
   for (const sz of [-1, 1]) {
     const runner = tube(Array.from({ length: 11 }, (_, i) => {
       const x = (i / 10 - 0.5) * 0.036;
@@ -1188,72 +1219,75 @@ function buildNurseryHorse() {
   }
   p.addMesh(MAT.wood_dark, bevelBox(0.004, 0.0015, 0.015, 0.0003), C.walnut, -0.01, 0.0022, 0);
   p.addMesh(MAT.wood_dark, bevelBox(0.004, 0.0015, 0.015, 0.0003), C.walnut, 0.01, 0.0022, 0);
-  // Legs + carved body + arched neck & head + saddle
   for (const [lx, lz, tilt] of [[-0.008, -0.004, 0.25], [-0.008, 0.004, 0.25], [0.008, -0.004, -0.25], [0.008, 0.004, -0.25]]) {
     p.addMesh(MAT.bone_wax, bevelBox(0.0025, 0.012, 0.0025, 0.0004), C.bone, lx, 0.0025, lz, 0, 0, tilt);
   }
   p.addMesh(MAT.bone_wax, uvSphere(0.0105, 0.0052, 0.0048, 14, 10), C.bone, 0, 0.015, 0);
   p.addMesh(MAT.fabric_velvet, bevelBox(0.008, 0.003, 0.0102, 0.0008), C.velvetRed, 0, 0.018, 0);
+  p.addMesh(MAT.brass_aged, bevelBox(0.002, 0.003, 0.003, 0.0003), C.brass, 0.0035, 0.0205, 0); // saddle pommel
+  p.addMesh(MAT.wood_dark, bevelBox(0.005, 0.0026, 0.0024, 0.0004), C.walnutDark, -0.011, 0.014, 0, 0, 0, -0.5); // horsehair tail
   const neck = extrude2D([[0, 0], [0.007, 0], [0.011, 0.011], [0.015, 0.009], [0.014, 0.014], [0.007, 0.016], [0.002, 0.009]], 0.0045, 0.0006);
   p.addMesh(MAT.bone_wax, neck, C.bone, 0.004, 0.015, 0);
-  bakePartAO(p, 0.016, 0, 0.48);
+  p.scaleShift(1.85);
+  bakePartAO(p, 0.03, 0, 0.48);
   return p;
 }
 
 function buildRoomKitchen() {
   const p = new PartBuilder('room_kitchen');
-  // Cast-iron Victorian Coal Range Stove + Stovepipe Chimney + Copper Kettle + Butcher's Table
-  const sx = -0.032, sz = -0.025;
+  // Cast-iron Victorian Coal Range Stove + Stovepipe Chimney + Copper Kettle + Stewpot + Butcher's Table
+  const sx = -0.042, sz = -0.045;
   p.addMesh(MAT.iron_cast, bevelBox(0.034, 0.024, 0.022, 0.0008), C.iron, sx, 0, sz);
   p.addMesh(MAT.iron_cast, bevelBox(0.037, 0.0025, 0.025, 0.0005), C.iron, sx, 0.023, sz);
   p.addMesh(MAT.brass_aged, bevelBox(0.038, 0.0014, 0.002, 0.0003), C.brass, sx, 0.022, sz + 0.014);
-  // Oven brass doors & glowing coal grate slit
   p.addMesh(MAT.brass_aged, bevelBox(0.011, 0.012, 0.0015, 0.0003), C.brassDark, sx + 0.008, 0.005, sz + 0.011);
   p.addMesh(MAT.fabric_velvet, bevelBox(0.01, 0.005, 0.0016, 0.0002), C.alarm, sx - 0.008, 0.012, sz + 0.011);
-  // Stovepipe chimney rising up the back wall + copper kettle on burner
   p.addMesh(MAT.iron_cast, cylY(0.0036, 0.0036, 0.032, 12), C.iron, sx - 0.008, 0.025, sz - 0.006);
   p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.0052, 0], [0.0062, 0.0035], [0.0038, 0.007], [0, 0.008]], 14), C.copper, sx + 0.007, 0.0255, sz + 0.002);
-  // Heavy Oak Butcher-Block Prep Table + Ceramic Bowls (right side)
-  const tx = 0.024, tz = -0.016;
+  p.addMesh(MAT.iron_cast, cylY(0.0055, 0.0062, 0.0055, 14), C.iron, sx - 0.006, 0.0255, sz + 0.004); // cast-iron stewpot
+  // Heavy Oak Butcher-Block Prep Table + Bowls + Rolling Pin (back-right)
+  const tx = 0.038, tz = -0.042;
   p.addMesh(MAT.wood_dark, bevelBox(0.038, 0.004, 0.022, 0.0006), C.pine, tx, 0.014, tz);
   for (const lx of [-1, 1]) for (const lz of [-1, 1]) {
     p.addMesh(MAT.wood_dark, bevelBox(0.0032, 0.014, 0.0032, 0.0004), C.oak, tx + lx * 0.015, 0, tz + lz * 0.008);
   }
   p.addMesh(MAT.bone_wax, lathe([[0, 0], [0.0035, 0], [0.006, 0.0045], [0.005, 0.0045], [0.003, 0.001], [0, 0.001]], 14), C.bone, tx - 0.008, 0.018, tz);
+  p.addMesh(MAT.wood_dark, cylY(0.0015, 0.0015, 0.014, 10), C.oak, tx + 0.002, 0.0195, tz + 0.004, Math.PI / 2, 0.4, 0); // rolling pin
   p.addMesh(MAT.iron_cast, cylY(0.0045, 0.005, 0.005, 12), C.iron, tx + 0.008, 0.018, tz - 0.003);
-  bakePartAO(p, 0.024, 0, 0.54);
+  p.scaleShift(1.85);
+  bakePartAO(p, 0.044, 0, 0.54);
   return p;
 }
 
 function buildRoomHall() {
   const p = new PartBuilder('room_hall');
-  // Balustraded Oak Staircase with Turned Newel Post & Brass Finial
-  const sx = -0.03, sz = -0.032;
+  // Balustraded Oak Staircase in back-left corner (after 1.85x -> sx = -0.085, sz = -0.096)
+  const sx = -0.046, sz = -0.052;
   for (let i = 0; i < 6; i++) {
     const h = 0.0055 * (i + 1), z = sz + (5 - i) * 0.0068;
     p.addMesh(MAT.wood_dark, bevelBox(0.038, h, 0.0072, 0.0004), C.walnut, sx, 0, z);
     p.addMesh(MAT.fabric_velvet, bevelBox(0.022, 0.0008, 0.0074, 0.0002), C.velvetRed, sx, h, z);
-    // Turned baluster along inner stair edge
     p.addMesh(MAT.wood_dark, cylY(0.0009, 0.0009, 0.013, 8), C.mahogany, sx + 0.017, h, z);
   }
-  // Sloped banister handrail + bottom newel post
   p.addMesh(MAT.wood_dark, tube([[sx + 0.017, 0.018, sz + 5 * 0.0068, 0.0015], [sx + 0.017, 0.046, sz, 0.0015]], 8), C.mahogany);
   p.addMesh(MAT.wood_dark, bevelBox(0.005, 0.021, 0.005, 0.0006), C.mahogany, sx + 0.017, 0, sz + 5 * 0.0068 + 0.002);
   p.addMesh(MAT.brass_aged, uvSphere(0.0024, 0.0028, 0.0024, 10, 8), C.brass, sx + 0.017, 0.0225, sz + 5 * 0.0068 + 0.002);
 
-  // Tall Victorian Grandfather Longcase Clock (right back corner, x = +0.041, z = -0.034)
-  const cx = 0.041, cz = -0.034;
+  // Tall Victorian Grandfather Longcase Clock in back-right corner (after 1.85x -> cx = +0.104, cz = -0.0925)
+  const cx = 0.056, cz = -0.05;
   p.addMesh(MAT.wood_dark, bevelBox(0.015, 0.01, 0.012, 0.0006), C.walnutDark, cx, 0, cz);
-  // Recessed waist case (open pendulum window in front!)
   p.addMesh(MAT.wood_dark, bevelBox(0.012, 0.024, 0.004, 0.0004), C.ebony, cx, 0.01, cz - 0.003);
   for (const lx of [-1, 1]) p.addMesh(MAT.wood_dark, bevelBox(0.0028, 0.024, 0.01, 0.0004), C.walnut, cx + lx * 0.005, 0.01, cz);
-  // Clock hood + brass dial face + broken-arch pediment
   p.addMesh(MAT.wood_dark, bevelBox(0.016, 0.016, 0.013, 0.0006), C.mahogany, cx, 0.034, cz);
   p.addMesh(MAT.brass_aged, cylY(0.0052, 0.0052, 0.0012, 16), C.brass, cx, 0.042, cz + 0.0066, Math.PI / 2, 0, 0);
   p.addMesh(MAT.bone_wax, cylY(0.0042, 0.0042, 0.0014, 16), C.bone, cx, 0.042, cz + 0.0067, Math.PI / 2, 0, 0);
   p.addMesh(MAT.wood_dark, bevelBox(0.001, 0.0032, 0.0008, 0.0001), C.ink, cx, 0.042, cz + 0.0075);
-  p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.002, 0], [0.0008, 0.004], [0, 0.005]], 10), C.brass, cx, 0.05, cz);
-  bakePartAO(p, 0.024, 0, 0.55);
+  p.addMesh(MAT.wood_dark, bevelBox(0.0026, 0.0008, 0.0008, 0.0001), C.ink, cx + 0.001, 0.042, cz + 0.0075, 0, 0, 0.35);
+  for (const px of [-0.006, 0, 0.006]) {
+    p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.002, 0], [0.0008, 0.004], [0, 0.005]], 10), C.brass, cx + px, 0.05, cz);
+  }
+  p.scaleShift(1.85);
+  bakePartAO(p, 0.044, 0, 0.55);
   return p;
 }
 
@@ -1262,36 +1296,40 @@ function buildHallPendulum() {
   // Brass pendulum rod & bob hanging from pivot y = 0 downward so rotation.z swings it inside the grandfather clock!
   p.addMesh(MAT.brass_aged, bevelBox(0.0008, 0.016, 0.0006, 0.0001), C.brass, 0, -0.016, 0);
   p.addMesh(MAT.brass_aged, uvSphere(0.003, 0.003, 0.0012, 12, 10), C.brass, 0, -0.0165, 0);
+  p.scaleShift(1.85);
   return p;
 }
 
 function buildRoomCellar() {
   const p = new PartBuilder('room_cellar');
-  // Stone Arch Pilasters against back wall + 3 Hooped Oak Wine Casks on Timber Cradles + Slatted Crates
+  // Stone Arch Pilasters against back wall + 3 Hooped Oak Wine Casks + Iron-Banded Trunk + Slatted Crate
   for (const sx of [-1, 1]) {
-    p.addMesh(MAT.stone_slate, bevelBox(0.01, 0.038, 0.009, 0.0008), C.stone, sx * 0.042, 0, -0.039);
+    p.addMesh(MAT.stone_slate, bevelBox(0.01, 0.038, 0.009, 0.0008), C.stone, sx * 0.054, 0, -0.056);
   }
   const barrel = lathe([
     [0, -0.011], [0.0075, -0.011], [0.0098, -0.005], [0.0104, 0], [0.0098, 0.005], [0.0075, 0.011], [0, 0.011],
   ], 16, 46);
   const hoop = lathe([[0.0096, -0.001], [0.0106, -0.001], [0.0106, 0.001], [0.0096, 0.001]], 16, 42);
-  for (const [bx, by, bz, yaw] of [[-0.026, 0.012, -0.024, 0.08], [0.0, 0.012, -0.026, -0.05], [-0.013, 0.029, -0.025, 0.02]]) {
+  for (const [bx, by, bz, yaw] of [[-0.038, 0.012, -0.044, 0.08], [-0.012, 0.012, -0.046, -0.05], [-0.025, 0.029, -0.045, 0.02]]) {
     if (by < 0.015) p.addMesh(MAT.wood_dark, bevelBox(0.018, 0.004, 0.018, 0.0005), C.walnutDark, bx, 0, bz, 0, yaw, 0);
     p.addMesh(MAT.wood_dark, barrel, C.oak, bx, by, bz, Math.PI / 2, yaw, 0);
     for (const hz of [-0.006, 0.006]) p.addMesh(MAT.iron_cast, hoop, C.iron, bx + Math.sin(yaw) * hz, by, bz + Math.cos(yaw) * hz, Math.PI / 2, yaw, 0);
     p.addMesh(MAT.brass_aged, cylY(0.0011, 0.0008, 0.004, 8), C.brass, bx, by - 0.002, bz + 0.012, Math.PI / 2, 0, 0);
   }
-  // Slatted wooden crate + brass cellar lantern on top
-  p.addMesh(MAT.wood_dark, bevelBox(0.02, 0.016, 0.018, 0.0006), C.pine, 0.03, 0, -0.018, 0, -0.22, 0);
-  p.addMesh(MAT.iron_cast, lathe([[0, 0], [0.0038, 0], [0.0032, 0.008], [0.0045, 0.009], [0, 0.012]], 10), C.iron, 0.03, 0.016, -0.018);
-  bakePartAO(p, 0.024, 0, 0.58);
+  // Iron-strapped oak steamer trunk + slatted crate + cellar lantern (back-right)
+  p.addMesh(MAT.wood_dark, bevelBox(0.024, 0.013, 0.015, 0.0008), C.mahogany, 0.018, 0, -0.048);
+  for (const ix of [-0.007, 0.007]) p.addMesh(MAT.iron_cast, bevelBox(0.0018, 0.0135, 0.016, 0.0003), C.iron, 0.018 + ix, 0, -0.048);
+  p.addMesh(MAT.brass_aged, bevelBox(0.003, 0.003, 0.0012, 0.0002), C.brass, 0.018, 0.007, -0.0402);
+  p.addMesh(MAT.wood_dark, bevelBox(0.02, 0.016, 0.018, 0.0006), C.pine, 0.044, 0, -0.04, 0, -0.22, 0);
+  p.addMesh(MAT.iron_cast, lathe([[0, 0], [0.0038, 0], [0.0032, 0.008], [0.0045, 0.009], [0, 0.012]], 10), C.iron, 0.044, 0.016, -0.04);
+  p.scaleShift(1.85);
+  bakePartAO(p, 0.044, 0, 0.58);
   return p;
 }
 
 // ------------------------------------------------------------------ 7. Floating 3D Spirit Clue Objects (1.5 m Ring)
 function buildClueShard() {
   const p = new PartBuilder('clue_shard');
-  // Jagged fractured antique-mirror shard in a tarnished pewter/lead frame (~38 cm across at 1.5 m)
   const poly = [
     [-0.15, -0.17], [0.06, -0.19], [0.18, -0.09], [0.16, 0.11], [0.03, 0.19], [-0.14, 0.15], [-0.19, -0.01],
   ];
@@ -1300,7 +1338,6 @@ function buildClueShard() {
   const frameOuter = poly.map(([x, y]) => [x * 1.05, y * 1.05]);
   p.addMesh(MAT.silver_tarnished, extrude2D(frameOuter, 0.01, 0.0025), C.steel, 0, 0, -0.009);
   p.addMesh(MAT.glass_spectral, extrude2D(poly.map(([x, y]) => [x * 0.94, y * 0.94]), 0.006, 0.0015), C.mirror, 0, 0, -0.002, 0, 0, 0, 1, 1, 1, 0.72);
-  // Brass suspension chain loop at top apex
   p.addMesh(MAT.brass_aged, tube([
     [-0.02, 0.17, -0.006, 0.005], [0, 0.23, -0.006, 0.005], [0.02, 0.17, -0.006, 0.005],
   ], 8), C.brassDark);
@@ -1310,11 +1347,10 @@ function buildClueShard() {
 
 function buildCluePlate() {
   const p = new PartBuilder('clue_plate');
-  // Rusted Victorian Cast-Iron & Enamel Street-Name Plate (`9 MARROW LANE`, ~64 cm x 17 cm at 1.5 m)
   const W = 0.64, H = 0.17;
   p.addMesh(MAT.iron_cast, bevelBox(W + 0.03, H + 0.03, 0.016, 0.004), C.ironRust, 0, -(H + 0.03) / 2, -0.012);
   p.addMesh(MAT.iron_cast, bevelBox(W, H, 0.012, 0.003), C.ink, 0, -H / 2, -0.005);
-  // 4 Raised Brass Corner Rivets & Top/Bottom Moulded Bars
+  for (const sy of [-1, 1]) p.addMesh(MAT.brass_aged, bevelBox(W - 0.02, 0.008, 0.008, 0.002), C.brassDark, 0, sy * (H * 0.44), -0.001);
   for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
     p.addMesh(MAT.brass_aged, uvSphere(0.011, 0.011, 0.008, 12, 8), C.brassDark, sx * (W * 0.47), sy * (H * 0.38), 0.002);
   }
@@ -1324,15 +1360,14 @@ function buildCluePlate() {
 
 function buildClueSlip() {
   const p = new PartBuilder('clue_slip');
-  // Aged Telegraph / Hotel Telephone Slip impaled on a Tarnished Brass Spindle Spike (`555-0142`)
   const W = 0.62, H = 0.165;
   const sheet = surfaceSheet(16, 6, false, (u, v) => ({
     x: (u - 0.5) * W,
     y: (0.5 - v) * H,
     z: -0.006 - Math.sin(u * Math.PI * 2) * 0.008 - Math.pow(Math.max(0, u - 0.78) * 4, 2) * 0.018,
   }));
-  p.addMesh(MAT.bone_wax, sheet, C.ebony); // dark charcoal/crimson note card backing
-  // Brass desk spindle spike piercing top-center of the slip!
+  p.addMesh(MAT.bone_wax, sheet, C.ebony);
+  p.addMesh(MAT.fabric_velvet, cylY(0.022, 0.022, 0.006, 14), C.alarm, -W * 0.42, -H * 0.25, -0.002, Math.PI / 2, 0, 0);
   p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.028, 0], [0.02, 0.012], [0.006, 0.025], [0, 0.025]], 16), C.brassDark, 0, 0.055, -0.035, Math.PI / 2, 0, 0);
   p.addMesh(MAT.silver_tarnished, cylY(0.0035, 0.0006, 0.075, 10), C.silver, 0, 0.055, -0.02, Math.PI / 2, 0, 0);
   bakePartAO(p, 0.08, null, 0.4);
@@ -1341,9 +1376,9 @@ function buildClueSlip() {
 
 function buildClueCalendar() {
   const p = new PartBuilder('clue_calendar');
-  // Carved Mahogany Wall-Calendar Backboard + Twin Brass Binder Rings + Torn Paper Mount (`12 MARCH 1931`)
   const W = 0.33, H = 0.41;
   p.addMesh(MAT.wood_dark, bevelBox(W, H, 0.018, 0.005), C.walnutDark, 0, -H / 2, -0.016);
+  p.addMesh(MAT.brass_aged, bevelBox(W + 0.012, 0.016, 0.022, 0.004), C.brassDark, 0, H * 0.48, -0.014);
   p.addMesh(MAT.brass_aged, bevelBox(W - 0.03, 0.028, 0.012, 0.003), C.brassDark, 0, H * 0.41, -0.006);
   for (const sx of [-1, 1]) {
     const ring = tube(Array.from({ length: 13 }, (_, i) => {

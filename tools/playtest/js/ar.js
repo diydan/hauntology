@@ -18,10 +18,11 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const easeOutBack = (t) => { const c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
 
 // ------------------------------------------------------------------ sample data
-const W = 0.115, D = 0.095, WALL = 0.0045;
-const TRAY_Z = D + 0.017 + 0.0225 + 0.002; // the middle of the tray in front of the board, where the line-up stands
-const SHELF_X = 1.5 * W + 0.038; // side curio shelf holding the six canonical Relics
-const LIFT = 0.042; // how high a carried effigy hangs above its sliding plinth
+const W = 0.3, D = 0.25, WALL = 0.0075;
+const TRAY_Z = D + 0.115; // generous courtyard gap in front of the house where the 6-Suspect line-up stands
+const LINEUP_SPACING = 0.142;
+const SHELF_X = 1.5 * W + 0.122; // wide side curio shelf holding the six canonical Relics
+const LIFT = 0.062; // how high a carried effigy hangs above its sliding plinth
 const ROOMS = [
   { id: 'library', name: 'Library', c: 0, r: 0, floor: 0x3b2a1e, rug: 0x5c1d22, kind: 'wood' },
   { id: 'study', name: 'Study', c: 1, r: 0, floor: 0x462a20, rug: 0x243b2f, kind: 'wood' },
@@ -51,16 +52,16 @@ const RELICS = [
   { id: 'bell', mesh: 'relic_bell', name: 'The Séance Bell', col: 1, row: 2, room: 'kitchen', note: 'Turned walnut baluster handle over aged brass; its iron clapper trembles on its own.' },
 ];
 const PAWNS = [
-  { id: 'seat1', name: 'Your pawn (active turn)', room: 'study', dx: -0.032, dz: 0.018, collar: 0xe0a43a, active: true, ghost: false, note: 'Carved lantern pawn ringed in brass — it is your turn to act.' },
-  { id: 'seat2', name: 'Ada’s pawn', room: 'library', dx: 0.033, dz: 0.02, collar: 0x76b8a6, active: false, ghost: false, note: 'A living investigator searching the upper rooms.' },
-  { id: 'seat3', name: 'Miles’s pawn', room: 'hall', dx: 0.016, dz: 0.026, collar: 0xc45c4b, active: false, ghost: false, note: 'Standing just inside the front threshold of the Hall.' },
-  { id: 'seat4', name: 'Poltergeist pawn', room: 'cellar', dx: -0.024, dz: 0.02, collar: 0x7e8288, active: false, ghost: true, note: 'Fractured monochrome ash-stone. A fallen investigator who now haunts the house.' },
+  { id: 'seat1', name: 'Your pawn (active turn)', room: 'study', dx: -0.102, dz: 0.07, collar: 0xe0a43a, active: true, ghost: false, note: 'Carved lantern pawn ringed in brass — it is your turn to act.' },
+  { id: 'seat2', name: 'Ada’s pawn', room: 'library', dx: 0.102, dz: 0.068, collar: 0x76b8a6, active: false, ghost: false, note: 'A living investigator searching the upper rooms.' },
+  { id: 'seat3', name: 'Miles’s pawn', room: 'hall', dx: 0.055, dz: 0.085, collar: 0xc45c4b, active: false, ghost: false, note: 'Standing just inside the front threshold of the Hall.' },
+  { id: 'seat4', name: 'Poltergeist pawn', room: 'cellar', dx: -0.1, dz: 0.07, collar: 0x7e8288, active: false, ghost: true, note: 'Fractured monochrome ash-stone. A fallen investigator who now haunts the house.' },
 ];
 const NOTES = [
   { room: 'cellar', text: '✕ ruled out', color: '#ff9a9a', tilt: -0.055 },
   { room: 'kitchen', text: '? maybe', color: '#f2c879', tilt: 0.05 },
 ];
-const GHOST_Y = 0.085; // how high her feet hover above the floor
+const GHOST_Y = 0.115; // how high her feet hover above the floor
 // Clues: a = turn from straight ahead (radians, positive is to your right), e = look up (positive) or down.
 const CLUES = [
   { id: 'pin1', kind: 'pin', n: 1, text: '4', title: 'Code piece 1 of 4', a: -0.95, e: 0.12 },
@@ -76,7 +77,7 @@ const CLUE_R = 1.5; // metres from you
 const GHOST_TOUR = ['hall', 'kitchen', 'library', 'study', 'nursery', 'cellar'];
 
 // ------------------------------------------------------------------ state
-const S = { cam: false, tilt: false, notes: true, yaw: Number(q.get('yaw')) || 0, pitch: q.has('pitch') ? Number(q.get('pitch')) : -0.88,
+const S = { cam: false, tilt: false, notes: true, flat: q.get('flat') === '1', yaw: Number(q.get('yaw')) || 0, pitch: q.has('pitch') ? Number(q.get('pitch')) : -0.82,
   sel: null, dev: null, lastDrag: -1e9 };
 
 // ------------------------------------------------------------------ renderer & lighting
@@ -86,7 +87,7 @@ renderer.setClearColor(0x000000, 0);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.18;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, 1, 0.02, 12);
+const camera = new THREE.PerspectiveCamera(84, 1, 0.02, 12);
 scene.add(camera);
 const anchor = new THREE.Group();
 scene.add(anchor);
@@ -235,56 +236,56 @@ board.add(kitLayer);
 const animProps = { horse: null, pendulum: null, frost: null, frostMats: [], turnRing: null, hearthLight: null, studyLight: null };
 
 (function buildBoard() {
-  const slabW = 3 * W + 0.036, slabD = 2 * D + 0.036;
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.014, slabD), std(0x2b1a10, { roughness: 0.55 }));
-  slab.position.y = -0.007; fallbackShell.add(slab);
-  const tray = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.012, 0.046), std(0x2b1a10, { roughness: 0.55 }));
-  tray.position.set(0, -0.006, TRAY_Z); fallbackShell.add(tray);
-  const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.066, 0.014, 2 * D + 0.024), std(0x2b1a10, { roughness: 0.55 }));
-  shelf.position.set(SHELF_X, -0.007, 0); fallbackShell.add(shelf);
+  const slabW = 3 * W + 0.07, slabD = 2 * D + 0.07;
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.016, slabD), std(0x2b1a10, { roughness: 0.55 }));
+  slab.position.y = -0.008; fallbackShell.add(slab);
+  const tray = new THREE.Mesh(new THREE.BoxGeometry(slabW, 0.014, 0.09), std(0x2b1a10, { roughness: 0.55 }));
+  tray.position.set(0, -0.007, TRAY_Z); fallbackShell.add(tray);
+  const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.016, 2 * D + 0.055), std(0x2b1a10, { roughness: 0.55 }));
+  shelf.position.set(SHELF_X, -0.008, 0); fallbackShell.add(shelf);
 
-  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(0.74, 0.46), new THREE.MeshBasicMaterial({
-    map: canvasTex(256, 180, (g, w, h) => { g.shadowColor = 'rgba(0,0,0,.95)'; g.shadowBlur = 34; g.fillStyle = '#000'; g.fillRect(w * 0.18, h * 0.2, w * 0.64, h * 0.58); }),
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.72, 1.12), new THREE.MeshBasicMaterial({
+    map: canvasTex(256, 180, (g, w, h) => { g.shadowColor = 'rgba(0,0,0,.95)'; g.shadowBlur = 34; g.fillStyle = '#000'; g.fillRect(w * 0.16, h * 0.18, w * 0.68, h * 0.62); }),
     transparent: true, depthWrite: false, opacity: 0.64, toneMapped: false }));
-  shadow.rotation.x = -Math.PI / 2; shadow.position.set(0.028, -0.0162, 0.02); board.add(shadow);
+  shadow.rotation.x = -Math.PI / 2; shadow.position.set(0.07, -0.0205, 0.055); board.add(shadow);
 
   for (const r of ROOMS) {
     const c = roomCenter(r); roomPos[r.id] = c;
     const fm = std(0xffffff, { map: floorTex(r), roughness: r.kind === 'slate' ? 0.92 : 0.78, metalness: 0.04, emissive: 0x000000 });
-    const f = new THREE.Mesh(new THREE.BoxGeometry(W - 0.001, 0.004, D - 0.001), fm);
+    const f = new THREE.Mesh(new THREE.BoxGeometry(W - 0.0015, 0.004, D - 0.0015), fm);
     f.position.set(c.x, 0.002, c.z); f.userData = { type: 'room', id: r.id }; board.add(f); floors[r.id] = f; hit.push(f);
     if (r.kind !== 'slate') {
-      const rug = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.66, D * 0.52), std(0xffffff, { map: rugTex(r.rug), transparent: true, roughness: 0.95 }));
-      rug.rotation.x = -Math.PI / 2; rug.position.set(c.x, 0.0042, c.z - 0.003); board.add(rug);
+      const rug = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.62, D * 0.48), std(0xffffff, { map: rugTex(r.rug), transparent: true, roughness: 0.95 }));
+      rug.rotation.x = -Math.PI / 2; rug.position.set(c.x, 0.0042, c.z + 0.015); board.add(rug);
     }
-    const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.066, 0.0165), new THREE.MeshBasicMaterial({ map: labelTex(r.name), transparent: true, depthWrite: false }));
-    lab.rotation.x = -Math.PI / 2; lab.position.set(c.x, 0.0046, c.z + (r.r === 0 ? 0.016 : D / 2 - 0.012)); board.add(lab);
+    const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.132, 0.033), new THREE.MeshBasicMaterial({ map: labelTex(r.name), transparent: true, depthWrite: false }));
+    lab.rotation.x = -Math.PI / 2; lab.position.set(c.x, 0.0046, c.z + (r.r === 0 ? 0.085 : D / 2 - 0.025)); board.add(lab);
   }
 
   // Warm miniature candlelight inside the Study & glowing coal grate in the Kitchen
   const st = roomPos.study, kt = roomPos.kitchen;
-  const studyLight = new THREE.PointLight(0xffb464, 0.0032, 0.24, 2);
-  studyLight.position.set(st.x + 0.02, 0.052, st.z - 0.028); board.add(studyLight); animProps.studyLight = studyLight;
-  const hearthLight = new THREE.PointLight(0xff6e38, 0.0028, 0.22, 2);
-  hearthLight.position.set(kt.x - 0.036, 0.022, kt.z - 0.01); board.add(hearthLight); animProps.hearthLight = hearthLight;
+  const studyLight = new THREE.PointLight(0xffb464, 0.0055, 0.52, 2);
+  studyLight.position.set(st.x + 0.038, 0.088, st.z - 0.095); board.add(studyLight); animProps.studyLight = studyLight;
+  const hearthLight = new THREE.PointLight(0xff6e38, 0.0048, 0.48, 2);
+  hearthLight.position.set(kt.x - 0.094, 0.034, kt.z - 0.058); board.add(hearthLight); animProps.hearthLight = hearthLight;
 
-  // Six canonical Relics arranged in the six velvet alcoves of the side Relic Shelf
+  // Six canonical Relics arranged in the six wide-spaced velvet alcoves of the side Relic Shelf
   const gold = std(0xc8a44a, { metalness: 0.85, roughness: 0.3, emissive: 0x241800 });
   for (const rl of RELICS) {
-    const rx = SHELF_X - 0.014 + rl.col * 0.026, rz = (rl.row - 1) * 0.062, baseY = 0.0045 + rl.col * 0.0035;
+    const rx = SHELF_X - 0.039 + rl.col * 0.078, rz = (rl.row - 1) * 0.168, baseY = 0.0068 + rl.col * 0.0055;
     const g = new THREE.Group(); g.position.set(rx, baseY, rz); g.userData = { type: 'relic', id: rl.id };
     const tokenSlot = new THREE.Group(); g.add(tokenSlot);
-    const mover = new THREE.Group(); mover.position.y = 0.009; g.add(mover);
-    const fb = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.006, 0.014, 12), gold); fb.name = 'fallback'; mover.add(fb);
+    const mover = new THREE.Group(); mover.position.y = 0.013; g.add(mover);
+    const fb = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.01, 0.024, 12), gold); fb.name = 'fallback'; mover.add(fb);
     if (rl.id === 'wax_hand') {
-      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.0022, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffc46b }));
-      flame.scale.y = 1.75; flame.position.set(0, 0.035, 0); flame.name = 'flame'; mover.add(flame);
-      const light = new THREE.PointLight(0xffa850, 0.0026, 0.22, 2); light.position.set(0, 0.038, 0); light.name = 'light'; mover.add(light);
+      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.0036, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffc46b }));
+      flame.scale.y = 1.75; flame.position.set(0, 0.058, 0); flame.name = 'flame'; mover.add(flame);
+      const light = new THREE.PointLight(0xffa850, 0.0046, 0.38, 2); light.position.set(0, 0.062, 0); light.name = 'light'; mover.add(light);
     }
-    const halo = new THREE.Mesh(new THREE.PlaneGeometry(0.026, 0.026), new THREE.MeshBasicMaterial({ map: radialTex('255,198,108'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.65 }));
-    halo.rotation.x = -Math.PI / 2; halo.position.y = 0.0048; g.add(halo);
-    const hitbox = new THREE.Mesh(new THREE.SphereGeometry(0.0135, 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
-    hitbox.position.y = 0.018; hitbox.userData = g.userData; g.add(hitbox); hit.push(hitbox);
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(0.052, 0.052), new THREE.MeshBasicMaterial({ map: radialTex('255,198,108'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.65 }));
+    halo.rotation.x = -Math.PI / 2; halo.position.y = 0.008; g.add(halo);
+    const hitbox = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ visible: false }));
+    hitbox.position.y = 0.03; hitbox.userData = g.userData; g.add(hitbox); hit.push(hitbox);
     g.userData.mover = mover; g.userData.tokenSlot = tokenSlot; relicGroups.push(g); board.add(g);
   }
 
@@ -292,14 +293,14 @@ const animProps = { horse: null, pendulum: null, frost: null, frostMats: [], tur
   for (const pw of PAWNS) {
     const c = roomPos[pw.room], g = new THREE.Group();
     g.position.set(c.x + pw.dx, 0.004, c.z + pw.dz); g.userData = { type: 'pawn', id: pw.id };
-    const fb = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.009, 0.036, 14), std(pw.collar, { roughness: pw.ghost ? 0.9 : 0.5 }));
-    fb.position.y = 0.018; fb.name = 'fallback'; g.add(fb);
+    const fb = new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.012, 0.048, 14), std(pw.collar, { roughness: pw.ghost ? 0.9 : 0.5 }));
+    fb.position.y = 0.024; fb.name = 'fallback'; g.add(fb);
     if (!pw.ghost) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0074, 0.0013, 8, 18), std(pw.collar, { roughness: 0.35, metalness: 0.25, emissive: pw.collar, emissiveIntensity: 0.18 }));
-      ring.rotation.x = Math.PI / 2; ring.position.y = 0.0245; g.add(ring);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.0095, 0.0016, 8, 18), std(pw.collar, { roughness: 0.35, metalness: 0.25, emissive: pw.collar, emissiveIntensity: 0.18 }));
+      ring.rotation.x = Math.PI / 2; ring.position.y = 0.0315; g.add(ring);
     }
-    const hitbox = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.048, 8), new THREE.MeshBasicMaterial({ visible: false }));
-    hitbox.position.y = 0.024; hitbox.userData = g.userData; g.add(hitbox); hit.push(hitbox);
+    const hitbox = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.064, 8), new THREE.MeshBasicMaterial({ visible: false }));
+    hitbox.position.y = 0.032; hitbox.userData = g.userData; g.add(hitbox); hit.push(hitbox);
     pawnGroups.push({ pw, g }); board.add(g);
   }
 })();
@@ -319,31 +320,31 @@ async function buildFigures() {
   const threadTex = canvasTex(8, 96, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(159,232,208,0)'); gr.addColorStop(0.7, 'rgba(180,215,205,.38)'); gr.addColorStop(1, 'rgba(215,232,226,.78)'); g.fillStyle = gr; g.fillRect(w * 0.25, 0, w * 0.5, h); });
   await Promise.all(SUSPECTS.map(async (s) => {
     const tex = await loadTex(`art/${s.id}.webp`);
-    const h = 0.105, w = h * (tex.image.width / tex.image.height), topY = h + 0.0046;
+    const h = 0.138, w = h * (tex.image.width / tex.image.height), topY = h + 0.0062;
     const g = new THREE.Group();
-    const lp = lineupPos(SUSPECTS.indexOf(s), SUSPECTS.length, 0.062, TRAY_Z); g.position.set(lp.x, 0, lp.z);
+    const lp = lineupPos(SUSPECTS.indexOf(s), SUSPECTS.length, LINEUP_SPACING, TRAY_Z); g.position.set(lp.x, 0, lp.z);
     const base = new THREE.Group(); base.position.y = 0.0015;
-    const fbDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.0125, 0.0135, 0.003, 24), std(0x1a1410, { roughness: 0.4, metalness: 0.4 }));
+    const fbDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.021, 0.004, 24), std(0x1a1410, { roughness: 0.4, metalness: 0.4 }));
     fbDisc.name = 'fallback'; base.add(fbDisc); g.add(base);
-    const stain = new THREE.Mesh(new THREE.PlaneGeometry(0.068, 0.068), new THREE.MeshBasicMaterial({ map: stainTex, transparent: true, depthWrite: false, opacity: 0, toneMapped: false }));
+    const stain = new THREE.Mesh(new THREE.PlaneGeometry(0.104, 0.104), new THREE.MeshBasicMaterial({ map: stainTex, transparent: true, depthWrite: false, opacity: 0, toneMapped: false }));
     stain.rotation.x = -Math.PI / 2; stain.position.y = 0.0012; g.add(stain);
-    const geo = new THREE.PlaneGeometry(w, h, 4, 18); geo.translate(0, h / 2 + 0.0046, 0); // slots cleanly into the brass clasp jaws of suspect_plinth
+    const geo = new THREE.PlaneGeometry(w, h, 4, 18); geo.translate(0, h / 2 + 0.0062, 0); // slots cleanly into the brass clasp jaws of suspect_plinth
     const plane = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.04, side: THREE.DoubleSide, color: 0xdcd7cf, toneMapped: false }));
     plane.userData = { type: 'suspect', id: s.id }; g.add(plane); hit.push(plane);
-    const threadGeo = new THREE.PlaneGeometry(0.0011, 0.26); threadGeo.translate(0, 0.13, 0);
+    const threadGeo = new THREE.PlaneGeometry(0.0014, 0.31); threadGeo.translate(0, 0.155, 0);
     const thread = new THREE.Mesh(threadGeo, new THREE.MeshBasicMaterial({ map: threadTex, transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0, toneMapped: false }));
     thread.position.y = topY - 0.002; thread.visible = false; g.add(thread); // taut marionette filament rising into the dark while held
-    const ring = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.05), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false, opacity: 0 }));
+    const ring = new THREE.Mesh(new THREE.PlaneGeometry(0.078, 0.078), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false, opacity: 0 }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.0035; g.add(ring);
     const badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: pillTex('maybe here', '#f2c879'), transparent: true, depthTest: false }));
-    badge.scale.set(0.06, 0.015, 1); badge.position.y = topY + 0.014; badge.renderOrder = 9; badge.visible = false; g.add(badge); // shows only while you have marked this character
+    badge.scale.set(0.092, 0.023, 1); badge.position.y = topY + 0.019; badge.renderOrder = 9; badge.visible = false; g.add(badge); // shows only while you have marked this character
     board.add(g);
     standees.push({ id: s.id, s, g, base, stain, thread, plane, ring, badge, w, h, topY, orig: geo.attributes.position.array.slice(),
-      mode: 'idle', tx: lp.x, tz: lp.z, vy: 0, rig: null, phi: 0, u: 0, wLag: 0, holdT: 0, pallor: 0, settleT: 0 });
+      mode: 'idle', tx: lp.x, tz: lp.z, vy: 0, rig: null, phi: 0, u: 0, wLag: 0, holdT: 0, pallor: 0, fallT: 0, settleT: 0 });
   }));
 
   const wt = await whisperTex;
-  const gh = 0.2, gw = gh * (wt.image.width / wt.image.height);
+  const gh = 0.265, gw = gh * (wt.image.width / wt.image.height);
   const group = new THREE.Group(); board.add(group);
   const geo = new THREE.PlaneGeometry(gw, gh); geo.translate(0, gh / 2, 0);
   const fade = canvasTex(4, 64, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#fff'); gr.addColorStop(0.62, '#fff'); gr.addColorStop(1, '#222'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
@@ -353,12 +354,12 @@ async function buildFigures() {
   const proxy = new THREE.Mesh(new THREE.PlaneGeometry(gw * 0.45, gh * 0.9), new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide }));
   proxy.position.y = gh / 2; proxy.userData = { type: 'ghost' }; plane.add(proxy); hit.push(proxy);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: radialTex('120,230,210'), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.55 }));
-  glow.scale.set(0.34, 0.34, 1); glow.position.y = gh * 0.55; glow.renderOrder = 4; group.add(glow);
-  const light = new THREE.PointLight(0x7fe0d0, 0.0055, 0.4, 2); light.position.y = gh * 0.5; group.add(light);
+  glow.scale.set(0.48, 0.48, 1); glow.position.y = gh * 0.55; glow.renderOrder = 4; group.add(glow);
+  const light = new THREE.PointLight(0x7fe0d0, 0.0085, 0.68, 2); light.position.y = gh * 0.5; group.add(light);
   const N = 70, pos = new Float32Array(N * 3), seed = [];
-  for (let i = 0; i < N; i++) seed.push({ a: Math.random() * 6.28, r: 0.015 + Math.random() * 0.07, s: 0.01 + Math.random() * 0.02, p: Math.random() });
+  for (let i = 0; i < N; i++) seed.push({ a: Math.random() * 6.28, r: 0.025 + Math.random() * 0.115, s: 0.01 + Math.random() * 0.02, p: Math.random() });
   const mgeo = new THREE.BufferGeometry(); mgeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  const mist = new THREE.Points(mgeo, new THREE.PointsMaterial({ size: 0.014, map: radialTex('170,240,225'), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+  const mist = new THREE.Points(mgeo, new THREE.PointsMaterial({ size: 0.019, map: radialTex('170,240,225'), transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
   mist.frustumCulled = false; group.add(mist);
   ghost = { group, plane, glow, light, mist, seed, pos, shroudMats: [], from: new THREE.Vector3(), to: new THREE.Vector3(), t0: performance.now() / 1000, room: 'hall', tourIdx: 0 };
   const h0 = roomPos.hall; group.position.set(h0.x, GHOST_Y, h0.z); ghost.from.copy(group.position); ghost.to.copy(group.position);
@@ -369,11 +370,11 @@ const notesGroup = new THREE.Group(); board.add(notesGroup);
 const noteSlots = [];
 for (const n of NOTES) {
   const c = roomCenter(roomAt(n.room));
-  const slot = new THREE.Group(); slot.position.set(c.x, 0.004, c.z + 0.01); slot.rotation.z = n.tilt || 0; notesGroup.add(slot);
+  const slot = new THREE.Group(); slot.position.set(c.x + 0.102, 0.004, c.z + 0.008); slot.rotation.z = n.tilt || 0; notesGroup.add(slot);
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: pillTex(n.text, n.color), transparent: true, depthTest: false }));
-  sp.position.set(0, 0.144, 0.003); sp.scale.set(0.074, 0.0185, 1); sp.renderOrder = 9; slot.add(sp);
-  const stem = new THREE.Mesh(new THREE.BoxGeometry(0.0009, 0.15, 0.0009), new THREE.MeshBasicMaterial({ color: new THREE.Color(n.color), transparent: true, opacity: 0.55, depthWrite: false }));
-  stem.position.set(0, 0.075, 0); stem.name = 'fallback'; slot.add(stem);
+  sp.position.set(0, 0.203, 0.004); sp.scale.set(0.104, 0.026, 1); sp.renderOrder = 9; slot.add(sp);
+  const stem = new THREE.Mesh(new THREE.BoxGeometry(0.0012, 0.215, 0.0012), new THREE.MeshBasicMaterial({ color: new THREE.Color(n.color), transparent: true, opacity: 0.55, depthWrite: false }));
+  stem.position.set(0, 0.1075, 0); stem.name = 'fallback'; slot.add(stem);
   noteSlots.push(slot);
 }
 
@@ -525,7 +526,7 @@ function apply3DKit(kit) {
     const lens = kit.instantiate('inspected_lens');
     if (lens) {
       const c = roomPos[rid];
-      lens.position.set(c.x - 0.033, 0.0041, c.z + 0.028);
+      lens.position.set(c.x - 0.095, 0.0041, c.z + 0.072);
       lens.rotation.y = rid === 'library' ? 0.52 : -0.68;
       notesGroup.add(lens);
     }
@@ -539,13 +540,13 @@ function apply3DKit(kit) {
   const horse = kit.instantiate('nursery_horse');
   if (horse) {
     const c = roomPos.nursery;
-    horse.position.set(c.x - 0.028, 0.004, c.z + 0.006); horse.rotation.y = 0.42;
+    horse.position.set(c.x - 0.085, 0.004, c.z - 0.055); horse.rotation.y = 0.42;
     kitLayer.add(horse); animProps.horse = horse;
   }
   const pendulum = kit.instantiate('hall_pendulum');
   if (pendulum) {
     const c = roomPos.hall;
-    pendulum.position.set(c.x + 0.041, 0.004 + 0.033, c.z - 0.031);
+    pendulum.position.set(c.x + 0.1036, 0.004 + 0.0615, c.z - 0.0925);
     kitLayer.add(pendulum); animProps.pendulum = pendulum;
   }
 
@@ -568,8 +569,8 @@ function apply3DKit(kit) {
 
 // ------------------------------------------------------------------ placing the board
 let placeT0 = -1;
-const pulse = new THREE.Mesh(new THREE.RingGeometry(0.19, 0.196, 64), new THREE.MeshBasicMaterial({ color: 0xb9a6ff, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
-pulse.rotation.x = -Math.PI / 2; pulse.position.y = -0.0155; board.add(pulse);
+const pulse = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.464, 64), new THREE.MeshBasicMaterial({ color: 0xb9a6ff, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
+pulse.rotation.x = -Math.PI / 2; pulse.position.y = -0.0175; board.add(pulse);
 const _f = new THREE.Vector3();
 let lastHeading = { x: 0, z: -1 };
 // Point the camera the way the phone points (tilt), or the way the Player dragged it. Placing must use the same aim the Player sees.
@@ -610,6 +611,7 @@ function select(hitData) {
     say(pw.name, pw.note);
   } else if (hitData.type === 'clue') { const o = clueObjs.find((x) => x.c.id === hitData.id); say(o.c.title, `It says ${o.c.text}.`); }
   else if (hitData.type === 'ghost') say('The Whisper', 'Draped in a spectral shroud that does not appear on the TV. Only your phone shows her.');
+  if (S.flat) renderFlat();
 }
 
 // ------------------------------------------------------------------ input: drag to look, tap to pick
@@ -660,7 +662,7 @@ function layout() { // where each character should stand: in the room it is mark
   [...standees].sort((a, b) => SUSPECTS.findIndex((x) => x.id === a.id) - SUSPECTS.findIndex((x) => x.id === b.id)).forEach((s) => {
     const r = marks[s.id] && roomAt(marks[s.id]);
     if (r) { const k = (count[r.id] = count[r.id] || 0); count[r.id]++; const c = roomPos[r.id], o = slotPos(k, W, D); s.tx = c.x + o.x; s.tz = c.z + o.z; }
-    else { const lp = lineupPos(SUSPECTS.findIndex((x) => x.id === s.id), SUSPECTS.length, 0.062, TRAY_Z); s.tx = lp.x; s.tz = lp.z; }
+    else { const lp = lineupPos(SUSPECTS.findIndex((x) => x.id === s.id), SUSPECTS.length, LINEUP_SPACING, TRAY_Z); s.tx = lp.x; s.tz = lp.z; }
   });
 }
 function refreshBadges() { standees.forEach((s) => { s.badge.visible = S.notes && !!marks[s.id]; }); }
@@ -680,7 +682,7 @@ function standeeAt(cx, cy) {
   const hits = ray.intersectObjects(standees.map((s) => s.plane), false);
   return hits.length ? standees.find((s) => s.plane === hits[0].object) : null;
 }
-const dropRing = new THREE.Mesh(new THREE.PlaneGeometry(0.056, 0.056), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0.92, map: canvasTex(128, 128, (g, w, h) => {
+const dropRing = new THREE.Mesh(new THREE.PlaneGeometry(0.092, 0.092), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0.92, map: canvasTex(128, 128, (g, w, h) => {
   const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w * 0.44);
   r.addColorStop(0, 'rgba(6,9,12,.85)'); r.addColorStop(0.75, 'rgba(10,18,18,.45)'); r.addColorStop(1, 'rgba(10,18,18,0)');
   g.fillStyle = r; g.fillRect(0, 0, w, h);
@@ -700,7 +702,7 @@ function startCarry(s, cx, cy) {
 }
 function moveCarry(cx, cy) {
   const P = fingerOnPlane(cx, cy, 0.004 + LIFT + carry.s.topY); if (!P) return;
-  carry.hx = clamp(P.x + carry.grabX, -1.5 * W - 0.02, 1.5 * W + 0.02); carry.hz = clamp(P.z + carry.grabZ, -D, TRAY_Z + 0.03);
+  carry.hx = clamp(P.x + carry.grabX, -1.5 * W - 0.05, 1.5 * W + 0.05); carry.hz = clamp(P.z + carry.grabZ, -D - 0.025, TRAY_Z + 0.065);
   const room = roomUnder(carry.hx, carry.hz);
   if ((room && room.id) !== (carry.hover && carry.hover.id)) { carry.hover = room; setHover(room); haptic(5); }
 }
@@ -708,14 +710,24 @@ function endCarry(cancelled) {
   const s = carry.s, room = cancelled ? (marks[s.id] && roomAt(marks[s.id])) : roomUnder(carry.hx, carry.hz);
   setHover(null);
   replaceMarks(applyDrop(marks, s.id, room ? room.id : null)); layout(); refreshBadges();
-  carry = null; s.vy = 0; s.settleT = 0;
-  if (reduced || !s.rig) { s.mode = 'idle'; s.rig = null; s.pallor = 0; s.g.position.set(s.tx, groundAt(s.tx, s.tz), s.tz); } else s.mode = 'falling'; // reduced motion: no fall, no wobble
-  haptic(30);
+  carry = null; s.vy = 0; s.fallT = 0; s.settleT = 0;
+  if (reduced || !s.rig) { s.mode = 'idle'; s.rig = null; s.pallor = 0; s.g.position.set(s.tx, groundAt(s.tx, s.tz), s.tz); } // reduced motion: no fall, no wobble
+  else {
+    // Snap g.position.y to the floorboards at the exact drop spot while keeping s.rig.p in board-space Y so stepChain
+    // drives the entire severed plummet cleanly to the floor with zero mid-air float or ice-skating slide.
+    s.g.position.y = groundAt(s.g.position.x, s.g.position.z);
+    const dir = SUSPECTS.indexOf(s.s) % 2 ? 1 : -1;
+    s.rig.p[0] += dir * 0.008; s.rig.p[2] += dir * 0.005; s.rig.p[4] += dir * 0.003; s.rig.p[6] += dir * 0.001;
+    s.rig.q[0] = s.rig.p[0]; s.rig.q[2] = s.rig.p[2];
+    s.thread.visible = false;
+    s.mode = 'falling';
+  }
+  haptic(14);
   select({ type: 'suspect', id: s.id });
 }
 function rigStep(s, dt, pinned, restoreK) { // dead-weight marionette step + 3D shroud deformation
   const g = s.g.position;
-  stepChain(s.rig, dt, { holdX: s.u, holdY: g.y + s.topY, pinned, restoreK, restTopX: s.u, restTopY: g.y + s.topY, floorY: groundAt(g.x, g.z) + 0.0046 });
+  stepChain(s.rig, dt, { holdX: s.u, holdY: g.y + s.topY, pinned, restoreK, restTopX: s.u, restTopY: g.y + s.topY, floorY: groundAt(g.x, g.z) + 0.0052 });
   const pos = s.plane.geometry.attributes.position; deformVertices(s.rig, s.orig, pos.array, s.topY, s.h, s.u, g.y, s.wLag); pos.needsUpdate = true;
 }
 function applyPallor(s, target, k) {
@@ -769,32 +781,41 @@ function updateStandee(s, t, dt) {
     } else s.plane.rotation.y = gazeYaw(s);
     return;
   }
-  if (s.mode === 'falling') { // dead drop: heavy plummet, zero rebound, crooked slump onto the floorboards
-    g.position.x += (s.tx - g.position.x) * ease(18); g.position.z += (s.tz - g.position.z) * ease(18);
-    stepMotionAxes(s, prevX, prevZ, dt, ease(10));
-    s.vy -= 8.5 * dt; g.position.y += s.vy * dt;
+  if (s.mode === 'falling') { // severed strings: plummet straight down at the release point and fold into the floorboards
+    s.fallT += dt;
     const floor = groundAt(g.position.x, g.position.z);
-    if (g.position.y <= floor) {
-      g.position.y = floor; s.vy = 0; s.mode = 'settle'; s.settleT = 0;
-      const slump = (SUSPECTS.indexOf(s.s) % 2 ? 1 : -1) * 0.0024; s.rig.p[2] += slump; s.rig.q[2] = s.rig.p[2];
-    }
-    applyPallor(s, 0.85, ease(8));
-    s.plane.rotation.z *= Math.max(0, 1 - dt * 12);
+    g.position.y = floor;
+    s.wLag *= Math.max(0, 1 - dt * 14);
+    s.plane.rotation.z *= Math.max(0, 1 - dt * 14);
+    applyPallor(s, 0.96, ease(12));
     rigStep(s, dt, false, 0);
+    if (s.rig.p[1] <= floor + 0.018 || s.fallT >= 0.24) {
+      s.mode = 'settle'; s.settleT = 0;
+      haptic([24, 18, 10]);
+    }
     return;
   }
-  // settle: brief dead stillness on the floorboards, then drawn upright head-first as if hauled by unseen strings
+  // settle: motionless heap on the floorboards (~0.38 s), then ratcheted string-haul head-first back upright
   s.settleT += dt;
-  g.position.x += (s.tx - g.position.x) * ease(16); g.position.z += (s.tz - g.position.z) * ease(16); g.position.y = groundAt(g.position.x, g.position.z);
-  stepMotionAxes(s, prevX, prevZ, dt, ease(12));
-  s.wLag *= Math.max(0, 1 - dt * 10);
-  const rise = clamp((s.settleT - 0.16) / 0.68, 0, 1), restoreK = rise * rise * (3 - 2 * rise);
-  creepPhi(s, ease(rise > 0.15 ? 4.5 : 0.4));
-  s.plane.rotation.z *= Math.max(0, 1 - dt * 10);
-  applyPallor(s, 1 - rise, ease(6));
+  const u = clamp((s.settleT - 0.38) / 0.85, 0, 1);
+  const restoreK = u <= 0 ? 0
+    : u < 0.26 ? (u / 0.26) * 0.24
+    : u < 0.42 ? 0.24 + ((u - 0.26) / 0.16) * 0.04
+    : Math.min(1, 0.28 + ((u - 0.42) / 0.58) * 0.72);
+  if (u > 0.25) {
+    const glide = ease(12 * Math.min(1, (u - 0.25) / 0.45));
+    g.position.x += (s.tx - g.position.x) * glide;
+    g.position.z += (s.tz - g.position.z) * glide;
+    stepMotionAxes(s, prevX, prevZ, dt, ease(12));
+  }
+  g.position.y = groundAt(g.position.x, g.position.z);
+  s.wLag *= Math.max(0, 1 - dt * 12);
+  if (u > 0.15) creepPhi(s, ease(u > 0.45 ? 4.8 : 0.85));
+  s.plane.rotation.z = u > 0.26 && u < 0.42 ? Math.sin(s.settleT * 47) * 0.014 : s.plane.rotation.z * Math.max(0, 1 - dt * 12);
+  applyPallor(s, u <= 0 ? 0.96 : 1 - Math.pow(u, 1.35), ease(u <= 0 ? 10 : 7));
   rigStep(s, dt, false, restoreK);
   const { off, speed } = chainUnrest(s.rig, s.u, g.position.y + s.topY);
-  if (s.settleT > 0.9 && off < 0.0012 && speed < 8e-5 && Math.abs(s.wLag) < 4e-4) {
+  if (s.settleT > 1.25 && off < 0.0014 && speed < 8e-5 && Math.abs(s.wLag) < 4e-4 && Math.hypot(g.position.x - s.tx, g.position.z - s.tz) < 0.002) {
     const pos = s.plane.geometry.attributes.position; pos.array.set(s.orig); pos.needsUpdate = true;
     applyPallor(s, 0, 1); s.plane.rotation.z = 0; s.rig = null; s.mode = 'idle';
   }
@@ -849,14 +870,110 @@ function stopCam() {
 }
 addEventListener('pagehide', stopCam);
 
-$('#b-cam').addEventListener('click', toggleCamera);
-$('#b-place').addEventListener('click', () => { place(); say('Board placed', 'It stays where you put it. Move the phone to look around it.'); });
-$('#b-tilt').addEventListener('click', () => { if (S.tilt) { S.wantTilt = false; setTilt(false); say('Tilt is off', 'Drag the picture to look around.'); } else askTilt(); });
-const sheet = $('#sheet'), card = $('#card'), arrowEl = $('#arrow'), boardArrowEl = $('#arrow-board');
-function openSheet(on) { sheet.hidden = !on; card.hidden = on; $('#b-clues').setAttribute('aria-pressed', String(on)); }
+const sheet = $('#sheet'), card = $('#card'), flatEl = $('#flat-board'), arrowEl = $('#arrow'), boardArrowEl = $('#arrow-board');
+let lastFlatGhost = null;
+function el(tag, cls, text) { const x = document.createElement(tag); if (cls) x.className = cls; if (text != null) x.textContent = text; return x; }
+function renderFlat() {
+  if (!S.flat || !flatEl) return;
+  lastFlatGhost = ghost ? ghost.room : 'hall';
+  const frag = document.createDocumentFragment();
+  const zh = el('div', 'fb-head'); zh.append(el('h2', '', 'Haunted House (2D board)'), el('span', 'fb-sub', 'Tap a room, pawn, relic or suspect'));
+  frag.append(zh);
+  const grid = el('div', 'fb-grid');
+  for (const r of ROOMS) {
+    const rb = el('button', 'fb-room'); rb.type = 'button';
+    if (S.sel && S.sel.type === 'room' && S.sel.id === r.id) rb.dataset.sel = '1';
+    rb.addEventListener('click', () => select({ type: 'room', id: r.id }));
+    const top = el('div', 'fb-room-top', r.name);
+    rb.append(top);
+    const tags = el('div', 'fb-tags');
+    if (r.id === COLD_SPOT_ROOM) tags.append(el('span', 'fb-tag cold', 'Cold Spot'));
+    if (INSPECTED_ROOMS.includes(r.id)) tags.append(el('span', 'fb-tag insp', 'Inspected'));
+    if (S.notes) for (const n of NOTES) if (n.room === r.id) tags.append(el('span', 'fb-tag mark', n.text));
+    if (tags.childNodes.length) rb.append(tags);
+    const items = el('div', 'fb-items');
+    if (lastFlatGhost === r.id) {
+      const wb = el('span', 'fb-tag whisper', 'The Whisper');
+      wb.addEventListener('click', (e) => { e.stopPropagation(); select({ type: 'ghost' }); });
+      items.append(wb);
+    }
+    for (const pw of PAWNS) if (pw.room === r.id) {
+      const pb = el('span', 'fb-tag pawn', pw.active ? `${pw.name.replace(' (active turn)', '')} ★` : pw.name);
+      pb.addEventListener('click', (e) => { e.stopPropagation(); select({ type: 'pawn', id: pw.id }); });
+      items.append(pb);
+    }
+    for (const s of SUSPECTS) if (marks[s.id] === r.id) {
+      const sb = el('span', 'fb-tag mark', s.name);
+      sb.addEventListener('click', (e) => { e.stopPropagation(); select({ type: 'suspect', id: s.id }); });
+      items.append(sb);
+    }
+    if (items.childNodes.length) rb.append(items);
+    grid.append(rb);
+  }
+  frag.append(grid);
+
+  const sh = el('div', 'fb-head'); sh.append(el('h2', '', 'Suspects & your private marks'), el('span', 'fb-sub', 'Only you see these'));
+  frag.append(sh);
+  const slist = el('div', 'fb-list');
+  for (const s of SUSPECTS) {
+    const row = el('div', 'fb-row');
+    if (S.sel && S.sel.type === 'suspect' && S.sel.id === s.id) row.dataset.sel = '1';
+    const img = el('img', 'fb-thumb'); img.src = `art/${s.id}.webp`; img.alt = s.name;
+    const cur = marks[s.id] && roomAt(marks[s.id]);
+    const info = el('div', 'fb-info');
+    info.append(el('b', '', s.name), el('small', '', cur ? `Marked: ${cur.name}` : 'In front line-up'));
+    info.addEventListener('click', () => select({ type: 'suspect', id: s.id }));
+    img.addEventListener('click', () => select({ type: 'suspect', id: s.id }));
+    const pick = document.createElement('select');
+    pick.setAttribute('aria-label', `Mark location for ${s.name}`);
+    pick.append(Object.assign(document.createElement('option'), { value: '', textContent: 'Line-up (no mark)' }));
+    for (const r of ROOMS) pick.append(Object.assign(document.createElement('option'), { value: r.id, textContent: r.name }));
+    pick.value = cur ? cur.id : '';
+    pick.addEventListener('change', () => {
+      const room = pick.value ? roomAt(pick.value) : null;
+      replaceMarks(applyDrop(marks, s.id, room ? room.id : null)); layout(); refreshBadges();
+      standees.forEach((x) => { x.mode = 'idle'; x.rig = null; x.pallor = 0; x.g.position.set(x.tx, groundAt(x.tx, x.tz), x.tz); });
+      select({ type: 'suspect', id: s.id });
+    });
+    row.append(img, info, pick); slist.append(row);
+  }
+  frag.append(slist);
+
+  const rh = el('div', 'fb-head'); rh.append(el('h2', '', 'Curio shelf · Relics'), el('span', 'fb-sub', 'Tap a relic to inspect'));
+  frag.append(rh);
+  const rg = el('div', 'fb-relics');
+  for (const rl of RELICS) {
+    const b = el('button', 'fb-pick'); b.type = 'button';
+    if (S.sel && S.sel.type === 'relic' && S.sel.id === rl.id) b.dataset.sel = '1';
+    b.append(el('span', '', rl.name), el('small', '', `Clue link: ${(roomAt(rl.room) || {}).name || rl.room}`));
+    b.addEventListener('click', () => select({ type: 'relic', id: rl.id }));
+    rg.append(b);
+  }
+  frag.append(rg);
+  flatEl.replaceChildren(frag);
+}
+function syncPanels() {
+  const showSheet = !sheet.hidden;
+  flatEl.hidden = !S.flat || showSheet;
+  card.hidden = showSheet;
+  glCanvas.hidden = S.flat;
+  tableCanvas.hidden = S.flat;
+  if (S.flat) { arrowEl.hidden = true; boardArrowEl.hidden = true; }
+}
+function setFlat(on) {
+  S.flat = !!on;
+  const b = $('#b-flat'); b.setAttribute('aria-pressed', String(S.flat)); b.textContent = S.flat ? 'AR / 3D' : '2D view';
+  syncPanels();
+  if (S.flat) renderFlat();
+}
+function openSheet(on) { sheet.hidden = !on; $('#b-clues').setAttribute('aria-pressed', String(on)); syncPanels(); }
+$('#b-cam').addEventListener('click', () => { if (S.flat) setFlat(false); toggleCamera(); });
+$('#b-place').addEventListener('click', () => { if (S.flat) setFlat(false); place(); say('Board placed', 'It stays where you put it. Move the phone to look around it.'); });
+$('#b-tilt').addEventListener('click', () => { if (S.flat) setFlat(false); if (S.tilt) { S.wantTilt = false; setTilt(false); say('Tilt is off', 'Drag the picture to look around.'); } else askTilt(); });
+$('#b-flat').addEventListener('click', () => { if (!sheet.hidden) openSheet(false); setFlat(!S.flat); });
 $('#b-clues').addEventListener('click', () => openSheet(sheet.hidden));
 $('#sheet-close').addEventListener('click', () => openSheet(false));
-$('#t-notes').addEventListener('click', () => { S.notes = !S.notes; $('#t-notes').setAttribute('aria-pressed', String(S.notes)); $('#t-notes').textContent = S.notes ? 'My marks: on' : 'My marks: off'; notesGroup.visible = S.notes; refreshBadges(); });
+$('#t-notes').addEventListener('click', () => { S.notes = !S.notes; $('#t-notes').setAttribute('aria-pressed', String(S.notes)); $('#t-notes').textContent = S.notes ? 'My marks: on' : 'My marks: off'; notesGroup.visible = S.notes; refreshBadges(); if (S.flat) renderFlat(); });
 $('#t-list').addEventListener('click', () => { clueObjs.forEach((o) => markFound(o, true)); say('Every clue is shown as text', 'Open Clues to read them. You did not have to look around.'); });
 
 // ------------------------------------------------------------------ frame loop
@@ -913,23 +1030,23 @@ function frame(now) {
     el.style.transform = `translate(-50%, -50%) translate(${Math.cos(ang) * stage.clientWidth * rxk}px, ${-Math.sin(ang) * stage.clientHeight * ryk}px)`;
     el.firstElementChild.style.transform = `rotate(${-ang}rad)`;
   };
-  const clueArrow = sheet.hidden && near && nearD > 0.55 && now - lastFindAt > 3000;
+  const clueArrow = !S.flat && sheet.hidden && near && nearD > 0.55 && now - lastFindAt > 3000;
   arrowEl.hidden = !clueArrow;
   if (clueArrow) { near.g.getWorldPosition(_cp); pointAt(arrowEl, _cp, 0.38, 0.33); }
   anchor.getWorldPosition(_cp); _dir.copy(_cp).sub(_w).normalize();
   if (Math.acos(clamp(_fwd.dot(_dir), -1, 1)) > 0.8) { if (boardOffSince < 0) boardOffSince = now; } else boardOffSince = -1;
-  const boardArrow = sheet.hidden && boardOffSince >= 0 && now - boardOffSince > 2000;
+  const boardArrow = !S.flat && sheet.hidden && boardOffSince >= 0 && now - boardOffSince > 2000;
   boardArrowEl.hidden = !boardArrow;
   if (boardArrow) pointAt(boardArrowEl, _cp, 0.3, 0.26);
 
   // relics: float above their curio shelf tokens, turn slowly, flicker candlelight
   for (const g of relicGroups) {
     const m = g.userData.mover;
-    m.position.y = 0.0085 + (reduced ? 0 : Math.sin(t * 1.5 + g.position.z * 32 + g.position.x * 20) * 0.0015);
+    m.position.y = 0.013 + (reduced ? 0 : Math.sin(t * 1.5 + g.position.z * 20 + g.position.x * 14) * 0.0018);
     if (!reduced) m.rotation.y = t * 0.65 + g.position.z * 8;
     const l = m.getObjectByName('light');
     if (l) {
-      l.intensity = 0.0026 + (reduced ? 0 : Math.sin(t * 13) * 0.0004 + Math.sin(t * 5.7) * 0.0004);
+      l.intensity = 0.0042 + (reduced ? 0 : Math.sin(t * 13) * 0.0006 + Math.sin(t * 5.7) * 0.0006);
       const f = m.getObjectByName('flame'); if (f) f.scale.y = 1.75 + (reduced ? 0 : Math.sin(t * 13) * 0.18);
     }
   }
@@ -938,8 +1055,8 @@ function frame(now) {
   if (animProps.horse) animProps.horse.rotation.z = reduced ? 0 : Math.sin(t * 1.85) * 0.095;
   if (animProps.pendulum) animProps.pendulum.rotation.z = reduced ? 0 : Math.sin(t * Math.PI) * 0.16;
   if (animProps.turnRing && !reduced) animProps.turnRing.rotation.y = t * 0.55;
-  if (animProps.studyLight && !reduced) animProps.studyLight.intensity = 0.0032 + Math.sin(t * 7.4) * 0.00045;
-  if (animProps.hearthLight && !reduced) animProps.hearthLight.intensity = 0.0028 + Math.sin(t * 5.1) * 0.0005;
+  if (animProps.studyLight && !reduced) animProps.studyLight.intensity = 0.0055 + Math.sin(t * 7.4) * 0.00075;
+  if (animProps.hearthLight && !reduced) animProps.hearthLight.intensity = 0.0048 + Math.sin(t * 5.1) * 0.0008;
   if (animProps.frostMats.length && !reduced) {
     const pulseFrost = 0.82 + Math.sin(t * 1.35) * 0.18;
     for (const fm of animProps.frostMats) fm.mat.opacity = fm.base * pulseFrost;
@@ -954,20 +1071,23 @@ function frame(now) {
   if (ghost) {
     const G = ghost;
     if (t - G.t0 > 7.5) { G.t0 = t; G.tourIdx = (G.tourIdx + 1) % GHOST_TOUR.length; G.room = GHOST_TOUR[G.tourIdx]; const c = roomPos[G.room]; G.from.copy(G.group.position); G.to.set(c.x, GHOST_Y, c.z); }
-    const p = clamp((t - G.t0) / 3, 0, 1), se = p * p * (3 - 2 * p);
-    G.group.position.lerpVectors(G.from, G.to, se); G.group.position.y = GHOST_Y + (reduced ? 0 : Math.sin(t * 1.3) * 0.008);
-    const lg = G.group.worldToLocal(_w.clone()); G.plane.rotation.y = Math.atan2(lg.x, lg.z); G.plane.rotation.z = reduced ? 0 : Math.sin(t * 0.9) * 0.025;
-    const flick = !reduced && (Math.sin(t * 2.1) * Math.sin(t * 3.7) > 0.93);
-    G.plane.material.opacity = flick ? 0.55 : 0.92; G.glow.material.opacity = 0.5 + (reduced ? 0 : Math.sin(t * 1.1) * 0.08);
-    for (const sm of G.shroudMats) sm.mat.opacity = sm.base * (flick ? 0.55 : 1);
-    for (let i = 0; i < G.seed.length; i++) {
-      const sd = G.seed[i]; const u = (t * sd.s * 3 + sd.p) % 1;
-      G.pos[i * 3] = Math.cos(sd.a + t * 0.3) * sd.r * (0.6 + u * 0.6); G.pos[i * 3 + 1] = u * 0.22; G.pos[i * 3 + 2] = Math.sin(sd.a + t * 0.3) * sd.r * (0.6 + u * 0.6);
+    if (S.flat) { if (G.room !== lastFlatGhost) renderFlat(); }
+    else {
+      const p = clamp((t - G.t0) / 3, 0, 1), se = p * p * (3 - 2 * p);
+      G.group.position.lerpVectors(G.from, G.to, se); G.group.position.y = GHOST_Y + (reduced ? 0 : Math.sin(t * 1.3) * 0.008);
+      const lg = G.group.worldToLocal(_w.clone()); G.plane.rotation.y = Math.atan2(lg.x, lg.z); G.plane.rotation.z = reduced ? 0 : Math.sin(t * 0.9) * 0.025;
+      const flick = !reduced && (Math.sin(t * 2.1) * Math.sin(t * 3.7) > 0.93);
+      G.plane.material.opacity = flick ? 0.55 : 0.92; G.glow.material.opacity = 0.5 + (reduced ? 0 : Math.sin(t * 1.1) * 0.08);
+      for (const sm of G.shroudMats) sm.mat.opacity = sm.base * (flick ? 0.55 : 1);
+      for (let i = 0; i < G.seed.length; i++) {
+        const sd = G.seed[i]; const u = (t * sd.s * 3 + sd.p) % 1;
+        G.pos[i * 3] = Math.cos(sd.a + t * 0.3) * sd.r * (0.6 + u * 0.6); G.pos[i * 3 + 1] = u * 0.22; G.pos[i * 3 + 2] = Math.sin(sd.a + t * 0.3) * sd.r * (0.6 + u * 0.6);
+      }
+      G.mist.geometry.attributes.position.needsUpdate = true;
+      G.mist.material.opacity = reduced ? 0.25 : 0.55;
     }
-    G.mist.geometry.attributes.position.needsUpdate = true;
-    G.mist.material.opacity = reduced ? 0.25 : 0.55;
   }
-  renderer.render(scene, camera);
+  if (!S.flat) renderer.render(scene, camera);
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } });
 
@@ -976,6 +1096,7 @@ addEventListener('resize', resize);
 resize();
 _eu.set(S.pitch, S.yaw, 0, 'YXZ'); camera.quaternion.setFromEuler(_eu);
 place();
+if (S.flat) setFlat(true);
 const kitPromise = loadGlb('models/spirit-table.glb', THREE).catch(() => null);
 Promise.all([buildFigures(), kitPromise]).then(([, kit]) => {
   if (kit) apply3DKit(kit);
@@ -984,6 +1105,7 @@ Promise.all([buildFigures(), kitPromise]).then(([, kit]) => {
   if (mk) { const next = {}; mk.split(',').forEach((pair) => { const [id, room] = pair.split(':'); if (SUSPECTS.some((x) => x.id === id) && roomAt(room)) next[id] = room; }); replaceMarks(next); layout(); standees.forEach((x) => x.g.position.set(x.tx, groundAt(x.tx, x.tz), x.tz)); refreshBadges(); }
   const want = q.get('sel');
   if (want) { const s = SUSPECTS.find((x) => x.id === want); select(s ? { type: 'suspect', id: s.id } : { type: want === 'ghost' ? 'ghost' : 'room', id: want }); }
+  else if (S.flat) renderFlat();
 }).catch((err) => say('Could not load the figures', String(err && err.message || err)));
 raf = requestAnimationFrame(frame);
 { // test and screenshot helpers: ?look=pin2 turns the view to a clue (&lookoff=0.35 starts beside it), ?found=all or ?found=pin1,pin2 marks clues found, ?sheet=1 opens the list

@@ -6,11 +6,11 @@
 import { setTheory, theoryOf, type Theory } from "../party/theory";
 
 /** The board: three rooms across, two deep. */
-export const BOARD = { W: 0.115, D: 0.095 } as const;
+export const BOARD = { W: 0.3, D: 0.25 } as const;
 export type Board = Readonly<{ W: number; D: number }>;
 /** Where the line-up stands: a tray in front of the board. */
-export const LINEUP_SPACING = 0.062;
-export const LINEUP_Z = BOARD.D + 0.017 + 0.0225 + 0.002;
+export const LINEUP_SPACING = 0.142;
+export const LINEUP_Z = BOARD.D + 0.115;
 
 /** A room, as its column (0 to 2, left to right) and row (0 at the back, 1 at the front). */
 export type Slot = Readonly<{ c: number; r: number }>;

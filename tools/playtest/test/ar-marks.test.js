@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { roomAtPoint, lineupPos, slotPos, applyDrop } from '../js/ar-marks.js';
 
-const W = 0.115, D = 0.095;
+const W = 0.3, D = 0.25;
 
 test('every room is found from its middle, and a point off the board is no room', () => {
   for (let c = 0; c < 3; c++) for (let r = 0; r < 2; r++) {
@@ -13,14 +13,14 @@ test('every room is found from its middle, and a point off the board is no room'
       const p = roomAtPoint(x + dx * W, z + dz * D, W, D); assert.deepEqual(p, { c, r }, 'still the same room near a corner');
     }
   }
-  for (const [x, z] of [[0, D + 0.01], [0, -D - 0.01], [1.5 * W + 0.01, 0], [-1.5 * W - 0.01, 0], [NaN, 0], [0, Infinity], [0, 0.14]]) assert.equal(roomAtPoint(x, z, W, D), null, `${x},${z}`);
+  for (const [x, z] of [[0, D + 0.01], [0, -D - 0.01], [1.5 * W + 0.01, 0], [-1.5 * W - 0.01, 0], [NaN, 0], [0, Infinity], [0, D + 0.115]]) assert.equal(roomAtPoint(x, z, W, D), null, `${x},${z}`);
 });
 
 test('the line-up is centred, evenly spaced and in front of the board', () => {
-  const xs = [0, 1, 2, 3, 4, 5].map((i) => lineupPos(i, 6, 0.062, 0.14));
+  const xs = [0, 1, 2, 3, 4, 5].map((i) => lineupPos(i, 6, 0.142, D + 0.115));
   assert.ok(Math.abs(xs[0].x + xs[5].x) < 1e-12, 'centred');
-  for (let i = 1; i < 6; i++) assert.ok(Math.abs(xs[i].x - xs[i - 1].x - 0.062) < 1e-12);
-  assert.ok(xs.every((p) => p.z > D + 0.017), 'in front of the slab');
+  for (let i = 1; i < 6; i++) assert.ok(Math.abs(xs[i].x - xs[i - 1].x - 0.142) < 1e-12);
+  assert.ok(xs.every((p) => p.z > D + 0.035), 'in front of the slab');
   assert.ok(Math.abs(xs[5].x) < 1.5 * W, 'no wider than the board');
 });
 
