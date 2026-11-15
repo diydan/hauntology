@@ -21,6 +21,7 @@ This spec builds on the Spirit lens of `party-mode` (Requirement 16) without cha
 | Has a Camera button. | The same, with an indicator and a stop control, off each time (5.1). |
 | Points an arrow to the board when it is out of view. | The same (4.6). |
 | Is a stand-alone page with its own list. | A Controller layer with a Table list (6.3). |
+| Lets you drag a character onto a room, with a rag-doll swing, and keeps the mark for the page's lifetime. | The same (Requirement 8), but the mark is a Theory mark kept in the Player's own notebook, and the Table list has a way to set it without dragging (8.5). |
 
 What the mockup proved: the board, the standees and the Whisper read well at 390 by 844 and at 320 by 568 CSS pixels; a tap picks a piece; the tilt, drag and fake-camera paths work in a desktop browser. What it did not prove: tilt drift, battery, heat and the camera on real phones (Spike spirit-table 1.1).
 
@@ -31,7 +32,7 @@ type Mark = 'ruled_out' | 'maybe';
 type TableData = {
   rooms: { zone: string; name: string; slot: number; coldSpot: boolean; inspected: boolean; mark?: Mark }[];
   pawns: { seat: number; nickname: string; zone: string | 'door'; active: boolean; mono: boolean }[];
-  suspects: { card: string; name: string; mark?: Mark }[];   // Line-up order is the pool order
+  suspects: { card: string; name: string; mark?: Mark; placedIn?: string }[];   // Line-up order is the pool order; placedIn is the Player's own Theory mark
   relics: { card: string; name: string; mark?: Mark }[];     // Shelf order is the pool order
   haunt: { level: number; max: number };
   ended?: { zone: string; suspect: string; relic: string };  // only when phase === 'ended'
@@ -57,6 +58,16 @@ tablePlan(i: { sensors: boolean; faceDown: boolean; hidden: boolean; reducedMoti
 
 **Plan.** `tablePlan` returns `draw` false when the phone is face down or the page is hidden, `frameMs` at least 33, `view` as `sensors` with a sensor and Tilt on, `drag` otherwise, and `list` when WebGL is missing, and `still` under reduced motion.
 
+## Drag to mark (Requirement 8)
+
+The pure parts are small. `roomAtPoint(x, z)` says which of the six rooms a point on the board is over (or none); `lineupPos(i, n)` and `slotPos(k)` give where a Suspect stands in the Line-up or in a room (three across, two rows, so six fit); and `applyDrop(marks, suspect, room | null)` returns the new set of Theory marks: it sets the Suspect's one room, or clears it, and touches no other Suspect. Dropping on a room sets, dropping anywhere else clears.
+
+**The finger holds the head.** The finger's ray is cut with a flat plane at the height of the Suspect's head (a little above the board), and the Suspect hangs below that point. So the feet are in front of the finger on the screen, and the room under the *feet* is the one that counts. The room lights up and a ring on the floor shows the landing place, so the Player sees what a drop will do before it happens.
+
+**Rag doll (`rag.ts`).** A chain of seven points hangs from the held point and is simulated in one fixed frame (not the figure's own), so the body lags when the finger moves. Each step does a Verlet move with damping, then eight rounds of keeping every link its length and a mild stiffness (so the body bends and does not fold), and floor clamping. The flat picture has 14 rows; each row is placed on the chain and turned to its tangent, so a chain hanging straight gives back exactly the flat picture (tested). When let go the top is no longer held, the body goes limp and falls 3 centimetres with one small bounce, and then a spring toward the upright pose ramps up over 0.45 seconds while gravity fades out; the figure is flat and still again about 1.1 seconds after it lands (measured), so the spec says two seconds. Bad input (an unreadable finger position, a huge time step) changes nothing or resets the chain, and never gives a point that is not a number. Reduced motion skips the chain: the Suspect lifts and drops with no swing.
+
+**Notebook.** The Theory mark lives in the notebook the Controller already keeps on the phone. The Table reads it into `tableData` as `placedIn` and asks the notebook to set or clear it; the Table keeps nothing of its own (3.4). The Table list's room choice per Suspect (8.5) calls the same two functions, so the drag and the list can never disagree.
+
 ## The phone (`web/src/table/`)
 
 `SpiritTable.tsx` builds a three.js scene at the Table's real size: a slab with an inlay, six floors with a rug and a label each, low interior walls with door gaps, tall back and side walls and an open front, a soft contact shadow, flat standees with a small base, a Whisper plane with a faded hem, a glow and a few mist points, Mark tags with a stem, and a ring under the picked piece. Lights are physical units (the Table is small, so candela values are small). `TableList.tsx` is the text twin. The backdrop is a canvas drawn once, or the camera in a `<video>` element under the three.js canvas, started with `getUserMedia({ video: { facingMode: 'environment' }, audio: false })` from the Camera tap only (`puzzles` 15.10). The controls are one row of four buttons: Camera, Place, Tilt and Clues.
@@ -71,6 +82,7 @@ Pictures come from the Seat Portraits and Ghost Profiles the Room already holds,
 | `party-mode` Controller settings | One device switch, "Spirit table", off by default, next to the Spirit lens switch. |
 | `party-mode` Spirit lens (16.4) | None: the lens keeps "neither the camera nor markers". |
 | `puzzles` Requirement 15 | None: the Clue ring only has to hang round the same viewpoint (7.1). |
+| `party-mode` notebook (Controller) | One more local mark: a Theory mark, "this Suspect, maybe in this Zone", at most one per Suspect, never sent. The notebook's existing marks (ruled out, maybe) are unchanged. |
 | `shared/src/app/csp.ts` | `Permissions-Policy` now allows `camera=(self)` (done 2026-11-15, with its tests). |
 | `tech.md` | The unverified assumptions below; `SPIRIT_TABLE_ENABLED`. |
 | `structure.md` | The `shared/src/table/` and `web/src/table/` folders. |
@@ -85,7 +97,7 @@ T4. Camera: whether the rear camera backdrop works in the installed web app on i
 ## Left out on purpose
 
 - Showing the Table on the TV or sharing it between phones: it is private by design.
-- Pieces that move by game rules, a Suspect standing in a Zone, or any piece that depends on the Solution, a Hand or a Residue position.
+- Pieces that move by game rules, a Suspect standing in a Zone by itself (only the Player's own Theory mark puts one there), or any piece that depends on the Solution, a Hand or a Residue position.
 - Pinning the Table to the real room with WebXR or markers (Android only, and the owner put WebXR out of scope).
 - Walking around the Table: three degrees of freedom do not track steps.
 - A sound for the Table: it makes none.
@@ -143,3 +155,11 @@ The screens of this spec are built from `design/elements.css`, with the values o
 | The list view | `ui-panel ui-log` |
 
 A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.
+
+### Property 7: A drop only sets or clears the player's own theory mark
+*For any* set of Theory marks, Suspect and drop point, `applyDrop` with a room gives exactly that Suspect that one room and leaves every other Suspect's mark as it was, with no room it clears that Suspect's mark and nothing else, never changes its input, and `roomAtPoint` finds each of the six rooms from any point inside it and no room from a point outside the board; and `tableData` puts a Suspect in a room only when its Theory mark says so, in a distinct place inside that room, and otherwise in the Line-up.
+**Validates: Requirements 2.3, 8.2, 8.3**
+
+### Property 8: The rag doll keeps its shape and stands back up
+*For any* finger path and release, the rag doll's links stay within 8 percent of their length while held, no point is ever below the floor or not a number, a chain hanging straight bends the picture into exactly the flat picture, and after release the figure is upright and still within two seconds of landing.
+**Validates: Requirements 8.1, 8.4**

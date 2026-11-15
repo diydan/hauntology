@@ -12,6 +12,7 @@ The Spirit table is an optional private layer of Party Mode: a small 3D haunted 
 - **Pawn**: the standee of one Player (a Bot too): their Seat Portrait, or a nickname chip.
 - **Line-up**: the row of six Suspect standees along the front edge. **Shelf**: the row of six Relics at the side.
 - **Mark**: one of the Player's own notebook marks (ruled out, or maybe), drawn as a floating tag tied to the Zone, Suspect or Relic it belongs to.
+- **Theory mark**: the Player's own "maybe here" mark that ties one Suspect to one room, made by dragging the Suspect onto the room.
 - **Place**: the tap that puts the Table in front of the Player, facing them, where the middle of the view meets an assumed table.
 - **Table list**: the text twin of the Table: every Zone, Player, Suspect and Relic with its Marks.
 - **Table data**: the only input of the drawing, `tableData(publicView, privateView, notebook)`.
@@ -38,7 +39,7 @@ The Spirit table is an optional private layer of Party Mode: a small 3D haunted 
 
 1. THE Table SHALL have six rooms, one for each Zone of the Public View's pool, each labelled with the Zone's name, in a seeded cosmetic layout that says nothing about where the Zones are in the world.
 2. THE Table SHALL stand a Pawn for every Player in the room of the Zone named by that Player's latest public `suggest` or `inspect` event, or beside the front door WHEN there is none, SHALL draw the Pawn of a Poltergeist in black and white for the rest of the game, and SHALL ring the Pawn of the Player whose Turn it is.
-3. THE Table SHALL stand the six Suspects in a Line-up along the front edge and the six Relics on a Shelf at the side, in the order of the Public View's pool, and SHALL NOT put a Suspect or a Relic in a room, because no Suspect or Relic has a place in the rules and a standee in a room would look like a clue.
+3. THE Table SHALL stand the six Suspects in a Line-up along the front edge and the six Relics on a Shelf at the side, in the order of the Public View's pool, and SHALL NOT put a Suspect or a Relic in a room of its own accord, because no Suspect or Relic has a place in the rules and a standee in a room would look like a clue; the only Suspect in a room is one the Player has put there with a Theory mark (Requirement 8).
 4. WHERE the Haunt has a Cold Spot THEN the Table SHALL draw a pale cold glow over that room, and the Whisper SHALL float above the Table, hovering over the Cold Spot room when there is one and otherwise drifting from room to room on a seeded tour, glowing more as the Haunt level rises, and none of this SHALL depend on the Solution, a Hand or a Residue position.
 5. THE Controller SHALL draw each Suspect and Pawn as a flat standee of its picture, with a round card where the picture has no cut-out background, that turns about its up axis only to face the Player, and SHALL use no picture, voice or model that the Room does not already hold.
 6. WHEN the Player taps a piece THEN a card SHALL name it and say what the Player may know of it: for a room its Pawns, the Player's own Marks and whether the Player inspected it, for a Suspect or a Relic the Player's own Marks, and for a Pawn the nickname and whether they have joined the haunting.
@@ -105,3 +106,15 @@ The Spirit table is an optional private layer of Party Mode: a small 3D haunted 
 2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
 3. THE phone screens SHALL use `ui-panel`, `ui-button`, `ui-notice` and `ui-status`, SHALL draw the Table, the ghost and the clues with colours from `shared/src/design/tokens.ts`, and SHALL keep every control at least 44 CSS pixels.
 4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.
+
+### Requirement 8
+
+**User Story:** As a Player, I want to pick up a suspect and put it on a room, so that I can leave my own "maybe here" theory on the table, and I want the picking up to feel like lifting a limp doll.
+
+#### Acceptance Criteria
+
+1. WHEN the Player puts a finger on a Suspect and moves it more than 8 CSS pixels THEN the Controller SHALL pick the Suspect up and not turn the view, lift it, buzz once, hold it by the head so that the body hangs below the finger, light the room under its feet and draw a ring on the floor where it will stand if let go, and WHEN the finger goes down on a Suspect and comes up without moving THEN the tap SHALL pick the piece as in 2.6.
+2. WHEN the Player lets go over a room THEN the Controller SHALL make a Theory mark for that Suspect in that room, stand the Suspect in a free place in the room with a "maybe here" tag, and say so on its card, and WHEN the Player lets go anywhere else THEN the Controller SHALL take the Theory mark back and return the Suspect to the Line-up, and a Suspect SHALL have at most one Theory mark while a room MAY hold all six.
+3. THE Theory mark SHALL belong to the Player's own notebook on that phone, SHALL change no rule, SHALL NOT be sent, stored by the Room, counted or shown to anyone else, and SHALL be drawn as in 3.2 only for its owner.
+4. THE picked-up Suspect SHALL hang from the finger like a rag doll: the body swings and bends as the finger moves without stretching, goes limp and falls when let go, and stands back up and is still within two seconds of letting go, and WHERE the Player prefers reduced motion THEN the Suspect SHALL lift and drop with no swing, fall or wobble.
+5. THE Table list SHALL offer, for every Suspect, a choice of the six rooms or "No mark", so that a Theory mark can be made and taken back without dragging, and EVERY control for it SHALL have a touch target of at least 48 CSS pixels.

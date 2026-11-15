@@ -73,3 +73,22 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - _Requirements: 8.4_
   - [ ] 5.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 8.1_
+
+- [ ] 5. Drag to mark (Requirement 8)
+  - [x] 5.1 Mockup: carry a character, the finger holding the head, the lit room and the landing ring, the drop that marks or clears, the rag-doll swing and stand-up, reduced motion, a hook that steps the physics without drawing, and 14 tests
+    - Built in `tools/playtest/js/ar.js`, `ar-rag.js`, `ar-marks.js` and `test/ar-rag.test.js`, `ar-marks.test.js`, `ar.test.js`. It keeps the mark only while the page is open and has no list choice; the real code uses the notebook (8.3) and the Table list (8.5).
+    - _Requirements: 8.1, 8.2, 8.4_
+  - [ ] 5.2 `marks.ts`: `roomAtPoint`, `lineupPos`, `slotPos`, `applyDrop`, and `tableData` reading `placedIn` from the notebook
+    - _Requirements: 2.3, 8.2, 8.3_
+  - [ ] 5.3 **Property 7: A drop only sets or clears the player's own theory mark**
+    - **Validates: Requirements 2.3, 8.2, 8.3**
+  - [ ] 5.4 `rag.ts`: `makeChain`, `stepChain`, `chainUnrest`, `deformVertices` (the rag doll)
+    - _Requirements: 8.1, 8.4_
+  - [ ] 5.5 **Property 8: The rag doll keeps its shape and stands back up**
+    - **Validates: Requirements 8.1, 8.4**
+  - [ ] 5.6 Phone: the carry and the drop in `SpiritTable.tsx` (an 8 pixel threshold, the finger-held head, the lit room, the landing ring, the buzz, the card text, no swing under reduced motion)
+    - _Requirements: 8.1, 8.2, 8.4_
+  - [ ] 5.7 The Theory mark in the notebook, drawn as a standee in its room with a "maybe here" tag for its owner only, and the Table list's room choice per Suspect (48 pixel targets)
+    - _Requirements: 8.2, 8.3, 8.5_
+  - [ ] 5.8 Checks: a Theory mark is never sent or stored by the Room, a real-browser drag at 320 by 568 and 390 by 844 pixels, and a mutation pass on `applyDrop` and `stepChain`
+    - _Requirements: 8.3, 8.5_
