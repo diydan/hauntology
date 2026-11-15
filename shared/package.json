@@ -12,6 +12,7 @@
     "./session-cookie": "./src/session-cookie.ts",
     "./origin": "./src/origin.ts",
     "./conditions/*": "./src/conditions/*.ts",
+    "./world/*": "./src/world/*.ts",
     "./puzzles/*": "./src/puzzles/*.ts"
   },
   "scripts": {

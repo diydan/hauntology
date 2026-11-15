@@ -6,10 +6,13 @@ import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
 import { sessionRoutes } from "./routes/session";
+import { worldRoutes, type WorldsDeps } from "./routes/worlds";
 
 export type AppOptions = SessionOptions & {
   /** What `SpendGuard` knows, once it exists. */
   spend?: (c: Context<AppEnv>) => Promise<SpendStatus> | SpendStatus;
+  /** Where worlds are kept. When given, `/api/worlds/:id`, its assets and `DELETE` are served. */
+  worlds?: WorldsDeps;
 };
 
 /**
@@ -25,5 +28,6 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   const flags = async (c: Context<AppEnv>): Promise<ShellFlags> =>
     flagsFrom(c.env, options.spend ? await options.spend(c) : undefined);
   app.route("/api/session", sessionRoutes({ flags }));
+  if (options.worlds !== undefined) app.route("/api/worlds", worldRoutes(options.worlds));
   return app;
 }

@@ -30,6 +30,12 @@ export type WorldAccessHarness = {
   assetPath?: (worldId: string) => string;
 };
 
+/**
+ * Checks a run may leave out because the route does not exist yet. Each one shows as a todo in the test
+ * output, never silently. Only `play` is allowed: `POST /api/play/start` belongs to ghost-engine 5.
+ */
+export type SkippableCheck = "play";
+
 const isNotFound = (r: Reply): boolean => {
   const b = r.body as { ok?: unknown; code?: unknown } | null;
   return r.status === 404 && b !== null && typeof b === "object" && b.ok === false && b.code === "world_not_found";
@@ -38,7 +44,7 @@ const same = (a: Reply, b: Reply): boolean => a.status === b.status && JSON.stri
 const describeReply = (r: Reply): string => `${r.status} ${JSON.stringify(r.body)}`;
 
 /** Runs every check and returns the violations, in plain words. An empty list means the contract holds. */
-export async function checkWorldAccess(h: WorldAccessHarness): Promise<string[]> {
+export async function checkWorldAccess(h: WorldAccessHarness, skip: readonly SkippableCheck[] = []): Promise<string[]> {
   const v: string[] = [];
   const A = await h.newVisitor();
   const B = await h.newVisitor();
@@ -52,6 +58,7 @@ export async function checkWorldAccess(h: WorldAccessHarness): Promise<string[]>
   const play = (who: Headers_, id: string) => h.request("/api/play/start", { method: "POST", headers: who, body: { worldId: id } });
   const asset = (who: Headers_, id: string) => h.request(h.assetPath!(id), { method: "GET", headers: who });
   const ok2xx = (r: Reply) => r.status >= 200 && r.status < 300;
+  const playChecked = !skip.includes("play");
 
   /** A request for someone else's world must look exactly like a request for a missing one. */
   const mustLookMissing = (what: string, foreign: Reply, missing: Reply) => {
@@ -74,10 +81,12 @@ export async function checkWorldAccess(h: WorldAccessHarness): Promise<string[]>
   if ((await get(A, W)).status !== 200) v.push("DELETE by another visitor removed the owner's world");
 
   // Another visitor cannot start a play session in it.
-  mustLookMissing("POST play/start by another visitor", await play(B, W), await play(B, M));
-  mustLookMissing("POST play/start with no cookie", await play(NONE, W), await play(NONE, M));
-  const ownPlay = await play(A, W);
-  if (ownPlay.status !== 200) v.push(`POST play/start: the owner got ${describeReply(ownPlay)}`);
+  if (playChecked) {
+    mustLookMissing("POST play/start by another visitor", await play(B, W), await play(B, M));
+    mustLookMissing("POST play/start with no cookie", await play(NONE, W), await play(NONE, M));
+    const ownPlay = await play(A, W);
+    if (ownPlay.status !== 200) v.push(`POST play/start: the owner got ${describeReply(ownPlay)}`);
+  }
 
   // Its assets are private too.
   if (h.assetPath !== undefined) {
@@ -92,8 +101,10 @@ export async function checkWorldAccess(h: WorldAccessHarness): Promise<string[]>
     const r = await get(who, G);
     if (r.status !== 200) v.push(`GET Gallery world (${name}): ${describeReply(r)}`);
   }
-  const galleryPlay = await play(B, G);
-  if (galleryPlay.status !== 200) v.push(`POST play/start in a Gallery world (another visitor): ${describeReply(galleryPlay)}`);
+  if (playChecked) {
+    const galleryPlay = await play(B, G);
+    if (galleryPlay.status !== 200) v.push(`POST play/start in a Gallery world (another visitor): ${describeReply(galleryPlay)}`);
+  }
   const galleryDelete = await del(B, G);
   if (ok2xx(galleryDelete)) v.push(`DELETE Gallery world by a visitor succeeded (${describeReply(galleryDelete)})`);
   if ((await get(A, G)).status !== 200) v.push("DELETE of a Gallery world by a visitor removed it");
@@ -107,10 +118,15 @@ export async function checkWorldAccess(h: WorldAccessHarness): Promise<string[]>
 }
 
 /** Registers the contract as a test for one app. Used by every route set that serves worlds. */
-export function worldAccessContract(label: string, makeHarness: () => Promise<WorldAccessHarness>): void {
+export function worldAccessContract(
+  label: string,
+  makeHarness: () => Promise<WorldAccessHarness>,
+  options: { skip?: readonly SkippableCheck[] } = {},
+): void {
   describe(`world access contract: ${label}`, () => {
     it("serves an own world only to its Session, and answers a foreign id like a missing one", async () => {
-      expect(await checkWorldAccess(await makeHarness())).toEqual([]);
+      expect(await checkWorldAccess(await makeHarness(), options.skip)).toEqual([]);
     });
+    for (const check of options.skip ?? []) it.todo(`${check}: not checked yet, its route does not exist (ghost-engine 5)`);
   });
 }

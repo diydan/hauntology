@@ -26,6 +26,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 - [ ] 3. Shared pure logic
   - [ ] 3.1 Schemas and error codes
     - zod `WorldManifestSchema`, `QuoteSchema`, `JobStatusSchema`, `QuotaSchema`; `errors.ts` with stable codes.
+    - Only `WorldManifestSchema` is built so far (`shared/src/world/manifest.ts`; the shell already has the status, quote and quota schemas in `shared/src/app/api-schemas.ts`). An asset `path` is a file name inside the bundle, never a URL.
     - _Requirements: 7.3, 8.2_
   - [ ] 3.2 Upload validation and JPEG metadata stripper
     - `validateUpload`, `stripJpegMetadata` (drop APP1/APP13/COM segments, keep scan data).
@@ -71,10 +72,12 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
   - [ ]* 3.16 Write property test for secret and URL hygiene
     - **Property 12: Browser-facing payloads leak no secrets or upstream URLs**
     - **Validates: Requirements 8.5**
-  - [ ] 3.17 Retention calculator
+  - [x] 3.17 Retention calculator
     - `expiredKeys(objects, now)`.
+    - Built in `shared/src/world/retention.ts` (`expiredKeys`, `expiredObjects`, `retentionFromEnv` for `UPLOAD_TTL_HOURS` and `WORLD_TTL_DAYS`). Uploads and candidates 24 hours, a world bundle and sprite 7 days, a Gallery object never; an object exactly at its limit is kept.
     - _Requirements: 10.1_
-  - [ ]* 3.18 Write property test for retention
+  - [x]* 3.18 Write property test for retention
+    - In `shared/src/world/retention.test.ts` (100 seeded runs, plus the boundary and bad-clock cases).
     - **Property 13: Retention deletes exactly the expired non-Gallery objects**
     - **Validates: Requirements 10.1**
 
@@ -126,10 +129,12 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - _Requirements: 8.1, 8.2, 8.3, 5.3_
   - [ ] 7.4 `GET /api/worlds/:id` and asset streaming
     - Status payload, manifest when ready, range requests, immutable cache headers, no upstream URLs or keys.
+    - **Routes built, store not.** `api/src/routes/worlds.ts` serves the status, `world.json` and the files the manifest names (single range, 206 and 416, a cache that never expires, private for an own world), and builds every payload field by field so no upstream URL or key can leave. It talks to a `WorldStore` port (`api/src/worlds/store.ts`) with an in-memory store for tests. Still to do: the store behind it, which is the `WorldJob` record (7.1 to 7.3) and R2 (scaffold 2), and the `GET` of a world with a non-`ready` manifest after ingest (7.3).
     - _Requirements: 7.3, 8.4, 8.5_
 
 - [ ] 8. Retention, delete and logging
   - [ ] 8.1 Scheduled cleanup (cron trigger) using `expiredKeys`; `DELETE /api/worlds/:id` removing upload, candidates, bundle, sprite and play sessions.
+    - **Rules built, wiring not.** `DELETE /api/worlds/:id` (owner only, a Gallery world never, the Session forgets the id) and `cleanupExpired(store, now, policy)` in `api/src/worlds/cleanup.ts` are done and tested over the `WorldStore` port; `purge(id)` is the one call that must remove the record, upload, candidates, bundle, sprite and play sessions. Still to do: a `purge` backed by R2, `WorldJob` and `PlaySession`, and the `scheduled` handler and cron trigger in `wrangler.jsonc` (scaffold 2).
     - _Requirements: 10.1, 10.2_
   - [ ] 8.2 Logging policy
     - Central logger that only accepts ids, counters, codes; lint rule or test that forbids logging request bodies.

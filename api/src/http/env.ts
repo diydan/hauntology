@@ -14,6 +14,10 @@ export type Bindings = {
   PARTY_ENABLED?: string;
   /** When set (not empty), Turnstile is configured and its origin is allowed by the page policy. */
   TURNSTILE_SECRET?: string;
+  /** How long an upload and a candidate are kept, in hours. Default 24. */
+  UPLOAD_TTL_HOURS?: string;
+  /** How long a user's world is kept, in days. Default 7. A Gallery world is kept for ever. */
+  WORLD_TTL_DAYS?: string;
   /** Extra allowed `Origin` values, comma-separated (development only). */
   ALLOWED_ORIGINS?: string;
 };
