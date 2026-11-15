@@ -41,6 +41,8 @@ export type PuzzleHostProps = Readonly<{
   onHear?: () => boolean | void | Promise<boolean | void>;
   /** The Player pressed the Tilt button: on (true) or off (false). The device's settings keep that wish, so tilt stays off once they turned it off. */
   onTiltChoice?: (on: boolean) => void;
+  /** What the page that hosts the puzzle puts in the puzzle's own bar, after the time (the Controller's Menu button), so it needs no bar of its own above the puzzle. */
+  barExtra?: ReactNode;
   now?: () => number;
 }>;
 
@@ -57,7 +59,7 @@ const TWIST_KINDS: ReadonlySet<Kind> = new Set<Kind>(["safe", "clock"]);
  * draws and plays. Heavy screens load only when needed, and nothing here needs motion, sound or buzz.
  */
 export function PuzzleHost(props: PuzzleHostProps): ReactNode {
-  const { kind, view, faded, clue = null, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear, onTiltChoice } = props;
+  const { kind, view, faded, clue = null, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear, onTiltChoice, barExtra } = props;
   const now = props.now ?? (() => performance.now());
   const [phase, setPhase] = useState<"faded" | "play" | "done">(faded ? "faded" : "play");
   const [wrong, setWrong] = useState(0);
@@ -153,6 +155,7 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
       {tilt === "on" ? <button type="button" className="ui-button" aria-label="Hold level" onClick={() => feel.motion.holdLevel()}>Level</button> : null}
     </>
   ) : null;
+  const timer = <span className="pz-timer" aria-hidden="true"><span className="pz-bar-label">Time</span> {capMs === null ? fmtS(shown) : `${fmtS(shown)} of ${Math.round(capMs / 1000)} s`}</span>;
   const pips = useMemo(() => Array.from({ length: attempts }, (_, i) => i < wrong), [attempts, wrong]);
   const skipOffered = onSkip !== undefined && (wrong >= 2 || shown >= 20_000);
 
@@ -173,7 +176,7 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
             <div className="ui-lamps" role="img" aria-label={`${attempts - wrong} of ${attempts} tries left`}>{pips.map((used, i) => <span key={i} className={used ? "ui-lamp" : "ui-lamp is-on"} />)}</div>
           </div>
         </div>
-        <span className="pz-timer" aria-hidden="true"><span className="pz-bar-label">Time</span> {capMs === null ? fmtS(shown) : `${fmtS(shown)} of ${Math.round(capMs / 1000)} s`}</span>
+        {barExtra ? <div className="pz-bar-right">{timer}<div className="pz-bar-extra">{barExtra}</div></div> : timer}
       </header>
       {helping ? <HelpCard kind={kind} clock={capMs !== null} onClose={closeHelp} /> : null}
       {peeking && clue ? (

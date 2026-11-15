@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, render } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Transcript } from "@hauntology/shared/puzzles/types";
 import { createFakeFeel } from "../../puzzles/feel/fakes";
@@ -14,7 +15,7 @@ let props: PuzzleHostProps | null = null;
 vi.mock("../../puzzles/PuzzleHost", () => ({ PuzzleHost: (p: PuzzleHostProps) => { props = p; return <div data-testid="host" />; } }));
 afterEach(() => { cleanup(); props = null; });
 
-function setup(over: Partial<PuzzleDevice["device"]> = {}) {
+function setup(over: Partial<PuzzleDevice["device"]> = {}, barExtra?: ReactNode) {
   const port = new StandInPort();
   port.offerLock("candles", "easy", 2, true);
   const offer = port.getView().lock as LockOffer;
@@ -23,7 +24,7 @@ function setup(over: Partial<PuzzleDevice["device"]> = {}) {
     feel: createFakeFeel(), device: { ...DEFAULT_DEVICE_SETTINGS, ...over }, tilt: "off", canVibrate: false, changeDevice: () => undefined,
     onTiltChoice: (on: boolean) => { calls.push(`tilt ${on}`); }, setDevice: () => undefined,
   } as unknown as PuzzleDevice;
-  render(<LockArea port={port as ControllerPort} offer={offer} device={device} />);
+  render(<LockArea port={port as ControllerPort} offer={offer} device={device} {...(barExtra ? { barExtra } : {})} />);
   return { port, offer, device, calls, host: props as unknown as PuzzleHostProps };
 }
 
@@ -39,6 +40,13 @@ describe("LockArea gives the Lock to the puzzle screen and the answers to the Ro
     expect(host.feel).toBe(device.feel);
     expect(host.assist).toBe(true);
     expect(setup({ assist: false }).host.assist).toBe(false);
+  });
+
+  it("gives what the Controller keeps in reach to the puzzle's bar, and nothing when there is nothing", () => {
+    const extra = <button type="button">Menu</button>;
+    expect(setup({}, extra).host.barExtra).toBe(extra);
+    cleanup();
+    expect(setup().host.barExtra).toBeUndefined();
   });
 
   it("sends an Attempt to the Room under the Lock's id and returns the Room's reply", () => {

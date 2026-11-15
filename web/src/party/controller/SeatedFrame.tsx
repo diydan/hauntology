@@ -42,27 +42,35 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
   const [chosen, setChosen] = useState<Layout | null>(null);
   const layout: Layout = chosen ?? (landscape ? "pad" : "panel");
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuButton = useRef<HTMLButtonElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  const connection = <span className={`ui-chip${view.connection === "online" ? " is-active" : ""}`} role="status">{CONNECTION_WORDS[view.connection]}</span>;
+  const menuButton = (
+    <button
+      ref={menuButtonRef} type="button" className="ui-button pc-menu-button" aria-expanded={menuOpen} aria-controls={menuOpen ? "pc-menu" : undefined}
+      onClick={() => setMenuOpen((open) => !open)}
+    >Menu</button>
+  );
 
   return (
     <div className="pc-seated" data-layout={layout}>
-      <header className="pc-bar">
-        <div className="pc-who">
-          <span className="ui-chip is-active" aria-label={`Room Code ${view.code ?? ""}`}>{view.code}</span>
-          <span className="pc-name">{view.nickname}</span>
-          {view.master ? <span className="ui-chip">Master</span> : null}
-        </div>
-        <div className="pc-side">
-          <span className={`ui-chip${view.connection === "online" ? " is-active" : ""}`} role="status">{CONNECTION_WORDS[view.connection]}</span>
-          <button
-            ref={menuButton} type="button" className="ui-button pc-menu-button" aria-expanded={menuOpen} aria-controls={menuOpen ? "pc-menu" : undefined}
-            onClick={() => setMenuOpen((open) => !open)}
-          >Menu</button>
-        </div>
-      </header>
+      {view.lock ? null : (
+        <header className="pc-bar">
+          <div className="pc-who">
+            <span className="ui-chip is-active" aria-label={`Room Code ${view.code ?? ""}`}>{view.code}</span>
+            <span className="pc-name">{view.nickname}</span>
+            {view.master ? <span className="ui-chip">Master</span> : null}
+          </div>
+          <div className="pc-side">
+            {connection}
+            {menuButton}
+          </div>
+        </header>
+      )}
 
       {view.lock ? (
-        <LockArea port={port} offer={view.lock} device={device} />
+        // the Controller's bar is not drawn above a Lock: the Menu (and a connection that is not fine) go in the puzzle's own bar
+        <LockArea port={port} offer={view.lock} device={device} barExtra={<>{view.connection === "online" ? null : connection}{menuButton}</>} />
       ) : (
         <main className="pc-main ui-stack">
           <div className="ui-segments pc-layouts" role="radiogroup" aria-label="Controller layout">
@@ -88,7 +96,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
 
       {menuOpen ? (
         <div id="pc-menu">
-          <MenuSheet onClose={() => setMenuOpen(false)} returnFocusTo={menuButton}>
+          <MenuSheet onClose={() => setMenuOpen(false)} returnFocusTo={menuButtonRef}>
             <div className="ui-stack">
               <PuzzleSettings
                 {...(view.master ? { master: { value: view.master.puzzles, preset: view.master.preset, onChange: (s) => port.setPuzzles(s) } } : {})}

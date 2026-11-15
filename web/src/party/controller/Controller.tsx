@@ -15,7 +15,7 @@ export function Controller({ port, initialCode = "" }: { port: ControllerPort; i
   const view = useSyncExternalStore((onChange) => port.subscribe(() => onChange()), () => port.getView(), () => port.getView());
   const [device, setDevice] = useDeviceSettings();
   return (
-    <div className="pc-page">
+    <div className={view.lock ? "pc-page pc-page--lock" : "pc-page"}>
       {view.seat === null ? <JoinPage port={port} initialCode={initialCode} /> : <SeatedFrame port={port} view={view} control={{ device, setDevice }} />}
     </div>
   );

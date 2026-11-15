@@ -22,8 +22,9 @@
 .pc-side { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-2); margin-left: auto; }
 .pc-menu-button { flex: 0 0 auto; }
 .pc-layouts { max-width: 20rem; }
-/* The Lock takes the height the screen has left after this page's own: the page padding above and below and the header (one row) between. */
-.pc-lock { min-width: 0; --pz-chrome: calc(var(--pc-target) + var(--space-3) * 3 + env(safe-area-inset-bottom, 0px)); }
+/* With a Lock open the puzzle is the page: its own bar has the Menu, so there is no header and no padding of this page around it (the puzzle keeps the safe areas). */
+.pc-page--lock { padding: 0; }
+.pc-lock { min-width: 0; }
 
 /* the two layouts: named regions that later parts of the Controller fill */
 .pc-slot { display: grid; place-items: center; min-height: 6rem; padding: var(--space-3); border: var(--stroke-thin) dashed var(--line); border-radius: var(--radius-lg); text-align: center; }
