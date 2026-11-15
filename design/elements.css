@@ -164,6 +164,8 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-speech-tail { color: var(--text-quiet); font-style: italic; }
 .ui-note { min-height: 1rem; margin: var(--space-2) 0 0; color: var(--text-quiet); font-size: var(--text-small); }
 .ui-note.is-warn { color: var(--danger); }
+/* A warning inside a dialogue sits on a lit surface (the raised surface tinted by whoever speaks), which the red-text rule of the token file does not cover: red words there are 4.2 to 1. The words stay in the text colour and the red is the edge. */
+.ui-dialogue .ui-note.is-warn { display: inline-block; padding-left: var(--space-2); border-left: var(--stroke-frame) solid var(--danger); color: var(--text); text-align: left; }
 .ui-dialogue-action { position: absolute; right: var(--space-2); bottom: var(--space-1); padding: var(--space-1) var(--space-3); }
 
 /* ---- the HUD: only what the rules give the player ----------------------------------------------------------------------------------------- */
@@ -198,11 +200,12 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-chip.is-haunting { border-style: dashed; font-style: italic; opacity: 0.75; }
 
 /* ---- the transport bar: always in reach -------------------------------------------------------------------------------------------------- */
-.ui-transport { position: sticky; bottom: var(--space-2); z-index: var(--z-sticky); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-2); padding: var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--surface-panel) 94%, transparent); box-shadow: var(--shadow-lift); }
-.ui-tool { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-0); min-height: var(--target-main); padding: var(--space-1) var(--space-0); font-size: var(--text-micro); letter-spacing: 0.04em; }
+/* The tools share the row equally and are never narrower than a touch target: when six do not fit (a 320 px screen), the last one wraps onto a row of its own and takes its width. From the wide breakpoint the Director tool is gone and the five are a grid. */
+.ui-transport { position: sticky; bottom: var(--space-2); z-index: var(--z-sticky); display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--surface-panel) 94%, transparent); box-shadow: var(--shadow-lift); }
+.ui-tool { display: flex; flex: 1 1 var(--target); flex-direction: column; align-items: center; justify-content: center; gap: var(--space-0); min-width: var(--target); min-height: var(--target-main); padding: var(--space-1) var(--space-0); font-size: var(--text-micro); letter-spacing: 0.04em; }
 .ui-tool-glyph { font-size: var(--text-title); line-height: 1; }
 .ui-keys { display: none; grid-column: 1 / -1; margin: var(--space-0) 0 0; color: var(--text-quiet); font-size: var(--text-micro); text-align: center; }
-@media (min-width: 900px) { .ui-keys { display: block; } .ui-tool--narrow-only { display: none; } .ui-transport { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .ui-keys { display: block; } .ui-tool--narrow-only { display: none; } .ui-transport { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 
 /* ---- progress through a story ----------------------------------------------------------------------------------------------------------- */
 .ui-progress { padding: var(--space-0) var(--space-1); }

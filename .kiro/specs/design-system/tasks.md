@@ -34,7 +34,7 @@
   - [x] 3.3 The web app loads `design/fonts.css` and `design/elements.css` after `tokens.css` (`web/src/main.tsx`); the production build bundles the four fonts from the app's own origin
     - _Requirements: 5.2_
 
-- [ ] 4. Move the screens built before this spec
+- [x] 4. Move the screens built before this spec
   - [x] 4.1 `web/src/puzzles/puzzles.css`: the raw hex colours (`#14171c`, `#1c2027`) and `rgb(233 228 216 / 22%)` are surface and text roles; the puzzle styles hold no hex, no `rgb()` and no palette name
     - Done 2026-11-15. The wire colours and the 12 shelf-item hues in `web/src/puzzles/art/` stay as hex on purpose: they are game content that must tell things apart, not interface colour (see 4.5).
     - _Requirements: 5.3_
@@ -43,6 +43,7 @@
     - _Requirements: 5.3_
   - [x] 4.3 `web/src/app/screens/*`, `web/src/app/play/*`, `web/src/app/create/*`, `web/src/app/haunt/*`, `web/src/app/case/*`: the same, screen by screen, one `ui-button--primary` to a screen
     - Done 2026-11-15. Checked in a headless browser at 390 and 1280 px: no console errors, no sideways scroll, no control under 44 px. `create/surface.ts` still paints black ink on white paper: that is the ink check's pixel contract, not look.
+    - One leftover found later by `world-pipeline` 13 and moved: the demo Turnstile stand-in (`web/src/app/confirm/turnstile-standin.ts`) still made `button` elements. The old-class test now reads `.ts` files too. The Create, Confirm and progress screens were re-checked at 390 and 1280 px in 17 states each (targets, one yellow button, contrast, focus ring, reduced motion): all pass.
     - _Requirements: 5.2, 5.3_
   - [x] 4.4 The 11 puzzle phone screens: buttons, panels, hints, status, gauges and rows are `ui-` elements; the game pieces keep `pz-` classes made of roles and tokens; 48 px targets stay (`--pz-target` on the host); `--pz-space-*` is gone, they use `--space-1` to `--space-4`
     - Done 2026-11-15. Checked in a headless browser at 390 px: every kind, no console errors, no sideways scroll, every control at least 48 px.
@@ -69,5 +70,8 @@
   - [x] 5.3 Every spec folder is a screen spec or says why it has no screen; the test fails for a new folder that is neither; the five specs that had a screen part and no Shared look (`world-pipeline`, `conditions`, `ghost-engine`, `errands`, `world-clues`) now carry it
     - _Requirements: 6.1, 6.3, 6.4_
 
-- [ ] 6. Checkpoint
+- [x] 6. Checkpoint
   - Run `pnpm check-tokens`, `node tools/check-traceability.mjs`, `node --test tools/test/design-tokens.test.mjs tools/test/design-system.test.mjs tools/test/voice-demo.test.mjs`, `pnpm --filter web test` and `pnpm typecheck`; open `/design/` and the play-through on a real phone (`mtest.hauntology.app/design/` after `cd tools/playtest && node build.mjs && wrangler deploy`). Nothing is open.
+  - **Run on 2026-11-15, all pass:** `pnpm check-tokens` ok; `node tools/check-traceability.mjs` OK; all the tools tests (249, which include `design-tokens`, `design-system` and `voice-demo`); `pnpm --filter web test` (923); `pnpm -r test` (`shared` 891, `api` 641); `pnpm typecheck` clean in all three packages. **The real phone was not done:** it needs a deploy to `mtest.hauntology.app`, which was not made. In its place `/design/` and the play-through were checked in an emulated phone (touch, `isMobile`) at 320x568, 360x740, 375x667, 390x844, 430x932 and sideways at 844x390, and under reduced motion: no sideways scroll, no console errors, no animation or transition over 10 ms under reduced motion, no control under 44 px wide or tall except the catalogue's bare check box and an inline link (demo pieces: a check box in use sits in a 44 px row), and one solid yellow button on the play-through (the second yellow thing is the skip link, off screen until it takes focus). Opening both on a real device once is still the owner's step; this box is ticked on the emulated check at the owner's request.
+  - **Two faults the emulated check found, fixed:** (1) the six transport tools were 40 px wide at 320 px. `.ui-transport` is now a wrapping flex row and `.ui-tool` is `flex: 1 1 var(--target)` with `min-width: var(--target)`: one row of six from about 345 px up (51 px each at 390), and at 320 px the last tool wraps onto a row of its own and takes its width (five at 49 px, the Director full width); from 900 px it is still the grid of five with the keys line. (2) Red text inside `ui-dialogue` was 4.23 to 1: the dialogue is the raised surface tinted 5 per cent by whoever speaks, which the token rules for red text do not cover. A warning there is now `--text` with a 3 px red edge (`.ui-dialogue .ui-note.is-warn`). New tests in `tools/test/design-system.test.mjs`: the tool minimum and the wrap, the wide grid, text and quiet text at 4.5 on the dialogue lit by each of the four lights, and the warning's rule; 11 deliberate breakages, all caught. Both were checked again in the emulated phone and by eye.
+  - **Decisions for you to review:** (1) the transport wraps to two rows below about 345 px wide (the Director as a full-width bar) rather than shrinking the tools; (2) in a dialogue a warning is bone text with a red edge, not red text. The Director's label still spills a few pixels past its button at 360 to 390 px (the word is wider than the 51 px tool; it clears its neighbours); not fixed.

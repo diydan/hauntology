@@ -48,7 +48,7 @@ describe("RoomCore: the lobby", () => {
     await say(core, "ben", { t: "addBot" });
     expect(f.of("ben", "refused").at(-1)).toEqual({ t: "refused", code: "not_master" });
     await say(core, "ana", { t: "addBot" });
-    expect((f.of("host", "lobby").at(-1) as { seats: unknown[] }).seats).toHaveLength(3);
+    expect(f.of("host", "lobby").at(-1)?.["seats"] as unknown[]).toHaveLength(3);
     await say(core, "ben", { t: "start" });
     expect(f.of("ben", "refused").at(-1)).toEqual({ t: "refused", code: "not_master" });
     await say(core, "ana", { t: "start" });

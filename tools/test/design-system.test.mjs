@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { entries } from '../lib/design-tokens.mjs';
+import { contrast, entries, roleHex } from '../lib/design-tokens.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const read = (f) => readFileSync(join(root, f), 'utf8');
@@ -101,6 +101,43 @@ test('every control is at least 44 px (the main ones 52 px) and the focus ring i
   assert.match(rules.find(([s]) => s === '.ui-stack > *')[1], /margin: 0/, 'the gap of a stack is the only space between its blocks');
   assert.equal(tokens.role.focus.color, 'lantern');
   assert.ok(!/outline:\s*none/.test(elements.replace(/\.ui-sheet-title:focus \{[^}]*\}/, '')), 'the only ring turned off is the one on a title that is a focus target, not a control');
+});
+
+test('the transport tools are never narrower than a touch target: they wrap instead of shrinking (a 320 px screen), and from the wide breakpoint the five are a grid', () => {
+  const tool = rules.find(([s]) => s === '.ui-tool')[1];
+  assert.match(tool, /min-width: var\(--target\)/, 'a tool is at least a touch target wide as well as tall');
+  assert.match(tool, /flex: 1 1 var\(--target\)/, 'the tools share the row equally, from a touch target up');
+  const bar = rules.find(([s]) => s === '.ui-transport')[1];
+  assert.match(bar, /display: flex/);
+  assert.match(bar, /flex-wrap: wrap/, 'six tools that do not fit wrap onto a second row, so none is squeezed under a touch target');
+  assert.ok(!/grid-template-columns/.test(bar), 'six equal columns shrank each tool to 40 px at 320 px');
+  assert.match(rawElements, /@media \(min-width: 900px\) \{[\s\S]*?\.ui-tool--narrow-only \{ display: none; \} \.ui-transport \{ display: grid; grid-template-columns: repeat\(5, minmax\(0, 1fr\)\); \}/);
+  // What one row of six needs: six touch targets, five gaps, the bar's padding on both sides and its edge. A screen with less room than that wraps the last tool; it is about 322 px, so a 345 px phone keeps one row.
+  const px = (v) => (v.endsWith('rem') ? parseFloat(v) * 16 : parseFloat(v));
+  assert.equal(px(tokens.size.target.value), 44);
+  const gap = px(tokens.space['2'].value);
+  assert.ok(6 * 44 + 5 * gap + 2 * gap + 2 <= 330, 'one row of six must fit a 345 px phone');
+});
+
+test('text on the dialogue is readable on every lit surface it can take, and a warning inside it keeps the red to its edge (red words are 4.2 to 1 there)', () => {
+  const dialogue = rules.find(([s]) => s === '.ui-dialogue')[1];
+  const tint = dialogue.match(/background: color-mix\(in srgb, var\(--lit, var\(--accent\)\) (\d+)%, var\(--surface-raised\)\);/);
+  assert.ok(tint, 'the dialogue is the raised surface tinted by the light of whoever speaks');
+  const share = Number(tint[1]) / 100;
+  const lit = [...elements.matchAll(/--lit: var\(--([a-z-]+)\)/g)].map((m) => m[1]);
+  assert.ok(lit.includes('accent') && lit.includes('speaker-whisper') && lit.includes('speaker-keeper') && lit.includes('speaker-suspect'), `the lights are ${lit}`);
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const mix = (a, p, b) => '#' + rgb(a).map((v, i) => Math.round(v * p + rgb(b)[i] * (1 - p)).toString(16).padStart(2, '0')).join('');
+  let redFails = 0;
+  for (const light of lit) {
+    const surface = mix(roleHex(tokens, light), share, roleHex(tokens, 'surface-raised'));
+    for (const role of ['text', 'text-quiet']) assert.ok(contrast(roleHex(tokens, role), surface) >= 4.5, `${role} on the dialogue lit by ${light} is ${contrast(roleHex(tokens, role), surface).toFixed(2)}`);
+    if (contrast(roleHex(tokens, 'danger'), surface) < 4.5) redFails++;
+  }
+  assert.ok(redFails > 0, 'red words do not reach 4.5 on a lit dialogue, which is why a warning there is not red text (if this fails, the special rule is no longer needed)');
+  const warn = rules.find(([s]) => s === '.ui-dialogue .ui-note.is-warn')[1];
+  assert.match(warn, /color: var\(--text\)/);
+  assert.match(warn, /border-left: var\(--stroke-frame\) solid var\(--danger\)/);
 });
 
 test('yellow is the main colour and only the main button and the skip link are solid yellow; green is rare and only the Whisper and the tick box have it', () => {
