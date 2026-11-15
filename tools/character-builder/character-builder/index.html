@@ -849,12 +849,24 @@ async function applyMaterials(root, file, variant, side) {
 }
 function bindToBody(root) {
   const list = []; root.traverse(o => { if (o.isSkinnedMesh) list.push(o); }); const out = [];
-  for (const m of list) { const sk = new THREE.Skeleton(m.skeleton.bones.map(b => B[b.name] || b), m.skeleton.boneInverses); m.parent.remove(m); bodyObj.add(m); m.bind(sk, m.bindMatrix); skirtWeights(m); out.push(m); }
+  for (const m of list) { const sk = new THREE.Skeleton(m.skeleton.bones.map(b => B[b.name] || b), m.skeleton.boneInverses); m.parent.remove(m); bodyObj.add(m); m.bind(sk, m.bindMatrix); skirtWeights(m); weldSeams(m); out.push(m); }
   return out;
 }
 /* SKIRTS AND DRESSES: the pack skins them to the leg bones, so each side follows its own leg (the cloth splits between the legs and folds at the knee).
    For a garment that is closed between the legs, the leg weights below the hips go to the hips plus the AVERAGE of both thighs (more of the thighs toward the hem),
    so the skirt swings as one cone with the legs and never bends at the knee. Trousers (open between the legs) are left alone. */
+/* every garment: seam points (separate panels' vertices at the same spot, within 3 mm) share one set of skin weights, so seams never open when a joint bends (jeans split at a heavy knee) */
+function weldSeams(m) {
+  const g = m.geometry, P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight; if (!SI || !SW) return;
+  { // seam points (panels' vertices at the same spot) must share one set of weights, or the seam opens when the legs move (a slit down the front of a dress)
+    // within 3 mm, not only the exact same spot: a slit's two edges meet at rest but not exactly, and must move as one (stitched shut)
+    const TOL = 0.3, cells = new Map(), ck = (x, y, z) => Math.floor(x / TOL) + ',' + Math.floor(y / TOL) + ',' + Math.floor(z / TOL);
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), cx = Math.floor(x / TOL), cy = Math.floor(y / TOL), cz = Math.floor(z / TOL); let f0 = -1;
+      for (let a = -1; a <= 1 && f0 < 0; a++) for (let b = -1; b <= 1 && f0 < 0; b++) for (let c = -1; c <= 1 && f0 < 0; c++) { const l = cells.get((cx + a) + ',' + (cy + b) + ',' + (cz + c)); if (l) for (const j of l) if (Math.hypot(P.getX(j) - x, P.getY(j) - y, P.getZ(j) - z) < TOL) { f0 = j; break; } }
+      if (f0 >= 0) { for (let c = 0; c < 4; c++) { SI.setComponent(i, c, SI.getComponent(f0, c)); SW.setComponent(i, c, SW.getComponent(f0, c)); } }
+      else { const k = ck(x, y, z); (cells.get(k) || cells.set(k, []).get(k)).push(i); } } }
+  SI.needsUpdate = SW.needsUpdate = true;
+}
 function skirtWeights(m) {
   const g = m.geometry, P = g.attributes.position, SI = g.attributes.skinIndex, SW = g.attributes.skinWeight, bones = m.skeleton && m.skeleton.bones, G = g.attributes.aGarm; if (!SI || !SW || !bones) return;
   const O = m.userData.skinOrig ||= { si: SI.array.slice(), sw: SW.array.slice() }; SI.array.set(O.si); SW.array.set(O.sw); SI.needsUpdate = SW.needsUpdate = true; // always from the pack's own weights: this runs again after the hem is lengthened (the stretched part needs the shins, not the thighs)
@@ -882,14 +894,7 @@ function skirtWeights(m) {
     const top = [...w.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4), sum = top.reduce((a, e) => a + e[1], 0) || 1;
     for (let k = 0; k < 4; k++) { SI.setComponent(i, k, top[k] ? top[k][0] : 0); SW.setComponent(i, k, top[k] ? top[k][1] / sum : 0); }
   }
-  { // seam points (panels' vertices at the same spot) must share one set of weights, or the seam opens when the legs move (a slit down the front of a dress)
-    // within 3 mm, not only the exact same spot: a slit's two edges meet at rest but not exactly, and must move as one (stitched shut)
-    const TOL = 0.3, cells = new Map(), ck = (x, y, z) => Math.floor(x / TOL) + ',' + Math.floor(y / TOL) + ',' + Math.floor(z / TOL);
-    for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), cx = Math.floor(x / TOL), cy = Math.floor(y / TOL), cz = Math.floor(z / TOL); let f0 = -1;
-      for (let a = -1; a <= 1 && f0 < 0; a++) for (let b = -1; b <= 1 && f0 < 0; b++) for (let c = -1; c <= 1 && f0 < 0; c++) { const l = cells.get((cx + a) + ',' + (cy + b) + ',' + (cz + c)); if (l) for (const j of l) if (Math.hypot(P.getX(j) - x, P.getY(j) - y, P.getZ(j) - z) < TOL) { f0 = j; break; } }
-      if (f0 >= 0) { for (let c = 0; c < 4; c++) { SI.setComponent(i, c, SI.getComponent(f0, c)); SW.setComponent(i, c, SW.getComponent(f0, c)); } }
-      else { const k = ck(x, y, z); (cells.get(k) || cells.set(k, []).get(k)).push(i); } } }
-  SI.needsUpdate = SW.needsUpdate = true; m.userData.skirt = between;
+  weldSeams(m); m.userData.skirt = between;
 }
 function removePart(slot) { const p = parts[slot]; if (!p) return; for (const o of p.objs) o.parent && o.parent.remove(o); for (const e of p.mats) e.mat && e.mat.dispose && e.mat.dispose(); delete parts[slot]; if (slot === 'hair' || slot === 'bangs') rebuildHairPhysics(); }
 const ATTACH = new Set(['hair', 'bangs', 'hat', 'glasses']);
@@ -1029,7 +1034,7 @@ function insetBody() {
         for (const [a, b] of [[v[0], v[1]], [v[1], v[2]], [v[2], v[0]]]) { const k = a[0] < b[0] ? a[0] + '|' + b[0] : b[0] + '|' + a[0], e = edges.get(k); if (e) e.n++; else edges.set(k, { n: 1, p: a[1], q: b[1] }); } }
       let y0 = Infinity, y1 = -Infinity, x1 = 0; for (let j = 0; j < P.count; j++) { const o = at(j); y0 = Math.min(y0, o[1]); y1 = Math.max(y1, o[1]); x1 = Math.max(x1, Math.abs(o[0])); }
       const shoe = /shoe|boot/i.test(m.name), real = o => shoe ? o[1] > y1 - 3 : (o[1] < y0 + 4 || Math.abs(o[0]) > x1 - 4); // the real openings only: a hem or trouser cuff (bottom), a sleeve end (the far ends of the arms in the bind pose), a shoe's top; panel seams don't count
-      for (const e of edges.values()) if (e.n === 1) for (const o of [e.p, e.q]) if (real(o) && !skirtIn.some(sk => sk.g !== m && sk.wraps(o[0], o[1], o[2]))) { const r = !shoe && o[1] < y0 + 4 ? (m.userData.skirt ? 4 : 9) : ER, c = ck(...o); (cell.get(c) || cell.set(c, []).get(c)).push([o[0], o[1], o[2], r]); } } // a bottom hem keeps 9 cm: legs spread and step far out from under a skirt or shorts
+      for (const e of edges.values()) if (e.n === 1) for (const o of [e.p, e.q]) if (!real(o)) { if (!shoe) { const c = ck(...o); (cell.get(c) || cell.set(c, []).get(c)).push([o[0], o[1], o[2], 3]); } } /* any other hole in the cloth (ripped jeans' knees): the skin behind it stays drawn, 3 cm round */ else if (!skirtIn.some(sk => sk.g !== m && sk.wraps(o[0], o[1], o[2]))) { const r = !shoe && o[1] < y0 + 4 ? (m.userData.skirt ? 4 : 9) : ER, c = ck(...o); (cell.get(c) || cell.set(c, []).get(c)).push([o[0], o[1], o[2], r]); } } // a bottom hem keeps 9 cm: legs spread and step far out from under a skirt or shorts
     // bottom hems by column: under each bit of skin, the lowest point of any (non-shoe) garment within 6 cm sideways; skin less than 9 cm above it stays drawn (works for hems with no open edge, like a doubled skirt hem)
     const COL = 2, colMin = new Map(); for (const m of garments) { if (/shoe|boot/i.test(m.name)) continue; const P = m.geometry.attributes.position, G = m.geometry.attributes.aGarm;
       for (let j = 0; j < P.count; j++) { const k2 = Math.floor(P.getX(j) / COL) + ',' + Math.floor(P.getZ(j) / COL), y = P.getY(j) + (G ? G.getY(j) : 0); const cur = colMin.get(k2); if (!cur || y < cur[0]) colMin.set(k2, [y, !!m.userData.skirt]); } }
