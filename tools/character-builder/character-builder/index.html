@@ -863,8 +863,11 @@ function skirtWeights(m) {
   const bindPos = i => new THREE.Vector3().setFromMatrixPosition(new THREE.Matrix4().copy(m.skeleton.boneInverses[i]).invert()), tL = bindPos(iL), tR = bindPos(iR);
   const hipW = Math.abs(tL.x - tR.x), midX = (tL.x + tR.x) / 2, thighY = (tL.y + tR.y) / 2, v = new THREE.Vector3(); if (!(hipW > 0)) return;
   const isLeg = bones.map(b => /Thigh|Calf|Knee|Foot|Toe/.test(b.name)); let between = 0, minY = Infinity;
-  for (let i = 0; i < P.count; i++) { at(i, v); minY = Math.min(minY, v.y); if (Math.abs(v.x - midX) < 0.15 * hipW && v.y < thighY - 0.4 * hipW) between++; }
-  if (between < 20) return; // trousers: open between the legs
+  const kneeY0 = cL >= 0 && cR >= 0 ? (bindPos(cL).y + bindPos(cR).y) / 2 : thighY - 3 * hipW, bandTop = kneeY0 + 0.6 * (thighY - kneeY0); // between the knees, well below the crotch: trousers, overalls and suits have a gap there, a skirt has cloth
+  const kb = []; for (let i = 0; i < P.count; i++) { at(i, v); minY = Math.min(minY, v.y); if (v.y < bandTop && v.y > kneeY0 - 0.5 * hipW) kb.push([v.x, v.z]); }
+  if (kb.length) { const zF = Math.max(...kb.map(q => q[1])), zC = kb.reduce((s2, q) => s2 + q[1], 0) / kb.length; // a skirt has cloth at the FRONT surface across the middle; trousers' inner seams near the middle sit at mid depth
+    for (const [x, z] of kb) if (Math.abs(x - midX) < 0.15 * hipW && z > zC + 0.6 * (zF - zC)) between++; }
+  if (between < 6) return; // trousers: open between the legs
   const span = Math.max(thighY - minY, 1e-3), w = new Map(), kneeY = cL >= 0 && cR >= 0 ? (bindPos(cL).y + bindPos(cR).y) / 2 : -Infinity, band = 0.3 * hipW;
   for (let i = 0; i < P.count; i++) {
     at(i, v); if (v.y > thighY + 0.1 * hipW) continue;
@@ -1015,8 +1018,8 @@ function insetBody() {
   const skirtIn = []; for (const g of garments) { if (!g.userData.skirt) continue; { const P0 = g.geometry.attributes.position, G0 = g.geometry.attributes.aGarm; let lo0 = Infinity, hi0 = -Infinity; for (let i = 0; i < P0.count; i++) { const y = P0.getY(i) + (G0 ? G0.getY(i) : 0); lo0 = Math.min(lo0, y); hi0 = Math.max(hi0, y); } if (hi0 - lo0 < 45) continue; } /* long skirts only: a short skirt's legs are mostly out */ const P = g.geometry.attributes.position, G = g.geometry.attributes.aGarm, SL = 2, NA = 24; let hemY = Infinity, topY = -Infinity, cx = 0, cz = 0, n = 0;
     for (let i = 0; i < P.count; i++) { const y = P.getY(i) + (G ? G.getY(i) : 0); hemY = Math.min(hemY, y); topY = Math.max(topY, y); cx += P.getX(i); cz += P.getZ(i); n++; } cx /= n; cz /= n;
     const rad = new Map(); for (let i = 0; i < P.count; i++) { const y = P.getY(i) + (G ? G.getY(i) : 0), dx = P.getX(i) - cx, dz = P.getZ(i) - cz, k = Math.floor(y / SL) + ',' + (((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA); rad.set(k, Math.max(rad.get(k) || 0, Math.hypot(dx, dz))); }
-    skirtIn.push({ hemY, topY, inside: (x, y, z) => { if (y < hemY + 5 || y > topY - 12) return false; const dx = x - cx, dz = z - cz, a0 = ((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA; let r = 0; for (const da of [-1, 0, 1]) for (const dy of [-1, 0, 1]) r = Math.max(r, rad.get((Math.floor(y / SL) + dy) + ',' + ((a0 + da + NA) % NA)) || 0); return Math.hypot(dx, dz) < r + 2; } }); } // a little OUTSIDE the resting outline too: a wide step carries the leg out to the dress wall
-  if (skirtIn.length) for (const [k, nn] of nrm) if (skirtIn.some(sk => sk.inside(nn[3], nn[4], nn[5]))) hidden.add(k);
+    skirtIn.push({ hemY, topY, inside: (x, y, z) => { if (y < hemY + 5 || y > topY - 12) return false; const dx = x - cx, dz = z - cz; if (Math.hypot(dx, dz) < 6) return true; const a0 = ((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA; let r = 0; for (const da of [-1, 0, 1]) for (const dy of [-1, 0, 1]) r = Math.max(r, rad.get((Math.floor(y / SL) + dy) + ',' + ((a0 + da + NA) % NA)) || 0); return Math.hypot(dx, dz) < r + 2; } }); } // a little OUTSIDE the resting outline too: a wide step carries the leg out to the dress wall
+  const inSkirt = new Set(); if (skirtIn.length) for (const [k, nn] of nrm) if (skirtIn.some(sk => sk.inside(nn[3], nn[4], nn[5]))) { hidden.add(k); inSkirt.add(k); }
   SOCK_CUT.value = skirtIn.length ? Math.min(...skirtIn.map(sk => sk.hemY)) + 14 : 1e9;
   // keep only skin WELL inside a garment: skin within ER cm of a garment's OPENING (hem, cuff, collar, shoe top: edges with one triangle) stays drawn,
   // because a moving leg or foot brings it out past the opening (holes at knees and ankles). Distance to the opening, not to bare skin: inner thighs are bare but deep inside a skirt
@@ -1033,6 +1036,7 @@ function insetBody() {
     const hemBelow = (x, y, z) => { let lo = Infinity; const cx = Math.floor(x / COL), cz = Math.floor(z / COL); for (let a = -3; a <= 3; a++) for (let c = -3; c <= 3; c++) { const v = colMin.get((cx + a) + ',' + (cz + c)); if (v !== undefined && v < lo) lo = v; } return lo; };
     const drop = []; for (const k of hidden) { const nn = nrm.get(k), cx = Math.floor(nn[3] / CK), cy = Math.floor(nn[4] / CK), cz = Math.floor(nn[5] / CK); let near = false;
       for (let a = -1; a <= 1 && !near; a++) for (let b = -1; b <= 1 && !near; b++) for (let c = -1; c <= 1 && !near; c++) { const l = cell.get((cx + a) + ',' + (cy + b) + ',' + (cz + c)); if (l) for (const o of l) if (Math.hypot(o[0] - nn[3], o[1] - nn[4], o[2] - nn[5]) < o[3]) { near = true; break; } }
+      if (inSkirt.has(k)) near = false; // inside a long dress only its hem matters (the sleeves and neckline are far away; a thigh poked through the front)
       if (!near) { const up = nn[4] - hemBelow(nn[3], nn[4], nn[5]); if (up >= 0 && up < 9) near = true; } // only skin ABOVE the hem it is under (feet below a trouser cuff are the shoes' business)
       if (near) drop.push(k); }
     for (const k of drop) hidden.delete(k); }
@@ -1040,6 +1044,7 @@ function insetBody() {
     for (let i = 0; i < P.count; i++) { const k = qk(P.getX(i), P.getY(i), P.getZ(i)), d = depth.get(k); if (d) { const nn = nrm.get(k); arr[3 * i] = -nn[0] * d; arr[3 * i + 1] = -nn[1] * d; arr[3 * i + 2] = -nn[2] * d; } }
     setAll(m, arr);
     const hd = new Float32Array(P.count); if (m !== faceMesh) for (let i = 0; i < P.count; i++) if (hidden.has(qk(P.getX(i), P.getY(i), P.getZ(i)))) hd[i] = 1; setHide(m, hd); }
+  insetBody.dbg = { nrm, hidden, inSkirt, skirtIn };
   insetBody.last = { garments: garments.length, tris: tris.length, sunk: depth.size, hidden: hidden.size }; insetBody.hem = hemLog;
 }
 

@@ -66,3 +66,9 @@ Look panel, "Face print (test)". Two test portraits: The Whisper and Mr. Ashby (
 - Long dresses: leg skin a little outside the resting outline (+2 cm) is hidden too; seam points share one set of skin weights; the inside of every garment is drawn in shadow (a slit or open hem reads as dark, not lit pink). Small leg flecks can still show when Vane steps wide.
 - Dress slit: seam points within 3 mm share skin weights (stitch), garment insides get no shine or rim light, and under a long dress the boot/sock shaft above hem+14 cm is cut (`SOCK_CUT`; it poked through when the cloth folded). A hairline still shows down Vane's dress front in a wide step.
 - Elbows: checked in 12 arm poses (Ashby's sweater, Pike's jacket): no holes; the same "well inside only" hide rule covers sleeves (4 cm from a sleeve end).
+
+## Clipping review (2026-11-15): 10 body/clothing setups x 4 poses, plus hair with hoods, collars and hats
+- Fixed: trousers, overalls and the racing suit were being taken for skirts (their inner leg seams sit near the middle in the bind pose). That made legs stiff, split trousers at the knee, cut the shoes and threw pieces round the feet. A skirt now needs cloth at the FRONT surface across the middle between the knees. Only the long dress and the short skirt count.
+- Fixed: Vane's "slit" was thigh skin poking through the dress front: skin near the dress's centre line always counts as inside, and skin inside a long dress stays hidden except near its hem.
+- Clean: elbows, knees and ankles in all setups; thin and heavy builds; trousers, jeans, overalls, racing suit, loose trousers, shorts, big shorts, hoodie, blazer, shirt.
+- Still open: a heavy build's thigh can poke through a short skirt mid-stride; the inside of short skirts and big shorts reads pinkish when seated (up-skirt view); long hair's strand cards end in dark, blocky tips; 'hair.tied.001' via S.hair rendered the same as the medium style (check the id).
