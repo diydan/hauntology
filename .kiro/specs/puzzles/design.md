@@ -153,7 +153,7 @@ Min solve times are starting guesses. Spike puzzles 1.5 sets them.
 
 An optional layer, off by default, that shows a Sight as clues hanging in the air round the phone. It changes how a Sight is delivered and nothing else: the Safe code still needs the same code, `verify` is untouched, and a phone without the layer sees the plaque of 6.1.
 
-**What it is.** The Player turns the phone (or drags) and sees a faint glow where a clue hangs. Keeping the view on a glow for 0.7 seconds reads it. There are four forms:
+**What it is.** The Player turns the phone (or drags) and sees a ring with a question mark where a clue hangs. Keeping the view on a ring for 0.7 seconds reads it. (The first mockup used a faint additive glow, which could not be seen over a camera picture, so the hint is a dark disc with a light ring and a question mark.) There are four forms:
 
 | Form | Looks like | Example (made up) | Needed by a Lock? |
 |---|---|---|---|
@@ -177,7 +177,7 @@ stepRead(progress: number, angleRad: number, dtMs: number): number // 0..1; read
 
 **The phone** (`web/src/puzzles/clues/`): `ClueRing.tsx` draws the clues as three.js sprites round the camera, turned by `DeviceOrientationEvent` (the same tilt of the feel layer, so the same permission tap and the same drag fallback) with `ClueList.tsx` beside it. It is a lazy chunk loaded only when the layer is on, uses the three.js the web app already has, and draws at most 30 frames a second. The optional camera backdrop is a `<video>` element under the three.js canvas, started with `getUserMedia({ video: { facingMode: 'environment' }, audio: false })` from the Player's tap on Camera, with a visible indicator and a stop control, and stopped when the ring closes or the page is hidden; no frame is ever read into a canvas, stored or sent. The Controller turns the Sight into the ring: the ring replaces the 5 seconds of a plain Sight, and the Faded clue at a Lock stays text.
 
-**Reference.** A mockup of the ring (and of a private 3D board round it) is `tools/playtest/ar.html`, on the playtest site. It has the same four forms, the glow, the 0.7 second read, the arrow, the Clue list and "Show all as text", and its test `tools/playtest/test/ar.test.js` checks the Phone number is in the fiction range. It tracks the phone's turn only (three degrees of freedom): it does not pin a clue to a place in the room, so a clue can drift and the Player can press Place to centre the ring again. The mockup also offers the camera behind the picture, which this spec allows as an opt-in (15.10).
+**Reference.** A mockup of the ring (and of a private 3D board round it) is `tools/playtest/ar.html`, on the playtest site. It has the same four forms, the question-mark ring, the 0.7 second read, the arrow, the Clue list and "Show all as text", and its test `tools/playtest/test/ar.test.js` checks the Phone number is in the fiction range. It tracks the phone's turn only (three degrees of freedom): it does not pin a clue to a place in the room, so a clue can drift and the Player can press Place to centre the ring again. The mockup also offers the camera behind the picture, which this spec allows as an opt-in (15.10).
 
 **Not in v1.** A clue split across two phones; Story clues as the answer of a Lock; clues pinned to the room with WebXR (Android only).
 
@@ -261,7 +261,7 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 | `ghost-engine` | `gateReveal` in front of the `reveal` Directive; `WanderLocks` in the Session. |
 | `ghost-voice` | 24 Library lines for the Whisper's board words (`check-voice-library.mjs` will ask for them). |
 | `haunwallker` | The Locks switch on the Play start screen; `puzzleFeel` in `PlatformKit`. |
-| Camera for Spirit clues | **Decided by the owner on 2026-11-15: the camera is allowed in the real game, as an opt-in backdrop of the Clue ring (15.10).** The party-mode Spirit lens keeps "neither the camera nor markers" (16.4): this decision does not change it. `steering/product.md` puts VR/WebXR out of scope; a flat camera backdrop that tracks nothing is neither, so it needs no change. **Needed:** `shared/src/app/csp.ts` sets `Permissions-Policy: camera=()`, which blocks the camera on any page that receives it (the party-mode selfie and QR scan need it too): allow `camera=(self)` wherever the app's pages are served, and check `csp.test.ts` and `security-headers.test.ts`. |
+| Camera for Spirit clues | **Decided by the owner on 2026-11-15: the camera is allowed in the real game, as an opt-in backdrop of the Clue ring (15.10).** The party-mode Spirit lens keeps "neither the camera nor markers" (16.4): this decision does not change it. `steering/product.md` puts VR/WebXR out of scope; a flat camera backdrop that tracks nothing is neither, so it needs no change. **Done 2026-11-15:** `shared/src/app/csp.ts` set `Permissions-Policy: camera=()`, which blocked the camera on any page that received it (the party-mode selfie and QR scan need it too); it now says `camera=(self)`, with `csp.test.ts` and `security-headers.test.ts` updated. Check where the app's pages are served, in case a host sets its own header. |
 | `tech.md` | Unverified assumptions 19 to 24 below; `PUZZLES_ENABLED`. |
 | `structure.md` | The `puzzles/` folders. |
 | `docs/SOUNDS.md` | Say that Puzzle sounds are synthesised and need no file. |
