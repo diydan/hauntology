@@ -11,7 +11,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const NAMES = ['creak', 'whisper', 'bell', 'laugh', 'wind', 'rumble', 'becoming'];
-/** The two sounds of the footage scenes: the crate lid (the Reel at Haunt 3) and the hand at the door (Haunt 7 and 8). */
+/** The two sounds of the footage scenes: the claw on the rim of the crate (the Reel at Haunt 3) and the hand at the door (Haunt 7 and 8). */
 export const SCENE_NAMES = ['knock', 'scrape'];
 export const LIMITS = { perFile: 50 * 1024, total: 350 * 1024, seconds: 3, becomingSeconds: 4, lufs: -16, lufsTolerance: 1.5, peakDb: -0.1 };
 

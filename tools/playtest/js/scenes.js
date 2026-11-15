@@ -16,14 +16,14 @@ export const SHOTS = {
 
 /** What each shot shows, in words. The picture is decoration, so this line is its twin for the live region and the log. */
 export const SHOT_TEXT = {
-  ship: 'A ship, far out at sea.',
+  ship: 'A tall ship at the quay, its sails loose.',
   coffin: 'Something rises in the ship\'s hold.',
   streets: 'An empty street, and no one at the windows.',
   stairs: 'A shadow climbs the stairs.',
   hand: 'A shadow hand reaches the door.',
   bed: 'A shape leans over the bed.',
   dawn: 'The sun rises. The window is empty.',
-  house: 'Something waits in the doorway.',
+  house: 'Something waits in a doorway. A woman hides her face at a window.',
 };
 
 /**
@@ -71,15 +71,22 @@ export function reelShot(level, max) {
 }
 
 /**
- * The two sounds of our own that go with a Reel shot (puzzles Requirement 20.6): the crate lid scrapes as the coffin shot plays (Haunt 3),
- * and someone knocks as the shadow hand reaches the door (Haunt 7 and 8). The files are `web/public/sounds/<name>.m4a`.
+ * The two sounds of our own that go with a Reel shot (puzzles Requirement 20.6): a claw scrapes the wooden rim of the crate in the coffin
+ * shot (Haunt 3), and someone knocks as the shadow hand reaches the door (Haunt 7 and 8). The files are `web/public/sounds/<name>.m4a`.
  * The footage has no sound of its own, and a sound is never the only signal: SOUND_TEXT is its twin in words.
  */
 export const SHOT_SOUND = { coffin: 'scrape', hand: 'knock' };
 export const SOUND_TEXT = {
-  scrape: 'A wooden lid scrapes.',
+  scrape: 'A claw scrapes the wooden rim.',
   knock: 'Someone knocks, slowly, at a door.',
 };
+
+/**
+ * When each sound starts, in seconds from the start of its shot: the moment of the picture it belongs to, found frame by frame on the clips.
+ * `scrape`: in reel-coffin the claw comes down on the rim of the crate at 3.2 s, and the file has 0.1 s of lead-in before the grip, so it starts at 3.1.
+ * `knock`: in reel-hand the fingertips reach the door frame at 2.1 s, and the file's first knock is at once, so it starts at 2.1.
+ */
+export const SOUND_AT = { scrape: 3.1, knock: 2.1 };
 
 /**
  * The sound for a Haunt level, or null when its shot has none. Total, like reelShot.

@@ -2,9 +2,10 @@
 // their whole small domains (every Haunt level for every maximum, a grid of clock readings) and not by sample.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EVENT_LEVELS, SHOTS, SHOT_SOUND, SHOT_TEXT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, reelSound, shadowPosition, stepPosition, wanderCard } from '../js/scenes.js';
+import { EVENT_LEVELS, SHOTS, SHOT_SOUND, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, reelSound, shadowPosition, stepPosition, wanderCard } from '../js/scenes.js';
 import { root } from './helpers.js';
 
 const MAXES = [8, 10, 12];
@@ -178,4 +179,17 @@ test('20.6 each sound has its words, its file in the game folder, a credit, and 
     assert.ok(credits.includes(`| \`${name}.m4a\` |`), `${name} has a row in CREDITS.md`);
     assert.doesNotMatch(words, /poltergeist/i);
   }
+});
+
+const probe = (file) => { const r = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], { encoding: 'utf8' }); return r.status === 0 ? Number(r.stdout) : null; };
+
+test('20.6 every sound has a start time inside its shot, and the shot is long enough for the sound to begin and be heard', { skip: probe(resolve(root, 'media', 'reel-hand.mp4')) === null && 'ffprobe not installed' }, () => {
+  assert.deepEqual(Object.keys(SOUND_AT).sort(), Object.keys(SOUND_TEXT).sort(), 'a start time for each sound, and no other');
+  for (const [shot, sound] of Object.entries(SHOT_SOUND)) {
+    const at = SOUND_AT[sound];
+    const clip = probe(resolve(root, 'media', `${SHOTS[shot]}.mp4`));
+    assert.ok(Number.isFinite(at) && at >= 0, `${sound} starts at a real time`);
+    assert.ok(at < clip - 0.5, `${sound} starts at ${at} s of a ${clip.toFixed(2)} s shot, at least half a second before the end`);
+  }
+  assert.ok(SOUND_AT.scrape > SOUND_AT.knock, 'the claw lands later in its shot than the fingers reach the door (frames of the two clips)');
 });

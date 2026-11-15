@@ -17,7 +17,7 @@ let wanted = !reduce.matches && !saver;
 const say = (text) => { status.textContent = text; };
 
 // The clock shadow, the Reel and the endings (js/scenes-page.js). They move only while footage is on and the page is visible.
-// Our own two sounds (the crate lid, the knock) go with a Reel shot. One Audio element each, made on the first tap, which is the
+// Our own two sounds (the claw on the crate, the knock) go with a Reel shot. One Audio element each, made on the first tap, which is the
 // Haunt +1 tap itself, so the browser lets it play. A sound that is blocked or missing is dropped: the words of the shot say it too.
 const sounds = {};
 function playSound(name) {

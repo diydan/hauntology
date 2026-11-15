@@ -1,6 +1,6 @@
 // The footage test page and its clip (Requirement 18 of .kiro/specs/puzzles): the files and the rules at source level, the page in jsdom
 // with the media element stubbed, and the build. Page tests skip themselves when jsdom is not installed (it lives in web/node_modules).
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
@@ -306,37 +306,115 @@ test('20 with footage off the Reel still swaps the shot and says it in words, an
   assert.match($('#ft-reel-text').textContent, /Something rises/);
 });
 
+// Sounds wait for their moment in the shot, so these tests run setTimeout on a clock they move (the clips are not really played).
+const flush = async () => { for (let i = 0; i < 8; i++) await Promise.resolve(); }; // lets the promise of a play() settle
+async function onClock(fn) {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try { await fn(async (ms) => { await flush(); mock.timers.tick(ms); await flush(); }); } finally { mock.timers.reset(); }
+}
+const rise = (n) => { for (let i = 0; i < n; i++) click(btn('Haunt +1')); };
+
+test('20.6 the scrape starts 3.1 seconds into its shot and the knock 2.1 seconds into its shot, not before', { skip }, async () => {
+  const { heard } = open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    rise(3);
+    await go(3099);
+    assert.deepEqual(heard, [], 'not yet: 3099 ms');
+    await go(1);
+    assert.deepEqual(heard, ['media/scrape.m4a'], 'at 3.1 s the claw is on the rim');
+    rise(4); // 4, 5, 6 and 7
+    await go(2099);
+    assert.equal(heard.length, 1, 'the knock waits for the fingers to reach the door');
+    await go(1);
+    assert.deepEqual(heard, ['media/scrape.m4a', 'media/knock.m4a']);
+  });
+});
+
 test('20.6 the Reel scrapes at Haunt 3 and knocks at 7 and 8, once for each rise, and is silent at every other level', { skip }, async () => {
   const { heard } = open();
   await load(); await tick(5);
-  const rises = [];
-  for (let i = 1; i <= 11; i++) { const before = heard.length; click(btn('Haunt +1')); rises.push(heard.slice(before)); }
-  const none = [];
-  assert.deepEqual(rises, [none, none, ['media/scrape.m4a'], none, none, none, ['media/knock.m4a'], ['media/knock.m4a'], none, none, none], 'level 1 to 10, then a tap at the maximum');
-  const before = heard.length;
-  for (let i = 0; i < 4; i++) click(btn('Haunt −1')); // 10 to 6: through the knock levels and back
-  click(btn('Haunt +1')); // 7 again: a rise, so it knocks
-  assert.equal(heard.length, before + 1, 'a step back is silent; the rise to 7 knocks once');
+  await onClock(async (go) => {
+    const rises = [];
+    for (let i = 1; i <= 11; i++) { const before = heard.length; rise(1); await go(5000); rises.push(heard.slice(before)); }
+    const none = [];
+    assert.deepEqual(rises, [none, none, ['media/scrape.m4a'], none, none, none, ['media/knock.m4a'], ['media/knock.m4a'], none, none, none], 'level 1 to 10, then a tap at the maximum');
+  });
 });
 
-test('20.6 a step back never makes the sound, even onto a level that has one', { skip }, async () => {
+test('20.6 a step back never makes the sound, even onto a level that has one, and drops one that is waiting', { skip }, async () => {
   const { heard } = open();
   await load(); await tick(5);
-  for (let i = 0; i < 9; i++) click(btn('Haunt +1'));
-  heard.length = 0;
-  for (let i = 0; i < 9; i++) click(btn('Haunt −1')); // 8, 7 (knock levels) and 3 (the scrape level) on the way down
-  assert.deepEqual(heard, []);
+  await onClock(async (go) => {
+    rise(9); await go(5000);
+    heard.length = 0;
+    for (let i = 0; i < 9; i++) { click(btn('Haunt −1')); await go(5000); } // 8, 7 (knock levels) and 3 (the scrape level) on the way down
+    assert.deepEqual(heard, []);
+    rise(3); // the scrape is waiting for its moment...
+    await go(1000);
+    click(btn('Haunt −1')); // ...and the Reel steps back to the ship
+    await go(5000);
+    assert.deepEqual(heard, [], 'the waiting scrape is dropped');
+  });
+});
+
+test('20.6 a sound still waiting is dropped when the Reel moves on: the next level, a new maximum, or Sound switched off', { skip }, async () => {
+  const { heard } = open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    rise(3); await go(1000); rise(1); await go(5000); // Haunt 3 then 4: the street has no sound
+    assert.deepEqual(heard, [], 'the scrape of level 3 never sounds over the street');
+    rise(3); await go(5000); // 5, 6, 7: the knock
+    heard.length = 0;
+    rise(1); await go(1000); rise(0); click(btn('Max 12')); await go(5000); // 8 is waiting; a new maximum redraws the Reel
+    assert.deepEqual(heard, [], 'a new maximum drops the waiting knock');
+    rise(1); await go(2100); // 9 at max 12 is the bed: silent
+    click(btn('Haunt −1')); click(btn('Haunt −1')); // back to 7
+    heard.length = 0;
+    rise(1); await go(500); // 8 again: knock waiting
+    click($('#ft-sound')); // Sound off
+    await go(5000);
+    assert.deepEqual(heard, [], 'Sound switched off while the knock waits: silence');
+  });
+});
+
+test('20.6 a rise straight after the one to a sound, before its picture has started, drops that sound', { skip }, async () => {
+  const { heard } = open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    rise(3); rise(1); // 3 and at once 4, in the same moment: the play() of level 3 has not settled yet
+    await go(5000);
+    assert.deepEqual(heard, [], 'the scrape of level 3 never sounds over the street');
+    rise(2); rise(1); // 5, 6 and at once 7: a knock for 7 only
+    await go(5000);
+    assert.deepEqual(heard, ['media/knock.m4a']);
+  });
+});
+
+test('20.6 two rises in a row to levels of the same shot sound once, from the later rise', { skip }, async () => {
+  const { heard } = open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    rise(6); await go(5000); // 6
+    heard.length = 0;
+    rise(1); await go(1000); // 7: the knock waits
+    rise(1); // 8: a new turn starts its own wait
+    await go(2100);
+    assert.deepEqual(heard, ['media/knock.m4a'], 'one knock, not two');
+    await go(5000);
+    assert.equal(heard.length, 1);
+  });
 });
 
 test('20.6 the words of a sound are always on screen: the scrape and the knock are said, other levels say no sound', { skip }, async () => {
   open();
   await load(); await tick(5);
   const text = () => $('#ft-reel-text').textContent;
-  for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
-  assert.match(text(), /A wooden lid scrapes\.$/);
-  click(btn('Haunt +1'));
+  rise(3);
+  assert.match(text(), /A claw scrapes the wooden rim\.$/);
+  rise(1);
   assert.doesNotMatch(text(), /scrapes|knocks/);
-  for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
+  rise(3);
   assert.match(text(), /Someone knocks, slowly, at a door\.$/);
 });
 
@@ -347,41 +425,57 @@ test('20.6 the Sound switch is on to begin with, silences both sounds when off, 
   assert.equal(sw.getAttribute('role'), 'switch');
   assert.equal(sw.getAttribute('aria-checked'), 'true');
   assert.equal(sw.querySelector('.ui-switch-state').textContent, 'On');
-  click(sw);
-  assert.equal(sw.getAttribute('aria-checked'), 'false');
-  assert.equal(sw.querySelector('.ui-switch-state').textContent, 'Off');
-  assert.equal($('#ft-status').textContent, 'Sound off.');
-  for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
-  assert.deepEqual(heard, [], 'with Sound off the scrape does not play');
-  assert.match($('#ft-reel-text').textContent, /A wooden lid scrapes\./, 'and its words are still there');
-  assert.equal($('#ft-reel').querySelector('source[type="video/webm"]').getAttribute('src'), 'media/reel-coffin.webm', 'the shot still changes');
-  click(sw);
-  assert.equal($('#ft-status').textContent, 'Sound on.');
-  for (let i = 0; i < 4; i++) click(btn('Haunt +1'));
-  assert.deepEqual(heard, ['media/knock.m4a'], 'switched on again, the next rise to a sound plays it');
+  await onClock(async (go) => {
+    click(sw);
+    assert.equal(sw.getAttribute('aria-checked'), 'false');
+    assert.equal(sw.querySelector('.ui-switch-state').textContent, 'Off');
+    assert.equal($('#ft-status').textContent, 'Sound off.');
+    rise(3); await go(5000);
+    assert.deepEqual(heard, [], 'with Sound off the scrape does not play');
+    assert.match($('#ft-reel-text').textContent, /A claw scrapes the wooden rim\./, 'and its words are still there');
+    assert.equal($('#ft-reel').querySelector('source[type="video/webm"]').getAttribute('src'), 'media/reel-coffin.webm', 'the shot still changes');
+    click(sw);
+    assert.equal($('#ft-status').textContent, 'Sound on.');
+    rise(4); await go(5000);
+    assert.deepEqual(heard, ['media/knock.m4a'], 'switched on again, the next rise to a sound plays it');
+  });
 });
 
-test('20.6 the sound is not footage: it plays with footage paused or reduced motion on, and Sound is what silences it', { skip }, async () => {
+test('20.6 a still picture has no moment: with footage off the sound is at once, and Sound is what silences it', { skip }, async () => {
   const { heard, log } = open({ reduce: true });
   await load(); await tick(5);
-  for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
-  assert.deepEqual(heard, ['media/scrape.m4a']);
+  rise(3);
+  assert.deepEqual(heard, ['media/scrape.m4a'], 'at once, with no wait');
   assert.equal(log.filter(([a, id]) => a === 'play' && id === 'ft-reel').length, 0, 'and the picture stays still');
+});
+
+test('20.6 a picture the browser blocked has no moment either: its sound is at once', { skip }, async () => {
+  const { w, heard } = open();
+  w.HTMLMediaElement.prototype.play = function () { return Promise.reject(new Error('blocked')); };
+  await load(); await tick(5);
+  await onClock(async () => {
+    rise(3); await flush();
+    assert.deepEqual(heard, ['media/scrape.m4a']);
+    assert.match($('#ft-status').textContent, /blocked the clip/);
+  });
 });
 
 test('20.6 a blocked sound, a missing Audio and a failed load change nothing: the words carry the shot', { skip }, async () => {
   const { audio, heard } = open();
   await load(); await tick(5);
-  audio.refuse = true;
-  for (let i = 0; i < 3; i++) click(btn('Haunt +1')); await tick(5); // a rejected play() must not surface as an error
-  assert.deepEqual(heard, ['media/scrape.m4a'], 'it tried');
-  assert.match($('#ft-reel-text').textContent, /scrapes/);
-  assert.deepEqual(window.__errors, []);
-  audio.broken = true;
-  for (let i = 0; i < 4; i++) click(btn('Haunt +1')); // the knock at 7, with no Audio at all
-  assert.match($('#ft-reel-text').textContent, /knocks/);
-  assert.equal($('#ft-haunt-text').textContent, 'Haunt 7 of 10', 'the page carried on');
-  assert.deepEqual(window.__errors, []);
+  await onClock(async (go) => {
+    audio.refuse = true;
+    rise(3); await go(5000); // a rejected play() must not surface as an error
+    await flush();
+    assert.deepEqual(heard, ['media/scrape.m4a'], 'it tried');
+    assert.match($('#ft-reel-text').textContent, /scrapes/);
+    assert.deepEqual(window.__errors, []);
+    audio.broken = true;
+    rise(4); await go(5000); // the knock at 7, with no Audio at all
+    assert.match($('#ft-reel-text').textContent, /knocks/);
+    assert.equal($('#ft-haunt-text').textContent, 'Haunt 7 of 10', 'the page carried on');
+    assert.deepEqual(window.__errors, []);
+  });
 });
 
 test('21 the endings: a hero shot, then our own title card; the house card names who joined the haunting', { skip }, async () => {

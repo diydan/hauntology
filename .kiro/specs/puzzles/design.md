@@ -484,13 +484,13 @@ A scene earns its place only if it does one of three jobs: it **shows state**, i
 
 | Haunt | Shot | Clip | Event |
 |---|---|---|---|
-| 0 to 2 | The ship at sea | `reel-ship` | |
+| 0 to 2 | The ship at the quay | `reel-ship` | |
 | 3 | Orlok rises in his crate | `reel-coffin` | yes |
 | 4 and 5 | An empty street | `reel-streets` | |
 | 6 | The shadow on the stairs | `stair-shadow` | yes |
 | 7 and 8 | The shadow hand at the door | `reel-hand` | |
 | 9 (to the maximum) | The shape over the bed | `reel-bed` | yes |
-| the maximum | Something waits in the doorway | `end-house` | the ending |
+| the maximum | Something waits in a doorway, a woman hides her face at a window | `end-house` | the ending |
 
 For a maximum of 8 the ladder ends at 7 (the hand) and 8 is the house; for 12 the bed holds from 9 to 11. The two ending shots are `end-dawn` (Detectives win) and `end-house` (the house wins).
 

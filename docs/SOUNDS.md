@@ -21,7 +21,7 @@ The footage has no sound of its own (puzzles Requirement 18.4), so two scene sho
 | File | Where it plays | Max length | Should sound like |
 |---|---|---|---|
 | `knock` | the Reel at Haunt 7 and 8 (the shadow hand at the door) | 3 s | a knock on a door, a few knocks, not a random thud |
-| `scrape` | the Reel at Haunt 3 (the crate lid) | 3 s | a wooden lid sliding over wood |
+| `scrape` | the Reel at Haunt 3 (a claw on the rim of the crate) | 3 s | wood dragged over wood, gripping and then letting go |
 
 ## Format
 

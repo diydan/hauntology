@@ -1,7 +1,7 @@
 // The scene demos of the footage test page: the clock shadow, the Reel, the two endings (Requirements 19 to 21) and Wander's home movie.
 // Everything here is driven by public state only (a clock, a Haunt level, a list of nicknames). The video is decoration:
 // its meaning is always also said in words (the text twin of each shot) and the page works with the footage off.
-import { SHOTS, SHOT_TEXT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, reelSound, shadowPosition, stepPosition, wanderCard } from './scenes.js';
+import { SHOTS, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, reelSound, shadowPosition, stepPosition, wanderCard } from './scenes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const clock = (ms) => { const s = Math.ceil(Math.max(0, ms) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -90,7 +90,11 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
     s.className = `ui-seg${n <= haunt ? ' is-on' : ''}${isEventLevel(n, max) ? ' ui-seg--event' : ''}${n === max ? ' ui-seg--max' : ''}`;
     return s;
   }
+  let turn = 0; // each redraw of the Reel is a new turn: a sound still waiting for its moment in an older shot is dropped
+  let soundTimer = 0;
   function drawHaunt(play, rose = false) {
+    const mine = ++turn;
+    clearTimeout(soundTimer);
     const shot = reelShot(haunt, max);
     meter.replaceChildren(...Array.from({ length: max }, (_, i) => seg(i + 1)));
     meter.setAttribute('aria-label', `Haunt ${haunt} of ${max}`);
@@ -98,8 +102,14 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
     const sound = reelSound(haunt, max);
     $('#ft-reel-text').textContent = `${isEventLevel(haunt, max) ? 'Haunt Event. ' : haunt >= max ? 'The house wins. ' : ''}${SHOT_TEXT[shot]}${sound ? ` ${SOUND_TEXT[sound]}` : ''}`;
     if (shot !== shown) { setShot(reel, shot); shown = shot; }
-    if (play && isOn()) { reel.currentTime = 0; reel.play().catch(() => say('The browser blocked the clip. Tap Play footage.')); }
-    if (rose && sound && soundOn) playSound(sound); // only a rise makes the sound (20.3, 20.6), not a step back
+    let started = null; // settles when the picture is moving: true, or false when the browser blocked it
+    if (play && isOn()) { reel.currentTime = 0; started = reel.play().then(() => true, () => { say('The browser blocked the clip. Tap Play footage.'); return false; }); }
+    if (rose && sound && soundOn) { // only a rise makes the sound (20.3, 20.6), not a step back
+      const fire = () => { if (mine === turn && soundOn) playSound(sound); };
+      // The sound belongs to a moment of the shot (SOUND_AT): once the picture is moving, wait for that moment. A still picture has no moment, so it sounds at once.
+      if (!started) fire();
+      else started.then((moving) => { if (mine !== turn) return; if (moving) soundTimer = setTimeout(fire, SOUND_AT[sound] * 1000); else fire(); });
+    }
   }
   $('#ft-haunt-up').addEventListener('click', () => { haunt = Math.min(max, haunt + 1); drawHaunt(true, true); });
   $('#ft-haunt-down').addEventListener('click', () => { haunt = Math.max(0, haunt - 1); drawHaunt(true); });
