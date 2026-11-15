@@ -277,6 +277,7 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 3. WHEN the Haunt level rises THEN the Host SHALL play the shot of the new level once, muted, and SHALL say in words, in the public log and its live region, what the shot shows and that a Haunt Event fired, and the Haunt number and its meter SHALL stay on screen.
 4. THE Reel SHALL move only on the public Haunt level, SHALL NOT play during the 15 second window after a Suggestion or during an answer choice, SHALL always be skippable, and SHALL NOT be shown on the Display under the pyramid in this version (its light limits are those of `party-mode` 7.4).
 5. EVERY shot SHALL be a clip under Requirement 18 of at most 5 seconds, and the game SHALL work with every shot missing, because the Haunt number, the meter and the words carry the meaning.
+6. THE Reel MAY play two sounds of our own with a shot, `scrape` (the crate lid, Haunt 3) and `knock` (the shadow hand at the door, Haunt 7 and 8), from `web/public/sounds/` and under the rules of the sound files in `docs/SOUNDS.md` (mono `.m4a`, at most 50 KB and 3 seconds, about -16 LUFS and not clipped, CC0 or bought, credited in `docs/sounds/CREDITS.md`, no words and no real person's voice), only WHERE the Master has sound on, never as the only signal of a shot (the words of 20.3 carry the meaning), and the game SHALL work with both missing.
 
 ### Requirement 21
 

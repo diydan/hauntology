@@ -5,6 +5,7 @@ Own work: every sample is computed here from noise, sine waves and filters, with
 and are dedicated to the public domain (CC0 1.0). No recording, no word, no real person's voice, nothing from a film, game or song.
 
 Usage:  python3 tools/sounds/make-sounds.py <out dir>        writes creak.wav ... becoming.wav (mono, 44.1 kHz, 16 bit)
+        python3 tools/sounds/make-sounds.py <out dir> --extras   writes knock.wav and scrape.wav instead (for the footage scenes)
         then tools/sounds/encode-sounds.sh <out dir> <dest>   levels to about -16 LUFS and encodes the .m4a files
 Needs numpy and nothing else. A phone speaker has no bass, so every clip keeps its energy between 150 Hz and 6 kHz.
 """
@@ -236,6 +237,44 @@ def becoming():
 CLIPS = {'creak': creak, 'whisper': whisper, 'bell': bell, 'laugh': laugh, 'wind': wind, 'rumble': rumble, 'becoming': becoming}
 
 
+# ---- sounds for the footage scenes (not among the seven; only made with --extras)
+
+def knock():
+    """Three knocks on a wooden door, a little uneven: each is a click and a few damped wood resonances (for the shadow hand at the door)."""
+    r = rng(21)
+    n = int(1.7 * SR)
+    out = np.zeros(n)
+    modes = [(165, 0.07, 1.0), (390, 0.05, 0.75), (690, 0.035, 0.5), (1130, 0.025, 0.3)]
+    for t0, amp in [(0.05, 1.0), (0.47, 0.82), (0.83, 0.7)]:
+        m = int(0.35 * SR)
+        t = np.arange(m) / SR
+        body = sum(w * np.exp(-t / tau) * np.sin(2 * np.pi * f * (1 + 0.01 * r.normal()) * t + r.uniform(0, 6.28)) for f, tau, w in modes)
+        click = fft_filter(r.normal(size=m), lo=900, hi=3800) * np.exp(-t / 0.004) * 0.6
+        hit = (body + click) * smoothstep(t / 0.0015) * amp
+        s = int(t0 * SR) + int(r.normal() * 0.004 * SR)
+        k = max(0, min(m, n - s))
+        out[s:s + k] += hit[:k]
+    return fade_out(peak(fft_filter(out, lo=120, hi=6000)), 0.05)
+
+
+def scrape():
+    """Wood dragged over wood: friction noise that grips and slips, bearing down and then letting go (for the lid of the crate)."""
+    r = rng(22)
+    n = int(2.6 * SR)
+    t = np.arange(n) / SR
+    air = r.normal(size=n)
+    band = sweep_band(air, lambda s: 380 + 520 * np.sin(np.pi * min(s / 2.4, 1.0)) ** 1.2, 0.8)
+    rough = fft_filter(r.normal(size=n), lo=6, hi=40)
+    grip = np.clip(0.55 + 0.55 * rough / np.max(np.abs(rough)), 0, None) ** 1.5
+    low = fft_filter(r.normal(size=n), lo=140, hi=420) * 0.5
+    env = smoothstep(t / 0.5) * (1 - smoothstep((t - 1.9) / 0.6))
+    y = fft_filter((band * grip + low * grip ** 2) * env, lo=150, hi=5000)
+    return fade_out(peak(y), 0.05)
+
+
+EXTRAS = {'knock': knock, 'scrape': scrape}
+
+
 def write_wav(path, x):
     pcm = (np.clip(x, -1, 1) * 32767).astype('<i2')
     with wave.open(path, 'wb') as w:
@@ -246,10 +285,13 @@ def write_wav(path, x):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    extras = '--extras' in args
+    args = [a for a in args if a != '--extras']
+    if len(args) != 1:
         sys.exit(__doc__)
-    out = sys.argv[1]
-    for name, fn in CLIPS.items():
+    out = args[0]
+    for name, fn in (EXTRAS if extras else CLIPS).items():
         x = fn()
         write_wav(f'{out}/{name}.wav', x)
         print(f'{name}: {len(x) / SR:.2f} s, peak {np.max(np.abs(x)):.2f}')

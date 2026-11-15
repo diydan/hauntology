@@ -1,8 +1,9 @@
 // The build check for the sound files (party-mode Requirement 20): fails on a file with no credit, over a size limit, or in the wrong format.
 // Usage: node tools/check-sounds.mjs [sounds folder] [credits file]      (defaults: web/public/sounds and docs/sounds/CREDITS.md)
 //
-// The rules (docs/SOUNDS.md): seven files named creak, whisper, bell, laugh, wind, rumble and becoming; each mono AAC `.m4a` of at most
-// 50 KB, at most 350 KB in all, at most 3 seconds (the becoming 4); levelled to about -16 LUFS and not clipped; one row of credit each.
+// The rules (docs/SOUNDS.md): seven files named creak, whisper, bell, laugh, wind, rumble and becoming, and two for the footage scenes
+// named knock and scrape (puzzles Requirement 20.6); each mono AAC `.m4a` of at most 50 KB, at most 350 KB in all, at most 3 seconds
+// (the becoming 4); levelled to about -16 LUFS and not clipped; one row of credit each.
 // The format, length and loudness checks use ffprobe and ffmpeg; without them those checks are skipped with a warning.
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -10,6 +11,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const NAMES = ['creak', 'whisper', 'bell', 'laugh', 'wind', 'rumble', 'becoming'];
+/** The two sounds of the footage scenes: the crate lid (the Reel at Haunt 3) and the hand at the door (Haunt 7 and 8). */
+export const SCENE_NAMES = ['knock', 'scrape'];
 export const LIMITS = { perFile: 50 * 1024, total: 350 * 1024, seconds: 3, becomingSeconds: 4, lufs: -16, lufsTolerance: 1.5, peakDb: -0.1 };
 
 const run = (cmd, args) => spawnSync(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
@@ -59,7 +62,7 @@ export function checkSounds({ dir = 'web/public/sounds', credits = 'docs/sounds/
   for (const f of files) {
     const path = resolve(dir, f);
     const m = /^([a-z]+)\.m4a$/.exec(f);
-    if (!m || !NAMES.includes(m[1])) { errors.push(`${f}: not one of the seven sound files (${NAMES.map((n) => `${n}.m4a`).join(', ')}) or not .m4a`); continue; }
+    if (!m || ![...NAMES, ...SCENE_NAMES].includes(m[1])) { errors.push(`${f}: not one of the sound files (${[...NAMES, ...SCENE_NAMES].map((n) => `${n}.m4a`).join(', ')}) or not .m4a`); continue; }
     const size = statSync(path).size;
     total += size;
     if (size > L.perFile) errors.push(`${f}: ${size} bytes is over the limit of ${L.perFile}`);

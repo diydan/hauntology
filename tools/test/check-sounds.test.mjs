@@ -7,7 +7,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { NAMES, checkSounds, readCredits } from '../check-sounds.mjs';
+import { NAMES, SCENE_NAMES, checkSounds, readCredits } from '../check-sounds.mjs';
 import { encode } from '../sounds/encode-sounds.mjs';
 
 const repo = resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
@@ -35,7 +35,7 @@ const mentions = (r, re) => r.errors.some((e) => re.test(e));
 test('the real sound files of the repo pass', () => {
   const r = checkSounds({ dir: resolve(repo, 'web/public/sounds'), credits: resolve(repo, 'docs/sounds/CREDITS.md') });
   assert.deepEqual(r.errors, []);
-  assert.deepEqual(r.files, NAMES.map((n) => `${n}.m4a`).sort());
+  assert.deepEqual(r.files, [...NAMES, ...SCENE_NAMES].map((n) => `${n}.m4a`).sort(), 'the seven and the two of the footage scenes');
 });
 
 test('readCredits reads one row a file and ignores the header and the divider', () => {
@@ -59,14 +59,17 @@ test('a file with no row in the credits fails, and so does a row with an empty c
   } finally { s.done(); }
 });
 
-test('a name that is not one of the seven, or not .m4a, fails', { skip }, () => {
+test('a name that is not one of the nine, or not .m4a, fails; the two scene sounds are allowed', { skip }, () => {
   const s = setup(['creak']);
   try {
     copyFileSync(resolve(s.dir, 'creak.m4a'), resolve(s.dir, 'boom.m4a'));
     copyFileSync(resolve(s.dir, 'creak.m4a'), resolve(s.dir, 'bell.mp3'));
+    copyFileSync(resolve(s.dir, 'creak.m4a'), resolve(s.dir, 'knock.m4a'));
+    writeFileSync(s.credits, CREDITS(['creak', 'knock']));
     const r = check(s);
-    assert.ok(mentions(r, /boom\.m4a: not one of the seven/));
-    assert.ok(mentions(r, /bell\.mp3: not one of the seven/));
+    assert.ok(mentions(r, /boom\.m4a: not one of the sound files/));
+    assert.ok(mentions(r, /bell\.mp3: not one of the sound files/));
+    assert.ok(!mentions(r, /^knock\.m4a:/), 'a knock is a sound of the footage scenes');
   } finally { s.done(); }
 });
 

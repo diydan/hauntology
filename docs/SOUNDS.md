@@ -14,9 +14,18 @@ The game plays seven short clips. **It works without any of them**: a phone flas
 | `rumble` | Rattle level 3 | 3 s | a low tremble with energy from 150 to 800 Hz, because phone speakers have no bass |
 | `becoming` | when a player joins the haunting | 4 s | a swell, one hit, a fade. Drama from shape, not volume |
 
+## Two more, for the footage scenes
+
+The footage has no sound of its own (puzzles Requirement 18.4), so two scene shots get a sound from us (puzzles Requirement 20.6). Same rules, same folder, and the game works without them.
+
+| File | Where it plays | Max length | Should sound like |
+|---|---|---|---|
+| `knock` | the Reel at Haunt 7 and 8 (the shadow hand at the door) | 3 s | a knock on a door, a few knocks, not a random thud |
+| `scrape` | the Reel at Haunt 3 (the crate lid) | 3 s | a wooden lid sliding over wood |
+
 ## Format
 
-- Mono `.m4a`, at most 50 KB each and 350 KB for all seven.
+- Mono `.m4a`, at most 50 KB each and 350 KB for all nine.
 - Levelled to about -16 LUFS. Nothing clips.
 - Put the files in `web/public/sounds/` named exactly as in the table (`creak.m4a`, and so on).
 
@@ -43,7 +52,9 @@ Check the size (`ls -l`). If a file is over 50 KB, lower the bitrate (`-b:a 48k`
 
 ## How the current files were made (2026-11-15)
 
-The seven files in `web/public/sounds/` are our own: `tools/sounds/make-sounds.py` computes them from noise, sine waves and filters (needs `python3` and `numpy`; the same seeds give the same sounds), and `node tools/sounds/encode-sounds.mjs <wav folder> web/public/sounds` levels them to -16 LUFS in two passes and encodes them. They are dedicated to the public domain (CC0 1.0). They were judged by spectrogram and by the numbers, not by ear: **listen to them**, and to replace one, drop a better file in with a row in `docs/sounds/CREDITS.md` and run `pnpm check-sounds`.
+Four of the nine files in `web/public/sounds/` are our own: `tools/sounds/make-sounds.py` computes whisper, laugh, rumble and becoming from noise, sine waves and filters (needs `python3` and `numpy`; the same seeds give the same sounds; the synthesised creak, bell and wind it also makes are kept as fallbacks, and `--extras` makes a knock and a scrape). Five are CC0 recordings picked by ear from two listening reels: the creak (Ryding, Freesound), the bell (Kenney, Impact Sounds), the wind (swiftoid, Freesound), the knock (Ligidium, Freesound) and the scrape (kforetek, Freesound). Each is credited, with its link and what was done to it, in `docs/sounds/CREDITS.md`.
+
+`node tools/sounds/encode-sounds.mjs <wav folder> <dest>` (or `--one in.wav out.m4a`) levels a clip to -16 LUFS in two passes and encodes it. A single strike or knock cannot reach -16 LUFS at the same peak (a lone knock sits near -26), so such a clip is driven 4 to 20 dB into a soft clipper, the lightest drive that lands within 1 LU; a steady clip is not touched. If AAC would overshoot and clip when decoded, the clip is band-limited at 11 kHz, held under 0.8 and encoded with more bits. The bell (drive 16 dB) and the knock (12 dB) are thicker than their sources for that reason. To replace a sound, drop a better file in with a row in `docs/sounds/CREDITS.md` and run `pnpm check-sounds`.
 
 ## Optional
 

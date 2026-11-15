@@ -318,8 +318,8 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 20.1, 20.2, 20.3, 20.5, 21.1, 21.2, 21.3, 21.4, 21.5_
   - [ ] 14.2 The clock shadow in the Host: read the public Turn Clock readout, scrub `stair-shadow` at most ten times a second, stand still when paused, no piece when the Master chose no clock, a once-a-second step under reduced motion or data saver, numbers always beside it
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5_
-  - [ ] 14.3 The Reel in the Host: on each Haunt rise play the shot of the new level once, say it in the log and the live region (the Event too), keep the meter on screen, never during the Suggestion window or an answer choice, skippable, not on the Display
-    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5_
+  - [ ] 14.3 The Reel in the Host: on each Haunt rise play the shot of the new level once, say it in the log and the live region (the Event too), keep the meter on screen, never during the Suggestion window or an answer choice, skippable, not on the Display; with the `scrape` at Haunt 3 and the `knock` at Haunt 7 and 8 when the Master has sound on (the files are in `web/public/sounds/`, sourced and credited 2026-11-15)
+    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6_
   - [ ] 14.4 The endings in the Host: `end-dawn` or `end-house`, then a title card from the `party-lines` strings (the house card with who joined the haunting), a Skip of 48 pixels, the recap after it
     - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 21.6_
   - [ ]* 14.5 Write property test for the clock shadow over the real Host once it exists (the pure rule is already tested over a grid in `test/scenes.test.js`)
