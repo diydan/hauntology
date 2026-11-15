@@ -83,14 +83,14 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.20 Write property test for zones
     - **Property 9: Zones are valid and the world-size rule holds**
     - **Validates: Requirements 4.5**
-  - [ ] 2.21 Notebook `autoMarks` (Hand, shown cards, found Residue and, with `autoCross`, the passes) as a grid of the 18 cards against every Player and the Residue, the Residue counter, and `markCard`
+  - [x] 2.21 Notebook `autoMarks` (Hand, shown cards, found Residue and, with `autoCross`, the passes) as a grid of the 18 cards against every Player and the Residue, the Residue counter, and `markCard`
     - _Requirements: 4.4_
-  - [ ]* 2.22 Write property test for the notebook
+  - [x]* 2.22 Write property test for the notebook
     - **Property 10: Notebook marks are monotone**
     - **Validates: Requirements 4.4**
-  - [ ] 2.23 `firstPlayer(round)` (it moves one Detective clockwise each Round), `nextPlayer` and `advance` with Poltergeists, skips and rounds
+  - [x] 2.23 `firstPlayer(round)` (it moves one Detective clockwise each Round), `nextPlayer` and `advance` with Poltergeists, skips and rounds
     - _Requirements: 5.1, 5.7_
-  - [ ]* 2.24 Write property test for turn order
+  - [x]* 2.24 Write property test for turn order
     - **Property 11: Turn order is fair**
     - **Validates: Requirements 5.1, 5.7**
   - [ ] 2.25 `turnBudget` (with the Blackout reduction), achievement detectors `earned` and `bonusSeconds`
