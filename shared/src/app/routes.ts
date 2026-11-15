@@ -12,6 +12,7 @@ import type { FlowState, GuardResult, Route, ScreenId } from "./types";
  *   /play/:worldId     play  (Wander)
  *   /case/:worldId     case  (a solo case)
  *   /end/:worldId      end
+ *   /shared/:worldId   shared (the link a visitor gives a friend; the server says whether it still opens)
  *   /expired           expired
  *   anything else      not_found  (pathFor gives /not-found)
  */
@@ -34,6 +35,7 @@ const WORLD_PATHS = new Map<string, ScreenId>([
   ["play", "play"],
   ["case", "case"],
   ["end", "end"],
+  ["shared", "shared"],
 ]);
 
 /**
@@ -76,6 +78,7 @@ export function pathFor(route: Route): string {
     case "play":
     case "case":
     case "end":
+    case "shared":
       return route.worldId !== undefined && isWorldId(route.worldId) ? `/${route.screen}/${route.worldId}` : "/not-found";
     case "not_found": return "/not-found";
   }
@@ -91,6 +94,7 @@ export function pathFor(route: Route): string {
  * - `play` also needs `ghostReady`, else `haunt` for that world.
  * - `case` needs no ghost: a solo case fills every Suspect from the Preset Ghosts, so it is allowed for the known world.
  * - `end` also needs `playEnded`, else the place `play` would give.
+ * - `shared` is open to everyone: whether the link still opens is the server's answer, not the flow's.
  */
 export function guardRoute(route: Route, flow: FlowState): GuardResult {
   switch (route.screen) {
@@ -112,6 +116,7 @@ export function guardRoute(route: Route, flow: FlowState): GuardResult {
     case "home":
     case "gallery":
     case "create":
+    case "shared":
     case "not_found":
     case "expired":
       return ALLOW;

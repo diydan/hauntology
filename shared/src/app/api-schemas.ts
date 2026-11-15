@@ -62,6 +62,7 @@ export const WorldStatusSchema = z.object({
   title: Text(200).optional(),
   thumbUrl: OwnPathSchema.optional(),
   failure: z.object({ code: ErrorCodeSchema, quotaReturned: z.boolean(), retryAllowed: z.boolean() }).optional(),
+  shared: z.boolean().optional(),
 });
 
 export const PlayViewSchema = z.object({
@@ -95,6 +96,7 @@ export const API_SCHEMAS = {
   createWorld: z.object({ worldId: Id, status: z.enum(JOB_STATES) }),
   world: WorldStatusSchema,
   deleteWorld: z.null(),
+  shareWorld: z.object({ shared: z.boolean() }),
   ghostPresets: z.array(GhostPresetSchema).max(12),
   searchPlaces: z.array(PlaceMatchSchema).max(5),
   listen: z.object({ transcript: Text(1000) }),

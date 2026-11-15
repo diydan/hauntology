@@ -43,13 +43,13 @@ describe("routes and flow state", () => {
     for (const id of sample(worldIdArb)) expect(id).toMatch(/^[A-Za-z0-9_-]{22,43}$/);
   });
 
-  it("only haunt, play, case and end carry a world id, and every screen is reachable", () => {
+  it("only haunt, play, case, end and shared carry a world id, and every screen is reachable", () => {
     const routes = sample(routeArb, 600);
     for (const r of routes) {
-      const needs = r.screen === "haunt" || r.screen === "play" || r.screen === "case" || r.screen === "end";
+      const needs = r.screen === "haunt" || r.screen === "play" || r.screen === "case" || r.screen === "end" || r.screen === "shared";
       expect("worldId" in r).toBe(needs);
     }
-    expect(new Set(routes.map((r) => r.screen)).size).toBe(10);
+    expect(new Set(routes.map((r) => r.screen)).size).toBe(11);
   });
 
   it("flow states never hold an undefined optional field and reach both values of every flag", () => {

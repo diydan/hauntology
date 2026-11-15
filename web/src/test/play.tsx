@@ -73,6 +73,7 @@ export function testPlatform(over: Partial<PlatformKit> = {}, options: { dispose
   });
   const locate = vi.fn(async () => ({ lat: 51.50735, lon: -0.12776 }));
   const saveFile = vi.fn();
+  const copyText = vi.fn(async (_text: string) => true);
   const kit: Partial<PlatformKit> = {
     loadViewer,
     loadHost,
@@ -88,9 +89,11 @@ export function testPlatform(over: Partial<PlatformKit> = {}, options: { dispose
       unlockAudio: async () => { log.push("unlock"); },
     },
     saveFile,
+    origin: () => "https://hauntology.test",
+    copyText,
     ...over,
   };
-  return { kit, log, loadViewer, loadHost, loadCreator, locate, saveFile, played, recorder };
+  return { kit, log, loadViewer, loadHost, loadCreator, locate, saveFile, copyText, played, recorder };
 }
 
 export type Played = ReturnType<typeof testPlatform>;

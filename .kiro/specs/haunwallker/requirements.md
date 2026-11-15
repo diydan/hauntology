@@ -202,7 +202,20 @@ The spec directory is named `haunwallker` because it was created under that name
 
 #### Acceptance Criteria
 
-1. THE screens of this spec (Home, Gallery, Create, Confirm, Play, Haunt, Case and End) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+1. THE screens of this spec (Home, Gallery, Create, Confirm, Play, Haunt, Case, End and Shared) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
 2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
 3. THE Shell SHALL use `ui-page`, `ui-header`, `ui-panel`, `ui-card` and `ui-modal` for its pages and the confirm step, `ui-button` with one `ui-button--primary` for the main action of a screen, `ui-notice` for the content notice and the offline banner, `ui-status` for progress and errors, the `ui-field` family for the Create form, and `ui-sheet` for the Chat (a bottom sheet on a phone, a side panel from 900 pixels).
 4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.
+
+### Requirement 15
+
+**User Story:** As a visitor, I want to share my place with a friend by a link, and to open a place a friend shared with me, so that we can walk into the same place without making it again. (`world-pipeline` 9.2 and Requirement 9.4 are the server side.)
+
+#### Acceptance Criteria
+
+1. WHEN the visitor's own place is ready THEN Haunt SHALL show a "Share this place" card with the link off. Turning it on SHALL call `POST /api/worlds/:id/share` and show the link on this origin (`/shared/<worldId>`, nothing else in it) with a "Copy link" action and a "Stop sharing" action, which calls `DELETE /api/worlds/:id/share`.
+2. THE card SHALL say in plain words that anyone who has the link can walk into the place, and that the link stops working when sharing is stopped, when the place is deleted and when its time runs out. "Copy link" SHALL be announced politely; WHEN the browser cannot copy THEN the link SHALL be selected in its field so the visitor can copy it by hand.
+3. THE card SHALL NOT be shown for a Gallery place, for a place that is not ready, or for a place the visitor opened by someone's link, and "Delete my place" SHALL NOT be shown for a place the visitor opened by a link.
+4. WHEN a visitor opens `/shared/:worldId` THEN the Shell SHALL ask the API for the world. WHEN it is ready THEN the Shell SHALL show its title and thumbnail with a "Walk in" action, which records the place as opened by a link (not the visitor's own) and goes to Haunt to choose a ghost. WHEN the API answers `world_not_found` THEN the Shell SHALL show the Expired Screen, which is one answer for a place that was deleted, ran out of time, is not shared any more or never was.
+5. WHEN the visitor who opens the link owns the place (only the owner's status carries `shared`, true or false, whether or not the link is on) THEN the Shell SHALL record the place as their own, and the Shared Screen SHALL say that it is their place and whether the link is on: on, that anyone who has the link can open the page; off, that only they can. A visitor is told only that someone shared the place.
+6. THE Shell SHALL never show who owns a place. WHEN a share call fails THEN the card SHALL show the error copy and stay as it was; WHEN it answers `world_not_found` THEN the Shell SHALL show the Expired Screen.

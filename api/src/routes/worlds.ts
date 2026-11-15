@@ -57,8 +57,8 @@ function statusOf(w: WorldRecord, access: Access): Record<string, unknown> {
       ? { failure: { code: w.failure.code, quotaReturned: w.failure.quotaReturned, retryAllowed: w.failure.retryAllowed } }
       : {}),
     ...(manifest !== null ? { manifest } : {}),
-    // Only the owner is told whether the share link is on.
-    ...(access === "owner" && w.shared === true ? { shared: true } : {}),
+    // Only the owner is told whether the share link is on or off. A visitor's status has no `shared` at all, which is how the shell tells the owner from a visitor.
+    ...(access === "owner" ? { shared: w.shared === true } : {}),
   };
 }
 

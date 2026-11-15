@@ -67,6 +67,8 @@ describe("the demo FakeApi and the real client share the same shapes", () => {
     const near = { pos: [ANCHORS[0]!.pos[0], 0, ANCHORS[0]!.pos[2]] as [number, number, number], yaw: 0 };
     check("playTurn", b.playTurn(t, play.playId, { input: { button: "look" }, pose: near }));
     check("playGet", b.playGet(t, play.playId));
+    check("shareWorld", b.shareWorld(t + 60_000, created.worldId, true));
+    check("world", b.world(t + 60_000, created.worldId)); // now with `shared: true`
     check("deleteWorld", b.deleteWorld(t, created.worldId));
     // `listen` is the one JSON route the backend answers only with a heard clip; `speak` returns audio.
     const heard = b.listen(t, new Blob([new Uint8Array(100)], { type: "audio/webm" }));
@@ -84,5 +86,17 @@ describe("the demo FakeApi and the real client share the same shapes", () => {
     const atmosphere = { timeOfDay: "night", weather: "fog", tempBand: "cold", windBand: "calm", moon: "full moon" };
     expect(PlayViewSchema.safeParse({ ...view, atmosphere }).success).toBe(true);
     expect(PlayViewSchema.safeParse({ ...view, atmosphere: { ...atmosphere, place: { lat: 1.23, lon: 4.56 } } }).success).toBe(false);
+  });
+});
+
+describe("the share link's shapes", () => {
+  it("shareWorld answers only a yes or no, and a status carries `shared` only as a yes or no", () => {
+    expect(API_SCHEMAS.shareWorld.safeParse({ shared: true }).success).toBe(true);
+    expect(API_SCHEMAS.shareWorld.safeParse({ shared: false, ok: true }).success).toBe(true);
+    for (const bad of [{}, { shared: "yes" }, { shared: 1 }, { shared: null }, null, "true"]) expect(API_SCHEMAS.shareWorld.safeParse(bad).success, JSON.stringify(bad)).toBe(false);
+    expect(API_SCHEMAS.world.safeParse({ id: "w", status: "ready", shared: true }).success).toBe(true);
+    expect(API_SCHEMAS.world.safeParse({ id: "w", status: "ready" }).success).toBe(true);
+    expect(API_SCHEMAS.world.safeParse({ id: "w", status: "ready", shared: "yes" }).success).toBe(false);
+    expect(API_SCHEMAS.world.parse({ id: "w", status: "ready", shared: true, ownerSid: "sid-1" })).toEqual({ id: "w", status: "ready", shared: true });
   });
 });

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetTurnstileLoader, type TurnstileApi } from "./confirm/turnstile";
-import { browserLocate, defaultPlatform } from "./platform";
+import { browserCopyText, browserLocate, defaultPlatform } from "./platform";
 
 const original = Object.getOwnPropertyDescriptor(globalThis.navigator, "geolocation");
 afterEach(() => {
@@ -62,5 +62,39 @@ describe("defaultPlatform.loadTurnstile", () => {
     } finally {
       delete (window as unknown as { turnstile?: TurnstileApi }).turnstile;
     }
+  });
+});
+
+describe("browserCopyText", () => {
+  const clipboard = Object.getOwnPropertyDescriptor(globalThis.navigator, "clipboard");
+  afterEach(() => {
+    if (clipboard) Object.defineProperty(globalThis.navigator, "clipboard", clipboard);
+    else delete (globalThis.navigator as { clipboard?: unknown }).clipboard;
+  });
+  const withClipboard = (impl: unknown) => Object.defineProperty(globalThis.navigator, "clipboard", { configurable: true, value: impl });
+
+  it("puts the text on the clipboard and says so", async () => {
+    const writeText = vi.fn(async (_t: string) => {});
+    withClipboard({ writeText });
+    await expect(browserCopyText("https://app.example/shared/w-1")).resolves.toBe(true);
+    expect(writeText).toHaveBeenCalledWith("https://app.example/shared/w-1");
+  });
+
+  it("says no, and does not throw, when the browser refuses, has no clipboard or has no writeText", async () => {
+    withClipboard({ writeText: async () => { throw new Error("denied"); } });
+    await expect(browserCopyText("x")).resolves.toBe(false);
+    withClipboard(undefined);
+    await expect(browserCopyText("x")).resolves.toBe(false);
+    withClipboard({});
+    await expect(browserCopyText("x")).resolves.toBe(false);
+  });
+
+  it("is the default platform's way to copy, and its origin is this page's", async () => {
+    const writeText = vi.fn(async (_t: string) => {});
+    withClipboard({ writeText });
+    const kit = defaultPlatform();
+    await expect(kit.copyText("link")).resolves.toBe(true);
+    expect(kit.origin()).toBe(location.origin);
+    expect(writeText).not.toHaveBeenCalledWith(location.origin);
   });
 });

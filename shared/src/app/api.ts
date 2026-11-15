@@ -41,7 +41,8 @@ export type WorldStatus = {
   title?: string | undefined;
   thumbUrl?: string | undefined;
   /** Present when `status` is `failed`. */
-  failure?: { code: ErrorCode; quotaReturned: boolean; retryAllowed: boolean } | undefined;
+  failure?: { code: ErrorCode; quotaReturned: boolean; retryAllowed: boolean } | undefined;  /** True only for the owner of a place whose share link is on: the server never tells anyone else, so it also marks a place as the visitor's own. */
+  shared?: boolean | undefined;
 };
 
 export type JournalEntry = { anchorId: AnchorId; text: string };
@@ -87,6 +88,8 @@ export interface ShellApi {
   createWorld(req: { imageId: string; confirmToken: string; turnstile?: string }): Promise<ApiResult<{ worldId: string; status: JobState }>>;
   world(worldId: string): Promise<ApiResult<WorldStatus>>;
   deleteWorld(worldId: string): Promise<ApiResult<null>>;
+  /** Turns the share link of the visitor's own ready place on or off (`POST` or `DELETE /api/worlds/:id/share`). Anyone else's place, a Gallery place and one not ready are `world_not_found`. */
+  shareWorld(worldId: string, on: boolean): Promise<ApiResult<{ shared: boolean }>>;
 
   ghostPresets(): Promise<ApiResult<GhostPreset[]>>;
   searchPlaces(q: string): Promise<ApiResult<PlaceMatch[]>>;

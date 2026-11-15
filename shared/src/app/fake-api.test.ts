@@ -273,6 +273,56 @@ describe("making a place", () => {
   });
 });
 
+describe("sharing a place (shell Requirement 15)", () => {
+  const ready = () => createFakeBackend({ stageMs: { queued: 0, generating: 0, ingesting: 0 } });
+
+  it("turns the link of the visitor's own ready place on and off, and says so in the status of their own place, on or off", () => {
+    const b = ready();
+    const id = makeWorld(b, 0);
+    expect(value(b.world(0, id)).shared).toBe(false);
+    expect(value(b.shareWorld(0, id, true))).toEqual({ shared: true });
+    expect(value(b.world(0, id)).shared).toBe(true);
+    expect(value(b.shareWorld(0, id, false))).toEqual({ shared: false });
+    expect(value(b.world(0, id)).shared).toBe(false);
+  });
+
+  it("says nothing about a link in the status of a Gallery place, which is nobody's own", () => {
+    expect(value(ready().world(0, "attic-room"))).not.toHaveProperty("shared");
+  });
+
+  it("can be turned on again and again with the same answer", () => {
+    const b = ready();
+    const id = makeWorld(b, 0);
+    for (const on of [true, true, false, false, true]) expect(value(b.shareWorld(0, id, on))).toEqual({ shared: on });
+  });
+
+  it("answers world_not_found, the one answer, for a Gallery place, a missing one and one that is not ready", () => {
+    const slow = createFakeBackend({ stageMs: { queued: 1000, generating: 1000, ingesting: 1000 } });
+    const making = makeWorld(slow, 0);
+    for (const [b, id, on] of [[ready(), "greenhouse", true], [ready(), "greenhouse", false], [ready(), "nope", true], [ready(), "w-never-made", false], [slow, making, true]] as const) {
+      expect(code(b.shareWorld(0, id, on)), `${id} ${on}`).toBe(ErrorCode.world_not_found);
+    }
+    expect(code(slow.shareWorld(10_000, making, true))).toBe("ok");
+  });
+
+  it("ends with the place: a deleted place is not found, and shares nothing", () => {
+    const b = ready();
+    const id = makeWorld(b, 0);
+    value(b.shareWorld(0, id, true));
+    value(b.deleteWorld(0, id));
+    expect(code(b.shareWorld(0, id, true))).toBe(ErrorCode.world_not_found);
+    expect(code(b.world(0, id))).toBe(ErrorCode.world_not_found);
+  });
+
+  it("can be made to fail once, like every other call", () => {
+    const b = ready();
+    const id = makeWorld(b, 0);
+    b.failNext("shareWorld", ErrorCode.rate_limited);
+    expect(code(b.shareWorld(0, id, true))).toBe(ErrorCode.rate_limited);
+    expect(code(b.shareWorld(0, id, true))).toBe("ok");
+  });
+});
+
 describe("the Preset Ghosts", () => {
   it("lists six, each with a name and a sprite on this origin, and can be made to fail once", () => {
     const b = createFakeBackend();

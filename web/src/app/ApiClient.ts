@@ -190,6 +190,7 @@ export function createApiClient(options: ApiClientOptions = {}): ShellApi {
     createWorld: (req) => json(API_SCHEMAS.createWorld, "POST", "/api/worlds", req),
     world: (worldId) => json(API_SCHEMAS.world, "GET", `/api/worlds/${idPath(worldId)}`),
     deleteWorld: (worldId) => json(API_SCHEMAS.deleteWorld, "DELETE", `/api/worlds/${idPath(worldId)}`),
+    shareWorld: (worldId, on) => json(API_SCHEMAS.shareWorld, on ? "POST" : "DELETE", `/api/worlds/${idPath(worldId)}/share`),
 
     ghostPresets: () => json(API_SCHEMAS.ghostPresets, "GET", "/api/ghosts/presets"),
     searchPlaces: (q) => json(API_SCHEMAS.searchPlaces, "POST", "/api/conditions/search", { q }),

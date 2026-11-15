@@ -1,7 +1,7 @@
 import { errorCopy } from "@hauntology/shared/app/errors-copy";
 import { routeForApiError } from "@hauntology/shared/app/routes";
 import { useEffect, useState } from "react";
-import { useGallery, useShell } from "../context";
+import { useGallery, useRouterState, useShell } from "../context";
 import { Dialog } from "../Dialog";
 import { useAnnounce } from "../LiveRegion";
 
@@ -14,11 +14,12 @@ import { useAnnounce } from "../LiveRegion";
  * Expired Screen; any other failure says why and leaves the dialog open.
  *
  * A Gallery world is not the visitor's to delete, so the action is not shown for one. The Shell tells
- * them apart by the public Gallery list (a world that is not in it is the visitor's own), and shows
- * nothing until it knows.
+ * them apart by the public Gallery list (a world that is not in it is the visitor's own, unless they walked
+ * into it from someone's share link, which the flow records), and shows nothing until it knows.
  */
 export function DeletePlace({ worldId, leave }: { worldId: string; leave: () => Promise<void> | void }) {
   const { api, router, memory, gallery } = useShell();
+  const { flow } = useRouterState();
   const list = useGallery();
   const announce = useAnnounce();
   const [asking, setAsking] = useState(false);
@@ -29,7 +30,8 @@ export function DeletePlace({ worldId, leave }: { worldId: string; leave: () => 
     void gallery.load();
   }, [gallery]);
 
-  if (list.status !== "ready" || list.items.some((g) => g.id === worldId)) return null;
+  // Not shown for a Gallery place, nor for a place the visitor walked into from someone's link: neither is theirs to delete.
+  if (list.status !== "ready" || list.items.some((g) => g.id === worldId) || flow.sharedWorldId === worldId) return null;
 
   const forget = () => {
     memory.clear();

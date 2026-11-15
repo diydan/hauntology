@@ -258,3 +258,38 @@ describe("speak", () => {
     expect(await api.speak({ playId: "p", lineId: "l" })).toEqual({ ok: false, code: "voice_unavailable" });
   });
 });
+
+describe("sharing a place", () => {
+  it("turns the link on with a POST and off with a DELETE, on the place's own share path, and reads only the state back", async () => {
+    const s = scripted(json({ ok: true, shared: true, extra: "dropped" }), json({ ok: true, shared: false }));
+    const api = createApiClient({ fetch: s.fetch, online: alwaysOnline });
+    expect(await api.shareWorld("w-aaaa_bbbb-cccc", true)).toEqual({ ok: true, value: { shared: true } });
+    expect(await api.shareWorld("w-aaaa_bbbb-cccc", false)).toEqual({ ok: true, value: { shared: false } });
+    expect(s.calls.map((c) => `${c.init.method} ${c.url}`)).toEqual(["POST /api/worlds/w-aaaa_bbbb-cccc/share", "DELETE /api/worlds/w-aaaa_bbbb-cccc/share"]);
+    for (const c of s.calls) {
+      expect(c.init.credentials).toBe("same-origin");
+      expect(c.init.body).toBeUndefined();
+    }
+  });
+
+  it("encodes the id in the path, and answers world_not_found as the typed failure", async () => {
+    const s = scripted(json({ ok: false, code: "world_not_found" }, 404));
+    const api = createApiClient({ fetch: s.fetch, online: alwaysOnline });
+    expect(failure(await api.shareWorld("a b/c", true))).toEqual({ ok: false, code: "world_not_found" });
+    expect(s.calls[0]!.url).toBe("/api/worlds/a%20b%2Fc/share");
+  });
+
+  it("does not trust an answer that is not a yes or no", async () => {
+    const s = scripted(json({ ok: true, shared: "yes" }), json({ ok: true }));
+    const api = createApiClient({ fetch: s.fetch, online: alwaysOnline });
+    expect(failure(await api.shareWorld("w", true)).code).toBe("shell_crash");
+    expect(failure(await api.shareWorld("w", true)).code).toBe("shell_crash");
+  });
+
+  it("reads `shared` from a place's status only when it is a yes or no", async () => {
+    const s = scripted(json({ id: "w", status: "ready", shared: true }), json({ id: "w", status: "ready", shared: "yes" }));
+    const api = createApiClient({ fetch: s.fetch, online: alwaysOnline });
+    expect(await api.world("w")).toEqual({ ok: true, value: { id: "w", status: "ready", shared: true } });
+    expect(failure(await api.world("w")).code).toBe("shell_crash");
+  });
+});

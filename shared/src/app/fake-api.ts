@@ -82,7 +82,7 @@ const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const TOKEN_LIFETIME_MS = 30 * 60_000;
 
-type WorldRecord = { id: string; title: string; createdAt: number; outcome: "ready" | "failed"; refunded: boolean };
+type WorldRecord = { id: string; title: string; createdAt: number; outcome: "ready" | "failed"; refunded: boolean; shared: boolean };
 type PlayRecord = { id: string; worldId: string; found: AnchorId[]; journal: JournalEntry[]; turns: number; atmosphere: Atmosphere | null; lines: Set<string> };
 
 /** A clip over this many bytes counts as longer than 8 seconds. */
@@ -250,7 +250,7 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
         token.used = true;
         quota.world -= 1;
         const id = nextId("demo-world");
-        worlds.set(id, { id, title: "Your place", createdAt: now, outcome: options.worldOutcome ?? "ready", refunded: false });
+        worlds.set(id, { id, title: "Your place", createdAt: now, outcome: options.worldOutcome ?? "ready", refunded: false, shared: false });
         lastWorldId = id;
         return ok({ worldId: id, status: "queued" as JobState });
       });
@@ -263,7 +263,7 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
         const w = worlds.get(worldId);
         if (w === undefined) return fail(ErrorCode.world_not_found);
         const status = statusAt(w, now);
-        const result: WorldStatus = { id: w.id, status, title: w.title, thumbUrl: `/demo/worlds/${w.id}.svg` };
+        const result: WorldStatus = { id: w.id, status, title: w.title, thumbUrl: `/demo/worlds/${w.id}.svg`, shared: w.shared };
         if (status === "failed") {
           if (!w.refunded) {
             w.refunded = true;
@@ -284,6 +284,16 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
         if (lastWorldId === worldId) lastWorldId = undefined;
         if (lastPlayId !== undefined && !plays.has(lastPlayId)) lastPlayId = undefined;
         return ok(null);
+      });
+    },
+
+    shareWorld(now, worldId, on) {
+      return guarded("shareWorld", () => {
+        // As on the server: only the visitor's own, ready place; a Gallery place, a place still being made and a missing one look the same.
+        const w = worlds.get(worldId);
+        if (w === undefined || statusAt(w, now) !== "ready") return fail(ErrorCode.world_not_found);
+        w.shared = on;
+        return ok({ shared: on });
       });
     },
 

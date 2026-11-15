@@ -17,6 +17,11 @@ describe("resolveRoute", () => {
     expect(resolveRoute(`/play/${W}`)).toEqual({ screen: "play", worldId: W });
     expect(resolveRoute(`/case/${W}`)).toEqual({ screen: "case", worldId: W });
     expect(resolveRoute(`/end/${W}`)).toEqual({ screen: "end", worldId: W });
+    expect(resolveRoute(`/shared/${W}`)).toEqual({ screen: "shared", worldId: W });
+  });
+
+  it("gives not_found for a shared link with no world id, a bad one, or more parts", () => {
+    for (const path of ["/shared", "/shared/", `/shared/${W}/extra`, "/shared/a b", "/shared/..", `/shared/${"x".repeat(65)}`, `/Shared/${W}`]) expect(resolveRoute(path), path).toEqual({ screen: "not_found" });
   });
 
   it("ignores a query string and a fragment, and allows one trailing slash", () => {
@@ -48,18 +53,19 @@ describe("resolveRoute", () => {
 describe("pathFor", () => {
   it("is the canonical path of each route and round-trips", () => {
     const routes: Route[] = [
-      ...SCREEN_IDS.filter((s) => s !== "haunt" && s !== "play" && s !== "case" && s !== "end").map((screen): Route => ({ screen })),
-      { screen: "haunt", worldId: W }, { screen: "play", worldId: W }, { screen: "case", worldId: W }, { screen: "end", worldId: W },
+      ...SCREEN_IDS.filter((s) => s !== "haunt" && s !== "play" && s !== "case" && s !== "end" && s !== "shared").map((screen): Route => ({ screen })),
+      { screen: "haunt", worldId: W }, { screen: "play", worldId: W }, { screen: "case", worldId: W }, { screen: "end", worldId: W }, { screen: "shared", worldId: W },
     ];
     for (const r of routes) expect(resolveRoute(pathFor(r))).toEqual(r);
     expect(pathFor({ screen: "play", worldId: W })).toBe(`/play/${W}`);
     expect(pathFor({ screen: "case", worldId: W })).toBe(`/case/${W}`);
+    expect(pathFor({ screen: "shared", worldId: W })).toBe(`/shared/${W}`);
     expect(pathFor({ screen: "home" })).toBe("/");
   });
 
   it("gives the not-found path when a world route has no valid world id", () => {
     for (const worldId of [undefined, "", "a b", "a/b", "..", "x".repeat(65)]) {
-      for (const screen of ["haunt", "play", "case", "end"] as const) {
+      for (const screen of ["haunt", "play", "case", "end", "shared"] as const) {
         const route: Route = worldId === undefined ? { screen } : { screen, worldId };
         expect(pathFor(route)).toBe("/not-found");
         expect(resolveRoute(pathFor(route))).toEqual({ screen: "not_found" });
@@ -85,6 +91,13 @@ describe("guardRoute", () => {
     for (const screen of ["home", "gallery", "create", "not_found", "expired"] as const) {
       expect(guardRoute({ screen }, flow())).toEqual({ allow: true });
     }
+  });
+
+  it("lets a shared link through for anyone, with or without a known world: the server decides whether it still opens", () => {
+    const route: Route = { screen: "shared", worldId: W };
+    expect(guardRoute(route, flow())).toEqual({ allow: true });
+    expect(guardRoute(route, flow({ worldId: "someone-else", ghostReady: true, playEnded: true }))).toEqual({ allow: true });
+    expect(guardRoute(route, flow({ worldId: W, sharedWorldId: W }))).toEqual({ allow: true });
   });
 
   it("sends confirm without a picked image to create", () => {

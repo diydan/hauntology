@@ -165,7 +165,7 @@ describe("POST /api/worlds", () => {
     const session = await t.kit.send("/api/session", { headers: { Cookie: cookie, Origin: "http://app.test" } });
     expect(session.json).toMatchObject({ lastWorldId: worldId });
     const status2 = await t.kit.send(`/api/worlds/${worldId}`, { headers: v.headers });
-    expect(status2.json).toEqual({ id: worldId, status: "queued" });
+    expect(status2.json).toEqual({ id: worldId, status: "queued", shared: false });
   });
 
   it("copies where the picture came from and its Place Brief onto the world's record, for the manifest", async () => {

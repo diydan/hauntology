@@ -1,4 +1,4 @@
-import { WorldStatusSchema } from "@hauntology/shared/app/api-schemas";
+import { API_SCHEMAS, WorldStatusSchema } from "@hauntology/shared/app/api-schemas";
 import { describe, expect, it } from "vitest";
 import { BYTES, NOW, sampleManifest, worldsKit } from "../worlds/test-kit";
 
@@ -28,7 +28,8 @@ describe("GET /api/worlds/:id", () => {
     const owner = await kit.visitor();
     kit.store.putWorld({ id: ID, kind: "user", ownerSid: owner.sid, status: "generating", manifest: sampleManifest(ID) });
     const r = await kit.send(`/api/worlds/${ID}`, { headers: owner.headers });
-    expect(r.json).toEqual({ id: ID, status: "generating" });
+    // The owner is always told whether the link is on; a world still being made is simply not shared.
+    expect(r.json).toEqual({ id: ID, status: "generating", shared: false });
   });
 
   it("reports a failed world with its code and whether the allowance came back", async () => {
@@ -36,7 +37,7 @@ describe("GET /api/worlds/:id", () => {
     const owner = await kit.visitor();
     kit.store.putWorld({ id: ID, kind: "user", ownerSid: owner.sid, status: "failed", failure: { code: "upstream_rejected", quotaReturned: true, retryAllowed: false } });
     const r = await kit.send(`/api/worlds/${ID}`, { headers: owner.headers });
-    expect(r.json).toEqual({ id: ID, status: "failed", failure: { code: "upstream_rejected", quotaReturned: true, retryAllowed: false } });
+    expect(r.json).toEqual({ id: ID, status: "failed", failure: { code: "upstream_rejected", quotaReturned: true, retryAllowed: false }, shared: false });
   });
 
   it("sends the failure only for a failed world", async () => {
@@ -360,15 +361,31 @@ describe("the share link: POST and DELETE /api/worlds/:id/share (world-pipeline 
     expect(r.headers.get("Set-Cookie")).not.toBeNull();
   });
 
-  it("tells only the owner that the link is on", async () => {
+  it("answers in the shapes the shell reads: the share call, and the owner's status with `shared`", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    kit.readyWorld(ID, owner);
+    expect(API_SCHEMAS.shareWorld.parse((await share(kit, ID, owner)).json)).toEqual({ shared: true });
+    expect(API_SCHEMAS.world.parse((await kit.send(`/api/worlds/${ID}`, { headers: owner.headers })).json)).toMatchObject({ id: ID, status: "ready", shared: true });
+    expect(API_SCHEMAS.shareWorld.parse((await share(kit, ID, owner, "DELETE")).json)).toEqual({ shared: false });
+  });
+
+  it("tells only the owner whether the link is on or off, so the shell can tell the owner from a reader", async () => {
     const kit = worldsKit();
     const owner = await kit.visitor();
     kit.readyWorld(ID, owner, { shared: true });
     expect((await kit.send(`/api/worlds/${ID}`, { headers: owner.headers })).json).toMatchObject({ id: ID, shared: true });
+    const stranger = await kit.visitor();
+    expect((await kit.send(`/api/worlds/${ID}`, { headers: stranger.headers })).json).not.toHaveProperty("shared");
     const off = worldsKit();
     const o2 = await off.visitor();
     off.readyWorld(ID, o2);
-    expect((await off.send(`/api/worlds/${ID}`, { headers: o2.headers })).json).not.toHaveProperty("shared");
+    const own = await off.send(`/api/worlds/${ID}`, { headers: o2.headers });
+    expect(own.json).toMatchObject({ id: ID, shared: false });
+    expect(WorldStatusSchema.parse(own.json).shared).toBe(false);
+    // A world that is not shared is not open to anyone else, so a stranger gets no status, and so no `shared` either.
+    const other = await off.visitor();
+    expect((await off.send(`/api/worlds/${ID}`, { headers: other.headers })).status).toBe(404);
   });
 
   it("lets nobody but the owner delete a shared world or change its link; each refusal is the answer for a world nobody has", async () => {

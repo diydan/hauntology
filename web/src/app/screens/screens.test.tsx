@@ -244,6 +244,31 @@ describe("Ending", () => {
   });
 });
 
+describe("Shared (a place somebody shared)", () => {
+  const FRIEND = "w-friendfriendfriendfr";
+  const friendsWorld = (world: ShellApi["world"]): ShellApi => ({ ...createFakeApi({ latencyMs: 0 }), world });
+
+  it("main path: reached by a route change it takes focus and says its title", async () => {
+    const api = friendsWorld(async (id): Promise<ApiResult<import("@hauntology/shared/app/api").WorldStatus>> => ({ ok: true, value: { id, status: "ready", title: "A friend's kitchen" } }));
+    const h = await fromGallery({ api });
+    await goTo(h, { screen: "shared", worldId: FRIEND });
+    await screen.findByRole("heading", { name: "A friend's kitchen" });
+    await focusedH1("A shared place");
+    expect(live()).toBe(SCREEN_TITLES.shared);
+  });
+
+  it("failure path: a place that cannot be opened says why, offers Try again, and says so aloud", async () => {
+    const api = friendsWorld(async () => ({ ok: false, code: "network_error" }));
+    const h = await fromGallery({ api });
+    await goTo(h, { screen: "shared", worldId: FRIEND });
+    const copy = errorCopy("network_error");
+    await screen.findByText(copy.body);
+    await focusedH1("A shared place");
+    expect(live()).toBe(copy.title);
+    expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+  });
+});
+
 describe("NotFound", () => {
   it("main path: an address that is not a route says so, takes focus, and offers the way out", async () => {
     const h = await fromGallery();

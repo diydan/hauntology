@@ -5,7 +5,7 @@
 import type { ErrorCode } from "../errors";
 
 export const SCREEN_IDS = [
-  "home", "gallery", "create", "confirm", "haunt", "play", "case", "end", "not_found", "expired",
+  "home", "gallery", "create", "confirm", "haunt", "play", "case", "end", "shared", "not_found", "expired",
 ] as const;
 export type ScreenId = (typeof SCREEN_IDS)[number];
 
@@ -13,7 +13,9 @@ export type Route = { screen: ScreenId; worldId?: string };
 
 export type FlowState = {
   pickedImageId?: string; // set when a Place Image is chosen
-  worldId?: string;       // known world (own or Gallery)
+  worldId?: string;       // known world (own, Gallery or opened by a link)
+  /** The world the visitor walked into from someone's share link. When it is the known world, the place is not the visitor's own. */
+  sharedWorldId?: string;
   ghostReady: boolean;    // preset or created ghost chosen
   noticeAcked: boolean;
   playEnded: boolean;

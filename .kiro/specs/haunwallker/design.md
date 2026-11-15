@@ -17,7 +17,7 @@ Decisions:
 - **The world id survives reload in the Session, not in storage the visitor can lose.** The API keeps `lastWorldId` and `lastPlayId` on the Session record, and `GET /api/session` returns them. The shell never writes photos, sketches or captions to local storage, cookies or IndexedDB.
 - **Lazy Viewer.** three.js, Spark and three-mesh-bvh load by dynamic `import()` when Play mounts. Home ships without them.
 - **Error boundaries per Screen and one around the Viewer.** A Viewer crash leaves the Chat, HUD and Exit alive.
-- **Hash-free client routes** (`/`, `/gallery`, `/create`, `/confirm`, `/haunt/:worldId`, `/play/:worldId`, `/case/:worldId`, `/end/:worldId`, `/expired`), served by the Worker with an SPA fallback to `index.html`. A world id is 1 to 64 characters of `A-Z a-z 0-9 _ -`; any other path, including a bad world id, is `not_found`. A query string, a fragment and one trailing slash are ignored.
+- **Hash-free client routes** (`/`, `/gallery`, `/create`, `/confirm`, `/haunt/:worldId`, `/play/:worldId`, `/case/:worldId`, `/end/:worldId`, `/shared/:worldId`, `/expired`), served by the Worker with an SPA fallback to `index.html`. A world id is 1 to 64 characters of `A-Z a-z 0-9 _ -`; any other path, including a bad world id, is `not_found`. A query string, a fragment and one trailing slash are ignored.
 
 ## Architecture
 
@@ -84,6 +84,7 @@ sequenceDiagram
 | `POST /api/worlds/quote`, `POST /api/worlds` | Confirm Gate | 3.1, 3.3 |
 | `GET /api/worlds/:id` | Haunt (poll), Play (manifest) | 4.1 |
 | `DELETE /api/worlds/:id` | "Delete my place" | 3.8 |
+| `POST` / `DELETE /api/worlds/:id/share` | the Share card on Haunt (turn the link on or off) | 15.1 |
 | `GET /api/ghosts/presets` → `[{id, name, spriteUrl}]` (the shell's flattening of the `ghost-creator` route, which returns whole profiles) | the Preset Ghosts on Haunt | 4.2, 5.2 |
 | `POST /api/play/start`, `POST /api/play/:id/turn`, `GET /api/play/:id` | Play | 6.2, 6.3, 6.8 |
 | `POST /api/conditions/search` `{q}` | the Set the sky card (city search, at most five matches, a POST so the query is not in a URL) | 12.1 |
@@ -325,6 +326,10 @@ When a world is ready the Haunt screen offers two actions (Requirement 13): "Pla
 *For any* canvas bitmap, the shell enables "Make it real" if and only if `inkCoverage(bitmap) ≥ 0.005`, using the same function and constant as the API's sketch route.
 **Validates: Requirements 2.4**
 
+## Share a place (2026-11-15)
+
+Server side: `world-pipeline` 9.2. **Route and flow:** `/shared/:worldId` is a screen of its own (`shared`); its guard lets everyone in, because the server decides. `FlowState` gains `sharedWorldId`, set when a visitor walks in from a link, so `DeletePlace` and the Share card can tell a place that is not theirs. It is cleared with the place. **Screens:** `Shared` asks `GET /api/worlds/:id` once; a ready place shows its title and thumbnail and "Walk in" (to Haunt, as a Gallery visit does); `world_not_found` is the Expired Screen. A status that carries `shared` (true or false) can only come to the owner, so it marks the place as the visitor's own and the screen says so, and says whether the link is on; the server leaves `shared` out of every other status, which is how the shell tells the owner from a visitor. **Share card** (`web/src/app/haunt/SharePlace.tsx`): off, on (the link, Copy link, Stop sharing), busy and failed. The link is `shareUrl(origin, worldId)` (pure, in `shared/src/app/share-copy.ts` with the card's words). **Seams:** `ShellApi.shareWorld(worldId, on)` (the fake and the real client), and in `PlatformKit` `origin()` and `copyText(text)`, so tests and the demo need neither a clipboard nor an address.
+
 ## Shared look (design system, 2026-11-15)
 
 The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
@@ -336,6 +341,7 @@ The screens of this spec are built from `design/elements.css`, with the values o
 | Content notice, offline banner, progress, errors | `ui-notice ui-status` |
 | Create form | `ui-field ui-field-label ui-select ui-range ui-check` |
 | Chat | `ui-sheet ui-sheet-head ui-log` |
+| Share card, Shared screen | `ui-panel ui-stack ui-eyebrow ui-input ui-row ui-heading ui-figure ui-note ui-button ui-button--quiet ui-button--primary` |
 
 A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.
 

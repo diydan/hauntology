@@ -36,7 +36,21 @@ export type PlatformKit = {
   };
   /** Offers `blob` to the visitor as a download. */
   saveFile(name: string, blob: Blob): void;
+  /** The address of this app (`https://host`), the start of a share link. */
+  origin: () => string;
+  /** Puts `text` on the clipboard. `false` when the browser has no clipboard or refuses; the caller then shows the text to copy by hand. */
+  copyText: (text: string) => Promise<boolean>;
 };
+
+export async function browserCopyText(text: string): Promise<boolean> {
+  try {
+    if (typeof navigator === "undefined" || !navigator.clipboard) return false;
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export function browserSaveFile(name: string, blob: Blob): void {
   const url = URL.createObjectURL(blob);
@@ -75,5 +89,7 @@ export function defaultPlatform(): PlatformKit {
     surface: canvasSurface,
     voice: { recorder: browserRecorderFactory(), createAudio: browserAudio, unlockAudio: browserUnlock },
     saveFile: browserSaveFile,
+    origin: () => location.origin,
+    copyText: browserCopyText,
   };
 }

@@ -7,6 +7,7 @@ import Gallery from "./Gallery";
 import Haunt from "./Haunt";
 import Home from "./Home";
 import NotFound from "./NotFound";
+import Shared from "./Shared";
 
 /**
  * The Screen for each route. Play and Create are split into their own chunks with a dynamic
@@ -24,6 +25,7 @@ export const SCREENS: Record<ScreenId, Screen> = {
   play: lazy(() => import("./Play")),
   case: lazy(() => import("./Case")),
   end: End,
+  shared: Shared,
   not_found: NotFound,
   expired: Expired,
 };
@@ -38,6 +40,7 @@ export const SCREEN_TITLES: Record<ScreenId, string> = {
   play: "Wander",
   case: "Play a case",
   end: "The ending",
+  shared: "A shared place",
   not_found: "Nothing here",
   expired: "That place is gone",
 };

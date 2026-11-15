@@ -5,6 +5,7 @@ import { useRouterState, useShell } from "../context";
 import { createHauntController } from "../haunt/controller";
 import { DeletePlace } from "../haunt/DeletePlace";
 import { GhostChoice } from "../haunt/GhostChoice";
+import { SharePlace } from "../haunt/SharePlace";
 import { SkyCard } from "../haunt/SkyCard";
 import { StagePanel } from "../haunt/StagePanel";
 import { useAnnounce } from "../LiveRegion";
@@ -15,7 +16,8 @@ import { ScreenHeading } from "../RouteFocus";
  * `HauntController` asks for the Stage; this Screen shows it with calm progress and, while the visitor
  * waits, the ghost choice and the optional sky card. When the place is ready it says so and offers
  * "Play a case" and "Wander", and starts neither the Viewer nor a Room by itself. A Gallery world is
- * ready at once and shows the same choice. Nothing on this Screen is a paid call.
+ * ready at once and shows the same choice. The visitor's own ready place can be shared by a link (Requirement 15).
+ * Nothing on this Screen is a paid call.
  */
 export default function Haunt() {
   const { api, router, platform } = useShell();
@@ -68,6 +70,7 @@ export default function Haunt() {
         </>
       ) : null}
       {ui.stage === "ready" ? <PlayChoice worldId={worldId} /> : null}
+      <SharePlace worldId={worldId} ready={ui.stage === "ready"} />
       <DeletePlace worldId={worldId} leave={() => router.navigate({ screen: "home" })} />
     </main>
   );

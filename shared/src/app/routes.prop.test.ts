@@ -9,7 +9,7 @@ import { SCREEN_IDS, type Route } from "./types";
 function oracle(path: string): Route {
   const base = path.replace(/[?#][\s\S]*$/, "");
   if (base === "/") return { screen: "home" };
-  const m = /^\/(?:(gallery|create|confirm|expired)|(haunt|play|case|end)\/([A-Za-z0-9_-]{1,64}))\/?$/.exec(base);
+  const m = /^\/(?:(gallery|create|confirm|expired)|(haunt|play|case|end|shared)\/([A-Za-z0-9_-]{1,64}))\/?$/.exec(base);
   if (!m) return { screen: "not_found" };
   if (m[1]) return { screen: m[1] as Route["screen"] };
   return { screen: m[2] as Route["screen"], worldId: m[3] as string };
@@ -24,7 +24,7 @@ describe("Property 1: Routes are total and round-trip", () => {
       fc.property(paths, (path) => {
         const route = resolveRoute(path);
         if (!SCREEN_IDS.includes(route.screen)) return false;
-        const needsWorld = route.screen === "haunt" || route.screen === "play" || route.screen === "case" || route.screen === "end";
+        const needsWorld = route.screen === "haunt" || route.screen === "play" || route.screen === "case" || route.screen === "end" || route.screen === "shared";
         if (needsWorld !== (route.worldId !== undefined)) return false;
         if (route.worldId !== undefined && !isWorldId(route.worldId)) return false;
         const expected = oracle(path);
@@ -72,6 +72,7 @@ describe("Property 2: Guards never expose a screen without its prerequisites", (
           case "end":
             return result.allow === (knowsWorld && flow.playEnded) && (!result.allow || flow.playEnded);
           default:
+            // home, gallery, create, shared, expired and not_found: the server, not the flow, decides whether a shared link opens.
             return result.allow;
         }
       }),
