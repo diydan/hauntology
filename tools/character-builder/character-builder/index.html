@@ -276,7 +276,7 @@ const HEAD_MORPHS = [
     field(x, y, z) { const n = morphGS(x, 1.5) * morphGS(y - 143.9, 1.7) * morphSS(8.5, 10.5, z); return [0, 0, 0.7 * n]; } },
   { id: 'noseSize', label: 'Nose size', range: [-1, 1],
     field(x, y, z) { const n = morphGS(x, 2.0) * morphGS(y - 143.6, 2.0) * morphSS(8.5, 10.5, z), k = 0.35; return [k * x * n, k * (y - 143.6) * n, k * (z - 10.9) * n]; } },
-  { id: 'noseWidth', label: 'Nose width', range: [-1.5, 1.5],
+  { id: 'noseWidth', label: 'Nose width', range: [-2.5, 1.5], // narrower reach: real noses are slimmer than the pack's
     field(x, y, z) { const n = morphGS(x, 2.0) * morphGS(y - 143.6, 2.0) * morphSS(8.5, 10.5, z); return [0.25 * x * n, 0, 0]; } },
   { id: 'cheekFullness', label: 'Cheek fullness', range: [-1.5, 1.5],
     field(x, y, z) { const ax = Math.abs(x), c = morphGS(ax - 5.4, 2.0) * morphGS(y - 143.6, 1.8) * morphSS(3, 6, z) * (1 - morphSS(7.2, 8.2, ax)); return [0.55 * morphSgn(x) * c, 0, 0.2 * c]; } },
@@ -301,6 +301,10 @@ const HEAD_MORPHS = [
     field(x, y, z) { const m = morphGS(y - 141.3, 1.1) * morphSS(7, 9.2, z) * morphGS(x, 2.8); return [0, 0.25 * (y - 141.3) * m, 0.35 * m]; } },
   { id: 'noseBridge', label: 'Nose bridge width', range: [-1.5, 1.5],
     field(x, y, z) { return [0.28 * x * morphGS(y - 146.8, 1.6) * morphSS(6.5, 9.5, z) * morphGS(x, 2.2), 0, 0]; } },
+  { id: 'eyeWidth', label: 'Eye width', range: [-1.5, 1.0], // the eye openings narrowed (or widened) about each eye's centre: the pack's eyes are wider than real ones
+    field(x, y, z) { const u = x - morphSgn(x) * 3.35, w = morphGS(y - 147.8, 1.3) * morphGS(u, 2.6) * morphSS(3.5, 5.5, z) * morphSS(0.6, 1.4, Math.abs(x)); return [0.4 * u * w, 0, 0]; } }, // reaches the outer corner, which sits deep (z ~5.8)
+  { id: 'noseWings', label: 'Nose wings', range: [-1.5, 1.0], // the nostril wings in or out (the pack's nose is ~5.9 cm across them, a real one ~3.5 cm); 'Nose width' moves the bridge
+    field(x, y, z) { const w = morphGS(Math.abs(x) - 2.4, 1.3) * morphGS(y - 143.4, 1.4) * morphSS(6.5, 8.5, z); return [0.6 * morphSgn(x) * w, 0, 0]; } },
   { id: 'noseTip', label: 'Nose tip (droop)', range: [-1.5, 1.5],
     field(x, y, z) { const m = morphGS(y - 143.9, 1.3) * morphGS(x, 1.4) * morphSS(9.5, 11, z); return [0, -0.55 * m, 0.25 * m]; } },
 ];
@@ -2037,7 +2041,7 @@ function fitShape(c) {
   add('nose height', L.nose, 1, f.Y(c.nose[1]), 0.5);
   for (const [name, [py, l, r]] of Object.entries(c.rows)) { const y0 = EYE.y + (f.Y(py) - EYE.y) * ratio, v = L.edgeAt(y0); if (v) add('face edge ' + name, v, 0, (r - l) / 2 * f.s, 1.0); }
   if (c.noseW && L.noseAla) add('nose width', L.noseAla, 0, c.noseW * f.s, 0.7, 1.2);
-  if (c.eyeOutHalf && L.eyeOut) add('eye width', L.eyeOut, 0, c.eyeOutHalf * f.s, 0.3, 1.5);
+  if (c.eyeOutHalf && L.eyeOut) add('eye width', L.eyeOut, 0, c.eyeOutHalf * f.s, 0.6, 1.5);
   if (c.mouthHalf) add('mouth width', [2.4, L.mouth[1], 8.8], 0, c.mouthHalf * f.s, 0.8, 1.2);
   if (c.depth) { // the side view, guessed: the detector's depth (z smaller = nearer the camera) in the photo's own scale, relative to the eye plane
     const dz = pz => (c.depth.zEye - pz) * f.s;
