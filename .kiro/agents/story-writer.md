@@ -75,7 +75,7 @@ Each kind is written in one Speaker's voice only. The Lodger is spoken aloud onl
 9. **Photo prompts.** Everyday subjects a person already has on a phone or can take in a minute. Every tip says no people or faces and says the photo is shown on the shared screen. A line about a photo may mention only the prompt's subject, never what the photo shows, because no model sees it.
 10. **Original.** No third-party game names, characters, quotes or art, and nothing taken from any other table game.
 11. **Text first.** Every line must work with no sound. It must also read well spoken aloud.
-12. **Every scripted line is rendered ahead of time** as audio and kept. Do not write lines nobody needs. Do not pad a bank past the minimum with near-copies.
+12. **Every spoken scripted line is rendered ahead of time** as audio and kept (text-only kinds, the Lodger `aside`, are never spoken and never rendered). Do not write lines nobody needs. Do not pad a bank past the minimum with near-copies.
 13. **Never write stage directions into the words.** The speech voice reads every word aloud and cannot perform a pause, a gasp, a sigh or a gesture. A line that says "now I leave a pause for the gasp" is spoken as exactly those words, like a script being read out. Do not narrate a sound, a pause, a gesture or the speaker's own voice or body (no pause, gasp, sigh, laugh, whisper, silence, beat, "I clear my throat", "I look away"). Show the mood through what a person would actually say. A pause comes only from an ellipsis. (Learned on `lodger.confession.6`, 2026-11-15.)
 
 ## The Lodger gives no tell
