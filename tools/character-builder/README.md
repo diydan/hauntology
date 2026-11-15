@@ -1,6 +1,0 @@
-
-## Scenes, hair physics and head screenshots (character-builder/index.html)
-- **Three scenes**, chosen by the tabs at the top: **Create** (the performing stage, full look panel, clip buttons), **Make Over** (edit a hired band member: a bare salon floor with a pink barber chair and a styling table with a solid front, the character seated and not playing, camera slowly orbiting) and **Recruit** (an audition stage with a spotlight that follows the avatar; the candidate faces the camera and plays, and the camera sways left and right).
-- **Hair physics**: every hair and fringe bone chain uses a critically-damped, `dt`-invariant inertial spring driven by smoothed head motion (no gravity sag away from the sculpted rest pose, inward skull/forehead clipping blocked, and soft `tanh` angle limits). See `updateHair`.
-- **Head size** is a `shape.head` value (0..1, 0.5 = the pack's size, 0.85x to 1.5x), applied as a uniform scale on the head bone. **Build** now reaches 1.8x at the large end. The hip's horizontal travel is scaled by the leg-length factor to cut foot sliding.
-- **Head screenshots**: `node make-head-shots.cjs` (needs playwright and the viewer served) writes `screenshots/heads-presets.png` (six presets at three head sizes) and `screenshots/heads-random.png` (twelve seeded full looks). These contain the pack's art, so `screenshots/` is git-ignored.

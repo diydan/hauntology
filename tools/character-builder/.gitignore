@@ -1,7 +1,0 @@
-# Licensed pack art and Mixamo clips. Never commit.
-character-builder/assets/
-screenshots/
-node_modules/
-# never commit personal selfies used for testing, even if assets/ stops being ignored
-**/selfie*
-**/*selfie*.*
