@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { propParams } from "../app/prop-config";
-import { ASSET_FORMATS, MAX_ASSET_BYTES, buildManifest, storable, type AssetRole, type ManifestContext, type StoredAsset } from "./ingest";
+import { ASSET_FORMATS, EYE_HEIGHT, MARBLE_FRAME, MAX_ASSET_BYTES, buildManifest, poseFromService, storable, type AssetRole, type ManifestContext, type StoredAsset } from "./ingest";
 import { WorldManifestSchema } from "./manifest";
 
 const CTX: ManifestContext = { worldId: "w-aaaaaaaaaaaaaaaaaaaaaa", title: "The kitchen", brief: "A narrow kitchen.", source: "sketch", createdAt: 1_800_000_000_000 };
@@ -75,6 +75,39 @@ describe("Property 12: browser-facing payloads leak no secrets or upstream URLs"
         if (!r.ok) return;
         const text = JSON.stringify(r.manifest);
         expect(text).not.toMatch(/WLT-SENTINEL-KEY|worldlabs|https?:\/\/|\/\/cdn|203\.0\.113/);
+      }),
+      propParams(),
+    );
+  });
+});
+
+/** Whatever the service reports, the pose is one a manifest accepts, with the spawn at eye height on the floor and the box on the floor. */
+describe("poseFromService is total", () => {
+  const anything = fc.oneof(fc.double({ noNaN: false }), fc.constant(undefined), fc.constant(null as unknown as number), fc.constant("1" as unknown as number), fc.integer({ min: -1000, max: 1000 }));
+  const hundredths = fc.integer({ min: 1, max: 10_000 }).map((n) => n / 100);
+
+  it("never throws, and gives a pose the manifest schema accepts, for any scale and any ground", () => {
+    fc.assert(
+      fc.property(anything, anything, (metricScaleFactor, groundPlaneOffset) => {
+        const pose = poseFromService({ frame: MARBLE_FRAME, metricScaleFactor, groundPlaneOffset });
+        const r = buildManifest([goodSplat], { ...CTX, pose });
+        expect(r.ok).toBe(true);
+        expect(pose.orientation.scale).toBeGreaterThan(0);
+        expect(Number.isFinite(pose.floorY)).toBe(true);
+        expect(pose.spawn.position[1] - pose.floorY).toBeCloseTo(EYE_HEIGHT, 9);
+        expect(pose.bounds.min[1]).toBe(pose.floorY);
+        expect(pose.bounds.max[1] - pose.bounds.min[1]).toBeCloseTo(4, 9);
+      }),
+      propParams(),
+    );
+  });
+
+  it("uses a valid scale and a valid ground exactly, with the floor at minus the ground", () => {
+    fc.assert(
+      fc.property(hundredths, fc.integer({ min: -10_000, max: 10_000 }).map((n) => n / 100), (scale, ground) => {
+        const pose = poseFromService({ frame: MARBLE_FRAME, metricScaleFactor: scale, groundPlaneOffset: ground });
+        expect(pose.orientation.scale).toBe(scale);
+        expect(pose.floorY).toBe(0 - ground);
       }),
       propParams(),
     );

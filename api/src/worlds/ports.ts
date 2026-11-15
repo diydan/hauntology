@@ -1,6 +1,6 @@
 import type { ErrorCode } from "@hauntology/shared/errors";
 import type { SpendTicket } from "@hauntology/shared/world/spend";
-import type { AssetRole, Lod } from "@hauntology/shared/world/ingest";
+import type { AssetRole, Lod, ServicePose } from "@hauntology/shared/world/ingest";
 import type { WorldManifest } from "@hauntology/shared/world/manifest";
 
 /** What the world routes know about a stored Place Image. The bytes are never needed to decide anything. */
@@ -41,9 +41,9 @@ export interface WorldStarter {
 export type UpstreamFailure = { ok: false; kind: "rate_limited" | "no_credits" | "rejected" | "transient"; retryAfterMs?: number };
 
 /**
- * The world service (World Labs), as the job sees it. The real HTTP adapter is not built: its request and response
- * shapes are unverified until Spike 1.1 records them. Every call goes through `api/src/guarded/worldlabs.ts`, which
- * needs a Ticket, so nothing else may spend.
+ * The world service (World Labs), as the job sees it. The real HTTP adapter is `HttpWorldLabs`
+ * (`api/src/guarded/worldlabs-http.ts`), written from the documented shapes; a run (Spike 1.1) has not yet confirmed them.
+ * Every call goes through `api/src/guarded/worldlabs.ts`, which needs a Ticket, so nothing else may spend.
  */
 export interface WorldLabsPort {
   /** Starts the making of a world from a picture. */
@@ -54,12 +54,12 @@ export interface WorldLabsPort {
 
 /** One file of a finished world as the service describes it. `url` is the service's own address and never leaves the Worker. */
 export type SourceAsset = { role: AssetRole; format: string; lod?: Lod; url: string };
-export type SourceWorld = { splats: SourceAsset[]; collider?: SourceAsset; pano?: SourceAsset; thumb?: SourceAsset };
+/** `pose`: how to read the files (the frame they are written in and the scale and ground height the service reports). Absent means a world with no such information: the manifest keeps its placeholder pose. */
+export type SourceWorld = { splats: SourceAsset[]; collider?: SourceAsset; pano?: SourceAsset; thumb?: SourceAsset; pose?: ServicePose };
 
 /**
- * A finished world on the service's side, in our own terms: which files it has, and their bytes. The real HTTP
- * adapter that reads the service's `GET /worlds/{id}` into `SourceWorld` is not built: the field names are
- * unverified until Spike 1.1 records them.
+ * A finished world on the service's side, in our own terms: which files it has, and their bytes. `HttpWorldLabs`
+ * reads the finished operation into `SourceWorld` and downloads each file.
  */
 export interface WorldSource {
   fetchWorld(operationId: string): Promise<{ ok: true; world: SourceWorld } | UpstreamFailure>;

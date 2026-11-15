@@ -37,7 +37,7 @@ Party Mode vars (defaults): `PARTY_ENABLED=true`, `PARTY_MAX_PLAYERS=6`, `PARTY_
 ## Unverified assumptions (each has a spike; do not build on them blindly)
 1. Whether upstream asset URLs expire, and the formats of the panorama and thumbnail. The field names for splat, collider mesh, pano, thumbnail and the scale metadata are now documented (`worldlabs-api.md`, `docs/spikes/1.1.md`) but not yet confirmed by a run; Spike 1.1 has not been run (it needs a World API key and credits).
 2. Whether FLUX.2 klein 9B (`IMAGE_MODEL_ID`) produces acceptable sketch-to-photo quality from a 512 px sketch used as a reference image (klein's size limit is not stated), and whether that is good enough for World Labs to build from. If not, switch to `flux-2-dev`. Spike 1.2 retires this.
-3. Splat/world orientation (up axis and handedness; the scale and ground height are documented per world as `semantics_metadata`, `docs/spikes/1.1.md`) (needed for up-vector and eye height).
+3. Splat/world orientation: documented, not yet seen in a viewer. The files are in the `marble_raw_opencv` frame, the service turns them half a turn about x, and gives a scale and a ground height per world (`worldlabs-api.md`, `poseFromService`); one real world in the viewer must confirm upright, facing and floor (needed for up-vector and eye height).
 4. Whether outpaint-synthesized extra views improve world quality over a single photo.
 5. Spark API surface for opacity/recolor/LOD in the installed version.
 6. Party Mode: WebSocket p50/p95 input latency through a Durable Object with six phones at 30 Hz (party Spike 1.1).

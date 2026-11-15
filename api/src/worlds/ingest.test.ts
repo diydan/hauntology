@@ -88,6 +88,22 @@ describe("WorldIngestor", () => {
     expect([...t.r2.objects.get(`worlds/${WORLD}/splat-500k.spz`)!.bytes]).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   });
 
+  it("keeps the placeholder pose for a world that comes with no pose, and uses the pose of one that does", async () => {
+    const plain = setup();
+    const a = await plain.ingestor.ingest(JOB);
+    expect(a.ok && "manifest" in a && a.manifest).toMatchObject({ orientation: { upFix: [0, 0, 0, 1], scale: 1 }, floorY: 0 });
+
+    const posed = setup();
+    posed.source.world = { ...FULL, pose: { frame: "marble_raw_opencv", metricScaleFactor: 1.23, groundPlaneOffset: 0.42 } };
+    const b = await posed.ingestor.ingest(JOB);
+    expect(b.ok && "manifest" in b && b.manifest).toMatchObject({ orientation: { upFix: [1, 0, 0, 0], scale: 1.23 }, floorY: -0.42 });
+    // The stored world.json carries it too.
+    const stored = JSON.parse(new TextDecoder().decode(posed.r2.objects.get(`worlds/${WORLD}/world.json`)!.bytes));
+    expect(stored.orientation).toEqual({ upFix: [1, 0, 0, 0], scale: 1.23 });
+    expect(stored.floorY).toBeCloseTo(-0.42, 10);
+    expect(stored.spawn.position[1]).toBeCloseTo(1.6 - 0.42, 10);
+  });
+
   it("copies a file served as a stream as well as one served as bytes", async () => {
     const t = setup();
     for (const a of [FULL.splats[0]!, FULL.splats[1]!, FULL.collider!, FULL.pano!, FULL.thumb!]) t.source.serve.set(a.url, { bytes: Uint8Array.from([5, 6, 7]), stream: true });

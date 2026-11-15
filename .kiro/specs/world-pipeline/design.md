@@ -92,7 +92,7 @@ type WorldManifest = {
 };
 type AssetRef = { path: string; bytes: number; lod?: '100k' | '500k' | 'full' };
 ```
-Orientation, scale, spawn, floorY and bounds are computed at ingest with defaults and hand-tunable for Gallery Worlds (Spike 1.1 fixes the defaults).
+Orientation, scale, spawn, floorY and bounds are computed at ingest: for a world from the service from its documented frame and `semantics_metadata` (`poseFromService`; a run of Spike 1.1 and one look in the viewer confirm it), otherwise defaults; hand-tunable for Gallery Worlds.
 
 ## Job state machine
 `queued → generating → ingesting → ready`; `failed` reachable from any non-terminal state. `ready` and `failed` are absorbing. Rate-limit events only extend the next poll delay. `timeout` fires at 20 min from start. Every transition into `failed` or on timeout is accompanied by `SpendGuard.release`; `ready` by `commit`.

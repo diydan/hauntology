@@ -1,4 +1,4 @@
-import { MAX_SPLATS, assetName, buildManifest, storable, type StoredAsset } from "@hauntology/shared/world/ingest";
+import { MAX_SPLATS, assetName, buildManifest, poseFromService, storable, type StoredAsset } from "@hauntology/shared/world/ingest";
 import { MANIFEST_NAME } from "@hauntology/shared/world/manifest";
 import { bundleKey, bundlePrefix } from "./keys";
 import type { Ingestor, SourceAsset, UpstreamFailure, WorldSource } from "./ports";
@@ -24,6 +24,7 @@ const TRANSIENT: UpstreamFailure = { ok: false, kind: "transient" };
  * - A collider, panorama or thumbnail that is missing, empty or refused is left out, and the world is still ready.
  * - A rate limit, a fault or an out-of-credits answer is handed back as it is, so the job waits and tries the whole
  *   step again; what was copied stays and is overwritten.
+ * - The pose comes from what the service reports about the world (`poseFromService`); a world with no such report keeps the placeholder.
  * - Nothing here logs, returns or stores an address of the service.
  */
 export class WorldIngestor implements Ingestor {
@@ -50,7 +51,10 @@ export class WorldIngestor implements Ingestor {
       if (copied.kind === "stored") stored.push(copied.asset);
     }
 
-    const built = buildManifest(stored, { worldId: job.worldId, title: job.title, brief: job.brief, source: job.source, createdAt: job.createdAt });
+    const built = buildManifest(stored, {
+      worldId: job.worldId, title: job.title, brief: job.brief, source: job.source, createdAt: job.createdAt,
+      ...(w.pose !== undefined ? { pose: poseFromService(w.pose) } : {}),
+    });
     if (!built.ok) {
       await this.cleanup(job.worldId);
       return { ok: false, code: "ingest_failed" };

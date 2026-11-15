@@ -9,8 +9,10 @@ import { ASSET_NAME, WorldManifestSchema, type AssetRef, type WorldManifest } fr
  * - A collider, panorama or thumbnail that is missing or empty is left out of the manifest and the world is still ready.
  * - Every file name is made here from the role, the format and the level of detail, never from anything the
  *   world service sent, so a name cannot hold an address or a path, and no upstream address reaches a manifest.
- * - Orientation, scale, spawn, floor and bounds are defaults. They are placeholders until Spike 1.1 records the real
- *   conventions of the service (`.kiro/steering/tech.md`, unverified assumption 3); a Gallery world gets them tuned by hand.
+ * - Orientation, scale, spawn, floor and bounds are defaults unless the caller gives a pose. A world from the service gets
+ *   its pose from `poseFromService` (the scale and ground height the service reports, and the axis convention of its files,
+ *   as documented and not yet confirmed by a run: `.kiro/steering/tech.md`, unverified assumption 3); a Gallery world gets
+ *   its pose tuned by hand.
  */
 
 export type AssetRole = "splat" | "collider" | "pano" | "thumb";
@@ -49,6 +51,45 @@ export const DEFAULT_POSE: Pose = {
   floorY: 0,
   bounds: { min: [-10, 0, -10], max: [10, 4, 10] },
 };
+
+/** The frame the service's splat files are written in, as its documentation names it: OpenCV axes (x right, y down, z forward). */
+export const MARBLE_FRAME = "marble_raw_opencv" as const;
+/** A half turn about x, as `[x, y, z, w]`: it takes a `marble_raw_opencv` file to y up and z backward (the three.js frame). The service's own viewer applies the same turn. */
+export const MARBLE_UP_FIX: [number, number, number, number] = [1, 0, 0, 0];
+/** The eye height the spawn stands at above the floor, in metres. */
+export const EYE_HEIGHT = 1.6;
+const SCALE_RANGE = { min: 0.01, max: 100 } as const;
+const GROUND_LIMIT = 100;
+
+/** What the service reports about one world's files (`assets.splats.semantics_metadata`), when it reports it. */
+export type ServicePose = { frame: typeof MARBLE_FRAME; metricScaleFactor?: number | undefined; groundPlaneOffset?: number | undefined };
+
+/**
+ * The pose of a world made by the service. Its documentation gives, for a raw coordinate `p`:
+ * `metric = p * metric_scale_factor`, then `ground-aligned = metric - (0, ground_plane_offset, 0)`, in the frame it calls
+ * `marble_raw_opencv`, and says its own viewer then turns the file half a turn about x.
+ *
+ * The manifest says the viewer rotates by `upFix` and scales by `scale` (the order does not matter for a uniform
+ * scale), so: `upFix` is the half turn about x, `scale` is `metric_scale_factor`, and the ground, which the service puts
+ * at `y = ground_plane_offset` before the turn, is at `y = -ground_plane_offset` after it. That is `floorY`. The spawn
+ * stands on it at eye height, at the origin (where the picture was taken from), looking where the picture looks. The
+ * bounds are still a placeholder box of 20 by 4 by 20 metres on the floor.
+ *
+ * A scale that is missing, not a number (NaN and the infinities fail the range test) or outside 0.01 to 100 is read as 1 (the service says 1.0 means "could not be
+ * inferred"), and a ground height that is missing or outside plus or minus 100 metres as 0, so one bad number cannot
+ * put the viewer in a void.
+ */
+export function poseFromService(p: ServicePose): Pose {
+  const scale = typeof p.metricScaleFactor === "number" && p.metricScaleFactor >= SCALE_RANGE.min && p.metricScaleFactor <= SCALE_RANGE.max ? p.metricScaleFactor : 1;
+  const ground = typeof p.groundPlaneOffset === "number" && Math.abs(p.groundPlaneOffset) <= GROUND_LIMIT ? p.groundPlaneOffset : 0;
+  const floorY = 0 - ground; // `0 - x`, not `-x`: a ground of 0 must not give a floor of -0
+  return {
+    orientation: { upFix: [...MARBLE_UP_FIX], scale },
+    spawn: { position: [0, floorY + EYE_HEIGHT, 0], yaw: 0 },
+    floorY,
+    bounds: { min: [DEFAULT_POSE.bounds.min[0], floorY, DEFAULT_POSE.bounds.min[2]], max: [DEFAULT_POSE.bounds.max[0], floorY + (DEFAULT_POSE.bounds.max[1] - DEFAULT_POSE.bounds.min[1]), DEFAULT_POSE.bounds.max[2]] },
+  };
+}
 
 export type ManifestContext = {
   worldId: string;

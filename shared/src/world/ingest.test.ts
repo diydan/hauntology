@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ASSET_FORMATS, DEFAULT_POSE, MAX_ASSET_BYTES, MAX_SPLATS, assetName, buildManifest, storable, type ManifestContext, type StoredAsset } from "./ingest";
+import { ASSET_FORMATS, DEFAULT_POSE, EYE_HEIGHT, MARBLE_FRAME, MARBLE_UP_FIX, MAX_ASSET_BYTES, MAX_SPLATS, assetName, buildManifest, poseFromService, storable, type ManifestContext, type StoredAsset } from "./ingest";
 import { ASSET_NAME, WorldManifestSchema } from "./manifest";
 
 const CTX: ManifestContext = { worldId: "w-aaaaaaaaaaaaaaaaaaaaaa", title: "The kitchen", brief: "A narrow kitchen.", source: "upload", createdAt: 1_800_000_000_000 };
@@ -59,7 +59,7 @@ describe("buildManifest", () => {
     });
   });
 
-  it("uses these placeholders for the pose until Spike 1.1 records the real conventions", () => {
+  it("uses these placeholders for the pose when it is not given one", () => {
     expect(DEFAULT_POSE).toEqual({
       orientation: { upFix: [0, 0, 0, 1], scale: 1 },
       spawn: { position: [0, 1.6, 0], yaw: 0 },
@@ -132,5 +132,84 @@ describe("buildManifest", () => {
     expect(buildManifest(FULL, { ...CTX, brief: "b".repeat(2001) })).toEqual({ ok: false, code: "ingest_failed" });
     expect(buildManifest(FULL, { ...CTX, createdAt: -1 })).toEqual({ ok: false, code: "ingest_failed" });
     expect(buildManifest(FULL, { ...CTX, pose: { orientation: { upFix: [0, 0, 0, 1], scale: 0 } } })).toEqual({ ok: false, code: "ingest_failed" });
+  });
+});
+
+describe("poseFromService", () => {
+  const F = MARBLE_FRAME;
+
+  it("turns the file a half turn about x, scales by the metric factor and puts the floor at minus the ground offset", () => {
+    // The documentation's own numbers: metric_scale_factor 1.23, ground_plane_offset 0.42.
+    const p = poseFromService({ frame: F, metricScaleFactor: 1.23, groundPlaneOffset: 0.42 });
+    expect(p.orientation).toEqual({ upFix: [1, 0, 0, 0], scale: 1.23 });
+    expect(p.floorY).toBeCloseTo(-0.42, 10);
+    expect(p.spawn.position[0]).toBe(0);
+    expect(EYE_HEIGHT).toBe(1.6);
+    expect(p.spawn.position[1]).toBeCloseTo(1.6 - 0.42, 10);
+    expect(p.spawn.position[2]).toBe(0);
+    expect(p.spawn.yaw).toBe(0);
+    expect(p.bounds.min[1]).toBeCloseTo(-0.42, 10);
+    expect(p.bounds.max[1]).toBeCloseTo(-0.42 + 4, 10);
+    expect([p.bounds.min[0], p.bounds.min[2], p.bounds.max[0], p.bounds.max[2]]).toEqual([-10, -10, 10, 10]);
+  });
+
+  it("makes the half turn the one the documentation names: x, y, z, w = 1, 0, 0, 0, a unit quaternion that maps y to minus y", () => {
+    expect(MARBLE_UP_FIX).toEqual([1, 0, 0, 0]);
+    const [x, y, z, w] = MARBLE_UP_FIX;
+    expect(x * x + y * y + z * z + w * w).toBe(1);
+    // Rotating the point (0, 1, 0) by this quaternion: v' = v + 2w(q x v) + 2 q x (q x v) with q = (x, y, z).
+    const v: [number, number, number] = [0, 1, 0];
+    const cross = (a: number[], b: number[]): [number, number, number] => [a[1]! * b[2]! - a[2]! * b[1]!, a[2]! * b[0]! - a[0]! * b[2]!, a[0]! * b[1]! - a[1]! * b[0]!];
+    const t = cross([x, y, z], v).map((n) => 2 * n);
+    const c = cross([x, y, z], t);
+    const out = [v[0] + w * t[0]! + c[0], v[1] + w * t[1]! + c[1], v[2] + w * t[2]! + c[2]];
+    expect(out[0]).toBeCloseTo(0, 12);
+    expect(out[1]).toBeCloseTo(-1, 12);
+    expect(out[2]).toBeCloseTo(0, 12);
+  });
+
+  it("does not hand out the shared constant: the manifest may be changed without changing the next one", () => {
+    const a = poseFromService({ frame: F });
+    a.orientation.upFix[0] = 9;
+    expect(poseFromService({ frame: F }).orientation.upFix).toEqual([1, 0, 0, 0]);
+    expect(MARBLE_UP_FIX).toEqual([1, 0, 0, 0]);
+  });
+
+  it("reads a missing scale as 1 and a missing ground as 0, and still turns the file upright", () => {
+    const p = poseFromService({ frame: F });
+    expect(p.orientation).toEqual({ upFix: [1, 0, 0, 0], scale: 1 });
+    expect(p.floorY).toBe(0);
+    expect(Object.is(p.floorY, 0)).toBe(true); // not -0
+    expect(p.spawn.position).toEqual([0, EYE_HEIGHT, 0]);
+    expect(p.bounds).toEqual({ min: [-10, 0, -10], max: [10, 4, 10] });
+  });
+
+  it("ignores a scale that is not a number, not finite or outside 0.01 to 100, and keeps the ends of the range", () => {
+    for (const bad of [0, -1, 0.0099, 100.01, Number.NaN, Number.POSITIVE_INFINITY, "2" as unknown as number, null as unknown as number]) {
+      expect(poseFromService({ frame: F, metricScaleFactor: bad }).orientation.scale, String(bad)).toBe(1);
+    }
+    expect(poseFromService({ frame: F, metricScaleFactor: 0.01 }).orientation.scale).toBe(0.01);
+    expect(poseFromService({ frame: F, metricScaleFactor: 100 }).orientation.scale).toBe(100);
+  });
+
+  it("ignores a ground offset that is not a number, not finite or past 100 metres either way, and keeps the ends", () => {
+    for (const bad of [Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, 100.01, -100.01, "1" as unknown as number, null as unknown as number]) {
+      expect(poseFromService({ frame: F, groundPlaneOffset: bad }).floorY, String(bad)).toBe(0);
+    }
+    expect(poseFromService({ frame: F, groundPlaneOffset: 100 }).floorY).toBe(-100);
+    expect(poseFromService({ frame: F, groundPlaneOffset: -100 }).floorY).toBe(100);
+    expect(poseFromService({ frame: F, groundPlaneOffset: -2.5 }).floorY).toBe(2.5);
+  });
+
+  it("keeps a good scale when the ground is bad, and a good ground when the scale is bad", () => {
+    expect(poseFromService({ frame: F, metricScaleFactor: 2, groundPlaneOffset: Number.NaN })).toMatchObject({ orientation: { scale: 2 }, floorY: 0 });
+    expect(poseFromService({ frame: F, metricScaleFactor: 0, groundPlaneOffset: 1 })).toMatchObject({ orientation: { scale: 1 }, floorY: -1 });
+  });
+
+  it("makes a pose the manifest accepts, and the builder uses it for the manifest", () => {
+    const pose = poseFromService({ frame: F, metricScaleFactor: 1.23, groundPlaneOffset: 0.42 });
+    const r = buildManifest(FULL, { ...CTX, pose });
+    expect(r.ok && WorldManifestSchema.safeParse(r.manifest).success).toBe(true);
+    expect(r.ok && r.manifest).toMatchObject({ orientation: pose.orientation, spawn: pose.spawn, floorY: pose.floorY, bounds: pose.bounds });
   });
 });
