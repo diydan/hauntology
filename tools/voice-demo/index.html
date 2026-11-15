@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hauntology: Pippa play-through (test sequence)</title>
+<title>Hauntology: play-through (test sequence)</title>
 <style>
   :root { --bg:#09090e; --panel:#12121a; --line:#26263a; --text:#e9e6dc; --dim:#8d8aa0; --whisper:#b8a6ff; --keeper:#dbb36a; --warn:#ff8f6b; }
   * { box-sizing: border-box; }
@@ -30,10 +30,16 @@
   .stage { position:relative; min-height:340px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; overflow:hidden; transition:background .6s; }
   .stage.blackout { background:#000; }
   .stage.blackout .orb { opacity:.12; }
-  .orb { width:120px; height:120px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #f3eeff 0%, var(--whisper) 35%, #3a2f7a 70%, transparent 72%); opacity:.55; transition:opacity .4s, filter .4s; filter:blur(1px); }
+  .orb { width:110px; height:110px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #f3eeff 0%, var(--whisper) 35%, #3a2f7a 70%, transparent 72%); opacity:.55; transition:opacity .4s, filter .4s; filter:blur(1px); }
   .orb.keeper { background:radial-gradient(circle at 40% 35%, #fff4dd 0%, var(--keeper) 35%, #6b4a17 70%, transparent 72%); opacity:.35; }
   .orb.speaking { opacity:1; animation:breathe 2.4s ease-in-out infinite; filter:blur(0) drop-shadow(0 0 26px var(--whisper)); }
   @keyframes breathe { 0%,100% { transform:scale(1); } 50% { transform:scale(1.12); } }
+  .portrait { position:relative; width:240px; height:240px; border-radius:18px; background:#050509; border:1px solid var(--line); overflow:hidden; display:flex; align-items:center; justify-content:center; transition:box-shadow .4s, border-color .4s, opacity .6s; --glow:var(--whisper); }
+  .portrait.whisper { --glow:var(--whisper); } .portrait.keeper { --glow:var(--keeper); } .portrait.suspect { --glow:#7fd0b4; }
+  .portrait.speaking { border-color:var(--glow); box-shadow:0 0 36px var(--glow); }
+  .portrait img, .portrait video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#050509; }
+  .stage.blackout .portrait { opacity:.18; }
+  .clipnote { position:absolute; left:0; right:0; bottom:0; padding:3px 6px; font-size:10px; letter-spacing:.08em; text-transform:uppercase; background:#000a; color:var(--text); }
   .scene { color:var(--dim); font-size:13px; margin-top:14px; min-height:20px; }
   .who { margin-top:6px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--whisper); }
   .who.keeper { color:var(--keeper); }
@@ -51,8 +57,8 @@
 </head>
 <body>
 <header>
-  <h1>Hauntology: Pippa play-through</h1>
-  <small>A stand-alone test sequence. The audio is the real Voice Library audio; the game around it is not built yet, so this page plays the lines in the order a game would.</small>
+  <h1>Hauntology: play-through</h1>
+  <small>A stand-alone test sequence. The audio is the real Voice Library audio and the pictures and clips are the real character art; the game around them is not built yet, so this page plays the lines in the order a game would.</small>
 </header>
 <main>
   <section>
@@ -60,18 +66,22 @@
       <h2>Play a whole session</h2>
       <div class="grid">
         <button id="runWander" class="go">▶ Wander (single player)</button>
-        <button id="runParty" class="go">▶ Party round</button>
+        <button id="runParty" class="go">▶ Party: the haunting wins</button>
+        <button id="runSolved" class="go" style="grid-column:1 / span 2">▶ Party: the case is solved</button>
       </div>
       <div class="row" style="margin-top:10px"><button id="stop" class="stop" style="flex:1">■ Stop</button></div>
       <div class="row"><label>Pause</label><input id="pause" type="range" min="0" max="5" step="0.5" value="1.5"><span id="pauseV" class="status">1.5 s</span></div>
       <div class="row"><label>Volume</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.9"></div>
+      <div class="row"><label>Clips</label><label style="flex:1;color:var(--text)"><input id="useClips" type="checkbox" checked> use the lip-synced clip when a line has one</label></div>
     </div>
 
     <div class="panel" style="margin-top:12px">
       <div class="tabs"><button id="tabWander" class="on">Wander</button><button id="tabParty">Party</button></div>
 
       <div id="wander">
-        <h2>The place right now</h2>
+        <h2>The ghost</h2>
+        <div class="row"><label>Voice</label><select id="persona"><option value="soft">The Whisper (Pippa)</option><option value="dry">Mr. Ashby, the Keeper (Ronald)</option></select></div>
+        <h2 style="margin-top:14px">The place right now</h2>
         <div class="row"><label>Weather</label><select id="weather"></select></div>
         <div class="row"><label>Time</label><select id="time"></select></div>
         <div class="row"><label>Moon</label><select id="moon"></select></div>
@@ -85,17 +95,27 @@
         <h2>The table right now</h2>
         <div class="row"><label>Player</label><select id="nick"></select></div>
         <div class="row"><label>Room</label><select id="zone"></select></div>
-        <h2 style="margin-top:14px">The Whisper (Pippa, voiced)</h2>
+        <div class="row"><label>Suspect</label><select id="suspect"></select></div>
+        <h2 style="margin-top:14px">The Whisper (Pippa)</h2>
         <div class="grid" id="whisperPads"></div>
-        <h2 style="margin-top:14px">The Keeper (text only: not voiced yet)</h2>
+        <h2 style="margin-top:14px">The Keeper (Mr. Ashby, Ronald)</h2>
         <div class="grid" id="keeperPads"></div>
+        <h2 style="margin-top:14px">The Suspect (in their own voice)</h2>
+        <div class="grid" id="suspectPads"></div>
+        <h2 style="margin-top:14px">Made for the demo video (clip only)</h2>
+        <div class="grid" id="demoPads"></div>
       </div>
     </div>
   </section>
 
   <section>
     <div class="panel stage" id="stage">
-      <div class="orb" id="orb"></div>
+      <div class="portrait" id="portrait">
+        <div class="orb" id="orb"></div>
+        <img id="avatar" alt="" hidden>
+        <video id="clip" playsinline hidden></video>
+        <div class="clipnote" id="clipnote" hidden>lip-synced clip</div>
+      </div>
       <div class="scene" id="scene">Press a button, or play a whole session. (Your first click unlocks the sound.)</div>
       <div class="who" id="who"></div>
       <div class="sub" id="sub"></div>
