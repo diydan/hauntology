@@ -103,3 +103,14 @@ A clip cut from a source file already described in a **Source record** points to
 | Cut by | `ffmpeg`, 8.9 s from 5153.0 s, 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 4.0 s |
 | Size | `.mp4` 192 KB, `.webm` 221 KB, `.jpg` 10 KB |
 | Flash check | `node flash-check.mjs` on 2026-11-15: 160 frames, at most 0 flashes in any second (limit 3). |
+
+## wander-harbour
+
+| | |
+|---|---|
+| Record | Source record: Nosferatu (1922) |
+| Shot | One unbroken run of the film, 1:01:48 to 1:03:27 (99.4 s), with no title card in it: a tree by a house, the ship at sea, the sea, the sails, a woman at a window sill (small and dim, no close-up), and the ship coming into the harbour. Wander's home movie, played when a memory is found. It is the longest run in the film without a title card or a close-up of a face; the next shot after it is a face at a window. |
+| Picture only | No audio track (`-an`). No title card or intertitle. No music. |
+| Cut by | `ffmpeg`, 99.4 s from 3708.1 s, 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 75 s (the harbour) |
+| Size | `.mp4` 2.7 MB, `.webm` 3.9 MB, `.jpg` 11 KB |
+| Flash check | `node flash-check.mjs` on 2026-11-15: 1787 frames, at most 1 flash in any second (limit 3). A screen of whole-frame brightness; there is no lightning or strobe in the scene. |

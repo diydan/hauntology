@@ -26,6 +26,27 @@ export const SHOT_TEXT = {
   house: 'Something waits in the doorway.',
 };
 
+/**
+ * Wander's home movie: the long silent scene that plays when a memory is found (a 99 second run of the film with no title card).
+ * `reveal` is the Whisper's scripted line (docs/story/ghost-lines.md, reveal.soft.1): it says a memory was found, never what it is.
+ * `text` is the scene in words, for the live region and the journal.
+ */
+export const WANDER = {
+  scene: 'wander-harbour',
+  reveal: 'Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks.',
+  text: 'A tree by a house, a ship at sea, the sails, the water, and a ship coming into the harbour.',
+};
+
+/**
+ * The title card after the film: our own words. In Wander the words are the memory the engine narrated (two to four sentences from the
+ * ghost); the test page passes a stand-in. The scene never says what the memory is: the card does.
+ * @param {string} memory
+ */
+export function wanderCard(memory) {
+  const text = typeof memory === 'string' ? memory.trim() : '';
+  return { title: 'A memory, found.', lines: text ? [text] : [] };
+}
+
 /** The Haunt levels at which a Haunt Event fires (party-mode 11.2), when the level is below the maximum. */
 export const EVENT_LEVELS = [3, 6, 9];
 

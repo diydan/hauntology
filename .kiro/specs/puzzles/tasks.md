@@ -309,7 +309,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 18.1, 18.8_
   - [ ] 13.7 Find a traceable copy for a long scene. For *Nosferatu*, *The Student of Prague* and *Waxworks*: the oldest unprocessed print in a public archive whose record names it, or a licence from the restorer (the Murnau Foundation, the Deutsche Kinemathek, the Filmmuseum München); until then none of the three has a copy that passes 18.3 for scenes longer than a shot
     - _Requirements: 18.1, 18.3_
-  - [ ] 13.8 Longer scenes: let the `Footage` piece play a scene of minutes (byte ranges, metadata only until played, a Stop control after 5 seconds), cut the first scene with its `PROVENANCE.md` entry and flash screen, and include a 3 minute scene on mobile data in spike puzzles 1.7
+  - [ ] 13.8 Longer scenes: let the `Footage` piece play a scene of minutes (byte ranges, metadata only until played, a Stop control after 5 seconds), cut the first scene with its `PROVENANCE.md` entry and flash screen, and include a 3 minute scene on mobile data in spike puzzles 1.7 (first scene cut 2026-11-15: `wander-harbour`, 99 s, 2.7 MB, section 7 of the test page; the mobile data trial is still open)
     - _Requirements: 18.3, 18.5, 18.6_
 
 - [ ] 14. Scenes from footage (added 2026-11-15; satisfies Requirements 19, 20 and 21)

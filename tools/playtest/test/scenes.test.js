@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EVENT_LEVELS, SHOTS, SHOT_TEXT, endingCard, frameTime, isEventLevel, reelShot, shadowPosition, stepPosition } from '../js/scenes.js';
+import { EVENT_LEVELS, SHOTS, SHOT_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, shadowPosition, stepPosition, wanderCard } from '../js/scenes.js';
 import { root } from './helpers.js';
 
 const MAXES = [8, 10, 12];
@@ -130,4 +130,16 @@ test('20.3 and 21.3 every shot has its three files, a line of words for the live
 test('21.2 no player-facing string of the scenes says Poltergeist', () => {
   const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '').replace(/^\s*\/\/.*$/gm, '').replace(/[ \t]\/\/ .*$/gm, '');
   for (const f of ['js/scenes.js', 'js/scenes-page.js', 'footage.html']) assert.doesNotMatch(strip(readFileSync(resolve(root, f), 'utf8')), /poltergeist/i, f);
+});
+
+test('Wander: the scene has its files and its record, the Whisper line is the real scripted one, and the card holds the memory', () => {
+  const prov = readFileSync(resolve(root, 'media', 'PROVENANCE.md'), 'utf8');
+  for (const ext of ['webm', 'mp4', 'jpg']) assert.ok(existsSync(resolve(root, 'media', `${WANDER.scene}.${ext}`)), `${WANDER.scene}.${ext}`);
+  assert.match(prov, new RegExp(`^## ${WANDER.scene}$`, 'm'));
+  assert.ok(WANDER.text.length > 20);
+  const bank = readFileSync(resolve(root, '..', '..', 'docs', 'story', 'ghost-lines.md'), 'utf8');
+  assert.ok(bank.includes(`| \`reveal.soft.1\` | ${WANDER.reveal} |`), 'the line is reveal.soft.1 of the ghost line bank, word for word');
+  assert.doesNotMatch(WANDER.reveal, /\d|poltergeist/i, 'a reveal line has no digits and no Poltergeist');
+  assert.deepEqual(wanderCard('  I waited by the water.  '), { title: 'A memory, found.', lines: ['I waited by the water.'] });
+  for (const none of [undefined, null, '', '   ', 7]) assert.deepEqual(wanderCard(none).lines, [], `wanderCard(${none}) has no body`);
 });

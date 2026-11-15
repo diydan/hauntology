@@ -477,7 +477,8 @@ A scene earns its place only if it does one of three jobs: it **shows state**, i
 | The Reel | Cut | Haunt level | Requirement 20 |
 | Two endings | Hero | Game end | Requirement 21 |
 | Our own title cards | Cut | Endings first, then every Keeper line | 21.3 |
-| Sealed reveal, Joined the haunting, Cues from those who joined the haunting, Wander home movies, Film on a wall or the pyramid | Ideas | Not in the spec yet | |
+| Wander home movie | Hero | A memory is found | Idea; first scene cut (`wander-harbour`, 99 s, no title card) and shown in section 7 of `/footage.html` |
+| Sealed reveal, Joined the haunting, Cues from those who joined the haunting, Film on a wall or the pyramid | Ideas | Not in the spec yet | |
 
 **The Reel, as a ladder** (the Haunt Events are at 3, 6 and 9; the maximum is the ending and not a shot):
 

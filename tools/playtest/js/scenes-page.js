@@ -1,7 +1,7 @@
-// The three scene demos of the footage test page: the clock shadow, the Reel and the two endings (Requirements 19 to 21).
+// The scene demos of the footage test page: the clock shadow, the Reel, the two endings (Requirements 19 to 21) and Wander's home movie.
 // Everything here is driven by public state only (a clock, a Haunt level, a list of nicknames). The video is decoration:
 // its meaning is always also said in words (the text twin of each shot) and the page works with the footage off.
-import { SHOTS, SHOT_TEXT, endingCard, frameTime, isEventLevel, reelShot, shadowPosition, stepPosition } from './scenes.js';
+import { SHOTS, SHOT_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, shadowPosition, stepPosition, wanderCard } from './scenes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const clock = (ms) => { const s = Math.ceil(Math.max(0, ms) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -125,9 +125,36 @@ export function initScenes({ isOn, say }) {
   $('#ft-end-house').addEventListener('click', () => playEnding('house'));
   $('#ft-end-skip').addEventListener('click', () => { end.pause(); showCard(); });
 
+  // ---- 7. Wander: a memory is found, the Whisper's line, a long silent film, then our own card
+  const wander = $('#ft-wander');
+  const whisper = $('#ft-wander-whisper');
+  const wcard = $('#ft-wander-card');
+  const stop = $('#ft-wander-stop');
+  const STAND_IN_MEMORY = 'I stood by the water and watched for the sails. They came in slowly, as they always did.'; // the engine's narrated memory, in the real game
+  function showWanderCard() {
+    const c = wanderCard(STAND_IN_MEMORY);
+    $('#ft-wander-card-title').textContent = c.title;
+    $('#ft-wander-card-lines').textContent = c.lines.join(' ');
+    wcard.hidden = false;
+    stop.hidden = true;
+    say(`${c.title} ${c.lines.join(' ')}`);
+  }
+  $('#ft-wander-find').addEventListener('click', () => {
+    wcard.hidden = true;
+    whisper.textContent = WANDER.reveal;
+    whisper.hidden = false;
+    if (!isOn()) { showWanderCard(); return; } // footage off: the card at once, the same words
+    say(WANDER.text);
+    wander.currentTime = 0;
+    stop.hidden = false;
+    wander.play().catch(() => showWanderCard());
+  });
+  wander.addEventListener('ended', showWanderCard);
+  stop.addEventListener('click', () => { wander.pause(); showWanderCard(); });
+
   return {
     sync() {
-      if (!isOn()) { reel.pause(); end.pause(); }
+      if (!isOn()) { reel.pause(); end.pause(); wander.pause(); }
       drawClock();
     },
   };

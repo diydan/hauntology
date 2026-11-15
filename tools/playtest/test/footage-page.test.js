@@ -335,11 +335,48 @@ test('21 with footage off an ending shows its card at once and plays nothing', {
 test('21 every control of the scene demos is a real button with a name, and the pictures are hidden from a screen reader', { skip }, async () => {
   open();
   await load(); await tick(5);
-  for (const id of ['ft-clock-start', 'ft-clock-help', 'ft-clock-spook', 'ft-clock-pause', 'ft-haunt-up', 'ft-haunt-down', 'ft-end-detectives', 'ft-end-house', 'ft-end-skip']) {
+  for (const id of ['ft-clock-start', 'ft-clock-help', 'ft-clock-spook', 'ft-clock-pause', 'ft-haunt-up', 'ft-haunt-down', 'ft-end-detectives', 'ft-end-house', 'ft-end-skip', 'ft-wander-find', 'ft-wander-stop']) {
     const b = $(`#${id}`);
     assert.equal(b.tagName, 'BUTTON', id);
     assert.ok(b.textContent.trim().length > 2, `${id} has a name`);
   }
   for (const f of document.querySelectorAll('.ft-film')) assert.equal(f.getAttribute('aria-hidden'), 'true');
   assert.equal($('#ft-reel-text').getAttribute('role'), 'status');
+});
+
+test('Wander: Find plays the film from the start with the Whisper line and a Stop; the card comes at the end or on Stop', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  const v = $('#ft-wander');
+  assert.equal(v.getAttribute('preload'), 'metadata', 'a file over 1 MB loads only its metadata');
+  assert.equal($('#ft-wander-stop').hidden, true);
+  assert.equal($('#ft-wander-card').hidden, true);
+  v.currentTime = 33;
+  click(btn('Find the memory')); await tick(5);
+  assert.equal(v.__playing, true);
+  assert.equal(v.currentTime, 0, 'it starts from the beginning');
+  assert.equal($('#ft-wander-whisper').hidden, false);
+  assert.equal($('#ft-wander-whisper').textContent, 'Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks.');
+  assert.equal($('#ft-wander-stop').hidden, false, 'a Stop shows while a scene over 5 seconds plays');
+  assert.equal($('#ft-wander-card').hidden, true, 'the card waits for the film');
+  v.dispatchEvent(new window.Event('ended')); await tick(5);
+  assert.equal($('#ft-wander-card').hidden, false);
+  assert.equal($('#ft-wander-card-title').textContent, 'A memory, found.');
+  assert.match($('#ft-wander-card-lines').textContent, /watched for the sails/);
+  assert.equal($('#ft-wander-stop').hidden, true);
+  click(btn('Find the memory')); await tick(5);
+  assert.equal($('#ft-wander-card').hidden, true, 'finding it again hides the old card');
+  click(btn('Stop')); await tick(5);
+  assert.equal(v.__playing, false, 'Stop stops the film');
+  assert.equal($('#ft-wander-card').hidden, false, 'and shows the card at once');
+});
+
+test('Wander: with footage off the card shows at once, the film never plays, and the same words are there', { skip }, async () => {
+  const { log } = open({ reduce: true });
+  await load(); await tick(5);
+  click(btn('Find the memory')); await tick(5);
+  assert.equal(log.filter(([a]) => a === 'play').length, 0);
+  assert.equal($('#ft-wander-card').hidden, false);
+  assert.equal($('#ft-wander-stop').hidden, true);
+  assert.match($('#ft-wander-whisper').textContent, /^Here\. I have kept this/);
 });

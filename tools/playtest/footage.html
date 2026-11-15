@@ -122,7 +122,25 @@
     </div>
   </section>
 
-  <p class="ui-hint">Clips: Nosferatu (1922), public domain. Picture only: the original music and every title card are left out; the cards are ours. See media/PROVENANCE.md.</p>
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-g">
+    <h2 id="ft-g" class="ui-eyebrow">7 · Wander: a memory found (a 1 min 39 s silent film, then our card)</h2>
+    <div class="ft-tv">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-wander" muted playsinline preload="metadata" poster="media/wander-harbour.jpg"><source src="media/wander-harbour.webm" type="video/webm"><source src="media/wander-harbour.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack ui-stack--tight" aria-label="A memory">
+        <p id="ft-wander-whisper" class="ui-lead" role="status" hidden></p>
+        <div id="ft-wander-card" class="ui-stack ui-stack--tight" hidden>
+          <p id="ft-wander-card-title" class="ui-title"></p>
+          <p id="ft-wander-card-lines" class="ui-lead"></p>
+        </div>
+        <div class="ui-row">
+          <button id="ft-wander-find" class="ui-button ui-button--primary" type="button">Find the memory</button>
+          <button id="ft-wander-stop" class="ui-button" type="button" hidden>Stop</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <p class="ui-hint">Clips: Nosferatu (1922), public domain.</p> Picture only: the original music and every title card are left out; the cards are ours. See media/PROVENANCE.md.</p>
 </main>
 <script type="module" src="js/footage.js"></script>
 </body>

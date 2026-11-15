@@ -41,6 +41,10 @@ ffmpeg -i in.wav -ac 1 -af loudnorm=I=-16:TP=-1.5:LRA=11 -c:a aac -b:a 64k creak
 
 Check the size (`ls -l`). If a file is over 50 KB, lower the bitrate (`-b:a 48k`) or trim the tail.
 
+## How the current files were made (2026-11-15)
+
+The seven files in `web/public/sounds/` are our own: `tools/sounds/make-sounds.py` computes them from noise, sine waves and filters (needs `python3` and `numpy`; the same seeds give the same sounds), and `node tools/sounds/encode-sounds.mjs <wav folder> web/public/sounds` levels them to -16 LUFS in two passes and encodes them. They are dedicated to the public domain (CC0 1.0). They were judged by spectrogram and by the numbers, not by ear: **listen to them**, and to replace one, drop a better file in with a row in `docs/sounds/CREDITS.md` and run `pnpm check-sounds`.
+
 ## Optional
 
 Quiet ambient loops for the TV, one per weather and up to 12 (conditions task 4.3). They are not needed for the game.
