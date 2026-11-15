@@ -568,3 +568,16 @@ The screens of this spec are built from `design/elements.css`, with the values o
 | Lobby and ending | `ui-card ui-panel ui-modal` |
 
 A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.
+
+## Idea: knocking (2026-11-15, not yet a requirement)
+
+A phone lying on the table can feel a knock on that table (a short jolt on the motion sensor) and hear it (a sharp click on the microphone, loudness only, nothing recorded). Knocking is the oldest way a ghost talks, so it fits the game. Candidate uses, best first:
+
+| Use | How it plays | Notes |
+|---|---|---|
+| **A Poltergeist's rap** | A Player who joined the haunting knocks on the table; the TV plays knocks | A gentler cousin of the Rattle (shake); reuses the Rattle's limits, Cue plumbing and Scare points |
+| **Answer the ghost (Wander)** | The ghost asks yes or no; one knock yes, two knocks no | A séance beat in the memory walk; the `haunwallker` spec would own it |
+| Knock to open a door | Knock to enter a room or start a Lock | Risks feeling like a gimmick |
+| A knock-rhythm puzzle | Copy a knock pattern | Close to the Music box; probably not |
+
+Rules any use must keep: a **Knock** button always does the same (touch alone is enough); knocking is never the only way to do anything; the iOS motion permission comes from a tap, as for tilt; the microphone measures loudness only, as for Candles; and a knock changes no card, Turn or win unless a later requirement says so. Detection: a knock counts when the jolt and the click come within 90 ms of each other, one knock cannot count twice within 150 ms, and knocks less than 700 ms apart make one group ("two knocks"). These numbers are starting points for spike 1.10, which decides whether knocking is reliable enough to become a requirement. The test page is `tools/playtest/knock.html` (live on the playtest site once deployed), with its detector in `tools/playtest/js/knock-core.js`.

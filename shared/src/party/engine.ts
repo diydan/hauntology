@@ -1,13 +1,14 @@
 import { hash, mulberry32 } from "../puzzles/rng";
-import { hauntRise, roundEnd, sealAccusation, type AccuseState } from "./accuse";
+import { roundEnd, sealAccusation, type AccuseState } from "./accuse";
 import { botAct, newMind, observe, type Fact, type Mind, type MindCard } from "./bot";
-import { bonusSeconds, clockStatus, deadlineOf, earned, expire, nextWake, pause, turnBudget, type BaseSeconds, type ClockEvent, type TurnClock } from "./clock";
+import { bonusSeconds, clockStatus, deadlineOf, earned, expire, nextWake, pause, resume, turnBudget, type BaseSeconds, type ClockEvent, type TurnClock } from "./clock";
 import { dealCase, type Card, type Deal, type Solution } from "./deal";
 import { endingPayload, type EndingPayload, type RecapEvent, type Source } from "./ending";
 import { applyEvent, chooseOption, chooserFor, coldSpotIn, defaultOption, fireEvent, takeBlackout, type Haunt, type HauntOption } from "./haunt";
 import { buildPool, type Pool } from "./pool";
 import { inspectRefusal, placeResidue, settleInspect, startInspect, type Inspecting } from "./residue";
-import { gainResolve } from "./resolve";
+import { EAVESDROP_MS, canEavesdrop, eavesdrop, gainResolve, spendResolve, type EavesdropWindow } from "./resolve";
+import { applyNudge, canNudge, type LastSpook, type NudgeKind } from "./nudge";
 import { canSuggest, defaultShown, isBluff, resolveSuggestion, validShow } from "./suggest";
 import { firstPlayer, nextPlayer, type Order } from "./turns";
 
@@ -28,12 +29,13 @@ export const BOT_THINK_MAX_MS = 6_000;
 const BOT_ACTIONS_PER_TURN = 8;
 
 export type EngineSeat = Readonly<{ seat: number; nickname: string; bot: boolean; botLevel: "standard" | "gentle" }>;
-export type EngineSettings = Readonly<{ baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12 }>;
+export type EngineSettings = Readonly<{ baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off" }>;
 
 export type PlayerRec = Readonly<{
   seat: number; poltergeist: boolean; joinedRound: number | null; resolve: number;
   inspected: readonly string[]; shownToMe: readonly Readonly<{ card: string; by: number }>[]; found: readonly string[];
   sealed: Solution | null; hasSealed: boolean; suggestions: number; turnMsUsed: number;
+  heard: readonly Readonly<{ eventId: number; card: string }>[];
 }>;
 
 export type TurnRec = Readonly<{
@@ -42,6 +44,9 @@ export type TurnRec = Readonly<{
   answering: Readonly<{ eventId: number; refuter: number; held: readonly string[]; untilMs: number }> | null;
   windowUntilMs: number | null;
   botDueMs: number | null; botActions: number;
+  nudges: Readonly<{ help: boolean; spook: boolean }>;
+  /** True when the Master's pause (not a Suggestion) paused this clock. */
+  masterPausedClock: boolean;
 }>;
 
 export type EngineEvent = RecapEvent | Readonly<{ id: number; kind: "visit"; seat: number; zone: string; sinceTurnMs: number }> | Readonly<{ id: number; kind: "haunt-event"; option: HauntOption }>;
@@ -55,6 +60,11 @@ export type EngineState = Readonly<{
   log: readonly EngineEvent[]; nextId: number; shownLog: Readonly<Record<number, string>>; bluffs: readonly number[];
   sources: readonly Source[]; botFacts: Readonly<Record<number, readonly Fact[]>>;
   winners: readonly number[]; houseWins: boolean; ending: EndingPayload | null;
+  /** When the Master paused the game, or null. */
+  pausedSinceMs: number | null;
+  lastSpook: LastSpook | null;
+  nudgeCounts: Readonly<{ haunting: number; others: number }>;
+  eavesdrop: EavesdropWindow | null;
 }>;
 
 // ---------------------------------------------------------------- actions and messages
@@ -67,7 +77,11 @@ export type ClientMsg =
   | Readonly<{ t: "seal"; suspect: string; zone: string; relic: string }>
   | Readonly<{ t: "endTurn" }>
   | Readonly<{ t: "pass" }>
-  | Readonly<{ t: "choose"; option: HauntOption }>;
+  | Readonly<{ t: "choose"; option: HauntOption }>
+  | Readonly<{ t: "nudge"; kind: NudgeKind }>
+  | Readonly<{ t: "eavesdrop"; eventId: number }>
+  | Readonly<{ t: "pause" }>
+  | Readonly<{ t: "resume" }>;
 export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> | Readonly<{ kind: "alarm" }>;
 
 export type PublicSnapshot = Readonly<{
@@ -83,6 +97,8 @@ export type PrivateSnapshot = Readonly<{
   seat: number; hand: readonly Card[]; shownToMe: readonly Readonly<{ card: string; by: number }>[]; found: readonly string[];
   resolve: number; sealed: Solution | null;
   answer: Readonly<{ eventId: number; options: readonly string[]; deadlineMs: number }> | null;
+  heard: readonly Readonly<{ eventId: number; card: string }>[];
+  canEavesdrop: number | null;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
 }>;
 export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> }>
@@ -98,6 +114,7 @@ export function createEngine(o: Readonly<{ seed: number; seats: readonly EngineS
     players: [], round: 0, first: null, turnNo: 0, turn: null,
     haunt: { level: 0, max: o.settings.hauntMax, fired: [], pending: null, coldSpot: null, blackoutNext: false }, eventsChosen: 0,
     log: [], nextId: 1, shownLog: {}, bluffs: [], sources: [], botFacts: {}, winners: [], houseWins: false, ending: null,
+    pausedSinceMs: null, lastSpook: null, nudgeCounts: { haunting: 0, others: 0 }, eavesdrop: null,
   };
 }
 
@@ -138,6 +155,7 @@ function startTurn(s: EngineState, seat: number, now: number): EngineState {
   const turn: TurnRec = {
     seat, turnNo, startedMs: now, clock: { startedMs: now, budgetMs: budget === null ? null : budget * 1000, pausedMs: 0, pausedSinceMs: null, ended: false },
     at: null, suggested: false, inspecting: null, answering: null, windowUntilMs: null, botDueMs: null, botActions: 0,
+    nudges: { help: false, spook: false }, masterPausedClock: false,
   };
   const t2 = isBot(s2, seat) ? { ...turn, botDueMs: now + thinkMs(s2, 0) } : turn;
   return { ...s2, turn: t2 };
@@ -204,6 +222,8 @@ function deliverShown(s: EngineState, eventId: number, card: string, now: number
   const refuter = t.answering?.refuter ?? ((s.log.find((e) => e.id === eventId) as Extract<EngineEvent, { kind: "suggest" }>).refuter as number);
   let st = setPlayer(s, t.seat, (p) => ({ ...p, shownToMe: [...p.shownToMe, { card, by: refuter }] }));
   st = addFact(st, t.seat, { kind: "shown", card, by: refuter });
+  const sug = st.log.find((e) => e.id === eventId) as Extract<EngineEvent, { kind: "suggest" }>;
+  st = { ...st, eavesdrop: { eventId, suggester: t.seat, refuter, named: [sug.suspect, sug.zone, sug.relic], shown: card, untilMs: now + EAVESDROP_MS } };
   return { ...st, shownLog: { ...st.shownLog, [eventId]: card }, turn: { ...t, answering: null, windowUntilMs: now + WINDOW_MS, botDueMs: isBot(st, t.seat) ? now + thinkMs(st, eventId) : null } };
 }
 
@@ -217,12 +237,51 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     if (s.phase !== "lobby") return "game_started";
     const seatIds = s.seats.map((x) => x.seat);
     const deal = dealCase(s.pool, seatIds, s.seed);
-    const players: PlayerRec[] = seatIds.map((x) => ({ seat: x, poltergeist: false, joinedRound: null, resolve: 1, inspected: [], shownToMe: [], found: [], sealed: null, hasSealed: false, suggestions: 0, turnMsUsed: 0 }));
+    const players: PlayerRec[] = seatIds.map((x) => ({ seat: x, poltergeist: false, joinedRound: null, resolve: 1, inspected: [], shownToMe: [], found: [], sealed: null, hasSealed: false, suggestions: 0, turnMsUsed: 0, heard: [] }));
     const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(s.pool.zones.map((z) => z.id), deal.residue, s.seed), players, round: 1 };
     const first = firstPlayer(order(st), null, s.seed) as number;
     return startTurn({ ...st, first }, first, now);
   }
   if (s.phase !== "playing") return "game_over";
+  if (msg.t === "pause") {
+    if (seat !== s.masterSeat) return "not_master";
+    if (s.pausedSinceMs !== null) return "already_paused";
+    const t = s.turn;
+    const clockFree = t !== null && t.clock.pausedSinceMs === null;
+    return { ...s, pausedSinceMs: now, turn: t === null ? null : { ...t, clock: clockFree ? pause(t.clock, now) : t.clock, masterPausedClock: clockFree } };
+  }
+  if (msg.t === "resume") {
+    if (seat !== s.masterSeat) return "not_master";
+    if (s.pausedSinceMs === null) return "not_paused";
+    return resumeAll(s, now);
+  }
+  if (s.pausedSinceMs !== null) return "paused";
+  if (msg.t === "nudge") {
+    const t = s.turn;
+    const me = player(s, seat) as PlayerRec;
+    const left = t === null ? 0 : Math.max(0, (deadlineOf(t.clock, now) ?? now) - now);
+    const ok = canNudge({
+      seat, bot: isBot(s, seat), activeSeat: t?.seat ?? null, resolve: me.resolve, setting: s.settings.nudges ?? "all",
+      clockRunning: t !== null && t.clock.budgetMs !== null && t.clock.pausedSinceMs === null, budgetMs: t?.clock.budgetMs ?? 0, leftMs: left,
+      usedThisTurn: t?.nudges ?? { help: false, spook: false }, round: s.round, turnIndex: s.turnNo, lastSpook: s.lastSpook,
+    }, msg.kind);
+    if (!ok.ok) return ok.reason;
+    const tt = t as TurnRec;
+    const n = applyNudge(tt.clock.budgetMs as number, me.resolve, msg.kind);
+    let st = setPlayer(s, seat, (p) => ({ ...p, resolve: n.resolve }));
+    st = { ...st, turn: { ...tt, clock: { ...tt.clock, budgetMs: n.budgetMs }, nudges: { ...tt.nudges, [msg.kind]: true } },
+      lastSpook: msg.kind === "spook" ? { seat, round: s.round, turnIndex: s.turnNo } : s.lastSpook,
+      nudgeCounts: me.poltergeist ? { ...s.nudgeCounts, haunting: s.nudgeCounts.haunting + 1 } : { ...s.nudgeCounts, others: s.nudgeCounts.others + 1 } };
+    return addLog(st, { kind: "nudge", seat, nudge: msg.kind, target: tt.seat, turn: tt.turnNo })[0];
+  }
+  if (msg.t === "eavesdrop") {
+    const me = player(s, seat) as PlayerRec;
+    const w = s.eavesdrop;
+    if (w === null || w.eventId !== msg.eventId || !canEavesdrop(w, seat, me.poltergeist, me.resolve, now, me.heard.some((h) => h.eventId === w.eventId))) return "eavesdrop_denied";
+    const card = eavesdrop(w, seat, s.seed);
+    const st = setPlayer(s, seat, (p) => ({ ...p, resolve: spendResolve(p.resolve, 1) as number, heard: [...p.heard, { eventId: w.eventId, card }] }));
+    return addLog(st, { kind: "eavesdrop", seat })[0];
+  }
   if (msg.t === "choose") {
     const pend = s.haunt.pending;
     if (pend === null || chooseOption(s.haunt, seat, msg.option, now) === null) return "not_your_choice";
@@ -286,6 +345,25 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
   }
 }
 
+/** The Master resumes: every deadline moves on by the length of the pause, so nothing ran while it was paused. */
+function resumeAll(s: EngineState, now: number): EngineState {
+  const d = Math.max(0, now - (s.pausedSinceMs as number));
+  const shift = (x: number | null): number | null => (x === null ? null : x + d);
+  const t = s.turn;
+  const turn = t === null ? null : {
+    ...t, clock: t.masterPausedClock ? resume(t.clock, now) : t.clock, masterPausedClock: false,
+    inspecting: t.inspecting === null ? null : { ...t.inspecting, untilMs: t.inspecting.untilMs + d },
+    answering: t.answering === null ? null : { ...t.answering, untilMs: t.answering.untilMs + d },
+    windowUntilMs: shift(t.windowUntilMs), botDueMs: shift(t.botDueMs),
+  };
+  const p = s.haunt.pending;
+  return {
+    ...s, pausedSinceMs: null, turn,
+    haunt: p === null ? s.haunt : { ...s.haunt, pending: { ...p, deadlineMs: p.deadlineMs + d } },
+    eavesdrop: s.eavesdrop === null ? null : { ...s.eavesdrop, untilMs: s.eavesdrop.untilMs + d },
+  };
+}
+
 function onAlarm(s: EngineState, now: number): EngineState {
   let st = s;
   for (let guard = 0; guard < 20 && st.phase === "playing"; guard++) {
@@ -298,6 +376,7 @@ function onAlarm(s: EngineState, now: number): EngineState {
 
 /** Everything that is due at `now`, one thing at a time. */
 function tick(s: EngineState, now: number): EngineState {
+  if (s.pausedSinceMs !== null) return s;
   const p = s.haunt.pending;
   if (p !== null && p.chooser !== null && now >= p.deadlineMs) return applyChosen(s, defaultOption(p), now);
   const t = s.turn;
@@ -317,9 +396,9 @@ function tick(s: EngineState, now: number): EngineState {
   }
   if (t.windowUntilMs !== null && now >= t.windowUntilMs) return endTurn(s, now);
   if (clockStatus(t.clock, now) === "expired") {
-    const ex = expire(t.clock, now, false);
+    const ex = expire(t.clock, now, t.nudges.spook);
     if (ex.ended) {
-      const [st] = addLog({ ...s, haunt: { ...s.haunt, level: hauntRise(s.haunt, "timeout").level } }, { kind: "timeout", seat: t.seat, turn: t.turnNo });
+      const [st] = addLog({ ...s, haunt: { ...s.haunt, level: Math.min(s.haunt.max, s.haunt.level + ex.hauntRise) } }, { kind: "timeout", seat: t.seat, turn: t.turnNo });
       return endTurn(fireHaunt(st, now), now);
     }
   }
@@ -372,11 +451,13 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
     seat, hand: (s.deal.hands[seat] ?? []).map((c) => ({ ...c })), shownToMe: p.shownToMe.map((x) => ({ ...x })), found: [...p.found], resolve: p.resolve, sealed: p.sealed,
     answer: t?.answering && t.answering.refuter === seat ? { eventId: t.answering.eventId, options: [...t.answering.held], deadlineMs: t.answering.untilMs } : null,
     choose: pend !== null && pend.chooser === seat ? { options: [...pend.options], deadlineMs: pend.deadlineMs } : null,
+    heard: p.heard.map((h) => ({ ...h })),
+    canEavesdrop: s.eavesdrop !== null && s.eavesdrop.suggester !== seat && s.eavesdrop.refuter !== seat && !p.poltergeist && p.resolve >= 1 && !p.heard.some((h) => h.eventId === s.eavesdrop?.eventId) ? s.eavesdrop.eventId : null,
   };
 }
 
 function wakeOf(s: EngineState, now: number): number | null {
-  if (s.phase !== "playing") return null;
+  if (s.phase !== "playing" || s.pausedSinceMs !== null) return null;
   const t = s.turn;
   return nextWake({
     turn: t?.clock ?? null, inspectUntilMs: t?.inspecting?.untilMs ?? null, answeringUntilMs: t?.answering?.untilMs ?? null,

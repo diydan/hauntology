@@ -18,7 +18,9 @@ export type RecapEvent =
   | Readonly<{ id: number; kind: "nudge"; seat: number; nudge: "help" | "spook"; target: number; turn: number }>
   | Readonly<{ id: number; kind: "phone-cue"; target: number }>
   | Readonly<{ id: number; kind: "rattle"; target: number; turn: number }>
-  | Readonly<{ id: number; kind: "haunt"; level: number }>;
+  | Readonly<{ id: number; kind: "haunt"; level: number }>
+  /** Only that someone Eavesdropped, never what they heard. */
+  | Readonly<{ id: number; kind: "eavesdrop"; seat: number }>;
 
 /** Who sent each Frame, House Cue, Rattle and solved Haunting puzzle. Secret until the ending. */
 export type Source = Readonly<{ eventId: number; kind: "house-cue" | "frame" | "rattle" | "haunting-puzzle"; from: number | null; turn?: number }>;

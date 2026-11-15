@@ -20,6 +20,7 @@ app.append(
   h('div', { class: 'cards' },
     h('a', { href: 'lab.html', style: { borderColor: '#b9a6ff' } }, h('b', {}, 'Device lab'), h('small', { class: 'muted' }, 'Open one link on many devices. See who is on it. Fire sound, light and buzz here, or push them to others.'), tag('push'), tag('light'), tag('sound'), tag('buzz')),
     h('a', { href: 'check.html', style: { borderColor: '#b9a6ff' } }, h('b', {}, 'Check my phone'), h('small', { class: 'muted' }, 'Buzz, tilt, sound and mic tests. Copy the report.'), tag('start here')),
+    h('a', { href: 'knock.html', style: { borderColor: '#b9a6ff' } }, h('b', {}, 'Knock test'), h('small', { class: 'muted' }, 'Lay the phone on a table and knock. Does it feel the knock, and ignore talk and bumps? Copy the report.'), tag('motion'), tag('mic'), tag('idea')),
     h('a', { href: 'ar.html', style: { borderColor: '#8fe3d4' } }, h('b', {}, 'Spirit table (mockup)'), h('small', { class: 'muted' }, 'A private 3D board and ghost that only your phone can see, on your table through the camera.'), tag('camera'), tag('tilt'), tag('mockup')),
     ...ALL.map((k) => h('a', { href: `${k.id}.html` },
       h('b', {}, k.title),

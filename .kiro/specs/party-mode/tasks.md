@@ -32,6 +32,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ] 1.9 Sound files on real phones
     - Once the seven files exist: loudness and bass through a phone speaker (rumble energy from 150 to 800 Hz), the Becoming's drama at a safe volume, the size limits, and the game with every file removed.
     - _Requirements: 20.1, 20.2_
+  - [ ] 1.10 Knock (an idea, see the design's "Idea: knocking")
+    - On real phones lying on wooden, glass and stone tables, with `tools/playtest/knock.html`: how often a knock near the phone, at the far end of the table and on the phone's back is seen by the motion sensor alone, the microphone alone and both together; how often talk, claps, a cup put down and a lean on the table are wrongly seen; whether "two knocks" groups reliably; the iOS motion and microphone permission flow; and whether players find it fun. Record the copied reports in `docs/spikes/party-10.md` and decide: knocking becomes a requirement (a Poltergeist rap first), or it is dropped
+    - _Requirements: 19.1_
 
 - [ ] 2. Pure logic (`shared/src/party/`)
   - [x] 2.1 `generateRoomCode` and `normalizeCode`
@@ -178,9 +181,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.58 Write property test for Photo Prompts
     - **Property 30: Photo Prompt offers are deterministic, complete and bounded**
     - **Validates: Requirements 3.6, 3.7, 3.8**
-  - [ ] 2.59 `nudgeCost`, `canNudge` (with every named reason) and `nudge`: Help +10 s up to 120 s, Spook -10 s with 20 s left, a 30 s floor, one of each per Turn, one Spook per Round, never the same Player on consecutive Turns, none from the active Player or a Bot (a Poltergeist may Help and Spook), and no Spook within three Turns of the last; each accepted Nudge counted for haunting Players or for everyone else
+  - [x] 2.59 `nudgeCost`, `canNudge` (with every named reason) and `nudge`: Help +10 s up to 120 s, Spook -10 s with 20 s left, a 30 s floor, one of each per Turn, one Spook per Round, never the same Player on consecutive Turns, none from the active Player or a Bot (a Poltergeist may Help and Spook), and no Spook within three Turns of the last; each accepted Nudge counted for haunting Players or for everyone else
     - _Requirements: 12.2, 12.3, 12.4_
-  - [ ]* 2.60 Write property test for Nudges
+  - [x]* 2.60 Write property test for Nudges
     - **Property 31: Nudges obey cost, floor and limits**
     - **Validates: Requirements 12.2, 12.3, 12.4**
   - [ ] 2.61 `CUES` (four: creak, whisper, bell, laugh), `canCue` and `playCue`: one per Player per 4 s, three playing, six per Turn, text-only when sounds are off, no rule effect

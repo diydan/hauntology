@@ -24,9 +24,17 @@ function play(seed: number, n: number, max: 8 | 10 | 12, human: boolean, r: Rng,
         { t: "suggest", suspect: pick(s.pool.suspects).id, relic: pick(s.pool.relics).id },
         { t: "seal", suspect: pick(s.pool.suspects).id, zone: pick(zones), relic: pick(s.pool.relics).id },
         { t: "show", card: "s1" }, { t: "choose", option: "lull" }, { t: "start" },
+        { t: "nudge", kind: "help" }, { t: "nudge", kind: "spook" }, { t: "eavesdrop", eventId: s.eavesdrop?.eventId ?? 1 },
+        { t: "pause" }, { t: "resume" },
       ];
       go({ kind: "client", seat: 1, msg: pick(msgs) });
       now += 500;
+      continue;
+    }
+    if (human && s.turn && s.turn.seat !== 1 && r() < 0.15) {
+      const off: ClientMsg[] = [{ t: "nudge", kind: "help" }, { t: "nudge", kind: "spook" }, { t: "eavesdrop", eventId: s.eavesdrop?.eventId ?? 1 }, { t: "pause" }, { t: "resume" }];
+      go({ kind: "client", seat: 1, msg: off[randInt(r, off.length)] as ClientMsg });
+      if (s.pausedSinceMs !== null) { now += 2000; go({ kind: "client", seat: 1, msg: { t: "resume" } }); }
       continue;
     }
     if (s.turn?.answering && s.turn.answering.refuter === 1 && human) { go({ kind: "client", seat: 1, msg: { t: "show", card: s.turn.answering.held[0] as string } }); continue; }
@@ -104,7 +112,7 @@ describe("Property 2: No outbound message leaks", () => {
           const v = o.msg.view;
           const text = JSON.stringify(v);
           if (v.phase === "ended") continue; // the ending shows the Solution and the Residue places, by design
-          expect(text).not.toMatch(/"(hand|shownToMe|found|residueAt|shown|held|botFacts|bluffs|shownLog)"|"sealed":\{/);
+          expect(text).not.toMatch(/"(hand|shownToMe|found|residueAt|shown|held|botFacts|bluffs|shownLog|heard)"|"sealed":\{/);
           expect(v.ending).toBeNull();
           expect(text).not.toContain("solution");
         }

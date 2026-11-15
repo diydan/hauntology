@@ -16,7 +16,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
 - [ ] 2. Phase 2: the Engine (`shared/src/party/engine.ts`)
   - [ ] 2.1 `RoomGameState`, `Action`, `Outbound`, `StepResult` and the protocol schemas (party-mode `protocol.ts`)
     - _Requirements: 2.1_
-  - [ ] 2.2 (core loop done in `shared/src/party/engine.ts`: start, Turns, walk, plain Inspect, Suggestions with the answer choice, Accusations, the clock, Round end, Haunt Events, ending, Bots; still to add: Eavesdrop, Nudges, Cues, Frames, Master pause, reconnects, Locks) `step` for the lobby, start, turns, Suggestions, the answer choice, Accusations, Inspect, the Haunt, alarms and Bots, calling only the rule modules
+  - [ ] 2.2 (core loop done in `shared/src/party/engine.ts`: start, Turns, walk, plain Inspect, Suggestions with the answer choice, Accusations, the clock, Round end, Haunt Events, ending, Bots, Eavesdrop, Nudges with every limit, the Master pause; still to add: Cues, Frames, reconnects, Locks, Bots that Eavesdrop) `step` for the lobby, start, turns, Suggestions, the answer choice, Accusations, Inspect, the Haunt, alarms and Bots, calling only the rule modules
     - _Requirements: 2.1, 2.2, 2.4_
   - [x] 2.3 **Property 1: The Engine is deterministic and refuses without change**
     - **Validates: Requirements 2.1, 2.2**
