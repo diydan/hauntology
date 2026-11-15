@@ -91,12 +91,13 @@ test('18.3, 18.5 and 18.6 the page: muted, no controls, own origin only, a poste
   assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/, 'no colour of its own: tokens only');
 });
 
-test('18.3 the build copies the clip files and the poster, and not the provenance note', () => {
+test('18.3 the build copies the clip files, the poster and the two Reel sounds, and not the provenance note', () => {
   const dist = mkdtempSync(resolve(tmpdir(), 'playtest-dist-')); // not dist/: other test files read it while they run
   try {
     const r = spawnSync(process.execPath, [resolve(root, 'build.mjs')], { cwd: root, encoding: 'utf8', env: { ...process.env, PLAYTEST_DIST: dist } });
     assert.equal(r.status, 0, r.stderr);
-    assert.deepEqual(readdirSync(resolve(dist, 'media')).sort(), clips.flatMap((c) => [`${c}.jpg`, `${c}.mp4`, `${c}.webm`]).sort());
+    assert.deepEqual(readdirSync(resolve(dist, 'media')).sort(), [...clips.flatMap((c) => [`${c}.jpg`, `${c}.mp4`, `${c}.webm`]), 'knock.m4a', 'scrape.m4a'].sort());
+    for (const n of ['knock', 'scrape']) assert.deepEqual(readFileSync(resolve(dist, 'media', `${n}.m4a`)), readFileSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${n}.m4a`)), `${n}.m4a is the game's own file`);
     assert.ok(existsSync(resolve(dist, 'footage.html')));
   } finally {
     rmSync(dist, { recursive: true, force: true });
@@ -111,6 +112,10 @@ function open({ reduce = false, hidden = false } = {}) {
   w.matchMedia = () => ({ matches: reduce, addEventListener: (t, f) => listeners.push([t, f]) });
   globalThis.matchMedia = w.matchMedia;
   const log = [];
+  // the sounds: an Audio that records the file it was asked to play (jsdom has none that plays), and can be made to refuse
+  const heard = [];
+  const audio = { refuse: false, broken: false };
+  globalThis.Audio = class { constructor(src) { if (audio.broken) throw new Error('no audio'); this.src = src; this.currentTime = 0; } play() { heard.push(this.src); return audio.refuse ? Promise.reject(new Error('blocked')) : Promise.resolve(); } };
   w.HTMLMediaElement.prototype.play = function () { log.push(['play', this.id || this.className]); this.__playing = true; return Promise.resolve(); };
   w.HTMLMediaElement.prototype.pause = function () { log.push(['pause', this.id || this.className]); this.__playing = false; };
   Object.defineProperty(w.document, 'hidden', { value: hidden, configurable: true });
@@ -118,7 +123,7 @@ function open({ reduce = false, hidden = false } = {}) {
   Object.defineProperty(w.HTMLMediaElement.prototype, 'currentTime', { get() { return this.__t || 0; }, set(v) { this.__t = v; }, configurable: true });
   Object.defineProperty(w.HTMLMediaElement.prototype, 'duration', { get() { return 4.2; }, configurable: true });
   w.HTMLMediaElement.prototype.load = function () { this.__loads = (this.__loads || 0) + 1; };
-  return { w, log, listeners };
+  return { w, log, listeners, heard, audio };
 }
 let n = 0;
 const load = () => import(`../js/footage.js?run=${++n}`);
@@ -301,6 +306,84 @@ test('20 with footage off the Reel still swaps the shot and says it in words, an
   assert.match($('#ft-reel-text').textContent, /Something rises/);
 });
 
+test('20.6 the Reel scrapes at Haunt 3 and knocks at 7 and 8, once for each rise, and is silent at every other level', { skip }, async () => {
+  const { heard } = open();
+  await load(); await tick(5);
+  const rises = [];
+  for (let i = 1; i <= 11; i++) { const before = heard.length; click(btn('Haunt +1')); rises.push(heard.slice(before)); }
+  const none = [];
+  assert.deepEqual(rises, [none, none, ['media/scrape.m4a'], none, none, none, ['media/knock.m4a'], ['media/knock.m4a'], none, none, none], 'level 1 to 10, then a tap at the maximum');
+  const before = heard.length;
+  for (let i = 0; i < 4; i++) click(btn('Haunt −1')); // 10 to 6: through the knock levels and back
+  click(btn('Haunt +1')); // 7 again: a rise, so it knocks
+  assert.equal(heard.length, before + 1, 'a step back is silent; the rise to 7 knocks once');
+});
+
+test('20.6 a step back never makes the sound, even onto a level that has one', { skip }, async () => {
+  const { heard } = open();
+  await load(); await tick(5);
+  for (let i = 0; i < 9; i++) click(btn('Haunt +1'));
+  heard.length = 0;
+  for (let i = 0; i < 9; i++) click(btn('Haunt −1')); // 8, 7 (knock levels) and 3 (the scrape level) on the way down
+  assert.deepEqual(heard, []);
+});
+
+test('20.6 the words of a sound are always on screen: the scrape and the knock are said, other levels say no sound', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  const text = () => $('#ft-reel-text').textContent;
+  for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
+  assert.match(text(), /A wooden lid scrapes\.$/);
+  click(btn('Haunt +1'));
+  assert.doesNotMatch(text(), /scrapes|knocks/);
+  for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
+  assert.match(text(), /Someone knocks, slowly, at a door\.$/);
+});
+
+test('20.6 the Sound switch is on to begin with, silences both sounds when off, and the words stay', { skip }, async () => {
+  const { heard } = open();
+  await load(); await tick(5);
+  const sw = $('#ft-sound');
+  assert.equal(sw.getAttribute('role'), 'switch');
+  assert.equal(sw.getAttribute('aria-checked'), 'true');
+  assert.equal(sw.querySelector('.ui-switch-state').textContent, 'On');
+  click(sw);
+  assert.equal(sw.getAttribute('aria-checked'), 'false');
+  assert.equal(sw.querySelector('.ui-switch-state').textContent, 'Off');
+  assert.equal($('#ft-status').textContent, 'Sound off.');
+  for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
+  assert.deepEqual(heard, [], 'with Sound off the scrape does not play');
+  assert.match($('#ft-reel-text').textContent, /A wooden lid scrapes\./, 'and its words are still there');
+  assert.equal($('#ft-reel').querySelector('source[type="video/webm"]').getAttribute('src'), 'media/reel-coffin.webm', 'the shot still changes');
+  click(sw);
+  assert.equal($('#ft-status').textContent, 'Sound on.');
+  for (let i = 0; i < 4; i++) click(btn('Haunt +1'));
+  assert.deepEqual(heard, ['media/knock.m4a'], 'switched on again, the next rise to a sound plays it');
+});
+
+test('20.6 the sound is not footage: it plays with footage paused or reduced motion on, and Sound is what silences it', { skip }, async () => {
+  const { heard, log } = open({ reduce: true });
+  await load(); await tick(5);
+  for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
+  assert.deepEqual(heard, ['media/scrape.m4a']);
+  assert.equal(log.filter(([a, id]) => a === 'play' && id === 'ft-reel').length, 0, 'and the picture stays still');
+});
+
+test('20.6 a blocked sound, a missing Audio and a failed load change nothing: the words carry the shot', { skip }, async () => {
+  const { audio, heard } = open();
+  await load(); await tick(5);
+  audio.refuse = true;
+  for (let i = 0; i < 3; i++) click(btn('Haunt +1')); await tick(5); // a rejected play() must not surface as an error
+  assert.deepEqual(heard, ['media/scrape.m4a'], 'it tried');
+  assert.match($('#ft-reel-text').textContent, /scrapes/);
+  assert.deepEqual(window.__errors, []);
+  audio.broken = true;
+  for (let i = 0; i < 4; i++) click(btn('Haunt +1')); // the knock at 7, with no Audio at all
+  assert.match($('#ft-reel-text').textContent, /knocks/);
+  assert.equal($('#ft-haunt-text').textContent, 'Haunt 7 of 10', 'the page carried on');
+  assert.deepEqual(window.__errors, []);
+});
+
 test('21 the endings: a hero shot, then our own title card; the house card names who joined the haunting', { skip }, async () => {
   open();
   await load(); await tick(5);
@@ -335,7 +418,7 @@ test('21 with footage off an ending shows its card at once and plays nothing', {
 test('21 every control of the scene demos is a real button with a name, and the pictures are hidden from a screen reader', { skip }, async () => {
   open();
   await load(); await tick(5);
-  for (const id of ['ft-clock-start', 'ft-clock-help', 'ft-clock-spook', 'ft-clock-pause', 'ft-haunt-up', 'ft-haunt-down', 'ft-end-detectives', 'ft-end-house', 'ft-end-skip', 'ft-wander-find', 'ft-wander-stop']) {
+  for (const id of ['ft-clock-start', 'ft-clock-help', 'ft-clock-spook', 'ft-clock-pause', 'ft-haunt-up', 'ft-haunt-down', 'ft-sound', 'ft-end-detectives', 'ft-end-house', 'ft-end-skip', 'ft-wander-find', 'ft-wander-stop']) {
     const b = $(`#${id}`);
     assert.equal(b.tagName, 'BUTTON', id);
     assert.ok(b.textContent.trim().length > 2, `${id} has a name`);

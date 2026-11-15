@@ -63,7 +63,7 @@ sockets are open. Anyone with the link can push, so treat a room code like a pas
 | `/safe` `/musicbox` `/candles` `/moved` | the second set |
 | `/photo` `/words` `/board` `/maze` | the third set (maze is the optional extra) |
 | `/design/` | the design system catalogue: every element and token of the look (`design/` in the repo), to check the look on a phone |
-| `/footage` | one public-domain clip (Nosferatu, 1922, the stair shadow) behind a Sight, a Lock and "Nothing came loose", in three looks (Spikes puzzles 1.7). Rules: Requirement 18; record: `media/PROVENANCE.md`. It uses `/design/`, so serve the built site: `node build.mjs && node serve.mjs 8791 --dist`, then open `http://127.0.0.1:8791/footage.html` |
+| `/footage` | one public-domain clip (Nosferatu, 1922, the stair shadow) behind a Sight, a Lock and "Nothing came loose", in three looks (Spikes puzzles 1.7). Rules: Requirement 18; record: `media/PROVENANCE.md`. Its Reel plays our own scrape (Haunt 3) and knock (Haunt 7 and 8), copied from `web/public/sounds/` into `media/` by the build, behind a Sound switch (Requirement 20.6). It uses `/design/`, so serve the built site: `node build.mjs && node serve.mjs 8791 --dist`, then open `http://127.0.0.1:8791/footage.html` |
 
 Each puzzle page has easy and normal, three attempts, a Cap timer, **Touch only**, **Assist**, a Sight / walk delay /
 Faded flow for memory puzzles, and a result card to copy. Add `#seed=12345&level=normal` to replay the same lock.

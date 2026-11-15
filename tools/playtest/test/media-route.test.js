@@ -15,7 +15,7 @@ const env = {
   ASSETS: {
     fetch: async (req) => {
       seen.push({ url: req.url, range: req.headers.get('range'), method: req.method });
-      if (!/\.(mp4|webm|jpg)$/.test(new URL(req.url).pathname) || /missing/.test(req.url)) return new Response('nope', { status: 404 });
+      if (!/\.(mp4|webm|jpg|m4a)$/.test(new URL(req.url).pathname) || /missing/.test(req.url)) return new Response('nope', { status: 404 });
       return new Response(BYTES, { status: 200, headers: { 'content-type': 'video/mp4', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' } });
     },
   },
@@ -42,6 +42,15 @@ test('a range request gets 206 with exactly those bytes and the headers Safari r
   assert.equal(res.headers.get('content-type'), 'video/mp4');
   assert.match(res.headers.get('cache-control'), /^public, max-age=\d+$/);
   assert.equal(res.headers.get('x-robots-tag'), 'noindex, nofollow', 'the site-wide headers of the asset are kept');
+});
+
+test('the Reel sounds (.m4a) are served in ranges too, because Safari asks for audio that way', async () => {
+  const res = await get('/media/knock.m4a', { range: 'bytes=0-1' });
+  assert.equal(res.status, 206);
+  assert.deepEqual(await bytes(res), [0, 1]);
+  assert.equal(res.headers.get('accept-ranges'), 'bytes');
+  assert.equal((await get('/media/scrape.m4a')).status, 200);
+  assert.equal((await get('/media/knock.mp3')).status, 404, 'only the .m4a files are the sounds');
 });
 
 test('a suffix range and an open range cut the right bytes', async () => {

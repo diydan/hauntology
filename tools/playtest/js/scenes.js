@@ -70,6 +70,25 @@ export function reelShot(level, max) {
   return 'ship';
 }
 
+/**
+ * The two sounds of our own that go with a Reel shot (puzzles Requirement 20.6): the crate lid scrapes as the coffin shot plays (Haunt 3),
+ * and someone knocks as the shadow hand reaches the door (Haunt 7 and 8). The files are `web/public/sounds/<name>.m4a`.
+ * The footage has no sound of its own, and a sound is never the only signal: SOUND_TEXT is its twin in words.
+ */
+export const SHOT_SOUND = { coffin: 'scrape', hand: 'knock' };
+export const SOUND_TEXT = {
+  scrape: 'A wooden lid scrapes.',
+  knock: 'Someone knocks, slowly, at a door.',
+};
+
+/**
+ * The sound for a Haunt level, or null when its shot has none. Total, like reelShot.
+ * @returns {keyof typeof SOUND_TEXT | null}
+ */
+export function reelSound(level, max) {
+  return SHOT_SOUND[reelShot(level, max)] ?? null;
+}
+
 /** True when `level` is a Haunt Event level that is below the maximum, so the Reel marks it. */
 export function isEventLevel(level, max) {
   return EVENT_LEVELS.includes(level) && level < max;

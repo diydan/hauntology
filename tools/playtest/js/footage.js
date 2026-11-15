@@ -1,5 +1,5 @@
 // Footage test page: clips on phone screens and on the TV, in three looks. Picture only, muted, no recording.
-// The clip files are the only thing this page loads. Rules: .kiro/specs/puzzles (Requirements 18 to 21).
+// The clip files (and two sound files) are the only thing this page loads. Rules: .kiro/specs/puzzles (Requirements 18 to 21).
 import { initScenes } from './scenes-page.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -17,7 +17,17 @@ let wanted = !reduce.matches && !saver;
 const say = (text) => { status.textContent = text; };
 
 // The clock shadow, the Reel and the endings (js/scenes-page.js). They move only while footage is on and the page is visible.
-const scenes = initScenes({ isOn: () => wanted && !document.hidden, say });
+// Our own two sounds (the crate lid, the knock) go with a Reel shot. One Audio element each, made on the first tap, which is the
+// Haunt +1 tap itself, so the browser lets it play. A sound that is blocked or missing is dropped: the words of the shot say it too.
+const sounds = {};
+function playSound(name) {
+  try {
+    const a = (sounds[name] ||= new Audio(`media/${name}.m4a`));
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  } catch { /* no sound on this browser: the words carry it */ }
+}
+const scenes = initScenes({ isOn: () => wanted && !document.hidden, say, playSound });
 
 function paint() {
   playBtn.textContent = wanted ? 'Pause footage' : 'Play footage';

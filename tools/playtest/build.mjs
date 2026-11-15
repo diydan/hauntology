@@ -16,6 +16,9 @@ cpSync(resolve(root, 'art'), resolve(dist, 'art'), { recursive: true });
 // Public-domain footage (see media/PROVENANCE.md): only the clip files go out, not the provenance note.
 mkdirSync(resolve(dist, 'media'), { recursive: true });
 for (const f of readdirSync(resolve(root, 'media')).filter((n) => /\.(mp4|webm|jpg)$/.test(n))) cpSync(resolve(root, 'media', f), resolve(dist, 'media', f));
+// Our own two sounds for the Reel (puzzles Requirement 20.6) come from the game's own folder, so there is one copy to credit and to check.
+// They go in media/ so the Worker's range handler (src/route.js) serves them too: Safari asks for audio in ranges as well.
+for (const name of ['knock', 'scrape']) cpSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${name}.m4a`), resolve(dist, 'media', `${name}.m4a`));
 // The design system catalogue (every element and token of the look), for checking the look on a phone: /design/.
 // Only public files: the catalogue page, its script, the tokens, the elements, the fonts and their licences.
 const repo = resolve(root, '..', '..');

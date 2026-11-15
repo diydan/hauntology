@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EVENT_LEVELS, SHOTS, SHOT_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, shadowPosition, stepPosition, wanderCard } from '../js/scenes.js';
+import { EVENT_LEVELS, SHOTS, SHOT_SOUND, SHOT_TEXT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, reelSound, shadowPosition, stepPosition, wanderCard } from '../js/scenes.js';
 import { root } from './helpers.js';
 
 const MAXES = [8, 10, 12];
@@ -142,4 +142,40 @@ test('Wander: the scene has its files and its record, the Whisper line is the re
   assert.doesNotMatch(WANDER.reveal, /\d|poltergeist/i, 'a reveal line has no digits and no Poltergeist');
   assert.deepEqual(wanderCard('  I waited by the water.  '), { title: 'A memory, found.', lines: ['I waited by the water.'] });
   for (const none of [undefined, null, '', '   ', 7]) assert.deepEqual(wanderCard(none).lines, [], `wanderCard(${none}) has no body`);
+});
+
+test('20.6 the scrape sounds only at Haunt 3 and the knock at Haunt 7 and 8, below the maximum, for every maximum', () => {
+  for (const max of MAXES) {
+    const got = Array.from({ length: max + 1 }, (_, l) => reelSound(l, max));
+    const want = Array.from({ length: max + 1 }, (_, l) => (l === 3 ? 'scrape' : l === 7 || l === 8 ? 'knock' : null));
+    want[max] = null; // the maximum is the ending, which has no sound of its own
+    assert.deepEqual(got, want, `max ${max}`);
+  }
+  assert.deepEqual(Array.from({ length: 11 }, (_, l) => reelSound(l, 10)), [null, null, null, 'scrape', null, null, null, 'knock', 'knock', null, null]);
+});
+
+test('20.6 a sound belongs to the shot, so it can never be on a level that has another shot', () => {
+  for (const max of MAXES) for (let l = 0; l <= max; l++) assert.equal(reelSound(l, max), SHOT_SOUND[reelShot(l, max)] ?? null);
+  assert.deepEqual(Object.keys(SHOT_SOUND).sort(), ['coffin', 'hand']);
+  for (const shot of Object.keys(SHOT_SOUND)) assert.ok(shot in SHOTS, `${shot} is a shot`);
+});
+
+test('20.6 reelSound is total: odd input gives a sound or null, never a throw', () => {
+  for (const [l, m] of [[NaN, 10], [3, NaN], [-5, 10], [99, 10], [3.7, 10], [undefined, undefined], [3, 0], [7, -1]]) {
+    const r = reelSound(l, m);
+    assert.ok(r === null || r in SOUND_TEXT, `reelSound(${l}, ${m}) = ${r}`);
+  }
+  assert.equal(reelSound(3.7, 10), 'scrape', 'a fraction counts as its whole part');
+  assert.equal(reelSound(99, 10), null, 'past the maximum is the house, which is silent');
+});
+
+test('20.6 each sound has its words, its file in the game folder, a credit, and no word of speech', () => {
+  const credits = readFileSync(resolve(root, '..', '..', 'docs', 'sounds', 'CREDITS.md'), 'utf8');
+  assert.deepEqual(Object.keys(SOUND_TEXT).sort(), [...new Set(Object.values(SHOT_SOUND))].sort());
+  for (const [name, words] of Object.entries(SOUND_TEXT)) {
+    assert.ok(words.length > 10, `${name} has words`);
+    assert.ok(existsSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${name}.m4a`)), `${name}.m4a is in web/public/sounds`);
+    assert.ok(credits.includes(`| \`${name}.m4a\` |`), `${name} has a row in CREDITS.md`);
+    assert.doesNotMatch(words, /poltergeist/i);
+  }
 });

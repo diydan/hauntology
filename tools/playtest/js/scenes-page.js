@@ -1,7 +1,7 @@
 // The scene demos of the footage test page: the clock shadow, the Reel, the two endings (Requirements 19 to 21) and Wander's home movie.
 // Everything here is driven by public state only (a clock, a Haunt level, a list of nicknames). The video is decoration:
 // its meaning is always also said in words (the text twin of each shot) and the page works with the footage off.
-import { SHOTS, SHOT_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, shadowPosition, stepPosition, wanderCard } from './scenes.js';
+import { SHOTS, SHOT_TEXT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, reelSound, shadowPosition, stepPosition, wanderCard } from './scenes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const clock = (ms) => { const s = Math.ceil(Math.max(0, ms) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -17,10 +17,11 @@ export function setShot(video, name) {
 }
 
 /**
- * @param {{ isOn: () => boolean, say: (text: string) => void }} io  isOn: footage may move now; say: the page's live region
+ * @param {{ isOn: () => boolean, say: (text: string) => void, playSound?: (name: string) => void }} io
+ *   isOn: footage may move now; say: the page's live region; playSound: plays one of our own sounds by name (the page supplies it)
  * @returns {{ sync: () => void }}  call sync when isOn may have changed
  */
-export function initScenes({ isOn, say }) {
+export function initScenes({ isOn, say, playSound = () => {} }) {
   // ---- 4. the clock shadow: the Turn Clock, drawn as a shadow climbing the stairs
   const scrub = $('#ft-scrub');
   const clockText = $('#ft-clock-text');
@@ -73,21 +74,34 @@ export function initScenes({ isOn, say }) {
   let max = 10;
   let shown = 'ship';
 
+  // Sound is the Master's choice (Requirement 20.6): the scrape and the knock play only while it is on. It is not footage, so it does
+  // not follow the Pause footage button; the words of the shot, and of its sound, are always on screen either way.
+  const soundSwitch = $('#ft-sound');
+  let soundOn = true;
+  function drawSound() {
+    soundSwitch.setAttribute('aria-checked', String(soundOn));
+    $('.ui-switch-state', soundSwitch).textContent = soundOn ? 'On' : 'Off';
+  }
+  soundSwitch.addEventListener('click', () => { soundOn = !soundOn; drawSound(); say(soundOn ? 'Sound on.' : 'Sound off.'); });
+  drawSound();
+
   function seg(n) {
     const s = document.createElement('span');
     s.className = `ui-seg${n <= haunt ? ' is-on' : ''}${isEventLevel(n, max) ? ' ui-seg--event' : ''}${n === max ? ' ui-seg--max' : ''}`;
     return s;
   }
-  function drawHaunt(play) {
+  function drawHaunt(play, rose = false) {
     const shot = reelShot(haunt, max);
     meter.replaceChildren(...Array.from({ length: max }, (_, i) => seg(i + 1)));
     meter.setAttribute('aria-label', `Haunt ${haunt} of ${max}`);
     $('#ft-haunt-text').textContent = `Haunt ${haunt} of ${max}`;
-    $('#ft-reel-text').textContent = `${isEventLevel(haunt, max) ? 'Haunt Event. ' : haunt >= max ? 'The house wins. ' : ''}${SHOT_TEXT[shot]}`;
+    const sound = reelSound(haunt, max);
+    $('#ft-reel-text').textContent = `${isEventLevel(haunt, max) ? 'Haunt Event. ' : haunt >= max ? 'The house wins. ' : ''}${SHOT_TEXT[shot]}${sound ? ` ${SOUND_TEXT[sound]}` : ''}`;
     if (shot !== shown) { setShot(reel, shot); shown = shot; }
     if (play && isOn()) { reel.currentTime = 0; reel.play().catch(() => say('The browser blocked the clip. Tap Play footage.')); }
+    if (rose && sound && soundOn) playSound(sound); // only a rise makes the sound (20.3, 20.6), not a step back
   }
-  $('#ft-haunt-up').addEventListener('click', () => { haunt = Math.min(max, haunt + 1); drawHaunt(true); });
+  $('#ft-haunt-up').addEventListener('click', () => { haunt = Math.min(max, haunt + 1); drawHaunt(true, true); });
   $('#ft-haunt-down').addEventListener('click', () => { haunt = Math.max(0, haunt - 1); drawHaunt(true); });
   const maxButtons = [...document.querySelectorAll('[role="radio"][data-max]')];
   for (const b of maxButtons) {
