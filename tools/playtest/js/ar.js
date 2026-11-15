@@ -6,11 +6,11 @@
 // Anchoring is 3-DoF (the phone's tilt turns the view; walking toward the board does not move you closer). A real build
 // would use WebXR hit-test on Android and this tilt fallback on iPhone, where Safari has no WebXR.
 import * as THREE from './vendor/three.js';
+import { placeFor } from './ar-place.js';
 
 const $ = (s) => document.querySelector(s);
 const q = new URLSearchParams(location.search);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const TABLE_Y = -0.7; // metres below the phone: where the table is assumed to be
 const rad = (d) => (d * Math.PI) / 180;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const easeOutBack = (t) => { const c = 1.70158; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
@@ -319,19 +319,24 @@ function clueTex(c) {
 const CLUE_SIZE = { pin: [0.36, 0.36], address: [0.62, 0.155], phone: [0.62, 0.155], date: [0.3, 0.375] };
 const cluesRoot = new THREE.Group(); scene.add(cluesRoot);
 const clueObjs = [];
-const coldSpot = radialTex('143,227,212');
+const hintTex = canvasTex(128, 128, (g, w, h) => { // a dark disc, a teal ring and a question mark: readable over a camera picture too
+  g.fillStyle = 'rgba(8,18,20,.55)'; g.beginPath(); g.arc(w / 2, h / 2, w * 0.43, 0, 7); g.fill();
+  g.strokeStyle = 'rgba(143,227,212,.95)'; g.lineWidth = 7; g.shadowColor = 'rgba(143,227,212,1)'; g.shadowBlur = 12; g.beginPath(); g.arc(w / 2, h / 2, w * 0.38, 0, 7); g.stroke();
+  g.shadowBlur = 0; g.fillStyle = 'rgba(190,255,245,.95)'; g.font = '700 70px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('?', w / 2, h / 2 + 5);
+});
 for (const c of CLUES) {
   const g = new THREE.Group();
   g.position.set(Math.sin(c.a) * Math.cos(c.e) * CLUE_R, Math.sin(c.e) * CLUE_R, -Math.cos(c.a) * Math.cos(c.e) * CLUE_R);
   const [sw, sh] = CLUE_SIZE[c.kind];
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: clueTex(c), transparent: true, depthWrite: false, opacity: 0 }));
   sp.scale.set(sw, sh, 1); sp.renderOrder = 8; sp.userData = { type: 'clue', id: c.id };
-  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: coldSpot, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.2 }));
-  glow.scale.set(0.42, 0.42, 1); glow.renderOrder = 7;
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: hintTex, transparent: true, depthWrite: false, opacity: 0.8 }));
+  glow.scale.set(0.3, 0.3, 1); glow.renderOrder = 7;
   g.add(glow); g.add(sp); cluesRoot.add(g);
   clueObjs.push({ c, g, sp, glow, w: sw, h: sh, p: 0, found: false, foundT: -9 });
 }
 let lastFindAt = performance.now();
+let boardOffSince = -1;
 const clueCount = () => clueObjs.filter((o) => o.found).length;
 function buzz() { if (!reduced && navigator.vibrate) navigator.vibrate([18, 50, 18]); }
 function markFound(o, quiet) {
@@ -358,15 +363,19 @@ let placeT0 = -1;
 const pulse = new THREE.Mesh(new THREE.RingGeometry(0.19, 0.196, 64), new THREE.MeshBasicMaterial({ color: 0xb9a6ff, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
 pulse.rotation.x = -Math.PI / 2; pulse.position.y = -0.0136; board.add(pulse);
 const _f = new THREE.Vector3();
+let lastHeading = { x: 0, z: -1 };
+// Point the camera the way the phone points (tilt), or the way the Player dragged it. Placing must use the same aim the Player sees.
+function aimCamera(sway) {
+  if (S.tilt && S.dev) deviceQuat(camera.quaternion, S.dev);
+  else { _eu.set(S.pitch, S.yaw + sway, 0, 'YXZ'); camera.quaternion.setFromEuler(_eu); }
+}
 function place() {
+  aimCamera(0); // the phone's own heading, not the one the view had before Tilt switched on
   camera.getWorldDirection(_f);
-  let fx = _f.x, fz = _f.z; const flat = Math.hypot(fx, fz);
-  if (flat < 0.2) { fx = -Math.sin(S.yaw); fz = -Math.cos(S.yaw); } else { fx /= flat; fz /= flat; }
-  let dist = 0.85;
-  if (_f.y < -0.15) dist = clamp((-TABLE_Y / -_f.y) * flat, 0.5, 1.4); // where the centre of the view meets the table
-  anchor.position.set(fx * dist, TABLE_Y, fz * dist);
-  anchor.rotation.y = Math.atan2(-fx, -fz); // the board's front edge faces you
-  cluesRoot.rotation.y = anchor.rotation.y; // and the ring of clues is centred on the same direction
+  const p = placeFor(_f, lastHeading); lastHeading = p.heading;
+  anchor.position.set(p.x, p.y, p.z);
+  anchor.rotation.y = p.facing; // the board's front edge faces you
+  cluesRoot.rotation.y = p.facing; // and the ring of clues is centred on the same direction
   placeT0 = performance.now();
 }
 
@@ -377,7 +386,7 @@ const peopleIn = (room) => SUSPECTS.filter((s) => s.room === room).map((s) => s.
 function select(hitData) {
   for (const f of Object.values(floors)) f.material.emissive.setHex(0x000000);
   S.sel = hitData || null;
-  if (!hitData) return say('Your private table', 'Only your phone sees the board, the ghost and the clues. Turn around.');
+  if (!hitData) return say('Your private table', `Only your phone sees it. ${CLUES.length} clues hang around you: turn round and look for the ? rings.`);
   if (hitData.type === 'suspect') { const s = SUSPECTS.find((x) => x.id === hitData.id); const note = NOTES.find((n) => n.room === s.room); say(s.name, `Standing in the ${roomAt(s.room).name}. ${note ? 'Your note there: ' + note.text + '.' : 'You have no note there.'}`); }
   else if (hitData.type === 'room') {
     const r = roomAt(hitData.id); floors[r.id].material.emissive.setHex(0x3a2a18);
@@ -425,6 +434,7 @@ let listening = false;
 function onOrient(e) { if (e.beta != null && e.alpha != null) { const first = !S.dev; S.dev = { alpha: e.alpha, beta: e.beta, gamma: e.gamma }; if (first && S.wantTilt) setTilt(true, true); } }
 function listen() { if (!listening) { listening = true; addEventListener('deviceorientation', onOrient); } }
 function setTilt(on, auto) {
+  if (!on && S.tilt) { _eu.setFromQuaternion(camera.quaternion, 'YXZ'); S.yaw = _eu.y; S.pitch = clamp(_eu.x, -1.45, 1.2); } // keep the view where it is
   S.tilt = on; $('#b-tilt').setAttribute('aria-pressed', String(on)); $('#b-tilt').textContent = on ? 'Tilt on' : 'Tilt';
   if (on) { place(); if (!auto) say('Tilt is on', 'Turn your phone to look around the table. Tap Place to move the board.'); }
 }
@@ -465,7 +475,7 @@ addEventListener('pagehide', stopCam);
 $('#b-cam').addEventListener('click', toggleCamera);
 $('#b-place').addEventListener('click', () => { place(); say('Board placed', 'It stays where you put it. Move the phone to look around it.'); });
 $('#b-tilt').addEventListener('click', () => { if (S.tilt) { S.wantTilt = false; setTilt(false); say('Tilt is off', 'Drag the picture to look around.'); } else askTilt(); });
-const sheet = $('#sheet'), card = $('#card'), arrowEl = $('#arrow');
+const sheet = $('#sheet'), card = $('#card'), arrowEl = $('#arrow'), boardArrowEl = $('#arrow-board');
 function openSheet(on) { sheet.hidden = !on; card.hidden = on; $('#b-clues').setAttribute('aria-pressed', String(on)); }
 $('#b-clues').addEventListener('click', () => openSheet(sheet.hidden));
 $('#sheet-close').addEventListener('click', () => openSheet(false));
@@ -480,11 +490,7 @@ function frame(now) {
   const t = now / 1000, dt = Math.min(0.1, (now - last) / 1000 || 0.016); last = now;
 
   // camera
-  if (S.tilt && S.dev) deviceQuat(camera.quaternion, S.dev);
-  else {
-    const idle = now - S.lastDrag > 2500 && !reduced;
-    _eu.set(S.pitch, S.yaw + (idle ? Math.sin(t * 0.45) * 0.045 : 0), 0, 'YXZ'); camera.quaternion.setFromEuler(_eu);
-  }
+  aimCamera(!S.tilt && now - S.lastDrag > 2500 && !reduced ? Math.sin(t * 0.45) * 0.045 : 0);
   if (!S.cam) { // slide the stand-in table so it moves with the board
     _eu.setFromQuaternion(camera.quaternion, 'YXZ');
     const k = stage.clientHeight / (camera.fov * Math.PI / 180), limX = stage.clientWidth * 0.11, limY = stage.clientHeight * 0.11;
@@ -510,21 +516,30 @@ function frame(now) {
     if (!o.found) {
       o.p = clamp(o.p + (d < 0.2 ? dt / 0.7 : -dt / 1.4), 0, 1);
       o.sp.material.opacity = o.p * o.p;
-      o.glow.material.opacity = (0.16 + clamp(1 - d / 0.9, 0, 1) * 0.5 + (reduced ? 0 : Math.sin(t * 2 + o.c.a * 5) * 0.04)) * (1 - o.p * 0.6);
+      o.glow.material.opacity = (0.7 + clamp(1 - d / 0.9, 0, 1) * 0.3) * (1 - o.p);
+      const pulse = reduced ? 1 : 1 + 0.07 * Math.sin(t * 2.4 + o.c.a * 5); o.glow.scale.set(0.3 * pulse, 0.3 * pulse, 1);
       if (d < nearD) { nearD = d; near = o; }
       if (o.p >= 1) markFound(o);
     } else {
       const k = reduced ? 1 : 1 + 0.3 * Math.max(0, 1 - (t - o.foundT) / 0.5);
-      o.sp.scale.set(o.w * k, o.h * k, 1); o.glow.material.opacity += (0.12 - o.glow.material.opacity) * Math.min(1, dt * 4);
+      o.sp.scale.set(o.w * k, o.h * k, 1); o.glow.visible = false;
     }
   }
-  const showArrow = near && nearD > 0.55 && now - lastFindAt > 6000 && sheet.hidden;
-  arrowEl.hidden = !showArrow;
-  if (showArrow) { // an arrow at the edge of the picture, pointing the way to the nearest clue you have not found
-    near.g.getWorldPosition(_cp); _dir.copy(_cp).sub(_w).applyQuaternion(_qi);
-    const ang = Math.atan2(_dir.y, _dir.x), rx = stage.clientWidth * 0.38, ry = stage.clientHeight * 0.33;
-    arrowEl.style.transform = `translate(-50%, -50%) translate(${Math.cos(ang) * rx}px, ${-Math.sin(ang) * ry}px) rotate(${-ang}rad)`;
-  }
+  // arrows at the edge of the picture: one to the nearest clue you have not found, one to the board when it is out of view
+  const pointAt = (el, world, rxk, ryk) => {
+    _dir.copy(world).sub(_w).applyQuaternion(_qi);
+    const ang = Math.atan2(_dir.y, _dir.x);
+    el.style.transform = `translate(-50%, -50%) translate(${Math.cos(ang) * stage.clientWidth * rxk}px, ${-Math.sin(ang) * stage.clientHeight * ryk}px)`;
+    el.firstElementChild.style.transform = `rotate(${-ang}rad)`;
+  };
+  const clueArrow = sheet.hidden && near && nearD > 0.55 && now - lastFindAt > 3000;
+  arrowEl.hidden = !clueArrow;
+  if (clueArrow) { near.g.getWorldPosition(_cp); pointAt(arrowEl, _cp, 0.38, 0.33); }
+  anchor.getWorldPosition(_cp); _dir.copy(_cp).sub(_w).normalize();
+  if (Math.acos(clamp(_fwd.dot(_dir), -1, 1)) > 0.8) { if (boardOffSince < 0) boardOffSince = now; } else boardOffSince = -1;
+  const boardArrow = sheet.hidden && boardOffSince >= 0 && now - boardOffSince > 2000;
+  boardArrowEl.hidden = !boardArrow;
+  if (boardArrow) pointAt(boardArrowEl, _cp, 0.3, 0.26);
 
   // relics: float, spin, flicker
   for (const g of relicGroups) {
@@ -571,12 +586,12 @@ buildFigures().then(() => {
   if (want) { const s = SUSPECTS.find((x) => x.id === want); select(s ? { type: 'suspect', id: s.id } : { type: want === 'ghost' ? 'ghost' : 'room', id: want }); }
 }).catch((err) => say('Could not load the figures', String(err && err.message || err)));
 raf = requestAnimationFrame(frame);
-{ // test and screenshot helpers: ?look=pin2 turns the view to a clue, ?found=all or ?found=pin1,pin2 marks clues found, ?sheet=1 opens the list
+{ // test and screenshot helpers: ?look=pin2 turns the view to a clue (&lookoff=0.35 starts beside it), ?found=all or ?found=pin1,pin2 marks clues found, ?sheet=1 opens the list
   const look = CLUES.find((c) => c.id === q.get('look'));
-  if (look) { S.yaw = anchor.rotation.y - look.a; S.pitch = look.e; S.lastDrag = performance.now(); }
+  if (look) { S.yaw = anchor.rotation.y - look.a; S.pitch = look.e - (Number(q.get('lookoff')) || 0); S.lastDrag = performance.now(); } // lookoff: start this many radians below the clue
   const f = q.get('found');
   if (f) clueObjs.filter((o) => f === 'all' || f.split(',').includes(o.c.id)).forEach((o) => markFound(o, true));
   if (q.get('sheet')) openSheet(true);
 }
 renderClues();
-window.__ar = { place, select, S, camera, anchor, ghost: () => ghost, standees, floors, hit, clues: clueObjs, markFound };
+window.__ar = { place, aim: aimCamera, select, S, camera, anchor, ghost: () => ghost, standees, floors, hit, clues: clueObjs, markFound };
