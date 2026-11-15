@@ -4,7 +4,7 @@ Depends on `party-mode` (the pure rules in `shared/src/party/` including `inspec
 
 Order: spikes, then pure logic with property tests, then the phone feel layer and the first three Kinds end to end (the demo slice), then the Party and Wander wiring, then the second and third sets of Kinds, then settings, access and docs. Tasks marked `*` are optional test tasks that should still be done before submission.
 
-Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit board (5.3), Hidden words (5.2), Torn photo (5.1), the microphone (11.x), What moved (4.4), Wander Locks (group 4), Candle order (4.3), Music box (4.2), Safe code (4.1). What stays at the minimum: Clock time, Cut wires and Lock pick as the Locks of Party Inspect, with the Faded clue and Plain Inspect.
+Cut order if time runs short, first to last: Spirit clues (group 10), the Marble maze (5.4), the Spirit board (5.3), Hidden words (5.2), Torn photo (5.1), the microphone (11.x), What moved (4.4), Wander Locks (group 4), Candle order (4.3), Music box (4.2), Safe code (4.1). What stays at the minimum: Clock time, Cut wires and Lock pick as the Locks of Party Inspect, with the Faded clue and Plain Inspect.
 
 - [ ] 1. Spikes (record each in `docs/spikes/puzzles-<n>.md`)
   - [ ] 1.1 Spike puzzles 1.1: vibration
@@ -22,6 +22,9 @@ Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit b
   - [ ] 1.5 Spike puzzles 1.5: balance (run after group 6)
     - Five people play every built Kind at both levels. Record solve times, wrong Attempts, give-ups and how often the Cap ends a Lock. Set the minimum solve times, the Cap per preset (25 s, 40 s, 20 s), and decide whether a 60 second Classic Turn is still fun with a Lock or Quick must stay off.
     - _Requirements: 1.2, 1.3, 3.4, 7.2_
+  - [ ] 1.6 Spike puzzles 1.6: look to read (use the mockup `tools/playtest/ar.html` on the playtest site)
+    - On the same two phones, with tilt only, once on the stand-in backdrop and once with the camera behind it: does a clue stay in the same place over 30 seconds of turning (drift), do Players find a clue behind them, how long does the whole ring of seven take, are 12 degrees and 0.7 seconds right, and is the arrow wanted after 6 seconds, and does the camera work in the installed web app and how warm does the phone get. Record in `docs/spikes/puzzles-1.6.md`.
+    - _Requirements: 15.4, 15.5, 15.7, 15.9, 15.10_
 
 - [ ] 2. Pure logic (`shared/src/puzzles/`)
   - [x] 2.1 `types.ts`: `Kind`, `Level`, `PuzzleSetting`, `LockView`, `LockSecret`, `Lock`, `Sight`, `Transcript`, `Verdict`, `PartyLocks` and `WanderLocks` with zod schemas; add `puzzle_disabled`, `puzzle_not_open`, `puzzle_already_open`, `puzzle_bad_transcript`, `puzzle_too_fast`, `puzzle_rate_limited`, `puzzle_attempts_spent` and `sight_unknown` to `shared/src/errors.ts`
@@ -238,3 +241,30 @@ Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit b
   - [ ] 9.5 Docs: `docs/spikes/puzzles-<n>.md`, assumptions 19 to 23 and `PUZZLES_ENABLED` in `.kiro/steering/tech.md`, the `puzzles/` folders in `structure.md`, a line in `docs/SOUNDS.md`, the decisions list in `docs/IMPLEMENTATION.md`, and one sentence in `product.md`
     - _Requirements: 14.4_
   - [ ] 9.6 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `verify`, `lockCharge`, `placePuzzles` and `planHaptics`. Ensure every test passes; ask the user if questions arise.
+
+- [ ] 10. Spirit clues (optional layer; the first thing to cut)
+  - [x] 10.1 Mockup of the Clue ring, the glow, the 0.7 second read, the arrow, the Clue list and "Show all as text", with the made-up values and a guard test
+    - Built in `tools/playtest/ar.html`, `js/ar.js`, `css/ar.css` and `test/ar.test.js` (and published to the playtest site). It is a reference and not the real code: it shows the camera as an opt-in (15.10) but draws at full speed, keeps nothing between loads and has no camera indicator beyond the pressed button.
+    - _Requirements: 15.2, 15.3, 15.5, 15.7_
+  - [ ] 10.2 `clues.ts`: `SpiritClue`, the fixed lists (`ADDRESSES`, `DATES`, the 555-01xx Phone numbers) and `placeClues(seed, code)`
+    - _Requirements: 15.2, 15.3, 15.4_
+  - [ ]* 10.3 Write property test for the clue ring
+    - **Property 18: Clue rings are deterministic, spread out and made up**
+    - **Validates: Requirements 15.2, 15.3, 15.4**
+  - [ ] 10.4 `read.ts`: `stepRead(progress, angleRad, dtMs)` and the read state
+    - _Requirements: 15.5_
+  - [ ]* 10.5 Write property test for reading
+    - **Property 19: Reading needs a steady look**
+    - **Validates: Requirements 15.5**
+  - [ ] 10.6 `ClueRing.tsx` (sprites, tilt or drag, the glow, the click buzz and its pulse, 30 frames a second, face-down pause) and `ClueList.tsx` (the list, "Code so far", "Show all as text", the arrow after 6 seconds), and the optional camera backdrop (a video element under the canvas, a visible indicator, a stop control, the stand-in backdrop on refusal)
+    - _Requirements: 15.5, 15.7, 15.9, 15.10_
+  - [ ]* 10.7 Write property test for the text path
+    - **Property 20: Spirit clues change what is shown and nothing else**
+    - **Validates: Requirements 15.1, 15.7**
+  - [ ] 10.8 Controller wiring: the "Spirit clues" device switch (off by default, with the motion tap), the ring in place of the 5 second Sight (30 seconds, 45 with Assist), the Faded clue kept as text, the Turn treating the ring as a Sight
+    - _Requirements: 15.1, 15.6_
+  - [ ] 10.9 Source-level and access checks: the only camera use is one `getUserMedia` call with `audio: false` from the Camera tap, no `MediaRecorder`, `ImageCapture` or `getDisplayMedia` and no `drawImage` of the video in `web/src/puzzles/`, no clue typed or sent by a Player, nothing new in the Room's messages or the telemetry, 48 pixel targets, a 30 frame cap, a still ring under reduced motion, a shape for each form, a text label for every clue
+    - _Requirements: 15.8, 15.9, 15.10_
+  - [ ] 10.10 Allow the camera in the app's `Permissions-Policy` (`shared/src/app/csp.ts` now says `camera=()`, which also blocks the party-mode selfie and QR scan): `camera=(self)`, with `csp.test.ts` and `security-headers.test.ts` updated
+    - _Requirements: 15.10_
+  - [ ] 10.11 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `placeClues` and `stepRead`. Ensure every test passes; ask the user if questions arise.

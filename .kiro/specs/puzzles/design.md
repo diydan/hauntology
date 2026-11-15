@@ -149,6 +149,38 @@ Min solve times are starting guesses. Spike puzzles 1.5 sets them.
 
 `placePuzzles(seed, zones, setting)` shuffles the enabled Kinds with the seeded rng, gives each Zone one Lock (each Kind at most twice) and, for every Memory Kind at Zone `i`, puts its Sight in Zone `i + 1` (wrapping). Since every Zone is the next of exactly one Zone, a Zone holds at most one Sight. A Zone's Sight is the clue for the Lock one step behind it, so a Player learns it by walking on and then comes back, which is the "remember it from the last scene" idea.
 
+## Spirit clues (an optional layer over Sights)
+
+An optional layer, off by default, that shows a Sight as clues hanging in the air round the phone. It changes how a Sight is delivered and nothing else: the Safe code still needs the same code, `verify` is untouched, and a phone without the layer sees the plaque of 6.1.
+
+**What it is.** The Player turns the phone (or drags) and sees a faint glow where a clue hangs. Keeping the view on a glow for 0.7 seconds reads it. There are four forms:
+
+| Form | Looks like | Example (made up) | Needed by a Lock? |
+|---|---|---|---|
+| Code piece | A glowing digit with dots for its place (2 of 4) | 7 | Yes: the Safe code |
+| Address | Underlined chalk letters | 9 Marrow Lane | No (Story clue) |
+| Phone number | Handwriting, with "call" above it | 555-0142 | No (Story clue) |
+| Date | A torn calendar page | 12 March 1931 | No (Story clue) |
+
+Story clues are flavour: they say something about the haunted place, and v1 gives them no Lock. Making a date, an address or a phone number the answer of a new Kind (a calendar, a street sign, a phone dial) is on the list below.
+
+**Pure logic** (`shared/src/puzzles/clues.ts`, no clock or sensor inside):
+
+```ts
+type ClueForm = 'code' | 'address' | 'phone' | 'date';
+interface SpiritClue { id: string; form: ClueForm; text: string; place?: number; of?: number; turn: number; height: number } // radians; turn 0 is ahead, positive is to the right
+placeClues(seed: number, code: string): SpiritClue[]            // the ring, from the seed and the code only
+stepRead(progress: number, angleRad: number, dtMs: number): number // 0..1; reads at 1
+```
+
+`placeClues` makes n clues (the digits, plus up to three Story clues), cuts the turn into n equal slots, puts one clue at the middle of each slot with a seeded jitter of at most 8 degrees, and shuffles which clue takes which slot. With n at most 7 the slots are at least 51 degrees wide, so two clues are never closer than 35 degrees of turn, and for n of 4 or more each quarter of the turn holds a slot middle. Heights come from the seed, between -30 and +40 degrees. The Story clue values come from three fixed lists (`ADDRESSES`, `DATES` and a Phone number built as `555-01` plus two digits), so nothing real can be shown. `stepRead` rises by `dtMs / 700` while the angle is within 0.2 radians (12 degrees), falls by `dtMs / 1400` otherwise, and is clamped to 0..1.
+
+**The phone** (`web/src/puzzles/clues/`): `ClueRing.tsx` draws the clues as three.js sprites round the camera, turned by `DeviceOrientationEvent` (the same tilt of the feel layer, so the same permission tap and the same drag fallback) with `ClueList.tsx` beside it. It is a lazy chunk loaded only when the layer is on, uses the three.js the web app already has, and draws at most 30 frames a second. The optional camera backdrop is a `<video>` element under the three.js canvas, started with `getUserMedia({ video: { facingMode: 'environment' }, audio: false })` from the Player's tap on Camera, with a visible indicator and a stop control, and stopped when the ring closes or the page is hidden; no frame is ever read into a canvas, stored or sent. The Controller turns the Sight into the ring: the ring replaces the 5 seconds of a plain Sight, and the Faded clue at a Lock stays text.
+
+**Reference.** A mockup of the ring (and of a private 3D board round it) is `tools/playtest/ar.html`, on the playtest site. It has the same four forms, the glow, the 0.7 second read, the arrow, the Clue list and "Show all as text", and its test `tools/playtest/test/ar.test.js` checks the Phone number is in the fiction range. It tracks the phone's turn only (three degrees of freedom): it does not pin a clue to a place in the room, so a clue can drift and the Player can press Place to centre the ring again. The mockup also offers the camera behind the picture, which this spec allows as an opt-in (15.10).
+
+**Not in v1.** A clue split across two phones; Story clues as the answer of a Lock; clues pinned to the room with WebXR (Android only).
+
 ## The feel layer
 
 ```ts
@@ -229,7 +261,8 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 | `ghost-engine` | `gateReveal` in front of the `reveal` Directive; `WanderLocks` in the Session. |
 | `ghost-voice` | 24 Library lines for the Whisper's board words (`check-voice-library.mjs` will ask for them). |
 | `haunwallker` | The Locks switch on the Play start screen; `puzzleFeel` in `PlatformKit`. |
-| `tech.md` | Unverified assumptions 19 to 23 below; `PUZZLES_ENABLED`. |
+| Camera for Spirit clues | **Decided by the owner on 2026-11-15: the camera is allowed in the real game, as an opt-in backdrop of the Clue ring (15.10).** The party-mode Spirit lens keeps "neither the camera nor markers" (16.4): this decision does not change it. `steering/product.md` puts VR/WebXR out of scope; a flat camera backdrop that tracks nothing is neither, so it needs no change. **Needed:** `shared/src/app/csp.ts` sets `Permissions-Policy: camera=()`, which blocks the camera on any page that receives it (the party-mode selfie and QR scan need it too): allow `camera=(self)` wherever the app's pages are served, and check `csp.test.ts` and `security-headers.test.ts`. |
+| `tech.md` | Unverified assumptions 19 to 24 below; `PUZZLES_ENABLED`. |
 | `structure.md` | The `puzzles/` folders. |
 | `docs/SOUNDS.md` | Say that Puzzle sounds are synthesised and need no file. |
 
@@ -240,10 +273,12 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 21. Audio: whether Web Audio is silenced by the iPhone ringer switch, the delay from tap to note, and how five notes and a thunk sound through a phone speaker (Spike puzzles 1.3).
 22. Breath: whether a breath on the microphone can be told from speech and from wind, with echo cancellation and gain control off, on both platforms (Spike puzzles 1.4).
 23. Balance: solve times for each Kind, the Cap, three Attempts, the minimum solve times, and whether Locks make a 60 second Classic Turn too short (Spike puzzles 1.5).
+24. Look to read: whether a phone turned by tilt alone keeps a clue in the same place over 30 seconds (drift, worst on iPhone), whether Players find a clue behind them, whether 12 degrees and 0.7 seconds feel right, how long the whole ring takes, and whether the rear camera backdrop works in the installed web app on iPhone and what it costs in battery and heat (Spike puzzles 1.6).
 
 ## Left out on purpose
 
-- Digits hidden in the 3D world: they need Viewer anchors. The Safe code shows its code as a Sight instead.
+- Digits anchored in the 3D Viewer world: they need Viewer anchors. The Safe code shows its code as a Sight instead, and the optional Spirit clues (Requirement 15) hang it round the phone with no anchor.
+- Story clues as the answer of a Lock, two-phone clues and WebXR pinning: see Spirit clues above.
 - Torn-photo pieces from different rooms: v1 shows the whole picture in one Sight.
 - Ghost comments on a Lock: they would add Directives to `ghost-engine`. The Lock screens use UI text.
 - Two-phone puzzles (one reads, one acts): a good second version.
@@ -268,6 +303,7 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 - Web tests use the four fakes. A source-level check fails the build if `web/src/puzzles/` imports `MediaRecorder`, or if any `shared/src/puzzles/` file imports `web`, `api`, `party/solution` or a Hand.
 - The five mazes are checked solvable by breadth-first search in a unit test.
 - Word lists are checked: 24 each, A to Z, right lengths, none on a banned list.
+- The Spirit clue placement and reading are pure and property-tested (Properties 18 to 20); a mutation pass breaks `placeClues` and `stepRead` on purpose.
 - No test touches a sensor or the network.
 
 ## Correctness Properties
@@ -339,3 +375,15 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 ### Property 17: A breath needs sustained loudness
 *For any* series of timed loudness numbers, `blowDetect` is true only when some run above the threshold lasts at least 300 milliseconds, is false for any run shorter than that however loud, and is false for an empty or non-finite series.
 **Validates: Requirements 11.4**
+
+### Property 18: Clue rings are deterministic, spread out and made up
+*For any* seed and any code of 3 or 4 digits, `placeClues(seed, code)` returns the same list every time and reads no Hand or Solution, holds one Code piece for each digit with places 1 to n in order and digits equal to the code, holds at most three Story clues (at most one of each form) whose texts come from the fixed lists (every Phone number is `555-01` followed by two digits), puts every pair of clues at least 35 degrees apart in turn, keeps every height between 30 degrees below and 40 degrees above level, and puts at least one clue in each quarter of the turn when there are four or more.
+**Validates: Requirements 15.2, 15.3, 15.4**
+
+### Property 19: Reading needs a steady look
+*For any* series of timed view angles, `stepRead` stays between 0 and 1, rises only while the angle is within 12 degrees, falls otherwise, reaches 1 only after at least 0.7 seconds of steady looking in total (never sooner however large the time steps), and a clue once read stays read.
+**Validates: Requirements 15.5**
+
+### Property 20: Spirit clues change what is shown and nothing else
+*For any* Safe code and any reading state (nothing read, some read, all shown as text), the digits in the Clue list in order equal the code of the Sight, "Show all as text" reads every clue, and `verify` gives the same verdict for the same Transcript whatever was read.
+**Validates: Requirements 15.1, 15.7**
