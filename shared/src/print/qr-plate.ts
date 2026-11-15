@@ -1,5 +1,7 @@
-import type { RelicId } from "../party/relic-token";
+import type { RELICS } from "../party/pool";
 import { snapMicron, type Face, type Mesh, type Vec3 } from "./mesh";
+
+type RelicId = (typeof RELICS)[number]["id"];
 
 /**
  * Watertight heightfield QR plate generator and top-surface rasteriser (party-mode 8.2).
