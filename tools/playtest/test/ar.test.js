@@ -121,3 +121,13 @@ test('a character can be dragged onto a room to leave a private mark, with a rag
   assert.doesNotMatch(block, /room:/, 'no character starts in a room (no Suspect has a place in the rules)');
   assert.doesNotMatch(js, /localStorage|sessionStorage|fetch\(/, 'a mark is kept on the phone only and nothing is sent or stored');
 });
+
+test('a non-AR 2D view toggle offers all zones, pawns, relics and 1-tap room mark selectors without camera or sensors', () => {
+  const html = read('ar.html'), css = read('css/ar.css');
+  assert.match(html, /id="b-flat"/);
+  assert.match(html, /id="flat-board"/);
+  assert.match(css, /button\.pill \{[^}]*min-height: 48px/);
+  assert.match(css, /\.fb-row select, \.fb-pick \{[^}]*min-height: 48px/);
+  assert.match(js, /function renderFlat\(\)/);
+  assert.match(js, /function setFlat\(on\)/);
+});

@@ -100,3 +100,26 @@ test('3D shroud drape: zBend trails the hem backward in depth while keeping the 
   const bottomMidZ = out[((rows - 1) * cols + 2) * 3 + 2];
   assert.ok(bottomMidZ < -0.02, `hem drapes backward in 3D (${bottomMidZ})`);
 });
+
+test('severed drop: rapid heavy plummet folds knees and waist into a floor-sprawled heap with zero bounce or ice slide', () => {
+  const FLOOR = 0.004, c = makeChain(N, H, 0, FLOOR + 0.054 + TOP);
+  c.p[2] -= 0.003; c.p[4] -= 0.004; c.p[6] -= 0.001; c.p[8] += 0.005; c.p[10] += 0.005;
+  //Give sideways release momentum: floor friction should kill ice-skating on contact
+  for (let i = 0; i < N; i++) c.q[2 * i] -= 0.004;
+  for (let f = 0; f < 14; f++) stepChain(c, 1 / 60, { pinned: false, restoreK: 0, floorY: FLOOR }); // ~0.23 s
+  assert.ok(c.p[1] < FLOOR + 0.005, `crown slams down to the floorboards quickly (${c.p[1]})`);
+  const spanDist = Math.hypot(c.p[2 * (N - 1)] - c.p[0], c.p[2 * (N - 1) + 1] - c.p[1]);
+  assert.ok(spanDist < H * 0.75, `joints buckle rather than staying plank-stiff (${spanDist.toFixed(4)} vs H=${H})`);
+  const xAfterImpact = c.p[0];
+  for (let f = 0; f < 20; f++) stepChain(c, 1 / 60, { pinned: false, restoreK: 0, floorY: FLOOR });
+  assert.ok(Math.abs(c.p[0] - xAfterImpact) < 0.002 && c.p[1] <= FLOOR + 1e-6, 'lands dead with no slide or bounce');
+
+  // Verify 3D floor-crumple spreads knees forward and torso back without dropping below the floorboards
+  const cols = 5, rows = 19, orig = new Float32Array(cols * rows * 3), out = new Float32Array(cols * rows * 3);
+  let k = 0; for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) { orig[k++] = (q - 2) * 0.015; orig[k++] = 0.003 + H * (1 - r / (rows - 1)); orig[k++] = 0; }
+  deformVertices(c, orig, out, TOP, H, 0, FLOOR, 0);
+  let minY = 9, maxZ = -9, minZ = 9;
+  for (let i = 0; i < out.length; i += 3) { minY = Math.min(minY, out[i + 1]); minZ = Math.min(minZ, out[i + 2]); maxZ = Math.max(maxZ, out[i + 2]); }
+  assert.ok(minY > 0.001, `collapsed silhouette stays above floorboards (${minY})`);
+  assert.ok(maxZ > 0.015 && minZ < -0.025, `knees buckle forward and torso spills back in 3D (${minZ.toFixed(3)} .. ${maxZ.toFixed(3)})`);
+});
