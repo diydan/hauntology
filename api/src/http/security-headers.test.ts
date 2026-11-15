@@ -17,6 +17,7 @@ describe("security headers", () => {
     expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(res.headers.get("Referrer-Policy")).toBe("no-referrer");
     expect(res.headers.get("Permissions-Policy")).toContain("microphone=(self)");
+    expect(res.headers.get("Permissions-Policy")).toContain("camera=(self)");
   });
 
   it("names Turnstile's origin only when TURNSTILE_SECRET is set and not empty", async () => {

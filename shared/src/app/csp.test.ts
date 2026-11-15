@@ -58,10 +58,11 @@ describe("securityHeaders", () => {
     expect(Object.keys(h).sort()).toEqual(["Content-Security-Policy", "Permissions-Policy", "Referrer-Policy", "X-Content-Type-Options"]);
   });
 
-  it("allows the microphone and location to this origin only, and the camera to nobody", () => {
+  it("allows the microphone, location and camera to this origin only", () => {
     expect(PERMISSIONS_POLICY).toContain("microphone=(self)");
     expect(PERMISSIONS_POLICY).toContain("geolocation=(self)");
-    expect(PERMISSIONS_POLICY).toContain("camera=()");
+    expect(PERMISSIONS_POLICY).toContain("camera=(self)");
+    expect(PERMISSIONS_POLICY).not.toContain("camera=()");
     expect(PERMISSIONS_POLICY).not.toContain("*");
   });
 });

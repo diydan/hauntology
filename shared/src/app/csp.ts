@@ -43,10 +43,12 @@ export function buildCsp({ turnstile }: SecurityOptions): string {
 }
 
 /**
- * The microphone is for the held Talk Button and Stitch, and location only after an explicit
- * "Use my location" tap; both are allowed to this origin and to no frame. Everything else is off.
+ * The microphone is for the held Talk Button and Stitch, location only after an explicit
+ * "Use my location" tap, and the camera for the selfie, the relic scan and the optional backdrop of the
+ * Spirit clues (puzzles spec 15.10), each only after the Player's own tap. All three are allowed to this
+ * origin and to no frame. Everything else is off.
  */
-export const PERMISSIONS_POLICY = "microphone=(self), geolocation=(self), camera=(), payment=(), usb=(), bluetooth=(), serial=(), interest-cohort=()";
+export const PERMISSIONS_POLICY = "microphone=(self), geolocation=(self), camera=(self), payment=(), usb=(), bluetooth=(), serial=(), interest-cohort=()";
 
 export function securityHeaders(options: SecurityOptions): Record<string, string> {
   return {
