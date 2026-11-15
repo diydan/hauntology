@@ -68,3 +68,35 @@ test('resetChain puts the chain back hanging straight', () => {
   const { off, speed } = chainUnrest(c, 1, 0.5);
   assert.ok(off < 1e-12 && speed < 1e-12);
 });
+
+test('marionette feel: heavy dead-weight drag with no cartoon pendulum bounce, sharp neck crease, stiff spine and head-first rise', () => {
+  const c = makeChain(N, H, 0, 0.2);
+  let x = 0, maxLag = 0;
+  for (let i = 0; i < 12; i++) { x += 0.012; stepChain(c, 1 / 60, { holdX: x, holdY: 0.2 }); maxLag = Math.max(maxLag, x - c.p[2 * (N - 1)]); }
+  const segAngle = (i) => Math.atan2(c.p[2 * i + 2] - c.p[2 * i], -(c.p[2 * i + 3] - c.p[2 * i + 1])) * (180 / Math.PI);
+  const neckCrease = Math.abs(segAngle(1) - segAngle(0)), spineBend = Math.abs(segAngle(2) - segAngle(1));
+  assert.ok(neckCrease > spineBend * 3 && neckCrease > 12, `neck cocks sharply (${neckCrease.toFixed(1)} deg) while spine stays stiff (${spineBend.toFixed(1)} deg)`);
+  let overshoot = 0;
+  for (let i = 0; i < 240; i++) { stepChain(c, 1 / 60, { holdX: x, holdY: 0.2 }); overshoot = Math.max(overshoot, c.p[2 * (N - 1)] - x); }
+  assert.ok(overshoot < maxLag * 0.04, `creeps to a dead hang without cartoon swing (overshoot ${overshoot}, lag ${maxLag})`);
+
+  // Head-first rise from a floor slump: crown is hauled up toward restTopX/Y without overshooting, while knees/hem still drag low
+  const FLOOR = 0.004, r = makeChain(N, H, 0, FLOOR + TOP);
+  r.p[2] += 0.015; r.q[2] = r.p[2];
+  for (let i = 0; i < 45; i++) stepChain(r, 1 / 60, { pinned: false, restoreK: 0, floorY: FLOOR }); // slumped flat on the floor
+  assert.ok(r.p[1] < FLOOR + 0.005, 'slumped onto the floorboards');
+  for (let i = 0; i < 12; i++) stepChain(r, 1 / 60, { pinned: false, restoreK: 0.4, restTopX: 0, restTopY: FLOOR + TOP, floorY: FLOOR });
+  const headFrac = (r.p[1] - FLOOR) / TOP, kneeFrac = (r.p[2 * (N - 2) + 1] - FLOOR) / (TOP - (N - 2) * SEG);
+  assert.ok(headFrac > 0.6 && headFrac <= 1.0, `crown rises smoothly without spring-overshoot (${headFrac.toFixed(2)})`);
+  assert.ok(Math.abs(r.p[0]) < Math.abs(r.p[6]) * 0.5 && headFrac > kneeFrac + 0.15, 'crown leads while spine and knees lag behind');
+});
+
+test('3D shroud drape: zBend trails the hem backward in depth while keeping the pinched crown at z = 0', () => {
+  const cols = 5, rows = 19, orig = new Float32Array(cols * rows * 3);
+  let k = 0; for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) { orig[k++] = (q - 2) * 0.01; orig[k++] = TOP - (r / (rows - 1)) * H; orig[k++] = 0; }
+  const out = new Float32Array(orig.length), c = makeChain(N, H, 0, TOP);
+  deformVertices(c, orig, out, TOP, H, 0, 0, 0.025);
+  assert.ok(Math.abs(out[2]) < 1e-9, 'top crown stays at z = 0');
+  const bottomMidZ = out[((rows - 1) * cols + 2) * 3 + 2];
+  assert.ok(bottomMidZ < -0.02, `hem drapes backward in 3D (${bottomMidZ})`);
+});

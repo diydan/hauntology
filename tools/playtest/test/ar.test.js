@@ -114,6 +114,9 @@ test('a character can be dragged onto a room to leave a private mark, with a rag
   assert.match(js, /replaceMarks\(applyDrop\(marks, s\.id, room \? room\.id : null\)\)/, 'a drop on a room marks it, a drop elsewhere takes the mark back');
   assert.match(js, /if \(!reduced\) \{ s\.phi/, 'no rag doll under reduced motion');
   assert.match(js, /if \(reduced \|\| !s\.rig\) \{ s\.mode = 'idle'/, 'no fall or wobble under reduced motion');
+  assert.doesNotMatch(js, /bounced/, 'dropped figures land dead with no comical bounce');
+  assert.match(js, /PALLOR_TINT/, 'carried figures drain to spectral pallor');
+  assert.match(js, /s\.base\.position\.y = groundOff \+ 0\.0015/, 'plinth stays flat on the floorboards while the effigy hangs above');
   const block = js.match(/const SUSPECTS = \[([\s\S]*?)\];/)[1];
   assert.doesNotMatch(block, /room:/, 'no character starts in a room (no Suspect has a place in the rules)');
   assert.doesNotMatch(js, /localStorage|sessionStorage|fetch\(/, 'a mark is kept on the phone only and nothing is sent or stored');

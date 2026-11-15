@@ -13,6 +13,7 @@ for (const f of readdirSync(root).filter((n) => n.endsWith('.html'))) cpSync(res
 cpSync(resolve(root, 'css'), resolve(dist, 'css'), { recursive: true });
 cpSync(resolve(root, 'js'), resolve(dist, 'js'), { recursive: true });
 cpSync(resolve(root, 'art'), resolve(dist, 'art'), { recursive: true });
+cpSync(resolve(root, 'models'), resolve(dist, 'models'), { recursive: true });
 // Public-domain footage (see media/PROVENANCE.md): only the clip files go out, not the provenance note.
 mkdirSync(resolve(dist, 'media'), { recursive: true });
 for (const f of readdirSync(resolve(root, 'media')).filter((n) => /\.(mp4|webm|jpg)$/.test(n))) cpSync(resolve(root, 'media', f), resolve(dist, 'media', f));
