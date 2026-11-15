@@ -1,0 +1,4 @@
+# Licensed pack art and Mixamo clips. Never commit.
+character-builder/assets/
+screenshots/
+node_modules/

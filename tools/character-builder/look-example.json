@@ -1,0 +1,23 @@
+{
+  "gender": "F",
+  "head": "head.002",
+  "hair": "hair.tied.001",
+  "bangs": "hair.tied.001_ponytail",
+  "hat": null,
+  "glasses": "glasses.02",
+  "scarf": null,
+  "top": "top.009",
+  "bot": "bot.003",
+  "outfit": null,
+  "shoes": "shoes.002",
+  "variant": { "top.008": 1 },
+  "skin": "#b9805a",
+  "eyes": "#3f9a62",
+  "hairCol": "#ff3fb4",
+  "col": { "top": { "A": "#27e6ff", "B": "#1b1b24" }, "bot": { "A": "#8a4be8" }, "shoes": { "A": "#ffffff" } },
+  "expr": "happy",
+  "face": { "eye": 0.2, "nose": 0.0, "ears": 0.0 },
+  "shape": { "legs": 0.62, "arms": 0.5, "build": 0.4 },
+  "clip": "Singing",
+  "prop": true
+}
