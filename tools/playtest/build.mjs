@@ -11,6 +11,7 @@ mkdirSync(dist, { recursive: true });
 for (const f of readdirSync(root).filter((n) => n.endsWith('.html'))) cpSync(resolve(root, f), resolve(dist, f));
 cpSync(resolve(root, 'css'), resolve(dist, 'css'), { recursive: true });
 cpSync(resolve(root, 'js'), resolve(dist, 'js'), { recursive: true });
+cpSync(resolve(root, 'art'), resolve(dist, 'art'), { recursive: true });
 writeFileSync(resolve(dist, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
 writeFileSync(resolve(dist, '_headers'), [
   '/*',
@@ -18,7 +19,7 @@ writeFileSync(resolve(dist, '_headers'), [
   '  X-Content-Type-Options: nosniff',
   '  Referrer-Policy: no-referrer',
   '  X-Robots-Tag: noindex, nofollow',
-  '  Permissions-Policy: camera=(), geolocation=(), payment=(), microphone=(self), accelerometer=(self), gyroscope=(self)',
+  '  Permissions-Policy: camera=(self), geolocation=(), payment=(), microphone=(self), accelerometer=(self), gyroscope=(self)',
   '',
 ].join('\n'));
 console.log(`built ${readdirSync(dist).length} entries into dist/`);
