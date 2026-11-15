@@ -103,14 +103,14 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.28 Write property test for the clock and nextWake
     - **Property 13: The clock, nextWake, and disconnects end turns exactly once**
     - **Validates: Requirements 5.3, 5.5**
-  - [ ] 2.29 `canSuggest` (Poltergeist and Cold Spot refusals), `resolveSuggestion` (the published passes and the first holder clockwise), `defaultShown` and the 10 s `show` choice for a human Detective holding several named cards, with a refused `show` for a card not held or not named; a Suggestion may name a Suspect or a Relic from the suggester's own Hand (a Bluff), and `isBluff(hand, {suspect, relic})` decides it for every Suggestion, kept only in `state.bluffs` until the ending
+  - [x] 2.29 `canSuggest` (Poltergeist and Cold Spot refusals), `resolveSuggestion` (the published passes and the first holder clockwise), `defaultShown` and the 10 s `show` choice for a human Detective holding several named cards, with a refused `show` for a card not held or not named; a Suggestion may name a Suspect or a Relic from the suggester's own Hand (a Bluff), and `isBluff(hand, {suspect, relic})` decides it for every Suggestion, kept only in `state.bluffs` until the ending
     - _Requirements: 6.1, 6.2, 6.7_
-  - [ ]* 2.30 Write property test for suggestions, including the default card and a refused show, and a Bluff that gives the same public event, log line and narrator prompt as a non-Bluff with the same result, and `isBluff` true exactly when the Suspect or the Relic is in the Hand
+  - [x]* 2.30 Write property test for suggestions, including the default card and a refused show, and a Bluff that gives the same public event, log line and narrator prompt as a non-Bluff with the same result, and `isBluff` true exactly when the Suspect or the Relic is in the Hand
     - **Property 14: Suggestions resolve to the first holder clockwise**
     - **Validates: Requirements 6.1, 6.2, 6.7**
-  - [ ] 2.31 `sealAccusation` (once per Player per game, hidden from every view but its owner's), `roundEnd` (the five steps of 6.5: reveal together, correct ones share the win, wrong ones join the haunting and raise the Haunt, the Round's rise, Haunt Events, and the house wins at the maximum) and `gameOver` (a correct reveal, every Player a Poltergeist, or the Haunt at its maximum at a Round end)
+  - [x] 2.31 `sealAccusation` (once per Player per game, hidden from every view but its owner's), `roundEnd` (the five steps of 6.5: reveal together, correct ones share the win, wrong ones join the haunting and raise the Haunt, the Round's rise, Haunt Events, and the house wins at the maximum) and `gameOver` (a correct reveal, every Player a Poltergeist, or the Haunt at its maximum at a Round end)
     - _Requirements: 6.3, 6.5, 11.1_
-  - [ ]* 2.32 Write property test for accusations and termination
+  - [x]* 2.32 Write property test for accusations and termination
     - **Property 15: Accusations decide the game and the game terminates**
     - **Validates: Requirements 6.3, 6.5, 11.1, 11.5**
   - [ ] 2.33 `parseRelicToken`
