@@ -93,14 +93,14 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.24 Write property test for turn order
     - **Property 11: Turn order is fair**
     - **Validates: Requirements 5.1, 5.7**
-  - [ ] 2.25 `turnBudget` (with the Blackout reduction), achievement detectors `earned` and `bonusSeconds`
+  - [x] 2.25 `turnBudget` (with the Blackout reduction), achievement detectors `earned` and `bonusSeconds`
     - _Requirements: 5.2, 5.4, 5.6_
-  - [ ]* 2.26 Write property test for budgets and achievements
+  - [x]* 2.26 Write property test for budgets and achievements
     - **Property 12: Turn budgets and achievements are bounded and monotone**
     - **Validates: Requirements 5.2, 5.4, 5.6**
-  - [ ] 2.27 `clockStatus`, `nextWake` (including the Inspect, Haunt Event choice, Eavesdrop and Master-timeout deadlines), and `onDisconnect`
+  - [x] 2.27 `clockStatus`, `nextWake` (including the Inspect, Haunt Event choice, Eavesdrop and Master-timeout deadlines), and `onDisconnect`
     - _Requirements: 5.3, 5.5_
-  - [ ]* 2.28 Write property test for the clock and nextWake
+  - [x]* 2.28 Write property test for the clock and nextWake
     - **Property 13: The clock, nextWake, and disconnects end turns exactly once**
     - **Validates: Requirements 5.3, 5.5**
   - [ ] 2.29 `canSuggest` (Poltergeist and Cold Spot refusals), `resolveSuggestion` (the published passes and the first holder clockwise), `defaultShown` and the 10 s `show` choice for a human Detective holding several named cards, with a refused `show` for a card not held or not named; a Suggestion may name a Suspect or a Relic from the suggester's own Hand (a Bluff), and `isBluff(hand, {suspect, relic})` decides it for every Suggestion, kept only in `state.bluffs` until the ending
