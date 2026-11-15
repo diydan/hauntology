@@ -16,7 +16,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
 - [ ] 2. Phase 2: the Engine (`shared/src/party/engine.ts`)
   - [ ] 2.1 `RoomGameState`, `Action`, `Outbound`, `StepResult` and the protocol schemas (party-mode `protocol.ts`)
     - _Requirements: 2.1_
-  - [ ] 2.2 (core loop done in `shared/src/party/engine.ts`: start, Turns, walk, plain Inspect, Suggestions with the answer choice, Accusations, the clock, Round end, Haunt Events, ending, Bots, Eavesdrop, Nudges with every limit, the Master pause, Cues, Frames, House Cues on every Haunt Event, sound consent, reconnects (20 s grace, the two-miss skip, the Master hand-over after 60 s); still to add: presets and switches from the Master panel, Locks, Bots that Eavesdrop) `step` for the lobby, start, turns, Suggestions, the answer choice, Accusations, Inspect, the Haunt, alarms and Bots, calling only the rule modules
+  - [ ] 2.2 (core loop done in `shared/src/party/engine.ts`: start, Turns, walk, plain Inspect, Suggestions with the answer choice, Accusations, the clock, Round end, Haunt Events, ending, Bots, Eavesdrop, Nudges with every limit, the Master pause, Cues, Frames, House Cues on every Haunt Event, sound consent, reconnects (20 s grace, the two-miss skip, the Master hand-over after 60 s); presets and switches from the Master, Locks on a human's Inspect (Sights on entering a Zone, Attempts, give-up, the Cap, the Turn end, Plain Inspect, the level rising with the Haunt); still to add: Haunting puzzles, Bots that Eavesdrop) `step` for the lobby, start, turns, Suggestions, the answer choice, Accusations, Inspect, the Haunt, alarms and Bots, calling only the rule modules
     - _Requirements: 2.1, 2.2, 2.4_
   - [x] 2.3 **Property 1: The Engine is deterministic and refuses without change**
     - **Validates: Requirements 2.1, 2.2**
@@ -28,9 +28,9 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 1.2, 2.3_
 
 - [ ] 3. Phase 3: the Room server (`api/`)
-  - [ ] 3.1 `PartyRoom` DO: sockets with the Hibernation API, token to `Who`, `step`, save before send, the one alarm (party-mode 4.1, 4.4)
+  - [x] 3.1 (`RoomCore` in `shared/src/party/server.ts` holds the logic, tested with fake ports; `api/src/do/party-room.ts` plugs in hibernating sockets, storage and the alarm) `PartyRoom` DO: sockets with the Hibernation API, token to `Who`, `step`, save before send, the one alarm (party-mode 4.1, 4.4)
     - _Requirements: 3.1, 3.3_
-  - [ ] 3.2 `PartyDirectory` caps, rate limits, time to live and deletion; `/api/party` routes (party-mode 4.8, 4.10, 7)
+  - [ ] 3.2 (built and tested: `api/src/do/party-directory.ts` and `api/src/routes/party.ts`, with `shared/src/party/protocol.ts` checking every message; still to do: mount the routes in `app.ts`, bind both objects in `worker.ts` and `wrangler.jsonc` with a migration, and rate limits) `PartyDirectory` caps, rate limits, time to live and deletion; `/api/party` routes (party-mode 4.8, 4.10, 7)
     - _Requirements: 3.2_
   - [ ] 3.3 Bot runner by alarm with think time (party-mode 4.9)
     - _Requirements: 3.1_

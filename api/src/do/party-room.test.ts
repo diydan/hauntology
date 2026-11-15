@@ -1,0 +1,49 @@
+import { describe, expect, it } from "vitest";
+import { fakeState } from "../worlds/fake-cloudflare";
+import { PartyRoom } from "./party-room";
+
+/** A fake socket with an attachment, as the Hibernation API keeps one. */
+class FakeSocket {
+  sent: unknown[] = [];
+  closed: { code: number; reason: string } | null = null;
+  constructor(private attachment: unknown) {}
+  serializeAttachment(v: unknown) { this.attachment = v; }
+  deserializeAttachment() { return this.attachment; }
+  send(text: string) { this.sent.push(JSON.parse(text)); }
+  close(code: number, reason: string) { this.closed = { code, reason }; }
+}
+
+function room() {
+  const parts = fakeState();
+  const sockets: FakeSocket[] = [];
+  (parts.state as unknown as { getWebSockets(): FakeSocket[] }).getWebSockets = () => sockets;
+  const clock = { t: 5_000_000 };
+  const r = new PartyRoom(parts.state, {}, () => clock.t);
+  const post = async (path: string, body: unknown) => (await r.fetch(new Request(`https://room${path}`, { method: "POST", body: JSON.stringify(body) }))).json() as Promise<Record<string, unknown>>;
+  const socket = (id: string) => { const s = new FakeSocket({ id }); sockets.push(s); return s; };
+  return { r, parts, post, socket, clock };
+}
+
+describe("PartyRoom Durable Object", () => {
+  it("creates, seats, says hello over a socket, and starts a game; storage and the alarm hold the state", async () => {
+    const t = room();
+    const { hostToken } = (await t.post("/create", { code: "WXYZ" })) as { hostToken: string };
+    const ana = (await t.post("/join", { nickname: "Ana" })) as { token: string; seat: number };
+    const ben = (await t.post("/join", { nickname: "Ben" })) as { token: string };
+    const host = t.socket("h");
+    const sa = t.socket("a");
+    const sb = t.socket("b");
+    await t.r.webSocketMessage(host as unknown as WebSocket, JSON.stringify({ t: "hello", token: hostToken }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "hello", token: ana.token }));
+    await t.r.webSocketMessage(sb as unknown as WebSocket, JSON.stringify({ t: "hello", token: ben.token }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "start" }));
+    expect(host.sent.some((m) => (m as { t: string; view?: { phase: string } }).t === "public" && (m as { view: { phase: string } }).view.phase === "playing")).toBe(true);
+    expect(sa.sent.some((m) => (m as { t: string }).t === "private")).toBe(true);
+    expect(host.sent.some((m) => (m as { t: string }).t === "private")).toBe(false);
+    expect(t.parts.data.has("room")).toBe(true);
+    expect(t.parts.alarm.at).not.toBeNull();
+    await t.r.webSocketMessage(sb as unknown as WebSocket, new ArrayBuffer(4));
+    expect(sb.closed?.code).toBe(4400);
+    expect((await (await t.r.fetch(new Request("https://room/ws"))).text())).toMatch(/websocket/);
+  });
+});

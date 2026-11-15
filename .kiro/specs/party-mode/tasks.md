@@ -191,9 +191,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.62 Write property test for Cues
     - **Property 32: Cues are rate limited and change no rule**
     - **Validates: Requirements 12.1, 14.1, 14.2**
-  - [ ] 2.63 `applyPreset` (Classic 60 s and 10, Gentle 90 s and 12, Quick 45 s and 8, each with its Nudge, Frame, auto-cross and Bot settings), the Nudge (all, help-only, off), Frame and sound switches, and `canControl` extended so that only the Master's token can change them; no Cue, Nudge or Frame calls a model (their lines come from `partyScripted`)
+  - [x] 2.63 `applyPreset` (Classic 60 s and 10, Gentle 90 s and 12, Quick 45 s and 8, each with its Nudge, Frame, auto-cross and Bot settings), the Nudge (all, help-only, off), Frame and sound switches, and `canControl` extended so that only the Master's token can change them; no Cue, Nudge or Frame calls a model (their lines come from `partyScripted`)
     - _Requirements: 12.5, 14.6_
-  - [ ]* 2.64 Write property test for presets and switches
+  - [x]* 2.64 Write property test for presets and switches
     - **Property 33: Presets and switches do what they say**
     - **Validates: Requirements 12.5, 14.6**
   - [x] 2.65 Seat-owned limits: Resolve, per-Turn Nudges, Cue timing, sounds this Round, Frames sent and received and Sound Consent live on the seat and are unchanged by reconnect, hand-over and serialise-then-parse

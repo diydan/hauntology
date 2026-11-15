@@ -29,6 +29,9 @@ const ROWS: Readonly<Record<SoloPreset, Omit<SoloSettings, "worldId" | "speech" 
   quick: { baseSeconds: 45, hauntMax: 8, nudges: "all", frames: true, autoCross: false, botLevel: "standard", puzzles: "off" },
 };
 
+/** A preset's row (party-mode 12.5): only these fields change. */
+export const presetRow = (preset: SoloPreset): Omit<SoloSettings, "worldId" | "speech" | "sky"> => ({ ...ROWS[preset] });
+
 export const BOT_NAMES = ["Agnes", "Bertram", "Clementine", "Dorian", "Edith"] as const;
 
 export type SoloSeat = Readonly<{ seat: number; nickname: string; bot: boolean; master: boolean; botLevel: BotLevel | null }>;

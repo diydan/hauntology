@@ -281,9 +281,9 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 16.1_
 
 - [ ] 12. Decisions of 2026-11-15: the level follows the Haunt, Haunting puzzles, Locks in the solo case
-  - [ ] 12.1 `lockLevel(setting, preset, haunt, kind, sightLevel)` in `shared/src/puzzles/`
+  - [x] 12.1 `lockLevel(setting, preset, haunt, kind, sightLevel)` in `shared/src/puzzles/`
     - _Requirements: 1.4_
-  - [ ]* 12.2 Write property test for the level
+  - [x]* 12.2 Write property test for the level
     - **Property 21: The level follows the Haunt, and a clue always fits**
     - **Validates: Requirements 1.4**
   - [ ] 12.3 Haunting puzzles: one per Round per human Poltergeist, no-clue Kinds, one Scare point, closed at the Round end or the game end

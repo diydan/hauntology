@@ -9,6 +9,12 @@ import { buildPool, type Pool } from "./pool";
 import { inspectRefusal, placeResidue, settleInspect, startInspect, type Inspecting } from "./residue";
 import { EAVESDROP_MS, canEavesdrop, eavesdrop, gainResolve, spendResolve, type EavesdropWindow } from "./resolve";
 import { applyNudge, canNudge, type LastSpook, type NudgeKind } from "./nudge";
+import { presetRow, type SoloPreset } from "./solo";
+import { capFor } from "../puzzles/settings";
+import { lockLevel } from "../puzzles/level";
+import { placePuzzles } from "../puzzles/place";
+import { freezeFor, closeLock, initPartyLocks, openLock, sightsOnEntry, ackSight, submitAttempt, type PartyLocks } from "../puzzles/inspect";
+import type { Level, LockView, PuzzleSetting, Sight } from "../puzzles/types";
 import { CUE_PLAY_MS, canCue, canFrame, houseCuePhones, isCue, restlessSchedule, soundPlan, type CueId, type FrameSeat, type PhoneSeat, type SoundPlan } from "./cues";
 import { canSuggest, defaultShown, isBluff, resolveSuggestion, validShow } from "./suggest";
 import { firstPlayer, nextPlayer, type Order } from "./turns";
@@ -30,7 +36,11 @@ export const BOT_THINK_MAX_MS = 6_000;
 const BOT_ACTIONS_PER_TURN = 8;
 
 export type EngineSeat = Readonly<{ seat: number; nickname: string; bot: boolean; botLevel: "standard" | "gentle" }>;
-export type EngineSettings = Readonly<{ baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off"; sounds?: boolean; frames?: boolean }>;
+export type EngineSettings = Readonly<{
+  baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off"; sounds?: boolean; frames?: boolean;
+  /** The Puzzle setting: off, or the starting level of the Locks (puzzles 1.4). */
+  puzzles?: PuzzleSetting; preset?: SoloPreset; autoCross?: boolean;
+}>;
 export const DISCONNECT_GRACE_MS = 20_000;
 export const MASTER_AWAY_MS = 60_000;
 export const MISSED_TO_SKIP = 2;
@@ -81,6 +91,8 @@ export type EngineState = Readonly<{
   masterAwaySinceMs: number | null;
   /** Messages for one step beyond the views (a Cue to one phone, "not you"); emptied by every step. */
   outbox: readonly Outbound[];
+  /** The Locks (puzzles spec): one per Zone, the open one per seat, the Sights each seat has seen. */
+  locks: PartyLocks;
 }>;
 
 // ---------------------------------------------------------------- actions and messages
@@ -100,7 +112,12 @@ export type ClientMsg =
   | Readonly<{ t: "resume" }>
   | Readonly<{ t: "cue"; cue: string; place?: "tv" | "phone" }>
   | Readonly<{ t: "frame"; target: number; cue: string }>
-  | Readonly<{ t: "sound"; consent: boolean; audio?: boolean }>;
+  | Readonly<{ t: "sound"; consent: boolean; audio?: boolean }>
+  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
+  | Readonly<{ t: "attempt"; lockId: string; transcript: unknown }>
+  | Readonly<{ t: "giveUp"; lockId: string }>
+  | Readonly<{ t: "sightAck"; sightId: string }>
+  | Readonly<{ t: "plainInspect"; on: boolean }>;
 export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> | Readonly<{ kind: "alarm" }> | Readonly<{ kind: "connect"; seat: number }> | Readonly<{ kind: "disconnect"; seat: number }>;
 
 export type PublicSnapshot = Readonly<{
@@ -123,7 +140,10 @@ export type PrivateSnapshot = Readonly<{
 }>;
 export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> }>
   | Readonly<{ to: "seat"; seat: number; msg: Readonly<{ t: "private"; view: PrivateSnapshot }> | Readonly<{ t: "refused"; code: string }>
-      | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }> }>;
+      | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }>
+      | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null }>
+      | Readonly<{ t: "lockResult"; lockId: string; outcome: "solved" | "wrong" | "failed"; attemptsLeft?: number; zone?: string; card?: string | null }>
+      | Readonly<{ t: "sight"; sightId: string; sight: Sight }> }>;
 export type StepResult = Readonly<{ state: EngineState; out: readonly Outbound[]; wakeAtMs: number | null; refused?: string }>;
 
 // ---------------------------------------------------------------- creating a game
@@ -136,7 +156,7 @@ export function createEngine(o: Readonly<{ seed: number; seats: readonly EngineS
     haunt: { level: 0, max: o.settings.hauntMax, fired: [], pending: null, coldSpot: null, blackoutNext: false }, eventsChosen: 0,
     log: [], nextId: 1, shownLog: {}, bluffs: [], sources: [], botFacts: {}, winners: [], houseWins: false, ending: null,
     pausedSinceMs: null, lastSpook: null, nudgeCounts: { haunting: 0, others: 0 }, eavesdrop: null,
-    playing: [], masterAwaySinceMs: null, outbox: [],
+    playing: [], masterAwaySinceMs: null, outbox: [], locks: initPartyLocks([]),
   };
 }
 
@@ -225,9 +245,10 @@ function houseCue(s: EngineState, level: number, restless: boolean, now: number)
   return st;
 }
 
-function endTurn(s: EngineState, now: number): EngineState {
-  const t = s.turn;
-  if (t === null) return s;
+function endTurn(s0: EngineState, now: number): EngineState {
+  const t = s0.turn;
+  if (t === null) return s0;
+  const s = closeLocks(s0, now);
   let st = setPlayer({ ...s, turn: null }, t.seat, (p) => ({ ...p, turnMsUsed: p.turnMsUsed + Math.max(0, now - t.startedMs) }));
   const nxt = nextPlayer(order(st), st.first as number, t.seat);
   if (nxt !== null) return startTurn(st, nxt, now);
@@ -285,9 +306,26 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     const deal = dealCase(s.pool, seatIds, s.seed);
     const players: PlayerRec[] = seatIds.map((x) => ({ seat: x, poltergeist: false, joinedRound: null, resolve: 1, inspected: [], shownToMe: [], found: [], sealed: null, hasSealed: false, suggestions: 0, turnMsUsed: 0, heard: [],
       connected: !s.seats.find((y) => y.seat === x)?.bot, missed: 0, lastCueMs: null, soundsThisRound: 0, frameSentRound: null, framedRound: null, soundConsent: false, hasAudio: true }));
-    const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(s.pool.zones.map((z) => z.id), deal.residue, s.seed), players, round: 1 };
+    const zoneIds = s.pool.zones.map((z) => z.id);
+    const placed = placePuzzles(s.seed, zoneIds, s.settings.puzzles ?? "off");
+    const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(zoneIds, deal.residue, s.seed), players, round: 1, locks: initPartyLocks(placed.ok ? placed.value : []) };
     const first = firstPlayer(order(st), null, s.seed) as number;
     return startTurn({ ...st, first }, first, now);
+  }
+  if (msg.t === "settings") {
+    if (seat !== s.masterSeat) return "not_master";
+    const row = msg.preset ? presetRow(msg.preset) : null;
+    const timing = s.phase === "lobby"; // the clock and the Haunt maximum change only before the start
+    const next: EngineSettings = {
+      ...s.settings,
+      ...(row ? { nudges: row.nudges, frames: row.frames, autoCross: row.autoCross, puzzles: row.puzzles, preset: msg.preset } : {}),
+      ...(row && timing ? { baseSeconds: row.baseSeconds, hauntMax: row.hauntMax } : {}),
+      ...(msg.nudges !== undefined ? { nudges: msg.nudges } : {}), ...(msg.frames !== undefined ? { frames: msg.frames } : {}),
+      ...(msg.sounds !== undefined ? { sounds: msg.sounds } : {}), ...(msg.puzzles !== undefined ? { puzzles: msg.puzzles } : {}),
+      ...(timing && msg.baseSeconds !== undefined ? { baseSeconds: msg.baseSeconds } : {}), ...(timing && msg.hauntMax !== undefined ? { hauntMax: msg.hauntMax } : {}),
+    };
+    const seatBots = row ? s.seats.map((x) => (x.bot ? { ...x, botLevel: row.botLevel } : x)) : s.seats;
+    return { ...s, settings: next, seats: seatBots, haunt: timing ? { ...s.haunt, max: next.hauntMax } : s.haunt };
   }
   if (s.phase !== "playing") return "game_over";
   if (msg.t === "pause") {
@@ -302,6 +340,8 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     if (s.pausedSinceMs === null) return "not_paused";
     return resumeAll(s, now);
   }
+  if (msg.t === "plainInspect") return { ...s, locks: { ...s.locks, plain: { ...s.locks.plain, [String(seat)]: msg.on } } };
+  if (msg.t === "sightAck") { const r = ackSight(s.locks, String(seat), msg.sightId); return r.ok ? { ...s, locks: r.value } : "sight_unknown"; }
   if (msg.t === "sound") return setPlayer(s, seat, (p) => ({ ...p, soundConsent: msg.consent, hasAudio: msg.audio ?? p.hasAudio }));
   if (s.pausedSinceMs !== null) return "paused";
   if (msg.t === "cue") {
@@ -359,6 +399,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     const st = setPlayer(s, seat, (p) => ({ ...p, resolve: spendResolve(p.resolve, 1) as number, heard: [...p.heard, { eventId: w.eventId, card }] }));
     return addLog(st, { kind: "eavesdrop", seat })[0];
   }
+  if (msg.t === "attempt" || msg.t === "giveUp") return lockAction(s, seat, msg, now);
   if (msg.t === "choose") {
     const pend = s.haunt.pending;
     if (pend === null || chooseOption(s.haunt, seat, msg.option, now) === null) return "not_your_choice";
@@ -378,11 +419,28 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       if (!s.pool.zones.some((z) => z.id === msg.zone)) return "not_in_zone";
       if (t.suggested) return "already_suggested";
       const [st] = addLog(s, { kind: "visit", seat, zone: msg.zone, sinceTurnMs: now - t.startedMs });
-      return { ...st, turn: { ...t, at: msg.zone, inspecting: null } };
+      const st2: EngineState = { ...st, turn: { ...t, at: msg.zone, inspecting: null } };
+      if (isBot(st2, seat)) return st2;
+      const sight = sightsOnEntry(st2.locks, String(seat), msg.zone);
+      return sight.delivery === null ? { ...st2, locks: sight.state }
+        : { ...st2, locks: sight.state, outbox: [...st2.outbox, { to: "seat", seat, msg: { t: "sight", sightId: sight.delivery.sightId, sight: sight.delivery.sight } }] };
     }
     case "inspect": {
       const why = inspectRefusal({ seat, activeSeat: t.seat, poltergeist: me.poltergeist, inZone: t.at, inspected: me.inspected, inspecting: t.inspecting !== null });
       if (why !== null) return why;
+      if (s.locks.open[String(seat)]) return "puzzle_already_open";
+      const setting = s.settings.puzzles ?? "off";
+      const placed = s.locks.placed.find((l) => l.zone === t.at);
+      if (setting !== "off" && !isBot(s, seat) && placed !== undefined && !s.locks.plain[String(seat)]) {
+        const level = lockLevel(setting, s.settings.preset === "gentle", s.haunt.level, placed.kind, placed.level) as Level;
+        const locks: PartyLocks = { ...s.locks, placed: s.locks.placed.map((l) => (l.zone === t.at ? { ...l, level } : l)) };
+        const capMs = capFor(s.settings.preset ?? "classic");
+        const dl = deadlineOf(t.clock, now);
+        const opened = openLock(locks, String(seat), t.at as string, now, { setting, capMs, isBot: false, ...(dl === null ? {} : { turnDeadline: dl }) });
+        if (!opened.ok) return "puzzle_not_open";
+        const [st] = addLog({ ...s, locks: opened.value.state }, { kind: "inspect", seat, zone: t.at as string });
+        return { ...st, outbox: [...st.outbox, { to: "seat", seat, msg: { t: "lock", lockId: opened.value.lockId, view: opened.value.view, level, attempts: opened.value.attempts, deadlineAt: opened.value.deadlineAt, faded: opened.value.faded } }] };
+      }
       return { ...s, turn: { ...t, inspecting: startInspect(seat, t.at as string, now) } };
     }
     case "suggest": {
@@ -422,6 +480,40 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
   }
 }
 
+/** An Attempt or a give-up on the seat's open Lock. Solved gives exactly the plain Inspect result. */
+function lockAction(s: EngineState, seat: number, msg: Extract<ClientMsg, { t: "attempt" } | { t: "giveUp" }>, now: number): EngineState | string {
+  const open = s.locks.open[String(seat)];
+  if (!open || open.lockId !== msg.lockId) return "puzzle_not_open";
+  const capMs = capFor(s.settings.preset ?? "classic");
+  const t = s.turn;
+  const send = (st: EngineState, m: Extract<Outbound, { to: "seat" }>["msg"]): EngineState => ({ ...st, outbox: [...st.outbox, { to: "seat", seat, msg: m }] });
+  if (msg.t === "giveUp") {
+    const r = closeLock(s.locks, String(seat), "gave_up", now, capMs);
+    return r.ok ? send({ ...s, locks: r.value.state }, { t: "lockResult", lockId: msg.lockId, outcome: "failed" }) : "puzzle_not_open";
+  }
+  const zone = open.zone;
+  const dl = t === null ? null : deadlineOf(t.clock, now);
+  const r = submitAttempt(s.locks, String(seat), msg.lockId, msg.transcript, now, { capMs, ...(dl === null ? {} : { turnDeadline: dl }), inspect: () => s.residueAt[zone] ?? null });
+  if (!r.ok) return r.code;
+  const out = r.value;
+  if (out.outcome === "wrong") return send({ ...s, locks: out.state }, { t: "lockResult", lockId: msg.lockId, outcome: "wrong", attemptsLeft: out.attemptsLeft });
+  if (out.outcome === "failed") return send({ ...s, locks: out.state }, { t: "lockResult", lockId: msg.lockId, outcome: "failed" });
+  const card = out.inspectResult;
+  let st = setPlayer({ ...s, locks: out.state }, seat, (q) => ({ ...q, inspected: [...q.inspected, zone], found: card === null ? q.found : [...q.found, card] }));
+  return send(st, { t: "lockResult", lockId: msg.lockId, outcome: "solved", zone, card });
+}
+
+/** Close every open Lock at the end of a Turn: no Zone result, the Zone not inspected. */
+function closeLocks(s: EngineState, now: number): EngineState {
+  let st = s;
+  for (const [seatId, o] of Object.entries(s.locks.open)) {
+    if (!o) continue;
+    const r = closeLock(st.locks, seatId, "turn_ended", now, capFor(s.settings.preset ?? "classic"));
+    if (r.ok) st = { ...st, locks: r.value.state, outbox: [...st.outbox, { to: "seat", seat: Number(seatId), msg: { t: "lockResult", lockId: o.lockId, outcome: "failed" } }] };
+  }
+  return st;
+}
+
 /**
  * A phone dropped or came back (party-mode 5.5, 1.4, 1.7). Every seat-owned limit stays as it was. The active
  * Player's clock pauses for up to 20 s; a Master away for 60 s hands the role to the next human.
@@ -454,7 +546,7 @@ function resumeAll(s: EngineState, now: number): EngineState {
   };
   const p = s.haunt.pending;
   return {
-    ...s, pausedSinceMs: null, turn,
+    ...s, pausedSinceMs: null, turn, locks: freezeFor(s.locks, d),
     haunt: p === null ? s.haunt : { ...s.haunt, pending: { ...p, deadlineMs: p.deadlineMs + d } },
     eavesdrop: s.eavesdrop === null ? null : { ...s.eavesdrop, untilMs: s.eavesdrop.untilMs + d },
   };
@@ -479,6 +571,13 @@ function tick(s: EngineState, now: number): EngineState {
     const humans = s.players.filter((q) => !isBot(s, q.seat) && q.connected && q.seat !== s.masterSeat).map((q) => q.seat).sort((a, b) => a - b);
     const next = humans.find((x) => x > s.masterSeat) ?? humans[0];
     return next === undefined ? { ...s, masterAwaySinceMs: null } : { ...s, masterSeat: next, masterAwaySinceMs: null };
+  }
+  const capMs = capFor(s.settings.preset ?? "classic");
+  for (const [seatId, o] of Object.entries(s.locks.open)) {
+    if (o && now >= o.openedAt + capMs) {
+      const r = closeLock(s.locks, seatId, "cap", now, capMs);
+      if (r.ok) return { ...s, locks: r.value.state, outbox: [...s.outbox, { to: "seat", seat: Number(seatId), msg: { t: "lockResult", lockId: o.lockId, outcome: "failed" } }] };
+    }
   }
   const t = s.turn;
   if (t === null) return s;
@@ -565,7 +664,9 @@ function wakeOf(s: EngineState, now: number): number | null {
   if (s.phase !== "playing" || s.pausedSinceMs !== null) return null;
   const t = s.turn;
   return nextWake({
-    turn: t?.clock ?? null, inspectUntilMs: t?.inspecting?.untilMs ?? null, answeringUntilMs: t?.answering?.untilMs ?? null,
+    turn: t?.clock ?? null,
+    inspectUntilMs: Math.min(t?.inspecting?.untilMs ?? Infinity, ...Object.values(s.locks.open).flatMap((o) => (o ? [o.openedAt + capFor(s.settings.preset ?? "classic")] : []))) === Infinity ? null
+      : Math.min(t?.inspecting?.untilMs ?? Infinity, ...Object.values(s.locks.open).flatMap((o) => (o ? [o.openedAt + capFor(s.settings.preset ?? "classic")] : []))), answeringUntilMs: t?.answering?.untilMs ?? null,
     windowUntilMs: t?.windowUntilMs ?? null, hauntChoiceMs: s.haunt.pending?.chooser != null ? s.haunt.pending.deadlineMs : null,
     botThinkUntilMs: t === null || t.inspecting !== null || t.answering !== null ? null : t.botDueMs, // a Bot waits for its Inspect or an answer
     disconnectEndsMs: t?.disconnectEndsMs ?? null,

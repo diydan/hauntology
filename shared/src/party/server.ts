@@ -1,0 +1,216 @@
+import { whoIs } from "./auth";
+import { createEngine, step, type EngineSettings, type EngineState, type Outbound } from "./engine";
+import { handOver } from "./master";
+import { parseClientMessage } from "./protocol";
+import { createRoomState, isRoomExpired, newToken, parseRoom, serializeRoom, type RoomState, type Seat } from "./room";
+import { seatPlayer } from "./seats";
+
+/**
+ * The Room server's whole logic (integration Requirement 3), with no Cloudflare in it: the `PartyRoom` Durable Object
+ * only plugs real sockets, storage and the alarm into these ports. It holds no game rule: the lobby rules come from
+ * `room.ts`, `seats.ts`, `auth.ts` and `master.ts`, the game from the Engine. Every step is saved before anything is
+ * sent, and the one alarm is always set to the next wake time.
+ */
+export type Ports = {
+  load(): Promise<string | undefined>;
+  save(text: string): Promise<void>;
+  deleteAll(): Promise<void>;
+  setAlarm(atMs: number | null): Promise<void>;
+  send(socketId: string, msg: unknown): void;
+  close(socketId: string, code: number, reason: string): void;
+  now(): number;
+  randomBytes(n: number): Uint8Array;
+};
+
+export type SocketInfo = Readonly<{ role: "host" | "display" | "controller"; seat: Seat | null }>;
+export type ServerState = Readonly<{
+  room: RoomState;
+  engine: EngineState | null;
+  lobbySettings: EngineSettings;
+  sockets: Readonly<Record<string, SocketInfo>>;
+}>;
+
+export const DEFAULT_SETTINGS: EngineSettings = { baseSeconds: 60, hauntMax: 10, nudges: "all", frames: true, sounds: true, puzzles: "medium", preset: "classic" };
+export const PRESET_GHOSTS = ["preset-1", "preset-2", "preset-3", "preset-4", "preset-5", "preset-6", "preset-7", "preset-8"] as const;
+
+const seedFrom = (b: Uint8Array): number => ((b[0] ?? 0) | ((b[1] ?? 0) << 8) | ((b[2] ?? 0) << 16) | ((b[3] ?? 0) << 24)) >>> 0;
+
+export class RoomCore {
+  private state: ServerState | null = null;
+  constructor(private readonly ports: Ports) {}
+
+  private async loaded(): Promise<ServerState | null> {
+    if (this.state !== null) return this.state;
+    const text = await this.ports.load();
+    if (text === undefined) return null;
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; sockets: Record<string, SocketInfo> };
+    const room = parseRoom(raw.room);
+    if (room === null) return null;
+    this.state = { room, engine: raw.engine, lobbySettings: raw.lobbySettings, sockets: raw.sockets };
+    return this.state;
+  }
+
+  /** Save first, then set the alarm, then send: a crash after a send never loses what was sent. */
+  private async commit(next0: ServerState, out: readonly Outbound[] = [], wakeAtMs: number | null = null): Promise<void> {
+    // the Engine may pass the Master role on (a Master away 60 s); the lobby's record follows it
+    const next = next0.engine !== null && next0.engine.masterSeat !== next0.room.masterSeat ? { ...next0, room: { ...next0.room, masterSeat: next0.engine.masterSeat as Seat } } : next0;
+    this.state = next;
+    await this.ports.save(JSON.stringify({ room: serializeRoom(next.room), engine: next.engine, lobbySettings: next.lobbySettings, sockets: next.sockets }));
+    const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
+    await this.ports.setAlarm(wakeAtMs === null ? ttlAt : Math.min(wakeAtMs, ttlAt));
+    this.route(next, out);
+  }
+
+  private route(s: ServerState, out: readonly Outbound[]): void {
+    for (const o of out) {
+      for (const [sid, info] of Object.entries(s.sockets)) {
+        if (o.to === "public" || (info.role === "controller" && info.seat === o.seat)) this.ports.send(sid, o.msg);
+      }
+    }
+  }
+
+  private lobbyView(s: ServerState) {
+    return { t: "lobby" as const, code: s.room.code, masterSeat: s.room.masterSeat, started: s.room.started, settings: s.lobbySettings,
+      seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, connected: x.connected })) };
+  }
+  private broadcastLobby(s: ServerState): void { for (const sid of Object.keys(s.sockets)) this.ports.send(sid, this.lobbyView(s)); }
+
+  // ------------------------------------------------------------ HTTP-side calls (from the routes)
+  async create(code: string): Promise<{ hostToken: string; displayToken: string }> {
+    const fill = (b: Uint8Array): Uint8Array => { b.set(this.ports.randomBytes(b.length)); return b; };
+    const hostToken = newToken(fill);
+    const displayToken = newToken(fill);
+    const room = createRoomState(code, seedFrom(this.ports.randomBytes(4)), this.ports.now(), hostToken, displayToken);
+    await this.commit({ room, engine: null, lobbySettings: DEFAULT_SETTINGS, sockets: {} });
+    return { hostToken, displayToken };
+  }
+
+  async join(nickname: string): Promise<{ ok: true; seat: number; token: string } | { ok: false; code: string }> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return { ok: false, code: "room_unknown" };
+    const token = newToken((b) => { b.set(this.ports.randomBytes(b.length)); return b; });
+    const res = seatPlayer(s.room, nickname, token, this.ports.now());
+    if (!res.ok) return { ok: false, code: res.code };
+    const next = { ...s, room: res.state };
+    await this.commit(next);
+    this.broadcastLobby(next);
+    return { ok: true, seat: res.seat, token };
+  }
+
+  // ------------------------------------------------------------ sockets
+  async message(socketId: string, raw: string): Promise<void> {
+    const s = await this.loaded();
+    if (s === null) { this.ports.close(socketId, 4004, "room_unknown"); return; }
+    const parsed = parseClientMessage(raw);
+    if (parsed.kind === "bad") { this.ports.close(socketId, 4400, "bad_message"); return; }
+    const me = s.sockets[socketId];
+    if (parsed.kind === "room" && parsed.msg.t === "hello") return this.hello(s, socketId, parsed.msg.token);
+    if (me === undefined) { this.ports.close(socketId, 4401, "hello_first"); return; }
+    const now = this.ports.now();
+    const refuse = (code: string): void => this.ports.send(socketId, { t: "refused", code });
+
+    if (parsed.kind === "room") {
+      const m = parsed.msg;
+      const isMaster = me.role === "controller" && me.seat === s.room.masterSeat;
+      if (m.t === "end") {
+        if (!isMaster && me.role !== "host") return refuse("not_master");
+        return this.end(s);
+      }
+      if (m.t === "addBot") {
+        if (!isMaster) return refuse("not_master");
+        const res = seatPlayer(s.room, `Bot ${s.room.seats.length + 1}`, null, now);
+        if (!res.ok) return refuse(res.code);
+        const next = { ...s, room: res.state };
+        await this.commit(next);
+        return this.broadcastLobby(next);
+      }
+      if (m.t === "handOver") {
+        const token = s.room.seats.find((x) => x.seat === me.seat)?.token ?? "";
+        const room = handOver(s.room, token, m.seat as Seat);
+        if (room === null) return refuse("not_master");
+        const engine = s.engine === null ? null : { ...s.engine, masterSeat: m.seat };
+        const next = { ...s, room, engine };
+        await this.commit(next);
+        return this.broadcastLobby(next);
+      }
+      return;
+    }
+
+    if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+    let engine = s.engine;
+    let lobbySettings = s.lobbySettings;
+    if (engine === null) {
+      // The lobby: settings and start, by the Master only. The Engine is made at the start, from the seats then.
+      if (parsed.msg.t !== "settings" && parsed.msg.t !== "start" && parsed.msg.t !== "sound") return refuse("not_started");
+      const draft = createEngine({ seed: s.room.seed, seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel: lobbySettings.preset === "gentle" ? "gentle" as const : "standard" as const })), settings: lobbySettings, presetIds: PRESET_GHOSTS });
+      if (parsed.msg.t === "settings") {
+        const r = step(draft, { kind: "client", seat: me.seat, msg: parsed.msg }, now);
+        if (r.refused) return refuse(r.refused);
+        lobbySettings = r.state.settings;
+        const next = { ...s, lobbySettings };
+        await this.commit(next);
+        return this.broadcastLobby(next);
+      }
+      if (parsed.msg.t === "sound") return refuse("not_started");
+      if (s.room.seats.length < 2) return refuse("too_few_players");
+      engine = draft;
+    }
+    const r = step(engine, { kind: "client", seat: me.seat, msg: parsed.msg }, now);
+    if (r.refused) return refuse(r.refused);
+    let next: ServerState = { ...s, engine: r.state, lobbySettings, room: { ...s.room, lastActiveMs: now, started: true } };
+    // connect every seat that is on a socket now, so the Engine knows who is here
+    if (s.engine === null) for (const info of Object.values(next.sockets)) if (info.role === "controller" && info.seat !== null) next = { ...next, engine: step(next.engine as EngineState, { kind: "connect", seat: info.seat }, now).state };
+    await this.commit(next, r.out, r.wakeAtMs);
+  }
+
+  private async hello(s: ServerState, socketId: string, token: string): Promise<void> {
+    const who = whoIs(s.room, token);
+    if (who === null) { this.ports.close(socketId, 4403, "bad_token"); return; }
+    const now = this.ports.now();
+    let next: ServerState = { ...s, sockets: { ...s.sockets, [socketId]: { role: who.role, seat: who.seat } } };
+    let out: readonly Outbound[] = [];
+    let wake: number | null = null;
+    if (who.role === "controller" && who.seat !== null) {
+      next = { ...next, room: { ...next.room, seats: next.room.seats.map((x) => (x.seat === who.seat ? { ...x, connected: true, awaySinceMs: null } : x)) } };
+      if (next.engine !== null) { const r = step(next.engine, { kind: "connect", seat: who.seat }, now); next = { ...next, engine: r.state }; out = r.out; wake = r.wakeAtMs; }
+    }
+    await this.commit(next, out, wake);
+    this.ports.send(socketId, { t: "welcome", role: who.role, seat: who.seat });
+    this.ports.send(socketId, this.lobbyView(next));
+  }
+
+  async socketClosed(socketId: string): Promise<void> {
+    const s = await this.loaded();
+    if (s === null) return;
+    const me = s.sockets[socketId];
+    const sockets = { ...s.sockets };
+    delete sockets[socketId];
+    let next: ServerState = { ...s, sockets };
+    let out: readonly Outbound[] = [];
+    let wake: number | null = null;
+    const stillHere = me?.seat != null && Object.values(sockets).some((x) => x.seat === me.seat);
+    if (me?.role === "controller" && me.seat !== null && !stillHere) {
+      next = { ...next, room: { ...next.room, seats: next.room.seats.map((x) => (x.seat === me.seat ? { ...x, connected: false, awaySinceMs: this.ports.now() } : x)) } };
+      if (next.engine !== null) { const r = step(next.engine, { kind: "disconnect", seat: me.seat }, this.ports.now()); next = { ...next, engine: r.state }; out = r.out; wake = r.wakeAtMs; }
+    }
+    await this.commit(next, out, wake);
+  }
+
+  async alarm(): Promise<void> {
+    const s = await this.loaded();
+    if (s === null) return;
+    const now = this.ports.now();
+    if (isRoomExpired(s.room, now)) return this.end(s);
+    if (s.engine === null) { await this.ports.setAlarm(s.room.lastActiveMs + s.room.ttlMs); return; }
+    const r = step(s.engine, { kind: "alarm" }, now);
+    await this.commit({ ...s, engine: r.state }, r.out, r.wakeAtMs);
+  }
+
+  /** End the Room: tell every socket, close them, and delete everything at once (party-mode 1.5). */
+  private async end(s: ServerState): Promise<void> {
+    for (const sid of Object.keys(s.sockets)) { this.ports.send(sid, { t: "ended" }); this.ports.close(sid, 4000, "room_ended"); }
+    await this.ports.deleteAll();
+    await this.ports.setAlarm(null);
+    this.state = null;
+  }
+}
