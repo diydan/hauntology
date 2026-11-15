@@ -2,7 +2,7 @@ import { verifySession } from "@hauntology/shared/session-cookie";
 import type { WorldManifest } from "@hauntology/shared/world/manifest";
 import { createApp } from "../app";
 import { MemoryWorldStore } from "./memory-store";
-import type { WorldRecord } from "./store";
+import type { WorldRecord, WorldStore } from "./store";
 
 /** Helpers for tests of the world routes: an app over a `MemoryWorldStore`, visitors with a Session, and a ready world. */
 export const ORIGIN = "http://app.test";
@@ -35,8 +35,8 @@ export const BYTES = {
   "thumb.jpg": Uint8Array.from([20, 21, 22]),
 } as const;
 
-export function worldsKit(now: () => number = () => NOW) {
-  const store = new MemoryWorldStore();
+/** An app over any `WorldStore`, with visitors that have a Session. */
+export function appKit(store: WorldStore, now: () => number = () => NOW) {
   const app = createApp({ worlds: { store }, now });
 
   const send = async (path: string, init: { method?: string; headers?: Record<string, string>; body?: unknown } = {}): Promise<Sent> => {
@@ -59,6 +59,14 @@ export function worldsKit(now: () => number = () => NOW) {
   /** A request with no cookie at all. */
   const anonymous = (): Record<string, string> => ({ Origin: ORIGIN });
 
+  return { app, send, visitor, anonymous };
+}
+
+/** The same over a `MemoryWorldStore`, with a way to make a ready world. */
+export function worldsKit(now: () => number = () => NOW) {
+  const store = new MemoryWorldStore();
+  const kit = appKit(store, now);
+
   /** A ready user world with its files, owned by `owner`. */
   const readyWorld = (id: string, owner: Visitor | null, extra: Partial<WorldRecord> = {}): WorldRecord => {
     const record: WorldRecord = { id, kind: "user", ...(owner !== null ? { ownerSid: owner.sid } : {}), status: "ready", manifest: sampleManifest(id), ...extra };
@@ -67,5 +75,5 @@ export function worldsKit(now: () => number = () => NOW) {
     return record;
   };
 
-  return { app, store, send, visitor, anonymous, readyWorld };
+  return { ...kit, store, readyWorld };
 }

@@ -1,0 +1,24 @@
+import { z } from "zod";
+import { ErrorCodeSchema } from "../app/api-schemas";
+import { JOB_STATES } from "../app/types";
+import { WorldManifestSchema } from "./manifest";
+
+const Id = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
+
+/**
+ * What the `WorldJob` Durable Object keeps for one user world. Ids are limited to plain characters
+ * because they become R2 keys. A Gallery world is never kept there (its manifest is its record), so
+ * the kind is always `user` and the owner is always named. Unknown fields are dropped.
+ */
+export const StoredWorldSchema = z.object({
+  id: Id,
+  kind: z.literal("user"),
+  ownerSid: z.string().min(1).max(128),
+  status: z.enum(JOB_STATES),
+  title: z.string().max(200).optional(),
+  failure: z.object({ code: ErrorCodeSchema, quotaReturned: z.boolean(), retryAllowed: z.boolean() }).optional(),
+  manifest: WorldManifestSchema.optional(),
+  imageId: Id.optional(),
+  candidateIds: z.array(Id).max(16).optional(),
+});
+export type StoredWorld = z.infer<typeof StoredWorldSchema>;

@@ -93,7 +93,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - _Requirements: 3.8, 7.6_
   - [ ] 3.3 Run the contract suite against the real routes
     - Blocked until `world-pipeline` 7.4 and 8.1 and `ghost-engine` 5 exist. Call `worldAccessContract(label, makeHarness)` with a harness for the real app. If a route fails, record it in `docs/IMPLEMENTATION.md` under "Security gaps" instead of editing that route here.
-    - **Run on 2026-11-15, in part:** `api/src/contract/world-access.real.test.ts` runs the suite against the real world routes (`api/src/routes/worlds.ts`, `world-pipeline` 7.4 and 8.1) over an in-memory store, and it passes for `GET`, the assets and `DELETE`. The `POST /api/play/start` checks are listed as a todo (`skip: ["play"]`) because that route is `ghost-engine` 5. Not ticked: plug in the play route, and run it again over the real store once R2 and `WorldJob` back it.
+    - **Run on 2026-11-15, in part:** `api/src/contract/world-access.real.test.ts` runs the suite against the real world routes (`api/src/routes/worlds.ts`, `world-pipeline` 7.4 and 8.1) over an in-memory store, and it passes for `GET`, the assets and `DELETE`. `api/src/contract/world-access.cloudflare.test.ts` runs the same suite over `CloudflareWorldStore` with fakes of R2 and the `WorldJob` Durable Object, and it passes too. The `POST /api/play/start` checks are listed as a todo (`skip: ["play"]`) because that route is `ghost-engine` 5. Not ticked: plug in the play route, and run it again over the real store once R2 and `WorldJob` back it.
     - _Requirements: 3.8, 7.6_
 
 - [x] 4. Shell infrastructure (`web/src/app/`)

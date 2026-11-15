@@ -1,0 +1,14 @@
+// Not yet run: `wrangler` is not installed in this repo (world-pipeline task 2 adds it with the rest of the scaffold).
+// Still to add there: the static assets from web/dist (single-page fallback, Worker first), the secrets
+// (HMAC_SECRET, TURNSTILE_SECRET) in .dev.vars, and the other Durable Objects.
+{
+  "name": "hauntology",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-06-01",
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hauntology-worlds" }],
+  "durable_objects": { "bindings": [{ "name": "WORLD_JOB", "class_name": "WorldJob" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WorldJob"] }],
+  // Hourly: delete uploads past 24 hours and user worlds past 7 days.
+  "triggers": { "crons": ["17 * * * *"] },
+  "vars": { "WORLD_GEN_ENABLED": "true", "UPLOAD_TTL_HOURS": "24", "WORLD_TTL_DAYS": "7" }
+}

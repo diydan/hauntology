@@ -22,6 +22,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 - [ ] 2. Scaffold monorepo
   - pnpm workspace (`shared`, `api`, `web`, `tools/*`), strict tsconfig, Vitest, fast-check, zod, Hono, wrangler config with Durable Object, R2 and cron bindings and static assets from `web/dist` (`not_found_handling = "single-page-application"`, so every non-`/api` path serves `index.html`; `run_worker_first = true`, so the Worker answers `/api/*` and passes every other request to the `ASSETS` binding **through `securityHeadersMiddleware`**, which puts the page's Content-Security-Policy on the HTML; a static `_headers` file could not name Turnstile only when it is configured), `.dev.vars.example` (names only), `.gitignore` (ledger, `.dev.vars`).
   - Add `LICENSE` (MIT) and confirm `/.kiro` is not ignored.
+  - Started, not done: `api/src/worker.ts` (the `fetch` and `scheduled` entry and the `WorldJob` export) and `api/wrangler.jsonc` (R2 `BUCKET`, Durable Object `WORLD_JOB` with a v1 migration, an hourly cron, the retention vars). The config has not been run, because wrangler is not installed. Still to add: wrangler itself, the static assets and the Worker-first pass-through, the secrets and `.dev.vars.example`, the other Durable Objects and the `dev` script.
 
 - [ ] 3. Shared pure logic
   - [ ] 3.1 Schemas and error codes
@@ -98,6 +99,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 - [ ] 5. Upload, sketch and brief routes
   - [ ] 5.1 `POST /api/uploads`
     - Multipart parse, validate, strip metadata, store in R2 with 24 h expiry under opaque id; reject listing.
+    - Keys come from `api/src/worlds/keys.ts` (`uploads/<imageId>`, and `candidates/<imageId>` for 5.3), because retention and "Delete my place" find objects by key alone; the `WorldJob` record carries `imageId` and `candidateIds` so a delete can reach them.
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
   - [ ] 5.2 `WorkersAiClient` (wraps `env.AI.run` and the Images call, per Spike 1.2) and its guarded wrappers: image model, Scout text and vision, Llama Guard, cut-out
     - All wrappers live in `api/src/guarded/workersai/` and require a `SpendTicket`. Model ids come from `IMAGE_MODEL_ID`, `GHOST_MODEL_ID` and `GUARD_MODEL_ID`; no route hard-codes one.
@@ -120,21 +122,23 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 - [ ] 7. WorldJob Durable Object
   - [ ] 7.1 Generate and poll
     - Call guarded World Labs client, store operation id, alarm polling ~10 s with jitter, rate-limit backoff, 20-minute timeout, all transitions via `jobReducer`.
+    - The record side of the `WorldJob` class exists in `api/src/do/world-job.ts` (`/record`: `GET`, `PUT` to create, `PATCH` for `status`, `title`, `failure`, `manifest`, `imageId` and `candidateIds`, `DELETE`; `id`, `kind` and `ownerSid` never change). `start`, `alarm` and `jobReducer` are still to do, and write through that record. The owner is the Session id taken when `POST /api/worlds` (6.1) creates the record.
     - _Requirements: 7.1, 7.2, 7.3_
   - [ ] 7.2 Error mapping and kill switch
     - Client errors → `failed` with safe message and release; 402 → release and `tripKill`.
     - _Requirements: 7.4, 7.5, 7.6_
   - [ ] 7.3 Ingest
     - Fetch world, copy assets to R2, verify non-empty, write manifest, commit ticket; splat missing → fail and release; optional assets degrade.
+    - Store the bundle under `worlds/<worldId>/<name>` and write `world.json` last, using `api/src/worlds/keys.ts`; `PATCH` the `WorldJob` record to `ready` with the validated manifest (`WorldManifestSchema`).
     - _Requirements: 8.1, 8.2, 8.3, 5.3_
-  - [ ] 7.4 `GET /api/worlds/:id` and asset streaming
+  - [x] 7.4 `GET /api/worlds/:id` and asset streaming
     - Status payload, manifest when ready, range requests, immutable cache headers, no upstream URLs or keys.
-    - **Routes built, store not.** `api/src/routes/worlds.ts` serves the status, `world.json` and the files the manifest names (single range, 206 and 416, a cache that never expires, private for an own world), and builds every payload field by field so no upstream URL or key can leave. It talks to a `WorldStore` port (`api/src/worlds/store.ts`) with an in-memory store for tests. Still to do: the store behind it, which is the `WorldJob` record (7.1 to 7.3) and R2 (scaffold 2), and the `GET` of a world with a non-`ready` manifest after ingest (7.3).
+    - Built: `api/src/routes/worlds.ts` serves the status, `world.json` and the files the manifest names (single range, 206 and 416, a cache that never expires, private for an own world), and builds every payload field by field so no upstream URL or key can leave. It reads through the `WorldStore` port (`api/src/worlds/store.ts`). The real store is `api/src/worlds/cloudflare-store.ts`: a user world's record comes from the `WorldJob` Durable Object, a Gallery world's from `gallery/<id>/world.json` in R2, the bytes from R2 with range reads. **Verified over fakes of R2 and the Durable Object (`api/src/worlds/fake-cloudflare.ts`), as the testing strategy above says; not run on `wrangler dev` yet, because wrangler is not installed (task 2).** An id nobody has still wakes one empty `WorldJob`; bound that with the Worker's rate limit.
     - _Requirements: 7.3, 8.4, 8.5_
 
 - [ ] 8. Retention, delete and logging
-  - [ ] 8.1 Scheduled cleanup (cron trigger) using `expiredKeys`; `DELETE /api/worlds/:id` removing upload, candidates, bundle, sprite and play sessions.
-    - **Rules built, wiring not.** `DELETE /api/worlds/:id` (owner only, a Gallery world never, the Session forgets the id) and `cleanupExpired(store, now, policy)` in `api/src/worlds/cleanup.ts` are done and tested over the `WorldStore` port; `purge(id)` is the one call that must remove the record, upload, candidates, bundle, sprite and play sessions. Still to do: a `purge` backed by R2, `WorldJob` and `PlaySession`, and the `scheduled` handler and cron trigger in `wrangler.jsonc` (scaffold 2).
+  - [x] 8.1 Scheduled cleanup (cron trigger) using `expiredKeys`; `DELETE /api/worlds/:id` removing upload, candidates, bundle, sprite and play sessions.
+    - Built: `DELETE /api/worlds/:id` (owner only, a Gallery world never, the Session forgets the id), `cleanupExpired(store, now, policy)` (`api/src/worlds/cleanup.ts`), the `scheduled` handler and hourly cron in `api/src/worker.ts` and `api/wrangler.jsonc`. `CloudflareWorldStore.purge(id)` deletes the upload, candidates, bundle and sprite from R2, asks the play sessions to go through an optional `PlaySessionPurger` (nothing implements it until ghost-engine 5), and deletes the `WorldJob` record last so a half-done purge can be run again. `purge` and `removeObjects` act only on the `uploads/`, `candidates/`, `worlds/` and `sprites/` prefixes, so they cannot reach `gallery/`. Verified over fakes; not run on `wrangler dev`.
     - _Requirements: 10.1, 10.2_
   - [ ] 8.2 Logging policy
     - Central logger that only accepts ids, counters, codes; lint rule or test that forbids logging request bodies.
@@ -143,6 +147,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 - [ ] 9. Gallery
   - [ ] 9.1 `tools/ingest-gallery` script
     - Generate six Gallery Worlds from licensed or self-generated images via the dev MCP, ingest through the same manifest builder, hand-tune spawn and anchors, write attribution.
+    - A Gallery World is stored as `gallery/<id>/world.json` plus the files its manifest names (`api/src/worlds/keys.ts`); the manifest must carry the same `id`. Nothing in retention or delete can reach `gallery/`.
     - _Requirements: 9.1, 9.2_
   - [ ] 9.2 `GET /api/gallery` and share links
     - List endpoint; user worlds exposed at unguessable ids of ≥ 128 bits; Gallery works with generation disabled.

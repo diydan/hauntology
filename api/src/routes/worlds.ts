@@ -97,7 +97,7 @@ export function worldRoutes(deps: WorldsDeps): Hono<AppEnv> {
       return c.json(manifest);
     }
 
-    const stat = await store.stat(id, name);
+    const stat = await store.stat(w, name);
     if (stat === null) return notFound(c);
 
     // Asset names never change content within a world and a world id is never reused: cache for good.
@@ -110,7 +110,7 @@ export function worldRoutes(deps: WorldsDeps): Hono<AppEnv> {
       return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${stat.size}`, "Cache-Control": "no-store" } });
     }
     const part = range.kind === "ok" ? { start: range.start, end: range.end } : undefined;
-    const body = await store.read(id, name, part);
+    const body = await store.read(w, name, part);
     if (body === null) return notFound(c);
     if (part === undefined) return new Response(body, { status: 200, headers: { ...base, "Content-Length": String(stat.size) } });
     return new Response(body, {

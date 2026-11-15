@@ -1,10 +1,8 @@
 import type { ObjectKind, StoredObject } from "@hauntology/shared/world/retention";
+import { bundleKey } from "./keys";
 import type { ByteRange, WorldRecord, WorldStore } from "./store";
 
 type Stored = { bytes: Uint8Array; kind: ObjectKind; createdAt: number; worldId?: string };
-
-/** The key a bundle file is kept under. */
-export const bundleKey = (worldId: string, name: string): string => `worlds/${worldId}/${name}`;
 
 /**
  * A `WorldStore` in memory, for tests and for `wrangler dev` with fakes. It does what the real store
@@ -42,13 +40,13 @@ export class MemoryWorldStore implements WorldStore {
     return this.records.get(id) ?? null;
   }
 
-  async stat(id: string, name: string): Promise<{ size: number } | null> {
-    const o = this.objects.get(bundleKey(id, name));
+  async stat(world: WorldRecord, name: string): Promise<{ size: number } | null> {
+    const o = this.objects.get(bundleKey(world.id, name));
     return o === undefined ? null : { size: o.bytes.byteLength };
   }
 
-  async read(id: string, name: string, range?: ByteRange): Promise<Uint8Array | null> {
-    const o = this.objects.get(bundleKey(id, name));
+  async read(world: WorldRecord, name: string, range?: ByteRange): Promise<Uint8Array | null> {
+    const o = this.objects.get(bundleKey(world.id, name));
     if (o === undefined) return null;
     return range === undefined ? o.bytes : o.bytes.slice(range.start, range.end + 1);
   }

@@ -19,6 +19,9 @@ export type WorldRecord = {
   failure?: { code: ErrorCode; quotaReturned: boolean; retryAllowed: boolean };
   /** Present once the world is ready. Not trusted as it is: the routes parse it before they send it. */
   manifest?: WorldManifest;
+  /** The Place Image and the sketch candidates, so that deleting the world can delete them too. */
+  imageId?: string;
+  candidateIds?: string[];
 };
 
 /** An inclusive byte range, as in an HTTP `Range` header. */
@@ -27,10 +30,13 @@ export type ByteRange = { start: number; end: number };
 export interface WorldStore {
   /** The record of a world, or `null` when there is none. */
   find(id: string): Promise<WorldRecord | null>;
-  /** The size of one file of a world's bundle, or `null` when it is not there. */
-  stat(id: string, name: string): Promise<{ size: number } | null>;
+  /**
+   * The size of one file of a world's bundle, or `null` when it is not there. It takes the record, not
+   * the id, because a Gallery bundle and a user's bundle are kept in different places.
+   */
+  stat(world: WorldRecord, name: string): Promise<{ size: number } | null>;
   /** The bytes of a file, or of a range of it. `null` when it is not there. */
-  read(id: string, name: string, range?: ByteRange): Promise<Uint8Array | ReadableStream<Uint8Array> | null>;
+  read(world: WorldRecord, name: string, range?: ByteRange): Promise<Uint8Array | ReadableStream<Uint8Array> | null>;
   /**
    * Deletes everything tied to a world: its record, the upload and candidates, the bundle, the ghost
    * sprite and its play sessions. Safe to call for a world that is already gone.
