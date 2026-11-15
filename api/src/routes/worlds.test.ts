@@ -1,4 +1,6 @@
 import { API_SCHEMAS, WorldStatusSchema } from "@hauntology/shared/app/api-schemas";
+import { JobStatusSchema, progressLabel } from "@hauntology/shared/world/responses";
+import { JOB_STATES } from "@hauntology/shared/app/types";
 import { describe, expect, it } from "vitest";
 import { BYTES, NOW, sampleManifest, worldsKit } from "../worlds/test-kit";
 
@@ -20,7 +22,50 @@ describe("GET /api/worlds/:id", () => {
     expect(r.status).toBe(200);
     expect(r.headers.get("Cache-Control")).toBe("no-store");
     expect(WorldStatusSchema.parse(r.json)).toMatchObject({ id: ID, status: "ready", title: "The kitchen", thumbUrl: `/api/worlds/${ID}/assets/thumb.jpg` });
+    expect(JobStatusSchema.parse(r.json)).toMatchObject({ label: "Ready", manifest: sampleManifest(ID) });
     expect((r.json as { manifest: unknown }).manifest).toEqual(sampleManifest(ID));
+  });
+
+  it("answers every state, to the owner, a reader and anyone, in the shape of JobStatusSchema (world-pipeline 3.1, Requirements 7.3 and 8.2)", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    const stranger = await kit.visitor();
+    const failure = { code: "upstream_rejected", quotaReturned: true, retryAllowed: false } as const;
+    let n = 0;
+    for (const status of JOB_STATES) {
+      for (const shared of [false, true]) {
+        const id = `w-matrix-${n++}-0000000000`;
+        if (status === "ready") kit.readyWorld(id, owner, { shared });
+        else kit.store.putWorld({ id, kind: "user", ownerSid: owner.sid, status, manifest: sampleManifest(id), ...(status === "failed" ? { failure } : {}) });
+        const own = await kit.send(`/api/worlds/${id}`, { headers: owner.headers });
+        expect(own.status, id).toBe(200);
+        const parsed = JobStatusSchema.parse(own.json);
+        expect(parsed.label, id).toBe(progressLabel(status));
+        expect(parsed.manifest === undefined, id).toBe(status !== "ready");
+        expect(parsed.shared, id).toBe(status === "ready" ? shared : false);
+        expect(WorldStatusSchema.parse(own.json).id).toBe(id);
+        // A reader of a shared world gets the same shape, without `shared`.
+        const reader = await kit.send(`/api/worlds/${id}`, { headers: stranger.headers });
+        if (status === "ready" && shared) {
+          expect(JobStatusSchema.parse(reader.json).shared).toBeUndefined();
+          expect(JSON.stringify(reader.json)).not.toContain(owner.sid);
+        } else {
+          expect(reader.status, id).toBe(404);
+        }
+      }
+    }
+    // A Gallery world is a ready world with its manifest, in the same shape.
+    kit.store.putWorld({ id: "greenhouse", kind: "gallery", status: "ready", manifest: { ...sampleManifest("greenhouse"), source: "gallery", attribution: { credit: "A", licence: "CC0" } } });
+    expect(JobStatusSchema.parse((await kit.send("/api/worlds/greenhouse")).json)).toMatchObject({ id: "greenhouse", status: "ready", label: "Ready" });
+  });
+
+  it("never puts an upstream address or a key in a status: every address in it is on this origin, and every asset is a file name", async () => {
+    const kit = worldsKit();
+    const owner = await kit.visitor();
+    kit.readyWorld(ID, owner, { shared: true });
+    const text = (await kit.send(`/api/worlds/${ID}`, { headers: owner.headers })).text;
+    expect(text).not.toMatch(/https?:\/\//);
+    expect(text).not.toMatch(/worldlabs|wlt_|api[-_]?key/i);
   });
 
   it("answers a world that is still being made with its state and no manifest", async () => {
@@ -29,7 +74,7 @@ describe("GET /api/worlds/:id", () => {
     kit.store.putWorld({ id: ID, kind: "user", ownerSid: owner.sid, status: "generating", manifest: sampleManifest(ID) });
     const r = await kit.send(`/api/worlds/${ID}`, { headers: owner.headers });
     // The owner is always told whether the link is on; a world still being made is simply not shared.
-    expect(r.json).toEqual({ id: ID, status: "generating", shared: false });
+    expect(r.json).toEqual({ id: ID, status: "generating", label: "Dreaming", shared: false });
   });
 
   it("reports a failed world with its code and whether the allowance came back", async () => {
@@ -37,7 +82,7 @@ describe("GET /api/worlds/:id", () => {
     const owner = await kit.visitor();
     kit.store.putWorld({ id: ID, kind: "user", ownerSid: owner.sid, status: "failed", failure: { code: "upstream_rejected", quotaReturned: true, retryAllowed: false } });
     const r = await kit.send(`/api/worlds/${ID}`, { headers: owner.headers });
-    expect(r.json).toEqual({ id: ID, status: "failed", failure: { code: "upstream_rejected", quotaReturned: true, retryAllowed: false }, shared: false });
+    expect(r.json).toEqual({ id: ID, status: "failed", failure: { code: "upstream_rejected", quotaReturned: true, retryAllowed: false }, label: "It did not work", shared: false });
   });
 
   it("sends the failure only for a failed world", async () => {
@@ -54,7 +99,7 @@ describe("GET /api/worlds/:id", () => {
     kit.store.putWorld({ id: "w-nomanifest-0000000000", kind: "user", ownerSid: owner.sid, status: "ready" });
     for (const id of [ID, "w-nomanifest-0000000000"]) {
       const r = await kit.send(`/api/worlds/${id}`, { headers: owner.headers });
-      expect(r.json).toEqual({ id, status: "failed", failure: { code: "ingest_failed", quotaReturned: false, retryAllowed: false } });
+      expect(r.json).toEqual({ id, status: "failed", label: "It did not work", failure: { code: "ingest_failed", quotaReturned: false, retryAllowed: false } });
     }
   });
 

@@ -28,6 +28,15 @@ export const ErrorCodeSchema = z.enum(ERROR_CODES);
 
 export const QuotaSnapshotSchema = z.object({ world: Count, image: Count, llm: Count, tts: Count, stt: Count, live: Count });
 
+/** The answer to `POST /api/worlds/quote`: the exact picture, what is left, and the Confirm Token (world-pipeline 4.2). */
+export const QuoteSchema = z.object({
+  imageUrl: OwnPathSchema,
+  quota: QuotaSnapshotSchema,
+  confirmToken: z.string().min(1).max(512),
+  needsTurnstile: z.boolean(),
+  turnstileSiteKey: z.string().min(1).max(128).optional(),
+});
+
 export const ShellFlagsSchema = z.object({
   worldGenEnabled: z.boolean(),
   dayCapReached: z.boolean(),
@@ -92,7 +101,7 @@ export const API_SCHEMAS = {
   sketchRender: z.object({ candidates: z.array(CandidateSchema).max(8), quota: QuotaSnapshotSchema }),
   sketchSelect: z.object({ imageId: Id }),
   placeBrief: z.object({ brief: Text(2000), safe: z.boolean() }),
-  quote: z.object({ imageUrl: OwnPathSchema, quota: QuotaSnapshotSchema, confirmToken: z.string().min(1).max(512), needsTurnstile: z.boolean(), turnstileSiteKey: z.string().min(1).max(128).optional() }),
+  quote: QuoteSchema,
   createWorld: z.object({ worldId: Id, status: z.enum(JOB_STATES) }),
   world: WorldStatusSchema,
   deleteWorld: z.null(),

@@ -1,3 +1,4 @@
+import { progressLabel } from "@hauntology/shared/world/responses";
 import { ASSET_NAME, MANIFEST_NAME, WorldManifestSchema, assetNames, type WorldManifest } from "@hauntology/shared/world/manifest";
 import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
@@ -45,12 +46,14 @@ const assetUrl = (worldId: string, name: string): string => `/api/worlds/${world
 function statusOf(w: WorldRecord, access: Access): Record<string, unknown> {
   const manifest = readyManifest(w);
   if (w.status === "ready" && manifest === null) {
-    return { id: w.id, status: "failed", failure: { code: "ingest_failed", quotaReturned: false, retryAllowed: false } };
+    return { id: w.id, status: "failed", label: progressLabel("failed"), failure: { code: "ingest_failed", quotaReturned: false, retryAllowed: false } };
   }
   const title = w.title ?? manifest?.title;
   return {
     id: w.id,
     status: w.status,
+    // The words for the state, from the one table the shell also uses (world-pipeline 7.3).
+    label: progressLabel(w.status),
     ...(title !== undefined ? { title } : {}),
     ...(manifest?.assets.thumb ? { thumbUrl: assetUrl(w.id, manifest.assets.thumb.path) } : {}),
     ...(w.status === "failed" && w.failure

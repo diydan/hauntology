@@ -1,4 +1,5 @@
 import { verifyConfirm } from "@hauntology/shared/world/confirm-token";
+import { QuoteSchema } from "@hauntology/shared/world/responses";
 import { describe, expect, it } from "vitest";
 import type { CapTable } from "@hauntology/shared/world/spend-ledger";
 import { FakeTurnstile, MemoryImageStore, MemorySpendGuard, RecordingStarter, DEFAULT_CAPS } from "../worlds/fakes";
@@ -45,6 +46,8 @@ describe("POST /api/worlds/quote", () => {
     const r = await t.quote(v, "img-1");
     expect(r.status).toBe(200);
     expect(r.headers.get("Cache-Control")).toBe("no-store");
+    // The shape the shell reads, defined once (world-pipeline 3.1): the address is on this origin, the quota has the six meters.
+    expect(QuoteSchema.parse(r.json)).toEqual(r.json);
     const body = r.json as { imageUrl: string; quota: Record<string, number>; confirmToken: string; needsTurnstile: boolean };
     expect(body.imageUrl).toBe("/api/images/img-1");
     expect(body.quota).toEqual({ world: 2, image: 8, llm: 40, tts: 40, stt: 20, live: 30 });
@@ -114,6 +117,7 @@ describe("POST /api/worlds/quote", () => {
     const v = await on.kit.visitor();
     on.addImage(v, "img-1");
     expect((await on.quote(v, "img-1")).json).toMatchObject({ needsTurnstile: true, turnstileSiteKey: "0xSITE" });
+    expect(QuoteSchema.parse((await on.quote(v, "img-1")).json).turnstileSiteKey).toBe("0xSITE");
     on.kit.env.TURNSTILE_SITE_KEY = "";
     expect((await on.quote(v, "img-1")).json).toMatchObject({ needsTurnstile: true });
     expect((await on.quote(v, "img-1")).json).not.toHaveProperty("turnstileSiteKey");
@@ -165,7 +169,7 @@ describe("POST /api/worlds", () => {
     const session = await t.kit.send("/api/session", { headers: { Cookie: cookie, Origin: "http://app.test" } });
     expect(session.json).toMatchObject({ lastWorldId: worldId });
     const status2 = await t.kit.send(`/api/worlds/${worldId}`, { headers: v.headers });
-    expect(status2.json).toEqual({ id: worldId, status: "queued", shared: false });
+    expect(status2.json).toEqual({ id: worldId, status: "queued", label: "Queued", shared: false });
   });
 
   it("copies where the picture came from and its Place Brief onto the world's record, for the manifest", async () => {

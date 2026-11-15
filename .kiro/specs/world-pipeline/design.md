@@ -54,7 +54,7 @@ sequenceDiagram
 | `POST /api/places/brief` `{imageId}` | → `{brief, safe}` | 3.x |
 | `POST /api/worlds/quote` `{imageId}` | → `{imageUrl, quota, confirmToken}` | 4.1–4.2 |
 | `POST /api/worlds` `{imageId, confirmToken, turnstile?}` | → `{worldId, status}` | 4.3–4.5, 5.x, 6.x |
-| `GET /api/worlds/:id` | status + manifest when ready | 7.3, 8.2 |
+| `GET /api/worlds/:id` | status (the state and its progress label) + manifest when ready, as `JobStatusSchema`; the owner's also says whether the share link is on | 7.3, 8.2 |
 | `GET /api/worlds/:id/assets/:name` | range-capable asset stream | 8.4 |
 | `DELETE /api/worlds/:id` | delete my place | 10.2 |
 | `POST` / `DELETE /api/worlds/:id/share` | the owner turns the share link of a ready world on or off → `{ok, shared}`; while on, anyone with the id may read it | 9.4 |

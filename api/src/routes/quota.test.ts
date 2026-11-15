@@ -1,4 +1,5 @@
 import { API_SCHEMAS } from "@hauntology/shared/app/api-schemas";
+import { QuotaSchema } from "@hauntology/shared/world/responses";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CAPS, MemorySpendGuard, MemoryImageStore } from "../worlds/fakes";
 import { worldsKit } from "../worlds/test-kit";
@@ -20,6 +21,7 @@ describe("GET /api/quota (world-pipeline 5.7)", () => {
     const r = await kit.send("/api/quota", { headers: v.headers });
     expect(r.status).toBe(200);
     expect(Object.keys(r.json as object).sort()).toEqual([...METERS].sort());
+    expect(QuotaSchema.parse(r.json)).toEqual(r.json);
     expect(API_SCHEMAS.quota.parse(r.json)).toEqual(r.json);
     expect((r.json as Record<string, number>).world).toBeGreaterThan(0);
     const direct = await guard.remaining(v.sid, "unused");
