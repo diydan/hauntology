@@ -44,7 +44,7 @@ export function GhostChoice({ worldId }: { worldId: string }) {
   };
 
   const pick = (g: GhostPreset) => {
-    memory.set({ ghostPreset: g.id, ghostName: g.name });
+    memory.set({ ghostPreset: g.id, ghostName: g.name, ghostSprite: g.spriteUrl });
     router.setFlow({ ghostReady: true });
     setOpen("none");
     announce(`${g.name} is your ghost.`);
@@ -65,7 +65,7 @@ export function GhostChoice({ worldId }: { worldId: string }) {
           worldId,
           onMessage: (m) => {
             if (parseCreatorMessage(m) === null || !live) return;
-            memory.set({ ghostPreset: undefined, ghostName: undefined });
+            memory.set({ ghostPreset: undefined, ghostName: undefined, ghostSprite: undefined });
             router.setFlow({ ghostReady: true });
             setOpen("none");
             announce("Your ghost is ready.");

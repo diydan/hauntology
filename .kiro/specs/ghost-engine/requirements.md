@@ -39,6 +39,7 @@ The ghost engine runs the text-adventure loop: the visitor walks to three hidden
 1. WHEN the visitor presses a quick button (Look, Listen, Touch, Ask, Hint) or types free text THEN the Engine SHALL map the input deterministically to exactly one Action, treating text without a recognised verb as `say`.
 2. WHEN input is received THEN the Engine SHALL truncate it to 200 characters and SHALL accept at most one turn per 1.5 seconds per Session.
 3. WHEN input is used in a prompt THEN the Engine SHALL strip control characters and place it only inside a delimited data block.
+4. WHEN the visitor can type to the ghost THEN the chat panel SHALL say, in one line beside the text box, that what is typed may be sent to an AI model to help word the ghost's replies.
 
 ### Requirement 3
 

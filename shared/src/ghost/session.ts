@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AtmosphereSchema } from "../conditions/types";
+import { AtmosphereSchema, ConditionsSnapshotSchema, type ConditionsSnapshot } from "../conditions/types";
 import { AnchorIdSchema, AnchorSchema, Vec3Schema } from "../app/events";
 import { ARCHETYPES, type Anchor, type GameState, type Pose, type Seed, type Voice } from "./types";
 
@@ -35,6 +35,8 @@ export const PlaySessionSchema = z.object({
   createdAt: z.number().finite(),
   expiresAt: z.number().finite(),
   atmosphere: AtmosphereSchema.nullable(),
+  // The frozen conditions snapshot of this game (conditions 3.3). One that is corrupt is replaced by none (the normal look), as the design says, and does not end the game.
+  conditions: ConditionsSnapshotSchema.nullable().optional().catch(null),
 });
 
 export type PlaySession = {
@@ -52,6 +54,8 @@ export type PlaySession = {
   createdAt: number;
   expiresAt: number;
   atmosphere: z.infer<typeof AtmosphereSchema> | null;
+  /** The conditions read once at the start and kept frozen for this game: a rounded Place and its label, the Memory Day, the sky. Absent when none was chosen. Deleted with the game. */
+  conditions?: ConditionsSnapshot | null;
 };
 
 export const serializeSession = (s: PlaySession): string => JSON.stringify(s);

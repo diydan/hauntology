@@ -19,6 +19,8 @@ export type PlayMemory = {
   ghostPreset?: string | undefined;
   /** The chosen Preset Ghost's name, only to label the choice on Haunt. */
   ghostName?: string | undefined;
+  /** The chosen Preset Ghost's picture (an address on this site), for the portrait in the Chat. */
+  ghostSprite?: string | undefined;
   conditions?: ConditionsChoice | undefined;
   /** A Memory Day suggested by a photo's capture date (Requirement 12.2); the sky card offers it and the visitor can change or clear it. */
   suggestedDay?: MemoryDay | undefined;

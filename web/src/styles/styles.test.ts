@@ -89,9 +89,14 @@ describe("app styles", () => {
   it("puts the Chat in a bottom sheet below 900 px and a side panel from 900 px, by container query", () => {
     expect(app).toMatch(/\.play-layout\s*{[^}]*container-type:\s*inline-size/);
     expect(app).toMatch(/@container play \(min-width:\s*900px\)\s*{[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)\s*22rem/);
-    // The narrow layout is one column with the Chat in the second row.
+    // The narrow layout is one column, and the Chat is a `ui-sheet`: the element fixes it to the bottom and the layout only limits its height.
     expect(app).toMatch(/\.play-layout\s*{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\);/);
-    expect(app).toMatch(/\.play-layout \.chat\s*{[^}]*grid-row:\s*2/);
+    expect(elements).toMatch(/\.ui-sheet\s*{[^}]*position:\s*fixed;[^}]*bottom:\s*0/);
+    expect(app).toMatch(/\.play-layout \.chat\s*{[^}]*max-height:\s*60dvh/);
+    expect(app).not.toMatch(/\.play-layout \.chat\s*{[^}]*position:/);
+    // From 900 px the sheet is static (the element) and the layout puts it in the second column.
+    expect(elements).toMatch(/@media \(min-width: 900px\) {\s*\.ui-sheet {\s*position: static;/);
+    expect(app).toMatch(/@container play \(min-width:\s*900px\)\s*{[\s\S]*?\.play-layout \.chat\s*{[^}]*grid-column:\s*2/);
   });
 
   it("shows a button that is off the same way whether it is `disabled` or `aria-disabled`", () => {

@@ -84,6 +84,7 @@ describe("formatLog", () => {
       "play.start": { worldId: "id", access: "word" },
       "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
       "play.narrate": { outcome: "word", attempts: "int" },
+      "conditions.read": { source: "word", reason: "word", cache: "bool" },
       "play.end": { turns: "int" },
       "play.reset": { turns: "int" },
       "play.refused": { code: "word" },
@@ -104,6 +105,15 @@ describe("formatLog", () => {
     expect(narrated).toMatchObject({ event: "play.narrate", outcome: "model", attempts: 2, dropped: 3 });
     expect(JSON.stringify(narrated)).not.toContain("kettle");
     expect(JSON.stringify(parse(formatLog("info", "play.narrate", { outcome: "I remember the sound of the kettle", attempts: "two" } as never, T)))).not.toContain("kettle");
+  });
+
+  // conditions 3.7: the read of the real world keeps three counters and drops anything else, so a place, a label or a date cannot be logged by mistake
+  it("the conditions read keeps its three counters and drops a place, a position, a label, a date or a query", () => {
+    const line = parse(formatLog("info", "conditions.read", { source: "live", reason: "ok", cache: true, lat: 51.51, lon: -0.13, label: "Elm Street", date: "1999-12-31", query: "london", tz: "Europe/London" } as never, T));
+    expect(line).toEqual({ t: T, level: "info", event: "conditions.read", source: "live", reason: "ok", cache: true, dropped: 6 });
+    expect(JSON.stringify(line)).not.toMatch(/51\.51|Elm|1999|london|Europe/);
+    const bad = parse(formatLog("info", "conditions.read", { source: "Elm Street, London", reason: "12 Elm Street", cache: "yes" } as never, T));
+    expect(bad).toEqual({ t: T, level: "info", event: "conditions.read", dropped: 3 });
   });
 
   it("falls back for a bad level or time, and never writes either as text", () => {

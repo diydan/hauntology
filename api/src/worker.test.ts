@@ -173,6 +173,74 @@ describe("worker", () => {
     });
   });
 
+  describe("the real world at a game's start (ghost-engine 3.1, conditions 3.3 and 3.4)", () => {
+    // The weather host is a function here: nothing in this block opens a connection, and a call to any host but the weather one fails the test.
+    const FORECAST = JSON.stringify({ timezone: "America/New_York", current: { weather_code: 61, temperature_2m: 3, wind_speed_10m: 22 } });
+    const NEW_YORK = { lat: 40.7128, lon: -74.006, tz: "America/New_York", label: "New York, New York, United States" };
+    const playWithSky = async (extra: Record<string, string>, conditions: unknown) => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      const urls: string[] = [];
+      globalThis.fetch = (async (input: unknown) => {
+        urls.push(String(input));
+        return new Response(FORECAST, { status: 200 });
+      }) as typeof fetch;
+      try {
+        const { env, jobs } = envWith(extra);
+        const c = ctx().ctx;
+        const r0 = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, c);
+        const who = { Cookie: (r0.headers.get("Set-Cookie") as string).split(";")[0] as string, Origin: ORIGIN };
+        const { verifySession } = await import("@hauntology/shared/session-cookie");
+        const sid = (await verifySession(who.Cookie.slice(who.Cookie.indexOf("=") + 1), SECRET, Math.floor(Date.now() / 1000)))?.sid;
+        await jobs.get("w-mine").fetch("https://world-job/record", { method: "PUT", body: JSON.stringify({ id: "w-mine", kind: "user", ownerSid: sid, status: "ready", manifest: sampleManifest("w-mine") }) });
+        const call = (path: string, body?: unknown) => worker.fetch(new Request(`${ORIGIN}${path}`, { method: body === undefined ? "GET" : "POST", headers: { ...who, ...(body !== undefined ? { "Content-Type": "application/json" } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }), env, c);
+        type View = { atmosphere: unknown; anchors: Array<{ pos: number[] }> };
+        const started = (await (await call("/api/play/start", { worldId: "w-mine", ...(conditions === undefined ? {} : { conditions }) })).json()) as { playId: string; view: View };
+        vi.setSystemTime(Date.now() + 2000);
+        const turn = (await (await call(`/api/play/${started.playId}/turn`, { input: { text: "hello" }, pose: { pos: [0, 0, 0], yaw: 0 } })).json()) as { view: View };
+        const reloaded = (await (await call(`/api/play/${started.playId}`)).json()) as { view: View };
+        return { started, turn, reloaded, urls };
+      } finally {
+        vi.useRealTimers();
+      }
+    };
+    const choice = { hostHour: 12, place: NEW_YORK };
+
+    it("reads the weather once from the public host, and the sky stays the same through a turn and a reload from the real Durable Object's storage", async () => {
+      const r = await playWithSky({}, choice);
+      expect(r.urls).toEqual(["https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&current=weather_code,temperature_2m,wind_speed_10m&timezone=auto"]);
+      expect(r.started.view.atmosphere).toMatchObject({ weather: "rain", tempBand: "cold", windBand: "breezy" });
+      expect(r.turn.view.atmosphere).toEqual(r.started.view.atmosphere);
+      expect(r.reloaded.view.atmosphere).toEqual(r.started.view.atmosphere);
+      expect(JSON.stringify([r.started, r.turn, r.reloaded])).not.toMatch(/New York|America|40\.7|74\.0/);
+    });
+
+    it("makes no call, and shows the normal look, with no place chosen", async () => {
+      for (const conditions of [undefined, { hostHour: 3 }]) {
+        const r = await playWithSky({}, conditions);
+        expect(r.urls).toEqual([]);
+        expect(r.started.view.atmosphere).toBeNull();
+        expect(r.reloaded.view.atmosphere).toBeNull();
+      }
+    });
+
+    it("CONDITIONS_ENABLED=false makes no call at all", async () => {
+      const r = await playWithSky({ CONDITIONS_ENABLED: "false" }, choice);
+      expect(r.urls).toEqual([]);
+      expect(r.started.view.atmosphere).toBeNull();
+    });
+
+    it("WEATHER_BASE_URL moves the call to a base on this machine, and an address that is not acceptable turns the feature off", async () => {
+      const local = await playWithSky({ WEATHER_BASE_URL: "http://127.0.0.1:8788" }, choice);
+      expect(local.urls).toHaveLength(1);
+      expect(local.urls[0]!.startsWith("http://127.0.0.1:8788/v1/forecast?")).toBe(true);
+      for (const bad of ["http://weather.example.org", "https://user:pw@weather.example.org", "nonsense"]) {
+        const off = await playWithSky({ WEATHER_BASE_URL: bad }, choice);
+        expect(off.urls, bad).toEqual([]);
+        expect(off.started.view.atmosphere, bad).toBeNull();
+      }
+    });
+  });
+
   it("lets a reader of a shared place play it through the real Durable Objects, and deletes the games with the world (ghost-engine 5)", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     try {

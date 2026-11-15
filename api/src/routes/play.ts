@@ -6,6 +6,7 @@ import { toBase64Url } from "@hauntology/shared/session-cookie";
 import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
 import { setLastPlay, setLastWorld } from "../http/session";
+import type { ConditionsService } from "../conditions/snapshot-store";
 import { SILENT, type Logger } from "../log";
 import { narrateTurn, type Narration } from "../play/narrate";
 import type { PlayRefusal, PlaySessions } from "../play/ports";
@@ -18,6 +19,8 @@ export type PlayDeps = {
   sessions: PlaySessions;
   /** The model narrator (ghost-engine 4). Without it the ghost speaks only scripted lines, as before. */
   narration?: Narration;
+  /** The real world, read once when a game starts and kept with it (conditions 3.3; ghost-engine 3.1). Without it every game has the normal look and the narrator is told no sky. */
+  conditions?: ConditionsService;
   log?: Logger;
   now?: () => number;
 };
@@ -50,7 +53,8 @@ const STATUS = { session_not_found: 404, session_expired: 410, rate_limited: 429
  * the world (`lastWorldId`): a reader's world stays out of the Session so that a reload does not turn a link into a place they own.
  * A turn is played with scripted words first and kept; when the engine's rules allow, the model words it afterwards (`narrateTurn`: one `llm` unit for each call from
  * `SpendGuard`, the reply checked, one retry), and its words replace the scripted ones in the reply, the journal and the history only if the game still accepts them.
- * Any failure there leaves the scripted words, so a turn never fails because of the model. Logs: counters and codes only, never a word of the visitor's or the ghost's.
+ * Any failure there leaves the scripted words, so a turn never fails because of the model. A game's start reads the real world once (`deps.conditions`: weather, hour and moon of a chosen
+ * Place, frozen with the game; the Default when none is chosen, off, slow or failing) and nothing after it reads it again. Logs: counters and codes only, never a word of the visitor's or the ghost's, a place, a label or a position.
  */
 export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
   const routes = new Hono<AppEnv>();
@@ -85,7 +89,9 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
     const found = await playable(c, body.worldId);
     if (found === null) return refuse(c, "world_not_found");
 
-    let session = startSession({ id: `p-${randomId()}`, worldId: body.worldId, ownerSid: sid, world: found.facts, ghostPreset: body.ghostPreset, clientAnchors: body.anchors, seed: randomSeed(), now: now() });
+    // The one read of the real world for this game (a bounded wait: 3 seconds at the most, then the Default). It is kept with the game and never read again, not by a turn, the view or a reset.
+    const conditions = deps.conditions === undefined ? null : await deps.conditions.read(body.conditions).catch(() => null);
+    let session = startSession({ id: `p-${randomId()}`, worldId: body.worldId, ownerSid: sid, world: found.facts, ghostPreset: body.ghostPreset, clientAnchors: body.anchors, conditions, seed: randomSeed(), now: now() });
     if (!(await deps.sessions.start(session))) {
       // An id that is taken (a chance of about one in 2^128): try one more.
       session = { ...session, id: `p-${randomId()}` };
