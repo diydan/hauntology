@@ -1,0 +1,246 @@
+/*
+ * Hauntology elements: the reusable pieces of the look, taken from the play-through mockup (tools/voice-demo).
+ * Rules for this file (tools/test/design-system.test.mjs checks them):
+ *   - No raw colour, no px for a gap, no raw time. A colour is a ROLE (var(--accent), var(--surface-raised)...), a gap is var(--space-n),
+ *     a corner is var(--radius-n), a time is var(--fade-quick | --fade | --fade-slow). All of them come from design/tokens.json.
+ *   - Every control is at least var(--target) (44 px) tall. The main ones are var(--target-main).
+ *   - Yellow (--accent) is the main colour. Only .ui-button--primary and .ui-skip are solid yellow. Green (--accent-rare) is rare:
+ *     the Whisper's light, glow and nameplate edge, and the tick box. Red (--danger) is for warnings and Stop.
+ *   - Naming: .ui-block, .ui-block-part, .ui-block--variant, .is-state. A state is set from script; a variant is set in the markup.
+ *   - A new element is added here AND to design/catalogue.html in the same change (the test fails if one is missing from the other).
+ * Layout of a whole page (which grid areas, how wide) is the page's own business and stays out of this file. The one exception is
+ * .ui-sheet, because the steering file fixes its behaviour: a bottom sheet on a phone, a side panel from 900 px.
+ */
+
+/* ---- the page ------------------------------------------------------------------------------------------------------------------------ */
+.ui-page { margin: 0; min-height: 100vh; min-height: 100dvh; background: radial-gradient(ellipse at 50% -25%, var(--ember) 0%, var(--surface-page) 62%) fixed; color: var(--text); font: var(--text-body) / 1.55 var(--font-ui); -webkit-text-size-adjust: 100%; }
+.ui-page.is-locked { overflow: hidden; }
+.ui-page, .ui-page *, .ui-page *::before, .ui-page *::after { box-sizing: border-box; }
+.ui-page [hidden] { display: none !important; }
+.ui-page ::selection { background: color-mix(in srgb, var(--accent) 38%, transparent); color: var(--text); }
+.ui-page :focus-visible { outline: var(--stroke-ring) solid var(--focus); outline-offset: var(--stroke-ring); }
+:where(.ui-page) a { color: var(--accent); }
+.ui-heading { margin: 0 0 var(--space-3); font: 500 var(--text-title) / 1.25 var(--font-ui); letter-spacing: 0.04em; }
+.ui-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.ui-skip { position: absolute; left: var(--space-2); top: -60px; z-index: var(--z-skip); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--accent); color: var(--on-accent); }
+.ui-skip:focus { top: var(--space-2); }
+.ui-header { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: var(--stroke-thin) solid var(--line); }
+.ui-header-title { margin: 0; color: var(--accent); font-size: var(--text-title); font-weight: 500; letter-spacing: 0.06em; }
+.ui-header-sub { display: none; color: var(--text-quiet); font-size: var(--text-small); }
+@media (min-width: 640px) { .ui-header-sub { display: inline; } }
+
+/* ---- text ---------------------------------------------------------------------------------------------------------------------------- */
+.ui-eyebrow { margin: 0 0 var(--space-2); color: var(--text-quiet); font-size: var(--text-micro); font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; }
+.ui-hint { margin: var(--space-0) 0 var(--space-2); color: var(--text-quiet); font-size: var(--text-small); }
+.ui-status { margin: var(--space-2) 0 0; color: var(--text-quiet); font-size: var(--text-small); }
+.ui-status.is-bad { color: var(--danger); }
+.ui-prompt { margin: 0 0 var(--space-1); color: var(--accent); font-size: var(--text-body); letter-spacing: 0.08em; }
+.ui-title { margin: 0; font: 400 var(--text-display) / 1.15 var(--font-ghost); }
+.ui-lead { margin: var(--space-1) 0 var(--space-4); color: var(--text-quiet); font: italic 400 var(--text-lead) / 1.35 var(--font-ghost); }
+.ui-notice { margin: 0 0 var(--space-4); padding: var(--space-2) var(--space-3); border-left: var(--stroke-frame) solid var(--accent); color: var(--text-quiet); font-size: var(--text-small); }
+.ui-panel--danger { border-color: var(--danger); }
+.ui-notice--danger { border-left-color: var(--danger); color: var(--text); font-size: var(--text-body); } /* an error is read at body size */
+.ui-key { margin-left: var(--space-1); padding: 0 var(--space-1); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-sm); color: var(--text-quiet); font: inherit; font-size: var(--text-micro); }
+
+/* ---- surfaces ------------------------------------------------------------------------------------------------------------------------ */
+.ui-panel { padding: var(--space-3) var(--space-4); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-panel); }
+.ui-card { width: 100%; max-width: 32.5rem; padding: calc(var(--space-4) + var(--space-2)) calc(var(--space-4) + var(--space-1)); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-xl); background: var(--surface-panel); }
+.ui-modal { position: fixed; inset: 0; z-index: var(--z-modal); display: flex; align-items: center; justify-content: center; padding: var(--space-4); overflow: auto; background: color-mix(in srgb, var(--surface-sunk) 95%, transparent); }
+
+/* ---- layout helpers: where things go, from the space tokens ------------------------------------------------------------------------------ */
+.ui-stack { display: grid; align-content: start; gap: var(--space-3); min-width: 0; }
+.ui-stack > * { margin: 0; } /* the stack's gap is the only space between its blocks, whatever p, h2 or ol bring */
+.ui-stack--tight { gap: var(--space-2); }
+.ui-stack--loose { gap: var(--space-4); }
+.ui-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.ui-row--center { justify-content: center; }
+.ui-row--between { justify-content: space-between; }
+
+/* ---- buttons: every one at least 44 px ------------------------------------------------------------------------------------------------ */
+.ui-button { min-height: var(--target); padding: var(--space-2) var(--space-3); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); font: inherit; font-size: var(--text-control); cursor: pointer; transition: border-color var(--fade-quick) var(--ease), background var(--fade-quick) var(--ease), color var(--fade-quick) var(--ease); }
+.ui-button:disabled { border-style: dashed; opacity: 0.75; cursor: default; } /* a dashed edge says "not yet" without colour; 0.75 keeps the words 4.5 to 1 or better (quiet and yellow ones too) */
+.ui-button[aria-disabled='true'] { border-style: dashed; opacity: 0.75; cursor: not-allowed; }
+.ui-button[aria-pressed='true']:not(.ui-button--danger), .ui-button[aria-checked='true']:not(.ui-button--danger) { border-color: var(--accent); color: var(--accent); }
+a.ui-button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; } /* a link used as a button is as tall as the target, like a <button> */
+.ui-button--primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 500; }
+/* The main button that cannot be pressed yet is not a faded yellow block (dark words on it were 2.3 to 1): it is the raised surface with a tint of yellow, a yellow edge and quiet words, so the player still sees which one is the main action. */
+.ui-button--primary:disabled, .ui-button--primary[aria-disabled='true'] { border-color: color-mix(in srgb, var(--accent) 45%, var(--surface-raised)); background: color-mix(in srgb, var(--accent) 25%, var(--surface-raised)); color: var(--text-quiet); opacity: 1; }
+.ui-button--danger { border-color: var(--danger); background: var(--surface-page); color: var(--danger); }
+.ui-button--quiet { border-color: transparent; background: transparent; color: var(--text-quiet); }
+.ui-button--main { min-height: var(--target-main); padding: var(--space-3) var(--space-4); text-align: left; }
+.ui-button--block { width: 100%; }
+.ui-switch { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; padding: 0 var(--space-4); text-align: left; }
+.ui-switch-name { flex: 1 1 auto; }
+.ui-switch-state { font-weight: 700; }
+.ui-segments { display: flex; gap: var(--space-2); }
+.ui-segments > .ui-button { flex: 1 1 0; justify-content: center; text-align: center; }
+.ui-button--round { display: inline-grid; place-items: center; width: var(--target); height: var(--target); padding: 0; border: var(--stroke-ring) solid var(--accent); border-radius: var(--radius-round); color: var(--accent); font-size: var(--text-lead); font-weight: 500; line-height: 1; }
+.ui-button-sub { display: block; font-size: var(--text-small); font-weight: 400; opacity: 0.8; }
+.ui-choices { display: grid; gap: var(--space-2); }
+.ui-story { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-0); padding: var(--space-3); border-left: var(--stroke-edge) solid var(--accent); text-align: left; }
+.ui-story-title { color: var(--text); font-size: var(--text-control); font-weight: 500; }
+.ui-story-sub { color: var(--text-quiet); font-size: var(--text-small); }
+.ui-stories { display: grid; gap: var(--space-2); margin: var(--space-2) 0 var(--space-3); }
+.ui-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-bottom: var(--space-3); }
+.ui-grid--one { grid-template-columns: 1fr; }
+/* Hover only where a pointer can hover. On a phone a tap would leave the button lit until the next tap (sticky hover). */
+@media (hover: hover) {
+  .ui-button:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--accent); background: var(--surface-hover); }
+  .ui-button--primary:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--accent-hi); background: var(--accent-hi); }
+  .ui-button--danger:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--danger); background: var(--surface-page); }
+  .ui-button--quiet:hover:not(:disabled):not([aria-disabled='true']) { border-color: var(--line); background: transparent; color: var(--accent); }
+  .ui-story:hover .ui-story-title { color: var(--accent); }
+}
+
+/* ---- pictures, lists and progress ------------------------------------------------------------------------------------------------------------ */
+.ui-figure { margin: 0; overflow: hidden; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunk); }
+.ui-figure > img, .ui-figure > canvas { display: block; width: 100%; height: auto; }
+.ui-figure--thumb > img { aspect-ratio: 4 / 3; object-fit: cover; }
+.ui-figure > figcaption { padding: var(--space-1) var(--space-2); color: var(--text-quiet); font-size: var(--text-small); }
+.ui-facts { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.ui-facts > li { padding-left: var(--space-4); border-left: var(--stroke-ring) solid var(--line-strong); }
+.ui-steps { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin: 0; padding: 0; list-style: none; }
+.ui-step { padding: var(--space-1) var(--space-2); border-bottom: var(--stroke-ring) solid var(--line); color: var(--text); font-style: italic; }
+.ui-step.is-done { font-style: normal; border-bottom-color: var(--accent); opacity: 0.7; }
+.ui-step.is-current { font-style: normal; border-bottom-color: var(--accent); color: var(--accent); opacity: 1; }
+.ui-gauge { display: block; width: 100%; height: 0.75rem; overflow: hidden; border: 0; border-radius: var(--radius-sm); background: var(--line); -webkit-appearance: none; appearance: none; }
+.ui-gauge::-webkit-progress-bar { background: var(--line); }
+.ui-gauge::-webkit-progress-value { background: var(--accent); }
+.ui-gauge::-moz-progress-bar { background: var(--accent); }
+.ui-gauge--thin { height: 0.375rem; }
+.ui-gauge-fill { display: block; height: 100%; background: var(--accent); }
+
+/* ---- lines of talk (chat, journal): the Whisper's lines carry the green edge, never green text -------------------------------------------- */
+.ui-lines { display: grid; gap: var(--space-3); margin: 0; padding-left: var(--space-5); font: 400 var(--text-title) / 1.4 var(--font-ghost); }
+.ui-line { margin: 0 0 var(--space-2); }
+.ui-line--whisper { padding-left: var(--space-3); border-left: var(--stroke-frame) solid var(--speaker-whisper); font-family: var(--font-ghost); font-size: var(--text-title); }
+.ui-line--system { color: var(--danger); }
+.ui-line-who { color: var(--text-quiet); font-size: var(--text-small); }
+
+/* ---- form fields ---------------------------------------------------------------------------------------------------------------------- */
+.ui-select, .ui-range, .ui-input { width: 100%; min-height: var(--target); padding: var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); font: inherit; font-size: var(--text-input); accent-color: var(--accent); }
+.ui-input::placeholder { color: var(--text-quiet); }
+.ui-choice { display: flex; align-items: center; gap: var(--space-3); min-height: var(--target); color: var(--text); }
+.ui-choice > input { flex: 0 0 auto; width: 1.375rem; height: 1.375rem; accent-color: var(--accent); }
+.ui-choice > .ui-check { accent-color: var(--accent-rare); }
+.ui-check { flex: 0 0 auto; width: 1.375rem; height: 1.375rem; accent-color: var(--accent-rare); }
+.ui-field { display: grid; grid-template-columns: 5.25rem 1fr; align-items: center; gap: var(--space-2); margin: var(--space-2) 0; }
+.ui-field-label { color: var(--text-quiet); font-size: var(--text-control); }
+.ui-field--check { grid-template-columns: auto 1fr; }
+.ui-field--check .ui-field-label { display: flex; align-items: center; min-height: var(--target); color: var(--text); }
+
+/* ---- the stage: a lit panel with a speaker in it ----------------------------------------------------------------------------------------- */
+.ui-stage { --lit: var(--accent); position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); min-height: 0; padding: var(--space-3); overflow: hidden; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-xl); background: radial-gradient(ellipse at 50% 28%, var(--ember) 0%, var(--surface-panel) 70%); background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--lit) 12%, var(--ember)) 0%, var(--surface-panel) 72%); transition: background var(--fade-slow) var(--ease); }
+.ui-stage--whisper { --lit: var(--speaker-whisper); }
+.ui-stage--keeper { --lit: var(--speaker-keeper); }
+.ui-stage--suspect { --lit: var(--speaker-suspect); }
+.ui-stage.is-blackout { background: var(--void); }
+.ui-stage.is-blackout .ui-orb { opacity: 0.12; }
+.ui-stage.is-blackout .ui-portrait { opacity: 0.18; }
+
+.ui-portrait { --halo: var(--accent); position: relative; display: flex; align-items: center; justify-content: center; width: clamp(10.625rem, 46vw, 18.125rem); aspect-ratio: 1; overflow: hidden; border: var(--stroke-frame) solid var(--line); border-radius: var(--radius-round); background: var(--surface-sunk); transition: box-shadow var(--fade) var(--ease), border-color var(--fade) var(--ease), opacity var(--fade-slow) var(--ease); }
+.ui-portrait--whisper { --halo: var(--speaker-whisper); }
+.ui-portrait--keeper { --halo: var(--speaker-keeper); }
+.ui-portrait--suspect { --halo: var(--speaker-suspect); }
+.ui-portrait.is-speaking { border-color: var(--halo); box-shadow: 0 0 var(--glow-lg) color-mix(in srgb, var(--halo) 62%, transparent); }
+/* A face sits in the middle of its picture, so cover trims only the corners. */
+.ui-portrait > img, .ui-portrait > video { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: var(--radius-round); background: var(--surface-sunk); object-fit: cover; }
+.ui-clipnote { position: absolute; left: 50%; bottom: 9%; padding: var(--space-0) var(--space-3); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-pill); background: color-mix(in srgb, var(--void) 80%, transparent); color: var(--text); font-size: var(--text-micro); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; transform: translateX(-50%); }
+
+.ui-orb { width: 6.875rem; height: 6.875rem; border-radius: var(--radius-round); background: radial-gradient(circle at 40% 35%, var(--orb-lantern-core) 0%, var(--accent) 35%, var(--orb-lantern-rim) 70%, transparent 72%); opacity: 0.5; filter: blur(1px); transition: opacity var(--fade) var(--ease), filter var(--fade) var(--ease); }
+.ui-orb--whisper { background: radial-gradient(circle at 40% 35%, var(--orb-ghost-core) 0%, var(--accent-rare) 35%, var(--orb-ghost-rim) 70%, transparent 72%); }
+.ui-orb.is-speaking { opacity: 1; filter: blur(0) drop-shadow(0 0 var(--glow-lg) var(--accent)); animation: ui-breathe var(--breathe) ease-in-out infinite; }
+.ui-orb--whisper.is-speaking { filter: blur(0) drop-shadow(0 0 var(--glow-lg) var(--accent-rare)); }
+@keyframes ui-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+.ui-nameplate { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-0) var(--space-3); border: var(--stroke-thin) solid var(--line); border-left: var(--stroke-edge) solid var(--speaker-suspect); border-radius: var(--radius-sm); background: var(--surface-raised); color: var(--text); font-size: var(--text-small); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
+.ui-nameplate--whisper { border-left-color: var(--speaker-whisper); }
+.ui-nameplate--keeper { border-left-color: var(--speaker-keeper); }
+.ui-nameplate--suspect { border-left-color: var(--speaker-suspect); }
+.ui-scene { min-height: 1.125rem; margin: 0; color: var(--text-quiet); font-size: var(--text-small); text-align: center; }
+
+.ui-dialogue { position: relative; width: 100%; max-width: 45rem; min-height: 7.375rem; padding: var(--space-3) var(--space-4) calc(var(--space-3) + var(--space-1)); border: var(--stroke-thin) solid var(--line); border-top-color: color-mix(in srgb, var(--lit, var(--accent)) 45%, var(--line)); border-radius: var(--radius-lg); background: var(--surface-raised); background: color-mix(in srgb, var(--lit, var(--accent)) 5%, var(--surface-raised)); text-align: center; }
+.ui-speech { margin: 0; font: 400 var(--text-speech) / 1.35 var(--font-ghost); }
+.ui-word { opacity: 0; transition: opacity var(--fade-quick) var(--ease); }
+.ui-word.is-on { opacity: 1; }
+.ui-speech-tail { color: var(--text-quiet); font-style: italic; }
+.ui-note { min-height: 1rem; margin: var(--space-2) 0 0; color: var(--text-quiet); font-size: var(--text-small); }
+.ui-note.is-warn { color: var(--danger); }
+/* A warning inside a dialogue sits on a lit surface (the raised surface tinted by whoever speaks), which the red-text rule of the token file does not cover: red words there are 4.2 to 1. The words stay in the text colour and the red is the edge. */
+.ui-dialogue .ui-note.is-warn { display: inline-block; padding-left: var(--space-2); border-left: var(--stroke-frame) solid var(--danger); color: var(--text); text-align: left; }
+.ui-dialogue-action { position: absolute; right: var(--space-2); bottom: var(--space-1); padding: var(--space-1) var(--space-3); }
+
+/* ---- the HUD: only what the rules give the player ----------------------------------------------------------------------------------------- */
+.ui-hud { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); width: 100%; min-height: 3.75rem; }
+.ui-hud-box { display: flex; flex-direction: column; gap: var(--space-2); color: var(--text-quiet); font-size: var(--text-micro); letter-spacing: 0.1em; text-transform: uppercase; }
+.ui-hud-box--right { align-items: flex-end; text-align: right; }
+.ui-hud-box b { color: var(--text); font-weight: 500; }
+.ui-lamps { display: flex; gap: var(--space-2); }
+.ui-lamp { width: 1.25rem; height: 1.25rem; border: var(--stroke-ring) solid var(--line); border-radius: var(--radius-round); background: var(--surface-sunk); transition: background var(--fade-slow) var(--ease), box-shadow var(--fade-slow) var(--ease), border-color var(--fade-slow) var(--ease); }
+.ui-lamp.is-on { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 var(--glow-md) var(--accent); }
+.ui-compass-row { display: flex; align-items: center; gap: var(--space-3); }
+.ui-compass-text { display: flex; flex-direction: column; gap: var(--space-1); }
+.ui-compass { position: relative; flex: 0 0 auto; width: 3.75rem; height: 3.75rem; }
+.ui-compass svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ui-compass-ring { fill: none; stroke: var(--line); stroke-width: 2; }
+.ui-compass-tick { stroke: var(--shape-quiet); stroke-width: 1.5; }
+.ui-needle { transition: transform var(--fade-slow) var(--ease); }
+.ui-needle.is-none { opacity: 0.25; }
+.ui-needle polygon { fill: var(--accent); }
+.ui-bars { display: flex; align-items: flex-end; gap: var(--space-1); height: 1.375rem; }
+.ui-bar { width: 0.4375rem; border-radius: var(--radius-xs); background: var(--line); }
+.ui-bar:nth-child(1) { height: 0.5rem; } .ui-bar:nth-child(2) { height: 0.9375rem; } .ui-bar:nth-child(3) { height: 1.375rem; }
+.ui-bar.is-on { background: var(--accent); }
+.ui-meter { display: flex; gap: var(--space-1); padding-bottom: var(--space-2); }
+.ui-seg { position: relative; width: 0.875rem; height: 0.625rem; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-xs); background: var(--surface-sunk); transition: background var(--fade-slow) var(--ease); }
+.ui-seg.is-on { border-color: var(--accent); background: var(--accent); }
+.ui-seg--max.is-on { border-color: var(--danger); background: var(--danger); }
+.ui-seg--event::after { content: ''; position: absolute; left: 50%; bottom: -0.4375rem; width: 2px; height: 0.3125rem; background: var(--shape-quiet); }
+.ui-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+.ui-chip { padding: var(--space-0) var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-pill); color: var(--text-quiet); font-size: var(--text-small); letter-spacing: 0.04em; text-transform: none; }
+.ui-chip.is-active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface-panel)); color: var(--accent); }
+.ui-chip.is-haunting { border-style: dashed; font-style: italic; opacity: 0.75; }
+
+/* ---- the transport bar: always in reach -------------------------------------------------------------------------------------------------- */
+/* A tool starts from the width of its own label and is never narrower than a touch target, and the tools share what is left of the row. When they do not fit in one row (below about 355 px), the last one wraps onto a row of its own and takes its width. From the wide breakpoint the Director tool is gone and the five are a grid. */
+.ui-transport { position: sticky; bottom: var(--space-2); z-index: var(--z-sticky); display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-2) var(--space-1); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--surface-panel) 94%, transparent); box-shadow: var(--shadow-lift); }
+.ui-tool { display: flex; flex: 1 1 auto; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-0); min-width: var(--target); min-height: var(--target-main); padding: var(--space-1) var(--space-0); font-size: var(--text-micro); letter-spacing: 0.04em; }
+.ui-tool-glyph { font-size: var(--text-title); line-height: 1; }
+.ui-keys { display: none; grid-column: 1 / -1; margin: var(--space-0) 0 0; color: var(--text-quiet); font-size: var(--text-micro); text-align: center; }
+@media (min-width: 900px) { .ui-keys { display: block; } .ui-tool--narrow-only { display: none; } .ui-transport { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+
+/* ---- progress through a story ----------------------------------------------------------------------------------------------------------- */
+.ui-progress { padding: var(--space-0) var(--space-1); }
+.ui-progress-label { margin: 0 0 var(--space-2); color: var(--text-quiet); font-size: var(--text-small); }
+.ui-progress-next { min-height: 1.0625rem; margin: var(--space-2) 0 0; color: var(--text-quiet); font-size: var(--text-small); font-style: italic; }
+.ui-dots { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.ui-dot { width: 0.75rem; height: 0.75rem; border: var(--stroke-ring) solid var(--line); border-radius: var(--radius-round); transition: background var(--fade) var(--ease), box-shadow var(--fade) var(--ease), transform var(--fade) var(--ease); }
+.ui-dot.is-done { border-color: var(--accent); background: var(--accent); opacity: 0.45; }
+.ui-dot.is-current { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 var(--glow-sm) var(--accent); transform: scale(1.3); }
+
+/* ---- the sheet: a bottom sheet on a phone, a side panel from 900 px (steering/visual-style.md) --------------------------------------------- */
+.ui-sheet { position: fixed; right: 0; bottom: 0; left: 0; z-index: var(--z-sheet); max-height: 82vh; max-height: 82dvh; padding: var(--space-3) var(--space-4) var(--space-5); overflow: auto; border-top: var(--stroke-ring) solid var(--accent); border-radius: var(--radius-xl) var(--radius-xl) 0 0; background: var(--surface-panel); transform: translateY(105%); visibility: hidden; transition: transform var(--fade) var(--ease), visibility 0s linear var(--fade); }
+.ui-sheet.is-open { transform: none; visibility: visible; transition: transform var(--fade) var(--ease), visibility 0s; }
+.ui-sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+.ui-sheet-title { margin: 0; color: var(--accent); font-size: var(--text-control); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+.ui-sheet-title:focus { outline: none; }
+@media (min-width: 900px) {
+  .ui-sheet { position: static; max-height: none; padding: var(--space-3) var(--space-4); overflow: visible; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); transform: none; visibility: visible; }
+  .ui-sheet-close { display: none; }
+}
+.ui-fold { padding: var(--space-0) 0; border-top: var(--stroke-thin) solid var(--line); }
+.ui-fold:first-of-type { border-top: 0; }
+.ui-fold > summary { display: flex; align-items: center; min-height: var(--target); color: var(--text); font-size: var(--text-small); letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; }
+.ui-fold > summary::marker { color: var(--accent); }
+.ui-fold[open] > summary { color: var(--accent); }
+
+/* ---- the journal: what was said ------------------------------------------------------------------------------------------------------------- */
+.ui-log { max-height: 18.75rem; overflow: auto; font: 400 var(--text-title) / 1.4 var(--font-ghost); }
+.ui-log-row { padding: var(--space-2) 0; border-bottom: var(--stroke-thin) solid var(--line); }
+.ui-log-id { color: var(--text-quiet); font: 400 var(--text-micro) var(--font-ui); }
+.ui-log-who { color: var(--accent); font: 500 var(--text-small) var(--font-ui); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-orb.is-speaking { animation: none; }
+  .ui-page { scroll-behavior: auto; }
+}

@@ -1,0 +1,53 @@
+/*
+ * The lock of the Lock pick (art/lock.tsx): a pin-tumbler cylinder in cut-away, drawn in iron, brass and steel (the art-* tokens) with the design
+ * roles for the dark of the bores and the keyway. It loads with the art so a screen that draws the same lock has its styles.
+ */
+.pz-lock-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+.pz-lock-slice, .pz-lock-tools { display: block; width: 100%; height: auto; overflow: hidden; }
+.pz-lock-slice { width: calc(100% + 0.6px); } /* a hair of overlap, so no seam shows between two slices */
+.pz-lock-tools { position: absolute; inset: 0; height: 100%; pointer-events: none; }
+
+.pz-lk-housing { stroke: none; }
+.pz-keyway { fill: var(--surface-sunk); }
+.pz-shear { fill: none; stroke: var(--void); stroke-width: 1.6; opacity: 0.85; }
+.pz-pin-num { fill: color-mix(in srgb, var(--art-brass) 25%, var(--void)); font-size: 8px; font-weight: 700; text-anchor: middle; pointer-events: none; } /* engraved on the brass */
+.pz-bore { fill: color-mix(in srgb, var(--void) 75%, var(--art-iron)); stroke: color-mix(in srgb, var(--void) 55%, var(--art-iron)); stroke-width: 1; }
+.pz-spring { fill: none; stroke: color-mix(in srgb, var(--art-steel) 70%, var(--void)); stroke-width: 1.5; stroke-linejoin: round; }
+.pz-key-stack { transition: transform var(--fade-quick) var(--ease); }
+.pz-driver { stroke: color-mix(in srgb, var(--art-steel) 45%, var(--void)); stroke-width: 0.8; }
+.pz-keypin { stroke: color-mix(in srgb, var(--art-brass) 45%, var(--void)); stroke-width: 0.8; }
+.pz-seam { stroke: var(--void); stroke-width: 0.9; opacity: 0.7; }
+
+/* the pin being picked follows the pick at once; the others settle with a fade */
+.pz-pin-picking .pz-key-stack { transition: none; }
+.pz-pins-still .pz-key-stack { transition: none; }
+.pz-pin-set .pz-seam { stroke: var(--art-brass); opacity: 1; }
+
+/* the heat of the pin being picked, as the colour of its bore (the words say it too) */
+.pz-pins { --heat: var(--line-strong); }
+.pz-pins[data-heat='cold'] { --heat: var(--art-glass); }
+.pz-pins[data-heat='cool'] { --heat: var(--art-steel); }
+.pz-pins[data-heat='warm'] { --heat: var(--art-flame); }
+.pz-pins[data-heat='hot'] { --heat: var(--accent); }
+.pz-pin-picking .pz-bore { stroke: var(--heat); stroke-width: 2; }
+
+/* the tools: a tension wrench and a pick, steel rods in the keyway */
+.pz-rod { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pz-rod-wrench { stroke-width: 4.5; }
+.pz-rod-pick { stroke-width: 3; }
+.pz-rod-shadow { fill: none; stroke: var(--void); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.45; transform: translate(0, 1.2px); }
+.pz-wrench-held .pz-rod-wrench { filter: drop-shadow(0 0 2px var(--accent)); }
+
+/* the metals, as gradients */
+.pz-lk-iron-hi { stop-color: color-mix(in srgb, var(--art-iron) 80%, var(--text)); }
+.pz-lk-iron { stop-color: var(--art-iron); }
+.pz-lk-iron-lo { stop-color: color-mix(in srgb, var(--art-iron) 55%, var(--void)); }
+.pz-lk-brass-hi { stop-color: color-mix(in srgb, var(--art-brass) 60%, var(--text)); }
+.pz-lk-brass { stop-color: var(--art-brass); }
+.pz-lk-brass-lo { stop-color: color-mix(in srgb, var(--art-brass) 55%, var(--void)); }
+.pz-lk-steel-hi { stop-color: color-mix(in srgb, var(--art-steel) 55%, var(--text)); }
+.pz-lk-steel-lo { stop-color: color-mix(in srgb, var(--art-steel) 55%, var(--void)); }
+.pz-lk-pin-hi { stop-color: color-mix(in srgb, var(--art-brass) 55%, var(--text)); }
+.pz-lk-pin-lo { stop-color: color-mix(in srgb, var(--art-brass) 60%, var(--void)); }
+.pz-lk-rod-hi { stop-color: color-mix(in srgb, var(--art-steel) 55%, var(--text)); }
+.pz-lk-rod-lo { stop-color: color-mix(in srgb, var(--art-steel) 55%, var(--void)); }

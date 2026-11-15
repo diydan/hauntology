@@ -1,0 +1,185 @@
+/*
+ * Puzzle screens, built from the design system (design/elements.css and design/tokens.json; spec design-system, tasks 4.1 and 4.4).
+ * What is generic is an element: buttons (`ui-button`), the frame of a card (`ui-panel`), hints and status lines (`ui-hint`,
+ * `ui-status`, `ui-note`), headings (`ui-heading`), the tries (`ui-lamps`), the clue timer (`ui-gauge`), rows (`ui-row`). What is
+ * the puzzle itself (the wires, the safe, the candles, the maze, the photo) keeps a `pz-` class and says only where things go and
+ * how the game pieces look, with ROLES and tokens: no raw colour, no raw gap, no raw time.
+ *
+ * One spacing scale for every puzzle screen: --space-1 to --space-4 (4, 8, 12 and 16 px). Blocks sit 12 px apart (--space-3) and
+ * the things that belong together sit 8 px apart (--space-2); 4 px is for a label tucked against what it names, 16 px is for
+ * padding and for setting one group apart from another. A test (spacing.test.ts) keeps every gap, margin and padding on it.
+ *
+ * Mobile first: every control is at least 48 px (--pz-target, never below --target), nothing needs hover, nothing scrolls the
+ * page while a Puzzle is being played. Nothing here animates except through the fade tokens.
+ */
+.pz-host {
+  --pz-target: max(48px, var(--target));
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: var(--space-2) max(var(--space-3), env(safe-area-inset-right)) max(var(--space-3), env(safe-area-inset-bottom)) max(var(--space-3), env(safe-area-inset-left));
+  color: var(--text);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent; /* a tap shows its own feedback, not the browser's grey flash */
+  overscroll-behavior: contain;
+}
+/* The frame sizes itself the same whatever the page does globally: padding and borders never push it past the screen. */
+.pz-host, .pz-host *, .pz-host *::before, .pz-host *::after { box-sizing: border-box; }
+/* The glow is the visual twin of a buzz. Two names that look the same restart it without reloading the screen. */
+.pz-glow-a { animation: pz-glow-a var(--fade) var(--ease); }
+.pz-glow-b { animation: pz-glow-b var(--fade) var(--ease); }
+@keyframes pz-glow-a { from { box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--text) 22%, transparent); } to { box-shadow: inset 0 0 0 0 color-mix(in srgb, var(--text) 0%, transparent); } }
+@keyframes pz-glow-b { from { box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--text) 22%, transparent); } to { box-shadow: inset 0 0 0 0 color-mix(in srgb, var(--text) 0%, transparent); } }
+
+/* Inside a puzzle screen the blocks are one even stack, so an element brings no margin of its own, and the words are centred. */
+:is(.pz-host, .pz-sights) :is(.ui-heading, .ui-hint, .ui-note, .ui-status) { margin: 0; text-align: center; }
+/* A control shows where it is, whichever page the screen sits on. */
+:is(.pz-host, .pz-settings, .pz-sights) :focus-visible { outline: var(--stroke-ring) solid var(--focus); outline-offset: var(--stroke-ring); }
+/* The touch target is 48 px on a puzzle, never below the --target token. */
+:is(.pz-host, .pz-settings) .ui-button { min-height: var(--pz-target); min-width: var(--pz-target); touch-action: manipulation; }
+.pz-host .ui-button--round { width: var(--pz-target); height: var(--pz-target); }
+.pz-host .ui-hint { font-size: var(--text-control); } /* a puzzle's own instructions are the main words on the screen */
+
+.pz-bar-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: 2rem; }
+.pz-timer { font-variant-numeric: tabular-nums; }
+
+.pz-host .pz-stage { position: relative; min-height: 20rem; padding: var(--space-3); border-radius: var(--radius-lg); touch-action: none; overflow: hidden; }
+.pz-skeleton { min-height: 18rem; border-radius: var(--radius-md); background: linear-gradient(90deg, var(--surface-sunk), var(--surface-raised), var(--surface-sunk)); }
+.pz-host .pz-status { min-height: 1.5rem; }
+.pz-host .pz-twin { min-height: 1.3rem; } /* always there, so the buttons below never jump when it shows */
+
+.pz-host .pz-card { display: grid; gap: var(--space-3); padding: var(--space-4); border-radius: var(--radius-xl); text-align: center; }
+.pz-clue { display: grid; gap: var(--space-2); align-content: start; justify-items: center; min-height: 7.5rem; } /* a clue's lines sit in one even stack */
+.pz-host .pz-result { display: grid; gap: var(--space-2); justify-items: center; padding: var(--space-4); border-color: var(--accent); }
+.pz-host .pz-result[data-outcome="failed"] { border-color: var(--danger); }
+.pz-result-title { margin: 0; font-size: var(--text-lead); }
+
+.pz-digits { display: flex; gap: var(--space-2); justify-content: center; font-size: var(--text-display); font-weight: 700; font-variant-numeric: tabular-nums; }
+.pz-digits > span { display: grid; place-items: center; width: 2.75rem; height: 3.5rem; border-radius: var(--radius-md); background: var(--surface-raised); }
+
+.pz-shelf { display: grid; gap: var(--space-2); margin: 0; }
+.pz-slot { display: grid; place-items: center; aspect-ratio: 1; min-height: var(--pz-target); border: var(--stroke-ring) solid transparent; border-radius: var(--radius-md); background: var(--surface-raised); color: inherit; padding: 0; }
+.pz-slot[aria-pressed="true"] { border-color: var(--accent); }
+.pz-slot-empty { border: var(--stroke-ring) dashed var(--line-strong); background: transparent; }
+
+.pz-picture { display: block; width: 100%; height: 100%; border-radius: var(--radius-sm); }
+.pz-sight-picture { width: min(80%, 16rem); aspect-ratio: 3 / 2; margin: 0 auto; border: var(--stroke-ring) solid var(--line-strong); border-radius: var(--radius-md); overflow: hidden; }
+
+
+.pz-board { display: block; width: 100%; height: auto; touch-action: none; }
+.pz-canvas { display: block; margin: 0 auto; max-width: 100%; border-radius: var(--radius-lg); touch-action: none; }
+.pz-readout { margin: 0; text-align: center; font-size: var(--text-speech); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pz-glow-a, .pz-glow-b { animation: none; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--text) 15%, transparent); }
+}
+
+.pz-wide { width: 100%; }
+.pz-clock-board { width: min(86%, 22rem, var(--pz-h)); margin: 0 auto; }
+
+/* the tries and the time say what they are */
+.pz-bar-label { color: var(--text-quiet); font-size: var(--text-small); }
+/* Give up sits apart from the play controls, and asks once */
+.pz-foot-wrap { display: grid; gap: var(--space-4); }
+.pz-give { display: grid; gap: var(--space-2); justify-items: center; }
+.pz-peek { margin: 0; }
+/* controls that line up: equal columns */
+.pz-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+.pz-grid4 > .ui-button, .pz-grid2 > .ui-button { min-width: 0; padding: 0 var(--space-1); white-space: nowrap; }
+.pz-grid4 > .ui-button { font-size: var(--text-small); }
+.pz-grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
+.pz-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.pz-grid3 > .ui-button, .pz-contents > .ui-button { min-width: 0; padding: 0 var(--space-1); white-space: nowrap; }
+.pz-contents { display: contents; } /* a named group whose buttons sit in the parent grid */
+.pz-twist { display: grid; gap: var(--space-2); justify-items: center; margin: 0; }
+.pz-stopped { display: block; margin: 0 auto; }
+/* the two answers to "Give up?" sit side by side, the same width, at any screen width */
+.pz-confirm { width: 100%; }
+
+/* the header: "?" and the tries on the left, the time on the right, each with its label above */
+.pz-bar-row { flex-wrap: wrap; }
+.pz-bar-left { display: inline-flex; align-items: center; gap: var(--space-3); }
+.pz-tries { display: grid; gap: var(--space-1); justify-items: start; }
+.pz-timer { display: grid; gap: var(--space-1); justify-items: end; text-align: right; }
+/* the help card */
+.pz-host .pz-help { text-align: left; }
+.pz-host .pz-help .ui-heading { text-align: center; }
+.pz-help-steps, .pz-help-list { margin: 0; padding-left: var(--space-4); display: grid; gap: var(--space-2); font-size: var(--text-control); }
+.pz-help-sub { margin: 0; font-size: var(--text-body); }
+.pz-help-common { color: var(--text-quiet); font-size: var(--text-small); }
+
+/* A screen's blocks are one even stack, whatever the screen is: 12 px between blocks, and no block brings its own margin. */
+.pz-stage > div:not(.pz-skeleton) { display: grid; gap: var(--space-3); align-content: start; }
+.pz-stage > div > .ui-button:not(.pz-wide) { justify-self: center; }
+/* a label and the control it names, or two controls that work as one */
+.pz-field { display: grid; gap: var(--space-2); }
+/* what the puzzle says back: the host's message, and the buzz or sound twin, in a place of their own */
+.pz-feedback { display: grid; gap: 0; }
+.pz-foot:empty { display: none; } /* no play controls for this puzzle: no empty row, and no extra gap above Give up */
+
+/*
+ * Fit. The picture of a puzzle takes the height the screen has left, so a puzzle shows whole without scrolling the page where it can.
+ * --pz-rest is the height of everything else on that puzzle (the header, the words, the buttons, the message and Give up), measured at 390 px
+ * wide; --pz-min is the smallest the picture may get (a dial can shrink, a board you point at must stay big enough for a finger). If it does
+ * not fit even then, the page scrolls. 100dvh is the screen as it is now, with the browser bars in or out.
+ */
+.pz-host { --pz-min: 15rem; --pz-h: max(var(--pz-min), calc(100dvh - var(--pz-rest, 0px))); }
+.pz-host[data-kind='safe'] { --pz-rest: 35.5rem; --pz-min: 11rem; }
+.pz-host[data-kind='clock'] { --pz-rest: 38rem; --pz-min: 11rem; }
+.pz-host[data-kind='wires'] { --pz-rest: 25rem; --pz-min: 17.5rem; }
+.pz-host[data-kind='maze'] { --pz-rest: 24rem; }
+.pz-host[data-kind='board'] { --pz-rest: 38.5rem; }
+.pz-host[data-kind='words'] { --pz-rest: 32rem; }
+.pz-host[data-kind='photo'] { --pz-rest: 25.6rem; --pz-min: 19rem; }
+
+/* A short screen held upright: the same blocks, a little closer together. */
+@media (orientation: portrait) and (max-height: 47rem) {
+  .pz-host { gap: var(--space-2); }
+  .pz-host .pz-stage { padding: var(--space-2); }
+  .pz-stage > div:not(.pz-skeleton) { gap: var(--space-2); }
+  .pz-twin { min-height: 0; }
+}
+
+/* A very short screen held upright (a small phone, or a tall one with the browser bars showing): the picture may get smaller still. */
+@media (orientation: portrait) and (max-height: 42rem) {
+  .pz-host { --pz-min: 13rem; }
+  .pz-host[data-kind='safe'], .pz-host[data-kind='clock'] { --pz-min: 9rem; }
+  .pz-host[data-kind='photo'] { --pz-min: 17rem; }
+  .pz-host[data-kind='wires'] { --pz-min: 17.5rem; } /* the six terminals stay at least 48 px apart */
+  .pz-feedback .pz-status { min-height: 1.25rem; }
+  /* The tilt explanation is out of sight (still read aloud): the Twist button says what it is. */
+  .pz-twist .ui-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* The spirit board has more to give back than the other puzzles: on a screen under 56 rem it sets the clue smaller, hides its explaining line and shrinks the letters, so its short band reaches higher and the board may go down to 13 rem. Under 47 rem the blocks are also closer together, which gives a little more back. */
+@media (orientation: portrait) and (max-height: 56rem) {
+  .pz-host[data-kind='board'] { --pz-rest: 31rem; --pz-min: 13rem; }
+}
+@media (orientation: portrait) and (max-height: 47rem) {
+  .pz-host[data-kind='board'] { --pz-rest: 29rem; }
+}
+
+/*
+ * A phone held sideways has width and no height. The picture goes on the left and the controls beside it; the header, the message and
+ * Give up go in a narrow column on the right. Each puzzle marks its picture with .pz-visual.
+ */
+@media (orientation: landscape) and (max-height: 32rem) {
+  .pz-host { --pz-h: max(9rem, calc(100dvh - 5.5rem)); max-width: none; grid-template-columns: minmax(0, 1fr) 11rem; grid-template-areas: "stage bar" "stage feedback" "stage foot"; grid-template-rows: auto auto 1fr; align-items: start; column-gap: var(--space-3); row-gap: var(--space-2); }
+  .pz-host > .pz-bar-row { grid-area: bar; flex-direction: column; align-items: stretch; }
+  .pz-host > .pz-stage { grid-area: stage; min-height: 0; padding: var(--space-2); }
+  .pz-host > .pz-feedback { grid-area: feedback; }
+  .pz-host > .pz-foot-wrap { grid-area: foot; }
+  .pz-host > :not(.pz-bar-row, .pz-stage, .pz-feedback, .pz-foot-wrap) { grid-column: 1 / -1; }
+  .pz-host .pz-stage > div:not(.pz-skeleton) { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: repeat(6, auto) 1fr; column-gap: var(--space-3); row-gap: 0; margin-top: calc(var(--space-2) * -1); }
+  .pz-host .pz-stage > div > * { grid-column: 2; margin-top: var(--space-2); }
+  .pz-host .pz-stage > div > .pz-visual { grid-column: 1; grid-row: 1 / 8; }
+  .pz-host .pz-confirm { grid-template-columns: 1fr; }
+  .pz-twin { min-height: 0; }
+  .pz-host .pz-readout, .pz-host .pz-clue-line { font-size: var(--text-body); }
+  .pz-host .pz-under, .pz-host .pz-lit { font-size: var(--text-body); }
+  .pz-digits > span { height: 2.75rem; }
+}

@@ -1,0 +1,17 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Design tokens build",
+      "description": "On saving design/tokens.json, write web/src/styles/tokens.css and shared/src/design/tokens.ts from it, and fail if a name, a colour or a contrast rule is wrong.",
+      "trigger": "PostFileSave",
+      "matcher": "design/tokens\\.json$",
+      "action": {
+        "type": "command",
+        "command": "node tools/build-tokens.mjs"
+      },
+      "timeout": 30,
+      "enabled": true
+    }
+  ]
+}

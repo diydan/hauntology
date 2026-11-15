@@ -1,0 +1,9 @@
+// The local render Worker for tools/prerender-voice.mjs (ghost-voice task 3.11). NEVER deployed: run it with
+//   RENDER_TOKEN=<random, 16+ characters> pnpm --filter api exec wrangler dev -c ../tools/voice-render/wrangler.jsonc --ip 127.0.0.1 --port 8798 --var RENDER_TOKEN:$RENDER_TOKEN
+// The AI binding reaches the real Workers AI, so every call is billed to the logged-in account.
+{
+  "name": "hauntology-voice-render",
+  "main": "worker.mjs",
+  "compatibility_date": "2025-06-01",
+  "ai": { "binding": "AI" }
+}

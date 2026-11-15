@@ -1,0 +1,6 @@
+/* What moved. The dark shelf shows only empty spots; the dim is a fade of their opacity, never a flash. */
+.pz-moved-dark { display: grid; gap: var(--space-2); margin: 0; transition: opacity var(--fade); }
+.pz-moved-dark .pz-slot { aspect-ratio: 1; min-height: var(--pz-target, 48px); }
+.pz-moved-dark.pz-moved-still { transition: none; }
+.pz-moved-note { min-height: 1.5rem; font-size: var(--text-title); }
+.pz-moved-count { min-height: 2.2rem; font-size: var(--text-lead); }

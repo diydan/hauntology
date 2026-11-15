@@ -1,0 +1,137 @@
+import type { ErrorCode } from "@hauntology/shared/errors";
+import type { SpendTicket } from "@hauntology/shared/world/spend";
+import type { AssetRole, Lod, ServicePose } from "@hauntology/shared/world/ingest";
+import type { BriefVerdict } from "@hauntology/shared/world/brief";
+import type { WorldManifest } from "@hauntology/shared/world/manifest";
+
+/** What the world routes know about a stored Place Image. The bytes are never needed to decide anything. */
+export type ImageInfo = {
+  id: string;
+  /** The Session that uploaded it, or chose it from the candidates. Nobody else may quote it. */
+  ownerSid: string;
+  /** Lowercase hex SHA-256 of the stored bytes. */
+  sha256: string;
+  /** `safe` once the Place Brief check passed; `unsafe` is refused; `pending` means it has not been checked, which also refuses (fail closed). */
+  moderation: "safe" | "unsafe" | "pending";
+  contentType: string;
+  /** Where the picture came from, and the Place Brief made from it. Absent means an upload with no brief yet. */
+  source?: "upload" | "sketch";
+  brief?: string;
+};
+
+export interface ImageStore {
+  find(imageId: string): Promise<ImageInfo | null>;
+  /** The stored bytes and the content type they were stored with (`application/octet-stream` when it is not one of the three the project keeps). */
+  read(imageId: string): Promise<{ body: ReadableStream<Uint8Array> | Uint8Array; size: number; contentType: string } | null>;
+}
+
+/**
+ * Where an accepted upload is kept (world-pipeline 5.1): private storage under an opaque id, with the owner, the hash of the
+ * stored bytes and the type it was stored with. `moderation` is left off, which reads as "not yet checked" (5.4 writes it).
+ */
+export interface UploadStore {
+  put(imageId: string, bytes: Uint8Array, meta: { contentType: "image/jpeg" | "image/png" | "image/webp"; ownerSid: string; sha256: string }): Promise<void>;
+}
+
+/** What the Place Brief check made of a picture: a verdict (`safe` with the brief, `unsafe`, or an answer that could not be used). */
+export type BriefAnswer = { ok: true; verdict: BriefVerdict } | { ok: false };
+
+/**
+ * The Place Brief check (world-pipeline 5.4): asks a vision model for a short description and a safety verdict. `ok: false`
+ * means the call itself failed or timed out, which the route treats as "could not check" and does not charge for.
+ * Every call goes through `api/src/guarded/workersai/place-brief.ts`, which needs a Ticket for the `llm` meter.
+ */
+export interface PlaceBriefer {
+  brief(req: { image: Uint8Array; contentType: string }): Promise<BriefAnswer>;
+}
+
+/** Writes the result of the check onto a stored picture, or deletes the picture (an unsafe one). */
+export interface ImageVerdictStore {
+  /** Marks the picture `safe` and keeps its brief. `false` when there is no such picture. */
+  recordSafe(imageId: string, brief: string): Promise<boolean>;
+  /** Deletes the picture. */
+  remove(imageId: string): Promise<void>;
+}
+
+/** One picture from the image model: its bytes, or why there is none (`rate_limited` for a busy service, `failed` for anything else). */
+export type RenderAnswer = { ok: true; image: Uint8Array } | { ok: false; kind: "rate_limited" | "failed" };
+
+/**
+ * Makes a photograph from a sketch (world-pipeline 5.3, Requirement 2.4): the sketch goes in as a reference image with a
+ * prompt, and one picture comes out. Every call goes through `api/src/guarded/workersai/image.ts`, which needs a Ticket for
+ * the `image` meter.
+ */
+export interface ImageMaker {
+  render(req: { sketch: Uint8Array; prompt: string; seed: number; width: number; height: number }): Promise<RenderAnswer>;
+}
+
+/** What a candidate (a picture drawn from a sketch, kept 24 hours under `candidates/`) is stored with. */
+export type CandidateMeta = { contentType: "image/jpeg" | "image/png" | "image/webp"; ownerSid: string; sha256: string };
+
+/** Where the candidates of a sketch are kept, and how one becomes a Place Image. */
+export interface CandidateStore {
+  put(candidateId: string, bytes: Uint8Array, meta: CandidateMeta): Promise<void>;
+  /** The candidate's bytes, its type and its owner, or `null`. */
+  read(candidateId: string): Promise<{ body: ReadableStream<Uint8Array> | Uint8Array; size: number; contentType: string; ownerSid: string } | null>;
+  /**
+   * Makes the candidate a Place Image (`uploads/<id>`, from a sketch, not yet checked) for `ownerSid` and answers that id.
+   * The same candidate always gives the same id, and a second call finds the first one's picture as it is. `null` when there
+   * is no such candidate, or it is not that Session's.
+   */
+  promote(candidateId: string, ownerSid: string): Promise<string | null>;
+}
+
+/** Checks a Turnstile result with Cloudflare. `false` for anything that is not a clear yes. */
+export interface TurnstileVerifier {
+  verify(token: string, ip: string | null): Promise<boolean>;
+}
+
+/** Starts the job that makes the world. The Ticket goes with it: the job commits it when the world is ready and releases it when it fails (world-pipeline 7.1). */
+export interface WorldStarter {
+  start(job: { worldId: string; imageId: string; ownerSid: string; ticket: SpendTicket }): Promise<{ ok: true } | { ok: false; code: ErrorCode }>;
+}
+
+/**
+ * Why a call to the world service did not give an answer: it said slow down (`rate_limited`, with how long if it
+ * told us), it is out of credits (`no_credits`), it refused the request for good (`rejected`), or it failed in a
+ * way that may pass (`transient`: a timeout, a server fault, no network).
+ */
+export type UpstreamFailure = { ok: false; kind: "rate_limited" | "no_credits" | "rejected" | "transient"; retryAfterMs?: number };
+
+/**
+ * The world service (World Labs), as the job sees it. The real HTTP adapter is `HttpWorldLabs`
+ * (`api/src/guarded/worldlabs-http.ts`), written from the documented shapes; a run (Spike 1.1) has not yet confirmed them.
+ * Every call goes through `api/src/guarded/worldlabs.ts`, which needs a Ticket, so nothing else may spend.
+ */
+export interface WorldLabsPort {
+  /** Starts the making of a world from a picture. */
+  generate(req: { image: Uint8Array; contentType: string; name: string }): Promise<{ ok: true; operationId: string } | UpstreamFailure>;
+  /** Asks how far an operation is. `failed` means the service gave up on it. */
+  poll(operationId: string): Promise<{ ok: true; state: "pending" | "done" | "failed" } | UpstreamFailure>;
+}
+
+/** One file of a finished world as the service describes it. `url` is the service's own address and never leaves the Worker. */
+export type SourceAsset = { role: AssetRole; format: string; lod?: Lod; url: string };
+/** `pose`: how to read the files (the frame they are written in and the scale and ground height the service reports). Absent means a world with no such information: the manifest keeps its placeholder pose. */
+export type SourceWorld = { splats: SourceAsset[]; collider?: SourceAsset; pano?: SourceAsset; thumb?: SourceAsset; pose?: ServicePose };
+
+/**
+ * A finished world on the service's side, in our own terms: which files it has, and their bytes. `HttpWorldLabs`
+ * reads the finished operation into `SourceWorld` and downloads each file.
+ */
+export interface WorldSource {
+  fetchWorld(operationId: string): Promise<{ ok: true; world: SourceWorld } | UpstreamFailure>;
+  /** The bytes of one file and their size. An adapter that cannot know the size up front reads the file first. */
+  fetchAsset(asset: SourceAsset): Promise<{ ok: true; body: ReadableStream<Uint8Array> | Uint8Array; size: number } | UpstreamFailure>;
+}
+
+/**
+ * Copies a finished world into our storage under `worlds/<worldId>/` and says what its manifest is (world-pipeline 7.3,
+ * `worlds/ingest.ts`). It never returns an upstream address. `title`, `brief`, `source` and `createdAt` come from the
+ * world's record.
+ */
+export interface Ingestor {
+  ingest(job: { worldId: string; operationId: string; ownerSid: string; title: string; brief: string; source: "upload" | "sketch"; createdAt: number }): Promise<
+    { ok: true; manifest: WorldManifest } | { ok: false; code: "ingest_failed" } | UpstreamFailure
+  >;
+}

@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="150mm" viewBox="0 0 210 150">
+  <defs>
+    <style>
+      .sheet-bg { fill: #f8f5ec; }
+      .title { font-family: 'Georgia', serif; font-size: 5px; fill: #262229; font-weight: bold; }
+      .sub { font-family: 'Courier New', monospace; font-size: 3px; fill: #5a5045; }
+      .cut { fill: none; stroke: #d43838; stroke-width: 0.25; stroke-dasharray: 1.5,1; }
+      .term-num { font-family: 'Courier New', monospace; font-size: 7.5px; fill: #e8dec8; text-anchor: middle; font-weight: bold; }
+      .panel-lbl { font-family: 'Courier New', monospace; font-size: 4.2px; fill: #d4a84b; text-anchor: middle; font-weight: bold; }
+      .plug-lbl { font-family: 'Courier New', monospace; font-size: 2.3px; fill: #f8f5ec; text-anchor: middle; font-weight: bold; }
+    </style>
+  </defs>
+
+  <rect class="sheet-bg" x="0" y="0" width="210" height="150"/>
+  <text class="title" x="10" y="10">PROP #20 — CUT WIRES BOARD (1:1 STICKER SHEET — PRINT AT 100% SCALE)</text>
+  <text class="sub" x="10" y="14.5">Red dashed line = cut outline (fits 0.4 mm recessed pockets on prop-20-wires-panel.stl &amp; prop-20-plug-heads.stl)</text>
+
+  <!-- 1. Left & Right Terminal Labels 1-5 (10x pockets of 11.0 x 13.0 mm -> 10.6 x 12.6 mm stickers) -->
+  <g transform="translate(10, 24)">
+    <text class="sub" x="0" y="-3">1. Left &amp; Right Terminal Number Labels (10x 10.6 x 12.6 mm) — fits prop-20-wires-panel.stl</text>
+
+    <!-- Row A: Left Terminals 1-5 -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#d43838" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">1</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+    <g transform="translate(14, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#3870d4" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">2</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+    <g transform="translate(28, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#e6c84f" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">3</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+    <g transform="translate(42, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#3aa655" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">4</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+    <g transform="translate(56, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#e8dec8" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">5</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+
+    <!-- Row B: Right Terminals 1-5 -->
+    <g transform="translate(76, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#d4a84b" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">1</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+    <g transform="translate(90, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#d4a84b" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">2</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+    <g transform="translate(104, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#d4a84b" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">3</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+    <g transform="translate(118, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#d4a84b" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">4</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+    <g transform="translate(132, 0)">
+      <rect x="0" y="0" width="10.6" height="12.6" rx="1.0" fill="#1b181f" stroke="#d4a84b" stroke-width="0.5"/>
+      <text class="term-num" x="5.3" y="8.8">5</text>
+      <rect class="cut" x="0" y="0" width="10.6" height="12.6" rx="1.0"/>
+    </g>
+  </g>
+
+  <!-- 2. "SET" Label (26.0 x 11.0 mm -> 25.6 x 10.6 mm) & "paired" Status Label (30.0 x 8.0 mm -> 29.6 x 7.6 mm) -->
+  <g transform="translate(10, 50)">
+    <text class="sub" x="0" y="-3">2. Panel Header &amp; Status Labels — fits prop-20-wires-panel.stl</text>
+
+    <!-- SET label -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="25.6" height="10.6" rx="1.2" fill="#2c221a" stroke="#d4a84b" stroke-width="0.5"/>
+      <text class="panel-lbl" x="12.8" y="6.8">SET</text>
+      <rect class="cut" x="0" y="0" width="25.6" height="10.6" rx="1.2"/>
+    </g>
+
+    <!-- paired label -->
+    <g transform="translate(34, 1.5)">
+      <rect x="0" y="0" width="29.6" height="7.6" rx="1.0" fill="#14241c" stroke="#5ce6b8" stroke-width="0.45"/>
+      <text class="panel-lbl" x="14.8" y="5.2" fill="#5ce6b8" font-size="3.4">PAIRED</text>
+      <rect class="cut" x="0" y="0" width="29.6" height="7.6" rx="1.0"/>
+    </g>
+  </g>
+
+  <!-- 3. 10x Plug Cap Colour & Resistor Value Discs (9.6 mm dia pockets -> 9.2 mm dia stickers) -->
+  <g transform="translate(10, 76)">
+    <text class="sub" x="0" y="-3">3. Banana Plug Cap Discs (10x 9.2 mm dia — 5 resistor values x 2 ends) — fits prop-20-plug-heads.stl</text>
+
+    <!-- Wire 1: Red 1k -->
+    <g transform="translate(5, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#c93030" stroke="#f8f5ec" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8">1kΩ</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+    <g transform="translate(18, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#c93030" stroke="#f8f5ec" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8">RED</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+
+    <!-- Wire 2: Blue 2.2k -->
+    <g transform="translate(31, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#2b5ec7" stroke="#f8f5ec" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8">2.2k</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+    <g transform="translate(44, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#2b5ec7" stroke="#f8f5ec" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8">BLU</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+
+    <!-- Wire 3: Yellow 4.7k -->
+    <g transform="translate(57, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#c9a218" stroke="#1b181f" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8" fill="#1b181f">4.7k</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+    <g transform="translate(70, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#c9a218" stroke="#1b181f" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8" fill="#1b181f">YEL</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+
+    <!-- Wire 4: Green 10k -->
+    <g transform="translate(83, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#288a42" stroke="#f8f5ec" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8">10k</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+    <g transform="translate(96, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#288a42" stroke="#f8f5ec" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8">GRN</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+
+    <!-- Wire 5: White 22k -->
+    <g transform="translate(109, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#dfd5c0" stroke="#1b181f" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8" fill="#1b181f">22k</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+    <g transform="translate(122, 5)">
+      <circle cx="0" cy="0" r="4.6" fill="#dfd5c0" stroke="#1b181f" stroke-width="0.35"/>
+      <text class="plug-lbl" x="0" y="0.8" fill="#1b181f">WHT</text>
+      <circle class="cut" cx="0" cy="0" r="4.6"/>
+    </g>
+  </g>
+
+  <!-- 4. 20mm Scale Bar -->
+  <g transform="translate(10, 128)">
+    <line x1="0" y1="0" x2="20" y2="0" stroke="#262229" stroke-width="0.6"/>
+    <line x1="0" y1="-2" x2="0" y2="2" stroke="#262229" stroke-width="0.6"/>
+    <line x1="20" y1="-2" x2="20" y2="2" stroke="#262229" stroke-width="0.6"/>
+    <text class="sub" x="23" y="1">20.0 mm scale verification bar</text>
+  </g>
+</svg>

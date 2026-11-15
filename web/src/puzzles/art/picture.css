@@ -1,0 +1,22 @@
+/*
+ * The picture of the Torn photo (art/Picture.tsx): an old sepia print, in the tones of the art-sepia and art-paper tokens and the dark of the
+ * ground, with paper showing past a ragged tear. It loads with the art so the clue that shows the whole photo has the same styles.
+ */
+.pz-picture { --photo-ink: color-mix(in srgb, var(--art-sepia) 26%, var(--void)); }
+.pz-piece-art .pz-picture-torn { overflow: visible; border-radius: 0; }
+
+.pz-print-paper { fill: var(--art-paper); }
+.pz-print-edge { stroke: color-mix(in srgb, var(--photo-ink) 65%, transparent); stroke-width: 0.6; }
+.pz-print-rim { fill: none; stroke: color-mix(in srgb, var(--photo-ink) 55%, transparent); stroke-width: 0.8; }
+.pz-print-crease { fill: none; stroke: color-mix(in srgb, var(--art-paper) 40%, transparent); stroke-width: 0.9; }
+.pz-print-glow { stop-color: color-mix(in srgb, var(--art-ivory) 70%, transparent); }
+.pz-print-glow-end { stop-color: transparent; }
+.pz-print-mist { stop-color: color-mix(in srgb, var(--art-paper) 20%, transparent); }
+.pz-print-mist-end { stop-color: transparent; }
+.pz-print-vig { stop-color: color-mix(in srgb, var(--void) 58%, transparent); }
+.pz-print-vig-end { stop-color: transparent; }
+.pz-grain-dark { fill: color-mix(in srgb, var(--void) 38%, transparent); }
+.pz-grain-light { fill: color-mix(in srgb, var(--art-paper) 34%, transparent); }
+
+/* a torn piece: the paper past the print, on its ragged edge */
+.pz-torn-paper { fill: var(--art-paper); stroke: color-mix(in srgb, var(--art-paper) 55%, var(--void)); stroke-width: 0.7; stroke-linejoin: round; }

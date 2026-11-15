@@ -24,3 +24,8 @@ Reject and fall back if: empty, > 600 chars, contains `http`/`www`, markdown or 
 
 ## Hints
 Relative bearing words (ahead, behind, left, right, and diagonals) and distance bands (far, nearer, very close). Never coordinates, numbers or memory content.
+
+## Real world and voice
+- The ghost may mention the weather class, the time of day, the moon and one star once a game, from the frozen conditions snapshot, and nothing else about the real world. Never news, crime, death or real events at a place: a real place can be someone's home. `validateGhostReply` rejects a reply that mentions them, and scripted lines may not either.
+- The ghost never clones or imitates a voice. A stitched line is made only from fixed templates of the Word Bank words that consenting players recorded, so it cannot contain anything else.
+- In live mode every sentence of a reply is checked before it is spoken, and the microphone indicator and a stop button are visible whenever it listens.

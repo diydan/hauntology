@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="190mm" viewBox="0 0 210 190">
+  <defs>
+    <style>
+      .sheet-bg { fill: #f8f5ec; }
+      .title { font-family: 'Georgia', serif; font-size: 5px; fill: #262229; font-weight: bold; }
+      .sub { font-family: 'Courier New', monospace; font-size: 3px; fill: #5a5045; }
+      .cut { fill: none; stroke: #d43838; stroke-width: 0.25; stroke-dasharray: 1.5,1; }
+      .bay-lbl { font-family: 'Courier New', monospace; font-size: 2.8px; fill: #d4a84b; text-anchor: middle; font-weight: bold; }
+      .bay-sub { font-family: 'Georgia', serif; font-size: 2.2px; fill: #e8dec8; text-anchor: middle; }
+      .pin-lbl { font-family: 'Courier New', monospace; font-size: 4.2px; fill: #5ce6b8; text-anchor: middle; font-weight: bold; letter-spacing: 0.8px; }
+    </style>
+  </defs>
+
+  <rect class="sheet-bg" x="0" y="0" width="210" height="190"/>
+  <text class="title" x="10" y="10">PROP #15 — RELIC VAULT (1:1 STICKER SHEET — PRINT AT 100% SCALE)</text>
+  <text class="sub" x="10" y="14.5">Red dashed line = cut outline (fits 0.4 mm recessed pockets on vault-clasp, relic-tray, keypad-pod, vault-chest)</text>
+
+  <!-- 1. Vault Clasp Lock Escutcheon (30.0 x 18.0 mm -> 29.6 x 17.6 mm sticker) -->
+  <g transform="translate(10, 22)">
+    <text class="sub" x="0" y="-2">1. Vault Clasp Lock Escutcheon (29.6 x 17.6 mm) — fits prop-15-vault-clasp.stl</text>
+    <rect x="0" y="0" width="29.6" height="17.6" rx="2.0" fill="#2c221a" stroke="#d4a84b" stroke-width="0.6"/>
+    <rect x="1.6" y="1.6" width="26.4" height="14.4" rx="1.4" fill="none" stroke="#8a6c28" stroke-width="0.35"/>
+    <!-- Rivets -->
+    <circle cx="3.5" cy="3.5" r="1.0" fill="#d4a84b"/>
+    <circle cx="26.1" cy="3.5" r="1.0" fill="#d4a84b"/>
+    <circle cx="3.5" cy="14.1" r="1.0" fill="#d4a84b"/>
+    <circle cx="26.1" cy="14.1" r="1.0" fill="#d4a84b"/>
+    <!-- Keyhole surround -->
+    <circle cx="14.8" cy="7.2" r="3.2" fill="#120c09" stroke="#d4a84b" stroke-width="0.5"/>
+    <polygon points="13.2,8.5 16.4,8.5 17.2,14.8 12.4,14.8" fill="#120c09" stroke="#d4a84b" stroke-width="0.5"/>
+    <circle cx="14.8" cy="7.2" r="1.6" fill="#050404"/>
+    <polygon points="13.9,8.0 15.7,8.0 16.2,13.8 13.4,13.8" fill="#050404"/>
+    <rect class="cut" x="0" y="0" width="29.6" height="17.6" rx="2.0"/>
+  </g>
+
+  <!-- 2. Keypad Pod "ENTER PIN" Header Label (48.0 x 9.0 mm -> 47.6 x 8.6 mm sticker) -->
+  <g transform="translate(65, 22)">
+    <text class="sub" x="0" y="-2">2. Keypad Pod Header Label (47.6 x 8.6 mm) — fits prop-15-keypad-pod.stl</text>
+    <rect x="0" y="0" width="47.6" height="8.6" rx="1.2" fill="#0e1a16" stroke="#d4a84b" stroke-width="0.45"/>
+    <rect x="1.2" y="1.2" width="45.2" height="6.2" rx="0.8" fill="#07120e" stroke="#2c6e58" stroke-width="0.3"/>
+    <text class="pin-lbl" x="23.8" y="5.8">ENTER PIN [ _ _ _ _ ]</text>
+    <rect class="cut" x="0" y="0" width="47.6" height="8.6" rx="1.2"/>
+  </g>
+
+  <!-- 3. Six Relic Tray Bay Icon Stickers (22.0 x 22.0 mm pockets -> 21.6 x 21.6 mm stickers) -->
+  <g transform="translate(10, 52)">
+    <text class="sub" x="0" y="-3">3. Relic Tray Bay Floor Icons (6x 21.6 x 21.6 mm) — fits prop-15-relic-tray.stl bays r1..r6</text>
+
+    <!-- Bay r1: Music Box -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="21.6" height="21.6" rx="1.8" fill="#1c1512" stroke="#d4a84b" stroke-width="0.45"/>
+      <rect x="4.8" y="6.2" width="12.0" height="7.2" rx="0.8" fill="none" stroke="#d4a84b" stroke-width="0.5"/>
+      <line x1="4.8" y1="8.8" x2="16.8" y2="8.8" stroke="#d4a84b" stroke-width="0.4"/>
+      <circle cx="18.2" cy="9.8" r="1.2" fill="none" stroke="#d4a84b" stroke-width="0.45"/>
+      <text class="bay-lbl" x="10.8" y="4.4">hw:r1</text>
+      <text class="bay-sub" x="10.8" y="17.2">MUSIC BOX</text>
+      <rect class="cut" x="0" y="0" width="21.6" height="21.6" rx="1.8"/>
+    </g>
+
+    <!-- Bay r2: Wax Hand -->
+    <g transform="translate(26, 0)">
+      <rect x="0" y="0" width="21.6" height="21.6" rx="1.8" fill="#1c1512" stroke="#d4a84b" stroke-width="0.45"/>
+      <path d="M 8.2,13.6 L 8.2,7.5 M 9.8,13.6 L 9.8,6.2 M 11.4,13.6 L 11.4,6.6 M 13.0,13.6 L 13.0,7.8 M 6.8,11.2 L 8.2,9.8" stroke="#d4a84b" stroke-width="0.7" stroke-linecap="round"/>
+      <ellipse cx="10.6" cy="11.8" rx="2.8" ry="2.2" fill="#1c1512" stroke="#d4a84b" stroke-width="0.5"/>
+      <text class="bay-lbl" x="10.8" y="4.4">hw:r2</text>
+      <text class="bay-sub" x="10.8" y="17.2">WAX HAND</text>
+      <rect class="cut" x="0" y="0" width="21.6" height="21.6" rx="1.8"/>
+    </g>
+
+    <!-- Bay r3: Locket -->
+    <g transform="translate(52, 0)">
+      <rect x="0" y="0" width="21.6" height="21.6" rx="1.8" fill="#1c1512" stroke="#d4a84b" stroke-width="0.45"/>
+      <circle cx="10.8" cy="6.0" r="1.2" fill="none" stroke="#d4a84b" stroke-width="0.45"/>
+      <ellipse cx="10.8" cy="10.4" rx="3.4" ry="4.0" fill="none" stroke="#d4a84b" stroke-width="0.55"/>
+      <circle cx="10.8" cy="10.4" r="1.5" fill="#d4a84b"/>
+      <text class="bay-lbl" x="10.8" y="4.4">hw:r3</text>
+      <text class="bay-sub" x="10.8" y="17.2">LOCKET</text>
+      <rect class="cut" x="0" y="0" width="21.6" height="21.6" rx="1.8"/>
+    </g>
+
+    <!-- Bay r4: Planchette -->
+    <g transform="translate(78, 0)">
+      <rect x="0" y="0" width="21.6" height="21.6" rx="1.8" fill="#1c1512" stroke="#d4a84b" stroke-width="0.45"/>
+      <path d="M 10.8,5.8 L 15.2,12.8 Q 10.8,14.2 6.4,12.8 Z" fill="none" stroke="#d4a84b" stroke-width="0.55"/>
+      <circle cx="10.8" cy="10.5" r="1.4" fill="none" stroke="#d4a84b" stroke-width="0.45"/>
+      <text class="bay-lbl" x="10.8" y="4.4">hw:r4</text>
+      <text class="bay-sub" x="10.8" y="17.2">PLANCHETTE</text>
+      <rect class="cut" x="0" y="0" width="21.6" height="21.6" rx="1.8"/>
+    </g>
+
+    <!-- Bay r5: Silver Key -->
+    <g transform="translate(104, 0)">
+      <rect x="0" y="0" width="21.6" height="21.6" rx="1.8" fill="#1c1512" stroke="#d4a84b" stroke-width="0.45"/>
+      <circle cx="8.0" cy="10.0" r="2.4" fill="none" stroke="#d4a84b" stroke-width="0.55"/>
+      <line x1="10.4" y1="10.0" x2="15.8" y2="10.0" stroke="#d4a84b" stroke-width="0.6"/>
+      <line x1="13.8" y1="10.0" x2="13.8" y2="12.2" stroke="#d4a84b" stroke-width="0.6"/>
+      <line x1="15.2" y1="10.0" x2="15.2" y2="12.2" stroke="#d4a84b" stroke-width="0.6"/>
+      <text class="bay-lbl" x="10.8" y="4.4">hw:r5</text>
+      <text class="bay-sub" x="10.8" y="17.2">SILVER KEY</text>
+      <rect class="cut" x="0" y="0" width="21.6" height="21.6" rx="1.8"/>
+    </g>
+
+    <!-- Bay r6: Séance Bell -->
+    <g transform="translate(130, 0)">
+      <rect x="0" y="0" width="21.6" height="21.6" rx="1.8" fill="#1c1512" stroke="#d4a84b" stroke-width="0.45"/>
+      <path d="M 7.2,12.8 Q 7.8,7.2 10.8,7.2 Q 13.8,7.2 14.4,12.8 Z" fill="none" stroke="#d4a84b" stroke-width="0.55"/>
+      <line x1="10.8" y1="5.5" x2="10.8" y2="7.2" stroke="#d4a84b" stroke-width="0.6"/>
+      <circle cx="10.8" cy="13.5" r="1.0" fill="#d4a84b"/>
+      <text class="bay-lbl" x="10.8" y="4.4">hw:r6</text>
+      <text class="bay-sub" x="10.8" y="17.2">SEANCE BELL</text>
+      <rect class="cut" x="0" y="0" width="21.6" height="21.6" rx="1.8"/>
+    </g>
+  </g>
+
+  <!-- 4. Vault Chest & Lid Wood-Grain & Brass Corner Strap Strips (128.0 x 14.0 mm) -->
+  <g transform="translate(10, 90)">
+    <text class="sub" x="0" y="-3">4. Vault Chest &amp; Lid Wood-Grain &amp; Brass Strap Wraps (4x 128.0 x 14.0 mm)</text>
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="128" height="14" rx="1.0" fill="#2c1d14" stroke="#614128" stroke-width="0.4"/>
+      <rect x="0" y="0" width="10" height="14" fill="#b88c32"/>
+      <rect x="118" y="0" width="10" height="14" fill="#b88c32"/>
+      <circle cx="5" cy="4" r="1.0" fill="#3a2810"/>
+      <circle cx="5" cy="10" r="1.0" fill="#3a2810"/>
+      <circle cx="123" cy="4" r="1.0" fill="#3a2810"/>
+      <circle cx="123" cy="10" r="1.0" fill="#3a2810"/>
+      <path d="M 12,4 Q 44,2 76,5 T 116,4 M 12,10 Q 50,12 88,9 T 116,10" fill="none" stroke="#180f0a" stroke-width="0.35"/>
+      <rect class="cut" x="0" y="0" width="128" height="14" rx="1.0"/>
+    </g>
+    <g transform="translate(0, 18)">
+      <rect x="0" y="0" width="128" height="14" rx="1.0" fill="#2c1d14" stroke="#614128" stroke-width="0.4"/>
+      <rect x="0" y="0" width="10" height="14" fill="#b88c32"/>
+      <rect x="118" y="0" width="10" height="14" fill="#b88c32"/>
+      <circle cx="5" cy="4" r="1.0" fill="#3a2810"/>
+      <circle cx="5" cy="10" r="1.0" fill="#3a2810"/>
+      <circle cx="123" cy="4" r="1.0" fill="#3a2810"/>
+      <circle cx="123" cy="10" r="1.0" fill="#3a2810"/>
+      <path d="M 12,4 Q 44,6 76,3 T 116,5 M 12,10 Q 50,8 88,11 T 116,9" fill="none" stroke="#180f0a" stroke-width="0.35"/>
+      <rect class="cut" x="0" y="0" width="128" height="14" rx="1.0"/>
+    </g>
+    <g transform="translate(0, 36)">
+      <rect x="0" y="0" width="128" height="14" rx="1.0" fill="#2c1d14" stroke="#614128" stroke-width="0.4"/>
+      <rect x="0" y="0" width="10" height="14" fill="#b88c32"/>
+      <rect x="118" y="0" width="10" height="14" fill="#b88c32"/>
+      <circle cx="5" cy="4" r="1.0" fill="#3a2810"/>
+      <circle cx="5" cy="10" r="1.0" fill="#3a2810"/>
+      <circle cx="123" cy="4" r="1.0" fill="#3a2810"/>
+      <circle cx="123" cy="10" r="1.0" fill="#3a2810"/>
+      <text class="bay-lbl" x="64" y="8.5" font-size="3.6">BLACKWOOD RELIC VAULT — SEALED</text>
+      <rect class="cut" x="0" y="0" width="128" height="14" rx="1.0"/>
+    </g>
+  </g>
+
+  <!-- 5. 20mm Scale Bar -->
+  <g transform="translate(10, 168)">
+    <line x1="0" y1="0" x2="20" y2="0" stroke="#262229" stroke-width="0.6"/>
+    <line x1="0" y1="-2" x2="0" y2="2" stroke="#262229" stroke-width="0.6"/>
+    <line x1="20" y1="-2" x2="20" y2="2" stroke="#262229" stroke-width="0.6"/>
+    <text class="sub" x="23" y="1">20.0 mm scale verification bar</text>
+  </g>
+</svg>

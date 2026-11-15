@@ -11,7 +11,7 @@ fileMatchPattern: "**/*.test.ts"
 - Unit tests cover concrete examples and edge cases; property tests cover the universal rule. Do not duplicate one as the other.
 - Pure logic is tested in `shared/`. Durable Objects are tested with an in-memory storage fake plus fast-check command sequences (model-based testing).
 - Contract tests parse recorded fixtures in `shared/fixtures/**`. Fixtures are real upstream responses with secrets and ids scrubbed.
-- No test calls World Labs or Workers AI. A test that needs network is a bug.
+- No test calls World Labs, Workers AI (speech, Whisper, text, images), Cloudflare Images or Open-Meteo. A test that needs network is a bug.
 - Inject time and randomness (`now: () => number`, seeded rng). Never call `Date.now()` or `Math.random()` in logic under test.
 - Generators live next to the logic they test in `*.arb.ts` files and are reused across specs.
 - When a property test fails, minimise the counter-example, add it as a unit-test regression, then fix the code (not the property) unless the requirement is wrong — if so, update `requirements.md` first.

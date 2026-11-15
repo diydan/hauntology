@@ -1,0 +1,55 @@
+import type { EngineEvent, PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/engine";
+
+/**
+ * Plain words for the solo table (integration 4.2): names for seats and cards, one log line per public event, and the
+ * notebook. Framework-free, so it is tested on its own. It reads only the views the Room sent.
+ */
+export type Names = Readonly<{ seat(n: number | null): string; card(id: string): string }>;
+
+export function namesOf(view: PublicSnapshot, mySeat: number | null): Names {
+  const cards = new Map<string, string>();
+  for (const x of [...view.suspects, ...view.zones, ...view.relics]) cards.set(x.id, x.name);
+  return {
+    seat: (n) => (n === null ? "nobody" : n === mySeat ? "You" : view.seats.find((x) => x.seat === n)?.nickname ?? `Seat ${n}`),
+    card: (id) => cards.get(id) ?? id,
+  };
+}
+
+/** One line for the public log, or null for an event the log does not show. Never anything private. */
+export function eventLine(e: EngineEvent, n: Names): string | null {
+  switch (e.kind) {
+    case "turn-start": return `${n.seat(e.seat)}: turn starts.`;
+    case "visit": return `${n.seat(e.seat)} went to the ${n.card(e.zone)}.`;
+    case "inspect": return `${n.seat(e.seat)} searched the ${n.card(e.zone)}.`;
+    case "suggest": {
+      const who = `${n.seat(e.seat)} asked: ${n.card(e.suspect)}, in the ${n.card(e.zone)}, with the ${n.card(e.relic)}?`;
+      return e.refuter === null ? `${who} Nobody could answer.` : `${who} ${n.seat(e.refuter)} showed a card.`;
+    }
+    case "seal": return `${n.seat(e.seat)} sealed an accusation.`;
+    case "accuse": return `${n.seat(e.seat)} was ${e.right ? "right" : "wrong"}.`;
+    case "timeout": return `${n.seat(e.seat)} ran out of time.`;
+    case "haunt": return `The haunt rises to ${e.level}.`;
+    case "haunt-event": return `The house stirs: ${e.option.replace("-", " ")}.`;
+    case "eavesdrop": return `${n.seat(e.seat)} listened in.`;
+    case "nudge": return `${n.seat(e.seat)} nudged ${n.seat(e.target)}.`;
+    default: return null;
+  }
+}
+
+export type NoteMark = "mine" | "shown" | "found" | null;
+
+/** The notebook: each card, and how you know it is not the answer (in your hand, shown to you, or found). */
+export function notebook(view: PublicSnapshot, me: PrivateSnapshot | null): Readonly<{ group: string; rows: { id: string; name: string; mark: NoteMark }[] }>[] {
+  const mark = (id: string): NoteMark =>
+    me === null ? null : me.hand.some((c) => c.id === id) ? "mine" : me.shownToMe.some((x) => x.card === id) ? "shown" : me.found.includes(id) ? "found" : null;
+  const rows = (xs: readonly { id: string; name: string }[]) => xs.map((x) => ({ id: x.id, name: x.name, mark: mark(x.id) }));
+  return [
+    { group: "Ghosts", rows: rows(view.suspects) },
+    { group: "Rooms", rows: rows(view.zones) },
+    { group: "Relics", rows: rows(view.relics) },
+  ];
+}
+
+/** Seconds left on the clock, never below zero; null when no clock runs. */
+export const secondsLeft = (view: PublicSnapshot, nowMs: number): number | null =>
+  view.deadlineMs === null || view.paused ? null : Math.max(0, Math.ceil((view.deadlineMs - nowMs) / 1000));

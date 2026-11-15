@@ -14,6 +14,8 @@ The world viewer lets a visitor walk through a World Bundle in the browser (desk
 - **Haunt Level**: a number from 0 to 1 set by the game that scales the haunt effects.
 - **Quality Level**: a discrete rendering tier (resolution scale and splat LOD).
 - **Input Mode**: `play` (movement active) or `chat` (movement suspended).
+- **Atmosphere**: a frozen snapshot of the real-world conditions (weather class, time of day, moon, optional star texture) supplied by the shell through `setAtmosphere`; see the `conditions` spec.
+- **Tilt to look**: turning a phone to turn the camera, as an alternative to dragging.
 
 ## Requirements
 
@@ -52,6 +54,7 @@ The world viewer lets a visitor walk through a World Bundle in the browser (desk
 3. WHEN anchors are provided THEN the Viewer SHALL draw an orb at each unfound anchor whose intensity increases as the player approaches and drops to zero once the memory is found.
 4. WHEN the ghost is present THEN the Viewer SHALL draw the ghost sprite as a camera-facing, vertically locked billboard placed at least 1.2 m from the player and inside the world bounds, with a gentle bob.
 5. WHERE ambient audio is enabled THEN the Viewer SHALL start a procedurally generated drone only after a user gesture, provide a mute control, and lower the volume while the chat is open.
+6. WHEN the shell sends `setAtmosphere` THEN the Viewer SHALL tint and fog the world by weather class and time of day, draw rain or snow within a capped particle count (lower under a low Quality Level or reduced motion), show a sky from the supplied star texture at dusk and night, and SHALL change nothing about movement, collision, anchors or the Haunt Level.
 
 ### Requirement 4
 
@@ -94,3 +97,22 @@ The world viewer lets a visitor walk through a World Bundle in the browser (desk
 #### Acceptance Criteria
 
 1. WHEN the visitor chooses "Save memory card" THEN the Viewer SHALL render an image containing the world thumbnail and the excerpts of exactly the memories found, truncated to a fixed length, and containing no personal metadata.
+
+### Requirement 8
+
+**User Story:** As a visitor on a phone, I want to turn the phone to look around, so that looking feels natural.
+
+#### Acceptance Criteria
+
+1. WHERE the Viewer runs on a phone THEN the Viewer MAY offer tilt to look, asking for motion permission once from an explicit tap, using a tap to calibrate the forward direction, ignoring wobbles below a threshold, changing only the look direction and never movement or collision, and keeping drag-to-look as the fallback when permission is denied or no sensor exists.
+
+### Requirement 9
+
+**User Story:** As a Player, I want the screens of this feature to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Play) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Play screen SHALL show the memory lamps, the Hint's compass and bars with `ui-lamps`, `ui-compass` and `ui-bars`, the ghost's speech with `ui-dialogue`, `ui-speech` and `ui-nameplate`, the Chat with `ui-sheet` and `ui-log`, and an always visible Exit with `ui-button`; and the memory card SHALL draw with `shared/src/design/tokens.ts`.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

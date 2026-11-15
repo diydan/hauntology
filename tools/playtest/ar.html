@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0e0f14">
+<title>Spirit table (mockup) · Hauntology playtest</title>
+<link rel="stylesheet" href="css/ar.css">
+</head>
+<body>
+<div id="stage">
+  <video id="cam" playsinline muted autoplay hidden></video>
+  <canvas id="table" aria-hidden="true"></canvas>
+  <canvas id="gl" role="img" aria-label="A 3D haunted house board with ghost figures, seen through your phone"></canvas>
+</div>
+
+<header id="top">
+  <a class="back" href="index.html" aria-label="Back to the tests">&#8592;</a>
+  <span class="pill brand">Spirit table <small>mockup</small></span>
+  <span class="pill" id="st-priv" title="Nobody else can see this layer">Only you</span>
+</header>
+
+<section id="card" aria-live="polite">
+  <h1 id="card-t">Your private table</h1>
+  <p id="card-p">Only your phone sees it. 7 clues hang around you: turn round and look for the ? rings.</p>
+</section>
+
+<div id="arrow" class="arrow" hidden aria-hidden="true"><span class="ar-rot"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M4 12h15m-6-7 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><small>clue</small></div>
+<div id="arrow-board" class="arrow" hidden aria-hidden="true"><span class="ar-rot"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M4 12h15m-6-7 7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><small>board</small></div>
+
+<section id="sheet" hidden aria-label="Clues you have found">
+  <header><h2>Clues <span id="sheet-count">0 of 7</span></h2><button id="sheet-close" aria-label="Close the clue list">Close</button></header>
+  <p class="muted">Sample: the safe in the Hall needs 4 digits. Turn all the way round. Hold your view on a ? ring to read it.</p>
+  <p id="code-line" class="code"></p>
+  <ul id="clue-list"></ul>
+  <div class="row"><button id="t-notes" aria-pressed="true">My marks: on</button><button id="t-list">Show all as text</button></div>
+</section>
+
+<nav id="bar" aria-label="Controls">
+  <button id="b-cam" aria-pressed="false">Camera</button>
+  <button id="b-place">Place</button>
+  <button id="b-tilt" aria-pressed="false">Tilt</button>
+  <button id="b-clues" aria-pressed="false"><span>Clues</span><small>0/7</small></button>
+</nav>
+
+<script type="module" src="js/ar.js"></script>
+</body>
+</html>

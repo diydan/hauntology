@@ -68,7 +68,7 @@ The ghost engine runs the text-adventure loop: the visitor walks to three hidden
 
 #### Acceptance Criteria
 
-1. WHEN a Directive needs narration THEN the Narrator SHALL call the configured Workers AI text model with the persona, fixed rules, only the revealed memories and the Directive, with at most 220 output tokens and a 6-second timeout.
+1. WHEN a Directive needs narration THEN the Narrator SHALL call the configured Workers AI text model with the persona, fixed rules, only the revealed memories and the Directive, and optionally the weather class, the time-of-day bucket and the moon name from the frozen conditions snapshot (nothing else about the real world), with at most 220 output tokens and a 6-second timeout.
 2. WHEN any prompt is built THEN the Engine SHALL include no text of any memory that is not yet revealed.
 3. WHEN a model reply is received THEN the Engine SHALL validate it (non-empty, at most 600 characters, no URLs, markup or control characters, no out-of-fiction phrases), retry once on failure and then substitute a scripted line.
 4. THE Engine SHALL provide at least five persona-flavoured scripted lines for every Directive kind, selected with a seeded random generator.
@@ -110,3 +110,14 @@ The ghost engine runs the text-adventure loop: the visitor walks to three hidden
 #### Acceptance Criteria
 
 1. THE Engine SHALL record only counters (turns, reveals, fallbacks, validation failures, completions) and error codes, and SHALL NOT record visitor input, prompts or model output.
+
+### Requirement 10
+
+**User Story:** As a visitor, I want the chat with the ghost to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (the chat panel and the journal of the Play screen: task 6) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE chat panel SHALL be the Chat of the `world-viewer` Play screen, built from `ui-sheet`, `ui-log` (with `ui-log-row`, `ui-log-who`) and `ui-field`, with the quick buttons (Look, Listen, Touch, Ask, Hint) as `ui-button--quiet` in a `ui-choices` row, the ghost's reply in `ui-dialogue` with `ui-speech` and a `ui-nameplate` (`--whisper`, `--keeper` or `--suspect` by who speaks), the portrait in `ui-portrait`, and the journal as a `ui-panel` list; the transcript SHALL stay in an `aria-live` region.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

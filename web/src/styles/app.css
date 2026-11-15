@@ -1,0 +1,208 @@
+/*
+ * The web app's own style: WHERE things go, and nothing about how they look. The look is the design
+ * system (design/tokens.json through tokens.css, design/fonts.css, design/elements.css): every screen is
+ * built from the `ui-` elements, and this file holds only layout (grid areas, widths, scrolling, the
+ * pad's touch behaviour) in the space tokens. No colour, no type face and no corner is written here;
+ * styles.test.ts checks that. A piece that is missing is added to design/elements.css and
+ * design/catalogue.html, not here (steering/design-system.md).
+ */
+img,
+canvas,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+.ui-page {
+  overflow-wrap: anywhere;
+}
+
+/* A heading that takes focus on a route change is a place to put focus, not a control: no ring on it. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
+.screen {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4) calc(var(--space-6) + var(--space-4));
+  animation: fade-in var(--fade) var(--ease) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* A list of one action per row, and the Home facts. */
+.actions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.play-choice .actions p {
+  margin: var(--space-1) 0 0;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * Play: the Viewer and the Chat. The Chat is a bottom sheet in a narrow container and a side
+ * panel from 900 px, decided by a container query, not by script.
+ */
+.play-layout {
+  container-type: inline-size;
+  container-name: play;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 100dvh;
+}
+
+.play-layout .chat {
+  grid-row: 2;
+  max-height: 50dvh;
+  overflow-y: auto;
+  margin: 0 var(--space-3) var(--space-3);
+}
+
+@container play (min-width: 900px) {
+  .play-layout {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .play-layout .chat {
+    grid-row: 1;
+    grid-column: 2;
+    max-height: none;
+    margin: var(--space-3) var(--space-3) var(--space-3) 0;
+  }
+}
+
+.play-main,
+.case-layout {
+  min-width: 0;
+  padding: var(--space-4);
+}
+
+.case-host {
+  min-width: 0;
+}
+
+.viewer,
+.viewer-fallback {
+  min-height: 12rem;
+}
+
+.viewer-fallback {
+  display: grid;
+  place-items: center;
+}
+
+.transcript {
+  list-style: none;
+  padding: 0;
+  max-height: 14rem;
+}
+
+.debug {
+  position: fixed;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  max-width: calc(100% - var(--space-4));
+}
+
+.debug dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 var(--space-3);
+  margin: 0;
+}
+
+.debug dd {
+  margin: 0;
+}
+
+/* The setup card's choices: a column of rows at least as tall as the target, and the bot counts side by side. */
+.choice-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group legend {
+  padding: 0;
+}
+
+.choice-bots {
+  gap: var(--space-4);
+}
+
+/* Haunt: the ghost presets and the sky matches are lists, not bullets. */
+.presets,
+.matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.preset {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 5rem;
+}
+
+/*
+ * Create: the Sketch Pad has `touch-action: none`, so a finger draws and the page neither scrolls nor
+ * zooms inside it. The paper is painted by the pad itself (create/surface.ts), black ink on white.
+ */
+.pad-frame {
+  max-width: 40rem;
+}
+
+.pad-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.photo-preview {
+  max-height: 20rem;
+  object-fit: contain;
+}
+
+.candidate-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Confirm: the picture the place will be made from is as large as the page allows. */
+.confirm-figure {
+  max-width: 40rem;
+}
+
+.turnstile-box {
+  min-height: 4rem;
+}

@@ -1,0 +1,14 @@
+/*
+ * The candles, their holders and the microphone. Real wax candles in brass and pewter holders; the flame is a teardrop with a glow, and a
+ * snuffed candle leaves a thin wisp of smoke. Colours are the art-* tokens of the materials (art/patina.css); nothing here moves
+ * except through the fade tokens.
+ */
+.pz-flame-art, .pz-smoke-art, .pz-holder-art { display: block; width: 100%; height: 100%; overflow: visible; }
+.pz-cf-glow-in { stop-color: color-mix(in srgb, var(--art-flame) 65%, transparent); }
+.pz-cf-glow-out { stop-color: color-mix(in srgb, var(--art-flame) 0%, transparent); }
+.pz-cf-root { fill: color-mix(in srgb, var(--art-blue) 70%, transparent); }
+.pz-smoke-line { fill: none; stroke: color-mix(in srgb, var(--art-ivory) 55%, transparent); stroke-width: 1.6; stroke-linecap: round; }
+.pz-holder-ring { fill: none; stroke: color-mix(in srgb, var(--art-brass) 70%, var(--void)); stroke-width: 3; stroke-linecap: round; }
+.pz-holder-well { fill: color-mix(in srgb, var(--void) 55%, transparent); }
+.pz-mic-grille { fill: none; stroke: color-mix(in srgb, var(--art-brass) 35%, var(--void)); stroke-width: 1.2; stroke-linecap: round; }
+.pz-mic-cradle { fill: none; stroke: color-mix(in srgb, var(--art-steel) 80%, var(--void)); stroke-width: 2; stroke-linecap: round; }

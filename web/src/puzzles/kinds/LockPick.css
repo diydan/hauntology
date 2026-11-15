@@ -1,0 +1,13 @@
+/* Lock pick. Fits from 320 px wide; every control is at least the touch target. The lock is as tall as the screen allows: 31.5rem is everything else on this puzzle's screen, and a slice is 56 by 140 units. */
+.pz-lock { position: relative; width: min(100%, calc(var(--n) * 4.4rem), max(calc(var(--n) * 3.2rem), calc((100dvh - 31.5rem) * var(--n) / 2.5))); min-width: 0; contain: inline-size; margin: 0 auto; overflow: hidden; border: var(--stroke-thin) solid color-mix(in srgb, var(--art-brass) 35%, var(--void)); border-radius: var(--radius-md); box-shadow: 0 4px 10px color-mix(in srgb, var(--void) 55%, transparent); }
+.pz-pins { display: flex; margin: 0; padding: 0; list-style: none; }
+.pz-pin { flex: 1 1 0; min-width: 0; }
+.pz-heat { min-height: 1.5rem; margin: 0; text-align: center; font-size: var(--text-lead); font-weight: 700; }
+.pz-heat[data-heat="hot"] { color: var(--accent); }
+.pz-slider-label { display: block; margin: 0; text-align: center; font-size: var(--text-control); }
+.pz-slider { display: block; width: 100%; min-height: var(--pz-target); margin: 0; accent-color: var(--accent); touch-action: pan-y; }
+.pz-hold { flex: 1 1 9rem; touch-action: none; } /* wide enough to hold, and Tilt still fits beside it */
+/* The pins settle with a fade, or without one for a still frame (the Player's setting, art/lock.css) or the system's. */
+@media (prefers-reduced-motion: reduce) {
+  .pz-key-stack { transition: none; }
+}
