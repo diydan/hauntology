@@ -213,7 +213,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
 
   const left = view.plays - heard;
   const hearText = !hear ? "No voice here" : left > 0 ? `Hear the word (${left} left)` : "No more whispers";
-  const hearShort = !hear ? hearText : left > 0 ? `Hear (${left} left)` : hearText; // short enough that Clear, Hear and the tilt buttons share one row
+  const hearShort = !hear ? hearText : `Hear (${Math.max(0, left)} left)`; // short enough that Clear, Hear, Tilt and Level share one row on a phone
   return (
     <div className="pz-board-kind">
       <p className="pz-hint pz-clue-line">Clue: {view.clue} · {view.length} letters</p>
@@ -232,13 +232,13 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
         <div className="pz-digits" role="img" aria-label={`Letters so far: ${spelled.length} of ${view.length}`}>
           {Array.from({ length: view.length }, (_, i) => <span key={i}>{spelled[i] ?? "·"}</span>)}
         </div>
-        <div className="ui-row ui-row--center">
+        <div className="pz-boardrow">
           <button type="button" className="ui-button" disabled={spelled.length === 0} onClick={clear}>Clear</button>
           <button type="button" className="ui-button" disabled={!hear || left <= 0} aria-label={hearText} onClick={() => void speak()}>{hearShort}</button>
           {tiltButtons}
         </div>
       </div>
-      <p className="ui-hint pz-hint">{tilt === "on" ? "Tilt is on: lean the phone to roll the planchette, then tap anywhere or rest on the letter." : "Drag the planchette onto a letter, then press Pick. Or tap a letter."}</p>
+      <p className="ui-hint pz-hint pz-board-hint">{tilt === "on" ? "Tilt is on: lean the phone to roll the planchette, then tap anywhere or rest on the letter." : "Drag the planchette onto a letter, then press Pick. Or tap a letter."}</p>
     </div>
   );
 }

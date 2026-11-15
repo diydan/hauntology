@@ -132,7 +132,7 @@
 .pz-host[data-kind='clock'] { --pz-rest: 38rem; --pz-min: 11rem; }
 .pz-host[data-kind='wires'] { --pz-rest: 25rem; --pz-min: 17.5rem; }
 .pz-host[data-kind='maze'] { --pz-rest: 24rem; }
-.pz-host[data-kind='board'] { --pz-rest: 41.5rem; }
+.pz-host[data-kind='board'] { --pz-rest: 38.5rem; }
 .pz-host[data-kind='words'] { --pz-rest: 32rem; }
 .pz-host[data-kind='photo'] { --pz-rest: 25.6rem; --pz-min: 19rem; }
 
@@ -153,6 +153,14 @@
   .pz-feedback .pz-status { min-height: 1.25rem; }
   /* The tilt explanation is out of sight (still read aloud): the Twist button says what it is. */
   .pz-twist .ui-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+
+/* The spirit board has more to give back than the other puzzles: on a screen under 56 rem it sets the clue smaller, hides its explaining line and shrinks the letters, so its short band reaches higher and the board may go down to 13 rem. Under 47 rem the blocks are also closer together, which gives a little more back. */
+@media (orientation: portrait) and (max-height: 56rem) {
+  .pz-host[data-kind='board'] { --pz-rest: 31rem; --pz-min: 13rem; }
+}
+@media (orientation: portrait) and (max-height: 47rem) {
+  .pz-host[data-kind='board'] { --pz-rest: 29rem; }
 }
 
 /*

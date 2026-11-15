@@ -49,6 +49,21 @@ describe("puzzle fit", () => {
     expect(short).toMatch(/\.pz-host \{ --pz-min: 13rem; \}/);
   });
 
+  it("gives the spirit board its own short band: one row of four buttons, a one-line clue, no explaining line in sight, and a board that may go down to 13 rem", () => {
+    const board = sources["./kinds/Board.tsx"]!;
+    const css = kindCss["./kinds/Board.css"]!;
+    expect(board).toMatch(/className="pz-boardrow"/); // Clear, Hear, Tilt and Level in one row: a fourth button on a row of its own costs a 48 px line
+    expect(css).toMatch(/\.pz-boardrow > \.ui-button \{[^}]*flex: 1 1 auto;[^}]*white-space: nowrap;/);
+    const band = /@media \(orientation: portrait\) and \(max-height: 56rem\) \{([\s\S]*?)\n\}/.exec(css)![1]!;
+    expect(band).toMatch(/\.pz-clue-line \{ font-size: var\(--text-body\); \}/);
+    expect(band).toMatch(/\.pz-board-hint \{ position: absolute;/); // out of sight, still read aloud
+    expect(css).toMatch(/@media \(orientation: landscape\) and \(max-height: 32rem\) \{\s*\.pz-board-hint \{ position: absolute;/);
+    expect(board).toMatch(/pz-hint pz-board-hint/);
+    // what the screen has left is told in three bands: tall, under 56 rem, under 47 rem (the blocks sit closer together there); the floor stays at 13 rem
+    expect(puzzlesCss).toMatch(/@media \(orientation: portrait\) and \(max-height: 56rem\) \{\s*\.pz-host\[data-kind='board'\] \{ --pz-rest: 31rem; --pz-min: 13rem; \}/);
+    expect(puzzlesCss).toMatch(/@media \(orientation: portrait\) and \(max-height: 47rem\) \{\s*\.pz-host\[data-kind='board'\] \{ --pz-rest: 29rem; \}/);
+  });
+
   it("lays a phone held sideways out in two columns: the picture left, the controls beside it, the header, the message and Give up in a narrow column", () => {
     const land = /@media \(orientation: landscape\) and \(max-height: 32rem\) \{([\s\S]*?)\n\}\n/.exec(puzzlesCss)![1]!;
     expect(land).toMatch(/grid-template-areas: "stage bar" "stage feedback" "stage foot"/);

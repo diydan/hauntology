@@ -245,7 +245,8 @@ describe("Board", () => {
     expect(button().getAttribute("aria-label")).toBe("Hear the word (1 left)");
     await act(async () => { button().click(); button().click(); }); // a double tap in one go: the last whisper is spent once
     expect(said).toBe(2);
-    expect(button().textContent).toBe("No more whispers");
+    expect(button().getAttribute("aria-label")).toBe("No more whispers");
+    expect(button().textContent).toBe("Hear (0 left)");
     expect(button().disabled).toBe(true);
     await act(async () => { fireEvent.click(button()); });
     expect(said).toBe(2);
