@@ -981,8 +981,18 @@ async function setSlot(slot, id, keep = false) {
    between body pieces move together and no cracks open. Runs after a garment or the body shape changes. */
 let insetTimer = 0;
 function scheduleInset() { clearTimeout(insetTimer); insetTimer = setTimeout(insetBody, 150); }
+/* SCARF over the jacket: a scarf vertex that sits inside the top or outfit (behind its nearest surface point) is moved out along that surface's normal to 0.5 cm above it, so the scarf lies over the jacket front and back instead of passing through it. Bind pose, from the scarf's own original positions. */
+function scarfOver() {
+  const sc = parts.scarf; if (!sc) return; const tops = []; for (const s2 of ['top', 'outfit']) if (parts[s2]) parts[s2].objs.forEach(o => o.traverse(m => { if (m.isMesh && m.geometry.attributes.normal) tops.push(m); }));
+  const C = 1.5, grid = new Map(), key = (x, y, z) => Math.floor(x / C) + ',' + Math.floor(y / C) + ',' + Math.floor(z / C);
+  for (const m of tops) { const P = m.geometry.attributes.position, N = m.geometry.attributes.normal; for (let i = 0; i < P.count; i++) { const k = key(P.getX(i), P.getY(i), P.getZ(i)); (grid.get(k) || grid.set(k, []).get(k)).push([P.getX(i), P.getY(i), P.getZ(i), N.getX(i), N.getY(i), N.getZ(i)]); } }
+  sc.objs.forEach(o => o.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position, O = m.userData.scarfOrig ||= P.array.slice(); P.array.set(O);
+    if (tops.length) for (let i = 0; i < P.count; i++) { const x = O[3 * i], y = O[3 * i + 1], z = O[3 * i + 2], cx = Math.floor(x / C), cy = Math.floor(y / C), cz = Math.floor(z / C); let best = null, bd = 9;
+      for (let a2 = -2; a2 <= 2; a2++) for (let b = -2; b <= 2; b++) for (let c = -2; c <= 2; c++) { const l = grid.get((cx + a2) + ',' + (cy + b) + ',' + (cz + c)); if (l) for (const q of l) { const d = (q[0] - x) ** 2 + (q[1] - y) ** 2 + (q[2] - z) ** 2; if (d < bd) { bd = d; best = q; } } }
+      if (best) { const h = (x - best[0]) * best[3] + (y - best[1]) * best[4] + (z - best[2]) * best[5]; if (h < 0.5) { const push = 0.5 - h; P.setXYZ(i, x + best[3] * push, y + best[4] * push, z + best[5] * push); } } }
+    P.needsUpdate = true; m.geometry.computeBoundingSphere(); })); }
 function insetBody() {
-  if (!bodyObj) return; const garments = [];
+  if (!bodyObj) return; scarfOver(); const garments = [];
   for (const s of ['top', 'bot', 'outfit', 'shoes', 'scarf']) if (parts[s]) parts[s].objs.forEach(o => o.traverse(m => { if (m.isMesh && m.geometry && m.geometry.attributes.position && m.geometry.attributes.position.count) garments.push(m); }));
   const bodies = []; bodyObj.traverse(o => { if (o.isSkinnedMesh && /^[MF]_body_/.test(o.name) && o.geometry.attributes.position) bodies.push(o); }); if (faceMesh && faceMesh.geometry.attributes.position) bodies.push(faceMesh);
   const setHide = (m, arr) => { const g = m.geometry; if (g.attributes.aHide && g.attributes.aHide.count === g.attributes.position.count) { g.attributes.aHide.array.set(arr); g.attributes.aHide.needsUpdate = true; } else g.setAttribute('aHide', new THREE.BufferAttribute(arr, 1)); };
