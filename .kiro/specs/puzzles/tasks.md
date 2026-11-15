@@ -24,39 +24,37 @@ Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit b
     - _Requirements: 1.2, 1.3, 3.4, 7.2_
 
 - [ ] 2. Pure logic (`shared/src/puzzles/`)
-  - [ ] 2.1 `types.ts`: `Kind`, `Level`, `PuzzleSetting`, `LockView`, `LockSecret`, `Lock`, `Sight`, `Transcript`, `Verdict`, `PartyLocks` and `WanderLocks` with zod schemas; add `puzzle_disabled`, `puzzle_not_open`, `puzzle_already_open`, `puzzle_bad_transcript`, `puzzle_too_fast`, `puzzle_rate_limited`, `puzzle_attempts_spent` and `sight_unknown` to `shared/src/errors.ts`
-    - Built so far in `shared/src/puzzles/types.ts`: the Kind list (all eleven), the views, secrets, Sights and Transcript schema (zod) for `lockpick`, `wires` and `clock`, and `Verdict`. The error codes are in `shared/src/errors.ts` (with `puzzle_bad_placement` added for a bad Zone or Kind count) and their plain copy is in `shared/src/app/errors-copy.ts`. The other eight Kinds join with 2.4 and 2.5.
+  - [x] 2.1 `types.ts`: `Kind`, `Level`, `PuzzleSetting`, `LockView`, `LockSecret`, `Lock`, `Sight`, `Transcript`, `Verdict`, `PartyLocks` and `WanderLocks` with zod schemas; add `puzzle_disabled`, `puzzle_not_open`, `puzzle_already_open`, `puzzle_bad_transcript`, `puzzle_too_fast`, `puzzle_rate_limited`, `puzzle_attempts_spent` and `sight_unknown` to `shared/src/errors.ts`
+    - Built in `shared/src/puzzles/types.ts` (all eleven Kinds: views, secrets, Sights, Locks and the zod Transcript schema, `Verdict`). The error codes are in `shared/src/errors.ts` (with `puzzle_bad_placement` added for a bad Zone or Kind count) and their plain copy is in `shared/src/app/errors-copy.ts`.
     - _Requirements: 7.2, 7.6_
   - [x] 2.2 `rng.ts` (seeded generator) and `words.ts` (the two lists of 24 words, A to Z, 3 to 5 letters, gentle)
     - Built in `shared/src/puzzles/rng.ts` and `words.ts` (the two lists of 24 words and `BOARD_CLUES`, a short clue for each Spirit board word).
     - _Requirements: 5.2, 5.3, 10.5_
   - [x] 2.3 `kinds.ts` registry and `makeLock` for `lockpick`, `wires` and `clock` at both levels, with the level sizes of the design
-    - Built in `shared/src/puzzles/kinds.ts` (registry, `minSolveMs`) and `make.ts`. The `lockpick`, `wires` and `clock` Kinds are made; the rest follow in 2.4 and 2.5.
+    - Built in `shared/src/puzzles/kinds.ts` (registry, `minSolveMs`) and `make.ts`, for all eleven Kinds.
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
-  - [ ] 2.4 `makeLock` for `safe`, `musicbox`, `candles` and `moved`
+  - [x] 2.4 `makeLock` for `safe`, `musicbox`, `candles` and `moved`
+    - Built in `make.ts`, `verify.ts` and `kinds.ts`.
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
-  - [ ] 2.5 `makeLock` for `photo`, `words`, `board` and the optional `maze` (five authored mazes)
+  - [x] 2.5 `makeLock` for `photo`, `words`, `board` and the optional `maze` (five authored mazes)
+    - Built in `make.ts`, `verify.ts`, `kinds.ts` and `mazes.ts` (five authored mazes, solvable by search).
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
-  - [ ] 2.6 `sight.ts`: `sightFor`, `fadedFor` (only Memory Kinds; the same clue, a shorter time, 8 seconds with Assist)
-    - Built so far for the Memory Kinds that exist (`wires`, `clock`) in `shared/src/puzzles/sight.ts`.
+  - [x] 2.6 `sight.ts`: `sightFor`, `fadedFor` (only Memory Kinds; the same clue, a shorter time, 8 seconds with Assist)
+    - Built in `shared/src/puzzles/sight.ts`; the Memory Kinds are Cut wires, Clock time, Safe code, What moved and Torn photo.
     - _Requirements: 6.2, 6.3_
-  - [ ]* 2.7 Write property test for the Sight and its Faded twin
-    - Holds for the Memory Kinds built so far; it covers the others as they land.
+  - [x]* 2.7 Write property test for the Sight and its Faded twin
     - **Property 4: A Sight and its Faded twin show the same clue**
     - **Validates: Requirements 6.2, 6.3**
-  - [ ] 2.8 `verify.ts`: `verify` (schema, size, minimum solve time, answer or plausibility) and `referenceSolve` (touch events only) for every Kind
-    - Built so far for `lockpick`, `wires` and `clock` in `shared/src/puzzles/verify.ts`.
+  - [x] 2.8 `verify.ts`: `verify` (schema, size, minimum solve time, answer or plausibility) and `referenceSolve` (touch events only) for every Kind
+    - Built in `shared/src/puzzles/verify.ts` for all eleven Kinds.
     - _Requirements: 7.2, 7.3, 7.5, 12.1_
-  - [ ]* 2.9 Write property test for deterministic generation
-    - Holds for the three built Kinds; it covers the others as they land.
+  - [x]* 2.9 Write property test for deterministic generation
     - **Property 1: Generation is deterministic and never reads the Solution**
     - **Validates: Requirements 1.5, 6.2, 13.2**
-  - [ ]* 2.10 Write property test for solvability
-    - Holds for the three built Kinds; it covers the others as they land.
+  - [x]* 2.10 Write property test for solvability
     - **Property 2: Every generated Lock is solvable by the touch path**
     - **Validates: Requirements 3.1, 3.2, 3.3, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 5.3, 5.4, 12.1**
-  - [ ]* 2.11 Write property test for checking
-    - Holds for the three built Kinds; it covers the others as they land.
+  - [x]* 2.11 Write property test for checking
     - **Property 3: Checking accepts only the answer and never throws**
     - **Validates: Requirements 7.2, 7.5**
   - [x] 2.12 `place.ts`: `placePuzzles` (one Lock per Zone, each Kind at most twice, Sight in the next Zone) and `kindForDiscovery` (the first is never a Memory Kind)
@@ -107,20 +105,22 @@ Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit b
   - [x]* 2.27 Write property test for breath detection
     - **Property 17: A breath needs sustained loudness**
     - **Validates: Requirements 11.4**
-  - [ ] 2.28 `inspect.ts`: `openLock`, `submitAttempt`, `closeLock` (Plain Inspect, Bots, three Attempts, one open Lock, one Attempt a second, the public `inspect` line at open, the call to the party-mode `inspect()` on a solved Lock, the charge, no change to any rule)
+  - [x] 2.28 `inspect.ts`: `openLock`, `submitAttempt`, `closeLock` (Plain Inspect, Bots, three Attempts, one open Lock, one Attempt a second, the public `inspect` line at open, the call to the party-mode `inspect()` on a solved Lock, the charge, no change to any rule)
+    - Built in `shared/src/puzzles/inspect.ts`. The party-mode `inspect()` is handed in as a function and called once, only on a solved Lock; the Room's state is a small JSON record. Also: `sightsOnEntry` and `ackSight`, `restoreLock` for a reconnect, `freezeFor` for a Master pause, and `inspectPlan` for Plain Inspect.
     - _Requirements: 1.1, 1.2, 1.3, 1.6, 1.7, 7.1, 7.4, 7.6, 13.1_
-  - [ ]* 2.29 Write property test for a solved or failed Lock
+  - [x]* 2.29 Write property test for a solved or failed Lock
     - **Property 6: A solved Lock gives what a plain Inspect gives, and a failed one gives nothing**
     - **Validates: Requirements 1.2, 1.3, 7.4**
-  - [ ]* 2.30 Write property test for the Attempt limit
+  - [x]* 2.30 Write property test for the Attempt limit
     - **Property 11: Three wrong Attempts end a Lock and say nothing more**
     - **Validates: Requirements 1.3, 7.3**
-  - [ ] 2.31 `wander.ts`: `gateReveal`, `skipAvailable`, the open, attempt and skip reducers, Sight after a memory
+  - [x] 2.31 `wander.ts`: `gateReveal`, `skipAvailable`, the open, attempt and skip reducers, Sight after a memory
+    - Built in `shared/src/puzzles/wander.ts` (`gateReveal`, `submitWanderAttempt`, `skipWanderLock`, `sightAfterReveal`, `skipAvailable`). The engine calls `gateReveal` in front of its `reveal` Directive when `ghost-engine` is built.
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
-  - [ ]* 2.32 Write property test for the setting being off
+  - [x]* 2.32 Write property test for the setting being off
     - **Property 8: With the setting off, nothing changes**
     - **Validates: Requirements 1.1, 2.1**
-  - [ ]* 2.33 Write property test for reaching a memory
+  - [x]* 2.33 Write property test for reaching a memory
     - **Property 9: A memory is always reachable**
     - **Validates: Requirements 2.2, 2.3**
 
@@ -157,60 +157,83 @@ Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit b
 
 - [ ] 5. Feel layer (`web/src/puzzles/feel/`)
   - [ ] 5.1 The `Motion`, `Haptics`, `Synth` and `Breath` interfaces, the four fakes, `PlatformKit.puzzleFeel`, and a per-device switch for each
+    - Built in `web/src/puzzles/feel/types.ts` (the four interfaces and `PuzzleFeel`), `fakes.ts` (the four fakes) and `create.ts` (`createBrowserFeel`). Still to do: `PlatformKit.puzzleFeel` and the per-device switches, which belong to the Controller.
     - _Requirements: 8.6, 9.4_
-  - [ ] 5.2 `browserMotion`: permission from a tap, `beta` and `gamma` at 30 samples a second, the screen angle, stop when hidden or face down and when the Lock closes, raw values never leave the phone
+  - [x] 5.2 `browserMotion`: permission from a tap, `beta` and `gamma` at 30 samples a second, the screen angle, stop when hidden or face down and when the Lock closes, raw values never leave the phone
+    - Built in `feel/motion.ts` (`BrowserMotion`).
     - _Requirements: 8.1, 8.4, 8.5, 8.6_
-  - [ ] 5.3 `browserHaptics`: `navigator.vibrate` where present, the outcome of Spike 1.1 for iPhone, a visual twin for every buzz
+  - [x] 5.3 `browserHaptics`: `navigator.vibrate` where present, the outcome of Spike 1.1 for iPhone, a visual twin for every buzz
+    - Built in `feel/haptics.ts` (`BrowserHaptics`: the limiter, a visual twin for every buzz, and no buzz before the first touch, which a browser would log as an error). An iPhone gets the visual twin until Spike 1.1 says otherwise.
     - _Requirements: 9.1, 9.4, 9.5_
-  - [ ] 5.4 `browserSynth`: the recipes, the unlock tap, the "phone on silent" hint and a visual twin for every sound
+  - [x] 5.4 `browserSynth`: the recipes, the unlock tap, the "phone on silent" hint and a visual twin for every sound
+    - Built in `feel/synth.ts` (`BrowserSynth`).
     - _Requirements: 10.1, 10.3, 10.6_
-  - [ ] 5.5 `browserBreath`: the "Blow to snuff" tap, the microphone with echo cancellation and gain off, loudness only, the visible indicator and stop control, stop on end, hide or close
+  - [x] 5.5 `browserBreath`: the "Blow to snuff" tap, the microphone with echo cancellation and gain off, loudness only, the visible indicator and stop control, stop on end, hide or close
+    - Built in `feel/breath.ts` (`BrowserBreath`): loudness numbers only, and it stops when the page is hidden.
     - _Requirements: 11.1, 11.2, 11.3_
   - [ ] 5.6 Tie the Synth to the seat's sound consent (Party) and the Sound switch (Wander)
+    - `BrowserSynth` already reads `soundConsent`; tying it to the seat and the Wander switch is the Controller's.
     - _Requirements: 10.2_
 
 - [ ] 6. First three Kinds, end to end (the demo slice)
-  - [ ] 6.1 `PuzzleHost`: the full-screen frame with the timer ring, Attempts left, give up, the wrong-Attempt message with no partial count, the touch-path switch, and the Turn or Wander context
+  - [x] 6.1 `PuzzleHost`: the full-screen frame with the timer ring, Attempts left, give up, the wrong-Attempt message with no partial count, the touch-path switch, and the Turn or Wander context
+    - Built in `web/src/puzzles/PuzzleHost.tsx`. The Turn or Wander context arrives through its props from the Room. It keeps the screen awake while the Lock is open (`useWakeLock`).
     - _Requirements: 7.3, 12.3, 12.4, 13.1_
-  - [ ] 6.2 `SightCard` and the Faded clue at a Lock, with the heartbeat buzz
+  - [x] 6.2 `SightCard` and the Faded clue at a Lock, with the heartbeat buzz
+    - Built in `web/src/puzzles/SightCard.tsx`.
     - _Requirements: 6.1, 6.3_
-  - [ ] 6.3 Clock time screen (drag, twist, five-minute ticks)
+  - [x] 6.3 Clock time screen (drag, twist, five-minute ticks)
+    - Built in `kinds/Clock.tsx`.
     - _Requirements: 3.3_
-  - [ ] 6.4 Cut wires screen (drag, patterns as well as colours, snap and buzz)
+  - [x] 6.4 Cut wires screen (drag, patterns as well as colours, snap and buzz)
+    - Built in `kinds/Wires.tsx` (drag, or tap a wire and then a terminal).
     - _Requirements: 3.2, 12.3_
-  - [ ] 6.5 Lock pick screen (tension, tilt or slider, hot and cold, click, thunk)
+  - [x] 6.5 Lock pick screen (tension, tilt or slider, hot and cold, click, thunk)
+    - Built in `kinds/LockPick.tsx`.
     - _Requirements: 3.1_
   - [ ] 6.6 Checkpoint: play all three in a Party Room on two real phones (one Android, one iPhone) and in Wander; run Spike 1.5 for these three. Ensure every test passes; ask the user if questions arise.
 
 - [ ] 7. Second set of Kinds
-  - [ ] 7.1 Safe code screen (dial, twist, click, thunk)
+  - [x] 7.1 Safe code screen (dial, twist, click, thunk)
+    - Built in `kinds/Safe.tsx`.
     - _Requirements: 4.1_
-  - [ ] 7.2 Music box screen (the tune up to three times, five keys, lit keys, one buzz per note)
+  - [x] 7.2 Music box screen (the tune up to three times, five keys, lit keys, one buzz per note)
+    - Built in `kinds/MusicBox.tsx`.
     - _Requirements: 4.2, 10.3_
-  - [ ] 7.3 Candle order screen (gutter in turn, tap to snuff, the optional breath, relight on a wrong order)
+  - [x] 7.3 Candle order screen (gutter in turn, tap to snuff, the optional breath, relight on a wrong order)
+    - Built in `kinds/Candles.tsx` (with the optional breath).
     - _Requirements: 4.3, 11.1_
-  - [ ] 7.4 What moved screen (the shelf, the dark with the rumble, tap the changed objects)
+  - [x] 7.4 What moved screen (the shelf, the dark with the rumble, tap the changed objects)
+    - Built in `kinds/Moved.tsx`.
     - _Requirements: 4.4_
   - [ ] 7.5 Checkpoint: play the second set; set the Kinds per Zone so every Kind appears. Ensure every test passes; ask the user if questions arise.
 
 - [ ] 8. Third set of Kinds
-  - [ ] 8.1 Torn photo screen (turn, drag, click on a fit, the original shape pictures)
+  - [x] 8.1 Torn photo screen (turn, drag, click on a fit, the original shape pictures)
+    - Built in `kinds/Photo.tsx`.
     - _Requirements: 5.1_
-  - [ ] 8.2 Hidden words screen (torch by tilt or finger, pulse on a letter, tap in order)
+  - [x] 8.2 Hidden words screen (torch by tilt or finger, pulse on a letter, tap in order)
+    - Built in `kinds/Words.tsx`.
     - _Requirements: 5.2_
   - [ ] 8.3 Spirit board screen (planchette physics, tick per letter, dwell to choose) and the 24 Library lines for the Whisper's words, with the browser voice as the fallback and the text under Assist
+    - Built in `kinds/Board.tsx` and `speech.ts` (the browser voice). Still to do: the 24 Library lines and the word as text under Assist, which come from the Room's Whisper.
     - _Requirements: 5.3, 10.3, 10.5_
-  - [ ]* 8.4 Marble maze screen (orb physics, the 100 millisecond bump)
+  - [x]* 8.4 Marble maze screen (orb physics, the 100 millisecond bump)
+    - Built in `kinds/Maze.tsx`.
     - _Requirements: 5.4_
 
 - [ ] 9. Settings, access and docs
-  - [ ] 9.1 `PuzzleSettings`: the Master row, the Wander switch, the device switches for tilt, vibration, sound and Assist, and the Plain Inspect switch
+  - [x] 9.1 `PuzzleSettings`: the Master row, the Wander switch, the device switches for tilt, vibration, sound and Assist, and the Plain Inspect switch
+    - Built in `web/src/puzzles/PuzzleSettings.tsx`: the Master row, the Wander Locks switch, Plain Inspect and the device switches (touch only, tilt, buzz, sound, Assist, tilt strength, flip the twist). It holds no state; the Controller keeps and remembers the settings and passes them in.
     - _Requirements: 1.4, 2.1, 8.6, 9.4, 12.5_
-  - [ ] 9.2 `SightsPage` in the notebook (Assist only) and the longer Sight and Faded times
+  - [x] 9.2 `SightsPage` in the notebook (Assist only) and the longer Sight and Faded times
+    - Built in `web/src/puzzles/SightsPage.tsx` (shows the clues the seat saw only with Assist on), `SightClue.tsx` (the shared drawing), and the 8 second times in `shared/src/puzzles/sight.ts`.
     - _Requirements: 6.4, 12.5_
-  - [ ] 9.3 Access pass: a touch-only run of every Kind, 48 pixel targets, patterns and shapes besides colour, text labels, reduced motion removing shake and beam sway
+  - [x] 9.3 Access pass: a touch-only run of every Kind, 48 pixel targets, patterns and shapes besides colour, text labels, reduced motion removing shake and beam sway
+    - Checked in jsdom (a touch-only solve of every Kind, both levels, several seeds) and in a real Chromium at 320 by 568, 390 by 844 and 568 by 320 through `web/puzzles-demo.html`: no sideways scroll, no console error, every button at least 48 pixels, and a real-touch solve of Wires, Spirit board, Candles and Safe. Hidden words and Torn photo need sight; Plain Inspect is the way round.
     - _Requirements: 12.1, 12.3, 12.4_
-  - [ ] 9.4 Source-level checks: no `MediaRecorder` in `web/src/puzzles/`, no import of `web`, `api`, a Hand or the Solution in `shared/src/puzzles/`, no copied code or assets; word lists and mazes checked
+  - [x] 9.4 Source-level checks: no `MediaRecorder` in `web/src/puzzles/`, no import of `web`, `api`, a Hand or the Solution in `shared/src/puzzles/`, no copied code or assets; word lists and mazes checked
+    - Built as `shared/src/puzzles/source.test.ts` and `web/src/puzzles/source.test.ts`.
     - _Requirements: 11.2, 14.3_
   - [ ] 9.5 Docs: `docs/spikes/puzzles-<n>.md`, assumptions 19 to 23 and `PUZZLES_ENABLED` in `.kiro/steering/tech.md`, the `puzzles/` folders in `structure.md`, a line in `docs/SOUNDS.md`, the decisions list in `docs/IMPLEMENTATION.md`, and one sentence in `product.md`
     - _Requirements: 14.4_

@@ -1,0 +1,18 @@
+/* The puzzle settings. A plain column; every control is at least 48 px and it works from 320 px wide. */
+.pz-settings { --pz-target: max(48px, var(--target)); display: grid; gap: 0.75rem; padding: 0.75rem; color: var(--bone); }
+.pz-settings, .pz-settings * { box-sizing: border-box; }
+.pz-subtitle { margin: 0.5rem 0 0; font-size: 1rem; }
+.pz-setting { display: grid; gap: 0.25rem; }
+.pz-setting-hint { margin: 0; font-size: 0.85rem; opacity: 0.85; }
+.pz-switch, .pz-radio {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%;
+  min-height: var(--pz-target); padding: 0 1rem; border: 1px solid var(--dust); border-radius: 12px;
+  background: var(--ink); color: var(--bone); font: inherit; text-align: left; cursor: pointer; touch-action: manipulation;
+}
+.pz-switch[aria-checked="true"], .pz-radio[aria-checked="true"] { border-color: var(--lantern); color: var(--lantern); }
+.pz-switch[disabled] { opacity: 0.5; cursor: default; }
+.pz-switch-state { font-weight: 700; }
+.pz-radios { display: flex; gap: 0.5rem; }
+.pz-radio { justify-content: center; text-align: center; }
+.pz-range-label { font-size: 0.95rem; }
+.pz-range { display: block; width: 100%; min-height: var(--pz-target); margin: 0; accent-color: var(--lantern); }

@@ -1,0 +1,98 @@
+/*
+ * Puzzle screens. Mobile first: every control is at least 48 px, nothing needs hover, nothing scrolls the page while a
+ * Puzzle is being played, and every colour comes from the tokens. Nothing here animates except through the one fade.
+ */
+.pz-host {
+  --pz-target: max(48px, var(--target));
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 0.5rem max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  color: var(--bone);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent; /* a tap shows its own feedback, not the browser's grey flash */
+  overscroll-behavior: contain;
+}
+/* The frame sizes itself the same whatever the page does globally: padding and borders never push it past the screen. */
+.pz-host, .pz-host *, .pz-host *::before, .pz-host *::after { box-sizing: border-box; }
+/* The glow is the visual twin of a buzz. Two names that look the same restart it without reloading the screen. */
+.pz-glow-a { animation: pz-glow-a var(--fade) ease-out; }
+.pz-glow-b { animation: pz-glow-b var(--fade) ease-out; }
+@keyframes pz-glow-a { from { box-shadow: inset 0 0 0 4px rgb(233 228 216 / 22%); } to { box-shadow: inset 0 0 0 0 rgb(233 228 216 / 0%); } }
+@keyframes pz-glow-b { from { box-shadow: inset 0 0 0 4px rgb(233 228 216 / 22%); } to { box-shadow: inset 0 0 0 0 rgb(233 228 216 / 0%); } }
+
+.pz-bar-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 2rem; }
+.pz-pips { display: inline-flex; gap: 0.4rem; }
+.pz-pip { width: 0.8rem; height: 0.8rem; border-radius: 50%; background: var(--lantern); }
+.pz-pip-used { background: transparent; border: 2px solid var(--bone); }
+.pz-timer { font-variant-numeric: tabular-nums; }
+
+.pz-stage { position: relative; min-height: 20rem; padding: 0.75rem; border: 1px solid var(--dust); border-radius: 12px; touch-action: none; overflow: hidden; }
+.pz-skeleton { min-height: 18rem; border-radius: 8px; background: linear-gradient(90deg, #14171c, #1c2027, #14171c); }
+.pz-status { min-height: 1.5rem; margin: 0; text-align: center; }
+.pz-twin { margin: 0; text-align: center; color: var(--ghost); font-size: 0.8rem; }
+
+.pz-foot, .pz-row { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; }
+.pz-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: var(--pz-target); min-width: var(--pz-target); padding: 0 1rem;
+  border: 1px solid var(--lantern); border-radius: 12px; background: var(--ink); color: var(--lantern);
+  font: inherit; cursor: pointer; touch-action: manipulation;
+}
+.pz-btn[aria-pressed="true"], .pz-btn-primary { background: var(--lantern); color: var(--ink); }
+.pz-btn-quiet { border-color: var(--dust); color: var(--bone); }
+.pz-btn[disabled] { opacity: 0.45; cursor: default; }
+
+.pz-card { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid var(--dust); border-radius: 16px; text-align: center; background: var(--ink); }
+.pz-title { margin: 0; font-size: 1.1rem; }
+.pz-clue { min-height: 7.5rem; }
+.pz-bar { height: 6px; border-radius: 3px; background: #1c2027; overflow: hidden; }
+.pz-bar > i { display: block; height: 100%; background: var(--lantern); }
+.pz-hint { margin: 0.25rem 0; color: var(--bone); font-size: 0.9rem; text-align: center; }
+.pz-muted { margin: 0; color: var(--bone); opacity: 0.8; text-align: center; }
+.pz-muted-text { fill: var(--bone); opacity: 0.8; }
+
+.pz-result { display: grid; gap: 0.5rem; justify-items: center; padding: 1rem; border: 1px solid var(--lantern); border-radius: 12px; }
+.pz-result[data-outcome="failed"] { border-color: var(--alarm); }
+.pz-result-title { margin: 0; font-size: 1.4rem; }
+
+.pz-digits { display: flex; gap: 0.6rem; justify-content: center; font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pz-digits > span { display: grid; place-items: center; width: 2.75rem; height: 3.5rem; border-radius: 10px; background: #1c2027; }
+
+.pz-shelf { display: grid; gap: 0.5rem; margin: 0.5rem 0; }
+.pz-slot { display: grid; place-items: center; aspect-ratio: 1; min-height: var(--pz-target); border: 2px solid transparent; border-radius: 12px; background: #1c2027; color: inherit; padding: 0; }
+.pz-slot[aria-pressed="true"] { border-color: var(--lantern); }
+.pz-slot-empty { border: 2px dashed var(--dust); background: transparent; }
+
+.pz-picture { display: block; width: 100%; height: 100%; border-radius: 6px; }
+.pz-sight-picture { width: min(80%, 16rem); aspect-ratio: 3 / 2; margin: 0 auto; border: 2px solid var(--dust); border-radius: 8px; overflow: hidden; }
+
+/* the clock */
+.pz-clock-ring { fill: #14171c; stroke: var(--dust); stroke-width: 4; }
+.pz-tick { stroke: var(--dust); stroke-width: 1.5; }
+.pz-tick-big { stroke: var(--bone); stroke-width: 3; }
+.pz-clock-num { fill: var(--bone); font-size: 24px; font-weight: 650; }
+.pz-hand-hour { stroke: var(--bone); stroke-width: 10; stroke-linecap: round; }
+.pz-hand-minute { stroke: var(--ghost); stroke-width: 6; stroke-linecap: round; }
+.pz-hand-hub { fill: var(--bone); }
+
+.pz-board { display: block; width: 100%; height: auto; touch-action: none; }
+.pz-canvas { display: block; margin: 0 auto; max-width: 100%; border-radius: 12px; touch-action: none; }
+.pz-readout { margin: 0.25rem 0; text-align: center; font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.pz-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pz-glow-a, .pz-glow-b { animation: none; box-shadow: inset 0 0 0 3px rgb(233 228 216 / 15%); }
+}
+@media (orientation: landscape) and (max-height: 32rem) {
+  .pz-host { max-width: 44rem; }
+  .pz-stage { min-height: 14rem; }
+}
+
+.pz-wide { width: 100%; margin-top: 0.5rem; }
+.pz-clock-board { width: min(86%, 22rem); margin: 0 auto; }

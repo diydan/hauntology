@@ -1,11 +1,11 @@
 import { hash, mulberry32, randInt, shuffle } from "./rng";
-import { BUILT_KINDS, isMemoryKind, type BuiltKind, type Level, type PuzzleSetting } from "./types";
+import { DEFAULT_KINDS, isMemoryKind, type Kind, type Level, type PuzzleSetting } from "./types";
 import { ErrorCode, fail, ok, type Result } from "../errors";
 
 export type PlacedLock = Readonly<{
   lockId: string;
   zone: string;
-  kind: BuiltKind;
+  kind: Kind;
   level: Level;
   seed: number;
   /** The Zone that shows this Lock's Sight (the next Zone round the ring), or null for a Kind with no Sight. */
@@ -21,7 +21,7 @@ export function placePuzzles(
   roomSeed: number,
   zones: readonly string[],
   setting: PuzzleSetting,
-  enabled: readonly BuiltKind[] = BUILT_KINDS,
+  enabled: readonly Kind[] = DEFAULT_KINDS,
 ): Result<readonly PlacedLock[]> {
   if (setting === "off") return ok([]);
   const kinds = [...new Set(enabled)];
@@ -31,7 +31,7 @@ export function placePuzzles(
   const r = mulberry32(hash("place", roomSeed));
   const pool = [...shuffle(r, kinds), ...shuffle(r, kinds)];
   const locks = zones.map((zone, i): PlacedLock => {
-    const kind = pool[i] as BuiltKind;
+    const kind = pool[i] as Kind;
     return {
       lockId: `L${hash(roomSeed, "lock-id", zone).toString(16).padStart(8, "0")}`,
       zone,
@@ -48,8 +48,8 @@ export function placePuzzles(
  * The Kind for the Nth memory found in Wander (0 is the first). The first is never a Memory Kind, because there is
  * no earlier scene to have seen its Sight in. Null when no enabled Kind fits.
  */
-export function kindForDiscovery(seed: number, index: number, enabled: readonly BuiltKind[] = BUILT_KINDS): BuiltKind | null {
+export function kindForDiscovery(seed: number, index: number, enabled: readonly Kind[] = DEFAULT_KINDS): Kind | null {
   const pool = index === 0 ? enabled.filter((k) => !isMemoryKind(k)) : [...enabled];
   if (pool.length === 0) return null;
-  return pool[randInt(mulberry32(hash("discovery", seed, index)), pool.length)] as BuiltKind;
+  return pool[randInt(mulberry32(hash("discovery", seed, index)), pool.length)] as Kind;
 }

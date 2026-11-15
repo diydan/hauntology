@@ -1,8 +1,26 @@
+import { MAZES } from "./mazes";
 import { hash, mulberry32, randInt, range, shuffle, type Rng } from "./rng";
-import type { BuiltKind, Level, Lock } from "./types";
+import type { Kind, Level, Lock, Picture } from "./types";
+import { BOARD_CLUES, BOARD_WORDS_3, BOARD_WORDS_4, READ_WORDS_4, READ_WORDS_5 } from "./words";
 
 /** Number of wire looks (colour, pattern and end shape) the screens can draw. */
 export const WIRE_STYLES = 6;
+/** Number of shelf item looks the screens can draw. */
+export const SHELF_ITEMS = 12;
+
+/** A picture drawn from simple shapes; the same picture is the Sight and the pieces. */
+function makePicture(r: Rng): Picture {
+  const hue = randInt(r, 360);
+  const shapes = range(9).map((i) => ({
+    t: (["circle", "rect", "tri"] as const)[i % 3] as "circle" | "rect" | "tri",
+    x: Math.round((0.08 + r() * 0.84) * 1000) / 1000,
+    y: Math.round((0.1 + r() * 0.8) * 1000) / 1000,
+    s: Math.round((0.1 + r() * 0.16) * 1000) / 1000,
+    c: `hsl(${(hue + 40 * (i + 1) + randInt(r, 25)) % 360} ${55 + randInt(r, 25)}% ${45 + randInt(r, 20)}%)`,
+    a: randInt(r, 4) * 90,
+  }));
+  return { top: `hsl(${hue} 45% 22%)`, bottom: `hsl(${(hue + 30) % 360} 55% 58%)`, shapes };
+}
 
 function uniqueSpaced(r: Rng, n: number, lo: number, hi: number, minGap: number): number[] {
   for (let tries = 0; tries < 200; tries++) {
@@ -18,7 +36,7 @@ function uniqueSpaced(r: Rng, n: number, lo: number, hi: number, minGap: number)
  * Make a Lock. Deterministic, and it takes nothing but a Kind, a level and a seed, so it cannot depend on the
  * Solution, a Hand or a Residue position (Property 1).
  */
-export function makeLock(kind: BuiltKind, level: Level, seed: number): Lock {
+export function makeLock(kind: Kind, level: Level, seed: number): Lock {
   const r = mulberry32(hash("lock", kind, level, seed));
   const easy = level === "easy";
   switch (kind) {
@@ -46,6 +64,64 @@ export function makeLock(kind: BuiltKind, level: Level, seed: number): Lock {
       let m: number;
       do { h = 1 + randInt(r, 12); m = 5 * randInt(r, 12); } while (h === 12 && m === 0); // not the resting hands
       return { kind, level, seed, view: { kind, stepMin: 5 }, secret: { kind, h, m }, sight: { kind, h, m } };
+    }
+    case "safe": {
+      const n = easy ? 3 : 4;
+      let code: number[];
+      do { code = range(n).map(() => randInt(r, 10)); } while (code.every((d) => d === code[0])); // not all one digit
+      return { kind, level, seed, view: { kind, digits: n }, secret: { kind, code }, sight: { kind, code } };
+    }
+    case "musicbox": {
+      const n = easy ? 3 : 4;
+      let tune: number[];
+      do { tune = range(n).map(() => randInt(r, 5)); } while (tune.every((d) => d === tune[0]));
+      return { kind, level, seed, view: { kind, n, plays: 3, tune }, secret: { kind, tune }, sight: null };
+    }
+    case "candles": {
+      const n = easy ? 4 : 5;
+      const order = shuffle(r, range(n));
+      return { kind, level, seed, view: { kind, n, shows: 2, order }, secret: { kind, order }, sight: null };
+    }
+    case "moved": {
+      const slots = easy ? 6 : 8;
+      const k = easy ? 2 : 3;
+      const before = shuffle(r, range(SHELF_ITEMS)).slice(0, slots);
+      const unused = shuffle(r, range(SHELF_ITEMS).filter((i) => !before.includes(i)));
+      const changed = shuffle(r, range(slots)).slice(0, k).sort((a, b) => a - b);
+      const after = before.slice();
+      let missing = 0;
+      changed.forEach((slot, i) => {
+        if (missing === 0 && r() < 0.35) { after[slot] = -1; missing++; } // at most one thing goes missing
+        else after[slot] = unused[i] as number;
+      });
+      return { kind, level, seed, view: { kind, slots, darkMs: 2000, after }, secret: { kind, changed }, sight: { kind, shelf: before } };
+    }
+    case "photo": {
+      const cols = easy ? 2 : 3;
+      const rows = 2;
+      const picture = makePicture(r);
+      const turns0: number[] = range(cols * rows).map(() => randInt(r, 4));
+      if (!turns0.some((t) => t !== 0)) turns0[0] = 1; // at least one piece starts turned
+      return { kind, level, seed, view: { kind, cols, rows, picture, turns0 }, secret: { kind, turns0 }, sight: { kind, picture, cols, rows } };
+    }
+    case "words": {
+      const list = easy ? READ_WORDS_4 : READ_WORDS_5;
+      const word = list[randInt(r, list.length)] as string;
+      const n = word.length;
+      const placed = [...word].map((ch, i) => ({ ch, x: Math.round(((i + 0.5) / n + (r() - 0.5) * 0.06) * 1000) / 1000, y: Math.round((0.2 + r() * 0.6) * 1000) / 1000 }));
+      const letters = shuffle(r, range(n)).map((i) => placed[i] as (typeof placed)[number]);
+      const order = letters.map((l, idx) => [l.x, idx] as const).sort((a, b) => a[0] - b[0]).map((p) => p[1]);
+      return { kind, level, seed, view: { kind, n, letters }, secret: { kind, order, word }, sight: null };
+    }
+    case "board": {
+      const list = easy ? BOARD_WORDS_3 : BOARD_WORDS_4;
+      const word = list[randInt(r, list.length)] as (typeof list)[number];
+      return { kind, level, seed, view: { kind, length: word.length, plays: 2, dwellMs: 350, clue: BOARD_CLUES[word] }, secret: { kind, word }, sight: null };
+    }
+    case "maze": {
+      const list = MAZES[level];
+      const grid = list[randInt(r, list.length)] as readonly string[];
+      return { kind, level, seed, view: { kind, grid }, secret: { kind }, sight: null };
     }
   }
 }

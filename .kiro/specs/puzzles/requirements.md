@@ -107,7 +107,7 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 
 #### Acceptance Criteria
 
-1. WHEN a Lock opens THEN the Room SHALL send the Player's phone only the parameters it needs to draw and play that Kind, and SHALL keep the answer on the server for every Kind except Lock pick, Music box, Candle order, What moved, Torn photo and Marble maze, whose phone must know their own tune, order, shelf, picture and layout to play them, and no answer SHALL be sent to any other seat or screen.
+1. WHEN a Lock opens THEN the Room SHALL send the Player's phone only the parameters it needs to draw and play that Kind, and SHALL keep the answer on the server for every Kind except Lock pick, Music box, Candle order, What moved, Torn photo, Hidden words and Marble maze, whose phone must know their own tune, order, shelf, picture, letters and layout to play them, and no answer SHALL be sent to any other seat or screen.
 2. WHEN a Player submits an Attempt THEN the Room SHALL check the Transcript with `verify`, accept it only when it is the answer, reject a Transcript with more than 64 events or 4 KB or that is malformed, reject one that is faster than the Kind's minimum solve time, and never fail with an exception.
 3. WHEN an Attempt is wrong THEN the Room SHALL tell the Player only that it was wrong and how many Attempts are left, and SHALL give no count of right wires, digits, notes, objects or pieces.
 4. THE Puzzle SHALL change no rule: no Haunt, Resolve, Bonus Seconds, Achievement, Hand, Residue position, Solution or Round outcome SHALL depend on a Puzzle, except the Turn time charged under 1.2 and 1.3 and the private result of the one Zone.

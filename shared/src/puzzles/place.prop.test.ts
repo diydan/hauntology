@@ -1,15 +1,15 @@
 import * as fc from "fast-check";
-import { describe, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { propParams } from "../app/prop-config";
 import { kindForDiscovery, placePuzzles } from "./place";
 import { seedArb } from "./puzzles.arb";
-import { BUILT_KINDS, MEMORY_KINDS, type BuiltKind } from "./types";
+import { DEFAULT_KINDS, KINDS, MEMORY_KINDS, type Kind } from "./types";
 
 /** Distinct Zone names and an enabled set big enough to use each Kind at most twice. */
 const placementArb = fc
-  .uniqueArray(fc.string({ minLength: 1, maxLength: 8 }), { minLength: 2, maxLength: 6 })
+  .uniqueArray(fc.string({ minLength: 1, maxLength: 8 }), { minLength: 2, maxLength: 12 })
   .chain((zones) =>
-    fc.tuple(fc.constant(zones), fc.subarray<BuiltKind>([...BUILT_KINDS], { minLength: Math.ceil(zones.length / 2), maxLength: BUILT_KINDS.length })),
+    fc.tuple(fc.constant(zones), fc.subarray<Kind>([...KINDS], { minLength: Math.ceil(zones.length / 2), maxLength: KINDS.length })),
   );
 const settingArb = fc.constantFrom("easy" as const, "normal" as const);
 
@@ -42,9 +42,21 @@ describe("Property 5: Locks are placed one per Zone with a valid Sight source", 
     );
   });
 
+  it("uses the ten Kinds, without the optional maze, unless told otherwise", () => {
+    expect(DEFAULT_KINDS).toHaveLength(10);
+    expect(DEFAULT_KINDS).not.toContain("maze");
+    fc.assert(
+      fc.property(seedArb, (seed) => {
+        const res = placePuzzles(seed, ["a", "b", "c", "d", "e", "f"], "normal");
+        return res.ok && res.value.every((l) => l.kind !== "maze") && new Set(res.value.map((l) => l.kind)).size >= 3;
+      }),
+      propParams(),
+    );
+  });
+
   it("never makes the first discovery a Memory Kind", () => {
     fc.assert(
-      fc.property(seedArb, fc.subarray<BuiltKind>([...BUILT_KINDS]), (seed, enabled) => {
+      fc.property(seedArb, fc.subarray<Kind>([...KINDS]), (seed, enabled) => {
         const first = kindForDiscovery(seed, 0, enabled);
         if (first === null) return enabled.every((k) => MEMORY_KINDS.includes(k));
         return !MEMORY_KINDS.includes(first) && enabled.includes(first);

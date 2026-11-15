@@ -1,0 +1,5 @@
+/* Spirit board. The canvas has a fixed logical size and is scaled by CSS, so it fits from 320 px wide. */
+.pz-spirit { width: 100%; max-width: 24rem; height: auto; background: #1a1410; touch-action: none; outline-offset: 2px; }
+.pz-spirit:focus-visible { outline: 3px solid var(--lantern); }
+.pz-under { min-height: 1.75rem; font-size: 1.1rem; }
+.pz-clue-line { font-size: 1rem; }

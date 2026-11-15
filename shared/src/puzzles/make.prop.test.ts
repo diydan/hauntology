@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { propParams } from "../app/prop-config";
 import { minSolveMs } from "./kinds";
 import { makeLock } from "./make";
-import { builtKindArb, levelArb, lockArb, seedArb } from "./puzzles.arb";
+import { kindArb, levelArb, lockArb, seedArb } from "./puzzles.arb";
 import { fadedFor, sightFor } from "./sight";
 import { MEMORY_KINDS } from "./types";
 import { referenceSolve, verify } from "./verify";
@@ -14,7 +14,7 @@ describe("Property 1: Generation is deterministic and never reads the Solution",
   it("gives equal Locks, Sights and answers on a repeat, and takes only a Kind, a level and a seed", () => {
     expect(makeLock.length).toBe(3); // no parameter could carry a Solution, a Hand or a Residue position
     fc.assert(
-      fc.property(builtKindArb, levelArb, seedArb, (kind, level, seed) => {
+      fc.property(kindArb, levelArb, seedArb, (kind, level, seed) => {
         const a = makeLock(kind, level, seed);
         const b = makeLock(kind, level, seed); // what a reconnecting seat gets
         if (JSON.stringify(a) !== JSON.stringify(b)) return false;
@@ -31,12 +31,11 @@ describe("Property 1: Generation is deterministic and never reads the Solution",
 describe("Property 2: Every generated Lock is solvable by the touch path", () => {
   // Feature: puzzles, Property 2: Every generated Lock is solvable by the touch path
   // Validates: Requirements 3.1, 3.2, 3.3, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 5.3, 5.4, 12.1
-  // (holds for the Kinds built so far: lockpick, wires, clock)
-  it("has a reference Transcript made of touch events only that verify accepts", () => {
+    it("has a reference Transcript made of touch events only that verify accepts", () => {
     fc.assert(
       fc.property(lockArb, (lock) => {
         const t = referenceSolve(lock);
-        const touchOnly = new Set(["kind", "sets", "pairs", "h", "m", "code", "notes", "order", "changed", "placed", "letters", "elapsedMs"]);
+        const touchOnly = new Set(["kind", "sets", "pairs", "h", "m", "code", "notes", "order", "changed", "placed", "letters", "reachedAtMs", "hits", "elapsedMs"]);
         if (!Object.keys(t).every((k) => touchOnly.has(k))) return false; // no tilt, sound, buzz or breath field
         if (t.elapsedMs < minSolveMs(lock)) return false;
         return verify(lock, t).ok === true;

@@ -313,7 +313,7 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 **Validates: Requirements 6.1, 6.5, 6.6, 13.2**
 
 ### Property 11: Three wrong Attempts end a Lock and say nothing more
-*For any* Lock and any sequence of wrong Transcripts, the third wrong Attempt closes the Lock `failed`, the Attempts left count down 3, 2, 1, no result carries a count of right parts, and a fourth Attempt returns `puzzle_attempts_spent`.
+*For any* Lock and any sequence of wrong Transcripts, the third wrong Attempt closes the Lock `failed`, the Attempts left count down 3, 2, 1, no result carries a count of right parts, and a fourth Attempt finds no open Lock (`puzzle_not_open`; `puzzle_attempts_spent` is kept for a Lock that still shows three used).
 **Validates: Requirements 1.3, 7.3**
 
 ### Property 12: Tilt maths is total, bounded and rotation-correct

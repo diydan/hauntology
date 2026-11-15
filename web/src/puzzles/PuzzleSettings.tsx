@@ -1,0 +1,89 @@
+import { useId, type ReactNode } from "react";
+import { presetSetting, type Preset } from "@hauntology/shared/puzzles/settings";
+import { PUZZLE_SETTINGS, type PuzzleSetting } from "@hauntology/shared/puzzles/types";
+import type { FeelSettings, TiltState } from "./feel/types";
+import "./PuzzleSettings.css";
+
+/** The switches that belong to one device. `tilt` is the Player's wish for tilt (on by default where a sensor answers). */
+export type DeviceSettings = FeelSettings & Readonly<{ tilt: boolean; assist: boolean }>;
+export const DEFAULT_DEVICE_SETTINGS: DeviceSettings = { touchOnly: false, sensitivity: 1, hapticMode: "auto", dialInvert: false, soundConsent: true, tilt: true, assist: false };
+
+type Switch = Readonly<{ on: boolean; onChange: (on: boolean) => void }>;
+export type PuzzleSettingsProps = Readonly<{
+  /** The Master's row (Party Mode): shown to the Master only, so leave it out for everyone else. */
+  master?: Readonly<{ value: PuzzleSetting; preset: Preset; onChange: (value: PuzzleSetting) => void }>;
+  /** Wander: the Locks switch, off by default. */
+  wander?: Switch;
+  /** Party Mode: Plain Inspect for this seat. Only the seat sees it. */
+  plainInspect?: Switch;
+  device: DeviceSettings;
+  onDevice: (next: DeviceSettings) => void;
+  /** What the phone can do: whether a motion sensor answered, and whether it can buzz. */
+  tiltState: TiltState;
+  canVibrate: boolean;
+}>;
+
+const LEVEL_NAME: Readonly<Record<PuzzleSetting, string>> = { off: "Off", easy: "Easy", normal: "Normal" };
+
+/** One on/off switch: a button with a name, a visible state and a hint, at least 48 pixels tall. */
+function Row({ label, hint, on, onChange, disabled = false }: { label: string; hint: string; on: boolean; onChange: (on: boolean) => void; disabled?: boolean }): ReactNode {
+  const hintId = useId();
+  return (
+    <div className="pz-setting">
+      <button type="button" role="switch" aria-checked={on} aria-describedby={hintId} disabled={disabled} className="pz-switch" onClick={() => onChange(!on)}>
+        <span className="pz-switch-name">{label}</span>
+        <span className="pz-switch-state">{on ? "On" : "Off"}</span>
+      </button>
+      <p id={hintId} className="pz-setting-hint">{hint}</p>
+    </div>
+  );
+}
+
+const tiltHint = (state: TiltState, wanted: boolean, touchOnly: boolean): string => {
+  if (touchOnly) return "Touch only is on, so tilt is off.";
+  if (state === "unsupported") return "This phone has no motion sensor. You play with touch.";
+  if (state === "denied") return "Motion was not allowed. You play with touch. Allow it in the phone's settings to use tilt.";
+  return wanted ? "Lean the phone to move the pick, torch, planchette and orb. You can always use touch." : "Tilt is off. You play with touch.";
+};
+
+/**
+ * The puzzle settings: the Master's Puzzle setting (Party), the Locks switch (Wander), Plain Inspect (this seat), and the
+ * switches of this device (tilt, vibration, sound, Assist, touch only, tilt strength, twist direction). Every switch has a
+ * text state and a hint, every control is at least 48 pixels, and nothing here changes how any answer is checked.
+ * It holds no state of its own: the Controller keeps and remembers the settings and passes them in.
+ */
+export function PuzzleSettings({ master, wander, plainInspect, device, onDevice, tiltState, canVibrate }: PuzzleSettingsProps): ReactNode {
+  const set = (over: Partial<DeviceSettings>): void => onDevice({ ...device, ...over });
+  const touchOnly = device.touchOnly;
+  return (
+    <section className="pz-settings" aria-label="Puzzle settings">
+      <h2 className="pz-title">Puzzles</h2>
+
+      {master && (
+        <div className="pz-setting" role="radiogroup" aria-label="Puzzles">
+          <div className="pz-radios">
+            {PUZZLE_SETTINGS.map((level) => (
+              <button key={level} type="button" role="radio" aria-checked={master.value === level} className="pz-radio" onClick={() => master.onChange(level)}>{LEVEL_NAME[level]}</button>
+            ))}
+          </div>
+          <p className="pz-setting-hint">{`This game's preset gives ${LEVEL_NAME[presetSetting(master.preset)].toLowerCase()}. A change applies from the next Inspect, for everyone.`}</p>
+        </div>
+      )}
+      {wander && <Row label="Locks" hint="A small puzzle in front of each memory. You can always skip it." on={wander.on} onChange={wander.onChange} />}
+      {plainInspect && <Row label="Plain Inspect" hint="Your Inspect always works and always takes the full time. No puzzle. Nobody else is told." on={plainInspect.on} onChange={plainInspect.onChange} />}
+
+      <h3 className="pz-subtitle">This phone</h3>
+      <Row label="Touch only" hint="No tilt, no buzz, no sound and no microphone. Every puzzle can be finished this way." on={touchOnly} onChange={(on) => set({ touchOnly: on })} />
+      <Row label="Tilt" hint={tiltHint(tiltState, device.tilt, touchOnly)} on={device.tilt && !touchOnly && tiltState !== "unsupported"} onChange={(on) => set({ tilt: on })} disabled={touchOnly || tiltState === "unsupported"} />
+      <Row label="Buzz" hint={canVibrate ? "The phone buzzes with the puzzle. Every buzz also shows a glow." : "This phone cannot buzz. You see a glow instead."} on={canVibrate && device.hapticMode !== "visual" && !touchOnly} onChange={(on) => set({ hapticMode: on ? "auto" : "visual" })} disabled={touchOnly || !canVibrate} />
+      <Row label="Sound" hint="Clicks, notes and creaks from your own phone. Every sound is also shown on screen." on={device.soundConsent && !touchOnly} onChange={(on) => set({ soundConsent: on })} disabled={touchOnly} />
+      <Row label="Assist" hint="Keeps the clues you saw on a page, shows them for 8 seconds, and shows the Spirit board's word as text." on={device.assist} onChange={(on) => set({ assist: on })} />
+
+      <div className="pz-setting">
+        <label className="pz-range-label" htmlFor="pz-tilt-strength">Tilt strength: {device.sensitivity.toFixed(1)} times</label>
+        <input id="pz-tilt-strength" type="range" className="pz-range" min={0.4} max={2.5} step={0.1} value={device.sensitivity} disabled={touchOnly || !device.tilt} aria-valuetext={`${device.sensitivity.toFixed(1)} times`} onChange={(e) => set({ sensitivity: Number(e.currentTarget.value) })} />
+      </div>
+      <Row label="Flip the twist" hint="Turn this on if the safe dial and the clock hands turn the wrong way when you twist the phone." on={device.dialInvert} onChange={(on) => set({ dialInvert: on })} disabled={touchOnly || !device.tilt} />
+    </section>
+  );
+}

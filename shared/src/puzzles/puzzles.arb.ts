@@ -2,13 +2,13 @@ import * as fc from "fast-check";
 import { HAPTIC_NAMES } from "./haptics";
 import { makeLock } from "./make";
 import { RECIPES, type SoundName } from "./sound";
-import { BUILT_KINDS, LEVELS, type BuiltKind, type Level, type Lock } from "./types";
+import { KINDS, LEVELS, type Kind, type Level, type Lock } from "./types";
 import type { Tilt } from "./motion";
 
 export const seedArb: fc.Arbitrary<number> = fc.integer({ min: 0, max: 4_294_967_295 });
-export const builtKindArb: fc.Arbitrary<BuiltKind> = fc.constantFrom<BuiltKind>(...BUILT_KINDS);
+export const kindArb: fc.Arbitrary<Kind> = fc.constantFrom<Kind>(...KINDS);
 export const levelArb: fc.Arbitrary<Level> = fc.constantFrom<Level>(...LEVELS);
-export const lockArb: fc.Arbitrary<Lock> = fc.tuple(builtKindArb, levelArb, seedArb).map(([k, l, s]) => makeLock(k, l, s));
+export const lockArb: fc.Arbitrary<Lock> = fc.tuple(kindArb, levelArb, seedArb).map(([k, l, s]) => makeLock(k, l, s));
 
 /** Numbers a sensor can hand over: ordinary, huge, and the ones that are not numbers at all. */
 export const weirdNumberArb: fc.Arbitrary<number> = fc.oneof(

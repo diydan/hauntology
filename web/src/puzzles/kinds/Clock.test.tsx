@@ -1,0 +1,118 @@
+// @vitest-environment jsdom
+import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { makeLock } from "@hauntology/shared/puzzles/make";
+import { verify } from "@hauntology/shared/puzzles/verify";
+import { polar } from "../art/ClockFace";
+import { mountKind, pointer, stubGeometry, wait } from "../test-utils";
+import Clock from "./Clock";
+
+let restore = (): void => {};
+beforeEach(() => { restore = stubGeometry(); });
+afterEach(() => { cleanup(); restore(); });
+
+const view = makeLock("clock", "easy", 7).view;
+if (view.kind !== "clock") throw new Error("kind");
+const readout = (): string => screen.getByRole("img", { name: /The clock shows/ }).textContent ?? "";
+
+/** Press at a hand's tip and drag to an angle on the dial. */
+function dragHand(board: Element, from: { deg: number; r: number }, toDeg: number, toR = from.r): void {
+  const [x0, y0] = polar(150, 150, from.r, from.deg);
+  const [x1, y1] = polar(150, 150, toR, toDeg);
+  pointer(board, "pointerdown", x0, y0);
+  pointer(board, "pointermove", x1, y1);
+  pointer(board, "pointerup", x1, y1);
+}
+
+describe("Clock", () => {
+  it("starts at 12:00 with every control named and big enough to be a button", () => {
+    mountKind(Clock, view);
+    expect(readout()).toBe("12:00");
+    expect(screen.getByRole("application", { name: "Clock to set" })).toBeTruthy();
+    for (const name of ["Hour back", "Hour forward", "Minutes back", "Minutes forward", "Hour hand", "Minute hand", "Twist", "Set this time"]) {
+      expect(screen.getByRole("button", { name }), name).toBeTruthy();
+    }
+  });
+
+  it("sets the minutes by dragging the long hand, and the hour by dragging the short one, with a tick each", () => {
+    const { submits, feel } = mountKind(Clock, view);
+    const board = screen.getByRole("application");
+    dragHand(board, { deg: 0, r: 104 }, 120); // the minute hand from 12 to the 4: 20 minutes
+    expect(readout()).toBe("12:20");
+    dragHand(board, { deg: 10, r: 50 }, 130, 50); // the hour hand (now at 10 degrees) to just past the 4
+    expect(readout()).toBe("4:20");
+    expect(feel.haptics.buzzes.filter((b) => b === "tick").length).toBeGreaterThanOrEqual(2);
+    expect(feel.synth.played).toContain("tick");
+    fireEvent.click(screen.getByRole("button", { name: "Set this time" }));
+    expect(submits).toEqual([{ h: 4, m: 20 }]);
+  });
+
+  it("moves with the step buttons and wraps round: 12 to 1, 55 minutes to 0", () => {
+    mountKind(Clock, view);
+    fireEvent.click(screen.getByRole("button", { name: "Hour forward" }));
+    expect(readout()).toBe("1:00");
+    fireEvent.click(screen.getByRole("button", { name: "Hour back" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hour back" }));
+    expect(readout()).toBe("11:00");
+    fireEvent.click(screen.getByRole("button", { name: "Minutes back" }));
+    expect(readout()).toBe("11:55");
+    fireEvent.click(screen.getByRole("button", { name: "Minutes forward" }));
+    expect(readout()).toBe("11:00");
+  });
+
+  it("answers the answer: a set time that equals the stopped clock passes the shared check", () => {
+    const { submits } = mountKind(Clock, view);
+    const lock = makeLock("clock", "easy", 7);
+    if (lock.kind !== "clock") throw new Error("kind");
+    for (let i = 0; i < lock.secret.h % 12; i++) fireEvent.click(screen.getByRole("button", { name: "Hour forward" }));
+    for (let i = 0; i < lock.secret.m / 5; i++) fireEvent.click(screen.getByRole("button", { name: "Minutes forward" }));
+    fireEvent.click(screen.getByRole("button", { name: "Set this time" }));
+    const p = submits[0];
+    expect(p).toBeDefined();
+    expect(verify(lock, { kind: "clock", ...p, elapsedMs: 9999 })).toEqual({ ok: true });
+  });
+
+  it("ignores a move when nothing is held, and a drag ends when the finger lifts", () => {
+    mountKind(Clock, view);
+    const board = screen.getByRole("application");
+    const [x, y] = polar(150, 150, 104, 90);
+    pointer(board, "pointermove", x, y);
+    expect(readout()).toBe("12:00");
+    dragHand(board, { deg: 0, r: 104 }, 60);
+    expect(readout()).toBe("12:10");
+    const [x2, y2] = polar(150, 150, 104, 180);
+    pointer(board, "pointermove", x2, y2); // after the lift: no effect
+    expect(readout()).toBe("12:10");
+  });
+
+  it("turns the chosen hand with the phone when Twist is on, and says so when tilt is not available", async () => {
+    const { feel } = mountKind(Clock, view, { tilt: "on" });
+    feel.motion.dial = 10;
+    fireEvent.click(screen.getByRole("button", { name: "Twist" }));
+    await wait(80);
+    feel.motion.dial = 40; // a quarter-way round: 30 degrees
+    await wait(80);
+    expect(readout()).toBe("12:05");
+    feel.motion.dial = 100; // 90 degrees from the start: 15 minutes
+    await wait(80);
+    expect(readout()).toBe("12:15");
+    fireEvent.click(screen.getByRole("button", { name: "Twist: minute" })); // off again
+    feel.motion.dial = 200;
+    await wait(80);
+    expect(readout()).toBe("12:15");
+
+    cleanup();
+    const unsupported = mountKind(Clock, view, { tilt: "unsupported" });
+    unsupported.feel.motion.enableResult = "unsupported";
+    fireEvent.click(screen.getByRole("button", { name: "Twist" }));
+    await wait(20);
+    expect(unsupported.announcements.at(-1)).toMatch(/not available/i);
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("uses touch alone: no sensor is read when there is no tilt", async () => {
+    const { feel } = mountKind(Clock, view, { tilt: "off" });
+    await wait(60);
+    expect(feel.motion.enabled).toBe(0);
+  });
+});

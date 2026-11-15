@@ -1,0 +1,6 @@
+/* The Sights page of the notebook. A plain column that works from 320 px wide. */
+.pz-sights { display: grid; gap: 0.75rem; padding: 0.75rem; color: var(--bone); }
+.pz-sights, .pz-sights * { box-sizing: border-box; }
+.pz-sight-list { display: grid; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+.pz-sight-item { padding: 0.75rem; border: 1px solid var(--dust); border-radius: 12px; text-align: center; }
+.pz-sight-name { margin: 0 0 0.25rem; font-size: 1rem; }
