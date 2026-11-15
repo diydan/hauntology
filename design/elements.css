@@ -58,11 +58,13 @@
 
 /* ---- buttons: every one at least 44 px ------------------------------------------------------------------------------------------------ */
 .ui-button { min-height: var(--target); padding: var(--space-2) var(--space-3); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); font: inherit; font-size: var(--text-control); cursor: pointer; transition: border-color var(--fade-quick) var(--ease), background var(--fade-quick) var(--ease), color var(--fade-quick) var(--ease); }
-.ui-button:disabled { opacity: 0.4; cursor: default; }
-.ui-button[aria-disabled='true'] { opacity: 0.4; cursor: not-allowed; }
+.ui-button:disabled { border-style: dashed; opacity: 0.75; cursor: default; } /* a dashed edge says "not yet" without colour; 0.75 keeps the words 4.5 to 1 or better (quiet and yellow ones too) */
+.ui-button[aria-disabled='true'] { border-style: dashed; opacity: 0.75; cursor: not-allowed; }
 .ui-button[aria-pressed='true']:not(.ui-button--danger), .ui-button[aria-checked='true']:not(.ui-button--danger) { border-color: var(--accent); color: var(--accent); }
 a.ui-button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; } /* a link used as a button is as tall as the target, like a <button> */
 .ui-button--primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 500; }
+/* The main button that cannot be pressed yet is not a faded yellow block (dark words on it were 2.3 to 1): it is the raised surface with a tint of yellow, a yellow edge and quiet words, so the player still sees which one is the main action. */
+.ui-button--primary:disabled, .ui-button--primary[aria-disabled='true'] { border-color: color-mix(in srgb, var(--accent) 45%, var(--surface-raised)); background: color-mix(in srgb, var(--accent) 25%, var(--surface-raised)); color: var(--text-quiet); opacity: 1; }
 .ui-button--danger { border-color: var(--danger); background: var(--surface-page); color: var(--danger); }
 .ui-button--quiet { border-color: transparent; background: transparent; color: var(--text-quiet); }
 .ui-button--main { min-height: var(--target-main); padding: var(--space-3) var(--space-4); text-align: left; }

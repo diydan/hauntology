@@ -23,7 +23,7 @@ a page or a screen            loads the three CSS files and says only where thin
 |---|---|---|
 | Palette | `--ink --ink-deep --void --wood --wood-2 --wood-3 --ember --wood-line --leather --dust --ash --bone --lantern --lantern-hi --ghost --alarm --orb-* --art-*` (the 14 `--art-*` are puzzle game art: wire colours and shelf items) | `ink bone lantern ghost dust alarm` are frozen (steering). `ash` is the quiet text colour: 6.8 to 1 or better on every surface. `dust` is for shapes only (3.85 to 1). |
 | Roles | `--surface-page -sunk -panel -raised -hover`, `--line --line-strong`, `--text --text-quiet --shape-quiet`, `--accent --accent-hi --accent-rare --danger --on-accent --focus`, `--speaker-whisper -keeper -suspect` | What elements use. Change a role's colour and every element follows. |
-| Type | `--font-ui --font-ghost`, `--text-micro -small -control -body -title -lead -speech -display` | Sizes in rem (10.5 to 40 px at the default). |
+| Type | `--font-ui --font-ghost`, `--text-micro -small -control -body -title -lead -speech -display` | Sizes in rem (12 to 40 px at the default; running text 14 px). |
 | Space | `--space-0 .. --space-6` | 2, 4, 8, 12, 16, 24, 32 px. Steps 1 to 4 are the puzzle screens' `--pz-space-1` to `-4`. |
 | Shape | `--radius-xs sm md lg xl pill round`, `--stroke-thin ring frame edge`, `--glow-sm md lg`, `--shadow-lift` | |
 | Motion | `--fade-quick` 300, `--fade` 400, `--fade-slow` 600, `--breathe` 2400, `--ease` | The three fades are 0 ms under reduced motion. |

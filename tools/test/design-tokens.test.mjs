@@ -88,6 +88,11 @@ test('the sizes the steering file fixes: a touch target of 44 px, fades of 300 t
   const scale = entries(tokens, 'space').map(([, v]) => v.value);
   assert.deepEqual(scale.slice(1, 5), ['0.25rem', '0.5rem', '0.75rem', '1rem'], 'the same 4, 8, 12 and 16 px steps as the puzzle screens (--pz-space-1 to -4)');
   for (const [k, v] of entries(tokens, 'text-size')) assert.ok(/rem|clamp\(/.test(v.value) && !/px/.test(v.value), `text-${k} is in rem, so the player's own text size still works`);
+  for (const [k, v] of entries(tokens, 'text-size')) {
+    const smallest = v.value.startsWith('clamp(') ? parseFloat(v.value.slice(6)) : parseFloat(v.value); // the first number of a clamp is its least
+    assert.ok(smallest >= 0.75, `text-${k} is ${smallest * 16} px at the default: no text on a phone is under 12 px`);
+  }
+  assert.ok(parseFloat(tokens['text-size'].body.value) >= 0.875, 'running text is at least 14 px');
 });
 
 test('the game-art colours (wires, shelf items, metals, woods, paper) are tokens of their own: the art-* colours, none of them a role, all bright enough to see on the dark ground', () => {

@@ -2,3 +2,9 @@
 .pz-wall { width: min(100%, 22.5rem, var(--pz-h)); height: auto; background: var(--surface-sunk); touch-action: none; outline-offset: var(--stroke-ring); }
 .pz-wall:focus-visible { outline: var(--stroke-frame) solid var(--focus); }
 .pz-lit { min-height: 1.75rem; font-size: var(--text-title); }
+
+/* A short screen held upright: the letters so far are a little lower and the line that says which letter is lit takes less room, so the wall keeps its size. */
+@media (orientation: portrait) and (max-height: 47rem) {
+  .pz-words .pz-digits > span { height: 2.75rem; }
+  .pz-lit { min-height: 1.5rem; }
+}

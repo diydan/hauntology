@@ -6,11 +6,12 @@
 
 /* Clear, Hear, Tilt and Level share one row on a phone (a fourth button on a row of its own costs a whole 48 px line); on a narrower screen they wrap. */
 .pz-boardrow { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); }
-.pz-boardrow > .ui-button { flex: 1 1 auto; min-width: 0; padding: 0 var(--space-2); white-space: nowrap; font-size: var(--text-small); }
+.pz-boardrow > .ui-button { flex: 1 1 auto; min-width: 0; padding: 0 var(--space-1); white-space: nowrap; font-size: var(--text-small); }
 
 /* A short screen, upright or sideways: the clue takes one line and the letters are smaller, and the line that explains the board is out of sight (still read aloud): the readout and the Pick button say the same. */
 @media (orientation: portrait) and (max-height: 56rem) {
-  .pz-clue-line { font-size: var(--text-body); }
+  .pz-clue-line { font-size: var(--text-control); }
+  .pz-under { min-height: 1.5rem; }
   .pz-board-kind .pz-digits > span { height: 2.75rem; }
   .pz-board-hint { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }

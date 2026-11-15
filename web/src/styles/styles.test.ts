@@ -96,8 +96,10 @@ describe("app styles", () => {
 
   it("shows a button that is off the same way whether it is `disabled` or `aria-disabled`", () => {
     const off = (selector: string) => new RegExp(`${selector.replace(/[.[\]()']/g, "\\$&")}\\s*{([^}]*)}`).exec(elements)?.[1] ?? "";
-    expect(off(".ui-button:disabled")).toMatch(/opacity:\s*0\.4/);
-    expect(off(".ui-button[aria-disabled='true']")).toMatch(/opacity:\s*0\.4/);
+    expect(off(".ui-button:disabled")).toMatch(/opacity:\s*0\.75/);
+    expect(off(".ui-button[aria-disabled='true']")).toMatch(/opacity:\s*0\.75/);
+    expect(off(".ui-button:disabled")).toMatch(/border-style:\s*dashed/);
+    expect(off(".ui-button[aria-disabled='true']")).toMatch(/border-style:\s*dashed/);
     expect(off(".ui-button[aria-disabled='true']")).toMatch(/cursor:\s*not-allowed/);
   });
 

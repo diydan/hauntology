@@ -55,13 +55,21 @@ describe("puzzle fit", () => {
     expect(board).toMatch(/className="pz-boardrow"/); // Clear, Hear, Tilt and Level in one row: a fourth button on a row of its own costs a 48 px line
     expect(css).toMatch(/\.pz-boardrow > \.ui-button \{[^}]*flex: 1 1 auto;[^}]*white-space: nowrap;/);
     const band = /@media \(orientation: portrait\) and \(max-height: 56rem\) \{([\s\S]*?)\n\}/.exec(css)![1]!;
-    expect(band).toMatch(/\.pz-clue-line \{ font-size: var\(--text-body\); \}/);
+    expect(band).toMatch(/\.pz-clue-line \{ font-size: var\(--text-control\); \}/); // one line at 360 px, where 14 px body text would take two
+    expect(band).toMatch(/\.pz-under \{ min-height: 1\.5rem; \}/);
     expect(band).toMatch(/\.pz-board-hint \{ position: absolute;/); // out of sight, still read aloud
     expect(css).toMatch(/@media \(orientation: landscape\) and \(max-height: 32rem\) \{\s*\.pz-board-hint \{ position: absolute;/);
     expect(board).toMatch(/pz-hint pz-board-hint/);
     // what the screen has left is told in three bands: tall, under 56 rem, under 47 rem (the blocks sit closer together there); the floor stays at 13 rem
     expect(puzzlesCss).toMatch(/@media \(orientation: portrait\) and \(max-height: 56rem\) \{\s*\.pz-host\[data-kind='board'\] \{ --pz-rest: 31rem; --pz-min: 13rem; \}/);
     expect(puzzlesCss).toMatch(/@media \(orientation: portrait\) and \(max-height: 47rem\) \{\s*\.pz-host\[data-kind='board'\] \{ --pz-rest: 29rem; \}/);
+  });
+
+  it("gives the hidden words a lower row of letters and a thinner readout on a short screen held upright, so the wall keeps its size at 14 px running text", () => {
+    const css = kindCss["./kinds/Words.css"]!;
+    const band = /@media \(orientation: portrait\) and \(max-height: 47rem\) \{([\s\S]*?)\n\}/.exec(css)![1]!;
+    expect(band).toMatch(/\.pz-words \.pz-digits > span \{ height: 2\.75rem; \}/);
+    expect(band).toMatch(/\.pz-lit \{ min-height: 1\.5rem; \}/);
   });
 
   it("lays a phone held sideways out in two columns: the picture left, the controls beside it, the header, the message and Give up in a narrow column", () => {

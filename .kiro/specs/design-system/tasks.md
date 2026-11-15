@@ -61,6 +61,13 @@
     - _Requirements: 3.2, 3.5_
   - [x] 7.3 The spirit board: the Hear the word button moves into the Clear row
     - _Requirements: 3.5_
+  - [x] 7.4 The spirit board and the hidden words fit a short phone (done 2026-11-15)
+    - The board's Clear, Hear, Tilt and Level share one row; under 56 rem of height its clue is one line (12.5 px), its explaining line is out of sight (still read aloud) and its letters are lower; its short band has its own `--pz-rest` (38.5, 31 and 29 rem) and a 13 rem floor. The hidden words' letters row and readout are lower under 47 rem. With a motion sensor on, every puzzle fits at 375x667, 390x664, 360x740, 360x690, 390x844, 430x932 and sideways; 320x568 still scrolls for most. `fit.test.ts` keeps the pieces in place.
+    - _Requirements: 3.5_
+  - [x] 7.5 No text under 12 px (done 2026-11-15): `--text-micro` 12 px (was 10.5), `--text-small` 12.5 px (was 11.5), `--text-body` 14 px (was 13); the buttons stay at 12.5 px. A test keeps every size at or above 12 px. The phone audit finds no text under 12 px; the spirit board and the hidden words were re-fitted (7.4).
+    - _Requirements: 3.5_
+  - [x] 7.6 Buttons that cannot be pressed (done 2026-11-15): an ordinary one is dimmed to 0.75 (the words were 3.3 to 1 at 0.4) with a dashed edge; the main one is the raised surface tinted 25 per cent yellow with a yellow edge and quiet words (they were dark words on faded yellow, 2.3 to 1; now 4.6 to 1). The catalogue shows both. One test reads the colours and the opacity; five deliberate breaks are caught.
+    - _Requirements: 3.5_
 
 - [x] 5. Specs and steering
   - [x] 5.1 `.kiro/steering/design-system.md`, `visual-style.md` and `structure.md` updated

@@ -142,6 +142,36 @@ test('text on the dialogue is readable on every lit surface it can take, and a w
   assert.match(warn, /border-left: var\(--stroke-frame\) solid var\(--danger\)/);
 });
 
+test('a button that cannot be pressed still has words you can read (4.5 to 1), and the main one is not a faded yellow block but a tinted one with a yellow edge', () => {
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const mix = (a, p, b) => '#' + rgb(a).map((v, i) => Math.round(v * p + rgb(b)[i] * (1 - p)).toString(16).padStart(2, '0')).join('');
+  const raised = roleHex(tokens, 'surface-raised');
+  // an ordinary button is dimmed by opacity: its words are the text colour mixed with the surface
+  for (const sel of [".ui-button:disabled", ".ui-button[aria-disabled='true']"]) {
+    const o = Number(rules.find(([s]) => s === sel)[1].match(/opacity: ([\d.]+)/)[1]);
+    assert.match(rules.find(([s]) => s === sel)[1], /border-style: dashed/, 'a button that cannot be pressed is told by its edge as well as by its fade');
+    for (const [role, need] of [['text', 4.5], ['text-quiet', 4.5], ['accent', 4.5], ['danger', 3]]) for (const surface of ['surface-raised', 'surface-page', 'surface-panel']) {
+      const words = mix(roleHex(tokens, role), o, roleHex(tokens, surface));
+      assert.ok(contrast(words, roleHex(tokens, surface)) >= need, `${role} on a dimmed button on ${surface} at opacity ${o} is ${contrast(words, roleHex(tokens, surface)).toFixed(2)}, under ${need}`);
+    } // red words are 5.1 to 1 on the page and 3.2 when dimmed: a disabled Stop is rare, and it keeps its dashed edge
+  }
+  // the main button: no opacity, a tint of yellow on the raised surface, quiet words
+  const mainOff = rules.find(([s]) => s.includes('.ui-button--primary:disabled'));
+  assert.ok(mainOff && mainOff[0].includes(".ui-button--primary[aria-disabled='true']"), 'the same rule for the real and the aria way of being disabled');
+  for (const body of [mainOff[1]]) {
+    const tint = Number(body.match(/background: color-mix\(in srgb, var\(--accent\) (\d+)%, var\(--surface-raised\)\)/)[1]) / 100;
+    assert.match(body, /color: var\(--text-quiet\)/);
+    assert.match(body, /opacity: 1/, 'no second fade on top of the tint');
+    assert.ok(!/background: var\(--accent\)/.test(body), 'a disabled main button is not solid yellow');
+    const bg = mix(roleHex(tokens, 'accent'), tint, raised);
+    assert.ok(contrast(roleHex(tokens, 'text-quiet'), bg) >= 4.5, `quiet words on the disabled main button are ${contrast(roleHex(tokens, 'text-quiet'), bg).toFixed(2)}`);
+    assert.ok(contrast(bg, raised) >= 1.4, 'the disabled main button still stands out from a raised surface a little');
+  }
+  const primary = rules.findIndex(([s]) => s === '.ui-button--primary');
+  assert.ok(rules.indexOf(mainOff) > primary, 'the disabled rule comes after the main button rule, so it wins');
+  assert.match(read('design/catalogue.html'), /ui-button--primary" type="button" disabled/, 'the catalogue shows a disabled main button');
+});
+
 test('yellow is the main colour and only the main button and the skip link are solid yellow; green is rare and only the Whisper and the tick box have it', () => {
   const solid = declarations.filter((d) => d.prop === 'background' && d.value === 'var(--accent)').map((d) => d.sel);
   assert.deepEqual(solid.filter((s) => /button|skip|story|tool|dialogue-action/.test(s)).sort(), ['.ui-button--primary', '.ui-skip']);
