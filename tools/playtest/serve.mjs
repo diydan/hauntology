@@ -7,6 +7,7 @@ import http from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseRange } from './src/range.js';
 
 const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const args = process.argv.slice(2);
@@ -18,16 +19,6 @@ const TYPES = {
   '.woff2': 'font/woff2', '.md': 'text/plain; charset=utf-8', '.txt': 'text/plain; charset=utf-8',
 };
 const SKIP = new Set(['test', 'node_modules']);
-
-/** "bytes=a-b", "bytes=a-" or "bytes=-n" against a file of `size` bytes: [start, end] or null when it cannot be met. */
-function parseRange(header, size) {
-  const m = /^bytes=(\d*)-(\d*)$/.exec(header || '');
-  if (!m || (m[1] === '' && m[2] === '')) return null;
-  let start = m[1] === '' ? size - Number(m[2]) : Number(m[1]);
-  let end = m[1] === '' || m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1);
-  if (m[1] === '') start = Math.max(0, start);
-  return start <= end && start < size ? [start, end] : null;
-}
 
 const server = http.createServer(async (req, res) => {
   try {

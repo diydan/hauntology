@@ -6,7 +6,7 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/media/*"]
   },
   "durable_objects": { "bindings": [{ "name": "LAB_ROOM", "class_name": "LabRoom" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LabRoom"] }],
