@@ -1,18 +1,29 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import examples from "../../shared/fixtures/worldlabs/docs-examples.json";
 import worker, { SpendGuard, WorldJob, storeFor, type WorkerEnv } from "./worker";
 import { FakeJobs, FakeNamespace, FakeR2 } from "./worlds/fake-cloudflare";
+import { uploadKey } from "./worlds/keys";
 import { SECRET, sampleManifest, ORIGIN } from "./worlds/test-kit";
 
 const NOW = 1_800_000_000_000;
 const DAY = 24 * 3_600_000;
 
-const envWith = () => {
+const KEY = "wlt_test_KEY_0123456789";
+const realFetch = globalThis.fetch;
+afterEach(() => {
+  globalThis.fetch = realFetch;
+});
+
+/** The Worker's bindings over fakes. `extra` is added to the environment: with `WLT_API_KEY` the Worker is set up to make worlds, and `WORLD_JOB` is then the real (live) `WorldJob`. */
+const envWith = (extra: Record<string, string> = {}) => {
   const bucket = new FakeR2();
-  const jobs = new FakeJobs();
+  const env = { HMAC_SECRET: SECRET, BUCKET: bucket, SPEND_GUARD: undefined, WORLD_JOB: undefined, ...extra } as unknown as WorkerEnv;
+  const jobs = new FakeNamespace((state) => new WorldJob(state, env));
   const spend = new FakeNamespace((state) => new SpendGuard(state, {}));
-  const env = { HMAC_SECRET: SECRET, BUCKET: bucket, WORLD_JOB: jobs, SPEND_GUARD: spend } as unknown as WorkerEnv;
+  Object.assign(env, { WORLD_JOB: jobs, SPEND_GUARD: spend });
   return { bucket, jobs, spend, env };
 };
+const live = () => envWith({ WLT_API_KEY: KEY });
 const ctx = () => {
   const pending: Promise<unknown>[] = [];
   return { ctx: { waitUntil: (p: Promise<unknown>) => void pending.push(p), passThroughOnException: () => {} } as unknown as ExecutionContext, done: () => Promise.all(pending), count: () => pending.length };
@@ -40,7 +51,7 @@ describe("worker", () => {
   });
 
   it("shows the kill switch on the Home flags, and says world_gen_disabled for it", async () => {
-    const { env, spend } = envWith();
+    const { env, spend } = live();
     const before = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx);
     expect(((await before.json()) as { flags: { worldGenEnabled: boolean } }).flags.worldGenEnabled).toBe(true);
     await spend.get("global").fetch("https://spend-guard/kill", { method: "POST", body: JSON.stringify({ on: true }) });
@@ -101,5 +112,97 @@ describe("worker", () => {
     const image = await worker.fetch(new Request(`${ORIGIN}/api/images/img-1`, { headers }), env, ctx().ctx);
     expect(image.status).toBe(200);
     expect(image.headers.get("Content-Type")).toBe("image/png");
+  });
+});
+
+describe("worker: making a world (world-pipeline 6.1, 7.1, 7.3)", () => {
+  const J = { "Content-Type": "application/json" };
+  const visit = async (env: WorkerEnv) => {
+    const res = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx);
+    const cookie = (res.headers.get("Set-Cookie") as string).split(";")[0] as string;
+    const payload = cookie.slice(cookie.indexOf("=") + 1).split(".")[1] as string;
+    const sid = (JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as { sid: string }).sid;
+    return { sid, headers: { Cookie: cookie, Origin: ORIGIN, ...J } };
+  };
+  const flags = async (env: WorkerEnv) => ((await (await worker.fetch(new Request(`${ORIGIN}/api/session`), env, ctx().ctx)).json()) as { flags: { worldGenEnabled: boolean } }).flags;
+  const addImage = (bucket: FakeR2, sid: string) =>
+    bucket.put(uploadKey("img-1"), Uint8Array.from([137, 80, 78, 71, 9]), new Date(), { contentType: "image/png", customMetadata: { ownerSid: sid, sha256: "ab".repeat(32), moderation: "safe" } });
+  const worldsLeft = async (env: WorkerEnv, v: { headers: Record<string, string> }) => {
+    const quote = await worker.fetch(new Request(`${ORIGIN}/api/worlds/quote`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId: "img-1" }) }), env, ctx().ctx);
+    return ((await quote.json()) as { quota: { world: number } }).quota.world;
+  };
+  const enter = async (env: WorkerEnv, v: { headers: Record<string, string> }) => {
+    const quote = await worker.fetch(new Request(`${ORIGIN}/api/worlds/quote`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId: "img-1" }) }), env, ctx().ctx);
+    const { confirmToken } = (await quote.json()) as { confirmToken: string };
+    const res = await worker.fetch(new Request(`${ORIGIN}/api/worlds`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId: "img-1", confirmToken }) }), env, ctx().ctx);
+    return { status: res.status, json: (await res.json()) as { worldId?: string; code?: string; status?: string } };
+  };
+
+  it("makes no world, shows worlds closed on Home and reserves nothing when there is no key", async () => {
+    const { env, bucket, jobs } = envWith();
+    expect((await flags(env)).worldGenEnabled).toBe(false);
+    const v = await visit(env);
+    addImage(bucket, v.sid);
+    const r = await enter(env, v);
+    expect(r.json.code).toBe("world_gen_disabled");
+    expect(jobs.calls.filter((c) => !c.startsWith("GET"))).toEqual([]); // looked, made nothing
+    expect(await worldsLeft(env, v)).toBe(2); // nothing was reserved
+  });
+
+  it("makes no world when the key is there but a setting about the service is not acceptable", async () => {
+    for (const extra of [{ WORLD_MODEL: "marble-9" }, { WORLD_API_BASE: "https://evil.example" }]) {
+      const { env, bucket } = envWith({ WLT_API_KEY: KEY, ...extra });
+      expect((await flags(env)).worldGenEnabled, JSON.stringify(extra)).toBe(false);
+      const v = await visit(env);
+      addImage(bucket, v.sid);
+      expect((await enter(env, v)).json.code).toBe("world_gen_disabled");
+    }
+  });
+
+  it("keeps the switch of WORLD_GEN_ENABLED over the key", async () => {
+    const { env } = envWith({ WLT_API_KEY: KEY, WORLD_GEN_ENABLED: "false" });
+    expect((await flags(env)).worldGenEnabled).toBe(false);
+  });
+
+  it("with a key: shows worlds open, reserves a unit, starts the job, and the job asks the real service for the picture on its first wake", async () => {
+    const asked: { url: string; key: string | null }[] = [];
+    globalThis.fetch = (async (input: RequestInfo | URL, init: RequestInit = {}) => {
+      asked.push({ url: String(input), key: new Headers(init.headers).get("WLT-Api-Key") });
+      return new Response(JSON.stringify(examples.generate), { status: 200 });
+    }) as typeof fetch;
+
+    const { env, bucket, jobs } = live();
+    expect((await flags(env)).worldGenEnabled).toBe(true);
+    const v = await visit(env);
+    addImage(bucket, v.sid);
+    const r = await enter(env, v);
+    expect(r.status).toBe(201);
+    const worldId = r.json.worldId as string;
+    expect(worldId).toMatch(/^w-/);
+    expect(await worldsLeft(env, v)).toBe(1); // a unit is reserved
+    expect(jobs.calls).toContain(`POST ${worldId}`);
+    // Nothing has been sent to the service yet: the first wake does it.
+    expect(asked).toEqual([]);
+
+    const job = jobs.objects.get(worldId) as WorldJob;
+    jobs.alarms.get(worldId)!.at = null;
+    await job.alarm();
+    expect(asked).toEqual([{ url: "https://api.worldlabs.ai/marble/v1/worlds:generate", key: KEY }]);
+    const record = (await (await jobs.get(worldId).fetch("https://world-job/record")).json()) as { status: string };
+    expect(record.status).toBe("generating");
+  });
+
+  it("keeps the key out of every answer the Worker gives", async () => {
+    globalThis.fetch = (async () => new Response(JSON.stringify(examples.generate), { status: 200 })) as typeof fetch;
+    const { env, bucket, jobs } = live();
+    const v = await visit(env);
+    addImage(bucket, v.sid);
+    const r = await enter(env, v);
+    const worldId = r.json.worldId as string;
+    await (jobs.objects.get(worldId) as WorldJob).alarm();
+    const status = await worker.fetch(new Request(`${ORIGIN}/api/worlds/${worldId}`, { headers: { Cookie: v.headers.Cookie as string } }), env, ctx().ctx);
+    const everything = JSON.stringify([r.json, await status.text(), Object.fromEntries(status.headers)]);
+    expect(everything).not.toContain(KEY);
+    expect(everything).not.toContain("worldlabs");
   });
 });

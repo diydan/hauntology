@@ -600,6 +600,17 @@ describe("GET /api/images/:id", () => {
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(Uint8Array.from([1, 2, 3]));
   });
 
+  it("serves the type the bytes were stored with, not the one the lookup reports (the real store's lookup always says octet-stream)", async () => {
+    const t = setup();
+    const v = await t.kit.visitor();
+    t.addImage(v, "img-1", { contentType: "image/webp" });
+    const real = t.images;
+    t.images.find = async (id: string) => { const i = await real.images.get(id)?.info; return i === undefined ? null : { ...i, contentType: "application/octet-stream" }; };
+    const res = await t.kit.app.request("http://app.test/api/images/img-1", { headers: v.headers }, t.kit.env);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Content-Type")).toBe("image/webp");
+  });
+
   it("answers someone else's picture, no cookie and a missing picture alike", async () => {
     const t = setup();
     const a = await t.kit.visitor();

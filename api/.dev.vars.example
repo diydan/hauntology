@@ -1,3 +1,15 @@
 # Copy to .dev.vars for `wrangler dev`. Never commit real values.
 HMAC_SECRET=replace-with-at-least-16-random-characters
 # TURNSTILE_SECRET=
+
+# --- Making a world spends real money. Leave these out and no world is made (the Home screen shows worlds closed). ---
+# A World API key from platform.worldlabs.ai (not the Atlas key; credits bought in the Marble app do not work). One world on
+# the default model (marble-1.1) is about $1.26.
+# WLT_API_KEY=
+# The draft model is about $0.18 a world: use it for a first try. Anything that is not marble-1.0-draft, marble-1.0, marble-1.1
+# or marble-1.1-plus turns world making off.
+# WORLD_MODEL=marble-1.0-draft
+# Hard limits that SpendGuard enforces whatever else happens (defaults: 2 per visitor, 10 a day, 30 in all). Set the last to what you are willing to spend.
+# WORLD_SESSION_CAP=1
+# WORLD_DAY_CAP=3
+# WORLD_TOTAL_CAP=3

@@ -224,7 +224,7 @@ export function imageRoutes(images: ImageStore): Hono<AppEnv> {
     if (info === null || info.ownerSid !== c.get("session").sid) return c.json({ ok: false, code: "upload_rejected" }, 404);
     const object = await images.read(info.id);
     if (object === null) return c.json({ ok: false, code: "upload_rejected" }, 404);
-    const type = "contentType" in object && typeof object.contentType === "string" ? object.contentType : info.contentType;
+    const type = object.contentType;
     return new Response(object.body, { status: 200, headers: { "Content-Type": type, "Content-Length": String(object.size), "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
   });
   return routes;

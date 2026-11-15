@@ -10,6 +10,11 @@ import { imageRoutes, worldCreateRoutes, type CreationDeps } from "./routes/worl
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
 
 export type AppOptions = SessionOptions & {
+  /**
+   * Whether anything is set up to make a world (the Worker sets it from its key). When `false` the Home flags say worlds are
+   * closed, whatever `WORLD_GEN_ENABLED` says, so the shell does not offer what the create call would refuse. Default `true`.
+   */
+  worldGenAvailable?: boolean;
   /** What `SpendGuard` knows, once it exists. */
   spend?: (c: Context<AppEnv>) => Promise<SpendStatus> | SpendStatus;
   /** Where worlds are kept. When given, `/api/worlds/:id`, its assets and `DELETE` are served. */
@@ -29,8 +34,10 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   app.use("/api/*", originGuard());
   app.use("/api/*", session(options));
 
-  const flags = async (c: Context<AppEnv>): Promise<ShellFlags> =>
-    flagsFrom(c.env, options.spend ? await options.spend(c) : undefined);
+  const flags = async (c: Context<AppEnv>): Promise<ShellFlags> => {
+    const f = flagsFrom(c.env, options.spend ? await options.spend(c) : undefined);
+    return options.worldGenAvailable === false ? { ...f, worldGenEnabled: false } : f;
+  };
   app.route("/api/session", sessionRoutes({ flags }));
   if (options.worlds !== undefined) {
     app.route("/api/worlds", worldRoutes(options.worlds));

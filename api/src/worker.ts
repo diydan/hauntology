@@ -1,16 +1,18 @@
 import { retentionFromEnv } from "@hauntology/shared/world/retention";
 import { createApp } from "./app";
 import { SpendGuard } from "./do/spend-guard";
-import { WorldJob } from "./do/world-job";
+import { WorldJob } from "./do/live-world-job";
+import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
 import type { Bindings } from "./http/env";
 import { SpendGuardClient } from "./spend/client";
 import { cleanupExpired } from "./worlds/cleanup";
 import { CloudflareImageStore } from "./worlds/cloudflare-images";
 import { CloudflareWorldStore } from "./worlds/cloudflare-store";
+import { WorldJobStarter } from "./worlds/job-starter";
 import { CloudflareTurnstile } from "./worlds/turnstile";
 
-/** The bindings of `wrangler.jsonc`: the one R2 bucket and the `WorldJob` and `SpendGuard` Durable Object namespaces, besides the vars and secrets. */
-export type WorkerEnv = Bindings & { BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
+/** The bindings of `wrangler.jsonc`: the one R2 bucket and the `WorldJob` and `SpendGuard` Durable Object namespaces, besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
+export type WorkerEnv = Bindings & WorldLabsEnv & { BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
 
 export const storeFor = (env: WorkerEnv): CloudflareWorldStore => new CloudflareWorldStore({ bucket: env.BUCKET, jobs: env.WORLD_JOB });
 
@@ -21,18 +23,21 @@ export default {
   fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext): Response | Promise<Response> {
     let app = apps.get(env);
     if (app === undefined) {
-      // No job starter is passed, so a world cannot be made yet (`world_gen_disabled`), and the Quote shows the real places left.
-      // `WorldJobStarter` and the job in `do/world-job.ts` exist (7.1); what is missing is the real adapter for the world
-      // service (Spike 1.1 has to record its answers first) and ingest (7.3). Passing the starter before then would only
-      // reserve a unit and fail it.
+      // A world is made only when the Worker has a key for the world service (a secret; `WorldLabsEnv`) and every setting
+      // about it is acceptable (`worldLabsFromEnv`). Without one there is no job starter, the create call answers
+      // `world_gen_disabled` and the Home flags say worlds are closed, as before. With one, a create call reserves a unit
+      // from `SpendGuard` and starts the `WorldJob`, which makes the world through the guarded calls (world-pipeline 6.1, 7.1, 7.3).
+      const live = worldLabsFromEnv(env) !== null;
       const guard = new SpendGuardClient(env.SPEND_GUARD);
       app = createApp({
+        worldGenAvailable: live,
         spend: () => guard.status(),
         worlds: {
           store: storeFor(env),
           creation: {
             images: new CloudflareImageStore(env.BUCKET),
             guard,
+            ...(live ? { starter: new WorldJobStarter(env.WORLD_JOB) } : {}),
             ...(typeof env.TURNSTILE_SECRET === "string" && env.TURNSTILE_SECRET !== "" ? { turnstile: new CloudflareTurnstile(env.TURNSTILE_SECRET) } : {}),
           },
         },

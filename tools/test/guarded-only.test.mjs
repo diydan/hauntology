@@ -12,7 +12,8 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SOURCE_DIRS = ["api/src", "api/dev", "shared/src", "web/src"];
-const ALLOWED = /(^|\/)api\/src\/guarded\//;
+// The adapter, and the test-only stand-in of the service (`api/dev/fake-world-api.mjs`), which answers calls and makes none.
+const ALLOWED = /(^|\/)api\/src\/guarded\/|(^|\/)api\/dev\/fake-world-api\.mjs$/;
 const NEEDLES = [/worldlabs\.ai/i, /WLT-Api-Key/i, /WLT_API_KEY/, /worlds:generate/i];
 
 function* walk(dir) {

@@ -89,6 +89,27 @@ describe("start", () => {
   });
 });
 
+describe("the picture's content type", () => {
+  it("is the one the bytes were stored with, not the one the store's lookup reports (the real store's lookup always says octet-stream)", async () => {
+    const t = setup();
+    const real = t.images;
+    // Like CloudflareImageStore: `find` knows no content type, `read` has the stored one.
+    t.deps.images = {
+      find: async (id) => { const i = await real.find(id); return i === null ? null : { ...i, contentType: "application/octet-stream" }; },
+      read: (id) => real.read(id),
+    };
+    const job = new WorldJob(t.parts.state, {}, t.deps, () => t.clock.t, () => 0.5);
+    const call = (path: string, body: unknown) => job.fetch(new Request(`https://world-job${path}`, { method: path === "/record" ? "PUT" : "POST", body: JSON.stringify(body) }));
+    await call("/record", { id: WORLD, kind: "user", ownerSid: OWNER, status: "queued", imageId: "img-1" });
+    const r = await t.guard.reserve({ meter: "world", sessionId: OWNER, ipHash: "ip", now: t.clock.t });
+    if (!r.ok) throw new Error("reserve refused");
+    await call("/start", { ticket: r.ticket, imageId: "img-1", ownerSid: OWNER });
+    t.parts.alarm.at = null;
+    await job.alarm();
+    expect(t.upstream.generated[0]).toEqual({ image: PNG, contentType: "image/png", name: WORLD });
+  });
+});
+
 describe("the job", () => {
   it("makes a world: generate, poll until done, ingest, ready, and the unit stays spent", async () => {
     const t = setup();

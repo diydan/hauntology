@@ -7,6 +7,7 @@
 import { createApp } from "../src/app";
 import { SpendGuard } from "../src/do/spend-guard";
 import { WorldJob as BaseWorldJob, type JobDeps } from "../src/do/world-job";
+import { worldLabsFromEnv } from "../src/guarded/worldlabs-live";
 import realWorker, { storeFor, type WorkerEnv } from "../src/worker";
 import { SpendGuardClient } from "../src/spend/client";
 import { CloudflareImageStore } from "../src/worlds/cloudflare-images";
@@ -71,10 +72,15 @@ class StandInUpstream implements WorldLabsPort, WorldSource {
   }
 }
 
-/** The `WorldJob` with the stand-in service, the real ingest, quick timing and the real `SpendGuard`. */
+/**
+ * The `WorldJob` with the stand-in service, the real ingest, quick timing and the real `SpendGuard`. When the Worker is
+ * started with a key and a loopback `WORLD_API_BASE` as `--var`s (the command is in `src/contract/world-adapter.live.test.ts`),
+ * against `dev/fake-world-api.mjs`, the stand-in is replaced by the real adapter, so the real job, adapter and ingest run
+ * on the real runtime with nothing paid. A base that is not a loopback address gives no adapter, and the stand-in stays.
+ */
 export class WorldJob extends BaseWorldJob {
   constructor(state: DurableObjectState, env: WorkerEnv) {
-    const upstream = new StandInUpstream();
+    const upstream = worldLabsFromEnv(env) ?? new StandInUpstream();
     const deps: JobDeps = {
       upstream, ingestor: new WorldIngestor(upstream, env.BUCKET), images: new Images(env.BUCKET),
       guard: new SpendGuardClient(env.SPEND_GUARD, { strict: true }),

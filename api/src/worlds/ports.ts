@@ -20,7 +20,8 @@ export type ImageInfo = {
 
 export interface ImageStore {
   find(imageId: string): Promise<ImageInfo | null>;
-  read(imageId: string): Promise<{ body: ReadableStream<Uint8Array> | Uint8Array; size: number } | null>;
+  /** The stored bytes and the content type they were stored with (`application/octet-stream` when it is not one of the three the project keeps). */
+  read(imageId: string): Promise<{ body: ReadableStream<Uint8Array> | Uint8Array; size: number; contentType: string } | null>;
 }
 
 /** Checks a Turnstile result with Cloudflare. `false` for anything that is not a clear yes. */

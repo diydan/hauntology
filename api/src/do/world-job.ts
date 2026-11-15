@@ -145,9 +145,8 @@ export class WorldJob {
         const image = await deps.images.read(stored.imageId);
         if (image === null || !record.success) return { t: "upstream_error", status: 404 };
         const bytes = new Uint8Array(await new Response(image.body as BodyInit).arrayBuffer());
-        const info = await deps.images.find(stored.imageId);
-        // The name sent upstream is the world's own id: nothing the visitor wrote leaves with the picture.
-        const res = await generateWorld(deps.upstream, ticket, { image: bytes, contentType: info?.contentType ?? "application/octet-stream", name: record.data.id });
+        // The name sent upstream is the world's own id: nothing the visitor wrote leaves with the picture. The content type is the one the bytes were stored with.
+        const res = await generateWorld(deps.upstream, ticket, { image: bytes, contentType: image.contentType, name: record.data.id });
         return res.ok ? { t: "started", operationId: res.operationId } : failureEvent(res);
       }
       if (data.status === "generating") {
