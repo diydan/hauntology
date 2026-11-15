@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM, reachPlay, tick, click, buttonWith, pointer, waitFor, pastMinSolve, opened } from './helpers.js';
 import { minSolveMs, SHELF_ITEMS } from '../js/core.js';
+import { LETTER_POS } from '../js/kinds/board.js';
 
 const skip = !JSDOM && 'jsdom not installed';
 const polar = (cx, cy, r, deg) => [cx + r * Math.sin((deg * Math.PI) / 180), cy - r * Math.cos((deg * Math.PI) / 180)];
@@ -146,12 +147,13 @@ for (const level of ['easy', 'normal']) {
     await pastMinSolve(hw, minSolveMs(hw.lock));
     const canvas = document.querySelector('canvas');
     for (const ch of hw.lock.secret.word) {
-      const i = ch.charCodeAt(0) - 65, row = i < 13 ? 0 : 1, k = i % 13, t = k / 12;
-      pointer(canvas, 'pointerdown', 26 + t * 288, (row ? 200 : 104) - 26 * Math.sin(Math.PI * t));
-      pointer(canvas, 'pointerup', 26 + t * 288, (row ? 200 : 104) - 26 * Math.sin(Math.PI * t));
+      const p = LETTER_POS[ch.charCodeAt(0) - 65];
+      pointer(canvas, 'pointerdown', p.x, p.y);
+      pointer(canvas, 'pointerup', p.x, p.y);
     }
     await tick(30);
     assert.ok(opened());
+    assert.match(document.body.textContent, /Opened/);
   });
 
   test(`ui words (${level}): light each letter and tap it in reading order`, { skip }, async () => {

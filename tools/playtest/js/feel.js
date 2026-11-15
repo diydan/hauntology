@@ -11,6 +11,7 @@ const KEY = 'hw-playtest-v1';
 export const DEFAULTS = {
   touchOnly: false, assist: false, hapticMode: 'auto', audioChannel: 'normal', dialInvert: false,
   sensitivity: 1, cap: 25000, delay: 0, skipSight: false, level: 'easy',
+  tilt: 'auto', // 'auto': turn tilt on by itself where the phone has it; 'off': the Player turned it off
 };
 export function loadSettings() {
   try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return { ...DEFAULTS }; }

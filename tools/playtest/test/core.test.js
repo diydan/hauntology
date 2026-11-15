@@ -286,3 +286,19 @@ test('haptic limiter: a snap counts as two pulses', () => {
   assert.ok(lim.offer('rumble', 0));
   assert.equal(lim.offer('rumble', 5000), null); // one rumble per Attempt
 });
+
+test('board words: every word has a clue, and no clue gives the word away', () => {
+  const all = [...C.BOARD_WORDS_3, ...C.BOARD_WORDS_4];
+  assert.deepEqual(Object.keys(C.BOARD_CLUES).sort(), [...all].sort());
+  for (const w of all) {
+    const clue = C.BOARD_CLUES[w];
+    assert.ok(clue.length >= 5 && clue.length <= 40, w);
+    assert.ok(!clue.toUpperCase().includes(w), `${w}: the clue contains the word`);
+    assert.ok(!/[^a-z ,'-]/i.test(clue), `${w}: plain words only`);
+  }
+  for (const level of C.LEVELS) for (const seed of seeds.slice(0, 30)) {
+    const l = C.makeLock('board', level, seed);
+    assert.equal(l.view.clue, C.BOARD_CLUES[l.secret.word]);
+    assert.equal(l.view.length, l.secret.word.length);
+  }
+});

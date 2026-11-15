@@ -105,7 +105,7 @@ export type WanderLocks = { on: boolean; discovered: string[]; seen: string[]; o
 | `moved` | **yes** | the shelf before the dark | tap changed objects | none | one rumble in the dark | creak | yes (after shelf) | 3000 ms |
 | `photo` | **yes** | the finished picture | tap to turn, drag to place | none | click on a fit | rustle | yes (picture) | 4000 ms (easy), 6000 ms (normal) |
 | `words` | no | none | drag the torch | torch aim | pulse on a letter | none | yes (letters) | 3000 ms |
-| `board` | no | the word, spoken up to 2 times | drag the planchette, tap letters | planchette rolls | tick per letter, thunk on choose | the Whisper, tick | no | 800 ms per letter |
+| `board` | no | the word and a short clue, spoken up to 2 times | drag the planchette, tap letters | planchette rolls and is pulled to a letter; a tap picks it | tick per letter, thunk on choose | the Whisper, tick | no | 800 ms per letter |
 | `maze`* | no | none | finger drag | orb rolls | bump on a wall (100 ms) | bump | yes (layout) | 4000 ms |
 
 Min solve times are starting guesses. Spike puzzles 1.5 sets them.
@@ -162,6 +162,9 @@ export type PuzzleFeel = { motion: Motion; haptics: Haptics; synth: Synth; breat
 
 ### Motion (the gyroscope)
 
+**Default on.** On a phone with a touch screen, Tilt turns on by itself for the four Kinds that steer with it, and the permission request rides on the tap that starts the Lock (an iPhone only shows its prompt for a direct tap). A phone with no sensor answers `unsupported` within 1.5 seconds and plays by touch. A Player who turns Tilt off keeps it off on that device. (Playtest 2026-11-15: asking for a separate "Use tilt" tap on every puzzle was tedious.)
+
+
 `browserMotion.request()` calls `DeviceOrientationEvent.requestPermission()` from the "Use tilt" tap where that function exists (iPhone) and treats a phone without it as granted; no sensor gives `unsupported`. The listener reads `beta` and `gamma` (not `alpha`, which depends on the compass) at most 30 times a second, and stops when the page is hidden or the Lock closes.
 
 Pure helpers: `smoothTilt(prev, raw, 0.2)`, a 2 degree dead zone, `tiltForScreen(raw, screenAngle)` (swaps and flips the two axes for 90, 180 and 270 degrees), `zeroTilt(zero, raw)`, a clamp to plus or minus 45 degrees, `tiltToPosition(x, range)` (linear, clamped), and `dialAngle(orientation, screenAngle)` (the turn about the screen's own axis, so twisting the phone like a dial works held upright or flat; Spike puzzles 1.2 checks it).
@@ -190,6 +193,8 @@ Pure helpers: `smoothTilt(prev, raw, 0.2)`, a 2 degree dead zone, `tiltForScreen
 `RECIPES` are data: `tick` (4 ms band-passed noise at 3 kHz), `click` (8 ms noise and a 1.8 kHz blip), `thunk` (a 140 to 70 Hz drop with a 400 to 800 Hz knock, because phone speakers have no bass), `snap` (25 ms low-passed noise), `zap` (a sawtooth sweep from 900 to 300 Hz in 120 ms), `bump` (a 220 Hz sine for 80 ms and noise), `rustle` (150 ms band-passed noise), `creak` (a slow saw at 180 Hz with a wobble), `gutter` (a breath-like noise fade), and the five notes. `planSound(events, consent, voices)` returns nothing without consent and never more than four voices.
 
 The Spirit board's spoken word goes through the ghost-voice Library (the Whisper, 24 lines, prerendered, browser voice as fallback). A phone on silent may play nothing, so the Puzzle says so once, in text.
+
+**Playtest findings on the Spirit board (2026-11-15, real phones).** The browser's own voice was not clear, and a low pitch made it worse, so the word needs the prerendered Whisper line, and the fallback picks the clearest English voice at a normal pitch, never a novelty voice. Every word also has a short clue (`BOARD_CLUES`, never containing the word), spoken after the word and shown under the board, which fixes unclear words such as `URN` and `FIR` and keeps the Puzzle playable with no sound. Steering by Tilt and then resting on each letter was tedious, so: the letters are in three rows with a larger target, a letter pulls a slow planchette in, a tap anywhere picks the letter under it, and the rest time is 350 ms. The 24 Library lines should therefore carry the word, the clue and the word again.
 
 ### Breath (the microphone)
 

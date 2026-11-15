@@ -10,6 +10,7 @@ export default {
   title: 'Hidden words',
   blurb: 'Letters are written on a dark wall. Light them with your torch and tap them left to right to read the word.',
   memory: false,
+  usesTilt: true,
   mount(ctx) {
     const { lock, feel, stage } = ctx;
     const letters = lock.view.letters, n = letters.length;

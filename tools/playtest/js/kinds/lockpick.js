@@ -7,6 +7,7 @@ export default {
   title: 'Lock pick',
   blurb: 'Hold Tension, then move the pick. The phone buzzes faster as you get near each pin. Hold it still in the sweet spot to set the pin.',
   memory: false,
+  usesTilt: true,
   mount(ctx) {
     const { lock, feel, stage } = ctx;
     const v = lock.view;

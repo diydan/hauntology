@@ -51,6 +51,14 @@ export const READ_WORDS_5 = ['EMBER', 'QUILT', 'HAZEL', 'LINEN', 'FROST', 'SHADE
 export const BOARD_WORDS_3 = ['ELM', 'OAK', 'OWL', 'FOG', 'DEW', 'FIR', 'KEY', 'URN', 'HAT', 'SUN', 'BEE', 'ORB'];
 export const BOARD_WORDS_4 = ['HUSH', 'DOOR', 'STAR', 'ROSE', 'DOVE', 'LEAF', 'SNOW', 'RAIN', 'BIRD', 'HALL', 'GLOW', 'HOME'];
 
+/** A few gentle words about each Spirit board word, never the word itself: spoken after it and shown under the board. */
+export const BOARD_CLUES = {
+  ELM: 'a tall tree', OAK: 'a strong tree', OWL: 'a bird of the night', FOG: 'low grey cloud', DEW: 'drops on morning grass', FIR: 'an evergreen tree',
+  KEY: 'it opens a lock', URN: 'a tall jar', HAT: 'worn on the head', SUN: 'it rises each morning', BEE: 'it makes honey', ORB: 'a glowing ball',
+  HUSH: 'be very quiet', DOOR: 'you open it to come in', STAR: 'it shines at night', ROSE: 'a red flower', DOVE: 'a white bird', LEAF: 'it grows on a tree',
+  SNOW: 'cold, white and soft', RAIN: 'it falls from the clouds', BIRD: 'it can fly', HALL: 'a long room', GLOW: 'a soft light', HOME: 'where you live',
+};
+
 // ---------------------------------------------------------------- mazes (frozen outputs of a seeded backtracker)
 export const MAZES = {
   easy: [
@@ -225,7 +233,7 @@ export function makeLock(kind, level, seed) {
     case 'board': {
       const list = easy ? BOARD_WORDS_3 : BOARD_WORDS_4;
       const word = list[randInt(r, list.length)];
-      view = { length: word.length, plays: 2, dwellMs: 600 };
+      view = { length: word.length, plays: 2, dwellMs: 350, clue: BOARD_CLUES[word] };
       secret = { word };
       break;
     }

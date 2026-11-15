@@ -39,8 +39,9 @@ export function start(kind) {
   const chip = (key, text, onClick) => h('button', { class: 'chip', 'data-k': key, onClick }, h('b', {}, text), h('span', { class: 'v' }, ''));
   const chipTilt = chip('tilt', 'Tilt', async () => {
     if (settings.touchOnly) return toast('Touch only is on', 'bad');
-    if (feel.tiltState === 'on') { feel.disableTilt(); return toast('Tilt off'); }
+    if (feel.tiltState === 'on') { feel.disableTilt(); settings.tilt = 'off'; saveSettings(settings); return toast('Tilt off. It stays off until you turn it on.'); }
     const r = await feel.enableTilt();
+    if (r === 'on') { settings.tilt = 'auto'; saveSettings(settings); }
     toast(r === 'on' ? 'Tilt on. Hold the phone how you like and tap Hold level.' : r === 'denied' ? 'Motion was denied. On iPhone: Settings > Safari > Motion & Orientation Access.' : 'No motion sensor found. Touch works.', r === 'on' ? 'ok' : 'bad');
   });
   const MODES = ['auto', 'vibrate', 'ios-tick', 'visual'];
@@ -144,12 +145,28 @@ export function start(kind) {
     const t = setTimeout(done, ms);
     return { wrap, stop: () => clearTimeout(t) };
   }
+  /** Tilt is the default on a phone that has it: ask on the Start tap, and keep it off only if the Player turned it off. */
+  function wantsTilt() {
+    return !!kind.usesTilt && !settings.touchOnly && settings.tilt !== 'off' && feel.tiltState !== 'on' && ((navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window);
+  }
+  function announceTilt(state) {
+    if (state === 'on') toast('Tilt is on. Lean the phone. Tap Hold level to re-centre.', 'ok');
+    else if (state === 'denied') toast('Motion was denied, so touch is used. On iPhone: Settings > Safari > Motion & Orientation Access.', 'bad');
+  }
   function ready() {
     return card((done) => [
       h('h2', {}, kind.title),
       h('p', {}, kind.blurb),
       kind.memory ? h('p', { class: 'muted' }, settings.skipSight ? 'Memory puzzle: you will get the faded clue at the lock.' : 'Memory puzzle: you will see a clue first. Remember it.') : null,
-      h('div', { class: 'row' }, h('button', { class: 'primary', onClick: async () => { if (!settings.touchOnly) await feel.unlockSound(); done(); } }, 'Start')),
+      wantsTilt() ? h('p', { class: 'muted' }, 'Tilt turns on by itself if this phone has it. You can lean the phone to play.') : null,
+      h('div', { class: 'row' }, h('button', { class: 'primary', onClick: async (e) => {
+        // Both start inside this tap: an iPhone only shows its motion prompt for a direct tap
+        const jobs = [];
+        if (wantsTilt()) { e.target.textContent = 'Checking tilt…'; jobs.push(feel.enableTilt().then(announceTilt)); }
+        if (!settings.touchOnly) jobs.push(feel.unlockSound());
+        await Promise.all(jobs);
+        done();
+      } }, 'Start')),
     ]);
   }
   function showClue(title, data, ms) {
@@ -208,7 +225,7 @@ export function start(kind) {
     let last = performance.now();
     const loop = (t) => {
       if (phase !== 'play') return;
-      const dt = Math.min(50, t - last); last = t;
+      const dt = Math.max(0, Math.min(50, t - last)); last = t; // never negative: a kind may scale a force by it
       for (const fn of ticks) fn(t, dt);
       const el = t - startedAt, cap = settings.cap;
       timerEl.textContent = cap ? `${fmtS(el)} / ${cap / 1000} s` : fmtS(el);

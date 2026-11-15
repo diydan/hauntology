@@ -8,6 +8,7 @@ export default {
   title: 'Marble maze',
   blurb: 'Roll the orb to the ring. Tilt the phone, or drag a finger to pull the orb. Walls bump and buzz.',
   memory: false,
+  usesTilt: true,
   mount(ctx) {
     const { lock, feel, stage } = ctx;
     const grid = lock.view.grid, rows = grid.length, cols = grid[0].length;
