@@ -27,3 +27,18 @@ Look panel, "Face print (test)". Two test portraits: The Whisper and Mr. Ashby (
 - BEAUTIFY (selfies only, `FP.id === 'custom'`, never presets): slider + "Show original". On-device. At 100%: edge-preserving skin retouch in the print, grain 60% weaker, face-shape morphs pulled 25% toward neutral, a faint smile, brighter eyes and teeth.
 - (old note) Front/side view guessing is NOT done. Downloaded for it, never run: `character-builder/assets/mediapipe/` (MediaPipe Face Landmarker model + WASM from jsdelivr and Google storage, git-ignored).
 - Not done: automatic landmarks for selfies (the "Your image..." option has no shape fit), a fix for the pack's body skin poking through the jacket at the chest.
+
+## Realistic hair: strand cards (test, 2026-11-15)
+- Realistic style (Style > 0.5) grows strand cards over the pack's hair shell (`makeHairCards`). Cards are thin strips with see-through strands (canvas texture, 8 variants), flowing down and back over the shell, ending at the shell's hem in each direction and never crossing in front of the face.
+- Each card copies the shell's skin weights (it swings with the hair bones) and has the same face and hair morphs (photo fitting moves it too). Colour comes from the photo's bled hair texture; the lights shape the strands but do not tint them.
+- Length by style: short cuts up to 4 cm, medium 22 cm, long 34 cm. The photo-facing front keeps the printed photo.
+- Off the printed front, the shell is lit with a smooth normal (`aShellN`) so the pack's leaves stop showing.
+- Toggle: Face print > Real hair > "Strands on/off". Made here, so no asset licence.
+- Bought or free hair assets: MakeHuman Hair 01 is CC0 but mostly low-poly/stylised; Hair 02/03 are CC-BY. Reallusion content is not allowed in an in-game character creator without an Enterprise licence. Paid hair-card packs (about $19 each) need a per-pack licence check.
+
+## Head size, skin under clothes, skirts (2026-11-15)
+- Head: the realistic style shrinks the pack's heads to 0.87 (real eye spacing over stature vs the pack's). The full-body photo may move the head only +-7% around that (its stature guess is noisy; it had set Vane to 1.21).
+- Skin under clothes: skin a garment fully covers is not drawn (`aHide`, set in `insetBody`), so it cannot poke through in any pose. Long skirts and dresses also hide all leg skin inside their outline down to the (lengthened) hem. The hem fit now runs before this, so the lengthened part counts.
+- Skirts and dresses (closed between the legs): leg weights go to the hips plus both thighs, each side leaning to its own leg; below the knee the cloth follows both shins, so seated it hangs straight down instead of a stiff tube. Re-run after every hem fit, always from the pack's own weights. Trousers are untouched.
+- Seated skirts: the middle panel follows the hips more (it sags between spread knees), and each side leans only gently to its own leg, so a seated skirt no longer balloons.
+- Skin calibration fix: the loop compared the lit neck (pink rim light, chin shadow) with the printed face and chased the hue to the clamps (Vane: body x2.5 red/green, x0.4 blue = yellow). Now it matches brightness freely (0.5-1.8x) and hue only within 15%, and it draws only the face and neck while measuring (no hand, mic, collar or hair in front of the sample).
