@@ -108,7 +108,7 @@ Some lines are already rendered as Inworld audio and as 8 to 12 second talking-h
 | `ending.soft.1` | Whisper | You found all three. Thank you for staying. The door is open whenever you want it. I will be here. | **new, REVIEW**: "all three" is true only if the `ending` kind fires after all three memories are found; check the spec | `demo-n2-whisper-farewell` |
 | `meet.dry.1` | Keeper | Ah. A visitor. I would offer tea, but you can see my difficulty. | in `VOICE.md` | `hero-ashby-welcome` |
 | `end.haunting.dry.1` | Keeper | Well. That is that. I shall keep my secrets, and you may keep the memory of how close you were. | in `VOICE.md` | `hero-ashby-closing` |
-| `lodger.confession.1` to `.5` | Lodger | the five lines in `docs/story/lodger-lines.md` | approved | Vane `.1`, Cora `.2`, Percy `.3`, Dr. Pike `.4`, Captain Thorne `.5`, Mrs. Dunmore `.5` (`hero-suspect-<name>-confession`) |
+| `lodger.confession.1` to `.6` | Lodger | the six lines in `docs/story/lodger-lines.md` | `.1` to `.5` approved and in clips; `.6` is new, no REVIEW note, in a clip (9.2 s spoken) | Vane `.1`, Cora `.2`, Percy `.3`, Dr. Pike `.4`, Captain Thorne `.5`, Mrs. Dunmore `.6` (`hero-suspect-<name>-confession`) |
 
 **Demo only, not for any bank.** Two lines were made for the demo video and are only true in the demo, so they never go into a bank and never into the Library:
 

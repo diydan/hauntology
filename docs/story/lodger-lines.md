@@ -38,6 +38,7 @@ The Lodger gives no tell. Before the reveal, no `aside` or `stall` confirms or d
 | `lodger.confession.3` | Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good. |
 | `lodger.confession.4` | It was me. There. I feel... lighter. Well... I mean... do not look at me like that. |
 | `lodger.confession.5` | Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it. |
+| `lodger.confession.6` | Is everyone ready? It was me. Now I leave a pause for the gasp. I mean... do make it a good one. |
 
 ## Checked against the rules
 
