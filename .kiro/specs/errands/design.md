@@ -32,3 +32,7 @@ An Errand is settled at most once; Done scores two Scare points only on Yes; a m
 ## Testing
 
 Property tests with fast-check for Properties 1 to 3; example tests for the photo preference (1.4), the recap (2.4), the setting and opt-out (4.1, 4.3) and the Controller screens (3.1, 4.2).
+
+## Integration notes (2026-11-15)
+
+Errands join in Phase 7 of the `integration` spec, through the Engine, behind the `errands` setting. The messages are listed in the `party-mode` design's integration notes.

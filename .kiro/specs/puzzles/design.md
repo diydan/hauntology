@@ -387,3 +387,7 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 ### Property 20: Spirit clues change what is shown and nothing else
 *For any* Safe code and any reading state (nothing read, some read, all shown as text), the digits in the Clue list in order equal the code of the Sight, "Show all as text" reads every clue, and `verify` gives the same verdict for the same Transcript whatever was read.
 **Validates: Requirements 15.1, 15.7**
+
+## Integration notes (2026-11-15)
+
+Party integration (tasks 3) is Phase 5 of the `integration` spec: Inspect by a human Detective on a phone opens the Lock through `PuzzleHost` at the level of the Room's `puzzles` setting, with the feel layer from the Controller's device settings (`PlatformKit.puzzleFeel`). A Bot, and the solo case's shared-screen pad, get a plain Inspect. Wander integration (tasks 4) is Phase 6.

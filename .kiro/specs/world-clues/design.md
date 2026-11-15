@@ -29,3 +29,7 @@ For every placed real World Clue, the Lock it names accepts the answer drawn on 
 ## Testing
 
 Property tests for Properties 1 and 2. Example tests for the `phone` setting (1.4), the Public View content (2.2), Assist and Faded (3.2, 3.3) and Bots (3.4). Viewer checks for nearness, stillness and labels (2.1, 2.3) in the world-viewer harness.
+
+## Integration notes (2026-11-15)
+
+World Clues join in Phase 7 of the `integration` spec, through the Engine. The placed clues and Decoys go into the Public View as `worldClues` (Zone, Sign, Sight) only when `cluePlace` is `world`; the Viewer draws them as props by the `world-viewer` rules for anchors, and the clue props must fit that spec's budget for objects in the world.

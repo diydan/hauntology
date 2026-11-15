@@ -122,7 +122,8 @@ type Settings = { worldId: string | null; baseSeconds: 30 | 45 | 60 | 90 | null;
                   nudges: 'all' | 'help-only' | 'off'; frames: boolean; sounds: boolean; autoCross: boolean /* false */; botLevel: 'standard' | 'gentle';
                   // Classic: 60 s, 10, all, frames on, auto-cross off, standard. Gentle: 90 s, 12, help-only, frames off, auto-cross on, gentle. Quick: 45 s, 8, all, frames on, auto-cross off, standard.
                   conditions: { mode: 'place' | 'table' | 'off'; place?: Place }; hourStrike: boolean /* true */;
-                  lightBar: boolean /* true */; rattle: boolean /* true */; stitch: boolean /* false */; selfies: boolean /* false */ };
+                  lightBar: boolean /* true */; rattle: boolean /* true */; stitch: boolean /* false */; selfies: boolean /* false */;
+                  puzzles: 'off' | 'easy' | 'medium' | 'hard' /* from the preset */; errands: boolean /* false, see errands spec */; cluePlace: 'phone' | 'world' /* 'phone', see world-clues spec */ };
 type Player = { seat: Seat; nickname: string; kind: 'human' | 'bot'; connected: boolean;
                 poltergeist: boolean; resolve: number /* 0..3 */; inspected: string[] /* zone ids */;
                 hand: Card[]; achievements: AchievementId[]; missedTurns: number;
@@ -544,3 +545,11 @@ Codes: `party_disabled`, `rooms_full`, `world_too_small`, `room_unknown`, `room_
 ### Property 62: A Seat Portrait is black and white exactly when its Player has joined the haunting
 *For any* sequence of Accusations and any seat: `seatLook` is `'mono'` exactly when the seat is in the public Poltergeist seats and `'colour'` otherwise, it never returns to `'colour'` once `'mono'`, it depends on nothing but the Public View (two Rooms with the same Poltergeist seats and different Hands, Residues or Solutions give the same looks), `seatPortrait` returns the Preset's pre-made black and white picture for a Preset Ghost and the greyscale filter of the same picture otherwise, a Player with no Ghost Profile and every Bot get a chip that loses its colour the same way, and no Suspect card, speaker badge or narrator picture is ever given a `'mono'` look by this rule.
 **Validates: Requirements 19.8, 19.9**
+
+## Integration notes (2026-11-15)
+
+The order in which these rules are joined into a running game, and the Engine that joins them, are in the `integration` spec. Three additions there touch this design:
+
+- **Settings** gain `puzzles` (the Puzzle setting of the `puzzles` spec, Classic medium, Gentle easy, Quick off; hard only by the Master), `errands` and `cluePlace` (the `errands` and `world-clues` specs), each Master-only and applied from the next Inspect or Round.
+- **Protocol** gains, behind those switches: `errandDone`, `caught {poltergeist, object}` and `errandAnswer {yes}` (Client to Room); `errand {object, target, ruleLine}` to one Poltergeist, `errandAsk {object, deadlineMs}` to one Target, and the public `errand-done` and `caught` events without the sender (Room to Client); and `worldClues` in the Public View when `cluePlace` is `world`.
+- **The ending recap** lists every Errand with its sender, Target, object and outcome, after the Frames and House Cues.
