@@ -1,0 +1,17 @@
+{
+  // Hauntology playtest and device lab: static pages (assets) plus one Durable Object per lab room.
+  "name": "hauntology-playtest",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-15",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": { "bindings": [{ "name": "LAB_ROOM", "class_name": "LabRoom" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LabRoom"] }],
+  "routes": [{ "pattern": "mtest.hauntology.app", "custom_domain": true }],
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": { "LAB_ENABLED": "true" }
+}
