@@ -40,6 +40,10 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - **Validates: Requirements 4.3, 6.1**
   - [ ] 2.13 Source-level checks: nothing in `shared/src/table/` imports `party/solution`, a Hand, a Residue position or the Room seed, and nothing in it or `web/src/table/` sends a message or stores a Mark, a direction or a picture
     - _Requirements: 1.3, 3.1, 3.4_
+  - [ ] 2.14 `notebook.ts`: `markOf(notebook, card)` (ruled out when some column has the card, maybe when none does and some column is maybe, else none; no inference from lacks) and `tableData` using it for rooms, Suspects and Relics
+    - _Requirements: 3.2, 3.5_
+  - [ ] 2.15 **Property 9: A card's mark comes from the notebook grid alone**
+    - **Validates: Requirements 3.2, 3.5**
 
 - [ ] 3. The phone (`web/src/table/`)
   - [ ] 3.1 `SpiritTable.tsx`: the scene at real size (slab, six rooms with labels, low walls, standees that face the Player, the Whisper with a faded hem and mist, Mark tags with stems, the Cold Spot glow, the ring under a picked piece, the Place pulse), turned by the orientation sensor or by dragging, at most 30 frames a second, paused face down or hidden, still under reduced motion

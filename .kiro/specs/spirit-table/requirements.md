@@ -11,7 +11,7 @@ The Spirit table is an optional private layer of Party Mode: a small 3D haunted 
 - **Piece**: anything drawn on the Table: a room, a Pawn, a Suspect standee, a Relic, the Whisper, a Mark, a Cold Spot glow.
 - **Pawn**: the standee of one Player (a Bot too): their Seat Portrait, or a nickname chip.
 - **Line-up**: the row of six Suspect standees along the front edge. **Shelf**: the row of six Relics at the side.
-- **Mark**: one of the Player's own notebook marks (ruled out, or maybe), drawn as a floating tag tied to the Zone, Suspect or Relic it belongs to.
+- **Mark**: the Player's own notebook's verdict on one card (a Zone, a Suspect or a Relic), drawn as a floating tag tied to that card's piece: **ruled out** (a cross) or **maybe** (a question mark), worked out from the notebook grid as 3.5 says.
 - **Theory mark**: the Player's own "maybe here" mark that ties one Suspect to one room, made by dragging the Suspect onto the room.
 - **Place**: the tap that puts the Table in front of the Player, facing them, where the middle of the view meets an assumed table.
 - **Table list**: the text twin of the Table: every Zone, Player, Suspect and Relic with its Marks.
@@ -54,6 +54,7 @@ The Spirit table is an optional private layer of Party Mode: a small 3D haunted 
 2. THE Table SHALL draw the Player's own Marks as floating tags tied by a thin line to their Zone, Suspect or Relic, SHALL show the Zones the Player inspected with a light mark, and SHALL never draw a Mark for anyone else.
 3. WHEN the game has ended and the Solution is public THEN the Table MAY light the Solution's Zone, Suspect and Relic, and before that it SHALL NOT.
 4. THE Spirit table SHALL keep nothing: no Mark, direction, picture or reading SHALL be stored or sent, and it SHALL add nothing to the telemetry.
+5. THE Table SHALL work out a card's Mark from the Player's own notebook grid alone (the marks has, lacks, maybe and blank of each Player and of the Residue, as the notebook of `party-mode` 4.4 keeps them): a card is **ruled out** WHEN some Player or the Residue is marked as having it, is **maybe** WHEN nobody is marked as having it and some column is marked maybe, and has **no Mark** otherwise, so that a card marked as lacked in every column gets none, because the notebook makes no inference and the Table SHALL make none either.
 
 ### Requirement 4
 

@@ -28,7 +28,7 @@ What the mockup proved: the board, the standees and the Whisper read well at 390
 ## Pure logic (`shared/src/table/`)
 
 ```ts
-type Mark = 'ruled_out' | 'maybe';
+type Mark = 'ruled_out' | 'maybe';   // worked out by markOf from the notebook grid (below)
 type TableData = {
   rooms: { zone: string; name: string; slot: number; coldSpot: boolean; inspected: boolean; mark?: Mark }[];
   pawns: { seat: number; nickname: string; zone: string | 'door'; active: boolean; mono: boolean }[];
@@ -38,6 +38,7 @@ type TableData = {
   ended?: { zone: string; suspect: string; relic: string };  // only when phase === 'ended'
 };
 tableData(pub: PublicView, priv: PrivateView, notebook: Notebook): TableData
+markOf(notebook: Notebook, card: string): Mark | undefined
 tableLayout(roomCode: string, zones: readonly string[]): { zone: string; slot: number }[]
 whisperAt(roomCode: string, zones: readonly string[], coldSpot: string | null, haunt: { level: number; max: number }, tMs: number, reducedMotion: boolean): { x: number; z: number; height: number; glow: number }
 placeTable(dir: { x: number; y: number; z: number }, lastHeading: { x: number; z: number }): { x: number; y: number; z: number; facing: number }
@@ -47,6 +48,8 @@ tablePlan(i: { sensors: boolean; faceDown: boolean; hidden: boolean; reducedMoti
 **The Room seed never reaches a phone**, because the Solution can be derived from it. So the cosmetic layout and the Whisper's tour use a hash of the Room Code (which every phone already has) and the Zone ids, never the seed. `tableData` takes the two views and the notebook and nothing else, so a hidden fact cannot reach it by type, and a source-level test fails the build if a file in `shared/src/table/` imports `party/solution`, a Hand, a Residue position or the Room seed.
 
 **Pawns.** A Pawn's room is the Zone of that seat's newest public `suggest` or `inspect` event, else `door`. The Public View has no per-Player position (the Host reports one shared camera), so "last seen" is the honest public fact. A Pawn is `mono` exactly when the seat is a Poltergeist, and the set of Poltergeists only grows (as `seatLook` in `party-mode`).
+
+**Marks from the notebook.** The party-mode notebook is a grid of the 18 cards against every Player and the Residue, each cell has, lacks, maybe or blank, filled by `autoMarks` (the Hand, the shown cards, the found Residue and, with auto-cross, the passes) and by the Player's own `markCard`. `markOf(notebook, card)` reads one row of that grid. Every card is in exactly one of the Solution, the Residue or one Hand, so a card that some Player or the Residue is marked as having cannot be in the Solution: it is **ruled out** (a cross). A card that nobody is marked as having, with some column marked maybe, is **maybe** (a question mark). Anything else, including a card marked as lacked in every column, gets **no Mark**: by elimination such a card would be the Solution, but the notebook makes no inference (`party-mode` 4.4), and a tag that said so would hand the Player a deduction the notebook never made. The verdict is only as good as the Player's own marks: a wrong `has` the Player typed rules a card out on the table too, exactly as it does in the grid. `ruled out` beats `maybe`. The same function feeds the room, Suspect and Relic Marks of `tableData` and the Table list, so a Mark is the same everywhere.
 
 **Line-up and Shelf.** Pool order. A sort by anything else (a Hand, a Mark, the Solution) would leak, so the order is not allowed to be a function of anything but the pool.
 
@@ -163,3 +166,7 @@ A screen's own style says only where things go. A piece that is missing is added
 ### Property 8: The rag doll keeps its shape and stands back up
 *For any* finger path and release, the rag doll's links stay within 8 percent of their length while held, no point is ever below the floor or not a number, a chain hanging straight bends the picture into exactly the flat picture, and after release the figure is upright and still within two seconds of landing.
 **Validates: Requirements 8.1, 8.4**
+
+### Property 9: A card's mark comes from the notebook grid alone
+*For any* notebook grid and card, `markOf` is `'ruled_out'` exactly when some Player or the Residue is marked as having the card, `'maybe'` exactly when nobody is marked as having it and some column is marked maybe, and `undefined` otherwise, including when every column is marked as lacking it; the result does not change with any other card's marks, with another Player's hidden data or with the order the marks were made in; and every Mark in `tableData` equals `markOf` for its card.
+**Validates: Requirements 3.2, 3.5**
