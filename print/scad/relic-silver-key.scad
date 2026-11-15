@@ -7,7 +7,7 @@
 include <_common.scad>
 
 module relic_silver_key() {
-  // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
+  // 1. Flat 14.6 mm foot with a 6 mm centre socket (z = 0..4.5); the Relic Token has the matching peg
   relic_pedestal_base(h = 4.5, top_d = 18.0);
 
   // 2. No escutcheon plinth or base plate: the key stands straight on the connector neck.

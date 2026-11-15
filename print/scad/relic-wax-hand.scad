@@ -15,7 +15,7 @@ module wax_finger(p0, r0, p1, r1, p2, r2, p3, r3) {
 }
 
 module relic_wax_hand() {
-  // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
+  // 1. Flat 14.6 mm foot with a 6 mm centre socket (z = 0..4.5); the Relic Token has the matching peg
   relic_pedestal_base(h = 4.5, top_d = 18.4);
 
   // 2. A smooth wrist straight out of the connector neck (z = 4.5..13.0). No saucer, drips or base plate:

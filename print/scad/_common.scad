@@ -26,9 +26,11 @@ sticker_depth      = 0.40;
 token_side_mm      = 40.0;
 token_height_mm    = 6.0;
 token_qr_mm        = 36.4; // 36 x 36 mm sticker + 0.2 mm margin per side
-relic_conn_plug_d  = 13.6; // Compact centre connector plug on bottom of each Relic (130+ mm^2 bed contact at z=0)
-relic_conn_plug_h  = 2.0;  // Plug engagement depth into the centre of the Relic Token
-relic_conn_sock_d  = relic_conn_plug_d + 2 * clear_fit; // 13.9 mm press/drop-in centre socket on Relic Token
+relic_peg_d   = 5.6;   // Generic centre peg on the Relic Token. Small on purpose: the QR sticker gets a 6 mm hole punched for it and still scans.
+relic_peg_h   = 3.0;   // How far the peg stands above the token's top face
+relic_sock_d  = relic_peg_d + 0.5;  // 6.1 mm socket in the bottom of every Relic
+relic_sock_h  = relic_peg_h + 0.3;  // 3.3 mm deep
+relic_foot_d  = 14.6;  // Flat foot of every Relic at z = 0 (14.6 mm foot minus the socket and bevels = over 100 mm^2 of bed contact)
 
 // --- TowerPro SG90 9g Micro Servo dimensions (incorporating clear_move / clear_fit) ---
 sg90_body_w        = 22.8 + 2 * clear_fit; // 23.1 mm
@@ -129,24 +131,21 @@ module sticker_pocket_oval(rx, ry, depth = sticker_depth) {
       scale([rx, ry]) circle(r = 1);
 }
 
-// Compact Relic Centre Connector Plug (no wide circular base plate!):
-// Sits flat on z = 0 (diameter 13.6 mm -> 130+ mm^2 flat bed contact), plugs 2.0 mm into the
-// centre socket of `relic-token-pocket.stl`, and corbels smoothly at <= 45 deg into the Relic body.
-module relic_pedestal_base(h = 4.2, top_d = 18.0) {
-  plug_h = relic_conn_plug_h;
-  collar_h = max(0.8, h - plug_h);
-  union() {
-    // 1. Lower cylindrical centre-connector plug (z = 0..2.0) that drops into the Relic Token centre socket
-    cylinder(h = 0.4, d1 = relic_conn_plug_d - 0.8, d2 = relic_conn_plug_d);
-    translate([0, 0, 0.4])
-      cylinder(h = plug_h - 0.4, d = relic_conn_plug_d);
-    // Subtle anti-rotation alignment nub on +Y side of plug
-    translate([0, relic_conn_plug_d / 2 - 0.2, plug_h / 2])
-      chamfer_box(2.4, 1.2, plug_h - 0.4, r = 0.4, ch_bot = 0.2, ch_top = 0.2);
-
-    // 2. Smooth 45-deg corbelled transition collar into the Relic body (no wide base plate!)
-    translate([0, 0, plug_h])
-      cylinder(h = collar_h, d1 = relic_conn_plug_d + 1.2, d2 = min(top_d, relic_conn_plug_d + 2 * collar_h));
+// Relic foot (no wide base plate): a flat 14.6 mm foot at z = 0 with a 6.1 mm centre socket that drops onto the
+// 5.6 mm peg of `relic-token-pocket.stl`, then a short 45-degree corbel into the Relic body. Printing the socket
+// (a blind hole open to the bed) keeps the 100+ mm^2 of bed contact that a 6 mm plug could not give.
+module relic_pedestal_base(h = 4.5, top_d = 18.0) {
+  cone_h = max(0.8, (top_d - relic_foot_d) / 2);
+  cyl_h  = max(1.2, h - cone_h);
+  difference() {
+    union() {
+      cylinder(h = 0.4, d1 = relic_foot_d - 0.8, d2 = relic_foot_d);
+      translate([0, 0, 0.4]) cylinder(h = cyl_h - 0.4, d = relic_foot_d);
+      translate([0, 0, cyl_h]) cylinder(h = h - cyl_h, d1 = relic_foot_d, d2 = min(top_d, relic_foot_d + 2 * (h - cyl_h)));
+    }
+    // Centre socket, open to the bed, with a small lead-in
+    translate([0, 0, -0.01]) cylinder(h = relic_sock_h + 0.01, d = relic_sock_d);
+    translate([0, 0, -0.01]) cylinder(h = 0.5, d1 = relic_sock_d + 1.0, d2 = relic_sock_d);
   }
 }
 

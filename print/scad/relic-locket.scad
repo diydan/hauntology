@@ -7,19 +7,12 @@
 include <_common.scad>
 
 module relic_locket() {
-  // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
+  // 1. Flat 14.6 mm foot with a 6 mm centre socket (z = 0..4.5); the Relic Token has the matching peg
   relic_pedestal_base(h = 4.5, top_d = 18.0);
 
-  // 2. Scrolled Victorian ribbon display cradle (z = 4.5..12.0)
-  translate([0, 0, 4.5]) {
-    // Side scroll arms cradling the locket body
-    for (sx = [-1, 1]) {
-      hull() {
-        translate([sx * 4.5, 0, 1.8]) sphere(r = 3.0);
-        translate([sx * 11.2, 0, 8.5]) sphere(r = 2.6);
-      }
-    }
-  }
+  // 2. A short 45-degree stem from the foot up into the locket (no arms, cradle or base plate)
+  translate([0, 0, 4.5])
+    cylinder(h = 5.0, d1 = 18.0, d2 = 8.0);
 
   // 3. Upright Heirloom Oval Locket Body (z = 9.0..41.0, center at z = 25.0)
   translate([0, 0, 25.0])

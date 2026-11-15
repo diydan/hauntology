@@ -7,7 +7,7 @@
 include <_common.scad>
 
 module relic_bell() {
-  // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
+  // 1. Flat 14.6 mm foot with a 6 mm centre socket (z = 0..4.5); the Relic Token has the matching peg
   relic_pedestal_base(h = 4.5, top_d = 18.8);
 
   // 2. No base plate, pillars or clapper: a solid 45-deg flare (z = 4.5..9.1) carries the bell mouth straight off the neck.
