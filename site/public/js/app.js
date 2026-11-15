@@ -4119,8 +4119,11 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
         path(GQ, GB, q, tmp);
       }
       out.lerp(tmp, w);
-      // it turns its back on us before it reaches the door, so it goes in facing the dark
-      return { w, size: 1 + (size - 1) * w, alpha: 1 - sm(0.5, 0.58, q), turn: Math.PI * sm(0.26, 0.36, q) };
+      // face the doorway from early on: toward it from wherever the ghost is (right and away while it is left of the door), square on once lined up
+      const fx = FRONT.x - out.x, fz = FRONT.z - out.z;
+      const heading = q > QH ? Math.PI : (fx > 0 && fz < 0 ? Math.atan2(fx, fz) : Math.PI);
+      // it turns toward the door early in its path, so it goes in facing the dark
+      return { w, size: 1 + (size - 1) * w, alpha: 1 - sm(0.5, 0.58, q), turn: heading * sm(0.10, 0.22, q) };
     },
   };
 }
