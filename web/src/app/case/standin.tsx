@@ -12,16 +12,16 @@ export function mountHost({ container, setup, onMessage }: HostSetup): HostHandl
   const root = createRoot(container);
   const render = (over: boolean) =>
     root.render(
-      <div className="standin" data-standin-host>
+      <div className="ui-stack" data-standin-host>
         <p>Stand-in case. The party Host page is not built yet.</p>
         <p>
           {CASE_PRESET_COPY[setup.preset].label}, with {setup.bots} Bots.{over ? " The case is over." : ""}
         </p>
-        <div className="standin-walk" role="group" aria-label="Pretend">
-          <button type="button" className="button" disabled={over} onClick={() => onMessage({ t: "ended" })}>
+        <div className="ui-row" role="group" aria-label="Pretend">
+          <button type="button" className="ui-button" disabled={over} onClick={() => onMessage({ t: "ended" })}>
             End the case
           </button>
-          <button type="button" className="button" disabled={over} onClick={() => onMessage({ t: "refused", code: "world_too_small" })}>
+          <button type="button" className="ui-button" disabled={over} onClick={() => onMessage({ t: "refused", code: "world_too_small" })}>
             Say the place is too small
           </button>
         </div>

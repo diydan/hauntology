@@ -94,9 +94,11 @@ test('text colour is never a shape colour: --shape-quiet, --line and --line-stro
 });
 
 test('every control is at least 44 px (the main ones 52 px) and the focus ring is the lantern', () => {
-  for (const sel of ['.ui-button', '.ui-select, .ui-range', '.ui-fold > summary', '.ui-field--check .ui-field-label']) assert.match(rules.find(([s]) => s === sel)[1], /min-height: var\(--target\)/, sel);
+  for (const sel of ['.ui-button', '.ui-select, .ui-range, .ui-input', '.ui-fold > summary', '.ui-field--check .ui-field-label']) assert.match(rules.find(([s]) => s === sel)[1], /min-height: var\(--target\)/, sel);
   for (const sel of ['.ui-tool', '.ui-button--main']) assert.match(rules.find(([s]) => s === sel)[1], /min-height: var\(--target-main\)/, sel);
   assert.match(rawElements, /\.ui-page :focus-visible \{ outline: var\(--stroke-ring\) solid var\(--focus\); outline-offset: var\(--stroke-ring\); \}/);
+  assert.match(rules.find(([s]) => s === 'a.ui-button')[1], /display: inline-flex/, 'a link used as a button is a box, so its height counts');
+  assert.match(rules.find(([s]) => s === '.ui-stack > *')[1], /margin: 0/, 'the gap of a stack is the only space between its blocks');
   assert.equal(tokens.role.focus.color, 'lantern');
   assert.ok(!/outline:\s*none/.test(elements.replace(/\.ui-sheet-title:focus \{[^}]*\}/, '')), 'the only ring turned off is the one on a title that is a focus target, not a control');
 });
@@ -205,6 +207,39 @@ test('the commands exist: build-tokens, check-tokens, and the traceability check
   assert.equal(pkg.scripts['build-tokens'], 'node tools/build-tokens.mjs');
   assert.equal(pkg.scripts['check-tokens'], 'node tools/build-tokens.mjs --check');
   assert.ok(existsSync(join(root, 'tools/build-tokens.mjs')));
+});
+
+// ---- the screens built before the spec are on the elements now ----------------------------------------------------------------------------
+function cssFiles(dir) {
+  return readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? cssFiles(`${dir}/${e.name}`) : e.name.endsWith('.css') ? [`${dir}/${e.name}`] : []));
+}
+const SCREEN_CSS = ['web/src/styles/app.css', ...cssFiles('web/src/puzzles').filter((f) => !f.includes('/demo/'))];
+/** Variables a screen sets for itself (like --pz-target on the puzzle host), in any screen stylesheet. */
+const localScreenProps = new Set(SCREEN_CSS.flatMap((f) => [...read(f).matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1])));
+
+test('the web app and the puzzle screens write no colour of their own: no hex, no rgb(), and no palette name where a role exists', () => {
+  assert.ok(SCREEN_CSS.length >= 12, `${SCREEN_CSS.length} screen stylesheets found`);
+  const palette = entries(tokens, 'color').map(([k]) => k);
+  for (const file of SCREEN_CSS) {
+    const css = read(file).replace(/\/\*[\s\S]*?\*\//g, '');
+    assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(css), `${file} has a hex colour`);
+    assert.ok(!/\b(?:rgb|rgba|hsl|hsla)\(/.test(css), `${file} has a colour function`);
+    for (const m of css.matchAll(/var\(--([a-z0-9-]+)/g)) assert.ok(!palette.includes(m[1]) || tokens.color[m[1]].use === 'light', `${file} uses the palette name --${m[1]}: use its role`);
+    for (const m of css.matchAll(/var\((--[a-z0-9-]+)/g)) assert.ok(tokenProps.has(m[1]) || localScreenProps.has(m[1]), `${file} reads ${m[1]}, which is neither a token nor a variable a screen sets itself`);
+    assert.ok(!/\.(?:button|banner|card|notice)\s*[{,.:]/.test(css) || file.includes('puzzles'), `${file} still styles an old look class`);
+  }
+});
+
+test('the old look classes are gone from the screens: no className="button", no pz-btn or pz-help-btn in web/src', () => {
+  const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx$/.test(e.name) && !/\.test\./.test(e.name) ? [`${dir}/${e.name}`] : []));
+  const files = walk('web/src');
+  assert.ok(files.length > 40);
+  for (const f of files) {
+    const text = read(f);
+    assert.ok(!/className="button[ "]/.test(text), `${f} uses the old button`);
+    assert.ok(!/\bpz-btn(-[a-z]+)?\b|\bpz-help-btn\b/.test(text), `${f} uses an old puzzle button class`);
+  }
+  for (const f of files) for (const c of classesIn(read(f))) assert.ok(defined.has(c), `${f} uses ${c}, which design/elements.css does not define`);
 });
 
 // ---- the specs and steering say: build from these ---------------------------------------------------------------------------------------------

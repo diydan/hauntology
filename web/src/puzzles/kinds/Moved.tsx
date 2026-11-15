@@ -76,12 +76,12 @@ export default function Moved({ view, feel, reducedMotion, submit, announce, res
   }
   return (
     <div className="pz-moved" data-phase="lit">
-      <p className="pz-hint">Tap everything that changed on the shelf you saw: swapped, new or missing.</p>
+      <p className="ui-hint pz-hint">Tap everything that changed on the shelf you saw: swapped, new or missing.</p>
       <div className="pz-field">
         <Shelf items={view.after} cols={cols} selected={picked} onPick={toggle} />
         <p className="pz-readout pz-moved-count" role="status">{picked.size} chosen</p>
       </div>
-      <button type="button" className="pz-btn pz-btn-primary pz-wide" onClick={submitNow}>These changed</button>
+      <button type="button" className="ui-button ui-button--primary pz-wide" onClick={submitNow}>These changed</button>
     </div>
   );
 }

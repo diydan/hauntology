@@ -130,7 +130,7 @@ export const lookHere = async (n: number) => {
   await press("Talk");
   await press("Look");
   // The reply arrives, or the third memory has already taken the visitor to the Ending.
-  await waitFor(() => expect(document.querySelector(".transcript .ghost") !== null || screen.queryByRole("heading", { name: "You remembered" }) !== null).toBe(true));
+  await waitFor(() => expect(document.querySelector(".transcript .ui-line--whisper") !== null || screen.queryByRole("heading", { name: "You remembered" }) !== null).toBe(true));
 };
 
 export const live = () => document.querySelector("[data-live-region]")?.textContent ?? "";

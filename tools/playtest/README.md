@@ -62,6 +62,7 @@ sockets are open. Anyone with the link can push, so treat a room code like a pas
 | `/clock` `/wires` `/lockpick` | the first three puzzle Kinds |
 | `/safe` `/musicbox` `/candles` `/moved` | the second set |
 | `/photo` `/words` `/board` `/maze` | the third set (maze is the optional extra) |
+| `/design/` | the design system catalogue: every element and token of the look (`design/` in the repo), to check the look on a phone |
 
 Each puzzle page has easy and normal, three attempts, a Cap timer, **Touch only**, **Assist**, a Sight / walk delay /
 Faded flow for memory puzzles, and a result card to copy. Add `#seed=12345&level=normal` to replay the same lock.
@@ -69,7 +70,7 @@ Faded flow for memory puzzles, and a result card to copy. Add `#seed=12345&level
 ## Run and deploy
 
 ```
-node build.mjs            # copies the public files into dist/
+node build.mjs            # copies the public files into dist/ (and design/ to dist/design/); leaves dist/puzzles alone
 wrangler deploy           # Worker + assets + Durable Object, custom domain mtest.hauntology.app
 node serve.mjs            # local static server on 127.0.0.1:8787 (no lab, no https: tilt will not work)
 ```

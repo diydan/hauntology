@@ -28,14 +28,14 @@ export class ScreenBoundary extends Component<ScreenProps, State> {
     if (!this.state.failed) return this.props.children;
     const copy = errorCopy("shell_crash");
     return (
-      <main className="screen" data-screen-error>
-        <h1 tabIndex={-1}>{copy.title}</h1>
+      <main className="screen ui-stack" data-screen-error>
+        <h1 className="ui-heading" tabIndex={-1}>{copy.title}</h1>
         <p>{copy.body}</p>
         <p>
           Code: <code>shell_crash</code>
         </p>
         <p>
-          <a className="button" href="/">
+          <a className="ui-button ui-button--primary" href="/">
             Go home
           </a>
         </p>
@@ -69,7 +69,7 @@ export class ViewerBoundary extends Component<ViewerProps, State> {
   override render(): ReactNode {
     if (!this.state.failed) return this.props.children;
     return (
-      <div className="viewer-fallback">
+      <div className="viewer-fallback ui-panel ui-stack">
         {this.props.thumbUrl ? <img src={this.props.thumbUrl} alt={this.props.alt} /> : null}
         <p>The view stopped. You can still talk to the ghost or leave.</p>
       </div>

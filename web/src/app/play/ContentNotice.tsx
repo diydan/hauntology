@@ -7,11 +7,11 @@ export const NOTICE_TEXT = "This place is dim and quiet. Light may flicker, and 
 
 export function ContentNotice({ onGoIn }: { onGoIn: () => void }) {
   return (
-    <section className="notice" aria-labelledby="notice-title" data-content-notice>
-      <h2 id="notice-title">Before you go in</h2>
+    <section className="ui-notice ui-stack" aria-labelledby="notice-title" data-content-notice>
+      <h2 className="ui-heading" id="notice-title">Before you go in</h2>
       <p>{NOTICE_TEXT}</p>
       <p>
-        <button className="button" type="button" onClick={onGoIn}>
+        <button className="ui-button ui-button--primary" type="button" onClick={onGoIn}>
           Go in
         </button>
       </p>

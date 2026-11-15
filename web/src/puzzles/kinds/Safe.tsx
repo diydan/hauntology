@@ -105,7 +105,7 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
 
   return (
     <div>
-      <p className="pz-hint">Dial the code from the plaque you saw: turn the dial to a digit, then press Set.</p>
+      <p className="ui-hint pz-hint">Dial the code from the plaque you saw: turn the dial to a digit, then press Set.</p>
       <div className="pz-field">
         <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-safe-board" role="application" aria-label="Safe dial" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           <circle cx={CLOCK_C} cy={CLOCK_C} r={142} className="pz-safe-ring" />
@@ -130,17 +130,17 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
         {Array.from({ length: view.digits }, (_, i) => <span key={i}>{i < code.length ? String(code[i]) : "·"}</span>)}
       </div>
       <div className="pz-grid3">
-        <button type="button" className="pz-btn" aria-label="Digit minus" onClick={() => nudge(-1)}>Digit −</button>
-        <button type="button" className="pz-btn" aria-label="Digit plus" onClick={() => nudge(1)}>Digit +</button>
-        <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
+        <button type="button" className="ui-button" aria-label="Digit minus" onClick={() => nudge(-1)}>Digit −</button>
+        <button type="button" className="ui-button" aria-label="Digit plus" onClick={() => nudge(1)}>Digit +</button>
+        <button type="button" className="ui-button" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
       </div>
       <div className="pz-twist">
-        <p className="pz-hint">{twist ? "Hold the phone upright and turn it like a wheel to turn the dial." : "Twist: turn the phone like a wheel to turn the dial."}</p>
-        {twist ? <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={flip} onClick={toggleFlip}>Turns the wrong way? Flip it</button> : null}
+        <p className="ui-hint pz-hint">{twist ? "Hold the phone upright and turn it like a wheel to turn the dial." : "Twist: turn the phone like a wheel to turn the dial."}</p>
+        {twist ? <button type="button" className="ui-button" aria-pressed={flip} onClick={toggleFlip}>Turns the wrong way? Flip it</button> : null}
       </div>
       <div className="pz-grid2">
-        <button type="button" className="pz-btn pz-btn-quiet" disabled={code.length === 0} onClick={undo}>Undo</button>
-        <button type="button" className="pz-btn pz-btn-primary" onClick={setDigitNow}>Set</button>
+        <button type="button" className="ui-button" disabled={code.length === 0} onClick={undo}>Undo</button>
+        <button type="button" className="ui-button ui-button--primary" onClick={setDigitNow}>Set</button>
       </div>
     </div>
   );

@@ -45,12 +45,12 @@ export function PlayChoice({ worldId }: { worldId: string }) {
   };
 
   return (
-    <section className="play-choice" aria-labelledby="play-choice-title">
-      <h2 id="play-choice-title">How do you want to play?</h2>
-      <ul className="actions">
+    <section className="play-choice ui-stack" aria-labelledby="play-choice-title">
+      <h2 className="ui-heading" id="play-choice-title">How do you want to play?</h2>
+      <ul className="actions ui-choices">
         <li>
           <button
-            className="button"
+            className="ui-button ui-button--block"
             type="button"
             aria-disabled={caseState.available ? undefined : "true"}
             aria-describedby="case-line"
@@ -62,13 +62,13 @@ export function PlayChoice({ worldId }: { worldId: string }) {
           >
             Play a case
           </button>
-          <p id="case-line">{caseState.available ? CASE_LINE : `${CASE_LINE}. ${caseState.reason}`}</p>
+          <p id="case-line" className="ui-hint">{caseState.available ? CASE_LINE : `${CASE_LINE}. ${caseState.reason}`}</p>
         </li>
         <li>
-          <button className="button" type="button" aria-disabled={wanderOn ? undefined : "true"} aria-describedby="wander-line" onClick={() => wanderOn && wander()}>
+          <button className="ui-button ui-button--block" type="button" aria-disabled={wanderOn ? undefined : "true"} aria-describedby="wander-line" onClick={() => wanderOn && wander()}>
             Wander
           </button>
-          <p id="wander-line">{wanderOn ? WANDER_LINE : `${WANDER_LINE}. ${GHOST_FIRST_LINE}`}</p>
+          <p id="wander-line" className="ui-hint">{wanderOn ? WANDER_LINE : `${WANDER_LINE}. ${GHOST_FIRST_LINE}`}</p>
         </li>
       </ul>
       {open ? (

@@ -1,9 +1,8 @@
-*, *::before, *::after { box-sizing: border-box; }
-:root { --pz-target: max(48px, var(--target)); }
-html, body { margin: 0; min-height: 100%; background: var(--ink); color: var(--bone); font-family: var(--font-ui); font-size: 16px; }
-.pzd-nav { display: flex; flex-wrap: wrap; gap: 0.4rem; justify-content: center; padding: 0.5rem; }
-.pzd-nav a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 0.75rem; border: 1px solid var(--dust); border-radius: 10px; color: var(--bone); text-decoration: none; }
-.pzd-nav a[aria-current="page"] { border-color: var(--lantern); color: var(--lantern); }
-.pzd-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; padding: 0 0.5rem 0.5rem; }
-.pzd-more { max-width: 30rem; margin: 0 auto; padding: 0 0.75rem 1rem; }
+/* The development page around the puzzle: page-level layout only. The look is the design system (the body is `ui-page`). */
+.pzd-nav, .pzd-tools, .pzd-more { --pz-target: max(48px, var(--target)); }
+.pzd-nav { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; padding: var(--space-2); }
+.pzd-tools { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; padding: 0 var(--space-2) var(--space-2); }
+.pzd-nav .ui-button, .pzd-tools .ui-button, .pzd-more summary.ui-button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--pz-target); text-decoration: none; }
+.pzd-nav .ui-button[aria-current="page"] { border-color: var(--accent); color: var(--accent); }
+.pzd-more { max-width: 30rem; margin: 0 auto; padding: 0 var(--space-3) var(--space-4); }
 .pzd-more summary { cursor: pointer; list-style: none; }

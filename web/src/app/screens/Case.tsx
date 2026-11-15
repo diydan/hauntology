@@ -61,25 +61,25 @@ export default function Case() {
   }, [ui.phase, announce]);
 
   return (
-    <main className="case-layout">
+    <main className="case-layout ui-stack">
       <ScreenHeading>Play a case</ScreenHeading>
-      <p className="case-bar">
-        <button className="button" type="button" onClick={() => void controller.exit()}>
+      <p className="case-bar ui-row">
+        <button className="ui-button" type="button" onClick={() => void controller.exit()}>
           Exit
         </button>{" "}
-        {ui.scripted ? <small className="scripted">scripted ghost</small> : null}
+        {ui.scripted ? <small className="scripted ui-hint">scripted ghost</small> : null}
       </p>
       {ui.phase === "starting" ? <p aria-busy="true">Setting the scene…</p> : null}
       <div ref={container} className="case-host" data-host />
       {ui.phase === "ended" ? (
-        <p className="case-after">
-          <button className="button" type="button" onClick={() => controller.playAgain()}>
+        <p className="case-after ui-row">
+          <button className="ui-button ui-button--primary" type="button" onClick={() => controller.playAgain()}>
             Play again
           </button>{" "}
-          <button className="button" type="button" onClick={() => void controller.exit("home")}>
+          <button className="ui-button" type="button" onClick={() => void controller.exit("home")}>
             Home
           </button>{" "}
-          <button className="button" type="button" onClick={() => void controller.exit("gallery")}>
+          <button className="ui-button" type="button" onClick={() => void controller.exit("gallery")}>
             Gallery
           </button>
         </p>

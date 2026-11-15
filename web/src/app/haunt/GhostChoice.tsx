@@ -89,33 +89,33 @@ export function GhostChoice({ worldId }: { worldId: string }) {
   const label = flow.ghostReady ? (chosenName ? `Your ghost: ${chosenName}.` : "Your ghost is ready.") : "No ghost chosen yet.";
 
   return (
-    <section className="ghost-choice" aria-labelledby="ghost-choice-title">
-      <h2 id="ghost-choice-title">Your ghost</h2>
+    <section className="ghost-choice ui-stack" aria-labelledby="ghost-choice-title">
+      <h2 className="ui-heading" id="ghost-choice-title">Your ghost</h2>
       <p data-ghost-state>{label}</p>
-      <p>
-        <button className="button" type="button" aria-expanded={open === "creator"} onClick={() => setOpen(open === "creator" ? "none" : "creator")}>
+      <p className="ui-row">
+        <button className="ui-button" type="button" aria-expanded={open === "creator"} onClick={() => setOpen(open === "creator" ? "none" : "creator")}>
           Make a ghost
         </button>{" "}
-        <button className="button" type="button" aria-expanded={open === "presets"} onClick={() => (open === "presets" ? setOpen("none") : openPresets())}>
+        <button className="ui-button" type="button" aria-expanded={open === "presets"} onClick={() => (open === "presets" ? setOpen("none") : openPresets())}>
           Use a preset ghost
         </button>
       </p>
-      {creatorNote ? <p className="reason">{creatorNote}</p> : null}
+      {creatorNote ? <p className="ui-note is-warn">{creatorNote}</p> : null}
       {open === "creator" ? <div ref={holder} className="creator-host" data-creator /> : null}
       {open === "presets" ? (
-        <div className="preset-list" data-presets>
+        <div className="preset-list ui-stack" data-presets>
           {presets.status === "loading" || presets.status === "idle" ? <p aria-busy="true">Fetching the ghosts…</p> : null}
           {presets.status === "failed" ? (
-            <p>
-              <span className="reason">{errorCopy(presets.code).title}. {errorCopy(presets.code).body}</span>{" "}
+            <p className="ui-row">
+              <span className="ui-note is-warn">{errorCopy(presets.code).title}. {errorCopy(presets.code).body}</span>{" "}
               <RetryButton retryAfterSec={presets.retryAfterSec} onRetry={loadPresets} />
             </p>
           ) : null}
           {presets.status === "ready" ? (
-            <ul className="presets">
+            <ul className="presets ui-row">
               {presets.items.map((g) => (
                 <li key={g.id}>
-                  <button className="button preset" type="button" aria-pressed={memory.get().ghostPreset === g.id} onClick={() => pick(g)}>
+                  <button className="ui-button preset" type="button" aria-pressed={memory.get().ghostPreset === g.id} onClick={() => pick(g)}>
                     <img src={g.spriteUrl} alt="" width={48} height={72} /> {g.name}
                   </button>
                 </li>

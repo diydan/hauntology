@@ -150,16 +150,16 @@ export default function Play() {
   if (ui.phase === "failed" && ui.failure) {
     const copy = errorCopy(ui.failure.code);
     return (
-      <main className="screen">
+      <main className="screen ui-stack">
         <ScreenHeading>Wander</ScreenHeading>
-        <h2>{copy.title}</h2>
+        <h2 className="ui-heading">{copy.title}</h2>
         <p>{copy.body}</p>
         <p>
           Code: <code>{ui.failure.code}</code>
         </p>
-        <p>
+        <p className="ui-row">
           <RetryButton retryAfterSec={ui.failure.retryAfterSec} onRetry={() => void controller.retry()} />{" "}
-          <button className="button" type="button" onClick={() => void controller.exit("home")}>
+          <button className="ui-button" type="button" onClick={() => void controller.exit("home")}>
             Home
           </button>
         </p>
@@ -170,7 +170,7 @@ export default function Play() {
   const chatOpen = ui.play.mode === "chat";
   return (
     <div className="play-layout">
-      <main className="play-main">
+      <main className="play-main ui-stack">
         <ScreenHeading>Wander</ScreenHeading>
         {ui.phase === "loading" ? <p aria-busy="true">Opening the door…</p> : null}
         {ui.phase === "ready" ? (
@@ -188,20 +188,20 @@ export default function Play() {
               />
             ) : null}
             {ui.play.degraded !== undefined ? (
-              <p className="degraded" data-degraded>
+              <p className="ui-notice" data-degraded>
                 {DEGRADED_TEXT[ui.play.degraded]}
               </p>
             ) : null}
             {ui.play.degraded === "thumb" && thumb !== null ? (
-              <div className="viewer-fallback">
+              <div className="viewer-fallback ui-figure">
                 <img src={thumb} alt="A still picture of the place" />
               </div>
             ) : null}
-            {ui.scripted ? <small className="scripted">scripted ghost</small> : null}
+            {ui.scripted ? <small className="scripted ui-hint">scripted ghost</small> : null}
             <DeletePlace worldId={worldId} leave={() => controller.exit("home")} />
           </>
         ) : null}
-        <div ref={container} className="viewer" data-viewer />
+        <div ref={container} className="viewer ui-figure" data-viewer />
       </main>
       {chatOpen ? (
         <Chat

@@ -62,18 +62,18 @@ export default function Create() {
   };
 
   return (
-    <main className="screen create">
+    <main className="screen ui-stack create">
       <ScreenHeading>Make a place</ScreenHeading>
 
       {ui.error !== null ? (
-        <section className="create-error" aria-labelledby="create-error-title">
-          <h2 id="create-error-title">{errorCopy(ui.error.code).title}</h2>
+        <section className="create-error ui-notice ui-notice--danger ui-stack" aria-labelledby="create-error-title">
+          <h2 className="ui-heading" id="create-error-title">{errorCopy(ui.error.code).title}</h2>
           <p>{errorCopy(ui.error.code).body}</p>
-          <p>
-            <Link className="button" to={{ screen: "gallery" }}>
+          <p className="ui-row">
+            <Link className="ui-button" to={{ screen: "gallery" }}>
               Visit a gallery place
             </Link>{" "}
-            <button className="button" type="button" onClick={() => controller.clearError()}>
+            <button className="ui-button" type="button" onClick={() => controller.clearError()}>
               Close this
             </button>
           </p>
@@ -82,9 +82,9 @@ export default function Create() {
 
       <PhotoPicker disabledReason={photoReason} busy={busy || !gate.enabled} onUse={(photo) => void controller.uploadPhoto(photo)} />
 
-      <p className="gallery-link">
+      <p className="gallery-link ui-row">
         No photo, and no wish to draw?{" "}
-        <Link className="button" to={{ screen: "gallery" }}>
+        <Link className="ui-button" to={{ screen: "gallery" }}>
           Visit a gallery place
         </Link>
       </p>

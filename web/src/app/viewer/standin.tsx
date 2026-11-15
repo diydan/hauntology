@@ -59,18 +59,18 @@ function StandIn({ store, onMessage }: { store: { subscribe(l: () => void): () =
   };
   const chatting = state.mode === "chat";
   return (
-    <div className="standin" data-standin-viewer>
+    <div className="ui-stack" data-standin-viewer>
       <p>Stand-in view. The 3D Viewer is not built yet.</p>
       <p>
         Haunt level {Math.round(state.hauntLevel * 100)}%. Sky: {state.atmosphere}.
       </p>
-      <div className="standin-walk" role="group" aria-label="Move">
+      <div className="ui-row" role="group" aria-label="Move">
         {state.anchors.map((a, i) => (
-          <button key={a.id} type="button" className="button" disabled={chatting} onClick={() => walk(a)}>
+          <button key={a.id} type="button" className="ui-button" disabled={chatting} onClick={() => walk(a)}>
             {state.found.includes(a.id) ? `Back to memory ${i + 1}` : `Walk to memory ${i + 1}`}
           </button>
         ))}
-        <button type="button" className="button" disabled={chatting} onClick={wander}>
+        <button type="button" className="ui-button" disabled={chatting} onClick={wander}>
           Walk away
         </button>
       </div>

@@ -92,9 +92,9 @@ export default function MusicBox({ view, feel, submit, announce, resetKey }: Kin
   const windText = playing ? "Playing…" : left > 0 ? `Wind (${left} left)` : "No winds left";
   return (
     <div className="pz-musicbox">
-      <p className="pz-hint">Press Wind to hear the {view.n}-note tune, then play it back on the keys.</p>
-      <div className="pz-row">
-        <button type="button" className="pz-btn pz-btn-primary" disabled={playing || left <= 0} onClick={wind}>{windText}</button>
+      <p className="ui-hint pz-hint">Press Wind to hear the {view.n}-note tune, then play it back on the keys.</p>
+      <div className="ui-row ui-row--center">
+        <button type="button" className="ui-button ui-button--primary" disabled={playing || left <= 0} onClick={wind}>{windText}</button>
       </div>
       <div className="pz-field">
         <div className="pz-keys" role="group" aria-label="Keys">
@@ -109,10 +109,10 @@ export default function MusicBox({ view, feel, submit, announce, resetKey }: Kin
           {Array.from({ length: view.n }, (_, i) => <span key={i}>{notes[i] === undefined ? "·" : SHAPES[notes[i] as Note]}</span>)}
         </div>
       </div>
-      <div className="pz-row">
-        <button type="button" className="pz-btn pz-btn-quiet" disabled={notes.length === 0} onClick={clear}>Clear</button>
+      <div className="ui-row ui-row--center">
+        <button type="button" className="ui-button" disabled={notes.length === 0} onClick={clear}>Clear</button>
       </div>
-      <p className="pz-hint">No sound? Watch the keys light up: the tune is shown by the shapes.</p>
+      <p className="ui-hint pz-hint">No sound? Watch the keys light up: the tune is shown by the shapes.</p>
     </div>
   );
 }

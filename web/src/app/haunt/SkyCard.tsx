@@ -78,37 +78,39 @@ export function SkyCard() {
   };
 
   return (
-    <section className="sky-card" aria-labelledby="sky-title">
-      <h2 id="sky-title">Set the sky</h2>
-      <p>
-        <button className="button" type="button" aria-expanded={open} aria-controls="sky-body" onClick={() => setOpen((o) => !o)}>
+    <section className="sky-card ui-stack" aria-labelledby="sky-title">
+      <h2 className="ui-heading" id="sky-title">Set the sky</h2>
+      <p className="ui-row">
+        <button className="ui-button" type="button" aria-expanded={open} aria-controls="sky-body" onClick={() => setOpen((o) => !o)}>
           {open ? "Hide the sky card" : "Set the sky (optional)"}
         </button>{" "}
-        <small data-sky-state>{place || date !== "" ? `Sky: ${[place?.label, date !== "" && dateError === null ? date : null].filter(Boolean).join(", ")}` : "The usual sky."}</small>
+        <small className="ui-hint" data-sky-state>{place || date !== "" ? `Sky: ${[place?.label, date !== "" && dateError === null ? date : null].filter(Boolean).join(", ")}` : "The usual sky."}</small>
       </p>
 
       {open ? (
-        <div id="sky-body" className="sky-body">
-          <form onSubmit={search} role="search" aria-label="Find a city">
-            <label>
-              City <input type="search" value={query} maxLength={60} onChange={(e) => setQuery(e.target.value)} />
-            </label>{" "}
-            <button className="button" type="submit" disabled={searching || query.trim().length < 2}>
-              Search
-            </button>{" "}
-            <button className="button" type="button" onClick={locate}>
-              Use my location
-            </button>
+        <div id="sky-body" className="sky-body ui-stack">
+          <form className="ui-stack ui-stack--tight" onSubmit={search} role="search" aria-label="Find a city">
+            <label className="ui-stack ui-stack--tight">
+              City <input className="ui-input" type="search" value={query} maxLength={60} onChange={(e) => setQuery(e.target.value)} />
+            </label>
+            <div className="ui-row">
+              <button className="ui-button" type="submit" disabled={searching || query.trim().length < 2}>
+                Search
+              </button>
+              <button className="ui-button" type="button" onClick={locate}>
+                Use my location
+              </button>
+            </div>
           </form>
-          {note ? <p className="reason">{note}</p> : null}
+          {note ? <p className="ui-note is-warn">{note}</p> : null}
           {matches !== null ? (
             matches.length === 0 ? (
               <p>No places found. Try another name.</p>
             ) : (
-              <ul className="matches" aria-label="Matches">
+              <ul className="matches ui-stack ui-stack--tight" aria-label="Matches">
                 {matches.map((m) => (
                   <li key={`${m.label}${m.lat}${m.lon}`}>
-                    <button className="button" type="button" onClick={() => choose(placeFromMatch(m))}>
+                    <button className="ui-button" type="button" onClick={() => choose(placeFromMatch(m))}>
                       {m.label}
                     </button>
                   </li>
@@ -117,10 +119,10 @@ export function SkyCard() {
             )
           ) : null}
           {place ? (
-            <p>
+            <p className="ui-row">
               Place: <strong data-sky-place>{place.label}</strong>{" "}
               <button
-                className="button"
+                className="ui-button"
                 type="button"
                 onClick={() => {
                   setPlace(undefined);
@@ -132,11 +134,12 @@ export function SkyCard() {
             </p>
           ) : null}
 
-          <fieldset className="memory-day">
-            <legend>A Memory Day</legend>
-            <label>
-              Date{" "}
+          <fieldset className="memory-day ui-panel ui-stack">
+            <legend className="ui-eyebrow">A Memory Day</legend>
+            <label className="ui-stack ui-stack--tight">
+              Date
               <input
+                className="ui-input"
                 type="date"
                 value={date}
                 min={MEMORY_DAY_MIN}
@@ -149,10 +152,11 @@ export function SkyCard() {
                   commit(place, e.target.value, time);
                 }}
               />
-            </label>{" "}
-            <label>
-              Time{" "}
+            </label>
+            <label className="ui-stack ui-stack--tight">
+              Time
               <select
+                className="ui-select"
                 value={time}
                 onChange={(e) => {
                   const t = e.target.value as TimeOfDay;
@@ -166,10 +170,10 @@ export function SkyCard() {
                   </option>
                 ))}
               </select>
-            </label>{" "}
+            </label>
             {date !== "" ? (
               <button
-                className="button"
+                className="ui-button"
                 type="button"
                 onClick={() => {
                   setDate("");
@@ -181,7 +185,7 @@ export function SkyCard() {
               </button>
             ) : null}
             {dateError !== null ? (
-              <p id="sky-date-error" className="reason">
+              <p id="sky-date-error" className="ui-note is-warn">
                 {MEMORY_DAY_ERROR_COPY[dateError]}
               </p>
             ) : null}

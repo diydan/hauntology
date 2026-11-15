@@ -1,20 +1,13 @@
-/* The puzzle settings. A plain column; every control is at least 48 px and it works from 320 px wide. */
-.pz-settings { --pz-target: max(48px, var(--target)); display: grid; gap: var(--pz-space-4); padding: var(--pz-space-3); color: var(--bone); }
+/* The puzzle settings, built from the design system. A plain column; every control is at least 48 px and it works from 320 px wide. */
+.pz-settings { --pz-target: max(48px, var(--target)); display: grid; gap: var(--space-4); padding: var(--space-3); color: var(--text); }
 .pz-settings, .pz-settings * { box-sizing: border-box; }
-.pz-subtitle { margin: 0; font-size: 1rem; }
-.pz-setting { display: grid; gap: var(--pz-space-2); }
-.pz-setting-hint { margin: 0; font-size: 0.85rem; opacity: 0.85; }
-.pz-switch, .pz-radio {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--pz-space-3); width: 100%;
-  min-height: var(--pz-target); padding: 0 var(--pz-space-4); border: 1px solid var(--dust); border-radius: 12px;
-  background: var(--ink); color: var(--bone); font: inherit; text-align: left; cursor: pointer; touch-action: manipulation;
-}
-.pz-switch[aria-checked="true"], .pz-radio[aria-checked="true"] { border-color: var(--lantern); color: var(--lantern); }
-.pz-switch[disabled] { opacity: 0.5; cursor: default; }
+.pz-settings :is(.ui-heading, .ui-eyebrow, .ui-hint) { margin: 0; }
+.pz-setting { display: grid; gap: var(--space-2); }
+.pz-settings .pz-switch, .pz-settings .pz-radio { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); width: 100%; padding: 0 var(--space-4); text-align: left; }
+.pz-settings .pz-switch[aria-checked="true"], .pz-settings .pz-radio[aria-checked="true"] { border-color: var(--accent); color: var(--accent); }
 .pz-switch-state { font-weight: 700; }
-.pz-radios { display: flex; gap: var(--pz-space-2); }
-.pz-radio { justify-content: center; text-align: center; }
-.pz-range-label { font-size: 0.95rem; }
-.pz-range { display: block; width: 100%; min-height: var(--pz-target); margin: 0; accent-color: var(--lantern); }
-.pz-group { display: grid; gap: var(--pz-space-3); }
-.pz-assist-list { margin: var(--pz-space-2) 0 0; padding-left: var(--pz-space-4); }
+.pz-radios { display: flex; gap: var(--space-2); }
+.pz-settings .pz-radio { justify-content: center; text-align: center; }
+.pz-settings .ui-range { display: block; min-height: var(--pz-target); margin: 0; }
+.pz-group { display: grid; gap: var(--space-3); }
+.pz-assist-list { margin: var(--space-2) 0 0; padding-left: var(--space-4); }

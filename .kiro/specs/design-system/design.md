@@ -48,6 +48,7 @@ Black for the page, four dark browns for depth (page, panel, raised, hovered), l
 | Moving | `ui-transport ui-tool ui-tool-glyph ui-tool--narrow-only ui-keys ui-progress-label ui-dots ui-dot ui-progress-next` | Pause, back, next, stop; where in a story |
 | Sheet | `ui-sheet ui-sheet-head ui-sheet-title ui-sheet-close ui-fold` | Bottom sheet on a phone, side panel from 900 px |
 | Journal | `ui-log ui-log-row ui-log-id ui-log-who` | What was said |
+| Screens | `ui-stack ui-stack--tight ui-stack--loose ui-row ui-row--center ui-row--between ui-heading ui-input ui-choice ui-notice--danger ui-button--block ui-button--round ui-figure ui-figure--thumb ui-facts ui-steps ui-step ui-gauge ui-gauge--thin ui-gauge-fill ui-line ui-line--whisper ui-line--system ui-line-who ui-progress` | Layout helpers, headings, inputs, pictures, lists, progress and chat lines for the web app and the puzzle screens; a link used as a button is `a.ui-button` |
 | State | `is-on is-done is-current is-active is-haunting is-speaking is-open is-warn is-bad is-blackout is-locked is-none` | Set from script |
 
 The class list is the file; the catalogue is the picture. A test keeps them equal.
@@ -67,7 +68,7 @@ The class list is the file; the catalogue is the picture. A test keeps them equa
 ## Left out on purpose
 
 - Light mode. The game is dark only (`color-scheme: dark`).
-- Moving existing screens in one go. They move when next touched (Requirement 5.3); `app.css`'s `.button` and the puzzle screens' `pz-` classes keep working beside the elements.
+- Making the puzzle game art generic. The wires, safe dial, candles, maze, photo board and the rest keep their `pz-` classes, made of roles and tokens; their content hues (wire colours, shelf items) are still hex in `web/src/puzzles/art/` until a `game-art` token group exists (task 4.5).
 - `site/` (the marketing page) and `tools/prop-mockups` have their own palettes; they may adopt the tokens later.
 - A JavaScript component library. The elements are CSS and markup; React screens use the same class names.
 

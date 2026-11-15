@@ -58,7 +58,7 @@ export default function Haunt() {
 
   const waiting = ui.stage !== "failed";
   return (
-    <main className="screen haunt">
+    <main className="screen ui-stack haunt">
       <ScreenHeading>Your place</ScreenHeading>
       <StagePanel ui={ui} />
       {waiting ? (

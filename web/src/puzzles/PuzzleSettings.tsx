@@ -31,11 +31,11 @@ function Row({ label, hint, on, onChange, disabled = false }: { label: string; h
   const hintId = useId();
   return (
     <div className="pz-setting">
-      <button type="button" role="switch" aria-checked={on} aria-describedby={hintId} disabled={disabled} className="pz-switch" onClick={() => onChange(!on)}>
+      <button type="button" role="switch" aria-checked={on} aria-describedby={hintId} disabled={disabled} className="ui-button pz-switch" onClick={() => onChange(!on)}>
         <span className="pz-switch-name">{label}</span>
         <span className="pz-switch-state">{on ? "On" : "Off"}</span>
       </button>
-      <div id={hintId} className="pz-setting-hint">{hint}</div>
+      <div id={hintId} className="ui-hint">{hint}</div>
     </div>
   );
 }
@@ -61,28 +61,28 @@ export function PuzzleSettings({ master, wander, plainInspect, device, onDevice,
   const strengthId = useId();
   return (
     <section className="pz-settings" aria-label="Puzzle settings">
-      <h2 className="pz-title">Puzzles</h2>
+      <h2 className="ui-heading">Puzzles</h2>
 
       {master && (
         <div className="pz-setting" role="radiogroup" aria-label="Puzzles">
           <div className="pz-radios">
             {PUZZLE_SETTINGS.map((level) => (
-              <button key={level} type="button" role="radio" aria-checked={master.value === level} className="pz-radio" onClick={() => master.onChange(level)}>{LEVEL_NAME[level]}</button>
+              <button key={level} type="button" role="radio" aria-checked={master.value === level} className="ui-button pz-radio" onClick={() => master.onChange(level)}>{LEVEL_NAME[level]}</button>
             ))}
           </div>
-          <p className="pz-setting-hint">{`This game's preset gives ${LEVEL_NAME[presetSetting(master.preset)].toLowerCase()}. A change applies from the next Inspect, for everyone.`}</p>
+          <p className="ui-hint">{`This game's preset gives ${LEVEL_NAME[presetSetting(master.preset)].toLowerCase()}. A change applies from the next Inspect, for everyone.`}</p>
         </div>
       )}
       {wander && <Row label="Locks" hint="A small puzzle in front of each memory. You can always skip it." on={wander.on} onChange={wander.onChange} />}
       {plainInspect && <Row label="Plain Inspect" hint="Your Inspect always works and always takes the full time. No puzzle. Nobody else is told." on={plainInspect.on} onChange={plainInspect.onChange} />}
 
       <div role="group" aria-labelledby={senses} className="pz-group">
-        <h3 id={senses} className="pz-subtitle">Senses on this phone</h3>
+        <h3 id={senses} className="ui-eyebrow">Senses on this phone</h3>
         <Row label="Touch only" hint="Turns off tilt, buzz, sound and the microphone. Every puzzle can be finished this way." on={touchOnly} onChange={(on) => set({ touchOnly: on })} />
         <Row label="Tilt" hint={tiltHint(tiltState, device.tilt, touchOnly)} on={device.tilt && !touchOnly && tiltState !== "unsupported"} onChange={(on) => set({ tilt: on })} disabled={touchOnly || tiltState === "unsupported"} />
         <div className="pz-setting">
-          <label className="pz-range-label" htmlFor={strengthId}>Tilt strength: {device.sensitivity.toFixed(1)} times</label>
-          <input id={strengthId} type="range" className="pz-range" min={0.4} max={2.5} step={0.1} value={device.sensitivity} disabled={touchOnly || !device.tilt} aria-valuetext={`${device.sensitivity.toFixed(1)} times`} onChange={(e) => set({ sensitivity: Number(e.currentTarget.value) })} />
+          <label className="ui-field-label" htmlFor={strengthId}>Tilt strength: {device.sensitivity.toFixed(1)} times</label>
+          <input id={strengthId} type="range" className="ui-range" min={0.4} max={2.5} step={0.1} value={device.sensitivity} disabled={touchOnly || !device.tilt} aria-valuetext={`${device.sensitivity.toFixed(1)} times`} onChange={(e) => set({ sensitivity: Number(e.currentTarget.value) })} />
         </div>
         <Row label="Flip the twist" hint="Turn this on if the safe dial and the clock hands turn the wrong way when you twist the phone." on={device.dialInvert} onChange={(on) => set({ dialInvert: on })} disabled={touchOnly || !device.tilt} />
         <Row label="Buzz" hint={canVibrate ? "The phone buzzes with the puzzle. Every buzz also shows on screen." : "This phone cannot buzz. You see it on screen instead."} on={canVibrate && device.hapticMode !== "visual" && !touchOnly} onChange={(on) => set({ hapticMode: on ? "auto" : "visual" })} disabled={touchOnly || !canVibrate} />
@@ -90,7 +90,7 @@ export function PuzzleSettings({ master, wander, plainInspect, device, onDevice,
       </div>
 
       <div role="group" aria-labelledby={help} className="pz-group">
-        <h3 id={help} className="pz-subtitle">Help</h3>
+        <h3 id={help} className="ui-eyebrow">Help</h3>
         <Row
           label="Assist"
           hint={<>Assist does three things:<ul className="pz-assist-list"><li>It keeps the clues you saw on the Clues page, and lets you look at a clue again while you play.</li><li>It shows each clue for 8 seconds.</li><li>It shows the Spirit board's word as text.</li></ul></>}

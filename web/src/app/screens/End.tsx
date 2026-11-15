@@ -70,12 +70,12 @@ export default function End() {
   };
 
   return (
-    <main className="screen">
+    <main className="screen ui-stack">
       <ScreenHeading>You remembered</ScreenHeading>
       {state.k === "loading" ? <p aria-busy="true">Gathering your memories…</p> : null}
       {state.k === "failed" ? (
         <section>
-          <h2>{errorCopy(state.code).title}</h2>
+          <h2 className="ui-heading">{errorCopy(state.code).title}</h2>
           <p>{errorCopy(state.code).body}</p>
           <p>
             Code: <code>{state.code}</code>
@@ -88,27 +88,27 @@ export default function End() {
       {state.k === "missing" ? <p>Your memories are not available any more. You can go home and start again.</p> : null}
       {state.k === "ready" ? (
         <>
-          {memory.get().farewell ? <blockquote className="farewell">{memory.get().farewell}</blockquote> : null}
-          <ol className="journal" aria-label="The memories you found">
+          {memory.get().farewell ? <blockquote className="farewell ui-line ui-line--whisper">{memory.get().farewell}</blockquote> : null}
+          <ol className="journal ui-log" aria-label="The memories you found">
             {state.view.journal.map((entry) => (
-              <li key={entry.anchorId}>{entry.text}</li>
+              <li key={entry.anchorId} className="ui-log-row">{entry.text}</li>
             ))}
           </ol>
-          <p className="actions-row">
-            <button className="button" type="button" onClick={() => save(state.view)}>
+          <p className="ui-row">
+            <button className="ui-button ui-button--primary" type="button" onClick={() => save(state.view)}>
               Save memory card
             </button>{" "}
-            <button className="button" type="button" onClick={hauntAgain}>
+            <button className="ui-button" type="button" onClick={hauntAgain}>
               Haunt again
             </button>
           </p>
         </>
       ) : null}
-      <p>
-        <Link className="button" to={{ screen: "home" }}>
+      <p className="ui-row">
+        <Link className="ui-button" to={{ screen: "home" }}>
           Home
         </Link>{" "}
-        <Link className="button" to={{ screen: "gallery" }}>
+        <Link className="ui-button" to={{ screen: "gallery" }}>
           Gallery
         </Link>
       </p>

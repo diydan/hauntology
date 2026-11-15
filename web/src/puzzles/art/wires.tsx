@@ -5,7 +5,8 @@ export type WireLook = Readonly<{ name: string; color: string; dash: string; sha
 
 /**
  * Six wire looks. A wire is never told apart by colour alone: each has its own dash pattern and end shape too.
- * The colours keep 3:1 or better against the dark ground.
+ * The colours keep 3:1 or better against the dark ground. They are the game's own content (a wire is a coloured thing), so they
+ * are written here and not taken from the interface palette.
  */
 export const WIRE_LOOKS: readonly WireLook[] = [
   { name: "red circle", color: "#ff6b6b", dash: "", shape: "circle" },

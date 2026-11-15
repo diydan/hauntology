@@ -14,7 +14,7 @@ export function DebugOverlay() {
   const { stage, fps } = useSyncExternalStore(debug.subscribe, debug.getSnapshot, debug.getSnapshot);
   const quota = boot.status === "ready" ? boot.quota : null;
   return (
-    <aside className="debug" aria-label="Debug" data-debug-overlay>
+    <aside className="debug ui-panel" aria-label="Debug" data-debug-overlay>
       <dl>
         <dt>quota</dt>
         <dd data-debug="quota">{quota ? Object.entries(quota).map(([k, v]) => `${k} ${v}`).join(" · ") : "not loaded"}</dd>

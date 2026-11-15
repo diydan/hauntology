@@ -24,7 +24,7 @@ export default function Gallery() {
   };
 
   return (
-    <main className="screen">
+    <main className="screen ui-stack">
       <ScreenHeading>Visit a place</ScreenHeading>
       {state.status === "failed" ? (
         <Failure code={state.code} retryAfterSec={state.retryAfterSec} onRetry={() => void gallery.retry()} />
@@ -34,12 +34,14 @@ export default function Gallery() {
         ) : (
           <ul className="gallery">
             {state.items.map((item) => (
-              <li key={item.id} className="card">
-                <img src={item.thumbUrl} alt={item.title} loading="lazy" />
-                <h2>{item.title}</h2>
+              <li key={item.id} className="ui-panel ui-stack ui-stack--tight">
+                <figure className="ui-figure ui-figure--thumb">
+                  <img src={item.thumbUrl} alt={item.title} loading="lazy" />
+                </figure>
+                <h2 className="ui-heading">{item.title}</h2>
                 <p>{item.description}</p>
-                <p className="attribution">{item.attribution}</p>
-                <button className="button" type="button" aria-label={`Visit ${item.title}`} onClick={() => visit(item)}>
+                <p className="ui-hint">{item.attribution}</p>
+                <button className="ui-button ui-button--block" type="button" aria-label={`Visit ${item.title}`} onClick={() => visit(item)}>
                   Visit
                 </button>
               </li>
@@ -59,7 +61,7 @@ function Failure({ code, retryAfterSec, onRetry }: { code: string; retryAfterSec
   useEffect(() => announce(copy.title), [announce, copy.title]);
   return (
     <section>
-      <h2>{copy.title}</h2>
+      <h2 className="ui-heading">{copy.title}</h2>
       <p>{copy.body}</p>
       <p>
         Code: <code>{code}</code>

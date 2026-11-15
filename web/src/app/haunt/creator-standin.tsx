@@ -9,10 +9,10 @@ import type { CreatorHandle, CreatorSetup } from "./creator";
 export function mountCreator({ container, onMessage }: CreatorSetup): CreatorHandle {
   const root = createRoot(container);
   root.render(
-    <div className="standin" data-standin-creator>
+    <div className="ui-stack" data-standin-creator>
       <p>Stand-in Ghost Creator. The Creator is not built yet.</p>
-      <div className="standin-walk" role="group" aria-label="Pretend">
-        <button type="button" className="button" onClick={() => onMessage({ t: "chosen" })}>
+      <div className="ui-row" role="group" aria-label="Pretend">
+        <button type="button" className="ui-button" onClick={() => onMessage({ t: "chosen" })}>
           Use the default ghost
         </button>
       </div>

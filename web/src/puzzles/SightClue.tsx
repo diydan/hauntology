@@ -10,15 +10,15 @@ import "./puzzles.css";
 export function SightClue({ sight }: { sight: Sight }): ReactNode {
   const p = sight.payload;
   switch (p.kind) {
-    case "wires": return (<><p className="pz-hint">The fuse box, top to bottom:</p><FuseBox order={p.order} /></>);
-    case "clock": return (<><p className="pz-hint">A clock, stopped:</p><StoppedClock h={p.h} m={p.m} /><p className="pz-muted">{p.h}:{String(p.m).padStart(2, "0")}</p></>);
+    case "wires": return (<><p className="ui-hint pz-hint">The fuse box, top to bottom:</p><FuseBox order={p.order} /></>);
+    case "clock": return (<><p className="ui-hint pz-hint">A clock, stopped:</p><StoppedClock h={p.h} m={p.m} /><p className="ui-hint">{p.h}:{String(p.m).padStart(2, "0")}</p></>);
     case "safe": return (
       <>
-        <p className="pz-hint">A brass plaque, scratched with numbers:</p>
+        <p className="ui-hint pz-hint">A brass plaque, scratched with numbers:</p>
         <div className="pz-digits" role="img" aria-label={`Code: ${p.code.join(" ")}`}>{p.code.map((d, i) => <span key={i}>{d}</span>)}</div>
       </>
     );
-    case "moved": return (<><p className="pz-hint">A shelf:</p><Shelf items={p.shelf} cols={p.shelf.length === 6 ? 3 : 4} /></>);
-    case "photo": return (<><p className="pz-hint">A photo, pinned to the wall:</p><div className="pz-sight-picture"><PictureSvg picture={p.picture} cols={p.cols} rows={p.rows} label="The whole photo" /></div></>);
+    case "moved": return (<><p className="ui-hint pz-hint">A shelf:</p><Shelf items={p.shelf} cols={p.shelf.length === 6 ? 3 : 4} /></>);
+    case "photo": return (<><p className="ui-hint pz-hint">A photo, pinned to the wall:</p><div className="pz-sight-picture"><PictureSvg picture={p.picture} cols={p.cols} rows={p.rows} label="The whole photo" /></div></>);
   }
 }

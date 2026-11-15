@@ -37,12 +37,12 @@ export function Dialog({ title, onClose, children, closeLabel = "Close" }: { tit
   };
 
   return (
-    <div className="dialog-backdrop">
-      <div ref={box} className="dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onKeyDown={onKeyDown}>
-        <h2 id={titleId}>{title}</h2>
+    <div className="ui-modal">
+      <div ref={box} className="ui-card ui-stack" role="dialog" aria-modal="true" aria-labelledby={titleId} onKeyDown={onKeyDown}>
+        <h2 className="ui-heading" id={titleId}>{title}</h2>
         {children}
-        <p>
-          <button ref={closeButton} className="button" type="button" onClick={onClose}>
+        <p className="ui-row">
+          <button ref={closeButton} className="ui-button" type="button" onClick={onClose}>
             {closeLabel}
           </button>
         </p>

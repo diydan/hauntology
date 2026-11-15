@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { defaultWorld, makeStepper, newBall, type Ball } from "@hauntology/shared/puzzles/tilt-ball";
+import { CANVAS, withAlpha } from "../art/palette";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import { mazeCellSize, mazeLayout } from "./Maze-geometry";
 import type { KindProps } from "./types";
@@ -73,11 +74,11 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey, 
   }, []);
 
   function drawWalls(c: CanvasRenderingContext2D): void {
-    c.fillStyle = "#10121a";
+    c.fillStyle = CANVAS.well;
     c.fillRect(0, 0, w, h);
-    c.fillStyle = "#3a3f58";
+    c.fillStyle = CANVAS.wall;
     for (const wall of walls) c.fillRect(wall.x + 1, wall.y + 1, wall.w - 2, wall.h - 2);
-    c.strokeStyle = "#7fd6a1";
+    c.strokeStyle = CANVAS.ring;
     c.lineWidth = 4;
     c.beginPath();
     c.arc(goal.x, goal.y, cs * 0.34, 0, Math.PI * 2);
@@ -128,11 +129,11 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey, 
     last.y = ball.y;
     if (layer.current) c.drawImage(layer.current, 0, 0, w, h);
     else drawWalls(c);
-    c.fillStyle = "rgba(185,166,255,0.3)";
+    c.fillStyle = withAlpha(CANVAS.piece, 0.3);
     c.beginPath();
     c.arc(ball.x, ball.y, orbR * 1.6, 0, Math.PI * 2);
     c.fill();
-    c.fillStyle = "#b9a6ff";
+    c.fillStyle = CANVAS.piece;
     c.beginPath();
     c.arc(ball.x, ball.y, orbR, 0, Math.PI * 2);
     c.fill();
@@ -140,7 +141,7 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey, 
 
   return (
     <div className="pz-maze">
-      <p className="pz-hint">Reach the green ring. {tilt === "on" ? "Lean the phone to roll the orb." : "Hold a finger where the orb should go."}</p>
+      <p className="ui-hint pz-hint">Reach the green ring. {tilt === "on" ? "Lean the phone to roll the orb." : "Hold a finger where the orb should go."}</p>
       <div className="pz-field">
         <canvas
           ref={canvas} className="pz-canvas pz-maze-board" width={Math.round(w * dpr)} height={Math.round(h * dpr)}
@@ -150,7 +151,7 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey, 
         />
         <p className="pz-readout pz-maze-status" role="status">{done ? `You reached the ring. Walls hit: ${hits}` : `Walls hit: ${hits}`}</p>
       </div>
-      {tiltButtons ? <div className="pz-row">{tiltButtons}</div> : null}
+      {tiltButtons ? <div className="ui-row ui-row--center">{tiltButtons}</div> : null}
     </div>
   );
 }

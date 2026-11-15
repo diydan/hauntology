@@ -16,8 +16,8 @@ export function HelpCard({ kind, clock, onClose }: { kind: Kind; clock: boolean;
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
   return (
-    <div className="pz-card pz-help" role="dialog" aria-label={`How ${help.title} works`}>
-      <h2 className="pz-title">How {help.title} works</h2>
+    <div className="ui-panel pz-card pz-help" role="dialog" aria-label={`How ${help.title} works`}>
+      <h2 className="ui-heading">How {help.title} works</h2>
       <ol className="pz-help-steps">{help.steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
       {help.extras.length > 0 ? (
         <>
@@ -26,8 +26,8 @@ export function HelpCard({ kind, clock, onClose }: { kind: Kind; clock: boolean;
         </>
       ) : null}
       <ul className="pz-help-list pz-help-common">{COMMON_HELP.map((s, i) => <li key={i}>{s}</li>)}</ul>
-      {clock ? <p className="pz-muted">The clock keeps running while you read this.</p> : null}
-      <button ref={close} type="button" className="pz-btn pz-btn-primary" onClick={onClose}>Back to the puzzle</button>
+      {clock ? <p className="ui-hint">The clock keeps running while you read this.</p> : null}
+      <button ref={close} type="button" className="ui-button ui-button--primary" onClick={onClose}>Back to the puzzle</button>
     </div>
   );
 }

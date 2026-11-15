@@ -122,7 +122,7 @@ export default function Wires({ view, feel, submit, announce }: KindProps<"wires
 
   return (
     <div>
-      <p className="pz-hint">Match each wire to its place in the fuse box you saw. Drag it to a terminal, or tap the wire and then a terminal.</p>
+      <p className="ui-hint pz-hint">Match each wire to its place in the fuse box you saw. Drag it to a terminal, or tap the wire and then a terminal.</p>
       <div className="pz-field">
         <svg ref={board} viewBox={`0 0 ${W} ${H}`} className="pz-board pz-wires-board" role="group" aria-label="Wires board" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>
           {Object.entries(conn).filter(([w]) => Number(w) !== dragging).map(([w, t]) => {
@@ -151,9 +151,9 @@ export default function Wires({ view, feel, submit, announce }: KindProps<"wires
             );
           })}
         </svg>
-        <p className="pz-hint" role="status">{joined} of {n} wires joined</p>
+        <p className="ui-hint pz-hint" role="status">{joined} of {n} wires joined</p>
       </div>
-      <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={joined !== n} onClick={() => submit({ pairs })}>Check the wires</button>
+      <button type="button" className="ui-button ui-button--primary pz-wide" disabled={joined !== n} onClick={() => submit({ pairs })}>Check the wires</button>
     </div>
   );
 }

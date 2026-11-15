@@ -61,20 +61,20 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
         {...(hear ? { onHear: hear } : {})}
       />
       <nav className="pzd-nav" aria-label="Puzzle kinds">
-        {KINDS.map((k) => <a key={k} href={href(cfg, { kind: k })} {...(k === cfg.kind ? { "aria-current": "page" as const } : {})}>{k}</a>)}
+        {KINDS.map((k) => <a key={k} className="ui-button" href={href(cfg, { kind: k })} {...(k === cfg.kind ? { "aria-current": "page" as const } : {})}>{k}</a>)}
       </nav>
       <div className="pzd-tools">
-        <a className="pz-btn pz-btn-quiet" href={href(cfg, { level: LEVELS[(LEVELS.indexOf(cfg.level) + 1) % LEVELS.length] as Level })}>Level: {cfg.level}</a>
-        <a className="pz-btn pz-btn-quiet" href={href(cfg, { seed: cfg.seed + 1 })}>New seed ({cfg.seed})</a>
-        <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={tilt === "on"} onClick={() => { if (tilt === "on") feel.motion.disable(); else void feel.motion.enable(); }}>Tilt: {tilt}</button>
-        <button type="button" className="pz-btn pz-btn-quiet" onClick={() => void feel.synth.unlock()}>Sound</button>
+        <a className="ui-button" href={href(cfg, { level: LEVELS[(LEVELS.indexOf(cfg.level) + 1) % LEVELS.length] as Level })}>Level: {cfg.level}</a>
+        <a className="ui-button" href={href(cfg, { seed: cfg.seed + 1 })}>New seed ({cfg.seed})</a>
+        <button type="button" className="ui-button" aria-pressed={tilt === "on"} onClick={() => { if (tilt === "on") feel.motion.disable(); else void feel.motion.enable(); }}>Tilt: {tilt}</button>
+        <button type="button" className="ui-button" onClick={() => void feel.synth.unlock()}>Sound</button>
       </div>
       <details className="pzd-more">
-        <summary className="pz-btn pz-btn-quiet">Clues you saw</summary>
+        <summary className="ui-button">Clues you saw</summary>
         <SightsPage assist={device.assist} sights={clue ? [clue] : []} />
       </details>
       <details className="pzd-more">
-        <summary className="pz-btn pz-btn-quiet">Settings</summary>
+        <summary className="ui-button">Settings</summary>
         <PuzzleSettings device={device} onDevice={setDevice} tiltState={tilt} canVibrate={canVibrate} />
       </details>
     </>

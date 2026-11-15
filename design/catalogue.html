@@ -228,6 +228,54 @@
   </div>
 </section>
 
+<section class="cat-section" aria-labelledby="h-screens">
+  <h2 id="h-screens">Screens: layout, headings, inputs, pictures, lists, progress, talk</h2>
+  <div class="cat-item">
+    <h3><code>ui-stack</code> <code>ui-stack--tight</code> <code>ui-stack--loose</code> <code>ui-row</code> <code>ui-row--center</code> <code>ui-row--between</code> <code>ui-heading</code> <code>ui-button--block</code> <code>ui-button--round</code></h3>
+    <div class="ui-stack cat-box">
+      <h3 class="ui-heading">A screen heading</h3>
+      <p>A link looks like <a href="#h-screens">this</a> on a <code>ui-page</code>.</p>
+      <div class="ui-row ui-row--between"><button class="ui-button" type="button">Back</button><button class="ui-button ui-button--round" type="button" aria-label="Help">?</button></div>
+      <div class="ui-row ui-row--center"><button class="ui-button" type="button" aria-pressed="true">Pressed</button><button class="ui-button" type="button" aria-pressed="false">Not pressed</button><button class="ui-button" type="button" aria-disabled="true">Off</button></div>
+      <button class="ui-button ui-button--primary ui-button--block" type="button">Full width main button</button>
+      <a class="ui-button" href="#h-screens">A link that looks like a button</a>
+      <div class="ui-stack ui-stack--tight"><span>A tight stack</span><span>8 px apart</span></div>
+      <div class="ui-stack ui-stack--loose"><span>A loose stack</span><span>16 px apart</span></div>
+    </div>
+    <p class="cat-use"><code>ui-stack</code> puts blocks 12 px apart (tight 8, loose 16); <code>ui-row</code> lays buttons side by side and wraps. A button that is on is <code>aria-pressed="true"</code> (yellow edge and text, not a yellow block); a button that is off but must stay focusable is <code>aria-disabled="true"</code>.</p>
+  </div>
+  <div class="cat-item">
+    <h3><code>ui-input</code> <code>ui-choice</code> <code>ui-notice--danger</code></h3>
+    <div class="ui-stack cat-box">
+      <input class="ui-input" type="text" placeholder="Say something to the ghost" aria-label="Say something">
+      <label class="ui-choice"><input type="radio" name="c-r" checked> One player and bots</label>
+      <label class="ui-choice"><input type="radio" name="c-r"> Two to six players</label>
+      <label class="ui-choice"><input class="ui-check" type="checkbox" checked> Speak aloud (a tick box is the one green control)</label>
+      <p class="ui-notice ui-notice--danger">That did not work. Try again.</p>
+    </div>
+  </div>
+  <div class="cat-item">
+    <h3><code>ui-figure</code> <code>ui-figure--thumb</code> <code>ui-facts</code> <code>ui-steps</code> <code>ui-step</code> <code>ui-gauge</code> <code>ui-gauge--thin</code> <code>ui-gauge-fill</code></h3>
+    <div class="ui-stack cat-box">
+      <figure class="ui-figure ui-figure--thumb"><img alt="A placeholder picture" width="400" height="300" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3Crect width='4' height='3' fill='%2321170f'/%3E%3C/svg%3E"><figcaption>A picture in its frame</figcaption></figure>
+      <ul class="ui-facts"><li>You are in a place.</li><li>Someone has been waiting.</li></ul>
+      <ol class="ui-steps"><li class="ui-step is-done">queued</li><li class="ui-step is-current" aria-current="step">dreaming</li><li class="ui-step">stitching</li><li class="ui-step">ready</li></ol>
+      <progress class="ui-gauge" max="100" value="40" aria-label="Dreaming"></progress>
+      <div class="ui-gauge ui-gauge--thin" role="img" aria-label="Time left: most"><i class="ui-gauge-fill" style="width: 70%"></i></div>
+    </div>
+    <p class="cat-use">Loading is a feature: stage steps with a calm bar, not a spinner alone.</p>
+  </div>
+  <div class="cat-item">
+    <h3><code>ui-line</code> <code>ui-line--whisper</code> <code>ui-line--system</code> <code>ui-line-who</code></h3>
+    <div class="ui-panel cat-box">
+      <p class="ui-line"><span class="ui-line-who">You</span><br>look</p>
+      <p class="ui-line ui-line--whisper"><span class="ui-line-who">The Whisper</span><br>A room, once. Quiet now.</p>
+      <p class="ui-line ui-line--system">The ghost is not answering. Try again.</p>
+    </div>
+    <p class="cat-use">The Whisper's lines get the green edge, never green text.</p>
+  </div>
+</section>
+
 </main>
 
 <script type="module" src="/design/catalogue.mjs"></script>

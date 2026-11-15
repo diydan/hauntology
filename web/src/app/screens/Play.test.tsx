@@ -113,10 +113,10 @@ describe("Play: the interaction prompt and the Chat", () => {
     expect(document.querySelector(".scripted")).toBeNull();
     await press("Talk");
     await press("Look");
-    await waitFor(() => expect(document.querySelectorAll(".transcript .line")).toHaveLength(2));
-    const [you, ghost] = [...document.querySelectorAll(".transcript .line")];
+    await waitFor(() => expect(document.querySelectorAll(".transcript .ui-line")).toHaveLength(2));
+    const [you, ghost] = [...document.querySelectorAll(".transcript .ui-line")];
     expect(you!.textContent).toBe("You: Look");
-    expect(ghost!.classList.contains("ghost")).toBe(true);
+    expect(ghost!.classList.contains("ui-line--whisper")).toBe(true);
     expect(live()).toBe(ghost!.textContent!.replace("Ghost: ", ""));
     expect(document.querySelector(".scripted")?.textContent).toBe("scripted ghost");
 
@@ -124,8 +124,8 @@ describe("Play: the interaction prompt and the Chat", () => {
     expect((screen.getByRole("button", { name: "Send" }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.change(box, { target: { value: "  who are you?  " } });
     await act(async () => { fireEvent.submit(box.closest("form")!); });
-    await waitFor(() => expect(document.querySelectorAll(".transcript .line")).toHaveLength(4));
-    expect(document.querySelectorAll(".transcript .line")[2]!.textContent).toBe("You: who are you?");
+    await waitFor(() => expect(document.querySelectorAll(".transcript .ui-line")).toHaveLength(4));
+    expect(document.querySelectorAll(".transcript .ui-line")[2]!.textContent).toBe("You: who are you?");
     expect(box.value).toBe("");
     expect(box.maxLength).toBe(200);
   });
@@ -137,11 +137,11 @@ describe("Play: the interaction prompt and the Chat", () => {
     await press("Talk");
     api.backend.failNext("playTurn", "network_error");
     await press("Look");
-    await waitFor(() => expect(document.querySelector(".line.system")).not.toBeNull());
-    expect(document.querySelector(".line.system")!.textContent).toContain("We could not reach the server");
+    await waitFor(() => expect(document.querySelector(".ui-line--system")).not.toBeNull());
+    expect(document.querySelector(".ui-line--system")!.textContent).toContain("We could not reach the server");
     expect(live()).toContain("We could not reach the server");
     await press("Look");
-    await waitFor(() => expect(document.querySelectorAll(".line.ghost")).toHaveLength(1));
+    await waitFor(() => expect(document.querySelectorAll(".ui-line--whisper")).toHaveLength(1));
   });
 
   it("holds the controls after a rate limit for the advised seconds", async () => {
@@ -174,7 +174,7 @@ describe("Play: finding memories", () => {
     const dialog = screen.getByRole("dialog", { name: "Journal" });
     expect(dialog.textContent).toContain("A low hum comes back to you");
     expect(dialog.querySelectorAll("li")).toHaveLength(1);
-    expect(document.querySelector(".standin")!.textContent).toContain("Haunt level 43%");
+    expect(document.querySelector("[data-standin-viewer]")!.textContent).toContain("Haunt level 43%");
   });
 
   it("the journal dialog traps focus, closes on Escape and gives focus back", async () => {
@@ -305,7 +305,7 @@ describe("Play: the Viewer falls back", () => {
     await waitFor(() => expect(document.querySelector(".viewer-fallback img")?.getAttribute("src")).toBe("/demo/gallery/attic-room.svg"));
     await press("Talk");
     await press("Look");
-    await waitFor(() => expect(document.querySelectorAll(".line.ghost")).toHaveLength(1));
+    await waitFor(() => expect(document.querySelectorAll(".ui-line--whisper")).toHaveLength(1));
     void p;
   });
 
@@ -340,7 +340,7 @@ describe("Play: the ghost's voice", () => {
     await waitFor(() => expect(speak).toHaveBeenCalledTimes(1));
     expect(speak.mock.calls[0]![0].lineId).toMatch(/^line-/);
     await waitFor(() => expect(h.p.played).toHaveLength(1));
-    expect(document.querySelectorAll(".line.ghost")).toHaveLength(1);
+    expect(document.querySelectorAll(".ui-line--whisper")).toHaveLength(1);
     await press("Look");
     await waitFor(() => expect(h.p.played).toHaveLength(2));
     expect(h.p.played[0]!.paused).toBe(true);
@@ -354,7 +354,7 @@ describe("Play: the ghost's voice", () => {
     await press("Talk");
     fireEvent.click(screen.getByLabelText("Speak aloud"));
     await press("Look");
-    await waitFor(() => expect(document.querySelectorAll(".line.ghost")).toHaveLength(1));
+    await waitFor(() => expect(document.querySelectorAll(".ui-line--whisper")).toHaveLength(1));
     expect(speak).not.toHaveBeenCalled();
   });
 
@@ -367,7 +367,7 @@ describe("Play: the ghost's voice", () => {
     expect(screen.queryByLabelText("Speak aloud")).toBeNull();
     expect(screen.queryByRole("button", { name: "Hold to talk" })).toBeNull();
     await press("Look");
-    await waitFor(() => expect(document.querySelectorAll(".line.ghost")).toHaveLength(1));
+    await waitFor(() => expect(document.querySelectorAll(".ui-line--whisper")).toHaveLength(1));
     expect(speak).not.toHaveBeenCalled();
   });
 
@@ -378,9 +378,9 @@ describe("Play: the ghost's voice", () => {
     await goIn();
     await press("Talk");
     await press("Look");
-    await waitFor(() => expect(document.querySelectorAll(".line.ghost")).toHaveLength(1));
+    await waitFor(() => expect(document.querySelectorAll(".ui-line--whisper")).toHaveLength(1));
     expect(h.p.played).toHaveLength(0);
-    expect(document.querySelector(".line.system")).toBeNull();
+    expect(document.querySelector(".ui-line--system")).toBeNull();
   });
 
   it("hold to talk records while held, shows the microphone indicator, and sends the transcript as typed text", async () => {
@@ -397,8 +397,8 @@ describe("Play: the ghost's voice", () => {
     await act(async () => { fireEvent.pointerUp(talk); });
     await waitFor(() => expect(listen).toHaveBeenCalledTimes(1));
     expect(h.p.log).toContain("rec stop");
-    await waitFor(() => expect(document.querySelectorAll(".transcript .line")).toHaveLength(2));
-    expect(document.querySelectorAll(".transcript .line")[0]!.textContent).toBe("You: who are you");
+    await waitFor(() => expect(document.querySelectorAll(".transcript .ui-line")).toHaveLength(2));
+    expect(document.querySelectorAll(".transcript .ui-line")[0]!.textContent).toBe("You: who are you");
     expect(document.querySelector("[data-mic-indicator]")).toBeNull();
   });
 

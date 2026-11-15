@@ -1,6 +1,6 @@
 /* Safe code dial. Sizes in relative units so it fits from 320 px wide. */
 .pz-safe-board { width: min(82%, 22rem); margin: 0 auto; }
-.pz-safe-ring { fill: #1b1e2b; stroke: var(--dust); stroke-width: 4; }
-.pz-safe-num { fill: var(--bone); font-size: 32px; font-weight: 700; text-anchor: middle; }
-.pz-safe-tick { stroke: var(--dust); stroke-width: 3; }
-.pz-safe-marker { fill: var(--lantern); }
+.pz-safe-ring { fill: var(--surface-sunk); stroke: var(--shape-quiet); stroke-width: 4; }
+.pz-safe-num { fill: var(--text); font-size: 32px; font-weight: 700; text-anchor: middle; }
+.pz-safe-tick { stroke: var(--shape-quiet); stroke-width: 3; }
+.pz-safe-marker { fill: var(--accent); }

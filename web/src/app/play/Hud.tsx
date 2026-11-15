@@ -19,27 +19,27 @@ export function Hud({
   onExit: () => void;
 }) {
   return (
-    <div className="hud" role="group" aria-label="Game controls">
-      <p className="found" data-found>
+    <div className="ui-stack ui-stack--tight" role="group" aria-label="Game controls">
+      <p className="ui-hint" data-found>
         Memories found: {found} of {TOTAL_MEMORIES}
       </p>
-      <div className="hud-buttons">
-        <button className="button" type="button" onClick={onJournal}>
+      <div className="ui-row">
+        <button className="ui-button" type="button" onClick={onJournal}>
           Journal
         </button>
         {chatOpen ? null : (
-          <button className="button" type="button" onClick={onTalk}>
+          <button className="ui-button" type="button" onClick={onTalk}>
             Talk
           </button>
         )}
-        <button className="button" type="button" onClick={onExit}>
+        <button className="ui-button" type="button" onClick={onExit}>
           Exit
         </button>
       </div>
       {prompt !== null && !chatOpen ? (
-        <p className="prompt" data-prompt>
+        <p className="ui-notice ui-row" data-prompt>
           {promptText(prompt)}{" "}
-          <button className="button" type="button" onClick={onTalk}>
+          <button className="ui-button" type="button" onClick={onTalk}>
             Yes
           </button>
         </p>

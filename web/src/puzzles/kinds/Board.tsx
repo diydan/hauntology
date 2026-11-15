@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { defaultWorld, makeStepper, newBall, type Ball } from "@hauntology/shared/puzzles/tilt-ball";
+import { CANVAS, withAlpha } from "../art/palette";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import { BOARD_H, BOARD_W, DRAG_SLOP, LETTERS, LETTER_POS, MAGNET_MAX_SPEED, MAGNET_PULL, MAGNET_PX, NEAR_PX, PLANCHETTE_R, REST_SPEED, START, TAP_PX, UNDER_PX, nearestLetter } from "./Board-geometry";
 import type { KindProps } from "./types";
@@ -7,11 +8,11 @@ import "./Board.css";
 
 const WORLD = { ...defaultWorld(BOARD_W, BOARD_H, [], PLANCHETTE_R), friction: 5, maxSpeed: 260, accel: 22 };
 const NO_TILT = { x: 0, y: 0 } as const;
-const INK = "#1a1410";
-const LETTER = "#d9c9a3";
-const LANTERN = "#ffd86b";
-const RING = "#7fd6a1";
-const SPIRIT = "#b9a6ff";
+const INK = CANVAS.board;
+const LETTER = CANVAS.text;
+const LANTERN = CANVAS.lit;
+const RING = CANVAS.ring;
+const SPIRIT = CANVAS.piece;
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
 /**
@@ -153,14 +154,14 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
       c.arc(at.x, at.y, NEAR_PX + 2, -Math.PI / 2, -Math.PI / 2 + Math.min(1, dwell / view.dwellMs) * Math.PI * 2);
       c.stroke();
     }
-    c.fillStyle = "rgba(185,166,255,0.28)";
+    c.fillStyle = withAlpha(SPIRIT, 0.28);
     c.strokeStyle = SPIRIT;
     c.lineWidth = 2;
     c.beginPath();
     c.arc(b.x, b.y, PLANCHETTE_R, 0, Math.PI * 2);
     c.fill();
     c.stroke();
-    c.fillStyle = "#0e0f14";
+    c.fillStyle = CANVAS.well;
     c.beginPath();
     c.arc(b.x, b.y, 5, 0, Math.PI * 2);
     c.fill();
@@ -223,8 +224,8 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
   const hearText = !hear ? "No voice here" : left > 0 ? `Hear the word (${left} left)` : "No more whispers";
   return (
     <div className="pz-board-kind">
-      <div className="pz-row">
-        <button type="button" className="pz-btn pz-btn-primary" disabled={!hear || left <= 0} onClick={() => void speak()}>{hearText}</button>
+      <div className="ui-row ui-row--center">
+        <button type="button" className="ui-button" disabled={!hear || left <= 0} onClick={() => void speak()}>{hearText}</button>
       </div>
       <p className="pz-hint pz-clue-line">Clue: {view.clue} · {view.length} letters</p>
       <canvas
@@ -234,7 +235,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
       />
       <div className="pz-field">
         <p className="pz-readout pz-under" aria-live="off">{under === null ? "Move the planchette onto a letter" : `On the letter ${under}`}</p>
-        <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={under === null || spelled.length >= view.length} onClick={() => { if (under !== null) choose(under); }}>
+        <button type="button" className="ui-button ui-button--primary pz-wide" disabled={under === null || spelled.length >= view.length} onClick={() => { if (under !== null) choose(under); }}>
           {under === null ? "Pick the letter" : `Pick ${under}`}
         </button>
       </div>
@@ -242,12 +243,12 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
         <div className="pz-digits" role="img" aria-label={`Letters so far: ${spelled.length} of ${view.length}`}>
           {Array.from({ length: view.length }, (_, i) => <span key={i}>{spelled[i] ?? "·"}</span>)}
         </div>
-        <div className="pz-row">
-          <button type="button" className="pz-btn pz-btn-quiet" disabled={spelled.length === 0} onClick={clear}>Clear</button>
+        <div className="ui-row ui-row--center">
+          <button type="button" className="ui-button" disabled={spelled.length === 0} onClick={clear}>Clear</button>
           {tiltButtons}
         </div>
       </div>
-      <p className="pz-hint">{tilt === "on" ? "Tilt is on: lean the phone to roll the planchette, then tap anywhere or rest on the letter." : "Drag the planchette onto a letter, then press Pick. Or tap a letter."}</p>
+      <p className="ui-hint pz-hint">{tilt === "on" ? "Tilt is on: lean the phone to roll the planchette, then tap anywhere or rest on the letter." : "Drag the planchette onto a letter, then press Pick. Or tap a letter."}</p>
     </div>
   );
 }

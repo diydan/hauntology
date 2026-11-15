@@ -67,7 +67,7 @@ function Gate({ showDebug }: { showDebug: boolean }) {
   if (boot.status === "failed") return <BootFailure code={boot.code} retryAfterSec={boot.retryAfterSec} onRetry={() => void quota.retry().then(() => proceed(() => true))} />;
   if (boot.status !== "ready" || !route.ready) {
     return (
-      <main className="screen" aria-busy="true">
+      <main className="screen ui-stack" aria-busy="true">
         <p>Loading…</p>
       </main>
     );
@@ -78,8 +78,8 @@ function Gate({ showDebug }: { showDebug: boolean }) {
 function BootFailure({ code, retryAfterSec, onRetry }: { code: string; retryAfterSec: number | undefined; onRetry: () => void }) {
   const copy = errorCopy(code);
   return (
-    <main className="screen">
-      <h1>{copy.title}</h1>
+    <main className="screen ui-stack">
+      <h1 className="ui-heading">{copy.title}</h1>
       <p>{copy.body}</p>
       <p>
         Code: <code>{code}</code>
@@ -115,7 +115,7 @@ function Shell({ showDebug }: { showDebug: boolean }) {
     <FocusProvider value={focusOnMount}>
       <OfflineBanner />
       <ScreenBoundary key={path} screenId={route.screen}>
-        <Suspense fallback={<main className="screen" aria-busy="true"><p>Loading…</p></main>}>
+        <Suspense fallback={<main className="screen ui-stack" aria-busy="true"><p>Loading…</p></main>}>
           <Screen />
         </Suspense>
       </ScreenBoundary>

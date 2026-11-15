@@ -110,32 +110,34 @@ export function PhotoPicker({ disabledReason, busy, onUse }: { disabledReason: s
 
   const off = disabledReason !== null;
   return (
-    <section className="photo-picker" aria-labelledby="photo-title">
-      <h2 id="photo-title">Upload a photo</h2>
+    <section className="photo-picker ui-stack" aria-labelledby="photo-title">
+      <h2 className="ui-heading" id="photo-title">Upload a photo</h2>
       <p id="photo-notice">{PHOTO_NOTICE}</p>
       <p>
-        <label>
-          Choose a photo{" "}
-          <input type="file" accept={PHOTO_TYPES.join(",")} disabled={off || busy} aria-describedby={off ? "photo-reason" : "photo-notice"} onChange={(e) => void choose(e)} />
+        <label className="ui-stack ui-stack--tight">
+          Choose a photo
+          <input className="ui-input" type="file" accept={PHOTO_TYPES.join(",")} disabled={off || busy} aria-describedby={off ? "photo-reason" : "photo-notice"} onChange={(e) => void choose(e)} />
         </label>
       </p>
       {off ? (
-        <p id="photo-reason" className="reason">
+        <p id="photo-reason" className="ui-note is-warn">
           {disabledReason}
         </p>
       ) : null}
       {problem ? (
-        <p className="reason" data-photo-problem>
+        <p className="ui-note is-warn" data-photo-problem>
           {problem}
         </p>
       ) : null}
       {working && chosen === null ? <p aria-busy="true">Looking at your photo…</p> : null}
       {chosen !== null ? (
-        <div className="photo-chosen">
-          <img className="photo-preview" src={chosen.url} alt="The photo you chose" />
+        <div className="photo-chosen ui-stack">
+          <figure className="ui-figure">
+            <img className="photo-preview" src={chosen.url} alt="The photo you chose" />
+          </figure>
           {chosen.date !== undefined ? <p data-photo-date>{photoDateLine(chosen.date)}</p> : null}
           <p>
-            <button className="button" type="button" disabled={busy || working} onClick={() => void use()}>
+            <button className="ui-button" type="button" disabled={busy || working} onClick={() => void use()}>
               {working || busy ? "Working…" : "Use this photo"}
             </button>
           </p>

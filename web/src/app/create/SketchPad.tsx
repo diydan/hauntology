@@ -106,34 +106,35 @@ export function SketchPad({ history, onHistory, caption, onCaption, drawReason, 
 
   const reason = !gate.enabled ? gate.reason : waiting ? `Try again in ${waitSeconds}.` : null;
   return (
-    <section className="sketch-pad" aria-labelledby="pad-title">
-      <h2 id="pad-title">Draw a place</h2>
+    <section className="sketch-pad ui-stack" aria-labelledby="pad-title">
+      <h2 className="ui-heading" id="pad-title">Draw a place</h2>
       <p id="pad-help">
         This is a pointer tool: draw with a mouse, a finger or a pen. If you cannot use one, upload a photo or visit the Gallery instead.
       </p>
 
-      <div className="pad-tools" role="toolbar" aria-label="Drawing tools">
+      <div className="pad-tools ui-row" role="toolbar" aria-label="Drawing tools">
         {PAD_TOOLS.map((t) => (
-          <button key={t} type="button" className="button" aria-pressed={tool === t} onClick={() => setTool(t)}>
+          <button key={t} type="button" className="ui-button" aria-pressed={tool === t} onClick={() => setTool(t)}>
             {TOOL_LABEL[t]}
           </button>
         ))}
         {PAD_SIZES.map((s) => (
-          <button key={s} type="button" className="button" aria-pressed={size === s} aria-label={`${SIZE_LABEL[s]} size`} onClick={() => setSize(s)}>
+          <button key={s} type="button" className="ui-button" aria-pressed={size === s} aria-label={`${SIZE_LABEL[s]} size`} onClick={() => setSize(s)}>
             {SIZE_LABEL[s]}
           </button>
         ))}
-        <button type="button" className="button" disabled={!canUndo(history) || busy} onClick={() => onHistory(undo(history))}>
+        <button type="button" className="ui-button" disabled={!canUndo(history) || busy} onClick={() => onHistory(undo(history))}>
           Undo
         </button>
-        <button type="button" className="button" disabled={!canRedo(history) || busy} onClick={() => onHistory(redo(history))}>
+        <button type="button" className="ui-button" disabled={!canRedo(history) || busy} onClick={() => onHistory(redo(history))}>
           Redo
         </button>
-        <button type="button" className="button" disabled={history.present.length === 0 || busy} onClick={() => onHistory(clearPage(history))}>
+        <button type="button" className="ui-button" disabled={history.present.length === 0 || busy} onClick={() => onHistory(clearPage(history))}>
           Clear
         </button>
       </div>
 
+      <figure className="ui-figure pad-frame">
       <canvas
         ref={canvas}
         className="pad-canvas"
@@ -147,11 +148,12 @@ export function SketchPad({ history, onHistory, caption, onCaption, drawReason, 
         onPointerUp={finish}
         onPointerCancel={finish}
       />
+      </figure>
 
       <p>
-        <label>
-          Caption (optional){" "}
-          <input type="text" value={caption} maxLength={CAPTION_MAX} onChange={(e) => onCaption(e.target.value)} aria-describedby="pad-count" />
+        <label className="ui-stack ui-stack--tight">
+          Caption (optional)
+          <input className="ui-input" type="text" value={caption} maxLength={CAPTION_MAX} onChange={(e) => onCaption(e.target.value)} aria-describedby="pad-count" />
         </label>{" "}
         <small id="pad-count">
           {caption.length} of {CAPTION_MAX}
@@ -159,16 +161,16 @@ export function SketchPad({ history, onHistory, caption, onCaption, drawReason, 
       </p>
 
       <p>
-        <button className="button" type="button" aria-disabled={on ? undefined : "true"} aria-describedby={reason ? "pad-reason" : undefined} onClick={() => void make()}>
+        <button className="ui-button ui-button--primary" type="button" aria-disabled={on ? undefined : "true"} aria-describedby={reason ? "pad-reason" : undefined} onClick={() => void make()}>
           {busy ? "Making it real…" : "Make it real"}
         </button>
       </p>
       {reason ? (
-        <p id="pad-reason" className="reason">
+        <p id="pad-reason" className="ui-note is-warn">
           {reason}
         </p>
       ) : null}
-      {note ? <p className="reason">{note}</p> : null}
+      {note ? <p className="ui-note is-warn">{note}</p> : null}
     </section>
   );
 }

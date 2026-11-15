@@ -361,10 +361,10 @@ describe("Confirm: the bot check", () => {
     await waitFor(() => expect(t.widgets).toHaveLength(1));
     const w = t.widgets[0]!;
     await act(async () => { w.options["error-callback"]!(); });
-    expect(document.querySelector(".turnstile .reason")?.textContent).toBe(TURNSTILE_DID_NOT_WORK);
+    expect(document.querySelector(".turnstile .ui-note")?.textContent).toBe(TURNSTILE_DID_NOT_WORK);
     expect(live()).toBe(TURNSTILE_DID_NOT_WORK);
     await act(async () => { w.options["expired-callback"]!(); });
-    expect(document.querySelector(".turnstile .reason")?.textContent).toBe(TURNSTILE_RAN_OUT);
+    expect(document.querySelector(".turnstile .ui-note")?.textContent).toBe(TURNSTILE_RAN_OUT);
     expect(t.api.reset).toHaveBeenCalledWith("w1");
     expect(g.create).not.toHaveBeenCalled();
     expect(screen.getByRole("heading", { name: "One quick check" })).toBeTruthy();

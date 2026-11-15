@@ -110,12 +110,12 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
 
   return (
     <div>
-      <p className="pz-hint">Feel for each pin's sweet spot. Pins set left to right.</p>
+      <p className="ui-hint pz-hint">Feel for each pin's sweet spot. Pins set left to right.</p>
       <div className="pz-field">
         <ol className={`pz-pins${reducedMotion ? " pz-pins-still" : ""}`} aria-label="Pins">
           {Array.from({ length: view.pins }, (_, i) => {
             const state = i < cur ? "set" : i === cur ? "picking" : "waiting";
-            return <li key={i} className={`pz-pin pz-pin-${state}`}><span className="pz-sr">{`Pin ${i + 1} of ${view.pins}: ${state}`}</span><i aria-hidden="true" /></li>;
+            return <li key={i} className={`pz-pin pz-pin-${state}`}><span className="ui-sr-only pz-sr">{`Pin ${i + 1} of ${view.pins}: ${state}`}</span><i aria-hidden="true" /></li>;
           })}
         </ol>
         <p className="pz-heat" data-heat={heat}>{HEAT_TEXT[heat]}</p>
@@ -127,13 +127,13 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
           onChange={onSlide} onPointerDown={() => hold("slider", true)} onPointerUp={() => hold("slider", false)} onPointerCancel={() => hold("slider", false)}
         />
       </div>
-      <div className="pz-row">
-        <button type="button" className="pz-btn pz-hold" aria-pressed={tension} onClick={onButtonClick} onPointerDown={onButtonDown} onPointerUp={() => hold("button", false)} onPointerCancel={() => hold("button", false)}>
+      <div className="ui-row ui-row--center">
+        <button type="button" className="ui-button pz-hold" aria-pressed={tension} onClick={onButtonClick} onPointerDown={onButtonDown} onPointerUp={() => hold("button", false)} onPointerCancel={() => hold("button", false)}>
           Tension (hold)
         </button>
         {tiltButtons}
       </div>
-      <p className="pz-hint">{tilt === "on" ? "Tilt is on: hold Tension and lean the phone to move the pick." : "Touching the slider holds the tension for you. Or hold the Tension button."}</p>
+      <p className="ui-hint pz-hint">{tilt === "on" ? "Tilt is on: hold Tension and lean the phone to move the pick." : "Touching the slider holds the tension for you. Or hold the Tension button."}</p>
     </div>
   );
 }

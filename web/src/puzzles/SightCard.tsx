@@ -26,12 +26,12 @@ export function SightCard({ sight, title, feel, onDone, now = () => performance.
     // the card starts once, when it appears
   }, []);
   return (
-    <div className="pz-card" role="dialog" aria-label={title}>
-      <h2 className="pz-title">{title}</h2>
+    <div className="ui-panel pz-card" role="dialog" aria-label={title}>
+      <h2 className="ui-heading">{title}</h2>
       <div className="pz-clue"><SightClue sight={sight} /></div>
-      <div className="pz-bar" aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, (left / sight.showMs) * 100))}%` }} /></div>
-      <p className="pz-muted" aria-live="off">{Math.ceil(left / 1000)} s</p>
-      <button type="button" className="pz-btn" onClick={() => done.current()}>Got it</button>
+      <div className="ui-gauge ui-gauge--thin" aria-hidden="true"><i className="ui-gauge-fill" style={{ width: `${Math.max(0, Math.min(100, (left / sight.showMs) * 100))}%` }} /></div>
+      <p className="ui-hint" aria-live="off">{Math.ceil(left / 1000)} s</p>
+      <button type="button" className="ui-button ui-button--primary" onClick={() => done.current()}>Got it</button>
     </div>
   );
 }

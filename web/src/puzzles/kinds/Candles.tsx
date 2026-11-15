@@ -157,9 +157,9 @@ export default function Candles({ view, feel, reducedMotion, submit, announce, r
   const watchText = showing ? "Watching…" : left <= 0 ? "No more shows" : `Watch (${left} left)`;
   return (
     <div className="pz-candles">
-      <p className="pz-hint">{listening ? "Tap a candle to pick it, then blow on the phone." : "Watch the order, then tap the candles to put them out in that same order."}</p>
-      <div className="pz-row">
-        <button type="button" className="pz-btn pz-btn-primary" disabled={showing || left <= 0} onClick={watch}>{watchText}</button>
+      <p className="ui-hint pz-hint">{listening ? "Tap a candle to pick it, then blow on the phone." : "Watch the order, then tap the candles to put them out in that same order."}</p>
+      <div className="ui-row ui-row--center">
+        <button type="button" className="ui-button ui-button--primary" disabled={showing || left <= 0} onClick={watch}>{watchText}</button>
       </div>
       <div className="pz-field">
         <div className="pz-candle-row" role="group" aria-label="Candles">
@@ -176,17 +176,17 @@ export default function Candles({ view, feel, reducedMotion, submit, announce, r
         </div>
         <p className="pz-readout pz-out-so-far" role="img" aria-label={`Out so far: ${out.length === 0 ? "none" : out.map((c) => c + 1).join(", ")}`}>{out.length === 0 ? "Out so far: none" : `Out so far: ${out.map((c) => c + 1).join(" then ")}`}</p>
       </div>
-      <p className="pz-hint">Or blow them out: tap Blow to snuff, tap a candle, then blow on the phone. The microphone is optional and only measures loudness. Nothing is recorded.</p>
-      <div className="pz-row">
-        <button type="button" className="pz-btn pz-btn-quiet" disabled={showing || out.length === 0} onClick={relight}>Relight</button>
-        <button type="button" className="pz-btn" aria-pressed={listening} onClick={() => void toggleMic()}>Blow to snuff</button>
+      <p className="ui-hint pz-hint">Or blow them out: tap Blow to snuff, tap a candle, then blow on the phone. The microphone is optional and only measures loudness. Nothing is recorded.</p>
+      <div className="ui-row ui-row--center">
+        <button type="button" className="ui-button" disabled={showing || out.length === 0} onClick={relight}>Relight</button>
+        <button type="button" className="ui-button" aria-pressed={listening} onClick={() => void toggleMic()}>Blow to snuff</button>
       </div>
       {listening ? (
         <div className="pz-mic" role="status">
           <Mic />
           <span>Microphone on: listening for a breath</span>
           <span className="pz-meter" aria-hidden="true"><i ref={meter} /><u ref={mark} /></span>
-          <button type="button" className="pz-btn pz-btn-quiet" onClick={stopMic}>Stop listening</button>
+          <button type="button" className="ui-button" onClick={stopMic}>Stop listening</button>
         </div>
       ) : null}
     </div>

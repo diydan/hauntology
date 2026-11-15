@@ -63,19 +63,19 @@ export function TurnstileWidget({ siteKey, onResult }: { siteKey: string | undef
   }, [siteKey, platform, attempt, announce, onResult]);
 
   return (
-    <div className="turnstile">
+    <div className="turnstile ui-stack">
       {phase === "loading" ? <p aria-busy="true">{TURNSTILE_LOADING}</p> : null}
       {phase === "failed" ? (
-        <p className="reason" data-turnstile-problem>
+        <p className="ui-note is-warn" data-turnstile-problem>
           {siteKey === undefined ? TURNSTILE_NOT_SET_UP : TURNSTILE_LOAD_FAILED}{" "}
           {siteKey === undefined ? null : (
-            <button className="button" type="button" onClick={() => setAttempt((n) => n + 1)}>
+            <button className="ui-button" type="button" onClick={() => setAttempt((n) => n + 1)}>
               Try again
             </button>
           )}
         </p>
       ) : null}
-      {note ? <p className="reason">{note}</p> : null}
+      {note ? <p className="ui-note is-warn">{note}</p> : null}
       <div ref={holder} className="turnstile-box" data-turnstile />
     </div>
   );

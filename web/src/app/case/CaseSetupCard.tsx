@@ -18,21 +18,21 @@ export function CaseSetupCard({ initial, onStart, onCancel }: { initial: CaseSet
   const counts = Array.from({ length: BOTS_MAX - BOTS_MIN + 1 }, (_, i) => BOTS_MIN + i);
   return (
     <form
-      className="case-setup"
+      className="case-setup ui-panel ui-stack"
       aria-labelledby="case-setup-title"
       onSubmit={(e) => {
         e.preventDefault();
         onStart(normalizeCaseSetup({ preset, bots }));
       }}
     >
-      <h2 id="case-setup-title" ref={heading} tabIndex={-1}>
+      <h2 className="ui-heading" id="case-setup-title" ref={heading} tabIndex={-1}>
         Set up your case
       </h2>
 
-      <fieldset className="choice-group">
-        <legend>How it plays</legend>
+      <fieldset className="choice-group ui-stack ui-stack--tight">
+        <legend className="ui-eyebrow">How it plays</legend>
         {CASE_PRESETS.map((p) => (
-          <label key={p} className="choice-option">
+          <label key={p} className="ui-choice">
             <input type="radio" name="case-preset" value={p} checked={preset === p} onChange={() => setPreset(p)} />
             <span>
               <strong>{CASE_PRESET_COPY[p].label}</strong> <small>{CASE_PRESET_COPY[p].line}</small>
@@ -41,21 +41,21 @@ export function CaseSetupCard({ initial, onStart, onCancel }: { initial: CaseSet
         ))}
       </fieldset>
 
-      <fieldset className="choice-group choice-bots">
-        <legend>Bots at the table</legend>
+      <fieldset className="choice-group choice-bots ui-row">
+        <legend className="ui-eyebrow">Bots at the table</legend>
         {counts.map((n) => (
-          <label key={n} className="choice-option">
+          <label key={n} className="ui-choice">
             <input type="radio" name="case-bots" value={n} checked={bots === n} onChange={() => setBots(n)} />
             <span>{n}</span>
           </label>
         ))}
       </fieldset>
 
-      <p>
-        <button className="button" type="submit">
+      <p className="ui-row">
+        <button className="ui-button ui-button--primary" type="submit">
           Start
         </button>{" "}
-        <button className="button" type="button" onClick={onCancel}>
+        <button className="ui-button" type="button" onClick={onCancel}>
           Cancel
         </button>
       </p>

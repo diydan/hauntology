@@ -1,24 +1,11 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html {
-  background: var(--ink);
-}
-
-body {
-  margin: 0;
-  min-height: 100dvh;
-  background: var(--ink);
-  color: var(--bone);
-  font-family: var(--font-ui);
-  font-size: 1rem;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-
+/*
+ * The web app's own style: WHERE things go, and nothing about how they look. The look is the design
+ * system (design/tokens.json through tokens.css, design/fonts.css, design/elements.css): every screen is
+ * built from the `ui-` elements, and this file holds only layout (grid areas, widths, scrolling, the
+ * pad's touch behaviour) in the space tokens. No colour, no type face and no corner is written here;
+ * styles.test.ts checks that. A piece that is missing is added to design/elements.css and
+ * design/catalogue.html, not here (steering/design-system.md).
+ */
 img,
 canvas,
 video {
@@ -26,108 +13,49 @@ video {
   height: auto;
 }
 
-h1 {
-  font-size: 1.5rem;
-  line-height: 1.25;
-  margin: 0 0 1rem;
+.ui-page {
+  overflow-wrap: anywhere;
 }
 
-h1:focus {
+/* A heading that takes focus on a route change is a place to put focus, not a control: no ring on it. */
+[tabindex="-1"]:focus {
   outline: none;
-}
-
-a {
-  color: var(--lantern);
-}
-
-/* Every control is reachable from the keyboard and shows where it is. */
-:focus-visible {
-  outline: 3px solid var(--lantern);
-  outline-offset: 2px;
 }
 
 .screen {
   max-width: 48rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
-  animation: fade-in var(--fade) ease both;
+  padding: var(--space-5) var(--space-4) calc(var(--space-6) + var(--space-4));
+  animation: fade-in var(--fade) var(--ease) both;
 }
 
-.button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--target);
-  min-width: var(--target);
-  padding: 0 1rem;
-  border: 1px solid var(--lantern);
-  border-radius: 4px;
-  background: var(--ink);
-  color: var(--lantern);
-  font: inherit;
-  text-decoration: none;
-  cursor: pointer;
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.button:hover:not(:disabled) {
-  background: var(--lantern);
-  color: var(--ink);
-}
-
-.button:disabled {
-  border-color: var(--dust);
-  cursor: not-allowed;
-  opacity: 0.8;
-}
-
-.banner {
+/* A list of one action per row, and the Home facts. */
+.actions {
+  list-style: none;
   margin: 0;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--alarm);
-  background: var(--ink);
-  color: var(--bone);
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
   padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
 }
 
-.debug {
-  position: fixed;
-  left: 0.5rem;
-  bottom: 0.5rem;
-  max-width: calc(100% - 1rem);
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--dust);
-  background: var(--ink);
-  color: var(--ghost);
-  font-size: 0.75rem;
+.play-choice .actions p {
+  margin: var(--space-1) 0 0;
 }
 
-.debug dl {
+.gallery {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-4);
+  list-style: none;
   margin: 0;
-}
-
-.debug dd {
-  margin: 0;
-}
-
-.viewer-fallback {
-  display: grid;
-  place-items: center;
-  min-height: 12rem;
-  border: 1px solid var(--dust);
+  padding: 0;
 }
 
 /*
@@ -147,7 +75,7 @@ a {
   grid-row: 2;
   max-height: 50dvh;
   overflow-y: auto;
-  border-top: 1px solid var(--dust);
+  margin: 0 var(--space-3) var(--space-3);
 }
 
 @container play (min-width: 900px) {
@@ -160,299 +88,61 @@ a {
     grid-row: 1;
     grid-column: 2;
     max-height: none;
-    border-top: 0;
-    border-left: 1px solid var(--dust);
+    margin: var(--space-3) var(--space-3) var(--space-3) 0;
   }
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.premise {
-  font-size: 1.125rem;
-  margin: 0 0 1.5rem;
-}
-
-.actions,
-.facts {
-  list-style: none;
-  margin: 0 0 1.5rem;
-  padding: 0;
-}
-
-.actions {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.actions .button {
-  width: 100%;
-}
-
-.facts li {
-  margin: 0 0 0.5rem;
-  padding-left: 1rem;
-  border-left: 2px solid var(--dust);
-}
-
-.reason {
-  margin: -0.5rem 0 1.5rem;
-  color: var(--alarm);
-}
-
-.button[aria-disabled="true"] {
-  border-color: var(--dust);
-  cursor: not-allowed;
-  opacity: 0.8;
-}
-
-.gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
-  gap: 1rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.card {
-  display: grid;
-  align-content: start;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border: 1px solid var(--dust);
-}
-
-.card img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  background: var(--ink);
-}
-
-.card h2,
-.card p {
-  margin: 0;
-}
-
-.card h2 {
-  font-size: 1.125rem;
-}
-
-.attribution {
-  font-size: 0.875rem;
-  color: var(--ghost);
-}
-
-/* Play */
-.play-main {
-  display: grid;
-  align-content: start;
-  gap: 0.75rem;
+.play-main,
+.case-layout {
   min-width: 0;
-  padding: 1rem;
+  padding: var(--space-4);
 }
 
-.viewer {
+.case-host {
+  min-width: 0;
+}
+
+.viewer,
+.viewer-fallback {
   min-height: 12rem;
-  border: 1px solid var(--dust);
 }
 
-.hud {
+.viewer-fallback {
   display: grid;
-  gap: 0.5rem;
-}
-
-.hud-buttons,
-.quick,
-.voice,
-.actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.found,
-.prompt,
-.note,
-.degraded,
-.notice p {
-  margin: 0;
-}
-
-.prompt {
-  color: var(--ghost);
-}
-
-.degraded {
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--lantern);
-}
-
-.scripted {
-  color: var(--ghost);
-  font-size: 0.75rem;
-}
-
-.notice {
-  padding: 1rem;
-  border: 1px solid var(--lantern);
-}
-
-.chat {
-  display: grid;
-  align-content: start;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: var(--ink);
-}
-
-.chat-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.chat h2 {
-  margin: 0;
-  font-size: 1.125rem;
+  place-items: center;
 }
 
 .transcript {
   list-style: none;
-  margin: 0;
   padding: 0;
   max-height: 14rem;
-  overflow-y: auto;
-}
-
-.line {
-  margin: 0 0 0.5rem;
-}
-
-.line.ghost {
-  font-family: var(--font-ghost);
-  color: var(--ghost);
-}
-
-.line.system {
-  color: var(--alarm);
-}
-
-.who {
-  font-size: 0.75rem;
-  color: var(--bone);
-}
-
-.say {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.say input[type="text"] {
-  min-height: var(--target);
-  padding: 0 0.75rem;
-  border: 1px solid var(--dust);
-  border-radius: 4px;
-  background: var(--ink);
-  color: var(--bone);
-  font: inherit;
-}
-
-.mic {
-  color: var(--ghost);
-}
-
-.farewell {
-  margin: 0 0 1rem;
-  padding-left: 1rem;
-  border-left: 3px solid var(--ghost);
-  font-family: var(--font-ghost);
-  color: var(--ghost);
 }
 
 .journal {
-  padding-left: 1.5rem;
+  padding-left: var(--space-5);
 }
 
-.journal li {
-  margin-bottom: 0.75rem;
-  font-family: var(--font-ghost);
-}
-
-.dialog-backdrop {
+.debug {
   position: fixed;
-  inset: 0;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  max-width: calc(100% - var(--space-4));
+}
+
+.debug dl {
   display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgb(11 13 16 / 85%);
-}
-
-.dialog {
-  width: 100%;
-  max-width: 32rem;
-  max-height: 100%;
-  overflow-y: auto;
-  padding: 1rem;
-  border: 1px solid var(--lantern);
-  background: var(--ink);
-}
-
-.dialog h2 {
-  margin-top: 0;
-}
-
-.standin {
-  display: grid;
-  gap: 0.5rem;
-  padding: 1rem;
-}
-
-.standin p {
+  grid-template-columns: auto 1fr;
+  gap: 0 var(--space-3);
   margin: 0;
 }
 
-.standin-walk {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-/*
- * Play a case: the choice on Haunt, the setup card and the Case Screen. Targets are at least 44 px
- * (the `--target` token) and the card is a plain column, so it works at 320 px.
- */
-.play-choice h2 {
-  margin-top: 1.5rem;
-}
-
-.play-choice .actions p {
-  margin: 0.25rem 0 0;
-}
-
-.case-setup {
-  display: grid;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--dust);
-}
-
-.case-setup h2 {
+.debug dd {
   margin: 0;
 }
 
+/* The setup card's choices: a column of rows at least as tall as the target, and the bot counts side by side. */
 .choice-group {
-  display: grid;
-  gap: 0.25rem;
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
@@ -460,230 +150,63 @@ a {
 
 .choice-group legend {
   padding: 0;
-  margin-bottom: 0.25rem;
-}
-
-.choice-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-height: var(--target);
-}
-
-.choice-option input {
-  width: 1.5rem;
-  height: 1.5rem;
-  flex: none;
 }
 
 .choice-bots {
-  grid-auto-flow: column;
-  justify-content: start;
-  gap: 1rem;
+  gap: var(--space-4);
 }
 
-.case-layout {
-  display: grid;
-  align-content: start;
-  gap: 0.75rem;
-  min-width: 0;
-  padding: 1rem;
-}
-
-.case-bar,
-.case-after {
-  margin: 0;
-}
-
-.case-host {
-  min-width: 0;
-}
-
-/*
- * Haunt: the Stage display, the ghost choice, the sky card and the delete action. Progress is a
- * list of steps and a <progress>, never a spinner alone; nothing moves, so reduced motion needs no
- * special case here.
- */
-.stage-bar {
-  width: 100%;
-  height: 0.75rem;
-}
-
-.stage-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  margin: 0.5rem 0 1rem;
-  padding: 0;
+/* Haunt: the ghost presets and the sky matches are lists, not bullets. */
+.presets,
+.matches {
   list-style: none;
-}
-
-.stage-steps li {
-  padding: 0.25rem 0.5rem;
-  border-bottom: 2px solid var(--dust);
-  color: var(--bone);
-}
-
-/* A step still to come is plainer; --dust is only the line under it, never the text. */
-.stage-steps li:not([data-done="true"]):not([aria-current="step"]) {
-  font-style: italic;
-}
-
-.stage-steps li[aria-current="step"] {
-  border-bottom-color: var(--lantern);
-  color: var(--lantern);
-}
-
-.ghost-choice,
-.sky-card {
-  margin-top: 1.5rem;
-}
-
-.presets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
   margin: 0;
   padding: 0;
-  list-style: none;
 }
 
-.button.preset {
-  gap: 0.5rem;
+.preset {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   min-height: 5rem;
 }
 
-.matches {
-  display: grid;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-  padding: 0;
-  list-style: none;
-}
-
-.memory-day {
-  margin-top: 1rem;
-  border: 1px solid var(--dust);
-}
-
-.memory-day label,
-.sky-body label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-height: var(--target);
-}
-
-.sky-body input,
-.sky-body select {
-  min-height: var(--target);
-  font: inherit;
-}
-
 /*
- * Create: the photo picker, the Sketch Pad and the candidates. The pad has `touch-action: none`, so a
- * finger draws and the page neither scrolls nor zooms inside it. Every control is at least 44 px.
+ * Create: the Sketch Pad has `touch-action: none`, so a finger draws and the page neither scrolls nor
+ * zooms inside it. The paper is painted by the pad itself (create/surface.ts), black ink on white.
  */
+.pad-frame {
+  max-width: 40rem;
+}
+
 .pad-canvas {
   display: block;
   width: 100%;
-  max-width: 40rem;
   height: auto;
   aspect-ratio: 4 / 3;
-  border: 1px solid var(--dust);
-  background: #ffffff;
   touch-action: none;
   cursor: crosshair;
 }
 
-.pad-tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin: 0.5rem 0;
-}
-
-.button[aria-pressed="true"] {
-  background: var(--lantern);
-  color: var(--ink);
-}
-
-.photo-picker input[type="file"],
-.sketch-pad input[type="text"] {
-  min-height: var(--target);
-  font: inherit;
-}
-
 .photo-preview {
-  display: block;
   max-height: 20rem;
   object-fit: contain;
-  border: 1px solid var(--dust);
 }
 
 .candidate-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  gap: 1rem;
+  gap: var(--space-4);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.candidate-list img {
-  display: block;
-  width: 100%;
-  height: auto;
-  margin-bottom: 0.5rem;
-  border: 1px solid var(--dust);
-}
-
-.create-error {
-  margin-bottom: 1rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--alarm);
-}
-
-.create > section + section,
-.create > .gallery-link {
-  margin-top: 1.5rem;
-}
-
-/*
- * Confirm: the picture the place will be made from, the question, the bot check. The picture is as
- * large as the page allows so it is readable, and every control is at least 44 px.
- */
+/* Confirm: the picture the place will be made from is as large as the page allows. */
 .confirm-figure {
-  margin: 0 0 1rem;
-}
-
-.confirm-image {
-  display: block;
-  width: 100%;
   max-width: 40rem;
-  height: auto;
-  border: 1px solid var(--dust);
-}
-
-.confirm-figure figcaption {
-  margin-top: 0.25rem;
-}
-
-.confirm-check,
-.confirm-error {
-  margin: 1rem 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--dust);
-}
-
-.confirm-error {
-  border-color: var(--alarm);
 }
 
 .turnstile-box {
   min-height: 4rem;
-}
-
-.confirm-nav {
-  margin-top: 1.5rem;
 }

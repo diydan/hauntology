@@ -22,24 +22,26 @@ export function Candidates({
   onRedraw: () => void;
 }) {
   return (
-    <section className="candidates" aria-labelledby="cand-title">
-      <h2 id="cand-title">Pick the one that feels right</h2>
+    <section className="candidates ui-stack" aria-labelledby="cand-title">
+      <h2 className="ui-heading" id="cand-title">Pick the one that feels right</h2>
       <ul className="candidate-list">
         {candidates.map((c, i) => (
-          <li key={c.imageId}>
-            <img src={c.imageUrl} alt={altFor(caption, i)} />
-            <button className="button" type="button" disabled={busy} onClick={() => onPick(c.imageId)}>
+          <li key={c.imageId} className="ui-stack ui-stack--tight">
+            <figure className="ui-figure">
+              <img src={c.imageUrl} alt={altFor(caption, i)} />
+            </figure>
+            <button className="ui-button" type="button" disabled={busy} onClick={() => onPick(c.imageId)}>
               {`Use option ${i + 1}`}
             </button>
           </li>
         ))}
       </ul>
       <p data-pictures-left>Pictures left this visit: {picturesLeft}</p>
-      <p>
-        <button className="button" type="button" disabled={busy} onClick={onBack}>
+      <p className="ui-row">
+        <button className="ui-button" type="button" disabled={busy} onClick={onBack}>
           Back to the sketch
         </button>{" "}
-        <button className="button" type="button" disabled={busy} onClick={onRedraw}>
+        <button className="ui-button" type="button" disabled={busy} onClick={onRedraw}>
           Redraw
         </button>
       </p>

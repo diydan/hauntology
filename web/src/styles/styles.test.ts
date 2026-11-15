@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import elements from "../../../design/elements.css?raw";
+import indexHtml from "../../index.html?raw";
 import app from "./app.css?raw";
 import tokens from "./tokens.css?raw";
 
@@ -37,9 +39,12 @@ describe("tokens", () => {
   it("--dust is below 4.5:1, so it is never used for text", () => {
     const p = palette();
     expect(contrast(p.dust!, p.ink!)).toBeLessThan(4.5);
-    const dustUses = [...app.matchAll(/([a-z-]+):\s*[^;]*var\(--dust\)/g)].map((m) => m[1]);
-    expect(dustUses.length).toBeGreaterThan(0);
-    for (const property of dustUses) expect(property, "--dust used as a text colour").not.toBe("color");
+    // Neither the app's own style nor the shared elements may set a text colour from it (or from a shape role built on it).
+    for (const css of [app, elements]) {
+      const dustUses = [...css.matchAll(/([a-z-]+):\s*[^;]*var\(--(?:dust|shape-quiet)\)/g)].map((m) => m[1]);
+      for (const property of dustUses) expect(property, "--dust used as a text colour").not.toBe("color");
+    }
+    expect(elements).toMatch(/--shape-quiet\)/); // the check is looking at the real elements
   });
 
   it("has one fade of 300 to 600 ms that falls to 150 ms or less under reduced motion", () => {
@@ -66,13 +71,19 @@ describe("tokens", () => {
 });
 
 describe("app styles", () => {
-  it("shows a lantern focus ring on every focusable thing", () => {
-    expect(app).toMatch(/:focus-visible\s*{[^}]*outline:\s*3px solid var\(--lantern\)/);
+  it("shows a lantern focus ring on every focusable thing (the ring is an element of the design system, on the body's ui-page)", () => {
+    expect(elements).toMatch(/\.ui-page :focus-visible\s*{[^}]*outline:\s*var\(--stroke-ring\) solid var\(--focus\)/);
+    expect(tokens).toMatch(/--focus:\s*var\(--lantern\)/);
+    expect(indexHtml).toMatch(/<body class="ui-page">/);
+    // The only ring turned off is on a place to put focus (tabindex -1), never on a control.
+    const turnedOff = [...app.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([^{}]+)\{[^}]*outline:\s*none[^}]*\}/g)].map((m) => m[1]!.trim());
+    expect(turnedOff).toEqual(['[tabindex="-1"]:focus']);
   });
 
   it("makes touch targets at least 44 px", () => {
     expect(tokens).toMatch(/--target:\s*44px/);
-    expect(app).toMatch(/\.button\s*{[^}]*min-height:\s*var\(--target\)[^}]*min-width:\s*var\(--target\)/);
+    expect(elements).toMatch(/\.ui-button\s*{[^}]*min-height:\s*var\(--target\)/);
+    expect(elements).toMatch(/a\.ui-button\s*{[^}]*display:\s*inline-flex/); // a link used as a button is a box, so the height counts
   });
 
   it("puts the Chat in a bottom sheet below 900 px and a side panel from 900 px, by container query", () => {
@@ -84,8 +95,10 @@ describe("app styles", () => {
   });
 
   it("shows a button that is off the same way whether it is `disabled` or `aria-disabled`", () => {
-    expect(app).toMatch(/\.button:disabled\s*{[^}]*cursor:\s*not-allowed/);
-    expect(app).toMatch(/\.button\[aria-disabled="true"\]\s*{[^}]*cursor:\s*not-allowed/);
+    const off = (selector: string) => new RegExp(`${selector.replace(/[.[\]()']/g, "\\$&")}\\s*{([^}]*)}`).exec(elements)?.[1] ?? "";
+    expect(off(".ui-button:disabled")).toMatch(/opacity:\s*0\.4/);
+    expect(off(".ui-button[aria-disabled='true']")).toMatch(/opacity:\s*0\.4/);
+    expect(off(".ui-button[aria-disabled='true']")).toMatch(/cursor:\s*not-allowed/);
   });
 
   it("lays the Gallery out in a grid that never needs more than the screen is wide", () => {
@@ -98,5 +111,52 @@ describe("app styles", () => {
     expect(app).toMatch(/overflow-wrap:\s*anywhere/);
     expect(app).toMatch(/img,\s*canvas,\s*video\s*{[^}]*max-width:\s*100%/);
     expect(app).toMatch(/\.screen\s*{[^}]*max-width:\s*48rem/);
+  });
+});
+
+describe("app.css is layout only", () => {
+  // The look (colour, type face, corners) is the design system's: design/tokens.json and design/elements.css.
+  const declarations = [...app.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/([a-z-]+)\s*:\s*([^;{}]+);/g)].map((m) => ({ property: m[1]!, value: m[2]!.trim() }));
+
+  it("writes no colour, type face, corner or shadow of its own", () => {
+    expect(declarations.length).toBeGreaterThan(40);
+    for (const d of declarations) {
+      expect(d.property, `${d.property}: ${d.value}`).not.toMatch(/^(color|background(-[a-z]+)?|border-(?:[a-z]+-)?color|outline-color|font(-family)?|border-radius|box-shadow)$/);
+    }
+    expect(app).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/);
+    expect(app).not.toMatch(/var\(--(ink|ink-deep|void|wood|wood-2|wood-3|ember|wood-line|leather|dust|ash|bone|lantern|lantern-hi|ghost|alarm|surface-[a-z]+|text(-quiet)?|accent(-[a-z]+)?|danger|line(-strong)?)\)/);
+  });
+
+  it("puts every gap, margin and padding on the space scale: 0, auto, or a --space token", () => {
+    const SPACE = /^(0|auto|var\(--space-[0-6]\)|calc\((?:var\(--space-[0-6]\)|[-+*/() 0-9.])+\))$/;
+    const pieces = (value: string): string[] => {
+      const out: string[] = [];
+      let depth = 0;
+      let cur = "";
+      for (const ch of value) {
+        if (ch === "(") depth += 1;
+        if (ch === ")") depth -= 1;
+        if (/\s/.test(ch) && depth === 0) {
+          if (cur) out.push(cur);
+          cur = "";
+        } else cur += ch;
+      }
+      if (cur) out.push(cur);
+      return out;
+    };
+    let checked = 0;
+    for (const d of declarations.filter((x) => /^(gap|row-gap|column-gap|padding(-[a-z]+)?|margin(-[a-z]+)?)$/.test(x.property))) {
+      for (const piece of pieces(d.value)) {
+        checked += 1;
+        expect(piece, `${d.property}: ${d.value}`).toMatch(SPACE);
+      }
+    }
+    expect(checked).toBeGreaterThan(20);
+  });
+
+  it("is made of the elements: the old look classes are gone from the screens, and the body is a ui-page", () => {
+    for (const old of [".button", ".banner", ".reason", ".card", ".notice", ".dialog", ".chat-head", ".line", ".visually-hidden"]) expect(app, old).not.toMatch(new RegExp(`(^|[\\s,}])\\${old}[\\s{,.:\\[]`, "m"));
+    expect(elements).toMatch(/\.ui-stack > \*\s*{\s*margin:\s*0;/); // the stack's gap is the only space between its blocks
+    expect(app).not.toMatch(/a\.ui-button|\.ui-stack/); // those two live in the elements now, not in a screen's style
   });
 });

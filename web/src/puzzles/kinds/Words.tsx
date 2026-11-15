@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { CANVAS, withAlpha } from "../art/palette";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import type { KindProps } from "./types";
 import "./Words.css";
@@ -11,7 +12,7 @@ const TICK_AT = 0.6; // and one this lit buzzes when it comes into the beam
 const TAP_PX = 34;
 const DRAG_SLOP = 10;
 const KEY_STEP = 24;
-const BG = "#07080b";
+const BG = CANVAS.well;
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
 /** How lit a letter is by a torch at (bx, by): 1 inside the core, falling to 0 at the edge of the beam. */
@@ -163,8 +164,8 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
     c.fillStyle = BG;
     c.fillRect(0, 0, WALL, WALL);
     const g = c.createRadialGradient(b.x, b.y, 4, b.x, b.y, BEAM_R);
-    g.addColorStop(0, "rgba(255,240,200,0.20)");
-    g.addColorStop(1, "rgba(255,240,200,0)");
+    g.addColorStop(0, withAlpha(CANVAS.text, 0.2));
+    g.addColorStop(1, withAlpha(CANVAS.text, 0));
     c.fillStyle = g;
     c.fillRect(0, 0, WALL, WALL);
     c.font = "700 40px system-ui, sans-serif";
@@ -175,7 +176,7 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
       if (a <= 0) return;
       const order = latest.current.picked.indexOf(i);
       c.globalAlpha = a * 0.95;
-      c.fillStyle = order >= 0 ? "#7fd6a1" : "#f3ead2";
+      c.fillStyle = order >= 0 ? CANVAS.ring : CANVAS.text;
       c.fillText(l.ch, px(i), py(i));
       if (order >= 0) { // a picked letter also shows its place in the word, not only a colour
         c.font = "700 16px system-ui, sans-serif";
@@ -189,7 +190,7 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
   const litCh = lit === null ? null : (view.letters[lit]?.ch ?? null);
   return (
     <div className="pz-words">
-      <p className="pz-hint">{tilt === "on" ? "Lean the phone to sweep the torch." : "Drag a finger to aim the torch."} Pick the lit letters, left to right.</p>
+      <p className="ui-hint pz-hint">{tilt === "on" ? "Lean the phone to sweep the torch." : "Drag a finger to aim the torch."} Pick the lit letters, left to right.</p>
       <canvas
         ref={canvas} className="pz-canvas pz-wall" width={WALL * Math.min(2, window.devicePixelRatio || 1)} height={WALL * Math.min(2, window.devicePixelRatio || 1)}
         role="application" tabIndex={0} aria-label="Dark wall with hidden letters. Arrow keys aim the torch. Enter picks the lit letter."
@@ -197,7 +198,7 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
       />
       <div className="pz-field">
         <p className="pz-readout pz-lit" aria-live="off">{litCh === null ? "No letter is lit" : `Lit: ${litCh}`}</p>
-        <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={lit === null || picked.length >= view.n} onClick={() => { if (lit !== null) choose(lit); }}>
+        <button type="button" className="ui-button ui-button--primary pz-wide" disabled={lit === null || picked.length >= view.n} onClick={() => { if (lit !== null) choose(lit); }}>
           {litCh === null ? "Pick the lit letter" : `Pick ${litCh}`}
         </button>
       </div>
@@ -205,8 +206,8 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
         <div className="pz-digits" role="img" aria-label={`Letters so far: ${picked.length} of ${view.n}`}>
           {Array.from({ length: view.n }, (_, i) => <span key={i}>{picked[i] === undefined ? "·" : (view.letters[picked[i] as number]?.ch ?? "·")}</span>)}
         </div>
-        <div className="pz-row">
-          <button type="button" className="pz-btn pz-btn-quiet" disabled={picked.length === 0} onClick={clear}>Clear</button>
+        <div className="ui-row ui-row--center">
+          <button type="button" className="ui-button" disabled={picked.length === 0} onClick={clear}>Clear</button>
           {tiltButtons}
         </div>
       </div>

@@ -30,5 +30,5 @@ The look is written once. Do not invent a colour, a size, a gap, a corner or a t
 ## Checks that fail the build
 `pnpm check-tokens`, `tools/test/design-tokens.test.mjs`, `tools/test/design-system.test.mjs`, and the web app's `styles.test.ts`. Run them after touching `design/`.
 
-## Screens built before this
-`web/src/styles/app.css` (`.button`, `.banner`, `.screen`) and the puzzle screens (`pz-`) still work beside the elements. Move a screen onto the elements when you next change it, in the same change (design-system task 4).
+## Screens
+The web app (`web/src/app/**`, `web/src/styles/app.css`) and the puzzle screens (`web/src/puzzles/**`) are on the elements. `app.css` is layout only. A puzzle's game pieces keep `pz-` classes but use roles and tokens only; its buttons, panels, hints, status and gauges are `ui-` elements, with the 48 px targets set on `.pz-host`. Tests keep raw colours and palette names out of those stylesheets. Open: design-system task 4.5.

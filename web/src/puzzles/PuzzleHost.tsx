@@ -138,8 +138,8 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
   // Tilt is a way to play, not a way out: its buttons go to the screen, in a row with the screen's own buttons.
   const tiltButtons = info.usesTilt ? (
     <>
-      <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={tilt === "on"} onClick={() => (tilt === "on" ? feel.motion.disable() : void feel.motion.enable())}>{tilt === "on" ? "Tilt: on" : "Tilt"}</button>
-      {tilt === "on" ? <button type="button" className="pz-btn pz-btn-quiet" onClick={() => feel.motion.holdLevel()}>Hold level</button> : null}
+      <button type="button" className="ui-button" aria-pressed={tilt === "on"} onClick={() => (tilt === "on" ? feel.motion.disable() : void feel.motion.enable())}>{tilt === "on" ? "Tilt: on" : "Tilt"}</button>
+      {tilt === "on" ? <button type="button" className="ui-button" onClick={() => feel.motion.holdLevel()}>Hold level</button> : null}
     </>
   ) : null;
   const pips = useMemo(() => Array.from({ length: attempts }, (_, i) => i < wrong), [attempts, wrong]);
@@ -156,51 +156,51 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
     <section className={`pz-host${glow === 0 ? "" : glow % 2 === 1 ? " pz-glow-a" : " pz-glow-b"}`} aria-label="Puzzle">
       <header className="pz-bar-row">
         <div className="pz-bar-left">
-          <button ref={helpButton} type="button" className="pz-help-btn" aria-label="How this puzzle works" aria-expanded={helping} onClick={() => { setPeeking(false); setHelping((h) => !h); }}>?</button>
+          <button ref={helpButton} type="button" className="ui-button ui-button--round" aria-label="How this puzzle works" aria-expanded={helping} onClick={() => { setPeeking(false); setHelping((h) => !h); }}>?</button>
           <div className="pz-tries">
             <span className="pz-bar-label" aria-hidden="true">Tries</span>
-            <div className="pz-pips" role="img" aria-label={`${attempts - wrong} of ${attempts} tries left`}>{pips.map((used, i) => <span key={i} className={used ? "pz-pip pz-pip-used" : "pz-pip"} />)}</div>
+            <div className="ui-lamps" role="img" aria-label={`${attempts - wrong} of ${attempts} tries left`}>{pips.map((used, i) => <span key={i} className={used ? "ui-lamp" : "ui-lamp is-on"} />)}</div>
           </div>
         </div>
         <span className="pz-timer" aria-hidden="true"><span className="pz-bar-label">Time</span> {capMs === null ? fmtS(shown) : `${fmtS(shown)} of ${Math.round(capMs / 1000)} s`}</span>
       </header>
       {helping ? <HelpCard kind={kind} clock={capMs !== null} onClose={closeHelp} /> : null}
       {peeking && clue ? (
-        <div className="pz-card pz-peek" role="dialog" aria-label="The clue">
-          <h2 className="pz-title">The clue</h2>
+        <div className="ui-panel pz-card pz-peek" role="dialog" aria-label="The clue">
+          <h2 className="ui-heading">The clue</h2>
           <SightClue sight={clue} />
-          {capMs !== null ? <p className="pz-muted">The clock keeps running.</p> : null}
-          <button type="button" className="pz-btn pz-btn-primary" onClick={() => setPeeking(false)}>Back to the puzzle</button>
+          {capMs !== null ? <p className="ui-hint">The clock keeps running.</p> : null}
+          <button type="button" className="ui-button ui-button--primary" onClick={() => setPeeking(false)}>Back to the puzzle</button>
         </div>
       ) : null}
-      <div className="pz-stage" hidden={peeking || helping}>
+      <div className="ui-panel pz-stage" hidden={peeking || helping}>
         <Suspense fallback={<div className="pz-skeleton" aria-busy="true" aria-label="Loading the puzzle" />}>
           <Screen view={view as never} feel={feel} assist={assist} reducedMotion={reducedMotion} elapsed={elapsed} submit={submit as never} resetKey={wrong} announce={announce} hear={onHear} tiltButtons={tiltButtons} />
         </Suspense>
       </div>
       <div className="pz-feedback">
-        <p className="pz-status" role="status" aria-live="polite">{message}</p>
-        <p className="pz-sr" aria-live="polite">{spoken}</p>
-        <p className="pz-twin" aria-hidden="true">{twin ? (twin.type === "buzz" ? `Buzz: ${twin.name}` : `♪ ${twin.name}${twin.muted ? " · sound is off" : ""}`) : ""}</p>
+        <p className="ui-status pz-status" role="status" aria-live="polite">{message}</p>
+        <p className="ui-sr-only pz-sr" aria-live="polite">{spoken}</p>
+        <p className="ui-note pz-twin" aria-hidden="true">{twin ? (twin.type === "buzz" ? `Buzz: ${twin.name}` : `♪ ${twin.name}${twin.muted ? " · sound is off" : ""}`) : ""}</p>
       </div>
       {phase === "done" && reply ? (
-        <div className="pz-result" data-outcome={reply.outcome}>
+        <div className="ui-panel pz-result" data-outcome={reply.outcome}>
           <p className="pz-result-title">{reply.outcome === "solved" ? "Opened" : "Nothing came loose"}</p>
-          <button type="button" className="pz-btn pz-btn-primary" onClick={() => onFinish?.(reply)}>Done</button>
+          <button type="button" className="ui-button ui-button--primary" onClick={() => onFinish?.(reply)}>Done</button>
         </div>
       ) : (
         <footer className="pz-foot-wrap">
-          <div className="pz-foot">
-            {assist && clue ? <button type="button" className="pz-btn" onClick={() => { setHelping(false); setPeeking(true); }}>See the clue again</button> : null}
-            {skipOffered ? <button type="button" className="pz-btn" onClick={onSkip}>Let the ghost open it</button> : null}
-            {confirmGive ? null : <button type="button" className="pz-btn pz-btn-quiet" onClick={() => setConfirmGive(true)}>Give up</button>}
+          <div className="ui-row ui-row--center pz-foot">
+            {assist && clue ? <button type="button" className="ui-button" onClick={() => { setHelping(false); setPeeking(true); }}>See the clue again</button> : null}
+            {skipOffered ? <button type="button" className="ui-button" onClick={onSkip}>Let the ghost open it</button> : null}
+            {confirmGive ? null : <button type="button" className="ui-button ui-button--quiet" onClick={() => setConfirmGive(true)}>Give up</button>}
           </div>
           {confirmGive ? (
             <div className="pz-give">
-              <p className="pz-muted">Give up on this lock? Nothing will open.{capMs !== null ? " The time you used still counts." : ""}</p>
+              <p className="ui-hint">Give up on this lock? Nothing will open.{capMs !== null ? " The time you used still counts." : ""}</p>
               <div className="pz-grid2 pz-confirm">
-                <button type="button" className="pz-btn pz-btn-primary" onClick={() => setConfirmGive(false)}>Keep playing</button>
-                <button type="button" className="pz-btn pz-btn-quiet" onClick={onGiveUp}>Yes, give up</button>
+                <button type="button" className="ui-button ui-button--primary" onClick={() => setConfirmGive(false)}>Keep playing</button>
+                <button type="button" className="ui-button ui-button--quiet" onClick={onGiveUp}>Yes, give up</button>
               </div>
             </div>
           ) : null}

@@ -22,30 +22,30 @@ export default function Home() {
 
   const reason = caps?.reason ? reasonCopy(caps.reason) : null;
   return (
-    <main className="screen">
+    <main className="screen ui-stack">
       <ScreenHeading>Hauntology</ScreenHeading>
-      <p className="premise">{HOME_PREMISE}</p>
+      <p className="ui-lead">{HOME_PREMISE}</p>
 
-      <ul className="actions">
+      <ul className="actions ui-choices">
         <li>
-          <Action label="Draw a place" on={caps?.canDraw ?? false} />
+          <Action label="Draw a place" on={caps?.canDraw ?? false} primary />
         </li>
         <li>
           <Action label="Upload a photo" on={caps?.canUpload ?? false} />
         </li>
         <li>
-          <Link className="button" to={{ screen: "gallery" }}>
+          <Link className="ui-button ui-button--block" to={{ screen: "gallery" }}>
             Visit a gallery place
           </Link>
         </li>
       </ul>
       {reason ? (
-        <p id="home-reason" className="reason">
+        <p id="home-reason" className="ui-note is-warn">
           {reason}
         </p>
       ) : null}
 
-      <ul className="facts">
+      <ul className="ui-facts">
         {HOME_FACTS.map((fact) => (
           <li key={fact}>{fact}</li>
         ))}
@@ -55,16 +55,17 @@ export default function Home() {
 }
 
 /** A link to Create when on. When off, a button that does nothing, still reachable by keyboard, tied to the reason line. */
-function Action({ label, on }: { label: string; on: boolean }) {
+function Action({ label, on, primary = false }: { label: string; on: boolean; primary?: boolean }) {
+  const cls = `ui-button ui-button--block${primary ? " ui-button--primary" : ""}`;
   if (on) {
     return (
-      <Link className="button" to={{ screen: "create" }}>
+      <Link className={cls} to={{ screen: "create" }}>
         {label}
       </Link>
     );
   }
   return (
-    <button className="button" type="button" aria-disabled="true" aria-describedby="home-reason">
+    <button className={cls} type="button" aria-disabled="true" aria-describedby="home-reason">
       {label}
     </button>
   );

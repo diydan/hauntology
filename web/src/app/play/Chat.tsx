@@ -52,51 +52,51 @@ export function Chat({
   const isHold = (e: KeyboardEvent) => (e.key === " " || e.key === "Enter") && !e.repeat;
 
   return (
-    <aside className="chat" aria-label="Chat with the ghost" onKeyDown={onKeyDown} data-chat>
-      <div className="chat-head">
-        <h2>The ghost</h2>
-        <button className="button" type="button" onClick={onClose}>
+    <aside className="chat ui-panel ui-stack" aria-label="Chat with the ghost" onKeyDown={onKeyDown} data-chat>
+      <div className="ui-row ui-row--between">
+        <h2 className="ui-heading">The ghost</h2>
+        <button className="ui-button" type="button" onClick={onClose}>
           Close chat
         </button>
       </div>
 
-      <ol ref={log} className="transcript" role="log" aria-live="off" aria-label="Conversation">
+      <ol ref={log} className="transcript ui-log" role="log" aria-live="off" aria-label="Conversation">
         {ui.lines.map((line) => (
-          <li key={line.id} className={`line ${line.who}`}>
-            <span className="who">{WHO[line.who]}: </span>
+          <li key={line.id} className={`ui-line${line.who === "ghost" ? " ui-line--whisper" : line.who === "system" ? " ui-line--system" : ""}`}>
+            <span className="ui-line-who">{WHO[line.who]}: </span>
             {line.text}
           </li>
         ))}
       </ol>
-      {!gate.enabled ? <p className="note">Please wait {gate.secondsLeft} seconds.</p> : null}
+      {!gate.enabled ? <p className="ui-note">Please wait {gate.secondsLeft} seconds.</p> : null}
 
-      <div className="quick" role="group" aria-label="Quick actions">
+      <div className="ui-row" role="group" aria-label="Quick actions">
         {QUICK_BUTTONS.map((b) => (
-          <button key={b} className="button" type="button" disabled={waiting} onClick={() => onSubmit({ button: b })}>
+          <button key={b} className="ui-button" type="button" disabled={waiting} onClick={() => onSubmit({ button: b })}>
             {BUTTON_LABELS[b]}
           </button>
         ))}
       </div>
 
-      <form className="say" onSubmit={send}>
+      <form className="ui-stack ui-stack--tight" onSubmit={send}>
         <label htmlFor="chat-input">Say something</label>
         <input
-          id="chat-input" ref={input} type="text" value={text} maxLength={MAX_INPUT_CHARS} autoComplete="off"
+          className="ui-input" id="chat-input" ref={input} type="text" value={text} maxLength={MAX_INPUT_CHARS} autoComplete="off"
           onChange={(e) => setText(e.target.value)}
         />
-        <button className="button" type="submit" disabled={waiting || text.trim() === ""}>
+        <button className="ui-button" type="submit" disabled={waiting || text.trim() === ""}>
           Send
         </button>
       </form>
 
       {voiceAvailable ? (
-        <div className="voice" role="group" aria-label="Voice">
-          <label>
-            <input type="checkbox" checked={voice.speak} onChange={(e) => onSpeak(e.target.checked)} /> Speak aloud
+        <div className="ui-row" role="group" aria-label="Voice">
+          <label className="ui-choice">
+            <input className="ui-check" type="checkbox" checked={voice.speak} onChange={(e) => onSpeak(e.target.checked)} /> Speak aloud
           </label>
           {voice.mic === "unsupported" ? null : (
             <button
-              className="button" type="button" aria-pressed={voice.mic === "recording"} disabled={voice.mic === "unavailable" || waiting}
+              className="ui-button" type="button" aria-pressed={voice.mic === "recording"} disabled={voice.mic === "unavailable" || waiting}
               onPointerDown={(e) => { e.preventDefault(); onPress(); }}
               onPointerUp={onRelease} onPointerLeave={onRelease} onPointerCancel={onRelease}
               onKeyDown={(e) => { if (isHold(e)) { e.preventDefault(); onPress(); } }}
@@ -105,10 +105,10 @@ export function Chat({
               Hold to talk
             </button>
           )}
-          {voice.mic === "starting" ? <span className="mic">Waiting for the microphone…</span> : null}
-          {voice.mic === "recording" ? <span className="mic" data-mic-indicator>● Listening… let go to send</span> : null}
-          {voice.mic === "sending" ? <span className="mic">Sending…</span> : null}
-          {voice.note !== null ? <p className="note">{voice.note}</p> : null}
+          {voice.mic === "starting" ? <span className="ui-hint">Waiting for the microphone…</span> : null}
+          {voice.mic === "recording" ? <span className="ui-hint" data-mic-indicator>● Listening… let go to send</span> : null}
+          {voice.mic === "sending" ? <span className="ui-hint">Sending…</span> : null}
+          {voice.note !== null ? <p className="ui-note">{voice.note}</p> : null}
         </div>
       ) : null}
     </aside>

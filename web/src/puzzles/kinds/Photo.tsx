@@ -157,7 +157,7 @@ export default function Photo({ view, feel, reducedMotion, submit, announce }: K
 
   return (
     <div className="pz-photo">
-      <p className="pz-hint">{view.turning ? "Put the photo you saw back together. Drag pieces onto the frame. Tap a piece to pick it; tap it again to turn it." : "Put the photo you saw back together. Drag pieces onto the frame, or tap a piece and then an empty spot."}</p>
+      <p className="ui-hint pz-hint">{view.turning ? "Put the photo you saw back together. Drag pieces onto the frame. Tap a piece to pick it; tap it again to turn it." : "Put the photo you saw back together. Drag pieces onto the frame, or tap a piece and then an empty spot."}</p>
       <div className="pz-field">
         <div ref={board} className={`pz-photo-board${reducedMotion ? " pz-photo-still" : ""}`} data-cols={cols} role="group" aria-label="Torn photo" style={{ aspectRatio: `${W} / ${H}` }}>
           {range(n).map((i) => <span key={`t${i}`} className="pz-photo-cell" style={box(trayAt(i).x + INSET, trayAt(i).y + INSET, CELL - 2 * INSET)} aria-hidden="true" />)}
@@ -187,9 +187,9 @@ export default function Photo({ view, feel, reducedMotion, submit, announce }: K
         <p className="pz-readout pz-photo-count" role="status">{inFrame} of {n} in the frame</p>
       </div>
       <div className={view.turning ? "pz-grid3" : "pz-grid2"}>
-        {view.turning ? <button type="button" className="pz-btn" disabled={m.picked === null} onClick={() => { if (m.picked !== null) turn(m.picked); }}>Turn</button> : null}
-        <button type="button" className="pz-btn pz-btn-quiet" aria-label="Back to tray" disabled={!pickedInFrame} onClick={() => { if (m.picked !== null) toTray(m.picked); }}>To tray</button>
-        <button type="button" className="pz-btn pz-btn-primary" aria-label="Check the photo" disabled={inFrame < n} onClick={check}>Check</button>
+        {view.turning ? <button type="button" className="ui-button" disabled={m.picked === null} onClick={() => { if (m.picked !== null) turn(m.picked); }}>Turn</button> : null}
+        <button type="button" className="ui-button" aria-label="Back to tray" disabled={!pickedInFrame} onClick={() => { if (m.picked !== null) toTray(m.picked); }}>To tray</button>
+        <button type="button" className="ui-button ui-button--primary" aria-label="Check the photo" disabled={inFrame < n} onClick={check}>Check</button>
       </div>
     </div>
   );

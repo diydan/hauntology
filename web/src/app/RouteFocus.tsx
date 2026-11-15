@@ -16,7 +16,7 @@ export function ScreenHeading({ children }: { children: ReactNode }) {
     if (flag.current) ref.current?.focus();
   }, [flag]);
   return (
-    <h1 ref={ref} tabIndex={-1}>
+    <h1 className="ui-heading" ref={ref} tabIndex={-1}>
       {children}
     </h1>
   );

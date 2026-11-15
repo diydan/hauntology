@@ -1,4 +1,4 @@
 /* Hidden words. A square wall scaled by CSS, so it fits from 320 px wide. */
-.pz-wall { width: 100%; max-width: 22.5rem; height: auto; background: #07080b; touch-action: none; outline-offset: 2px; }
-.pz-wall:focus-visible { outline: 3px solid var(--lantern); }
-.pz-lit { min-height: 1.75rem; font-size: 1.1rem; }
+.pz-wall { width: 100%; max-width: 22.5rem; height: auto; background: var(--surface-sunk); touch-action: none; outline-offset: var(--stroke-ring); }
+.pz-wall:focus-visible { outline: var(--stroke-frame) solid var(--focus); }
+.pz-lit { min-height: 1.75rem; font-size: var(--text-title); }

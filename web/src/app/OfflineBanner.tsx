@@ -23,7 +23,7 @@ export function OfflineBanner() {
 
   if (online) return null;
   return (
-    <p className="banner" data-offline-banner>
+    <p className="ui-notice ui-notice--danger" data-offline-banner>
       {OFFLINE_TEXT}
     </p>
   );

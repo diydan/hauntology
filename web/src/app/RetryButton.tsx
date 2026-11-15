@@ -15,7 +15,7 @@ export function RetryButton({ retryAfterSec, onRetry }: { retryAfterSec: number 
     }
   }, [retryAfterSec, gate]);
   return (
-    <button className="button" type="button" disabled={!gate.enabled} onClick={onRetry}>
+    <button className="ui-button" type="button" disabled={!gate.enabled} onClick={onRetry}>
       {gate.enabled ? "Try again" : `Try again in ${gate.secondsLeft}`}
     </button>
   );

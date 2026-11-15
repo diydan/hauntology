@@ -34,15 +34,21 @@
   - [x] 3.3 The web app loads `design/fonts.css` and `design/elements.css` after `tokens.css` (`web/src/main.tsx`); the production build bundles the four fonts from the app's own origin
     - _Requirements: 5.2_
 
-- [ ] 4. Move the screens built before this spec (each one when it is next touched, in the same change)
-  - [ ] 4.1 `web/src/puzzles/puzzles.css`: the raw hex colours (`#14171c`, `#1c2027`) and `rgb(233 228 216 / 22%)` become surface and text tokens
+- [ ] 4. Move the screens built before this spec
+  - [x] 4.1 `web/src/puzzles/puzzles.css`: the raw hex colours (`#14171c`, `#1c2027`) and `rgb(233 228 216 / 22%)` are surface and text roles; the puzzle styles hold no hex, no `rgb()` and no palette name
+    - Done 2026-11-15. The wire colours and the 12 shelf-item hues in `web/src/puzzles/art/` stay as hex on purpose: they are game content that must tell things apart, not interface colour (see 4.5).
     - _Requirements: 5.3_
-  - [ ] 4.2 `web/src/styles/app.css`: `.button`, `.banner` and `.screen` become `ui-button`, `ui-notice` and `ui-panel` in the screens that use them; `.button`'s 4 px corner becomes `--radius-md`
+  - [x] 4.2 `web/src/styles/app.css` is layout only (689 lines became about 80): `.button`, `.banner`, `.notice`, `.card`, `.dialog` and the rest are the shared elements, and `<body class="ui-page">`
+    - Done 2026-11-15. The app's body text is now the mockup's 13 px mono (it was 16 px). Ghost lines in the Chat are cream serif with a green edge, not green text.
     - _Requirements: 5.3_
-  - [ ] 4.3 `web/src/app/screens/*`, `web/src/app/play/*`, `web/src/app/create/*`, `web/src/app/haunt/*`: the same, screen by screen
+  - [x] 4.3 `web/src/app/screens/*`, `web/src/app/play/*`, `web/src/app/create/*`, `web/src/app/haunt/*`, `web/src/app/case/*`: the same, screen by screen, one `ui-button--primary` to a screen
+    - Done 2026-11-15. Checked in a headless browser at 390 and 1280 px: no console errors, no sideways scroll, no control under 44 px. `create/surface.ts` still paints black ink on white paper: that is the ink check's pixel contract, not look.
     - _Requirements: 5.2, 5.3_
-  - [ ] 4.4 Move the 11 puzzle phone screens (`pz-` classes) onto `ui-button`, `ui-panel`, `ui-status` and the spacing tokens; keep their 48 px targets (`--pz-target`)
+  - [x] 4.4 The 11 puzzle phone screens: buttons, panels, hints, status, gauges and rows are `ui-` elements; the game pieces keep `pz-` classes made of roles and tokens; 48 px targets stay (`--pz-target` on the host); `--pz-space-*` is gone, they use `--space-1` to `--space-4`
+    - Done 2026-11-15. Checked in a headless browser at 390 px: every kind, no console errors, no sideways scroll, every control at least 48 px.
     - _Requirements: 5.3_
+  - [ ] 4.5 What is left: a `game-art` token group for the wire and shelf-item hues; a `ui-switch` element (or `aria-checked` on `ui-button`) for the puzzle settings switches, which still use `pz-switch`; a plain serif list element for the journal and chat (they use `ui-log` and `ui-line`); `ui-notice` at body size for long errors is done, a danger panel is not
+    - _Requirements: 4.4, 5.3_
 
 - [x] 5. Specs and steering
   - [x] 5.1 `.kiro/steering/design-system.md`, `visual-style.md` and `structure.md` updated
@@ -53,4 +59,4 @@
     - _Requirements: 6.1, 6.3, 6.4_
 
 - [ ] 6. Checkpoint
-  - Run `pnpm check-tokens`, `node tools/check-traceability.mjs`, `node --test tools/test/design-tokens.test.mjs tools/test/design-system.test.mjs tools/test/voice-demo.test.mjs`, `pnpm --filter web test` and `pnpm typecheck`; open `/design/` and the play-through on a real phone. Open: tasks 4.1 to 4.4.
+  - Run `pnpm check-tokens`, `node tools/check-traceability.mjs`, `node --test tools/test/design-tokens.test.mjs tools/test/design-system.test.mjs tools/test/voice-demo.test.mjs`, `pnpm --filter web test` and `pnpm typecheck`; open `/design/` and the play-through on a real phone (`mtest.hauntology.app/design/` after `cd tools/playtest && node build.mjs && wrangler deploy`). Open: task 4.5.

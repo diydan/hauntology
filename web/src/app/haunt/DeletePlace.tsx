@@ -62,16 +62,16 @@ export function DeletePlace({ worldId, leave }: { worldId: string; leave: () => 
   return (
     <>
       <p>
-        <button className="button" type="button" onClick={() => setAsking(true)}>
+        <button className="ui-button" type="button" onClick={() => setAsking(true)}>
           Delete my place
         </button>
       </p>
       {asking ? (
         <Dialog title="Delete this place?" closeLabel="Keep it" onClose={() => (busy ? undefined : setAsking(false))}>
           <p>This removes your place, its ghost and your game right now. It cannot be undone.</p>
-          {problem ? <p className="reason">{problem}</p> : null}
+          {problem ? <p className="ui-note is-warn">{problem}</p> : null}
           <p>
-            <button className="button" type="button" disabled={busy} onClick={() => void confirm()}>
+            <button className="ui-button ui-button--danger" type="button" disabled={busy} onClick={() => void confirm()}>
               {busy ? "Deleting…" : "Delete my place"}
             </button>
           </p>

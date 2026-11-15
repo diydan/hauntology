@@ -570,7 +570,7 @@ test('page: stage first, and a Director that is a bottom sheet on a phone and a 
 
 test('page: every control is at least 44 px, and the transport buttons are bigger', () => {
   assert.match(rule('.ui-button'), /min-height: var\(--target\)/);
-  assert.match(rule('.ui-select, .ui-range'), /min-height: var\(--target\)/);
+  assert.match(rule('.ui-select, .ui-range, .ui-input'), /min-height: var\(--target\)/);
   assert.match(rule('.ui-fold > summary'), /min-height: var\(--target\)/);
   assert.match(rule('.ui-field--check .ui-field-label'), /min-height: var\(--target\)/, 'the words of a tick box are a target too');
   assert.match(rule('.ui-tool'), /min-height: var\(--target-main\)/);

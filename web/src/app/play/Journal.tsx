@@ -8,9 +8,9 @@ export function Journal({ entries, onClose }: { entries: JournalEntry[]; onClose
       {entries.length === 0 ? (
         <p>Nothing found yet. Walk closer to the places that feel strange.</p>
       ) : (
-        <ol className="journal">
+        <ol className="journal ui-log">
           {entries.map((e) => (
-            <li key={e.anchorId}>{e.text}</li>
+            <li key={e.anchorId} className="ui-log-row">{e.text}</li>
           ))}
         </ol>
       )}

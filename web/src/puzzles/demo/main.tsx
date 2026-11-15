@@ -1,6 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "../../styles/tokens.css";
+// The shared look (design/): the two self-hosted fonts and the reusable ui- elements, as web/src/main.tsx loads them.
+import "../../../../design/fonts.css";
+import "../../../../design/elements.css";
 import "./demo.css";
 import { PuzzleDemo } from "./PuzzleDemo";
 

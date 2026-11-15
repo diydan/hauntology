@@ -61,14 +61,14 @@ export default function Confirm() {
   const noPlaces = s.k === "ready" ? noPlacesLine(s.quota) : null;
 
   return (
-    <main className="screen confirm">
+    <main className="screen ui-stack confirm">
       <ScreenHeading>{CONFIRM_QUESTION}</ScreenHeading>
 
       {s.k === "quoting" ? <p aria-busy="true">Looking at your picture…</p> : null}
 
       {quote !== undefined ? (
         <>
-          <figure className="confirm-figure">
+          <figure className="confirm-figure ui-figure">
             <img className="confirm-image" src={quote.imageUrl} alt={CONFIRM_IMAGE_ALT} />
             <figcaption>{CONFIRM_IMAGE_CAPTION}</figcaption>
           </figure>
@@ -80,7 +80,7 @@ export default function Confirm() {
       {s.k === "ready" ? (
         <p>
           <button
-            className="button"
+            className="ui-button ui-button--primary"
             type="button"
             aria-disabled={noPlaces === null ? undefined : "true"}
             aria-describedby={noPlaces === null ? undefined : "confirm-reason"}
@@ -91,17 +91,17 @@ export default function Confirm() {
         </p>
       ) : null}
       {noPlaces !== null ? (
-        <p id="confirm-reason" className="reason">
+        <p id="confirm-reason" className="ui-note is-warn">
           {noPlaces}{" "}
-          <Link className="button" to={{ screen: "gallery" }}>
+          <Link className="ui-button" to={{ screen: "gallery" }}>
             Visit a gallery place
           </Link>
         </p>
       ) : null}
 
       {s.k === "challenge" ? (
-        <section className="confirm-check" aria-labelledby="confirm-check-title">
-          <h2 id="confirm-check-title">{TURNSTILE_HEADING}</h2>
+        <section className="confirm-check ui-panel ui-stack" aria-labelledby="confirm-check-title">
+          <h2 className="ui-heading" id="confirm-check-title">{TURNSTILE_HEADING}</h2>
           <p>{TURNSTILE_ASK}</p>
           <TurnstileWidget siteKey={ui.siteKey} onResult={controller.turnstileOk} />
         </section>
@@ -109,34 +109,34 @@ export default function Confirm() {
 
       {s.k === "creating" ? (
         <p>
-          <button className="button" type="button" disabled aria-busy="true">
+          <button className="ui-button" type="button" disabled aria-busy="true">
             {ENTER_BUSY}
           </button>
         </p>
       ) : null}
 
       {s.k === "rejected" ? (
-        <section className="confirm-error" aria-labelledby="confirm-error-title">
-          <h2 id="confirm-error-title">{errorCopy(s.code).title}</h2>
+        <section className="confirm-error ui-notice ui-notice--danger ui-stack" aria-labelledby="confirm-error-title">
+          <h2 className="ui-heading" id="confirm-error-title">{errorCopy(s.code).title}</h2>
           <p>{errorCopy(s.code).body}</p>
-          <p>
+          <p className="ui-row">
             {errorCopy(s.code).next === "retry" || errorCopy(s.code).next === "wait" ? (
               <>
                 <RetryButton retryAfterSec={ui.retryAfterSec} onRetry={() => controller.retry()} />{" "}
               </>
             ) : null}
-            <Link className="button" to={{ screen: "gallery" }}>
+            <Link className="ui-button" to={{ screen: "gallery" }}>
               Visit a gallery place
             </Link>
           </p>
         </section>
       ) : null}
 
-      <p className="confirm-nav">
-        <button className="button" type="button" disabled={busy} onClick={() => controller.back()}>
+      <p className="confirm-nav ui-row">
+        <button className="ui-button" type="button" disabled={busy} onClick={() => controller.back()}>
           Back
         </button>{" "}
-        <button className="button" type="button" disabled={busy} onClick={() => controller.pickAnother()}>
+        <button className="ui-button" type="button" disabled={busy} onClick={() => controller.pickAnother()}>
           Pick another place
         </button>
       </p>

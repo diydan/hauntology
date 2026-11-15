@@ -16,8 +16,8 @@ export function StagePanel({ ui }: { ui: HauntUi }) {
 
   if (stage === null) {
     return (
-      <section className="stage" aria-labelledby="stage-title" aria-busy="true">
-        <h2 id="stage-title">Checking on your place</h2>
+      <section className="stage ui-panel ui-stack" aria-labelledby="stage-title" aria-busy="true">
+        <h2 className="ui-heading" id="stage-title">Checking on your place</h2>
         <p>One moment.</p>
       </section>
     );
@@ -26,19 +26,19 @@ export function StagePanel({ ui }: { ui: HauntUi }) {
   if (stage === "failed") {
     const copy = errorCopy(ui.failure?.code ?? "");
     return (
-      <section className="stage stage-failed" aria-labelledby="stage-title">
-        <h2 id="stage-title">{STAGE_COPY.failed.label}</h2>
+      <section className="stage stage-failed ui-panel ui-stack" aria-labelledby="stage-title">
+        <h2 className="ui-heading" id="stage-title">{STAGE_COPY.failed.label}</h2>
         <p>{STAGE_COPY.failed.line}</p>
         <p>
           <strong>{copy.title}.</strong> {copy.body}
         </p>
         {ui.failure ? <p>{quotaLine(ui.failure.quotaReturned)}</p> : null}
-        <p>
-          <Link className="button" to={{ screen: "gallery" }}>
+        <p className="ui-row">
+          <Link className="ui-button" to={{ screen: "gallery" }}>
             Visit a gallery place
           </Link>{" "}
           {ui.failure?.retryAllowed ? (
-            <button className="button" type="button" onClick={() => router.navigate({ screen: "confirm" })}>
+            <button className="ui-button" type="button" onClick={() => router.navigate({ screen: "confirm" })}>
               Try again
             </button>
           ) : null}
@@ -49,22 +49,22 @@ export function StagePanel({ ui }: { ui: HauntUi }) {
 
   const step = stageStep(stage) ?? 1;
   return (
-    <section className="stage" aria-labelledby="stage-title">
-      <h2 id="stage-title">{STAGE_COPY[stage].label}</h2>
+    <section className="stage ui-panel ui-stack" aria-labelledby="stage-title">
+      <h2 className="ui-heading" id="stage-title">{STAGE_COPY[stage].label}</h2>
       <p>{STAGE_COPY[stage].line}</p>
-      <progress className="stage-bar" max={STAGE_STEPS.length} value={step} aria-label={`Step ${step} of ${STAGE_STEPS.length}: ${STAGE_COPY[stage].label}`} />
-      <ol className="stage-steps" aria-label="Steps">
+      <progress className="ui-gauge" max={STAGE_STEPS.length} value={step} aria-label={`Step ${step} of ${STAGE_STEPS.length}: ${STAGE_COPY[stage].label}`} />
+      <ol className="stage-steps ui-steps" aria-label="Steps">
         {STAGE_STEPS.map((s, i) => (
-          <li key={s} aria-current={i + 1 === step ? "step" : undefined} data-done={i + 1 < step ? "true" : undefined}>
+          <li key={s} className={`ui-step${i + 1 < step ? " is-done" : ""}${i + 1 === step ? " is-current" : ""}`} aria-current={i + 1 === step ? "step" : undefined} data-done={i + 1 < step ? "true" : undefined}>
             {STAGE_COPY[s].label}
           </li>
         ))}
       </ol>
-      {ui.stale ? <p className="reason">We could not check just now. We will try again.</p> : null}
+      {ui.stale ? <p className="ui-note is-warn">We could not check just now. We will try again.</p> : null}
       {ui.overdue ? (
-        <p className="reason" data-overdue>
+        <p className="ui-note is-warn" data-overdue>
           {OVERDUE_LINE}{" "}
-          <Link className="button" to={{ screen: "gallery" }}>
+          <Link className="ui-button" to={{ screen: "gallery" }}>
             Visit a gallery place
           </Link>
         </p>
