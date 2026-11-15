@@ -107,9 +107,10 @@ export function makeLock(kind: Kind, level: Level, seed: number): Lock {
       const cols = pick(2, 3, 3);
       const rows = pick(2, 2, 3);
       const picture = makePicture(r);
-      const turns0: number[] = range(cols * rows).map(() => randInt(r, 4));
-      if (!turns0.some((t) => t !== 0)) turns0[0] = 1; // at least one piece starts turned
-      return { kind, level, seed, view: { kind, cols, rows, picture, turns0 }, secret: { kind, turns0 }, sight: { kind, picture, cols, rows } };
+      const turning = level !== "easy"; // easy: no turning, every piece starts the right way up
+      const turns0: number[] = range(cols * rows).map(() => (turning ? randInt(r, 4) : 0));
+      if (turning && !turns0.some((t) => t !== 0)) turns0[0] = 1; // at least one piece starts turned
+      return { kind, level, seed, view: { kind, cols, rows, picture, turns0, turning }, secret: { kind, turns0 }, sight: { kind, picture, cols, rows } };
     }
     case "words": {
       const list = pick<readonly string[]>(READ_WORDS_4, READ_WORDS_5, READ_WORDS_6);

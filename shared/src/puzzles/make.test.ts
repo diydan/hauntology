@@ -114,21 +114,22 @@ describe("makeLock: the other Kinds, at every level", () => {
     });
   });
 
-  it("Torn photo has 4, 6 or 9 pieces, at least one turned, and the Sight is the same picture", () => {
+  it("Torn photo has 4, 6 or 9 pieces, none turned on easy and at least one turned above it, and the Sight is the same picture", () => {
     each("photo", (l, level) => {
       if (l.kind !== "photo") throw new Error("kind");
       expect([l.view.cols, l.view.rows]).toEqual(L(level, [2, 2], [3, 2], [3, 3]));
       expect(l.view.turns0).toHaveLength(l.view.cols * l.view.rows);
-      expect(l.view.turns0.some((t) => t !== 0)).toBe(true);
+      expect(l.view.turning).toBe(level !== "easy");
+      expect(l.view.turns0.some((t) => t !== 0)).toBe(level !== "easy");
       expect(l.view.turns0.every((t) => t >= 0 && t <= 3)).toBe(true);
       expect(l.sight.picture).toEqual(l.view.picture);
       expect(l.view.picture.shapes.length).toBeGreaterThan(5);
     });
   });
 
-  it("Torn photo always starts with a turned piece, over thousands of seeds", () => {
+  it("Torn photo on medium always starts with a turned piece, over thousands of seeds", () => {
     for (let seed = 0; seed < 5000; seed++) {
-      const l = makeLock("photo", "easy", seed);
+      const l = makeLock("photo", "medium", seed);
       if (l.kind !== "photo") throw new Error("kind");
       expect(l.view.turns0.some((t) => t !== 0)).toBe(true);
     }

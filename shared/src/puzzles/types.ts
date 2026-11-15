@@ -36,7 +36,8 @@ export type CandlesView = Readonly<{ kind: "candles"; n: number; shows: number; 
 /** `after` is the shelf after the dark: an item id, or -1 for an empty spot. */
 export type MovedView = Readonly<{ kind: "moved"; slots: number; darkMs: number; after: readonly number[] }>;
 /** `turns0[piece]` is how many quarter turns the piece starts turned. */
-export type PhotoView = Readonly<{ kind: "photo"; cols: number; rows: number; picture: Picture; turns0: readonly number[] }>;
+/** `turning` is false on easy: every piece starts the right way up and cannot be turned. */
+export type PhotoView = Readonly<{ kind: "photo"; cols: number; rows: number; picture: Picture; turns0: readonly number[]; turning: boolean }>;
 export type WordsView = Readonly<{ kind: "words"; n: number; letters: readonly WordLetter[] }>;
 export type BoardView = Readonly<{ kind: "board"; length: number; plays: number; dwellMs: number; clue: string }>;
 export type MazeView = Readonly<{ kind: "maze"; grid: readonly string[] }>;

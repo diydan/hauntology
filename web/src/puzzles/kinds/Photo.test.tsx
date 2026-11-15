@@ -66,12 +66,26 @@ describe("Photo", () => {
       }
       expect([...trayIndex].sort((a, b) => a - b)).toEqual(Array.from({ length: n }, (_, i) => i)); // every tray cell used once
       expect(trayIndex.some((t, p) => t !== p)).toBe(true); // never in frame order
-      expect(turnBtn().hasAttribute("disabled")).toBe(true);
+      if (level === "easy") expect(screen.queryByRole("button", { name: "Turn" })).toBeNull(); // no turning on easy
+      else expect(turnBtn().hasAttribute("disabled")).toBe(true);
       expect(trayBtn().hasAttribute("disabled")).toBe(true);
       expect(checkBtn().hasAttribute("disabled")).toBe(true);
       expect(screen.getByRole("status").textContent).toBe(`0 of ${n} in the frame`);
       unmount();
     }
+  });
+
+  it("on easy has no turning: every piece starts the right way up, a second tap does not turn it, and there is no Turn button", () => {
+    const lock = lockOf("easy", 6);
+    expect(lock.view.turning).toBe(false);
+    mountKind(Photo, lock.view);
+    for (let p = 0; p < 4; p++) expect(rotation(p)).toBe(0);
+    fireEvent.click(piece(0));
+    fireEvent.click(piece(0));
+    expect(rotation(0)).toBe(0);
+    expect(screen.queryByRole("button", { name: "Turn" })).toBeNull();
+    expect(checkBtn().parentElement?.className).toMatch(/pz-grid2/);
+    expect(document.body.textContent).not.toMatch(/turn it/);
   });
 
   it("keeps Turn, Back to tray and Check side by side in one row, never stacked", () => {
@@ -142,7 +156,7 @@ describe("Photo", () => {
   });
 
   it("clicks only when a piece fits: right spot AND the right way up; any other drop is a rustle", () => {
-    const lock = lockOf("easy", 3);
+    const lock = lockOf("medium", 3);
     lockCur = lock;
     const p = lock.secret.turns0.findIndex((t) => t !== 0);
     expect(p).toBeGreaterThanOrEqual(0);
@@ -215,7 +229,7 @@ describe("Photo", () => {
   });
 
   it("tells a tap from a drag by how far the finger went, and ignores a cancelled touch", () => {
-    const lock = lockOf("easy", 3);
+    const lock = lockOf("medium", 3);
     lockCur = lock;
     const { feel } = mountKind(Photo, lock.view);
     const el = piece(1);
@@ -265,7 +279,9 @@ describe("Photo", () => {
   });
 
   it("answers the Player's own turns, 0 to 3, and a wrong photo is sent as given and keeps its pieces for the next try", () => {
-    const lock = lockOf("easy", 10);
+    const base = lockOf("easy", 10); // four pieces, made to turn for this test
+    const turns0 = [1, 2, 3, 1];
+    const lock: PhotoLock = { ...base, view: { ...base.view, turning: true, turns0 }, secret: { kind: "photo", turns0 } };
     lockCur = lock;
     const { submits, reset } = mountKind(Photo, lock.view);
     // pieces 0 and 1 swapped; every piece turned right; piece 2 turned four extra times (a full circle)
@@ -313,7 +329,7 @@ describe("Photo", () => {
   });
 
   it("keeps one piece picked at a time, turns only the picked piece, and gives the spot back with Back to tray", () => {
-    const lock = lockOf("easy", 3);
+    const lock = lockOf("medium", 3);
     const { announcements } = mountKind(Photo, lock.view);
     fireEvent.click(piece(0));
     fireEvent.click(piece(2));
@@ -349,7 +365,7 @@ describe("Photo", () => {
   });
 
   it("takes a click that a pointer made once only, and a click from a keyboard or a screen reader as a tap", () => {
-    const lock = lockOf("easy", 3);
+    const lock = lockOf("medium", 3);
     mountKind(Photo, lock.view);
     fireEvent.click(piece(0), { detail: 1 }); // the click after a pointer tap: pointerup already did the work
     expect(piece(0).getAttribute("aria-pressed")).toBe("false");

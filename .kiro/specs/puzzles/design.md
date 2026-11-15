@@ -110,7 +110,7 @@ export type WanderLocks = { on: boolean; discovered: string[]; seen: string[]; o
 
 Min solve times are starting guesses. Spike puzzles 1.5 sets them.
 
-**Level sizes** (easy / medium / hard): lockpick 3 / 4 / 5 pins and 14 / 10 / 8 degree windows; wires 4 / 5 / 6; clock steps of 15 / 5 / 1 minutes; safe 3 / 4 / 5 digits; musicbox 3 / 4 / 5 notes, 3 / 3 / 2 plays; candles 4 / 5 / 6, 2 / 2 / 1 shows; moved 6 / 8 / 9 objects, 2 / 3 / 4 changes, at most 1 / 1 / 2 missing, 2 / 2 / 1.5 s of dark; photo 2x2 / 3x2 / 3x3 pieces; words 4 / 5 / 6 letters; board 3 / 4 / 5 letters, 2 / 2 / 1 hearings; maze 9x11 / 9x13 / 9x15 (hard has one way through). Classic plays medium, Gentle easy; hard is a Master choice only.
+**Level sizes** (easy / medium / hard): lockpick 3 / 4 / 5 pins and 14 / 10 / 8 degree windows; wires 4 / 5 / 6; clock steps of 15 / 5 / 1 minutes; safe 3 / 4 / 5 digits; musicbox 3 / 4 / 5 notes, 3 / 3 / 2 plays; candles 4 / 5 / 6, 2 / 2 / 1 shows; moved 6 / 8 / 9 objects, 2 / 3 / 4 changes, at most 1 / 1 / 2 missing, 2 / 2 / 1.5 s of dark; photo 2x2 / 3x2 / 3x3 pieces (no turning on easy); words 4 / 5 / 6 letters; board 3 / 4 / 5 letters, 2 / 2 / 1 hearings; maze 9x11 / 9x13 / 9x15 (hard has one way through). Classic plays medium, Gentle easy; hard is a Master choice only.
 
 **Wires** are told apart by colour and pattern (stripe, dots, zigzag, plain, check). The Sight shows the order; the terminals on the right are only numbered, so the colours must be remembered or read from the notebook.
 

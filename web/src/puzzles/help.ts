@@ -94,7 +94,7 @@ export const KIND_HELP: Readonly<Record<Kind, KindHelp>> = {
   photo: {
     title: "Torn photo",
     steps: [
-      "A photo is torn into pieces, and the pieces are turned.",
+      "A photo is torn into pieces. On medium and hard, the pieces are turned too.",
       "Tap a piece to pick it. Tap it again, or press Turn, to turn it.",
       "Drag a piece onto the frame. Or tap an empty spot to put it there.",
       "When the frame is full, press Check.",
