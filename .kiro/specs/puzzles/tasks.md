@@ -1,0 +1,200 @@
+# Implementation Plan
+
+Depends on `party-mode` (the pure rules in `shared/src/party/` including `inspect()`, `PartyRoom`, the presets, the seat's sound consent and the Public View), `ghost-engine` (`step` and the `reveal` Directive, and the `PlaySession` Session), `ghost-voice` (the Library, for the Spirit board words), `world-viewer` (the `chat` Input Mode, reused while a Lock is open) and `haunwallker` (`PlatformKit` and the Play start screen). Nothing here is paid, so no task needs a SpendTicket and no test calls a model, a sensor or the network. Do the spikes first on real phones: three of their answers (iPhone vibration, iPhone motion permission, the ringer switch) change how much of the feel layer is real on an iPhone.
+
+Order: spikes, then pure logic with property tests, then the phone feel layer and the first three Kinds end to end (the demo slice), then the Party and Wander wiring, then the second and third sets of Kinds, then settings, access and docs. Tasks marked `*` are optional test tasks that should still be done before submission.
+
+Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit board (5.3), Hidden words (5.2), Torn photo (5.1), the microphone (11.x), What moved (4.4), Wander Locks (group 4), Candle order (4.3), Music box (4.2), Safe code (4.1). What stays at the minimum: Clock time, Cut wires and Lock pick as the Locks of Party Inspect, with the Faded clue and Plain Inspect.
+
+- [ ] 1. Spikes (record each in `docs/spikes/puzzles-<n>.md`)
+  - [ ] 1.1 Spike puzzles 1.1: vibration
+    - On a real Android phone (Chrome) and a real iPhone (Safari and the home-screen web app): does `navigator.vibrate` exist; how exact are the eight patterns of the catalogue; whether toggling a `<input type="checkbox" switch>` from script gives a haptic tick on iPhone (Safari 17.4 or later), whether it needs a tap, how often it can fire and whether it works in the installed web app; and the battery cost of six seconds of buzz. Decide what an iPhone gets: ticks, or the visual twin only. Record which patterns feel different from each other.
+    - _Requirements: 9.1, 9.2_
+  - [ ] 1.2 Spike puzzles 1.2: motion
+    - On the same two phones: the `DeviceOrientationEvent.requestPermission()` prompt on iPhone (needs a tap, how long the answer lasts, what a denial looks like), no prompt on Android, the real report rate of `deviceorientation`, drift over 30 seconds, whether `tiltForScreen` is right in portrait and landscape, and whether `dialAngle` (twisting the phone like a dial, held upright and held flat) has gimbal trouble. Pick the comfortable tilt range and the dead zone.
+    - _Requirements: 8.1, 8.2, 8.4_
+  - [ ] 1.3 Spike puzzles 1.3: audio
+    - Does Web Audio play on an iPhone with the ringer switch on silent; delay from a tap to a note; whether the five notes, the click and the thunk are clear through a phone speaker at 0.5 gain; whether one unlock tap at join covers the rest of the game. Decide the text of the "phone on silent" hint.
+    - _Requirements: 10.1, 10.4, 10.6_
+  - [ ] 1.4 Spike puzzles 1.4: breath
+    - With echo cancellation and automatic gain off, record loudness numbers (not audio) for a breath, a spoken word, a cough, wind and a table knock on both phones. Find a threshold and a 300 millisecond rule that count the breath and not the rest. If it fails, cut the microphone and keep the touch path.
+    - _Requirements: 11.1, 11.2, 11.4_
+  - [ ] 1.5 Spike puzzles 1.5: balance (run after group 6)
+    - Five people play every built Kind at both levels. Record solve times, wrong Attempts, give-ups and how often the Cap ends a Lock. Set the minimum solve times, the Cap per preset (25 s, 40 s, 20 s), and decide whether a 60 second Classic Turn is still fun with a Lock or Quick must stay off.
+    - _Requirements: 1.2, 1.3, 3.4, 7.2_
+
+- [ ] 2. Pure logic (`shared/src/puzzles/`)
+  - [ ] 2.1 `types.ts`: `Kind`, `Level`, `PuzzleSetting`, `LockView`, `LockSecret`, `Lock`, `Sight`, `Transcript`, `Verdict`, `PartyLocks` and `WanderLocks` with zod schemas; add `puzzle_disabled`, `puzzle_not_open`, `puzzle_already_open`, `puzzle_bad_transcript`, `puzzle_too_fast`, `puzzle_rate_limited`, `puzzle_attempts_spent` and `sight_unknown` to `shared/src/errors.ts`
+    - _Requirements: 7.2, 7.6_
+  - [ ] 2.2 `rng.ts` (seeded generator) and `words.ts` (the two lists of 24 words, A to Z, 3 to 5 letters, gentle)
+    - _Requirements: 5.2, 5.3, 10.5_
+  - [ ] 2.3 `kinds.ts` registry and `makeLock` for `lockpick`, `wires` and `clock` at both levels, with the level sizes of the design
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - [ ] 2.4 `makeLock` for `safe`, `musicbox`, `candles` and `moved`
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [ ] 2.5 `makeLock` for `photo`, `words`, `board` and the optional `maze` (five authored mazes)
+    - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  - [ ] 2.6 `sight.ts`: `sightFor`, `fadedFor` (only Memory Kinds; the same clue, a shorter time, 8 seconds with Assist)
+    - _Requirements: 6.2, 6.3_
+  - [ ]* 2.7 Write property test for the Sight and its Faded twin
+    - **Property 4: A Sight and its Faded twin show the same clue**
+    - **Validates: Requirements 6.2, 6.3**
+  - [ ] 2.8 `verify.ts`: `verify` (schema, size, minimum solve time, answer or plausibility) and `referenceSolve` (touch events only) for every Kind
+    - _Requirements: 7.2, 7.3, 7.5, 12.1_
+  - [ ]* 2.9 Write property test for deterministic generation
+    - **Property 1: Generation is deterministic and never reads the Solution**
+    - **Validates: Requirements 1.5, 6.2, 13.2**
+  - [ ]* 2.10 Write property test for solvability
+    - **Property 2: Every generated Lock is solvable by the touch path**
+    - **Validates: Requirements 3.1, 3.2, 3.3, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 5.3, 5.4, 12.1**
+  - [ ]* 2.11 Write property test for checking
+    - **Property 3: Checking accepts only the answer and never throws**
+    - **Validates: Requirements 7.2, 7.5**
+  - [ ] 2.12 `place.ts`: `placePuzzles` (one Lock per Zone, each Kind at most twice, Sight in the next Zone) and `kindForDiscovery` (the first is never a Memory Kind)
+    - _Requirements: 1.5, 2.4_
+  - [ ]* 2.13 Write property test for placement
+    - **Property 5: Locks are placed one per Zone with a valid Sight source**
+    - **Validates: Requirements 1.5, 2.4**
+  - [ ] 2.14 `charge.ts` (`lockCharge`, `capFor`) and `settings.ts` (`presetSetting`: Classic normal, Gentle easy, Quick off; `plainInspect`)
+    - _Requirements: 1.2, 1.3, 1.4, 1.7_
+  - [ ]* 2.15 Write property test for the time charged
+    - **Property 7: The time charged stays between ten seconds and the Cap**
+    - **Validates: Requirements 1.2, 1.3, 1.7**
+  - [ ] 2.16 `motion.ts`: `smoothTilt`, the dead zone, `tiltForScreen`, `zeroTilt`, the clamp, `tiltToPosition`, `dialAngle`
+    - _Requirements: 8.2_
+  - [ ]* 2.17 Write property test for the tilt maths
+    - **Property 12: Tilt maths is total, bounded and rotation-correct**
+    - **Validates: Requirements 8.2**
+  - [ ] 2.18 `tiltBall.ts`: `stepBall` and `advanceBall` in fixed 1/60 second steps with a carried remainder, speed cap, friction and a 0.3 bounce
+    - _Requirements: 8.3_
+  - [ ]* 2.19 Write property test for rate-independent physics
+    - **Property 13: Physics does not depend on the event rate**
+    - **Validates: Requirements 8.3**
+  - [ ] 2.20 `haptics.ts`: `PATTERNS`, `hotColdInterval`, `planHaptics` with the caps of 9.2
+    - _Requirements: 9.2, 9.3_
+  - [ ]* 2.21 Write property test for vibration plans
+    - **Property 14: Vibration plans respect the limits**
+    - **Validates: Requirements 9.2, 9.3**
+  - [ ] 2.22 `sound.ts`: `RECIPES`, `planSound` (consent, four voices, 0.5 gain, notes from 300 hertz, own phone only)
+    - _Requirements: 10.2, 10.4_
+  - [ ]* 2.23 Write property test for sound plans
+    - **Property 15: Sound plans respect consent and limits**
+    - **Validates: Requirements 10.2, 10.4**
+  - [ ] 2.24 `dim.ts`: `dimPlan`, `torchPlan`, `candlePlan` (fades, two changes a second, peak under white, a still step for reduced motion)
+    - _Requirements: 12.2_
+  - [ ]* 2.25 Write property test for light plans
+    - **Property 16: Light plans respect the photosensitivity limits**
+    - **Validates: Requirements 12.2**
+  - [ ] 2.26 `blow.ts`: `blowDetect(levels, baseline)` on numbers only
+    - _Requirements: 11.4_
+  - [ ]* 2.27 Write property test for breath detection
+    - **Property 17: A breath needs sustained loudness**
+    - **Validates: Requirements 11.4**
+  - [ ] 2.28 `inspect.ts`: `openLock`, `submitAttempt`, `closeLock` (Plain Inspect, Bots, three Attempts, one open Lock, one Attempt a second, the public `inspect` line at open, the call to the party-mode `inspect()` on a solved Lock, the charge, no change to any rule)
+    - _Requirements: 1.1, 1.2, 1.3, 1.6, 1.7, 7.1, 7.4, 7.6, 13.1_
+  - [ ]* 2.29 Write property test for a solved or failed Lock
+    - **Property 6: A solved Lock gives what a plain Inspect gives, and a failed one gives nothing**
+    - **Validates: Requirements 1.2, 1.3, 7.4**
+  - [ ]* 2.30 Write property test for the Attempt limit
+    - **Property 11: Three wrong Attempts end a Lock and say nothing more**
+    - **Validates: Requirements 1.3, 7.3**
+  - [ ] 2.31 `wander.ts`: `gateReveal`, `skipAvailable`, the open, attempt and skip reducers, Sight after a memory
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+  - [ ]* 2.32 Write property test for the setting being off
+    - **Property 8: With the setting off, nothing changes**
+    - **Validates: Requirements 1.1, 2.1**
+  - [ ]* 2.33 Write property test for reaching a memory
+    - **Property 9: A memory is always reachable**
+    - **Validates: Requirements 2.2, 2.3**
+
+- [ ] 3. Party integration (`PartyRoom`)
+  - [ ] 3.1 Add `PartyLocks` to the Room state, the messages `sight`, `sight_ack`, `puzzle_open`, `puzzle_view`, `puzzle_attempt`, `puzzle_cancel` and `puzzle_result` to the protocol schema, place the Locks at the start of a game, and rebuild an open Lock from the seed after a reconnect
+    - _Requirements: 1.5, 7.1, 13.2_
+  - [ ] 3.2 Sights: send on entering a Zone or starting a Turn there, record on the ack, resend on reconnect if there was no ack, keep them out of every view, log, recap and prompt
+    - _Requirements: 6.1, 6.5, 6.6_
+  - [ ]* 3.3 Write property test for private Sights across a reconnect
+    - **Property 10: Sights stay private and survive a reconnect**
+    - **Validates: Requirements 6.1, 6.5, 6.6, 13.2**
+  - [ ] 3.4 Wire Inspect to the Lock: the Turn Clock keeps running, the Cap and a Master pause, a Nudge, the end of the Turn, Bots on a plain Inspect, a solo case as any Room
+    - _Requirements: 1.1, 1.2, 1.3, 1.6, 13.1, 13.3_
+  - [ ] 3.5 The Puzzle setting in the Master panel and presets, applied from the next Inspect, and `puzzleSetting` in the Public View
+    - _Requirements: 1.4_
+  - [ ] 3.6 Plain Inspect as a seat setting that survives a reconnect and is visible to nobody else
+    - _Requirements: 1.7_
+  - [ ] 3.7 Telemetry counters (Kind, outcome, Attempts), and deletion of Transcripts, open Locks and `seen` with the Room
+    - _Requirements: 14.2_
+  - [ ]* 3.8 Write a model-based test of `PartyRoom` with fast-check command sequences (move, open, attempt, wrong, give up, reconnect, pause, Turn end) against a model that carries `seen` and checks every view
+    - _Requirements: 1.3, 6.5, 13.1, 13.2_
+
+- [ ] 4. Wander integration (`PlaySession`)
+  - [ ] 4.1 Add `WanderLocks` to the Session and `gateReveal` in front of the `reveal` Directive, with the setting off as the identity
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [ ] 4.2 The routes `POST /api/play/lock/open`, `/attempt` and `/skip` with the origin and session-cookie checks and the one-Attempt-a-second limit
+    - _Requirements: 2.2, 2.3, 7.6_
+  - [ ] 4.3 Show the Sight card after the memory text and keep the shown Sights in the Session through a reload within 24 hours
+    - _Requirements: 2.5_
+  - [ ] 4.4 Suspend movement and release pointer lock while a Lock is open, restore on close (reuse the `chat` Input Mode)
+    - _Requirements: 2.6_
+  - [ ] 4.5 `PUZZLES_ENABLED` (default true) and the Wander default (off), with the switch hidden when disabled
+    - _Requirements: 14.1, 2.1_
+
+- [ ] 5. Feel layer (`web/src/puzzles/feel/`)
+  - [ ] 5.1 The `Motion`, `Haptics`, `Synth` and `Breath` interfaces, the four fakes, `PlatformKit.puzzleFeel`, and a per-device switch for each
+    - _Requirements: 8.6, 9.4_
+  - [ ] 5.2 `browserMotion`: permission from a tap, `beta` and `gamma` at 30 samples a second, the screen angle, stop when hidden or face down and when the Lock closes, raw values never leave the phone
+    - _Requirements: 8.1, 8.4, 8.5, 8.6_
+  - [ ] 5.3 `browserHaptics`: `navigator.vibrate` where present, the outcome of Spike 1.1 for iPhone, a visual twin for every buzz
+    - _Requirements: 9.1, 9.4, 9.5_
+  - [ ] 5.4 `browserSynth`: the recipes, the unlock tap, the "phone on silent" hint and a visual twin for every sound
+    - _Requirements: 10.1, 10.3, 10.6_
+  - [ ] 5.5 `browserBreath`: the "Blow to snuff" tap, the microphone with echo cancellation and gain off, loudness only, the visible indicator and stop control, stop on end, hide or close
+    - _Requirements: 11.1, 11.2, 11.3_
+  - [ ] 5.6 Tie the Synth to the seat's sound consent (Party) and the Sound switch (Wander)
+    - _Requirements: 10.2_
+
+- [ ] 6. First three Kinds, end to end (the demo slice)
+  - [ ] 6.1 `PuzzleHost`: the full-screen frame with the timer ring, Attempts left, give up, the wrong-Attempt message with no partial count, the touch-path switch, and the Turn or Wander context
+    - _Requirements: 7.3, 12.3, 12.4, 13.1_
+  - [ ] 6.2 `SightCard` and the Faded clue at a Lock, with the heartbeat buzz
+    - _Requirements: 6.1, 6.3_
+  - [ ] 6.3 Clock time screen (drag, twist, five-minute ticks)
+    - _Requirements: 3.3_
+  - [ ] 6.4 Cut wires screen (drag, patterns as well as colours, snap and buzz)
+    - _Requirements: 3.2, 12.3_
+  - [ ] 6.5 Lock pick screen (tension, tilt or slider, hot and cold, click, thunk)
+    - _Requirements: 3.1_
+  - [ ] 6.6 Checkpoint: play all three in a Party Room on two real phones (one Android, one iPhone) and in Wander; run Spike 1.5 for these three. Ensure every test passes; ask the user if questions arise.
+
+- [ ] 7. Second set of Kinds
+  - [ ] 7.1 Safe code screen (dial, twist, click, thunk)
+    - _Requirements: 4.1_
+  - [ ] 7.2 Music box screen (the tune up to three times, five keys, lit keys, one buzz per note)
+    - _Requirements: 4.2, 10.3_
+  - [ ] 7.3 Candle order screen (gutter in turn, tap to snuff, the optional breath, relight on a wrong order)
+    - _Requirements: 4.3, 11.1_
+  - [ ] 7.4 What moved screen (the shelf, the dark with the rumble, tap the changed objects)
+    - _Requirements: 4.4_
+  - [ ] 7.5 Checkpoint: play the second set; set the Kinds per Zone so every Kind appears. Ensure every test passes; ask the user if questions arise.
+
+- [ ] 8. Third set of Kinds
+  - [ ] 8.1 Torn photo screen (turn, drag, click on a fit, the original shape pictures)
+    - _Requirements: 5.1_
+  - [ ] 8.2 Hidden words screen (torch by tilt or finger, pulse on a letter, tap in order)
+    - _Requirements: 5.2_
+  - [ ] 8.3 Spirit board screen (planchette physics, tick per letter, dwell to choose) and the 24 Library lines for the Whisper's words, with the browser voice as the fallback and the text under Assist
+    - _Requirements: 5.3, 10.3, 10.5_
+  - [ ]* 8.4 Marble maze screen (orb physics, the 100 millisecond bump)
+    - _Requirements: 5.4_
+
+- [ ] 9. Settings, access and docs
+  - [ ] 9.1 `PuzzleSettings`: the Master row, the Wander switch, the device switches for tilt, vibration, sound and Assist, and the Plain Inspect switch
+    - _Requirements: 1.4, 2.1, 8.6, 9.4, 12.5_
+  - [ ] 9.2 `SightsPage` in the notebook (Assist only) and the longer Sight and Faded times
+    - _Requirements: 6.4, 12.5_
+  - [ ] 9.3 Access pass: a touch-only run of every Kind, 48 pixel targets, patterns and shapes besides colour, text labels, reduced motion removing shake and beam sway
+    - _Requirements: 12.1, 12.3, 12.4_
+  - [ ] 9.4 Source-level checks: no `MediaRecorder` in `web/src/puzzles/`, no import of `web`, `api`, a Hand or the Solution in `shared/src/puzzles/`, no copied code or assets; word lists and mazes checked
+    - _Requirements: 11.2, 14.3_
+  - [ ] 9.5 Docs: `docs/spikes/puzzles-<n>.md`, assumptions 19 to 23 and `PUZZLES_ENABLED` in `.kiro/steering/tech.md`, the `puzzles/` folders in `structure.md`, a line in `docs/SOUNDS.md`, the decisions list in `docs/IMPLEMENTATION.md`, and one sentence in `product.md`
+    - _Requirements: 14.4_
+  - [ ] 9.6 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `verify`, `lockCharge`, `placePuzzles` and `planHaptics`. Ensure every test passes; ask the user if questions arise.
