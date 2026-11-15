@@ -61,17 +61,17 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
     - **Validates: Requirements 1.1, 5.2**
   - [ ] 2.17 `validateGhostReply` (it calls the `conditions` spec's `mentionsRealWorld` and replaces a reply that mentions news, crime, death or real events with a scripted line) and scripted line library (≥ 5 variants per Directive kind per voice, plus scripted weather lines and star lines)
     - Partly built: the scripted library (`scripted.ts`): at least five lines for every Directive in each of two voices (wistful, stern), two to four first-person scripted memories for each kind grounded in the Place Brief (`memoryText`, `briefPhrase`), no digit, address or markup in any line (tested over every line).
-    - **`validateGhostReply` built 2026-11-15** (`narration.ts`): empty, over 600 characters, a link (also `//host`), markup (`` ` * # < > ``), a control or hidden character (newlines and tabs are folded into a space), a phrase from outside the story, news, crime or death, a digit in a hint or a tease, and more than four sentences all fail. **Not ticked:** the real-world check is a stand-in word list inside the file, because the `conditions` spec's `mentionsRealWorld` is not built; swap it in when it is.
+    - **`validateGhostReply` built 2026-11-15** (`narration.ts`): empty, over 600 characters, a link (also `//host`), markup (`` ` * # < > ``), a control or hidden character (newlines and tabs are folded into a space), a phrase from outside the story, news, crime or death, a digit in a hint or a tease, and more than four sentences all fail. **Not ticked:** the real-world check is a stand-in word list inside the file, because the `conditions` spec's `mentionsRealWorld` is not built; swap it in when it is. Also built 2026-11-15: a hint must carry the engine's own way and distance words, a tease may not say which way, a reveal is two to four sentences, a reply that reads the rules out is refused, and a reply that is not English is refused (`wayIsRight`, `replyChecksFor`, `readsOutRules`, `looksEnglish`).
     - _Requirements: 5.3, 5.4_
-  - [ ]* 2.18 Write property test for reply safety
-    - Written for the validator (`narration.test.ts`: whatever the text, an accepted reply is non-empty, short, plain and free of links and outside words). Not ticked: "always" also needs the fallback to a scripted line when a reply fails, which comes with `narrationMode` (2.19) and the narrator wiring.
+  - [x]* 2.18 Write property test for reply safety
+    - **Done 2026-11-15:** the validator is tested over any text (`narration.test.ts`: an accepted reply is non-empty, short, plain, English and free of links and outside words), and the whole path is tested through the routes (`play-narration.test.ts`): a reply that fails its check twice is replaced by the scripted line, so what the visitor sees is always safe and never empty.
     - **Property 10: Replies are always safe and non-empty**
     - **Validates: Requirements 5.3, 5.4**
-  - [ ] 2.19 `narrationMode`
-    - Not built: it decides model or scripted per turn, and every turn is scripted until task 4.
+  - [x] 2.19 `narrationMode`
+    - **Built 2026-11-15** (`narration.ts`, `narrationMode`): scripted when the model is off (kill switch or no narrator), when the game was already over, for a `refuse` turn and at the game's 40 model turns; otherwise the model. The engine computes it from the state before the turn and hands `playTurn` a `NarrationJob` or `null`.
     - _Requirements: 6.1, 6.2_
-  - [ ]* 2.20 Write property test for narration independence
-    - The part the engine owns is tested: the progress of a game (found, ended, turns, idle turns) is the same whatever the memories, history, model-turn count or line seed (`engine.test.ts`, `play.test.ts`). It is ticked when a model narrator exists to compare against.
+  - [x]* 2.20 Write property test for narration independence
+    - **Done 2026-11-15** (`play.test.ts`, Property 11): over random games, the progress of a game (turn, found, ended, idle turns, times, seed state, pose, anchors, and which memories exist) is the same whether the model words every turn at once, late or never, and `settleNarration` changes only words and the count of model turns.
     - **Property 11: State transitions are independent of narration**
     - **Validates: Requirements 6.1, 6.2, 6.3**
   - [x]* 2.21 Write property test for completability
@@ -102,17 +102,20 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
     - Accept client anchors, validate, fall back to ring layout; use authored Gallery anchors when the manifest has them.
     - _Requirements: 1.2, 1.3, 1.5_
 
-- [ ] 4. Narrator
-  - [ ] 4.1 Guarded WorkersAiClient text call (Scout) with persona and rules, `llm` reserve per turn, 6 s timeout, one retry, scripted fallback
-    - **Adapter built 2026-11-15, over fakes, not run** (proposed model: Haiku 5.5, `steering/tech.md` assumption 20): `HaikuNarrator` and the door `generateNarration` (a `SpendTicket` for the `llm` meter or it throws) in `api/src/guarded/workersai/narrator.ts`, wired as `WorkersAiClient.narrator` (off until `AI_GATEWAY_ID` is set). It never sends a temperature, asks for no or the lowest thinking, names the gateway, and answers `rate_limited`, `failed` (neither charged), `unusable` or `refused` (both charged). **Not built:** the per-turn reserve and commit around it, the one retry, and the scripted fallback wiring in `play.ts` (those need the model to be accepted, after `docs/spikes/4.1.md`).
+- [x] 4. Narrator
+  - [x] 4.1 Guarded WorkersAiClient text call (Scout) with persona and rules, `llm` reserve per turn, 6 s timeout, one retry, scripted fallback
+    - **Built 2026-11-15**, the model accepted by the owner (Haiku 5.5; the spike ran: `docs/spikes/4.1.md`). The adapter is `api/src/guarded/workersai/narrator.ts` (`HaikuNarrator`, the door `generateNarration`: a `SpendTicket` for the `llm` meter or it throws; never a temperature; thinking off). The turn is `api/src/play/narrate.ts` (`narrateTurn`): one `llm` unit from `SpendGuard` for each call (kept when the model answered, given back when the call failed), 220 tokens at most, 6 s a call and 9 s for the whole turn (a retry that would run past it is not made: **a decision for you**, the spec said only "6 s, one retry"), one retry after a reply that fails its check or a call that failed and none after a refusal or a cap, and the scripted words whenever it gives nothing. The route plays the turn with scripted words first and stores them; the model's words replace them in the reply, the journal and the history only if the game keeps them (`PlaySessions.settle`, `settleNarration`).
     - _Requirements: 5.1, 5.3, 6.1_
-  - [ ] 4.2 Memory reveal narration
+  - [x] 4.2 Memory reveal narration
     - Two to four first-person sentences grounded in the brief and archetype; validate and store as the Memory; scripted memory templates per archetype as fallback.
+    - **Built 2026-11-15:** the reveal is worded from the seed's kind and hook and the Place Brief (2 to 4 sentences, checked), stored as the Memory by `settle` (so the journal shows it and the next prompts carry it), and the scripted memory (stored first) stays if the model's fails. The last memory is told by the model and the farewell after it stays scripted (**a decision for you**: the spike's model farewells were good, and this costs one call, not two).
     - _Requirements: 5.5, 5.4_
-  - [ ] 4.3 Red-team fixtures
+  - [x] 4.3 Red-team fixtures
     - 20+ jailbreak and markup strings through parser, prompt builder, validator; in-character deflection lines for `refuse`.
+    - **Built 2026-11-15** (`redteam.ts`, `redteam.test.ts`): 33 attacks of nine kinds and 19 bad model replies, through the parser, the prompt builder, the reply check and a whole game. It found a real gap: zero-width and direction characters split the words of "ignore all previous instructions" past the parser, which now also looks at the text with them removed. A refused text is answered with a scripted deflection (at least five lines in each voice, none repeating an attack) and never reaches the model.
     - _Requirements: 5.6, 2.3_
-  - [ ] 4.4 Kill switch and global daily cap wiring
+  - [x] 4.4 Kill switch and global daily cap wiring
+    - **Built 2026-11-15:** the model kill switch is `GHOST_NARRATION_ENABLED=false` (Requirement 6.2), the global daily cap is `LLM_DAY_CAP` and the visitor's is `LLM_SESSION_CAP`, both in `SpendGuard` (a refused unit means scripted lines, Requirement 6.1), and the game's cap of 40 model turns is in the engine (`MODEL_TURN_CAP`). The narrator is off, with only scripted lines, until the owner declares the `AI` binding and sets `AI_GATEWAY_ID`; `api/wrangler.jsonc` still declares neither, so nothing deployed can spend. A log line `play.narrate {outcome, attempts}` counts what happened; no word of any prompt or reply is logged.
     - _Requirements: 6.1, 6.2_
 
 - [ ] 5. Routes

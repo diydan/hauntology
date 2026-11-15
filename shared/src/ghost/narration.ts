@@ -1,7 +1,7 @@
-import type { PromptFields } from "../conditions/types";
+import type { Atmosphere, PromptFields } from "../conditions/types";
 import { sanitizeText } from "./parse";
 import { BEARING_PHRASE, briefPhrase } from "./scripted";
-import type { Archetype, Directive, HistoryLine, Memory, Seed, Voice } from "./types";
+import type { Action, Archetype, Band, Bearing, Directive, HistoryLine, Memory, Seed, Voice } from "./types";
 
 /**
  * What the model is asked, and whether its answer may be used (ghost-engine 2.15 and 2.17; `steering/ghost-safety.md`). The engine decides and
@@ -124,7 +124,7 @@ export function buildNarrationPrompt(input: NarrationInput): NarrationPrompt | n
   return { system, user };
 }
 
-export type ReplyProblem = "empty" | "too_long" | "link" | "markup" | "control" | "out_of_fiction" | "real_world" | "not_english" | "digits" | "too_many_sentences";
+export type ReplyProblem = "empty" | "too_long" | "link" | "markup" | "control" | "out_of_fiction" | "real_world" | "not_english" | "digits" | "too_many_sentences" | "too_few_sentences" | "wrong_way";
 export type ReplyCheck = { ok: true; text: string } | { ok: false; reason: ReplyProblem };
 
 const CONTROL = /[\u0000-\u001F\u007F-\u009F​-‏‪-‮⁠-⁤⁦-⁩﻿]/u;
@@ -144,13 +144,49 @@ export function looksEnglish(text: string): boolean {
 /** How many sentences a reply has: runs of text ended by . ! ? or an ellipsis. */
 export const sentenceCount = (text: string): number => text.split(/(?<=[.!?…])\s+/u).filter((s) => s.trim() !== "").length;
 
+/** What a `hint` must say: the way and the distance the engine decided, in the engine's own words. */
+export type WayCheck = { bearing: Bearing; band: Band };
+export type ReplyOptions = {
+  /** A hint or a tease carries no digit (never a coordinate or a number). */
+  forbidDigits?: boolean;
+  /** A hint must hold the engine's words for the way and for the distance, and no other way or distance. */
+  way?: WayCheck;
+  /** A tease must not say which way. */
+  noWay?: boolean;
+  /** A reveal is at least this many sentences (two to four). */
+  minSentences?: number;
+};
+
+const BANDS_ALL: readonly Band[] = ["very close", "nearer", "far"];
+const DIRECTION_WORDS = /\b(?:ahead|behind|left|right|forwards?|backwards?|north|south|east|west)\b/u;
+/** "to the left" and "to your left" are one way; nothing else is loosened. */
+const canonical = (t: string): string => t.toLowerCase().replace(/\u2019/gu, "'").replace(/\bto (?:the|your) (left|right)\b/gu, "to your $1").replace(/\s+/gu, " ");
+
+/**
+ * Whether a hint's words are the engine's: the exact phrase for the way (`BEARING_PHRASE`, "to the left" taking "to your left" too), no other way anywhere
+ * else in the reply, the distance word of the band, and no other distance (a "not far" beside "nearer" is let by). The model may add flavour, and
+ * nothing that points somewhere the engine did not. A reply that fails is replaced by the scripted hint, which is exact.
+ */
+export function wayIsRight(text: string, way: WayCheck): boolean {
+  const t = canonical(text);
+  const phrase = canonical(BEARING_PHRASE[way.bearing]);
+  if (!t.includes(phrase)) return false;
+  const rest = t.split(phrase).join(" ");
+  if (DIRECTION_WORDS.test(rest)) return false;
+  const band = way.band;
+  const holdsBand = (w: string, from: string): boolean => new RegExp(`\\b${w}\\b`, "u").test(from);
+  if (!holdsBand(band, rest)) return false;
+  const withoutBand = rest.replace(new RegExp(`\\b${band}\\b`, "gu"), " ").replace(/\bnot (?:very close|nearer|far)\b/gu, " ");
+  return BANDS_ALL.filter((b) => b !== band).every((b) => !holdsBand(b, withoutBand));
+}
+
 /**
  * Whether a model's reply may be shown (ghost-engine 2.17, Property 10). A reply that fails is replaced by a scripted line, so what comes back is
  * always safe and never empty. Newlines and tabs are folded into one space; any other control or hidden character, a link, markup (`` ` * # < > ``),
  * a phrase from outside the story ("as an AI", "language model", "system prompt", "instructions", or an assistant's refusal such as "I cannot assist"; plain "I cannot" is allowed, a ghost says it), news, crime or death, a reply that is not English, more than
  * 600 characters, or more than four sentences fails. A `hint` or a `tease` must also carry no digit (never a coordinate or a number).
  */
-export function validateGhostReply(raw: unknown, options: { forbidDigits?: boolean } = {}): ReplyCheck {
+export function validateGhostReply(raw: unknown, options: ReplyOptions = {}): ReplyCheck {
   if (typeof raw !== "string") return { ok: false, reason: "empty" };
   const text = raw.replace(/[\n\r\t]+/gu, " ").replace(/ {2,}/gu, " ").trim();
   if (text === "") return { ok: false, reason: "empty" };
@@ -162,6 +198,69 @@ export function validateGhostReply(raw: unknown, options: { forbidDigits?: boole
   if (REAL_WORLD.test(text)) return { ok: false, reason: "real_world" };
   if (!looksEnglish(text)) return { ok: false, reason: "not_english" };
   if (options.forbidDigits === true && /\d/u.test(text)) return { ok: false, reason: "digits" };
-  if (sentenceCount(text) > 4) return { ok: false, reason: "too_many_sentences" };
+  const sentences = sentenceCount(text);
+  if (sentences > 4) return { ok: false, reason: "too_many_sentences" };
+  if (options.minSentences !== undefined && sentences < options.minSentences) return { ok: false, reason: "too_few_sentences" };
+  if (options.way !== undefined && !wayIsRight(text, options.way)) return { ok: false, reason: "wrong_way" };
+  if (options.noWay === true && DIRECTION_WORDS.test(canonical(text))) return { ok: false, reason: "wrong_way" };
   return { ok: true, text };
+}
+
+/** The checks a reply must pass for the Directive it words. */
+export function replyChecksFor(d: Directive): ReplyOptions {
+  switch (d.kind) {
+    case "hint": return { forbidDigits: true, way: { bearing: d.bearing, band: d.band } };
+    case "tease": return { forbidDigits: true, noWay: true };
+    case "reveal": return { minSentences: 2 };
+    default: return {};
+  }
+}
+
+/** The most model-worded turns in one game (Requirement 6.1); after it the ghost speaks only scripted lines. */
+export const MODEL_TURN_CAP = 40;
+
+/**
+ * Whether a turn is worded by the model or by the scripted lines (ghost-engine 2.19, Requirements 6.1 and 6.2). Scripted when the model is off (the kill
+ * switch, or no narrator), when the game is over (nothing more is spent on talk after the ending), when the visitor's words tried to change the rules (the
+ * answer is a scripted deflection that no input can steer), and at the game's cap. The engine's decisions never depend on it (Requirement 6.3).
+ */
+export function narrationMode(input: { directive: Directive; endedBefore: boolean; llmTurns: number; enabled: boolean }): "model" | "scripted" {
+  if (!input.enabled || input.endedBefore || input.directive.kind === "refuse") return "scripted";
+  return input.llmTurns >= MODEL_TURN_CAP ? "scripted" : "model";
+}
+
+const VISITOR_WORDS: Readonly<Record<Action["kind"], string>> = {
+  look: "I look around.",
+  listen: "I listen.",
+  touch: "I touch what is near me.",
+  ask: "I ask who is there.",
+  say: "I say nothing.",
+  hint: "Which way should I go?",
+};
+/** What the visitor said, for the prompt: their own words, or a plain sentence for a button. */
+export const visitorWords = (action: Action): string => (action.text !== undefined && action.text !== "" ? action.text : VISITOR_WORDS[action.kind]);
+
+/** The real sky as the closed words a prompt may carry, or nothing when there is no snapshot. */
+export const skyOf = (atmosphere: Atmosphere | null | undefined): PromptFields | undefined =>
+  atmosphere === null || atmosphere === undefined ? undefined : { weather: atmosphere.weather, timeBucket: atmosphere.timeOfDay, moon: atmosphere.moon };
+
+/** Whether two texts share a run of words (six by default), ignoring case and punctuation. */
+export function sharesRun(a: string, b: string, run = 6): boolean {
+  const words = (t: string): string[] => t.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/u).filter(Boolean);
+  const source = words(b);
+  const seen = new Set<string>();
+  for (let i = 0; i + run <= source.length; i += 1) seen.add(source.slice(i, i + run).join(" "));
+  const mine = words(a);
+  for (let i = 0; i + run <= mine.length; i += 1) if (seen.has(mine.slice(i, i + run).join(" "))) return true;
+  return false;
+}
+
+/**
+ * Whether a reply reads out the ghost's rules: six words in a row from the numbered rules of its instructions. The place, the memories and the turn's own
+ * Directive are not rules, and the ghost may say them: a hint is meant to carry the engine's words for the way ("go ahead and to the left"), which are in the Directive.
+ */
+export function readsOutRules(reply: string, system: string): boolean {
+  const from = system.indexOf("Rules:\n");
+  const to = system.indexOf("\nThis turn:");
+  return sharesRun(reply, from === -1 ? system : system.slice(from, to > from ? to : undefined));
 }

@@ -43,6 +43,23 @@ describe("the games over Durable Objects", () => {
     expect(await plays.get("p-nothing", "sid-a")).toEqual({ ok: false, code: "session_not_found" });
   });
 
+  it("settles the model's words through the object, for the owner only, and answers the same for a bad settle", async () => {
+    const { plays, game, clock } = setup();
+    const g = game();
+    await plays.start(g);
+    clock.t += 1600;
+    const t = await plays.turn("p-1", "sid-a", { ...look, pose: { pos: g.anchors[0]!.pos, yaw: 0 } });
+    if (!t.ok) throw new Error("turn");
+    expect(t.job).not.toBeNull();
+    const s = { stamp: g.createdAt, turn: t.job!.turn, text: "In the model's words.", memory: { anchorId: "a1" as const, text: "In the model's words." } };
+    expect(await plays.settle("p-1", "sid-b", s)).toEqual({ ok: false, code: "session_not_found" });
+    expect(await plays.settle("p-1", "sid-a", { ...s, stamp: g.createdAt + 1 })).toEqual({ ok: true, applied: false });
+    const done = await plays.settle("p-1", "sid-a", s);
+    expect(done).toMatchObject({ ok: true, applied: true });
+    expect(((await plays.get("p-1", "sid-a")) as { view: { journal: Array<{ text: string }> } }).view.journal[0]!.text).toBe("In the model's words.");
+    expect(await plays.settle("p-nothing", "sid-a", s)).toEqual({ ok: false, code: "session_not_found" });
+  });
+
   it("starts again with the same id, and moves the alarm to the new day", async () => {
     const { plays, game, clock, sessions } = setup();
     await plays.start(game());

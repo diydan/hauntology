@@ -24,6 +24,8 @@ export const LOG_SCHEMA = {
   "play.start": { worldId: "id", access: "word" },
   /** One turn was taken: what the ghost was told to do (`reveal`, `echo`, `tease`, `hint`, `ambient`, `ending` or `refuse`) and whether it spoke from the scripted lines. Never the input or the reply. */
   "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
+  /** The model's part of a turn (ghost-engine 4): `model`, `invalid`, `refused`, `failed`, `capped` or `off`, and how many calls it took. Never a word of the prompt or the reply. */
+  "play.narrate": { outcome: "word", attempts: "int" },
   /** A game was finished or played again, with how many turns it took. */
   "play.end": { turns: "int" },
   "play.reset": { turns: "int" },

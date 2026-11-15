@@ -11,6 +11,7 @@ type IndexLike = { idFromName(name: string): unknown; get(id: unknown): { fetch(
  * with the in-process twin: the owner check, a day to live, one turn at a time (a Durable Object runs one call at a time) and one turn per 1.5 seconds.
  * An alarm at the game's end of life deletes it, and tells the world's index. Internal addresses, to the Worker only, each a `POST` with a JSON body:
  *   /start {game}  keep a new game (200, or 409 when a live one is there)    /turn {ownerSid, input, pose, world}   /get {ownerSid}
+ *   /settle {ownerSid, settle}  put the model's words where the scripted ones were (ghost-engine 4.2)
  *   /reset {ownerSid, world, seed}                                            /delete  forget the game (204)
  * Every answer but `/start` and `/delete` is the core's answer as it is: `{ok: true, ...}` or `{ok: false, code}`.
  */
@@ -40,6 +41,8 @@ export class PlaySession {
       }
       case "/turn":
         return json(await this.core.turn(owner, { input: body["input"], pose: body["pose"], world: body["world"] as never }));
+      case "/settle":
+        return json(await this.core.settle(owner, body["settle"]));
       case "/get":
         return json(await this.core.get(owner));
       case "/reset": {

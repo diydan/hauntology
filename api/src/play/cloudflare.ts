@@ -1,6 +1,6 @@
 import type { PlaySession } from "@hauntology/shared/ghost/session";
-import type { WorldFacts } from "@hauntology/shared/ghost/play";
-import type { Peek, PlayRefusal, PlaySessions, TurnDone } from "./ports";
+import type { Settle, WorldFacts } from "@hauntology/shared/ghost/play";
+import type { Peek, PlayRefusal, PlaySessions, Settled, TurnDone } from "./ports";
 
 type Stub = { fetch(input: string, init?: RequestInit): Promise<Response> };
 type Namespace = { idFromName(name: string): unknown; get(id: unknown): Stub };
@@ -31,6 +31,9 @@ export class CloudflarePlaySessions implements PlaySessions {
 
   async turn(id: string, ownerSid: string, turn: { input: unknown; pose: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<TurnDone | PlayRefusal> {
     return (await (await post(this.game(id), "play-session", "/turn", { ownerSid, ...turn })).json()) as TurnDone | PlayRefusal;
+  }
+  async settle(id: string, ownerSid: string, settle: Settle): Promise<Settled | PlayRefusal> {
+    return (await (await post(this.game(id), "play-session", "/settle", { ownerSid, settle })).json()) as Settled | PlayRefusal;
   }
   async get(id: string, ownerSid: string): Promise<Peek | PlayRefusal> {
     return (await (await post(this.game(id), "play-session", "/get", { ownerSid })).json()) as Peek | PlayRefusal;

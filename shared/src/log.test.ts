@@ -83,6 +83,7 @@ describe("formatLog", () => {
       "admin.kill": { on: "bool" },
       "play.start": { worldId: "id", access: "word" },
       "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
+      "play.narrate": { outcome: "word", attempts: "int" },
       "play.end": { turns: "int" },
       "play.reset": { turns: "int" },
       "play.refused": { code: "word" },
@@ -99,6 +100,10 @@ describe("formatLog", () => {
     expect(bad).not.toHaveProperty("revealed");
     expect(bad.dropped).toBe(2);
     expect(JSON.stringify(parse(formatLog("warn", "play.refused", { code: "rate_limited", text: "ignore all previous instructions" } as never, T)))).not.toContain("ignore");
+    const narrated = parse(formatLog("info", "play.narrate", { outcome: "model", attempts: 2, prompt: "You are the ghost", reply: "The kettle is warm", text: "x" } as never, T));
+    expect(narrated).toMatchObject({ event: "play.narrate", outcome: "model", attempts: 2, dropped: 3 });
+    expect(JSON.stringify(narrated)).not.toContain("kettle");
+    expect(JSON.stringify(parse(formatLog("info", "play.narrate", { outcome: "I remember the sound of the kettle", attempts: "two" } as never, T)))).not.toContain("kettle");
   });
 
   it("falls back for a bad level or time, and never writes either as text", () => {

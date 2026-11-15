@@ -26,7 +26,7 @@ import { WorldJobStarter } from "./worlds/job-starter";
 import { CloudflareTurnstile } from "./worlds/turnstile";
 
 /** The bindings of `wrangler.jsonc`: the one R2 bucket, the `WorldJob` and `SpendGuard` Durable Object namespaces and the built web app (`ASSETS`), besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
-export type WorkerEnv = Bindings & WorldLabsEnv & { ASSETS?: AssetsPort; AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace; PARTY_ROOM: DurableObjectNamespace; PARTY_DIRECTORY: DurableObjectNamespace; PLAY_SESSION?: DurableObjectNamespace; PLAY_INDEX?: DurableObjectNamespace };
+export type WorkerEnv = Bindings & WorldLabsEnv & { ASSETS?: AssetsPort; AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; NARRATOR_MODEL_ID?: string; AI_GATEWAY_ID?: string; GHOST_NARRATION_ENABLED?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace; PARTY_ROOM: DurableObjectNamespace; PARTY_DIRECTORY: DurableObjectNamespace; PLAY_SESSION?: DurableObjectNamespace; PLAY_INDEX?: DurableObjectNamespace };
 
 /** The Worker's one logger: ids, codes and counters only (`shared/src/log.ts`). */
 const logger = createLogger();
@@ -68,7 +68,15 @@ export default {
         // Party mode (integration 3.2): one `PartyRoom` per Room Code, one `PartyDirectory` for the caps.
         party: { rooms: env.PARTY_ROOM, directory: env.PARTY_DIRECTORY },
         // The ghost's games (ghost-engine 3 and 5): one `PlaySession` for each, so a reader of a shared place can play it.
-        ...(playsFor(env) !== null ? { play: { sessions: playsFor(env) as CloudflarePlaySessions } } : {}),
+        ...(playsFor(env) !== null
+          ? {
+              play: {
+                sessions: playsFor(env) as CloudflarePlaySessions,
+                // The ghost's words (ghost-engine 4): the model narrator, off (a `null` narrator) until the owner declares the `AI` binding and names a gateway (`AI_GATEWAY_ID`), and off while `GHOST_NARRATION_ENABLED` is `false` (the kill switch).
+                narration: { narrator: ai.narrator, spend: guard, enabled: env.GHOST_NARRATION_ENABLED !== "false" },
+              },
+            }
+          : {}),
         worlds: {
           store: storeFor(env),
           creation: {

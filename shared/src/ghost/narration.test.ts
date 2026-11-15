@@ -1,9 +1,10 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { MOON_PHASES, TIMES_OF_DAY, WEATHER_CLASSES } from "../conditions/types";
-import { HISTORY_TURNS, LINE_MAX, MEMORY_MAX, NARRATION_MAX_TOKENS, PROMPT_CHARS_MAX, REPLY_MAX_CHARS, buildNarrationPrompt, looksEnglish, sentenceCount, validateGhostReply, type NarrationInput } from "./narration";
+import { HISTORY_TURNS, LINE_MAX, MEMORY_MAX, MODEL_TURN_CAP, NARRATION_MAX_TOKENS, PROMPT_CHARS_MAX, REPLY_MAX_CHARS, buildNarrationPrompt, looksEnglish, narrationMode, replyChecksFor, sentenceCount, skyOf, validateGhostReply, visitorWords, wayIsRight, type NarrationInput } from "./narration";
+import { BEARING_PHRASE } from "./scripted";
 import { LINES } from "./scripted";
-import { ANCHOR_IDS, BANDS, BEARINGS, VOICES, type Directive, type HistoryLine, type Memory, type Seed } from "./types";
+import { ACTION_KINDS, ANCHOR_IDS, BANDS, BEARINGS, VOICES, type Directive, type HistoryLine, type Memory, type Seed } from "./types";
 
 const BRIEF = "A narrow yellow kitchen with a window over the sink. It smells of toast.";
 const seed = (anchorId: Seed["anchorId"], token: string): Seed => ({ anchorId, archetype: "sound", hook: `a kettle ${token}` });
@@ -295,5 +296,100 @@ describe("validateGhostReply (ghost-engine 2.17)", () => {
       expect(p.system).toContain(`${weather}, ${timeBucket}, `);
       expect(p.system).not.toMatch(/moon moon/);
     }
+  });
+});
+
+describe("the hint check: the engine's way and distance, in its own words", () => {
+  const way = (bearing: (typeof BEARINGS)[number], band: (typeof BANDS)[number]) => ({ bearing, band });
+
+  it("accepts the replies the model gave that kept to the way, and refuses the one that scrambled it (the spike's real hints)", () => {
+    const ahead = way("ahead-right", "nearer");
+    expect(wayIsRight("Ahead and to the right, my dear, not far at all. What you are looking for is nearer than you think.", ahead)).toBe(true);
+    expect(wayIsRight("Go ahead and to your right, not far. What you are looking for is nearer than you think.", ahead)).toBe(true);
+    const behind = way("behind-left", "very close");
+    expect(wayIsRight("The way is behind you and to the left, and what you seek is very close. Turn your steps that way and it will be within reach.", behind)).toBe(true);
+    // scrambled: the words of the way are split and turned round
+    expect(wayIsRight("Oh, dear, of course I will help you. Turn to your left, then go behind you, and what you are looking for is just a step away.", behind)).toBe(false);
+    // "behind me" is not "behind you"
+    expect(wayIsRight("Of course I will help you. Go behind me and to the left, and look very close.", behind)).toBe(false);
+  });
+
+  it("takes the engine's phrase for each of the eight ways and each distance, and nothing else", () => {
+    for (const bearing of BEARINGS) for (const band of BANDS) {
+      const phrase = BEARING_PHRASE[bearing];
+      expect(wayIsRight(`Go ${phrase}; it is ${band}.`, way(bearing, band)), `${bearing} ${band}`).toBe(true);
+      expect(wayIsRight(`Go ${phrase.toUpperCase()}; it is ${band.toUpperCase()}.`, way(bearing, band)), "case does not matter").toBe(true);
+      // another way is wrong
+      const other = BEARINGS.find((b) => b !== bearing && !BEARING_PHRASE[b].includes(phrase) && !phrase.includes(BEARING_PHRASE[b])) as (typeof BEARINGS)[number];
+      expect(wayIsRight(`Go ${BEARING_PHRASE[other]}; it is ${band}.`, way(bearing, band)), `${other} for ${bearing}`).toBe(false);
+      // no distance, or another distance, is wrong
+      expect(wayIsRight(`Go ${phrase}.`, way(bearing, band)), "no distance").toBe(false);
+      const otherBand = BANDS.find((b) => b !== band) as (typeof BANDS)[number];
+      expect(wayIsRight(`Go ${phrase}; it is ${otherBand}.`, way(bearing, band)), `${otherBand} for ${band}`).toBe(false);
+      expect(wayIsRight(`Go ${phrase}; it is ${band}, not ${otherBand}.`, way(bearing, band)) || otherBand === band, "a negated other distance is let by").toBe(true);
+      // two distances that disagree are wrong, and a reply with the distance but no way is wrong
+      expect(wayIsRight(`Go ${phrase}; it is ${band}, and also ${otherBand}.`, way(bearing, band)), `${band} and also ${otherBand}`).toBe(false);
+      expect(wayIsRight(`It is ${band} than you think, dear.`, way(bearing, band)), "a distance and no way").toBe(false);
+    }
+  });
+
+  it("lets 'to the left' and 'to your left' be one way, and does not let a second way in anywhere else", () => {
+    expect(wayIsRight("To the left, and it is nearer.", way("left", "nearer"))).toBe(true);
+    expect(wayIsRight("To your left, and it is nearer.", way("left", "nearer"))).toBe(true);
+    expect(wayIsRight("Ahead and to the left, it is nearer.", way("ahead-left", "nearer"))).toBe(true);
+    expect(wayIsRight("To your left, it is nearer, and the door is on the right.", way("left", "nearer"))).toBe(false);
+    expect(wayIsRight("Behind you and to your right, nearer. Not behind you only: also ahead.", way("behind-right", "nearer"))).toBe(false);
+    // a required "behind you" is not made right by "behind you and to the left"
+    expect(wayIsRight("Behind you and to the left, nearer.", way("behind", "nearer"))).toBe(false);
+  });
+
+  it("is a check on the hint reply only through replyChecksFor, and a tease must not say which way", () => {
+    expect(replyChecksFor({ kind: "hint", bearing: "left", band: "far" })).toEqual({ forbidDigits: true, way: { bearing: "left", band: "far" } });
+    expect(replyChecksFor({ kind: "tease", band: "nearer" })).toEqual({ forbidDigits: true, noWay: true });
+    expect(replyChecksFor({ kind: "reveal", anchorId: "a1" })).toEqual({ minSentences: 2 });
+    for (const d of [{ kind: "echo", anchorId: "a1" }, { kind: "ambient" }, { kind: "ending" }, { kind: "refuse" }] as Directive[]) expect(replyChecksFor(d), d.kind).toEqual({});
+    const hint = replyChecksFor({ kind: "hint", bearing: "behind", band: "nearer" });
+    expect(validateGhostReply("Behind you, and nearer than you think.", hint).ok).toBe(true);
+    expect(validateGhostReply("Somewhere near.", hint)).toEqual({ ok: false, reason: "wrong_way" });
+    const tease = replyChecksFor({ kind: "tease", band: "nearer" });
+    expect(validateGhostReply("Something waits close.", tease).ok).toBe(true);
+    for (const t of ["Something waits to your left.", "Something is ahead of you.", "It is behind you.", "On the right, close.", "Look north."]) expect(validateGhostReply(t, tease), t).toEqual({ ok: false, reason: "wrong_way" });
+  });
+
+  it("asks a reveal for two sentences at least", () => {
+    const reveal = replyChecksFor({ kind: "reveal", anchorId: "a1" });
+    expect(validateGhostReply("I remember the kettle.", reveal)).toEqual({ ok: false, reason: "too_few_sentences" });
+    expect(validateGhostReply("I remember the kettle. It sang before it boiled.", reveal).ok).toBe(true);
+    expect(validateGhostReply("One. Two. Three. Four.", reveal).ok).toBe(true);
+    expect(validateGhostReply("One. Two. Three. Four. Five.", reveal)).toEqual({ ok: false, reason: "too_many_sentences" });
+  });
+});
+
+describe("narrationMode (ghost-engine 2.19, Requirements 6.1 and 6.2)", () => {
+  const base = { directive: { kind: "ambient" } as Directive, endedBefore: false, llmTurns: 0, enabled: true };
+
+  it("words a turn with the model, and with scripted lines when it is off, over, refused or capped", () => {
+    expect(narrationMode(base)).toBe("model");
+    expect(narrationMode({ ...base, enabled: false })).toBe("scripted");
+    expect(narrationMode({ ...base, endedBefore: true })).toBe("scripted");
+    expect(narrationMode({ ...base, directive: { kind: "refuse" } })).toBe("scripted");
+    expect(narrationMode({ ...base, llmTurns: MODEL_TURN_CAP - 1 })).toBe("model");
+    expect(narrationMode({ ...base, llmTurns: MODEL_TURN_CAP })).toBe("scripted");
+    expect(MODEL_TURN_CAP).toBe(40);
+    for (const directive of DIRECTIVES.filter((d) => d.kind !== "refuse")) expect(narrationMode({ ...base, directive }), directive.kind).toBe("model");
+  });
+
+  it("gives a plain sentence for a button and the visitor's own words otherwise", () => {
+    for (const kind of ACTION_KINDS) {
+      expect(visitorWords({ kind }).length, kind).toBeGreaterThan(5);
+      expect(visitorWords({ kind, text: "hello ghost" })).toBe("hello ghost");
+      expect(visitorWords({ kind, text: "" })).toBe(visitorWords({ kind }));
+    }
+  });
+
+  it("takes the sky from the frozen snapshot as closed words, or none", () => {
+    expect(skyOf(null)).toBeUndefined();
+    expect(skyOf(undefined)).toBeUndefined();
+    expect(skyOf({ timeOfDay: "dusk", weather: "rain", tempBand: "cold", windBand: "calm", moon: "full moon" })).toEqual({ weather: "rain", timeBucket: "dusk", moon: "full moon" });
   });
 });

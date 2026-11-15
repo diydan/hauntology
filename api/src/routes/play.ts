@@ -7,12 +7,20 @@ import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
 import { setLastPlay, setLastWorld } from "../http/session";
 import { SILENT, type Logger } from "../log";
+import { narrateTurn, type Narration } from "../play/narrate";
 import type { PlayRefusal, PlaySessions } from "../play/ports";
 import { accessOf, mayRead } from "../worlds/access";
 import type { WorldRecord, WorldStore } from "../worlds/store";
-import { readBody } from "./world-create";
+import { ipHashOf, readBody } from "./world-create";
 
-export type PlayDeps = { store: WorldStore; sessions: PlaySessions; log?: Logger; now?: () => number };
+export type PlayDeps = {
+  store: WorldStore;
+  sessions: PlaySessions;
+  /** The model narrator (ghost-engine 4). Without it the ghost speaks only scripted lines, as before. */
+  narration?: Narration;
+  log?: Logger;
+  now?: () => number;
+};
 
 /** What the engine needs of a ready world, from its manifest as it parses: where the visitor starts, how far the world goes, the Place Brief and any authored anchors. `null` for a world that is not ready or whose manifest does not fit. */
 export function factsOf(world: WorldRecord): WorldFacts | null {
@@ -40,7 +48,9 @@ const STATUS = { session_not_found: 404, session_expired: 410, rate_limited: 429
  * `404 world_not_found`. The access is checked again on every call, so a world that is unshared or deleted ends the game at once for a reader. A game belongs to the
  * Session that started it: another Session's game is `session_not_found`. The Session remembers the game (`lastPlayId`) and, unless the visitor is only a reader,
  * the world (`lastWorldId`): a reader's world stays out of the Session so that a reload does not turn a link into a place they own.
- * The words are scripted (the model narrator is ghost-engine 4). Nothing here calls a paid service. Logs: counters and codes only.
+ * A turn is played with scripted words first and kept; when the engine's rules allow, the model words it afterwards (`narrateTurn`: one `llm` unit for each call from
+ * `SpendGuard`, the reply checked, one retry), and its words replace the scripted ones in the reply, the journal and the history only if the game still accepts them.
+ * Any failure there leaves the scripted words, so a turn never fails because of the model. Logs: counters and codes only, never a word of the visitor's or the ghost's.
  */
 export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
   const routes = new Hono<AppEnv>();
@@ -113,10 +123,31 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
     const o = typeof json === "object" && json !== null ? (json as Record<string, unknown>) : {};
     const r = await deps.sessions.turn(id, sid, { input: o["input"], pose: o["pose"], world: { bounds: found.facts.bounds, brief: found.facts.brief } });
     if (!r.ok) return refusal(c, r);
-    log.info("play.turn", { directive: r.directive, revealed: r.revealed, scripted: true });
+
+    let text: string = r.reply.text;
+    let view = r.view;
+    let scripted = true;
+    if (r.job !== null && deps.narration !== undefined) {
+      const said = await narrateTurn(deps.narration, r.job, { sessionId: sid, ipHash: await ipHashOf(c, c.env.HMAC_SECRET as string) });
+      log.info("play.narrate", { outcome: said.outcome, attempts: said.attempts });
+      if (said.text !== null) {
+        const job = r.job;
+        const reply = job.farewell !== null ? `${said.text} ${job.farewell}` : said.text;
+        const settled = await deps.sessions
+          .settle(id, sid, { stamp: job.stamp, turn: job.turn, text: reply, ...(job.memoryAnchor !== null ? { memory: { anchorId: job.memoryAnchor, text: said.text } } : {}) })
+          .catch(() => null);
+        // The model's words are shown only if the game kept them, so the reply, the journal and the history never disagree.
+        if (settled !== null && settled.ok && settled.applied) {
+          text = reply;
+          scripted = false;
+          if (settled.view !== undefined) view = settled.view;
+        }
+      }
+    }
+    log.info("play.turn", { directive: r.directive, revealed: r.revealed, scripted });
     if (r.revealed && r.ended) log.info("play.end", { turns: r.turns });
     c.header("Cache-Control", "no-store");
-    return c.json({ reply: r.reply, view: r.view });
+    return c.json({ reply: { text, scripted }, view });
   });
 
   routes.get("/:id", async (c) => {

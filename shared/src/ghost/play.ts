@@ -6,17 +6,19 @@ import { parseAction } from "./parse";
 import { sanitizePose } from "./pose";
 import { acceptTurn, retryAfterMs } from "./rate";
 import { makeRng, stepRng } from "./rng";
+import { narrationMode, skyOf, visitorWords, type NarrationInput } from "./narration";
 import { memoryText, narrate, voiceOfPreset } from "./scripted";
 import { makeSeeds } from "./seeds";
 import { SESSION_TTL_MS, isExpired, type PlaySession } from "./session";
 import { clientView } from "./view";
-import type { Anchor, Bounds, Directive, Memory, Seed, Vec3 } from "./types";
+import type { Anchor, AnchorId, Bounds, Directive, Memory, Seed, Vec3 } from "./types";
 
 /**
  * One whole game, from the first call to the last (ghost-engine tasks 3.1 and 3.2, over the pure parts of task 2): start a Session, take a turn,
  * start again. Pure: the clock, the seed and where the world is are all parameters, so the Durable Object that keeps a Session, and the
- * in-memory stand-in the route tests use, run the very same rules. The words are scripted (task 4, the model narrator, is not built); the engine's
- * decisions never depend on them (Requirement 6.3).
+ * in-memory stand-in the route tests use, run the very same rules. A turn is played with scripted words first, and stored; when the model is to word
+ * it, `playTurn` also hands back a `NarrationJob`, and what the model says is applied afterwards by `settleNarration`, which touches the words (a
+ * memory's text, a line of history) and the count of model turns and nothing else, so the engine's decisions never depend on them (Requirement 6.3).
  */
 export type WorldFacts = {
   spawn: Vec3;
@@ -81,10 +83,26 @@ export function resetSession(session: PlaySession, input: { world: WorldFacts; s
 }
 
 export type TurnInput = { input: unknown; pose: unknown; now: number; world: Pick<WorldFacts, "bounds" | "brief"> };
+
+/**
+ * What the narrator needs to word one turn, kept off the wire to the client: the prompt's inputs (built from what the visitor has been told and the
+ * one memory being told now, and nothing else), which game and turn it is for, the memory the turn told and what is said after it. `null` in a result
+ * when the engine's own rules call for scripted words (the game is over, the visitor tried to change the rules, or the game is at its model-turn cap).
+ */
+export type NarrationJob = {
+  /** The game's `createdAt`: "Haunt again" starts a new game, and a late answer for the old one must not reach it. */
+  stamp: number;
+  /** `state.turn` after this turn. */
+  turn: number;
+  input: NarrationInput;
+  /** The memory this turn told, and the scripted farewell that follows it when it was the last. */
+  memoryAnchor: AnchorId | null;
+  farewell: string | null;
+};
 export type TurnResult =
   | { ok: false; code: "rate_limited"; retryAfterMs: number }
   | { ok: false; code: "session_expired" }
-  | { ok: true; session: PlaySession; reply: { text: string; scripted: true }; view: PlayView; directive: Directive; revealed: boolean };
+  | { ok: true; session: PlaySession; reply: { text: string; scripted: true }; view: PlayView; directive: Directive; revealed: boolean; job: NarrationJob | null };
 
 const seedOf = (seeds: readonly Seed[], id: string): Seed | undefined => seeds.find((s) => s.anchorId === id);
 
@@ -102,18 +120,68 @@ export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
   let state = { ...stepped.state, seedState: s2 };
 
   let text: string;
+  let farewell: string | null = null;
+  let toldSeed: Seed | undefined;
   if (stepped.revealed !== null) {
     const seed = seedOf(session.seeds, stepped.revealed) as Seed;
+    toldSeed = seed;
     const memory: Memory = { anchorId: seed.anchorId, archetype: seed.archetype, text: memoryText(seed, turn.world.brief, r0) };
     state = withMemory(state, memory);
-    text = stepped.directive.kind === "ending" ? `${memory.text} ${narrate({ directive: stepped.directive, voice: session.voice, brief: turn.world.brief, seeds: session.seeds, r: [r0, r1] })}` : memory.text;
+    if (stepped.directive.kind === "ending") farewell = narrate({ directive: stepped.directive, voice: session.voice, brief: turn.world.brief, seeds: session.seeds, r: [r0, r1] });
+    text = farewell === null ? memory.text : `${memory.text} ${farewell}`;
   } else {
     text = narrate({ directive: stepped.directive, voice: session.voice, brief: turn.world.brief, seeds: session.seeds, r: [r0, r1] });
   }
   state = withHistory(state, action.text ?? action.kind, text);
 
+  // The model's part, if the engine's rules allow one: the last memory is told by the model and the farewell stays scripted, so a Directive of `ending` is worded as the `reveal` it comes with.
+  const job: NarrationJob | null =
+    narrationMode({ directive: stepped.directive, endedBefore: session.state.ended, llmTurns: session.state.llmTurns, enabled: true }) === "scripted"
+      ? null
+      : {
+          stamp: session.createdAt,
+          turn: state.turn,
+          memoryAnchor: toldSeed === undefined ? null : toldSeed.anchorId,
+          farewell,
+          input: {
+            voice: session.voice,
+            directive: toldSeed !== undefined ? { kind: "reveal", anchorId: toldSeed.anchorId } : stepped.directive,
+            brief: turn.world.brief,
+            memories: session.state.memories,
+            ...(toldSeed !== undefined ? { seed: toldSeed } : {}),
+            history: session.state.history,
+            player: visitorWords(action),
+            ...(skyOf(session.atmosphere) !== undefined ? { sky: skyOf(session.atmosphere) as NonNullable<ReturnType<typeof skyOf>> } : {}),
+          },
+        };
+
   const next: PlaySession = { ...session, state, pose };
-  return { ok: true, session: next, reply: { text, scripted: true }, view: clientView({ state, anchors: next.anchors, atmosphere: next.atmosphere }), directive: stepped.directive, revealed: stepped.revealed !== null };
+  return { ok: true, session: next, reply: { text, scripted: true }, view: clientView({ state, anchors: next.anchors, atmosphere: next.atmosphere }), directive: stepped.directive, revealed: stepped.revealed !== null, job };
+}
+
+/** What the model said for a turn, to be put where the scripted words were. */
+export type Settle = {
+  stamp: number;
+  turn: number;
+  /** The whole reply the visitor saw. */
+  text: string;
+  /** The memory the turn told, in the model's words. */
+  memory?: { anchorId: AnchorId; text: string };
+};
+
+/**
+ * Puts the model's words where the scripted ones were: the memory's text in the journal and the ghost's last line in the history, and counts the model turn.
+ * It changes the words and the count of model turns and nothing the engine decides (Property 11). `null` when the answer is for another game (a reset made
+ * a new one); the memory is still found by its anchor if other turns have come since, and the history line is only replaced while it is still the last turn's.
+ */
+export function settleNarration(session: PlaySession, settle: Settle): PlaySession | null {
+  if (settle.stamp !== session.createdAt) return null;
+  let state = { ...session.state, llmTurns: session.state.llmTurns + 1 };
+  const told = settle.memory;
+  if (told !== undefined) state = { ...state, memories: state.memories.map((m) => (m.anchorId === told.anchorId ? { ...m, text: told.text } : m)) };
+  const last = state.history[state.history.length - 1];
+  if (settle.turn === state.turn && last !== undefined && last.role === "ghost") state = { ...state, history: [...state.history.slice(0, -1), { role: "ghost", text: settle.text }] };
+  return { ...session, state };
 }
 
 export const viewOf = (session: PlaySession): PlayView => clientView({ state: session.state, anchors: session.anchors, atmosphere: session.atmosphere });

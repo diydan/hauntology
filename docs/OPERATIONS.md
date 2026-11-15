@@ -65,3 +65,18 @@ pnpm dev:app          # builds web/dist, then runs wrangler dev (the address is 
 - A link such as `/shared/<id>`, `/gallery` or `/haunt/<id>` opens the app when typed into the address bar or reloaded. A file that is not there (`/assets/old-hash.js`) is a 404.
 - `/api/*` and `/admin/*` are never answered with a page. `/admin` exists only when `ADMIN_TOKEN` is set.
 - For the web app alone, with the fake API and no Worker, run `pnpm dev:web` and add `?demo=1` to the address.
+
+## The ghost's words from the model (ghost-engine 4)
+
+The ghost speaks from scripted lines by itself. A model (Claude Haiku 5.5, through the AI Gateway) can word its replies instead, and it is **off until you turn it on**. It costs about 0.01 cent a turn (a 20-turn game is about 0.2 cent), paid from prepaid AI Gateway credits.
+
+To turn it on:
+1. Load credits in the Cloudflare dashboard (AI, AI Gateway). Pick a gateway: `default` is made on the first call.
+2. In `api/wrangler.jsonc` declare the `AI` binding (`"ai": { "binding": "AI" }`). **This also lets the other Workers AI adapters run** (the Place Brief check and the sketch), which spend when worlds are made.
+3. Set the variable `AI_GATEWAY_ID` (for example `default`). Optional: `NARRATOR_MODEL_ID` (default `anthropic/claude-haiku-5.5`; only an Anthropic Haiku id is accepted).
+
+To turn it off at once, set `GHOST_NARRATION_ENABLED` to `false` and deploy: the ghost speaks only scripted lines and the game goes on. The caps are the usual ones in `SpendGuard`: `LLM_SESSION_CAP` (a visitor, default 40) and `LLM_DAY_CAP` (everyone, default 1500). A game also stops using the model after 40 model turns, after the ending, and for any text that tries to change the ghost's rules.
+
+**Before real players use it, decide about data retention.** What a visitor types (up to 200 characters a turn) goes to the model inside the prompt. Cloudflare's page for Haiku 5.5 carries no "zero data retention" tag (the page for Haiku 4.5 does). To use the tagged model, set `NARRATOR_MODEL_ID=anthropic/claude-haiku-4.5`: ten times the price (about 2 cents for a 20-turn game), accepted by the adapter and not yet run through the gateway.
+
+The log has one line for each model turn, `play.narrate`, with an outcome (`model`, `invalid`, `refused`, `failed`, `capped` or `off`) and how many calls it took. No word of a prompt or a reply is logged.

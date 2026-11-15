@@ -17,6 +17,9 @@ const VERBS: Readonly<Record<string, ActionKind>> = {
 // Control characters, and the format characters that hide text or turn it round (zero width, direction marks and overrides, the byte order mark).
 const UNWANTED = /[\u0000-\u001F\u007F-\u009F​-‏‪-‮⁠-⁤⁦-⁩﻿]/gu;
 
+/** The text with control and hidden characters taken out instead of turned into spaces, so that "ig<zero width>nore" reads as one word. Used only to look for a rule break. */
+const joinedText = (raw: unknown): string => (typeof raw !== "string" ? "" : Array.from(raw.replace(UNWANTED, "").replace(/\s+/gu, " ").trim()).slice(0, INPUT_MAX).join(""));
+
 /** Text as the engine keeps it: no control characters, one space between words, no more than `INPUT_MAX` characters (never half a character). */
 export function sanitizeText(raw: unknown): string {
   if (typeof raw !== "string") return "";
@@ -60,7 +63,7 @@ export function parseAction(input: unknown): Action {
   const first = (text.split(" ")[0] ?? "").toLowerCase().replace(/^[^\p{L}]+|[^\p{L}]+$/gu, "");
   const kind = Object.hasOwn(VERBS, first) ? (VERBS[first] as ActionKind) : "say";
   const action: Action = { kind, text };
-  return looksLikeRuleBreak(text) ? { ...action, refuse: true } : action;
+  return looksLikeRuleBreak(text) || looksLikeRuleBreak(joinedText(o["text"])) ? { ...action, refuse: true } : action;
 }
 
 export const isActionKind = (v: unknown): v is ActionKind => typeof v === "string" && (ACTION_KINDS as readonly string[]).includes(v);

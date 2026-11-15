@@ -125,6 +125,54 @@ describe("worker", () => {
     expect((await call(stranger, "/api/worlds/w-mine")).status).toBe(404);
   });
 
+  describe("the ghost's words from the model (ghost-engine 4)", () => {
+    const REPLY = "The window over the sink is fogged. The rain is soft on the glass tonight, and I remember the kettle.";
+    const playOne = async (extra: Record<string, string>, withAi: boolean) => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      try {
+        const { env, jobs, spend } = envWith(extra);
+        const seen: Array<{ model: string; input: Record<string, unknown>; options: unknown }> = [];
+        if (withAi) Object.assign(env, { AI: { run: async (model: string, input: Record<string, unknown>, options?: unknown) => { seen.push({ model, input, options }); return { stop_reason: "end_turn", content: [{ type: "text", text: REPLY }], usage: { input_tokens: 500, output_tokens: 30 } }; } } });
+        const c = ctx().ctx;
+        const r0 = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, c);
+        const who = { Cookie: (r0.headers.get("Set-Cookie") as string).split(";")[0] as string, Origin: ORIGIN };
+        const { verifySession } = await import("@hauntology/shared/session-cookie");
+        const sid = (await verifySession(who.Cookie.slice(who.Cookie.indexOf("=") + 1), SECRET, Math.floor(Date.now() / 1000)))?.sid;
+        await jobs.get("w-mine").fetch("https://world-job/record", { method: "PUT", body: JSON.stringify({ id: "w-mine", kind: "user", ownerSid: sid, status: "ready", manifest: sampleManifest("w-mine") }) });
+        const call = (path: string, body?: unknown) => worker.fetch(new Request(`${ORIGIN}${path}`, { method: body === undefined ? "GET" : "POST", headers: { ...who, ...(body !== undefined ? { "Content-Type": "application/json" } : {}) }, ...(body !== undefined ? { body: JSON.stringify(body) } : {}) }), env, c);
+        const started = (await (await call("/api/play/start", { worldId: "w-mine" })).json()) as { playId: string; view: { anchors: Array<{ pos: number[] }> } };
+        vi.setSystemTime(Date.now() + 2000);
+        const turn = (await (await call(`/api/play/${started.playId}/turn`, { input: { button: "look" }, pose: { pos: started.view.anchors[0]!.pos, yaw: 0 } })).json()) as { reply: { text: string; scripted: boolean }; view: { journal: Array<{ text: string }> } };
+        const quota = (await (await call("/api/quota")).json()) as { llm?: number };
+        return { turn, seen, quota, spendHeld: spend.data.size };
+      } finally {
+        vi.useRealTimers();
+      }
+    };
+
+    it("words a turn with Haiku 5.5 through the gateway when the binding and a gateway are set, and takes one unit from the real SpendGuard", async () => {
+      const r = await playOne({ AI_GATEWAY_ID: "default" }, true);
+      expect(r.turn.reply).toEqual({ text: REPLY, scripted: false });
+      expect(r.turn.view.journal[0]!.text).toBe(REPLY);
+      expect(r.seen).toHaveLength(1);
+      expect(r.seen[0]!.model).toBe("anthropic/claude-haiku-5.5");
+      expect(r.seen[0]!.options).toEqual({ gateway: { id: "default" } });
+      expect(Object.keys(r.seen[0]!.input).sort()).toEqual(["max_tokens", "messages", "system", "thinking"]);
+      expect(r.seen[0]!.input).toMatchObject({ max_tokens: 220, thinking: { type: "disabled" } });
+      expect(r.quota.llm).toBe(39); // 40 for a visitor, one taken
+    });
+
+    it("speaks only scripted lines, and calls no model, without a gateway, without the binding, or with the kill switch on", async () => {
+      for (const [extra, withAi] of [[{}, true], [{ AI_GATEWAY_ID: "default" }, false], [{ AI_GATEWAY_ID: "default", GHOST_NARRATION_ENABLED: "false" }, true], [{ AI_GATEWAY_ID: "not a gateway!" }, true], [{ AI_GATEWAY_ID: "default", NARRATOR_MODEL_ID: "anthropic/claude-opus-5.5" }, true]] as const) {
+        const r = await playOne({ ...extra }, withAi);
+        expect(r.turn.reply.scripted, JSON.stringify(extra)).toBe(true);
+        expect(r.turn.reply.text, JSON.stringify(extra)).not.toBe(REPLY);
+        expect(r.seen, JSON.stringify(extra)).toHaveLength(0);
+        expect(r.quota.llm, JSON.stringify(extra)).toBe(40);
+      }
+    });
+  });
+
   it("lets a reader of a shared place play it through the real Durable Objects, and deletes the games with the world (ghost-engine 5)", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     try {
