@@ -2,6 +2,7 @@ import { RoomCore, type Ports } from "@hauntology/shared/party/server";
 
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const STATE_KEY = "room";
+type DirectoryNamespace = { idFromName(name: string): unknown; get(id: unknown): { fetch(input: string, init?: RequestInit): Promise<Response> } };
 
 /**
  * The `PartyRoom` Durable Object (party-mode 4.1, integration 3.1): one per Room, addressed by its Room Code. It holds
@@ -16,7 +17,7 @@ const STATE_KEY = "room";
 export class PartyRoom {
   private readonly core: RoomCore;
 
-  constructor(private readonly state: DurableObjectState, _env: unknown = {}, clock: () => number = Date.now) {
+  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace } = {}, clock: () => number = Date.now) {
     const sockets = (): WebSocket[] => (this.state as unknown as { getWebSockets(): WebSocket[] }).getWebSockets();
     const byId = (id: string): WebSocket | undefined => sockets().find((ws) => (ws as unknown as { deserializeAttachment(): { id?: string } | null }).deserializeAttachment()?.id === id);
     const ports: Ports = {
@@ -28,6 +29,12 @@ export class PartyRoom {
       close: (id, code, reason) => { try { byId(id)?.close(code, reason); } catch { /* already closed */ } },
       now: clock,
       randomBytes: (n) => crypto.getRandomValues(new Uint8Array(n)),
+      // Free the Room's place in the directory, so the cap counts only live Rooms.
+      ended: async (code) => {
+        const dir = env.PARTY_DIRECTORY;
+        if (dir === undefined) return;
+        await dir.get(dir.idFromName("party-directory")).fetch("https://party/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code }) });
+      },
     };
     this.core = new RoomCore(ports);
   }

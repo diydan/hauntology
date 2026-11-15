@@ -1,5 +1,7 @@
 import { retentionFromEnv } from "@hauntology/shared/world/retention";
 import { createApp } from "./app";
+import { PartyDirectory } from "./do/party-directory";
+import { PartyRoom } from "./do/party-room";
 import { SpendGuard } from "./do/spend-guard";
 import { WorldJob } from "./do/live-world-job";
 import type { AiBinding } from "./guarded/workersai/call";
@@ -21,7 +23,7 @@ import { WorldJobStarter } from "./worlds/job-starter";
 import { CloudflareTurnstile } from "./worlds/turnstile";
 
 /** The bindings of `wrangler.jsonc`: the one R2 bucket, the `WorldJob` and `SpendGuard` Durable Object namespaces and the built web app (`ASSETS`), besides the vars and secrets (and the world service's settings, `WorldLabsEnv`). */
-export type WorkerEnv = Bindings & WorldLabsEnv & { ASSETS?: AssetsPort; AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace };
+export type WorkerEnv = Bindings & WorldLabsEnv & { ASSETS?: AssetsPort; AI?: AiBinding; IMAGES?: ImagesBinding; GHOST_MODEL_ID?: string; GUARD_MODEL_ID?: string; IMAGE_MODEL_ID?: string; BUCKET: R2Bucket; WORLD_JOB: DurableObjectNamespace; SPEND_GUARD: DurableObjectNamespace; PARTY_ROOM: DurableObjectNamespace; PARTY_DIRECTORY: DurableObjectNamespace };
 
 /** The Worker's one logger: ids, codes and counters only (`shared/src/log.ts`). */
 const logger = createLogger();
@@ -53,6 +55,8 @@ export default {
         // Uploads are taken only where a world can be made from them: with no key there is nothing to keep a picture for.
         ...(live ? { uploads: { store: new CloudflareUploadStore(env.BUCKET) } } : {}),
         spend: () => guard.status(),
+        // Party mode (integration 3.2): one `PartyRoom` per Room Code, one `PartyDirectory` for the caps.
+        party: { rooms: env.PARTY_ROOM, directory: env.PARTY_DIRECTORY },
         worlds: {
           store: storeFor(env),
           creation: {
@@ -81,4 +85,4 @@ export default {
   },
 };
 
-export { SpendGuard, WorldJob };
+export { PartyDirectory, PartyRoom, SpendGuard, WorldJob };

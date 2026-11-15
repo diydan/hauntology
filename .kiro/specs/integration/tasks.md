@@ -30,7 +30,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
 - [ ] 3. Phase 3: the Room server (`api/`)
   - [x] 3.1 (`RoomCore` in `shared/src/party/server.ts` holds the logic, tested with fake ports; `api/src/do/party-room.ts` plugs in hibernating sockets, storage and the alarm) `PartyRoom` DO: sockets with the Hibernation API, token to `Who`, `step`, save before send, the one alarm (party-mode 4.1, 4.4)
     - _Requirements: 3.1, 3.3_
-  - [ ] 3.2 (built and tested: `api/src/do/party-directory.ts` and `api/src/routes/party.ts`, with `shared/src/party/protocol.ts` checking every message; still to do: mount the routes in `app.ts`, bind both objects in `worker.ts` and `wrangler.jsonc` with a migration, and rate limits) `PartyDirectory` caps, rate limits, time to live and deletion; `/api/party` routes (party-mode 4.8, 4.10, 7)
+  - [x] 3.2 (`api/src/do/party-directory.ts` and `api/src/routes/party.ts`, mounted at `/api/party` in `app.ts`, both objects bound in `worker.ts` and `wrangler.jsonc` (migration `v3`); `shared/src/party/protocol.ts` checks every message; limits: 20 join attempts a minute per hashed IP, 40 messages a second per socket; `PARTY_ENABLED` off answers `party_disabled`; an ended Room frees its directory place, and an entry is dropped after a day. Smoke run under `wrangler dev` on 2026-11-15: create, join, sockets, start, privacy, end) `PartyDirectory` caps, rate limits, time to live and deletion; `/api/party` routes (party-mode 4.8, 4.10, 7)
     - _Requirements: 3.2_
   - [ ] 3.3 Bot runner by alarm with think time (party-mode 4.9)
     - _Requirements: 3.1_

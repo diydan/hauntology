@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { PartyDirectory } from "../do/party-directory";
+import { JOINS_PER_MINUTE, PartyDirectory } from "../do/party-directory";
 import { PartyRoom } from "../do/party-room";
 import { FakeNamespace } from "../worlds/fake-cloudflare";
 import { partyRoutes } from "./party";
 
-function app(session = "s1") {
+function app(session = "s1", o: { enabled?: boolean; ip?: string } = {}) {
   const rooms = new FakeNamespace((state) => new PartyRoom(state));
   const directory = new FakeNamespace((state) => new PartyDirectory(state));
   let n = 0;
-  const routes = partyRoutes({ rooms, directory, sessionOf: () => session, random: () => ((n++ * 0.137) % 1) });
+  const routes = partyRoutes({ rooms, directory, sessionOf: () => session, ipHashOf: async () => o.ip ?? "ip1", enabled: () => o.enabled ?? true, random: () => ((n++ * 0.137) % 1) });
   return { routes, rooms, directory };
 }
 
@@ -39,5 +39,24 @@ describe("/api/party routes", () => {
     const { routes } = app();
     const res = await routes.request("/ABCD/ws");
     expect(res.status).toBe(426);
+  });
+
+  it("answers party_disabled on every route when the kill switch is off", async () => {
+    const { routes, directory } = app("s1", { enabled: false });
+    for (const [path, method] of [["/", "POST"], ["/ABCD/join", "POST"], ["/ABCD/ws", "GET"]] as const) {
+      const res = await routes.request(path, { method });
+      expect(res.status).toBe(503);
+      expect(await res.json()).toEqual({ ok: false, code: "party_disabled" });
+    }
+    expect(directory.calls).toEqual([]);
+  });
+
+  it("limits join attempts per hashed IP, good codes and bad codes alike", async () => {
+    const { routes } = app("s1", { ip: "same" });
+    const room = (await (await routes.request("/", { method: "POST" })).json()) as { code: string };
+    for (let i = 0; i < JOINS_PER_MINUTE; i++) expect((await routes.request(`/${i % 2 ? room.code : "QQQQ"}/join`, { method: "POST", body: JSON.stringify({ nickname: "A" }) })).status).not.toBe(429);
+    const late = await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "B" }) });
+    expect(late.status).toBe(429);
+    expect(await late.json()).toEqual({ ok: false, code: "rate_limited" });
   });
 });

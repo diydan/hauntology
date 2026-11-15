@@ -10,6 +10,10 @@ export type PartyDeps = Readonly<{
   directory: Namespace;
   /** The visitor's session id (one live Room per session). */
   sessionOf: (c: Context) => string;
+  /** The visitor's IP, hashed (never the IP itself): join attempts are limited per hash. */
+  ipHashOf: (c: Context) => Promise<string>;
+  /** The kill switch (`PARTY_ENABLED`): when it says no, every party route answers `party_disabled`. */
+  enabled: (c: Context) => boolean;
   random?: () => number;
 }>;
 
@@ -27,6 +31,11 @@ export function partyRoutes(deps: PartyDeps): Hono {
   const dir = (): Stub => deps.directory.get(deps.directory.idFromName("party-directory"));
   const roomOf = (code: string): Stub => deps.rooms.get(deps.rooms.idFromName(code));
 
+  app.use("*", async (c, next) => {
+    if (!deps.enabled(c)) return c.json({ ok: false, code: "party_disabled" }, 503);
+    return next();
+  });
+
   app.post("/", async (c) => {
     const sessionId = deps.sessionOf(c);
     for (let tries = 0; tries < 8; tries++) {
@@ -43,6 +52,9 @@ export function partyRoutes(deps: PartyDeps): Hono {
 
   app.post("/:code/join", async (c) => {
     const code = normalizeCode(c.req.param("code"));
+    // Counted before the code is even read, so guessing codes costs the same as joining one.
+    const allowed = (await (await post(dir(), "/attempt", { ipHash: await deps.ipHashOf(c) })).json()) as { ok: boolean };
+    if (!allowed.ok) return c.json({ ok: false, code: "rate_limited" }, 429);
     if (code === null) return c.json({ ok: false, code: "room_unknown" }, 404);
     const live = (await (await post(dir(), "/has", { code })).json()) as { live: boolean };
     if (!live.live) return c.json({ ok: false, code: "room_unknown" }, 404);
@@ -56,7 +68,10 @@ export function partyRoutes(deps: PartyDeps): Hono {
     const code = normalizeCode(c.req.param("code"));
     if (code === null) return c.json({ ok: false, code: "room_unknown" }, 404);
     if (c.req.header("Upgrade") !== "websocket") return c.json({ ok: false, code: "expected_websocket" }, 426);
-    return roomOf(code).fetch("https://party/ws", { headers: { Upgrade: "websocket" } });
+    // Only the upgrade headers go on (never the cookie): the Room knows a socket by the token in its first message.
+    const headers = new Headers({ Upgrade: "websocket" });
+    for (const h of ["Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions"]) { const v = c.req.header(h); if (v !== undefined) headers.set(h, v); }
+    return roomOf(code).fetch("https://party/ws", { headers });
   });
 
   return app;

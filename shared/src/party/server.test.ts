@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mulberry32 } from "../puzzles/rng";
-import { RoomCore, type Ports } from "./server";
+import { MAX_MESSAGES_PER_SECOND, RoomCore, type Ports } from "./server";
 
 /** Fake storage, sockets, clock and randomness. Storage survives a new RoomCore, as a Durable Object's does. */
 function fakes(seed = 1) {
@@ -8,6 +8,7 @@ function fakes(seed = 1) {
   const inbox = new Map<string, unknown[]>();
   const closed = new Map<string, { code: number; reason: string }>();
   const clock = { t: 1_000_000 };
+  const ended: string[] = [];
   const r = mulberry32(seed);
   const ports: Ports = {
     load: async () => disk.text,
@@ -18,9 +19,10 @@ function fakes(seed = 1) {
     close: (sid, code, reason) => { closed.set(sid, { code, reason }); },
     now: () => clock.t,
     randomBytes: (n) => Uint8Array.from({ length: n }, () => Math.floor(r() * 256)),
+    ended: async (code) => { ended.push(code); },
   };
   const of = (sid: string, t?: string) => (inbox.get(sid) ?? []).filter((m) => t === undefined || (m as { t: string }).t === t) as { t: string; [k: string]: unknown }[];
-  return { ports, disk, inbox, closed, clock, of };
+  return { ports, disk, inbox, closed, clock, of, ended };
 }
 const say = (core: RoomCore, sid: string, msg: unknown) => core.message(sid, JSON.stringify(msg));
 
@@ -53,6 +55,20 @@ describe("RoomCore: the lobby", () => {
     expect(f.of("host", "public").at(-1)).toMatchObject({ t: "public", view: { phase: "playing" } });
     expect(await core.join("Late")).toEqual({ ok: false, code: "game_started" });
     expect(b.seat).toBe(2);
+  });
+
+  it("refuses a socket's messages past the per-second limit unread, and takes them again the next second", async () => {
+    const { f, core } = await lobby();
+    f.clock.t += 1000; // a fresh second: the hellos counted in the last one
+    for (let i = 0; i < MAX_MESSAGES_PER_SECOND; i++) await say(core, "ben", { t: "addBot" });
+    expect(f.of("ben", "refused").filter((m) => m.code === "rate_limited")).toEqual([]);
+    await say(core, "ana", { t: "addBot" }); // another socket has its own count
+    expect(f.of("ana", "refused")).toEqual([]);
+    await say(core, "ben", { t: "addBot" });
+    expect(f.of("ben", "refused").at(-1)).toEqual({ t: "refused", code: "rate_limited" });
+    f.clock.t += 1000;
+    await say(core, "ben", { t: "addBot" });
+    expect(f.of("ben", "refused").at(-1)).toEqual({ t: "refused", code: "not_master" });
   });
 
   it("closes a socket that sends a bad token, junk, or anything before hello", async () => {
@@ -121,6 +137,7 @@ describe("RoomCore: the game", () => {
     await say(core, "host2", { t: "end" });
     expect(f.disk.text).toBeUndefined();
     expect(f.disk.deleted).toBe(1);
+    expect(f.ended).toEqual(["ABCD"]);
     expect(f.closed.get("ana")?.code).toBe(4000);
   });
 
@@ -130,5 +147,6 @@ describe("RoomCore: the game", () => {
     f.clock.t += 6 * 3600_000;
     await core.alarm();
     expect(f.disk.text).toBeUndefined();
+    expect(f.ended).toEqual(["ABCD"]);
   });
 });

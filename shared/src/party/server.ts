@@ -20,7 +20,12 @@ export type Ports = {
   close(socketId: string, code: number, reason: string): void;
   now(): number;
   randomBytes(n: number): Uint8Array;
+  /** Told once when the Room ends (by the Master, the host or its time to live), so the directory can free its place. */
+  ended?(code: string): Promise<void>;
 };
+
+/** At most this many messages per socket per second (party-mode 3.2: the Controller sends at most 30); the rest are refused unread. */
+export const MAX_MESSAGES_PER_SECOND = 40;
 
 export type SocketInfo = Readonly<{ role: "host" | "display" | "controller"; seat: Seat | null }>;
 export type ServerState = Readonly<{
@@ -37,6 +42,8 @@ const seedFrom = (b: Uint8Array): number => ((b[0] ?? 0) | ((b[1] ?? 0) << 8) | 
 
 export class RoomCore {
   private state: ServerState | null = null;
+  /** Per socket: the start of its current one-second window and the messages in it. Memory only: an eviction resets it, which is harmless. */
+  private readonly rate = new Map<string, { startMs: number; n: number }>();
   constructor(private readonly ports: Ports) {}
 
   private async loaded(): Promise<ServerState | null> {
@@ -101,6 +108,10 @@ export class RoomCore {
   async message(socketId: string, raw: string): Promise<void> {
     const s = await this.loaded();
     if (s === null) { this.ports.close(socketId, 4004, "room_unknown"); return; }
+    const t = this.ports.now();
+    const w = this.rate.get(socketId);
+    if (w === undefined || t - w.startMs >= 1000) this.rate.set(socketId, { startMs: t, n: 1 });
+    else if (++w.n > MAX_MESSAGES_PER_SECOND) { this.ports.send(socketId, { t: "refused", code: "rate_limited" }); return; }
     const parsed = parseClientMessage(raw);
     if (parsed.kind === "bad") { this.ports.close(socketId, 4400, "bad_message"); return; }
     const me = s.sockets[socketId];
@@ -182,6 +193,7 @@ export class RoomCore {
   async socketClosed(socketId: string): Promise<void> {
     const s = await this.loaded();
     if (s === null) return;
+    this.rate.delete(socketId);
     const me = s.sockets[socketId];
     const sockets = { ...s.sockets };
     delete sockets[socketId];
@@ -212,5 +224,7 @@ export class RoomCore {
     await this.ports.deleteAll();
     await this.ports.setAlarm(null);
     this.state = null;
+    this.rate.clear();
+    await this.ports.ended?.(s.room.code);
   }
 }

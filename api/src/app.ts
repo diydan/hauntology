@@ -16,6 +16,8 @@ import { imageRoutes, worldCreateRoutes, type CreationDeps } from "./routes/worl
 import { SILENT, type Logger } from "./log";
 import { galleryRoutes } from "./routes/gallery";
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
+import { partyRoutes, type PartyDeps } from "./routes/party";
+import { ipHashOf } from "./routes/world-create";
 
 export type AppOptions = SessionOptions & {
   /**
@@ -38,6 +40,8 @@ export type AppOptions = SessionOptions & {
     /** What the Quote and the create call need. Without it neither route exists. */
     creation?: Omit<CreationDeps, "store" | "now" | "worldGenEnabled">;
   };
+  /** The party Rooms (`PartyRoom`) and their directory (`PartyDirectory`). When given, `/api/party` is served; it answers `party_disabled` when `PARTY_ENABLED` is off (the same switch as the Home flag). */
+  party?: Pick<PartyDeps, "rooms" | "directory">;
 };
 
 /**
@@ -111,6 +115,18 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
         }),
       );
     }
+  }
+  if (options.party !== undefined) {
+    // Party mode (integration 3.2). The socket is a GET, so the origin guard lets it through; the Room takes no cookie, only the token in the first message.
+    app.route(
+      "/api/party",
+      partyRoutes({
+        ...options.party,
+        sessionOf: (c) => (c as Context<AppEnv>).get("session").sid,
+        ipHashOf: (c) => ipHashOf(c as Context<AppEnv>, (c as Context<AppEnv>).env.HMAC_SECRET as string),
+        enabled: (c) => flagsFrom((c as Context<AppEnv>).env).partyEnabled,
+      }),
+    );
   }
   // Last, so every route above wins and `/api` and `/admin` paths that nothing took stay 404s (`servePage`).
   if (options.assets !== undefined) app.notFound(servePage(options.assets));

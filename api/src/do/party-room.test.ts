@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fakeState } from "../worlds/fake-cloudflare";
+import { FakeNamespace } from "../worlds/fake-cloudflare";
+import { PartyDirectory } from "./party-directory";
 import { PartyRoom } from "./party-room";
 
 /** A fake socket with an attachment, as the Hibernation API keeps one. */
@@ -13,12 +15,12 @@ class FakeSocket {
   close(code: number, reason: string) { this.closed = { code, reason }; }
 }
 
-function room() {
+function room(env: ConstructorParameters<typeof PartyRoom>[1] = {}) {
   const parts = fakeState();
   const sockets: FakeSocket[] = [];
   (parts.state as unknown as { getWebSockets(): FakeSocket[] }).getWebSockets = () => sockets;
   const clock = { t: 5_000_000 };
-  const r = new PartyRoom(parts.state, {}, () => clock.t);
+  const r = new PartyRoom(parts.state, env, () => clock.t);
   const post = async (path: string, body: unknown) => (await r.fetch(new Request(`https://room${path}`, { method: "POST", body: JSON.stringify(body) }))).json() as Promise<Record<string, unknown>>;
   const socket = (id: string) => { const s = new FakeSocket({ id }); sockets.push(s); return s; };
   return { r, parts, post, socket, clock };
@@ -45,5 +47,19 @@ describe("PartyRoom Durable Object", () => {
     await t.r.webSocketMessage(sb as unknown as WebSocket, new ArrayBuffer(4));
     expect(sb.closed?.code).toBe(4400);
     expect((await (await t.r.fetch(new Request("https://room/ws"))).text())).toMatch(/websocket/);
+  });
+
+  it("frees its place in the directory when it ends", async () => {
+    const directory = new FakeNamespace((state) => new PartyDirectory(state));
+    const dir = directory.get(directory.idFromName("party-directory"));
+    const ask = async (path: string, body: unknown) => (await dir.fetch(`https://d${path}`, { method: "POST", body: JSON.stringify(body) })).json();
+    expect(await ask("/create", { code: "WXYZ", sessionId: "s" })).toEqual({ ok: true });
+    const t = room({ PARTY_DIRECTORY: directory });
+    const { hostToken } = (await t.post("/create", { code: "WXYZ" })) as { hostToken: string };
+    const host = t.socket("h");
+    await t.r.webSocketMessage(host as unknown as WebSocket, JSON.stringify({ t: "hello", token: hostToken }));
+    await t.r.webSocketMessage(host as unknown as WebSocket, JSON.stringify({ t: "end" }));
+    expect(host.closed?.code).toBe(4000);
+    expect(await ask("/has", { code: "WXYZ" })).toEqual({ live: false });
   });
 });

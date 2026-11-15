@@ -1,6 +1,6 @@
 // Run locally with `wrangler dev` (4.162.0, local R2 and Durable Object); never deployed. The secrets (HMAC_SECRET, TURNSTILE_SECRET) go in
-// `.dev.vars` (copy `.dev.vars.example`), and `TURNSTILE_SITE_KEY` when Turnstile is on. The Durable Objects of the other specs (PlaySession, PartyRoom,
-// PartyDirectory) are added with those specs.
+// `.dev.vars` (copy `.dev.vars.example`), and `TURNSTILE_SITE_KEY` when Turnstile is on. PlaySession (another spec) is added with its spec;
+// PartyRoom and PartyDirectory serve `/api/party` (party mode; `PARTY_ENABLED` off closes it).
 // The web app: the Worker serves `../web/dist` (build it first: `pnpm build:web`, or `pnpm dev:app` to build and run). `run_worker_first` sends every request
 // through the Worker, so every page carries the Content-Security-Policy (naming Turnstile only when it is configured; a static headers file could not) and
 // `/api/*` and `/admin/*` are never answered with a page. The Worker passes every other GET and HEAD to the `ASSETS` binding (`api/src/http/assets.ts`),
@@ -19,8 +19,20 @@
   "compatibility_date": "2025-06-01",
   "assets": { "directory": "../web/dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": true },
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hauntology-worlds" }],
-  "durable_objects": { "bindings": [{ "name": "WORLD_JOB", "class_name": "WorldJob" }, { "name": "SPEND_GUARD", "class_name": "SpendGuard" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["WorldJob"] }, { "tag": "v2", "new_sqlite_classes": ["SpendGuard"] }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "WORLD_JOB", "class_name": "WorldJob" },
+      { "name": "SPEND_GUARD", "class_name": "SpendGuard" },
+      // Party mode: one Room per code (sockets hibernate), one directory for the caps.
+      { "name": "PARTY_ROOM", "class_name": "PartyRoom" },
+      { "name": "PARTY_DIRECTORY", "class_name": "PartyDirectory" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["WorldJob"] },
+    { "tag": "v2", "new_sqlite_classes": ["SpendGuard"] },
+    { "tag": "v3", "new_sqlite_classes": ["PartyRoom", "PartyDirectory"] }
+  ],
   // Hourly: delete uploads past 24 hours and user worlds past 7 days.
   "triggers": { "crons": ["17 * * * *"] },
   "vars": { "WORLD_GEN_ENABLED": "true", "UPLOAD_TTL_HOURS": "24", "WORLD_TTL_DAYS": "7" }
