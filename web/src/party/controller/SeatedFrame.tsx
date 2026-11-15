@@ -1,0 +1,104 @@
+import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { PuzzleSettings, type DeviceSettingsControl } from "../../puzzles/PuzzleSettings";
+import { usePuzzleDevice } from "../../puzzles/usePuzzleDevice";
+import type { Connection, ControllerPort, RoomPhase, RoomView } from "./controller-port";
+import { LockArea } from "./LockArea";
+import { MenuSheet } from "./MenuSheet";
+import { Slot } from "./Slot";
+
+export type Layout = "pad" | "panel";
+
+const CONNECTION_WORDS: Readonly<Record<Connection, string>> = { connecting: "Connecting…", online: "Connected", reconnecting: "Reconnecting…", offline: "Offline" };
+const PHASE_WORDS: Readonly<Record<RoomPhase, string>> = {
+  lobby: "In the lobby. The Master starts the game.",
+  playing: "The game is on.",
+  paused: "The game is paused.",
+  ended: "The game has ended.",
+};
+
+/** Whether the phone is held sideways now. Without `matchMedia` (a test, an old browser) it is upright. */
+function useLandscape(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      if (typeof matchMedia !== "function") return () => undefined;
+      const query = matchMedia("(orientation: landscape)");
+      query.addEventListener("change", onChange);
+      return () => query.removeEventListener("change", onChange);
+    },
+    () => typeof matchMedia === "function" && matchMedia("(orientation: landscape)").matches,
+    () => false,
+  );
+}
+
+/**
+ * The Controller once a seat is taken (party-mode 9.2, Requirement 2.1): the header (Room Code, nickname, connection in words, Menu), the two
+ * layouts with a switch (the pad held sideways, the panel held upright; the Player's choice wins over the phone's turn), the Lock when the
+ * Room gives one, and the menu with this phone's settings. The pad and the panel are named regions waiting for their parts; nothing here plays
+ * the game. The settings come in as a `DeviceSettingsControl` and are kept by `useDeviceSettings` in the caller, so they outlive the page.
+ */
+export function SeatedFrame({ port, view, control }: { port: ControllerPort; view: RoomView; control: DeviceSettingsControl }): ReactNode {
+  const device = usePuzzleDevice(control);
+  const landscape = useLandscape();
+  const [chosen, setChosen] = useState<Layout | null>(null);
+  const layout: Layout = chosen ?? (landscape ? "pad" : "panel");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  return (
+    <div className="pc-seated" data-layout={layout}>
+      <header className="pc-bar">
+        <div className="pc-who">
+          <span className="ui-chip is-active" aria-label={`Room Code ${view.code ?? ""}`}>{view.code}</span>
+          <span className="pc-name">{view.nickname}</span>
+          {view.master ? <span className="ui-chip">Master</span> : null}
+        </div>
+        <div className="pc-side">
+          <span className={`ui-chip${view.connection === "online" ? " is-active" : ""}`} role="status">{CONNECTION_WORDS[view.connection]}</span>
+          <button
+            ref={menuButton} type="button" className="ui-button pc-menu-button" aria-expanded={menuOpen} aria-controls={menuOpen ? "pc-menu" : undefined}
+            onClick={() => setMenuOpen((open) => !open)}
+          >Menu</button>
+        </div>
+      </header>
+
+      {view.lock ? (
+        <LockArea port={port} offer={view.lock} device={device} />
+      ) : (
+        <main className="pc-main ui-stack">
+          <div className="ui-segments pc-layouts" role="radiogroup" aria-label="Controller layout">
+            <button type="button" role="radio" aria-checked={layout === "pad"} className="ui-button" onClick={() => setChosen("pad")}>Pad</button>
+            <button type="button" role="radio" aria-checked={layout === "panel"} className="ui-button" onClick={() => setChosen("panel")}>Panel</button>
+          </div>
+          <p className="ui-hint pc-phase" role="status">{PHASE_WORDS[view.phase]}</p>
+          {layout === "pad" ? (
+            <section className="pc-pad" aria-label="Pad">
+              <Slot name="stick" label="Movement stick" />
+              <Slot name="look" label="Look area" />
+              <Slot name="faces" label="Face buttons" />
+            </section>
+          ) : (
+            <section className="pc-panel" aria-label="Panel">
+              <Slot name="hand" label="Your hand" />
+              <Slot name="notebook" label="Notebook" />
+              <Slot name="contributions" label="Contributions" />
+            </section>
+          )}
+        </main>
+      )}
+
+      {menuOpen ? (
+        <div id="pc-menu">
+          <MenuSheet onClose={() => setMenuOpen(false)} returnFocusTo={menuButton}>
+            <div className="ui-stack">
+              <PuzzleSettings
+                {...(view.master ? { master: { value: view.master.puzzles, preset: view.master.preset, onChange: (s) => port.setPuzzles(s) } } : {})}
+                device={device.device} onDevice={device.changeDevice} tiltState={device.tilt} canVibrate={device.canVibrate}
+              />
+              <button type="button" className="ui-button ui-button--danger ui-button--block" onClick={() => void port.leave()}>Leave room</button>
+            </div>
+          </MenuSheet>
+        </div>
+      ) : null}
+    </div>
+  );
+}

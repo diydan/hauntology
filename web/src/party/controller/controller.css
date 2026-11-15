@@ -1,0 +1,41 @@
+/*
+ * The phone Controller. A screen's own style says only where things go: the look is the design system (design/elements.css, tokens.css).
+ * --pc-target is the touch size of this page (48 px, party-mode 2.6); the elements are 44 px on their own.
+ */
+.pc-page { --pc-target: max(48px, var(--target)); display: grid; align-content: start; gap: var(--space-3); max-width: 40rem; min-height: 100vh; min-height: 100dvh; margin: 0 auto; padding: var(--space-3); padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); }
+.pc-page, .pc-page * { box-sizing: border-box; }
+.pc-page .ui-button, .pc-page .ui-input { min-height: var(--pc-target); }
+.pc-page .ui-hint { margin: 0; }
+
+/* the join page */
+.pc-join { align-content: start; }
+.pc-join .ui-field { margin: 0 0 var(--space-0); }
+.pc-code { font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; }
+.pc-big { justify-content: center; text-align: center; }
+.pc-answer:empty { margin-top: calc(var(--space-3) * -1); }
+
+/* the seated frame */
+.pc-seated { display: grid; align-content: start; gap: var(--space-3); min-width: 0; }
+.pc-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.pc-who { display: flex; flex: 1 1 6rem; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
+.pc-name { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+.pc-side { display: flex; flex: 0 0 auto; align-items: center; gap: var(--space-2); margin-left: auto; }
+.pc-menu-button { flex: 0 0 auto; }
+.pc-layouts { max-width: 20rem; }
+/* The Lock takes the height the screen has left after this page's own: the page padding above and below and the header (one row) between. */
+.pc-lock { min-width: 0; --pz-chrome: calc(var(--pc-target) + var(--space-3) * 3 + env(safe-area-inset-bottom, 0px)); }
+
+/* the two layouts: named regions that later parts of the Controller fill */
+.pc-slot { display: grid; place-items: center; min-height: 6rem; padding: var(--space-3); border: var(--stroke-thin) dashed var(--line); border-radius: var(--radius-lg); text-align: center; }
+.pc-pad { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "stick look" "faces faces"; gap: var(--space-2); }
+.pc-slot--stick { grid-area: stick; min-height: 10rem; }
+.pc-slot--look { grid-area: look; min-height: 10rem; }
+.pc-slot--faces { grid-area: faces; }
+.pc-panel { display: grid; gap: var(--space-2); }
+
+/* held sideways, the pad is one row: the stick on the left, the look area on the right and the four buttons between */
+@media (orientation: landscape) and (max-height: 32rem) {
+  .pc-page { gap: var(--space-2); max-width: none; padding: var(--space-2); }
+  .pc-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "stick faces look"; }
+  .pc-slot--stick, .pc-slot--look { min-height: 6rem; }
+}

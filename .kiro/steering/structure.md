@@ -25,6 +25,7 @@ hauntology/
     app/               routes/screens: Home, Gallery, Create, Confirm, Creator, Play
     sketch/ viewer/ ghost/ creator/   feature folders
     party/             host/ controller/ display/ (three pages of Party Mode)
+                       controller/ is built as a shell so far: join page, seated frame, menu, Lock; the Room is behind controller-port.ts; the phone's settings come from device/
     device/            what a phone remembers about its Player (the puzzle settings, in localStorage): the Controller's side; the puzzle screens in puzzles/ store nothing
   print/               optional 3D-print kit: scad/ (relics, pyramid holder), generated STL, README
   design/              the design system: tokens.json (every value, written once), elements.css (the reusable ui- elements), fonts.css and fonts/ (self-hosted), catalogue.html (every element on one page; open /design/ in `pnpm voice-demo`). See steering/design-system.md

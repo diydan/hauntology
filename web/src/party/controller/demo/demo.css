@@ -1,0 +1,5 @@
+/* The strip under the demo Controller: page-level layout only. The look is the design system. */
+.pcd-bar { --pcd-target: max(48px, var(--target)); display: grid; gap: var(--space-2); max-width: 40rem; margin: 0 auto; padding: var(--space-2) var(--space-3) var(--space-4); }
+.pcd-bar .ui-hint { margin: 0; }
+.pcd-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.pcd-row .ui-button { min-height: var(--pcd-target); }
