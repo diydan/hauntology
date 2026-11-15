@@ -4,7 +4,11 @@
  * makes no request. Every piece of text is escaped. The shell uses this until `world-viewer` 9
  * provides the canvas card (`layoutMemoryCard`); the rules are the same: only found memories, each
  * excerpt at most 120 characters.
+ *
+ * It draws a standalone picture, which cannot read the page's CSS variables, so its colours come from
+ * the generated design tokens (design/tokens.json), not from hex written here.
  */
+import { color } from "../design/tokens";
 
 export const CARD_EXCERPT_MAX = 120;
 export const CARD_MAX_MEMORIES = 3;
@@ -51,18 +55,18 @@ export function memoryCardSvg(memories: readonly CardMemory[]): string {
   let y = 150;
   shown.forEach((m, i) => {
     const lines = wrapLines(cardExcerpt(m.text));
-    blocks.push(`<text x="40" y="${y}" fill="#e0a43a" font-size="16">${i + 1}</text>`);
-    lines.forEach((line, k) => blocks.push(`<text x="72" y="${y + k * 26}" fill="#e9e4d8" font-size="18">${xmlEscape(line)}</text>`));
+    blocks.push(`<text x="40" y="${y}" fill="${color.lantern}" font-size="16">${i + 1}</text>`);
+    lines.forEach((line, k) => blocks.push(`<text x="72" y="${y + k * 26}" fill="${color.bone}" font-size="18">${xmlEscape(line)}</text>`));
     y += lines.length * 26 + 36;
   });
   const height = Math.max(400, y + 40);
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 ${height}" width="600" height="${height}" role="img" aria-label="Memory card">`,
-    `<rect width="600" height="${height}" fill="#0b0d10"/>`,
-    `<rect x="12" y="12" width="576" height="${height - 24}" fill="none" stroke="#6b6f76" stroke-width="2"/>`,
+    `<rect width="600" height="${height}" fill="${color.ink}"/>`,
+    `<rect x="12" y="12" width="576" height="${height - 24}" fill="none" stroke="${color.dust}" stroke-width="2"/>`,
     `<g font-family="ui-monospace, Menlo, Consolas, monospace">`,
-    `<text x="40" y="70" fill="#9fe8d0" font-size="26">Hauntology</text>`,
-    `<text x="40" y="100" fill="#e9e4d8" font-size="16">${shown.length === 1 ? "One memory" : `${shown.length} memories`} came back to you.</text>`,
+    `<text x="40" y="70" fill="${color.ghost}" font-size="26">Hauntology</text>`,
+    `<text x="40" y="100" fill="${color.bone}" font-size="16">${shown.length === 1 ? "One memory" : `${shown.length} memories`} came back to you.</text>`,
     ...blocks,
     `</g>`,
     `</svg>`,

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hauntology design system: tokens and elements</title>
+<!-- The living reference. Every element of design/elements.css is shown here with its class names, so a new screen can be built by copying
+     markup from this page. tools/test/design-system.test.mjs fails if an element is in elements.css and not on this page. Open it with
+     `pnpm voice-demo` and go to http://127.0.0.1:8780/design/ (the tables of tokens are read from design/tokens.json). -->
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/fonts.css">
+<link rel="stylesheet" href="/design/elements.css">
+<style>
+  /* This page's own layout only. */
+  .cat { display: grid; gap: var(--space-5); max-width: 62rem; margin: 0 auto; padding: var(--space-4) var(--space-3) var(--space-6); }
+  .cat-section { display: grid; gap: var(--space-3); }
+  .cat-section > h2 { margin: 0; padding-bottom: var(--space-2); border-bottom: var(--stroke-thin) solid var(--line); color: var(--accent); font-size: var(--text-title); font-weight: 500; letter-spacing: 0.06em; }
+  .cat-item { display: grid; gap: var(--space-2); }
+  .cat-item > h3 { margin: 0; font-size: var(--text-small); font-weight: 400; color: var(--text-quiet); }
+  .cat-item code, .cat-use code { padding: 0 var(--space-1); border-radius: var(--radius-xs); background: var(--surface-raised); color: var(--text); font-size: var(--text-micro); }
+  .cat-use { margin: 0; color: var(--text-quiet); font-size: var(--text-small); }
+  .cat-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+  .cat-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: var(--space-2); }
+  .cat-swatch { display: grid; grid-template-columns: 2.5rem 1fr; gap: var(--space-2); align-items: center; padding: var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-md); background: var(--surface-panel); font-size: var(--text-micro); }
+  .cat-chip { width: 2.5rem; height: 2.5rem; border: var(--stroke-thin) solid var(--line-strong); border-radius: var(--radius-sm); }
+  .cat-swatch b { display: block; color: var(--text); font-weight: 500; }
+  .cat-swatch span { color: var(--text-quiet); }
+  .cat-table { width: 100%; border-collapse: collapse; font-size: var(--text-small); }
+  .cat-table th, .cat-table td { padding: var(--space-1) var(--space-2); border-bottom: var(--stroke-thin) solid var(--line); text-align: left; vertical-align: top; }
+  .cat-table th { color: var(--text-quiet); font-weight: 400; }
+  .cat-box { width: 100%; max-width: 40rem; }
+  .cat-demo-sheet .ui-sheet { position: static; max-height: none; transform: none; visibility: visible; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); }
+  .cat-demo-transport .ui-transport { position: static; }
+  .cat-demo-modal { position: relative; min-height: 22rem; overflow: hidden; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); }
+  .cat-demo-modal .ui-modal { position: absolute; }
+</style>
+</head>
+<body class="ui-page">
+<a class="ui-skip" href="#main">Skip to the elements</a>
+<header class="ui-header">
+  <h1 class="ui-header-title">Hauntology design system</h1>
+  <small class="ui-header-sub">tokens in design/tokens.json · elements in design/elements.css · this page is the reference</small>
+</header>
+
+<main id="main" class="cat">
+
+<section class="cat-section" aria-labelledby="h-rules">
+  <h2 id="h-rules">How to use it</h2>
+  <p class="cat-use">Colours, sizes, gaps, corners and times are <b>tokens</b>: write them once in <code>design/tokens.json</code>, run <code>pnpm build-tokens</code>. A screen is built from the <b>elements</b> below (<code>ui-…</code> classes) and says only where they go. If a piece is missing, add it to <code>design/elements.css</code> <i>and</i> to this page, using tokens only. Yellow is the main colour, green is rare, red is for warnings.</p>
+  <p class="cat-use">The page needs <code>&lt;body class="ui-page"&gt;</code> and these three links: <code>tokens.css</code>, <code>fonts.css</code>, <code>elements.css</code>. State is a class set from script: <code>is-on</code>, <code>is-done</code>, <code>is-current</code>, <code>is-active</code>, <code>is-haunting</code>, <code>is-speaking</code>, <code>is-open</code>, <code>is-warn</code>, <code>is-bad</code>, <code>is-blackout</code>, <code>is-locked</code>, <code>is-none</code>.</p>
+</section>
+
+<section class="cat-section" aria-labelledby="h-colour">
+  <h2 id="h-colour">Colour</h2>
+  <div class="cat-item"><h3>Roles: what elements use</h3><div class="cat-swatches" id="roleSwatches"></div></div>
+  <div class="cat-item"><h3>Palette: the values behind the roles</h3><div class="cat-swatches" id="paletteSwatches"></div></div>
+  <noscript><p class="cat-use">The colour tables are filled in by script from design/tokens.json.</p></noscript>
+</section>
+
+<section class="cat-section" aria-labelledby="h-scales">
+  <h2 id="h-scales">Type, space, corners, motion</h2>
+  <div class="cat-item"><h3>Type sizes <code>--text-*</code> and fonts <code>--font-ui</code>, <code>--font-ghost</code></h3><table class="cat-table" id="textTable"></table></div>
+  <div class="cat-item"><h3>Space <code>--space-*</code>, corners <code>--radius-*</code>, strokes <code>--stroke-*</code>, glows <code>--glow-*</code></h3><table class="cat-table" id="scaleTable"></table></div>
+  <div class="cat-item"><h3>Motion: fades <code>--fade-quick</code>, <code>--fade</code>, <code>--fade-slow</code>, <code>--breathe</code>, <code>--ease</code></h3><table class="cat-table" id="motionTable"></table></div>
+</section>
+
+<section class="cat-section" aria-labelledby="h-text">
+  <h2 id="h-text">Text</h2>
+  <div class="cat-item">
+    <h3><code>ui-prompt</code> <code>ui-title</code> <code>ui-lead</code> <code>ui-eyebrow</code> <code>ui-hint</code> <code>ui-status</code> <code>ui-notice</code> <code>ui-key</code></h3>
+    <div class="cat-box">
+      <p class="ui-prompt">&gt; look</p>
+      <h3 class="ui-title">You are in a place.</h3>
+      <p class="ui-lead">Someone has been waiting.</p>
+      <p class="ui-eyebrow">What was said</p>
+      <p class="ui-hint">A quiet line that explains a control.</p>
+      <p class="ui-status">Ready: 168 voiced lines.</p>
+      <p class="ui-status is-bad">The Library could not be loaded.</p>
+      <p class="ui-notice">Quiet, dim, may flicker. This page plays sound.</p>
+      <p class="ui-hint">Press <kbd class="ui-key">R</kbd> to hear it again.</p>
+    </div>
+    <p class="cat-use">Chrome is mono (<code>--font-ui</code>). What a ghost says is serif (<code>--font-ghost</code>): <code>ui-title</code>, <code>ui-lead</code>, <code>ui-speech</code>, <code>ui-log</code>. Quiet text is <code>--text-quiet</code>, never <code>--shape-quiet</code>.</p>
+  </div>
+</section>
+
+<section class="cat-section" aria-labelledby="h-buttons">
+  <h2 id="h-buttons">Buttons and fields</h2>
+  <div class="cat-item">
+    <h3><code>ui-button</code> and its variants <code>ui-button--primary</code> <code>ui-button--danger</code> <code>ui-button--quiet</code> <code>ui-button--main</code> <code>ui-button-sub</code> <code>ui-choices</code></h3>
+    <div class="cat-row">
+      <button class="ui-button" type="button">Meet</button>
+      <button class="ui-button ui-button--primary" type="button">Begin</button>
+      <button class="ui-button ui-button--danger" type="button">Stop</button>
+      <button class="ui-button ui-button--quiet" type="button">↻ Again<kbd class="ui-key" aria-hidden="true">R</kbd></button>
+      <button class="ui-button" type="button" disabled>Disabled</button>
+    </div>
+    <div class="ui-choices cat-box">
+      <button class="ui-button ui-button--main ui-button--primary" type="button">Begin the Wander<small class="ui-button-sub">You, alone with the Whisper.</small></button>
+      <button class="ui-button ui-button--main" type="button">A party round<small class="ui-button-sub">Mr. Ashby keeps the table.</small></button>
+    </div>
+    <p class="cat-use">At most one solid yellow button in view (<code>ui-button--primary</code>). Every button is at least 44 px; the main ones 52 px.</p>
+  </div>
+  <div class="cat-item">
+    <h3><code>ui-stories</code> <code>ui-story</code> <code>ui-story-title</code> <code>ui-story-sub</code> <code>ui-grid</code> <code>ui-grid--one</code></h3>
+    <div class="ui-stories cat-box">
+      <button class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Wander</span><span class="ui-story-sub">Alone with the ghost. Three memories to find.</span></button>
+      <button class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Party: the haunting wins</span><span class="ui-story-sub">A wrong accusation. The Haunt rises to 10.</span></button>
+    </div>
+    <div class="ui-grid cat-box"><button class="ui-button" type="button">Cold place</button><button class="ui-button" type="button">Blackout</button></div>
+    <p class="cat-use">A story card is a choice that starts something: brown with a yellow edge, so it does not shout like the main button.</p>
+  </div>
+  <div class="cat-item">
+    <h3><code>ui-field</code> <code>ui-field-label</code> <code>ui-field--check</code> <code>ui-select</code> <code>ui-range</code> <code>ui-check</code></h3>
+    <div class="cat-box">
+      <div class="ui-field"><label class="ui-field-label" for="c1">Weather</label><select class="ui-select" id="c1"><option>clear</option><option>foggy</option></select></div>
+      <div class="ui-field"><label class="ui-field-label" for="c2">Volume</label><input class="ui-range" id="c2" type="range" min="0" max="1" step="0.05" value="0.9"></div>
+      <div class="ui-field ui-field--check"><input class="ui-check" id="c3" type="checkbox" checked><label class="ui-field-label" for="c3">Use the lip-synced clip when a line has one</label></div>
+    </div>
+  </div>
+</section>
+
+<section class="cat-section" aria-labelledby="h-surfaces">
+  <h2 id="h-surfaces">Surfaces</h2>
+  <div class="cat-item">
+    <h3><code>ui-panel</code> <code>ui-card</code> <code>ui-modal</code> <code>ui-header</code> <code>ui-header-title</code> <code>ui-header-sub</code> <code>ui-skip</code> <code>ui-sr-only</code> <code>ui-page</code></h3>
+    <div class="ui-panel cat-box"><p class="ui-eyebrow">A panel</p><p class="ui-hint">The journal, a list, any block that sits on the page.</p></div>
+    <div class="cat-demo-modal"><div class="ui-modal"><div class="ui-card"><p class="ui-prompt">&gt; look</p><h3 class="ui-title">A card in a modal</h3><p class="ui-lead">The title card and the content notice.</p><button class="ui-button ui-button--main ui-button--primary" type="button">Begin<small class="ui-button-sub">One main button</small></button></div></div></div>
+    <p class="cat-use"><code>ui-skip</code> is the first thing on every page (solid yellow only while focused); <code>ui-sr-only</code> hides text but keeps it for a screen reader.</p>
+  </div>
+</section>
+
+<section class="cat-section" aria-labelledby="h-stage">
+  <h2 id="h-stage">The stage: a speaker, lit</h2>
+  <div class="cat-item">
+    <h3><code>ui-stage</code> with <code>ui-stage--whisper</code>, <code>ui-stage--keeper</code>, <code>ui-stage--suspect</code> and <code>is-blackout</code></h3>
+    <div class="ui-stage ui-stage--whisper cat-box">
+      <div class="ui-portrait ui-portrait--whisper is-speaking"><div class="ui-orb ui-orb--whisper is-speaking"></div><span class="ui-clipnote">lip-synced clip</span></div>
+      <div class="ui-nameplate ui-nameplate--whisper">The Whisper</div>
+      <p class="ui-scene">Wander: a memory is found</p>
+      <div class="ui-dialogue">
+        <p class="ui-speech"><span class="ui-word is-on">Someone</span> <span class="ui-word is-on">was</span> <span class="ui-word is-on">here.</span> <span class="ui-speech-tail">(shown, never spoken)</span></p>
+        <p class="ui-note">A quiet note under the line.</p>
+        <p class="ui-note is-warn">This line should have audio but the file is missing.</p>
+        <button class="ui-button ui-button--quiet ui-dialogue-action" type="button">↻ Again<kbd class="ui-key" aria-hidden="true">R</kbd></button>
+      </div>
+    </div>
+    <div class="cat-row">
+      <div class="ui-portrait ui-portrait--keeper is-speaking" style="width:7rem"><div class="ui-orb"></div></div>
+      <div class="ui-portrait ui-portrait--suspect is-speaking" style="width:7rem"><div class="ui-orb"></div></div>
+      <div class="ui-nameplate ui-nameplate--keeper">Mr. Ashby</div>
+      <div class="ui-nameplate ui-nameplate--suspect">A Suspect</div>
+    </div>
+    <p class="cat-use">The stage takes its light from whoever speaks: green for the Whisper, yellow for the Keeper, cream for a Suspect. A portrait is always round. <code>ui-portrait</code> holds an <code>img</code> or a <code>video</code>, or the <code>ui-orb</code> when there is no picture. <code>ui-dialogue</code> holds <code>ui-speech</code> (words fade in as <code>ui-word</code>), <code>ui-note</code> and the Again button <code>ui-dialogue-action</code>. A long line may be spoken only in part: the rest is <code>ui-speech-tail</code>.</p>
+  </div>
+</section>
+
+<section class="cat-section" aria-labelledby="h-hud">
+  <h2 id="h-hud">The HUD</h2>
+  <div class="cat-item">
+    <h3><code>ui-hud</code> <code>ui-hud-box</code> <code>ui-hud-box--right</code> <code>ui-lamps</code> <code>ui-lamp</code> <code>ui-compass</code> <code>ui-compass-row</code> <code>ui-compass-text</code> <code>ui-compass-ring</code> <code>ui-compass-tick</code> <code>ui-needle</code> <code>ui-bars</code> <code>ui-bar</code></h3>
+    <div class="ui-hud cat-box">
+      <div class="ui-hud-box"><span>Memories</span><div class="ui-lamps" role="img" aria-label="Memories found: 2 of 3"><span class="ui-lamp is-on"></span><span class="ui-lamp is-on"></span><span class="ui-lamp"></span></div></div>
+      <div class="ui-hud-box ui-hud-box--right"><span>Hint</span>
+        <div class="ui-compass-row" role="img" aria-label="Hint: behind-left, nearer">
+          <div class="ui-compass">
+            <svg viewBox="0 0 60 60" aria-hidden="true"><circle class="ui-compass-ring" cx="30" cy="30" r="27"/><line class="ui-compass-tick" x1="30" y1="9" x2="30" y2="3"/><line class="ui-compass-tick" x1="30" y1="57" x2="30" y2="51"/><line class="ui-compass-tick" x1="9" y1="30" x2="3" y2="30"/><line class="ui-compass-tick" x1="57" y1="30" x2="51" y2="30"/></svg>
+            <svg class="ui-needle" style="transform: rotate(-135deg)" viewBox="0 0 60 60" aria-hidden="true"><polygon points="30,5 36,32 30,27 24,32"/></svg>
+          </div>
+          <div class="ui-compass-text"><div class="ui-bars"><span class="ui-bar is-on"></span><span class="ui-bar is-on"></span><span class="ui-bar"></span></div><span>behind-left, nearer</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cat-item">
+    <h3><code>ui-meter</code> <code>ui-seg</code> <code>ui-seg--event</code> <code>ui-seg--max</code> <code>ui-chips</code> <code>ui-chip</code></h3>
+    <div class="ui-hud cat-box">
+      <div class="ui-hud-box"><span>Haunt 4 of 10</span>
+        <div class="ui-meter" role="img" aria-label="Haunt 4 of 10">
+          <span class="ui-seg ui-seg--event is-on"></span><span class="ui-seg is-on"></span><span class="ui-seg is-on"></span><span class="ui-seg is-on"></span><span class="ui-seg"></span><span class="ui-seg ui-seg--event"></span><span class="ui-seg"></span><span class="ui-seg"></span><span class="ui-seg ui-seg--event"></span><span class="ui-seg ui-seg--max"></span>
+        </div>
+      </div>
+      <div class="ui-hud-box ui-hud-box--right"><span>At the table</span>
+        <div class="ui-chips" role="list"><span class="ui-chip is-active" role="listitem">Mara</span><span class="ui-chip" role="listitem">Joss</span><span class="ui-chip is-haunting" role="listitem">Pim · haunting</span></div>
+      </div>
+    </div>
+    <p class="cat-use">The HUD shows only what the rules give the player: memories found, the Hint's bearing and distance, the Haunt and where a Haunt Event fires, who is at the table. Nothing else goes in it.</p>
+  </div>
+</section>
+
+<section class="cat-section" aria-labelledby="h-nav">
+  <h2 id="h-nav">Moving through a story</h2>
+  <div class="cat-item cat-demo-transport">
+    <h3><code>ui-transport</code> <code>ui-tool</code> <code>ui-tool-glyph</code> <code>ui-tool--narrow-only</code> <code>ui-keys</code></h3>
+    <nav class="ui-transport cat-box" aria-label="Playback">
+      <button class="ui-button ui-tool" type="button"><span class="ui-tool-glyph" aria-hidden="true">‹‹</span>Back</button>
+      <button class="ui-button ui-tool" type="button" aria-pressed="true"><span class="ui-tool-glyph" aria-hidden="true">❚❚</span>Pause</button>
+      <button class="ui-button ui-tool" type="button"><span class="ui-tool-glyph" aria-hidden="true">››</span>Next</button>
+      <button class="ui-button ui-tool ui-button--danger" type="button"><span class="ui-tool-glyph" aria-hidden="true">■</span>Stop</button>
+      <button class="ui-button ui-tool" type="button"><span class="ui-tool-glyph" aria-hidden="true">♪</span>Sound</button>
+      <button class="ui-button ui-tool ui-tool--narrow-only" type="button"><span class="ui-tool-glyph" aria-hidden="true">☰</span>Menu</button>
+      <p class="ui-keys">Space pause · ← back · → next · R again · Esc stop · M sound</p>
+    </nav>
+  </div>
+  <div class="cat-item">
+    <h3><code>ui-progress</code> <code>ui-progress-label</code> <code>ui-dots</code> <code>ui-dot</code> <code>ui-progress-next</code></h3>
+    <div class="ui-progress cat-box">
+      <p class="ui-progress-label">Wander · scene 3 of 7</p>
+      <ol class="ui-dots" aria-label="Scenes"><li class="ui-dot is-done"></li><li class="ui-dot is-done"></li><li class="ui-dot is-current"></li><li class="ui-dot"></li><li class="ui-dot"></li><li class="ui-dot"></li><li class="ui-dot"></li></ol>
+      <p class="ui-progress-next">Up next: a memory is found</p>
+    </div>
+  </div>
+</section>
+
+<section class="cat-section" aria-labelledby="h-sheet">
+  <h2 id="h-sheet">The sheet and the journal</h2>
+  <div class="cat-item cat-demo-sheet">
+    <h3><code>ui-sheet</code> <code>is-open</code> <code>ui-sheet-head</code> <code>ui-sheet-title</code> <code>ui-sheet-close</code> <code>ui-fold</code></h3>
+    <aside class="ui-sheet is-open cat-box" aria-label="Director">
+      <div class="ui-sheet-head"><h3 class="ui-sheet-title">Director</h3><button class="ui-button ui-sheet-close" type="button">Close</button></div>
+      <details class="ui-fold" open><summary>Play a story</summary><p class="ui-hint">A fold hides a group of controls until it is opened.</p></details>
+      <details class="ui-fold"><summary>Settings</summary><p class="ui-hint">Another group.</p></details>
+    </aside>
+    <p class="cat-use">A bottom sheet on a phone, a side panel from 900 px (steering/visual-style.md). It is the only element that carries a breakpoint of its own. The page puts it in a grid area; the sheet decides how it looks.</p>
+  </div>
+  <div class="cat-item">
+    <h3><code>ui-log</code> <code>ui-log-row</code> <code>ui-log-id</code> <code>ui-log-who</code></h3>
+    <div class="ui-panel cat-box"><div class="ui-log" role="log"><div class="ui-log-row"><span class="ui-log-id">reveal.soft.5  </span><span class="ui-log-who">The Whisper: </span>A name, almost.</div><div class="ui-log-row"><span class="ui-log-id">meet.soft.1  </span><span class="ui-log-who">The Whisper: </span>You came.</div></div></div>
+  </div>
+</section>
+
+</main>
+
+<script type="module" src="/design/catalogue.mjs"></script>
+</body>
+</html>

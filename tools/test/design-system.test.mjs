@@ -1,0 +1,259 @@
+// The shared elements (design/elements.css), the catalogue that shows them (design/catalogue.html), the fonts, and the rule that every screen is built from them.
+// Run: node --test tools/test/design-system.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { entries } from '../lib/design-tokens.mjs';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const read = (f) => readFileSync(join(root, f), 'utf8');
+const tokens = JSON.parse(read('design/tokens.json'));
+const tokensCss = read('web/src/styles/tokens.css');
+const rawElements = read('design/elements.css');
+const elements = rawElements.replace(/\/\*[\s\S]*?\*\//g, ''); // the rules, without the comments
+
+/** [selector, declarations] of every rule (at-rule bodies are flattened, so a rule inside @media counts). */
+const rules = [];
+for (const m of elements.matchAll(/([^{}]+)\{([^{}]*)\}/g)) { const sel = m[1].trim().replace(/^@media[^{]*$/, ''); if (sel) rules.push([sel.replace(/\s+/g, ' '), m[2].trim()]); }
+const declarations = [];
+for (const [sel, body] of rules) for (const d of body.split(';')) { const i = d.indexOf(':'); if (i > 0) declarations.push({ sel, prop: d.slice(0, i).trim(), value: d.slice(i + 1).trim() }); }
+const decl = (prop) => declarations.filter((d) => d.prop === prop);
+
+const classesIn = (text) => new Set([...text.matchAll(/(?<![\w-])\.?(ui-[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?)(?![\w-])/g)].map((m) => m[1]));
+const stateClassesIn = (text) => new Set([...text.matchAll(/(?<![\w-])(is-[a-z]+)(?![\w-])/g)].map((m) => m[1]));
+const defined = new Set([...elements.matchAll(/\.(ui-[a-z0-9]+(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?)(?![\w-])/g)].map((m) => m[1]));
+const definedStates = new Set([...elements.matchAll(/\.(is-[a-z]+)(?![\w-])/g)].map((m) => m[1]));
+const localProps = new Set([...elements.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+const tokenProps = new Set([...tokensCss.matchAll(/^\s+(--[a-z0-9-]+):/gm)].map((m) => m[1]));
+
+test('the elements are there: the real file, with the pieces the mockup is made of', () => {
+  assert.ok(defined.size >= 90, `${defined.size} classes`);
+  for (const c of ['ui-page', 'ui-button', 'ui-stage', 'ui-portrait', 'ui-nameplate', 'ui-dialogue', 'ui-hud', 'ui-lamp', 'ui-meter', 'ui-chip', 'ui-transport', 'ui-dots', 'ui-sheet', 'ui-fold', 'ui-story', 'ui-card', 'ui-modal', 'ui-log']) assert.ok(defined.has(c), c);
+});
+
+test('no raw colour: a colour is a role or a token, never a hex, rgb(), hsl() or a colour name', () => {
+  assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(elements), 'a hex colour');
+  assert.ok(!/\b(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklch|oklab)\(/.test(elements), 'a colour function');
+  const named = /\b(?:white|black|red|green|blue|yellow|orange|purple|pink|brown|gray|grey|gold|silver|cyan|magenta)\b/i;
+  for (const d of declarations) if (/color|background|border|shadow|fill|stroke|outline|filter|gradient/.test(d.prop + d.value)) assert.ok(!named.test(d.value.replace(/var\([^)]*\)/g, '')), `${d.sel} { ${d.prop}: ${d.value} } names a colour`);
+});
+
+test('every variable an element reads is a token (or one the elements set themselves), and none is misspelled', () => {
+  for (const m of elements.matchAll(/var\((--[a-z0-9-]+)/g)) assert.ok(tokenProps.has(m[1]) || localProps.has(m[1]), `${m[1]} is not in tokens.css`);
+  const used = new Set([...elements.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]));
+  for (const must of ['--accent', '--surface-raised', '--text', '--text-quiet', '--line', '--space-2', '--radius-md', '--fade', '--fade-slow', '--target', '--font-ui', '--font-ghost', '--speaker-whisper']) assert.ok(used.has(must), `${must} is used (the check is looking at the real file)`);
+});
+
+test('elements use the roles, not the palette: only the light colours (orb, ember, void) are used by their own names', () => {
+  const light = new Set(entries(tokens, 'color').filter(([, v]) => v.use === 'light').map(([k]) => `--${k}`));
+  const palette = entries(tokens, 'color').map(([k]) => `--${k}`);
+  for (const m of elements.matchAll(/var\((--[a-z0-9-]+)/g)) {
+    if (!palette.includes(m[1])) continue;
+    assert.ok(light.has(m[1]), `${m[1]} is a palette colour with a role: use the role`);
+  }
+});
+
+test('motion: every duration is a fade token, every easing is --ease, and there is no screen shake or flicker', () => {
+  for (const d of [...decl('transition'), ...decl('animation')]) {
+    for (const part of d.value.split(/,(?![^(]*\))/)) {
+      const times = part.match(/\b\d*\.?\d+m?s\b/g) ?? [];
+      for (const t of times) assert.ok(/^0m?s$/.test(t), `${d.sel}: a raw time ${t}`);
+      if (/var\(--(fade|breathe)/.test(part) || /\b0s\b/.test(part) || part.trim() === 'none') continue;
+      assert.fail(`${d.sel} { ${d.prop}: ${part.trim()} } has no fade token`);
+    }
+    // An easing keyword is only allowed on the looping breath, and `linear` on a visibility flip (a switch, not a movement).
+    const withoutVars = d.value.replace(/var\([^)]*\)/g, '').replace(/visibility 0s linear/g, '');
+    assert.ok(!/\b(ease-in|ease-out|ease-in-out|linear|ease)\b/.test(withoutVars) || /ui-breathe/.test(d.value), `${d.sel}: easing is var(--ease)`);
+  }
+  assert.ok(decl('transition').length >= 10, 'the check is looking at real transitions');
+  assert.ok(!/@keyframes\s+ui-(shake|flash|flicker|blink)/i.test(elements));
+  assert.match(elements, /@keyframes ui-breathe \{ 0%, 100% \{ transform: scale\(1\); \} 50% \{ transform: scale\(1\.12\); \} \}/, 'one small slow breath');
+  assert.match(elements, /@media \(prefers-reduced-motion: reduce\) \{\s*\.ui-orb\.is-speaking \{ animation: none; \}/, 'the loop stops under reduced motion (every fade is already 0 ms in tokens.css)');
+  assert.match(rawElements, /animation: ui-breathe var\(--breathe\) ease-in-out infinite/);
+});
+
+test('space and corners: every gap, margin and padding is a space token, every corner a radius token, every text size a type token', () => {
+  const SPACE = /^(0|auto|inherit|var\(--space-[0-6]\)|calc\((?:var\(--space-[0-6]\)|[-+*/() 0-9.])+\))$/;
+  /** A value split at the spaces that are not inside parentheses, so `calc(var(--space-4) + var(--space-2))` stays one piece. */
+  const tokensOf = (v) => { const out = []; let depth = 0; let cur = ''; for (const ch of v) { if (ch === '(') depth += 1; if (ch === ')') depth -= 1; if (/\s/.test(ch) && depth === 0) { if (cur) out.push(cur); cur = ''; } else cur += ch; } if (cur) out.push(cur); return out; };
+  for (const d of declarations) {
+    if (/^(gap|row-gap|column-gap|padding(-[a-z]+)?|margin(-[a-z]+)?)$/.test(d.prop) && !/^\.ui-sr-only/.test(d.sel)) for (const t of tokensOf(d.value)) assert.match(t, SPACE, `${d.sel} { ${d.prop}: ${d.value} }`);
+    if (d.prop === 'border-radius') for (const t of tokensOf(d.value)) assert.match(t, /^(0|var\(--radius-(xs|sm|md|lg|xl|pill|round)\))$/, `${d.sel} { border-radius: ${d.value} }`);
+    if (d.prop === 'font-size') assert.match(d.value, /^(inherit|var\(--text-[a-z]+\))$/, `${d.sel} { font-size: ${d.value} }`);
+    if (d.prop === 'font') assert.match(d.value, /^inherit$|var\(--text-[a-z]+\)/, `${d.sel} { font: ${d.value} } has no type size token`);
+    if (/^border(-(top|right|bottom|left))?$/.test(d.prop) && /\d/.test(d.value)) assert.match(d.value, /^(0|var\(--stroke-[a-z]+\) )/, `${d.sel} { ${d.prop}: ${d.value} }`);
+  }
+  assert.ok(decl('padding').length > 20 && decl('border-radius').length > 20 && decl('font-size').length > 20, 'the check is looking at the real file');
+});
+
+test('text colour is never a shape colour: --shape-quiet, --line and --line-strong carry no words', () => {
+  for (const d of declarations) if (d.prop === 'color' || d.prop === '-webkit-text-fill-color') for (const r of tokens.contrast.neverText) assert.ok(!d.value.includes(`var(--${r})`), `${d.sel} { color: ${d.value} }`);
+  assert.ok(decl('color').length > 25);
+});
+
+test('every control is at least 44 px (the main ones 52 px) and the focus ring is the lantern', () => {
+  for (const sel of ['.ui-button', '.ui-select, .ui-range', '.ui-fold > summary', '.ui-field--check .ui-field-label']) assert.match(rules.find(([s]) => s === sel)[1], /min-height: var\(--target\)/, sel);
+  for (const sel of ['.ui-tool', '.ui-button--main']) assert.match(rules.find(([s]) => s === sel)[1], /min-height: var\(--target-main\)/, sel);
+  assert.match(rawElements, /\.ui-page :focus-visible \{ outline: var\(--stroke-ring\) solid var\(--focus\); outline-offset: var\(--stroke-ring\); \}/);
+  assert.equal(tokens.role.focus.color, 'lantern');
+  assert.ok(!/outline:\s*none/.test(elements.replace(/\.ui-sheet-title:focus \{[^}]*\}/, '')), 'the only ring turned off is the one on a title that is a focus target, not a control');
+});
+
+test('yellow is the main colour and only the main button and the skip link are solid yellow; green is rare and only the Whisper and the tick box have it', () => {
+  const solid = declarations.filter((d) => d.prop === 'background' && d.value === 'var(--accent)').map((d) => d.sel);
+  assert.deepEqual(solid.filter((s) => /button|skip|story|tool|dialogue-action/.test(s)).sort(), ['.ui-button--primary', '.ui-skip']);
+  assert.ok(!declarations.some((d) => /^\.ui-story/.test(d.sel) && d.prop === 'background' && /accent/.test(d.value)), 'a story card is brown with a yellow edge, not a yellow block');
+  assert.match(rules.find(([s]) => s === '.ui-story')[1], /border-left: var\(--stroke-edge\) solid var\(--accent\)/);
+  const green = declarations.filter((d) => /--accent-rare|--speaker-whisper|--orb-ghost/.test(d.value)).map((d) => d.sel);
+  for (const sel of green) assert.ok(/whisper|\.ui-check/.test(sel), `green only for the Whisper and the tick box, not: ${sel}`);
+  assert.ok(green.length >= 5 && green.length <= 8, `green is used by ${green.length} rules: ${green.join(' | ')}`);
+  const yellow = declarations.filter((d) => /var\(--accent(-hi)?\)|--speaker-keeper/.test(d.value)).length;
+  assert.ok(yellow > green.length * 4, `yellow (${yellow} uses) is used far more than green (${green.length})`);
+  assert.match(rules.find(([s]) => s === '.ui-button--danger')[1], /border-color: var\(--danger\)[^}]*background: var\(--surface-page\)[^}]*color: var\(--danger\)/, 'Stop is red on black, where red passes');
+});
+
+test('the stage is lit by whoever speaks, in the speaker\'s colour, and a portrait is always round and fills with the face', () => {
+  const body = (sel) => rules.find(([s]) => s === sel)[1];
+  assert.match(body('.ui-stage--whisper'), /--lit: var\(--speaker-whisper\)/);
+  assert.match(body('.ui-stage--keeper'), /--lit: var\(--speaker-keeper\)/);
+  assert.match(body('.ui-stage--suspect'), /--lit: var\(--speaker-suspect\)/);
+  assert.match(body('.ui-stage'), /color-mix\(in srgb, var\(--lit\) 12%/);
+  assert.match(body('.ui-stage'), /background: radial-gradient\(ellipse at 50% 28%, var\(--ember\) 0%, var\(--surface-panel\) 70%\); background: radial-gradient/, 'a plain gradient comes first, for a browser without color-mix');
+  assert.match(body('.ui-dialogue'), /color-mix\(in srgb, var\(--lit, var\(--accent\)\) 5%, var\(--surface-raised\)\)/, 'the dialogue takes a little of the light, and still works outside a stage');
+  assert.match(body('.ui-portrait'), /border-radius: var\(--radius-round\)/);
+  assert.match(body('.ui-portrait'), /overflow: hidden/);
+  assert.match(body('.ui-portrait > img, .ui-portrait > video'), /border-radius: var\(--radius-round\)/);
+  assert.match(body('.ui-portrait > img, .ui-portrait > video'), /object-fit: cover/, 'a round frame fills with the face, it does not letterbox');
+  assert.match(body('.ui-orb'), /border-radius: var\(--radius-round\)/);
+  assert.match(body('.ui-portrait--whisper'), /--halo: var\(--speaker-whisper\)/);
+  assert.match(body('.ui-portrait--keeper'), /--halo: var\(--speaker-keeper\)/);
+  assert.match(body('.ui-portrait--suspect'), /--halo: var\(--speaker-suspect\)/);
+});
+
+test('the breakpoints in the media queries are the ones in the token file, and the sheet is a bottom sheet below the wide one', () => {
+  const found = [...rawElements.matchAll(/@media \(min-width: (\d+)px\)/g)].map((m) => Number(m[1]));
+  assert.ok(found.length >= 3);
+  const allowed = new Set(entries(tokens, 'breakpoint').map(([, v]) => parseInt(v.value, 10)));
+  for (const px of found) assert.ok(allowed.has(px), `a media query of ${px}px is not a token breakpoint (${[...allowed]})`);
+  assert.ok(found.includes(parseInt(tokens.breakpoint.wide.value, 10)));
+  assert.match(rawElements, /\.ui-sheet \{ position: fixed;[^}]*transform: translateY\(105%\); visibility: hidden;/);
+  assert.match(rawElements, /\.ui-sheet\.is-open \{ transform: none; visibility: visible;/);
+  assert.match(rawElements, /@media \(min-width: 900px\) \{\s*\.ui-sheet \{ position: static;[^}]*transform: none; visibility: visible; \}\s*\.ui-sheet-close \{ display: none; \}/);
+});
+
+test('the elements name no other origin: no url, no import, no link', () => {
+  assert.ok(!/url\(|@import|https?:\/\//.test(elements));
+});
+
+test('fonts are self-hosted: IBM Plex Mono for the interface and Newsreader for what a ghost says, four real WOFF2 files with their licences', () => {
+  const css = read('design/fonts.css');
+  const faces = [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)].map((m) => ({ family: /font-family:\s*'([^']+)'/.exec(m[1])[1], url: /url\('\.\/fonts\/([a-z0-9-]+\.woff2)'\)/.exec(m[1])[1] }));
+  assert.equal(faces.length, 4);
+  assert.deepEqual([...new Set(faces.map((f) => f.family))].sort(), ['IBM Plex Mono', 'Newsreader']);
+  for (const f of faces) assert.equal(readFileSync(join(root, 'design/fonts', f.url)).subarray(0, 4).toString('latin1'), 'wOF2', `${f.url} is a real WOFF2 file`);
+  assert.deepEqual(readdirSync(join(root, 'design/fonts')).filter((f) => f.endsWith('.woff2')).sort(), faces.map((f) => f.url).sort(), 'no font file is unused and none is missing');
+  assert.ok(!/https?:\/\/|@import/.test(css), 'no third-party request');
+  assert.match(tokens.font.ui.value, /^"IBM Plex Mono"/);
+  assert.match(tokens.font.ghost.value, /^Newsreader/);
+  for (const f of ['OFL-Newsreader.txt', 'OFL-IBM-Plex-Mono.txt']) assert.match(read(`design/fonts/${f}`), /SIL Open Font License/, `${f} is kept with the fonts`);
+  assert.match(read('design/fonts/README.md'), /Newsreader[\s\S]*IBM Plex Mono/);
+  assert.match(rawElements, /\.ui-page \{[^}]*font: var\(--text-body\) \/ 1\.55 var\(--font-ui\)/, 'the interface is monospace');
+  for (const sel of ['.ui-speech', '.ui-title', '.ui-lead', '.ui-log']) assert.match(rules.find(([s]) => s === sel)[1], /var\(--font-ghost\)/, `${sel} is the serif`);
+  assert.match(read('.kiro/steering/visual-style.md'), /Self-host fonts/);
+});
+
+// ---- the catalogue and the pages that use the elements -------------------------------------------------------------------------------------
+const catalogue = read('design/catalogue.html');
+const pages = { 'tools/voice-demo/index.html': read('tools/voice-demo/index.html'), 'tools/voice-demo/page.mjs': read('tools/voice-demo/page.mjs'), 'design/catalogue.html': catalogue };
+
+test('the catalogue shows every element: a class in elements.css that is not on the catalogue page fails', () => {
+  const shown = classesIn(catalogue);
+  const missing = [...defined].filter((c) => !shown.has(c));
+  assert.deepEqual(missing, [], `these elements are not in design/catalogue.html: ${missing.join(', ')}`);
+  for (const s of definedStates) assert.ok(catalogue.includes(s), `the state ${s} is not explained in the catalogue`);
+  assert.ok(catalogue.includes('pnpm build-tokens'));
+});
+
+test('a page uses only elements that exist: no misspelled ui- class or is- state in a page, its script or the catalogue', () => {
+  for (const [file, text] of Object.entries(pages)) {
+    for (const c of classesIn(text)) assert.ok(defined.has(c), `${file} uses ${c}, which design/elements.css does not define`);
+    for (const s of stateClassesIn(text.replace(/<code>[^<]*<\/code>/g, ''))) assert.ok(definedStates.has(s), `${file} sets ${s}, which design/elements.css does not define`);
+  }
+});
+
+test('the play-through page is built from the design system: its three links, its body class, and a style that only says where things go', () => {
+  const html = pages['tools/voice-demo/index.html'];
+  assert.match(html, /<link rel="stylesheet" href="\/design\/tokens\.css">\s*<link rel="stylesheet" href="\/design\/fonts\.css">\s*<link rel="stylesheet" href="\/design\/elements\.css">/);
+  assert.match(html, /<body class="ui-page">/);
+  const style = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
+  assert.ok(!/#[0-9a-fA-F]{3,8}\b|rgba?\(/.test(style), 'no raw colour on the page');
+  assert.ok(!/var\(--(ink|wood|bone|lantern|ghost|alarm|dust|ash|leather)[a-z0-9-]*\)/.test(style), 'no palette name on the page: it uses no colour at all');
+  assert.ok(!/@font-face/.test(style), 'the fonts come from design/fonts.css');
+  assert.ok(style.length < 1800, `the page's own style is ${style.length} characters: look belongs in design/elements.css`);
+});
+
+test('the web app loads the same fonts and elements as the mockup', () => {
+  const main = read('web/src/main.tsx');
+  assert.match(main, /import "\.\/styles\/tokens\.css";/);
+  assert.match(main, /import "\.\.\/\.\.\/design\/fonts\.css";\s*import "\.\.\/\.\.\/design\/elements\.css";/);
+});
+
+test('the commands exist: build-tokens, check-tokens, and the traceability check that runs them', () => {
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.scripts['build-tokens'], 'node tools/build-tokens.mjs');
+  assert.equal(pkg.scripts['check-tokens'], 'node tools/build-tokens.mjs --check');
+  assert.ok(existsSync(join(root, 'tools/build-tokens.mjs')));
+});
+
+// ---- the specs and steering say: build from these ---------------------------------------------------------------------------------------------
+/** The specs that have a screen of their own: each one carries the shared look requirement, a design section and a task. */
+const SCREEN_SPECS = ['haunwallker', 'puzzles', 'party-mode', 'world-viewer', 'spirit-table', 'ghost-voice', 'integration', 'ghost-creator'];
+
+test('the design-system spec exists with its requirements, design and tasks', () => {
+  for (const f of ['requirements', 'design', 'tasks']) assert.ok(existsSync(join(root, `.kiro/specs/design-system/${f}.md`)), f);
+  const req = read('.kiro/specs/design-system/requirements.md');
+  for (const word of ['design/tokens.json', 'design/elements.css', 'design/catalogue.html', 'pnpm build-tokens', 'pnpm check-tokens', '4.5', '44']) assert.ok(req.includes(word), `the requirements mention ${word}`);
+  assert.ok(SCREEN_SPECS.every((s) => req.includes(`\`${s}\``)), 'Requirement 6 names every spec that has a screen');
+});
+
+test('the steering says how to build a screen: tokens, elements, the catalogue, and when a new element may be added', () => {
+  const s = read('.kiro/steering/design-system.md');
+  assert.match(s, /^---\ninclusion: fileMatch\nfileMatchPattern: .+\n---/);
+  for (const word of ['design/tokens.json', 'design/elements.css', 'design/catalogue.html', 'pnpm build-tokens', 'pnpm check-tokens', 'ui-', 'is-', 'roles', 'One solid yellow', 'Green is rare']) assert.ok(s.includes(word), word);
+  const v = read('.kiro/steering/visual-style.md');
+  assert.match(v, /design\/tokens\.json/, 'the visual style points at the token file as the source');
+  assert.match(v, /design-system\.md/);
+  assert.match(v, /yellow as the main colour/i);
+  assert.match(read('.kiro/steering/structure.md'), /design\/\s+the design system: tokens\.json/, 'the layout lists the design folder');
+  assert.match(read('.kiro/steering/structure.md'), /build-tokens\.mjs/);
+});
+
+test('every spec that has a screen says its screens are built from the design system, with a requirement, a design section and a task', () => {
+  for (const name of SCREEN_SPECS) {
+    const req = read(`.kiro/specs/${name}/requirements.md`);
+    const m = /### Requirement (\d+)\s+\*\*User Story:\*\*[^\n]*\(Shared look\)([\s\S]*?)(?=\n### Requirement |$)/.exec(req);
+    assert.ok(m, `${name} has no "Shared look" requirement`);
+    assert.match(m[2], /design\/tokens\.json/, `${name}: the requirement points at the tokens`);
+    assert.match(m[2], /design\/elements\.css/, `${name}: the requirement points at the elements`);
+    assert.match(m[2], /design\/catalogue\.html/, `${name}: the requirement says a missing piece goes in the catalogue`);
+    assert.match(m[2], /4\.5 to 1/, `${name}: the requirement keeps the shared rules`);
+    const design = read(`.kiro/specs/${name}/design.md`);
+    assert.match(design, /## Shared look \(design system/, `${name}: the design has a Shared look section`);
+    assert.match(design, /design\/catalogue\.html/, `${name}: the design points at the catalogue`);
+    const tasks = read(`.kiro/specs/${name}/tasks.md`);
+    assert.match(tasks, new RegExp(`- \\[[ x]\\] \\d+\\. Shared look[^\\n]*Requirement ${m[1]}\\b`), `${name}: a task builds the screens from the shared elements`);
+    for (let i = 1; i <= 4; i++) assert.ok(tasks.includes(`_Requirements: ${m[1]}.`), `${name}: tasks cover Requirement ${m[1]}`);
+  }
+});
+
+test('a hook rebuilds the generated token files when the token file is saved', () => {
+  const hook = JSON.parse(read('.kiro/hooks/tokens-on-save.json'));
+  assert.equal(hook.version, 'v1');
+  const h = hook.hooks[0];
+  assert.equal(h.trigger, 'PostFileSave');
+  assert.ok(new RegExp(h.matcher).test('design/tokens.json') && !new RegExp(h.matcher).test('design/elements.css'), 'it runs for the token file and for nothing else');
+  assert.equal(h.action.type, 'command');
+  assert.match(h.action.command, /build-tokens/);
+});

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A read-only local server for the play-through demo (tools/voice-demo). It binds to 127.0.0.1 only, answers only GET and HEAD, serves
-// three fixed page files, the Library audio, the character portraits and the lip-synced clips, and nothing else. It calls no model, spends
+// three fixed page files, the design system files (tokens, elements, fonts and the catalogue page), the Library audio, the character portraits and the lip-synced clips, and nothing else. It calls no model, spends
 // nothing and writes nothing. Audio is reached only by a hash the manifest names; a portrait or a clip only by a name in a fixed list.
 // Usage: node tools/voice-demo/serve.mjs [--port 8780] [--lib DIR] [--art DIR]
 //   --lib  the rendered audio (default $VOICE_LIBRARY_DIR or ./.voice-library)
@@ -17,16 +17,27 @@ const root = resolve(here, '..', '..');
 export const AUDIO_PATH = /^\/audio\/([0-9a-f]{64})\.mp3$/;
 export const AVATAR_PATH = /^\/avatar\/([a-z]+)\.webp$/;
 export const CLIP_PATH = /^\/clip\/([a-z0-9-]+)\.mp4$/;
+export const FONT_PATH = /^\/design\/fonts\/([a-z0-9-]+)\.woff2$/;
+const CSS = 'text/css; charset=utf-8';
+/** The fixed files, each by its exact path. The design files live in design/ (tokens.css is generated into web/src/styles/ and served from there). */
 const STATIC = {
-  '/': ['index.html', 'text/html; charset=utf-8'],
-  '/page.mjs': ['page.mjs', 'text/javascript; charset=utf-8'],
-  '/lib.mjs': ['lib.mjs', 'text/javascript; charset=utf-8'],
+  '/': [join(here, 'index.html'), 'text/html; charset=utf-8'],
+  '/page.mjs': [join(here, 'page.mjs'), 'text/javascript; charset=utf-8'],
+  '/lib.mjs': [join(here, 'lib.mjs'), 'text/javascript; charset=utf-8'],
+  '/design/': [join(root, 'design', 'catalogue.html'), 'text/html; charset=utf-8'],
+  '/design/tokens.css': [join(root, 'web', 'src', 'styles', 'tokens.css'), CSS],
+  '/design/elements.css': [join(root, 'design', 'elements.css'), CSS],
+  '/design/fonts.css': [join(root, 'design', 'fonts.css'), CSS],
+  '/design/catalogue.mjs': [join(root, 'design', 'catalogue.mjs'), 'text/javascript; charset=utf-8'],
+  '/design/tokens.json': [join(root, 'design', 'tokens.json'), 'application/json'],
 };
 const HEADERS = {
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'no-referrer',
-  'content-security-policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; media-src 'self'; connect-src 'self'; img-src 'self' data:",
+  'content-security-policy': "default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src 'self'; connect-src 'self'; img-src 'self' data:",
 };
+/** The only font files that can be asked for (self-hosted, with their licences, in design/fonts). */
+export const FONT_NAMES = new Set(['newsreader-latin-400-normal', 'newsreader-latin-400-italic', 'ibm-plex-mono-latin-400-normal', 'ibm-plex-mono-latin-500-normal']);
 /** The only portrait ids and clip names that can be asked for. */
 export const AVATAR_IDS = new Set(Object.keys(CHARACTERS));
 export const CLIP_NAMES = new Set([...Object.values(CLIPS), ...DEMO_ONLY.map((d) => d.clip)]);
@@ -77,12 +88,14 @@ export function createDemoServer({ libDir, artDir, manifest, rows }) {
       return createReadStream(file, { start, end }).pipe(res);
     };
 
-    if (Object.hasOwn(STATIC, path)) {
+    if (Object.hasOwn(STATIC, path) && existsSync(STATIC[path][0])) {
       const [file, type] = STATIC[path];
-      return send(200, { 'content-type': type, 'cache-control': 'no-store' }, readFileSync(join(here, file)));
+      return send(200, { 'content-type': type, 'cache-control': 'no-store' }, readFileSync(file));
     }
     if (path === '/sequence.json') return send(200, { 'content-type': 'application/json', 'cache-control': 'no-store' }, JSON.stringify(sequence()));
 
+    const font = FONT_PATH.exec(path);
+    if (font && FONT_NAMES.has(font[1]) && existsSync(join(root, 'design', 'fonts', `${font[1]}.woff2`))) return serveFile(join(root, 'design', 'fonts', `${font[1]}.woff2`), 'font/woff2');
     const audio = AUDIO_PATH.exec(path);
     if (audio && allowedAudio.has(audio[1]) && existsSync(audioFile(audio[1]))) return serveFile(audioFile(audio[1]), 'audio/mpeg');
     const avatar = AVATAR_PATH.exec(path);

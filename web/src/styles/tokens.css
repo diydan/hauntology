@@ -1,28 +1,124 @@
-/*
- * Design tokens (steering/visual-style.md). Text on --ink must be at least 4.5:1; --dust is
- * below that, so it is for borders and quiet shapes only, never for text (styles.test.ts checks).
- */
+/* GENERATED from design/tokens.json by tools/build-tokens.mjs. Do not edit: change the JSON and run `pnpm build-tokens`. */
 :root {
-  --ink: #0b0d10;
-  --bone: #e9e4d8;
-  --lantern: #e0a43a;
-  --ghost: #9fe8d0;
-  --dust: #6b6f76;
-  --alarm: #d4604a;
 
-  /* The one fade: 300 to 600 ms, instant under reduced motion. */
-  --fade: 400ms;
+  /* Colour: the palette */
+  --ink: #0b0d10; /* black: the page */
+  --ink-deep: #050607; /* black: inside a portrait, a lamp, a meter segment */
+  --void: #000000; /* true black: the stage in a blackout */
+  --wood: #150f0a; /* dark brown: panels and cards */
+  --wood-2: #21170f; /* dark brown: raised things (buttons, inputs, nameplates) */
+  --wood-3: #2e2015; /* dark brown: raised and hovered */
+  --ember: #1b1209; /* warm black glow: the faint light at the top of the page */
+  --wood-line: #3d2d1f; /* brown: borders and dividers */
+  --leather: #6b4d33; /* mid brown: strong dividers */
+  --dust: #6b6f76; /* grey for quiet SHAPES only (compass ticks). 3.85:1 on ink, so never text */
+  --ash: #b3aa97; /* warm grey: quiet text, 6.8:1 or better on every surface */
+  --bone: #e9e4d8; /* cream: text */
+  --lantern: #e0a43a; /* yellow: the main colour */
+  --lantern-hi: #f2bb55; /* yellow: hover */
+  --ghost: #9fe8d0; /* green: a rare accent (the Whisper, the tick box) */
+  --alarm: #d4604a; /* red: warnings, Stop, the last Haunt segment */
+  --orb-lantern-core: #fff2d2; /* the Keeper's orb: centre */
+  --orb-lantern-rim: #6a4a14; /* the Keeper's orb: edge */
+  --orb-ghost-core: #effff9; /* the Whisper's orb: centre */
+  --orb-ghost-rim: #25584a; /* the Whisper's orb: edge */
 
-  /* Self-hosted fonts come later; until then the system monospace and serif are used. No font is fetched from another origin. */
-  --font-ui: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --font-ghost: Newsreader, Georgia, "Times New Roman", serif;
+  /* Colour: roles. Elements use these, never the palette directly */
+  --surface-page: var(--ink); /* the page */
+  --surface-sunk: var(--ink-deep); /* a hollow: portrait, lamp, empty meter segment */
+  --surface-panel: var(--wood); /* cards, sheets, panels */
+  --surface-raised: var(--wood-2); /* buttons, inputs, nameplates, the dialogue box */
+  --surface-hover: var(--wood-3); /* a raised thing under the pointer */
+  --line: var(--wood-line); /* borders, dividers, empty lamps */
+  --line-strong: var(--leather); /* a divider that must show */
+  --text: var(--bone); /* text */
+  --text-quiet: var(--ash); /* labels, hints, scene lines, the Director's quiet words */
+  --shape-quiet: var(--dust); /* quiet shapes that carry no words */
+  --accent: var(--lantern); /* yellow, the main colour: the one main button, edges, lamps, focus, the Keeper */
+  --accent-hi: var(--lantern-hi); /* the main button under the pointer */
+  --accent-rare: var(--ghost); /* green, rare: only the Whisper and the tick box */
+  --danger: var(--alarm); /* warnings, Stop, the last Haunt segment */
+  --on-accent: var(--ink); /* text on a solid yellow button */
+  --focus: var(--lantern); /* the focus ring */
+  --speaker-whisper: var(--ghost); /* the Whisper's light, glow and nameplate edge */
+  --speaker-keeper: var(--lantern); /* the Keeper's light, glow and nameplate edge */
+  --speaker-suspect: var(--bone); /* a Suspect's light, glow and nameplate edge */
 
-  --target: 44px;
-  color-scheme: dark;
+  /* Type */
+  --font-ui: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; /* chrome: every label, button, number and the > prompt */
+  --font-ghost: Newsreader, Georgia, "Times New Roman", serif; /* what a ghost says, and titles on the title card */
+
+  /* Type sizes */
+  --text-micro: 0.656rem; /* 10.5px: key caps, clip note, tiny labels */
+  --text-small: 0.719rem; /* 11.5px: hints, scene lines, status */
+  --text-control: 0.781rem; /* 12.5px: buttons, inputs */
+  --text-body: 0.8125rem; /* 13px: running text */
+  --text-title: 1rem; /* 16px: header, journal lines */
+  --text-lead: clamp(1.1875rem, 5vw, 1.375rem); /* 19 to 22px: the line under a title */
+  --text-speech: clamp(1.25rem, 4.6vw, 1.75rem); /* 20 to 28px: what the ghost says */
+  --text-display: clamp(1.875rem, 8vw, 2.5rem); /* 30 to 40px: a title card heading */
+
+  /* Space */
+  --space-0: 0.125rem; /* 2px: a label tucked against what it names */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem; /* 8px: things that belong together */
+  --space-3: 0.75rem; /* 12px: blocks */
+  --space-4: 1rem; /* 16px: padding, one group from another */
+  --space-5: 1.5rem; /* 24px */
+  --space-6: 2rem; /* 32px */
+
+  /* Corners */
+  --radius-xs: 2px; /* meter segments, bars */
+  --radius-sm: 6px; /* key caps, nameplates */
+  --radius-md: 10px; /* buttons, inputs */
+  --radius-lg: 14px; /* dialogue, transport, journal */
+  --radius-xl: 18px; /* stage, cards, the bottom sheet */
+  --radius-pill: 999px; /* chips */
+  --radius-round: 50%; /* portraits, lamps, dots, orbs */
+
+  /* Strokes */
+  --stroke-thin: 1px; /* borders */
+  --stroke-ring: 2px; /* lamps, dots, the focus ring */
+  --stroke-frame: 3px; /* a portrait's frame, a notice's edge */
+  --stroke-edge: 4px; /* the coloured edge of a nameplate or a story card */
+
+  /* Glow sizes */
+  --glow-sm: 10px; /* the current dot */
+  --glow-md: 14px; /* a lit lamp */
+  --glow-lg: 30px; /* a speaking portrait or orb */
+
+  /* Shadows */
+  --shadow-lift: 0 6px 24px color-mix(in srgb, var(--void) 50%, transparent); /* the transport bar, which floats over the page */
+
+  /* Motion */
+  --fade: 400ms; /* the one fade (the existing --fade) */
+  --fade-quick: 300ms; /* a word appearing, a border */
+  --fade-slow: 600ms; /* a light changing, the compass needle, the Haunt filling */
+  --breathe: 2400ms; /* the speaking orb, one slow breath. Looping, so reduced motion turns the animation off instead */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1); /* the one easing */
+
+  /* Touch */
+  --target: 44px; /* the smallest touch target (steering) */
+  --target-main: 52px; /* the main controls: transport buttons and title-card choices */
+
+  /* Breakpoints (a media query cannot read these; elements.css repeats them and a test keeps them equal) */
+  --bp-wide: 900px; /* the sheet becomes a side panel; the keys line shows */
+  --bp-roomy: 640px; /* the header gets its subtitle */
+
+  /* Layers */
+  --z-sticky: 20; /* the transport bar */
+  --z-sheet: 40; /* the bottom sheet */
+  --z-modal: 60; /* the title card */
+  --z-skip: 100; /* the skip link */
+
+  color-scheme: dark; /* the browser's own scrollbars, menus and form controls are dark too */
 }
 
+/* Every fade is instant when the player asks for less motion. The looping breathe is switched off in elements.css instead. */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --fade: 0ms;
+    --fade-quick: 0ms;
+    --fade-slow: 0ms;
   }
 }

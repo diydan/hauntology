@@ -2,130 +2,144 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hauntology: play-through (test sequence)</title>
+<!-- The look is the design system: the tokens (design/tokens.json, generated into tokens.css), the fonts and the shared elements
+     (design/elements.css). This page adds only where things go on it. Phone first: the stage comes first, the controls are a bottom
+     sheet (a side panel from 900 px). A new piece of look goes into design/elements.css and design/catalogue.html, not here. -->
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/fonts.css">
+<link rel="stylesheet" href="/design/elements.css">
 <style>
-  :root { --bg:#09090e; --panel:#12121a; --line:#26263a; --text:#e9e6dc; --dim:#8d8aa0; --whisper:#b8a6ff; --keeper:#dbb36a; --warn:#ff8f6b; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 Georgia, 'Times New Roman', serif; }
-  header { padding:14px 20px; border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:baseline; flex-wrap:wrap; }
-  header h1 { margin:0; font-size:18px; font-weight:normal; letter-spacing:.04em; }
-  header small { color:var(--dim); }
-  main { display:grid; grid-template-columns: minmax(300px, 380px) 1fr; gap:16px; padding:16px 20px; max-width:1200px; margin:0 auto; }
-  @media (max-width: 820px) { main { grid-template-columns: 1fr; } }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; }
-  h2 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); font-weight:normal; }
-  .tabs { display:flex; gap:6px; margin-bottom:12px; }
-  .tabs button { flex:1; }
-  button { background:#1c1c2a; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; cursor:pointer; }
-  button:hover { border-color:var(--whisper); }
-  button.on { background:#2a2547; border-color:var(--whisper); }
-  button.go { background:#2b2350; border-color:var(--whisper); }
-  button.stop { border-color:var(--warn); color:var(--warn); }
-  button.keeper:hover { border-color:var(--keeper); }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-  .row { display:flex; gap:8px; align-items:center; margin:6px 0; }
-  .row label { flex:0 0 70px; color:var(--dim); font-size:13px; }
-  select, input[type=range] { flex:1; background:#1c1c2a; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px; font:inherit; }
-  .stage { position:relative; min-height:340px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; overflow:hidden; transition:background .6s; }
-  .stage.blackout { background:#000; }
-  .stage.blackout .orb { opacity:.12; }
-  .orb { width:110px; height:110px; border-radius:50%; background:radial-gradient(circle at 40% 35%, #f3eeff 0%, var(--whisper) 35%, #3a2f7a 70%, transparent 72%); opacity:.55; transition:opacity .4s, filter .4s; filter:blur(1px); }
-  .orb.keeper { background:radial-gradient(circle at 40% 35%, #fff4dd 0%, var(--keeper) 35%, #6b4a17 70%, transparent 72%); opacity:.35; }
-  .orb.speaking { opacity:1; animation:breathe 2.4s ease-in-out infinite; filter:blur(0) drop-shadow(0 0 26px var(--whisper)); }
-  @keyframes breathe { 0%,100% { transform:scale(1); } 50% { transform:scale(1.12); } }
-  .portrait { position:relative; width:240px; height:240px; border-radius:18px; background:#050509; border:1px solid var(--line); overflow:hidden; display:flex; align-items:center; justify-content:center; transition:box-shadow .4s, border-color .4s, opacity .6s; --glow:var(--whisper); }
-  .portrait.whisper { --glow:var(--whisper); } .portrait.keeper { --glow:var(--keeper); } .portrait.suspect { --glow:#7fd0b4; }
-  .portrait.speaking { border-color:var(--glow); box-shadow:0 0 36px var(--glow); }
-  .portrait img, .portrait video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#050509; }
-  .stage.blackout .portrait { opacity:.18; }
-  .clipnote { position:absolute; left:0; right:0; bottom:0; padding:3px 6px; font-size:10px; letter-spacing:.08em; text-transform:uppercase; background:#000a; color:var(--text); }
-  .scene { color:var(--dim); font-size:13px; margin-top:14px; min-height:20px; }
-  .who { margin-top:6px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--whisper); }
-  .who.keeper { color:var(--keeper); }
-  .sub { margin:10px 16px 0; font-size:22px; line-height:1.4; max-width:640px; min-height:64px; }
-  .sub .tail { color:var(--dim); font-style:italic; }
-  .note { color:var(--dim); font-size:12px; margin-top:10px; min-height:18px; }
-  .note.warn { color:var(--warn); }
-  .log { max-height:300px; overflow:auto; font-size:13px; }
-  .log div { padding:5px 0; border-bottom:1px solid var(--line); }
-  .log .id { color:var(--dim); font-family:ui-monospace, Menlo, monospace; font-size:11px; }
-  .log .k { color:var(--keeper); } .log .w { color:var(--whisper); }
-  .status { color:var(--dim); font-size:12px; margin-top:8px; }
-  .status b { color:var(--text); font-weight:normal; }
+  /* Page layout only: which area each piece takes. */
+  .app { display:grid; gap:var(--space-3); padding:var(--space-3) var(--space-3) var(--space-4); max-width:77.5rem; margin:0 auto; grid-template-columns:minmax(0, 1fr); grid-template-areas:"stage" "transport" "scenes" "journal"; }
+  .stage-area { grid-area:stage; } .transport-area { grid-area:transport; } .scenes-area { grid-area:scenes; } .journal-area { grid-area:journal; } .sheet-area { grid-area:director; }
+  .stage-area:focus, .stage-area:focus-visible { outline:none; } /* the stage is only a place to put focus after the title card, not a control */
+  #introStatus { margin:calc(var(--space-2) * -1) 0 var(--space-3); }
+  @media (min-width: 900px) {
+    .stage-area { min-height:35rem; }
+    .app { grid-template-columns:minmax(0, 1fr) 22.5rem; grid-template-areas:"stage director" "transport director" "scenes director" "journal director"; align-items:start; padding:var(--space-4) calc(var(--space-4) + var(--space-1)) var(--space-5); }
+  }
 </style>
 </head>
-<body>
-<header>
-  <h1>Hauntology: play-through</h1>
-  <small>A stand-alone test sequence. The audio is the real Voice Library audio and the pictures and clips are the real character art; the game around them is not built yet, so this page plays the lines in the order a game would.</small>
+<body class="ui-page">
+<a class="ui-skip" href="#stage">Skip to the stage</a>
+<header class="ui-header">
+  <h1 class="ui-header-title">Hauntology</h1>
+  <small class="ui-header-sub">play-through · a test sequence: the voices and pictures are real, the game around them is not built yet</small>
 </header>
-<main>
-  <section>
-    <div class="panel">
-      <h2>Play a whole session</h2>
-      <div class="grid">
-        <button id="runWander" class="go">▶ Wander (single player)</button>
-        <button id="runParty" class="go">▶ Party: the haunting wins</button>
-        <button id="runSolved" class="go" style="grid-column:1 / span 2">▶ Party: the case is solved</button>
-      </div>
-      <div class="row" style="margin-top:10px"><button id="stop" class="stop" style="flex:1">■ Stop</button></div>
-      <div class="row"><label>Pause</label><input id="pause" type="range" min="0" max="5" step="0.5" value="1.5"><span id="pauseV" class="status">1.5 s</span></div>
-      <div class="row"><label>Volume</label><input id="vol" type="range" min="0" max="1" step="0.05" value="0.9"></div>
-      <div class="row"><label>Clips</label><label style="flex:1;color:var(--text)"><input id="useClips" type="checkbox" checked> use the lip-synced clip when a line has one</label></div>
+
+<div id="intro" class="ui-modal" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+  <div class="ui-card">
+    <p class="ui-prompt">&gt; look</p>
+    <h2 class="ui-title" id="introTitle">You are in a place.</h2>
+    <p class="ui-lead">Someone has been waiting.</p>
+    <p class="ui-notice">Quiet, dim, may flicker. This page plays sound.</p>
+    <p class="ui-status" id="introStatus" role="status">Loading the Library…</p>
+    <div class="ui-choices">
+      <button id="introWander" class="ui-button ui-button--main ui-button--primary" type="button" disabled>Begin the Wander<small class="ui-button-sub">You, alone with the Whisper. Three memories to find.</small></button>
+      <button id="introParty" class="ui-button ui-button--main" type="button" disabled>A party round: the haunting wins<small class="ui-button-sub">Mr. Ashby keeps the table. The Haunt rises.</small></button>
+      <button id="introSolved" class="ui-button ui-button--main" type="button" disabled>A party round: the case is solved<small class="ui-button-sub">A Suspect confesses.</small></button>
+      <button id="introExplore" class="ui-button ui-button--main" type="button" disabled>Explore on my own<small class="ui-button-sub">Open the Director and pick any moment.</small></button>
     </div>
+    <p class="ui-status">A test sequence: the voices, pictures and clips are the real ones; the game around them is not built yet.</p>
+  </div>
+</div>
 
-    <div class="panel" style="margin-top:12px">
-      <div class="tabs"><button id="tabWander" class="on">Wander</button><button id="tabParty">Party</button></div>
-
-      <div id="wander">
-        <h2>The ghost</h2>
-        <div class="row"><label>Voice</label><select id="persona"><option value="soft">The Whisper (Pippa)</option><option value="dry">Mr. Ashby, the Keeper (Ronald)</option></select></div>
-        <h2 style="margin-top:14px">The place right now</h2>
-        <div class="row"><label>Weather</label><select id="weather"></select></div>
-        <div class="row"><label>Time</label><select id="time"></select></div>
-        <div class="row"><label>Moon</label><select id="moon"></select></div>
-        <div class="row"><label>Bearing</label><select id="bearing"></select></div>
-        <div class="row"><label>Distance</label><select id="band"></select></div>
-        <h2 style="margin-top:14px">What the ghost says</h2>
-        <div class="grid" id="wanderPads"></div>
-      </div>
-
-      <div id="party" hidden>
-        <h2>The table right now</h2>
-        <div class="row"><label>Player</label><select id="nick"></select></div>
-        <div class="row"><label>Room</label><select id="zone"></select></div>
-        <div class="row"><label>Suspect</label><select id="suspect"></select></div>
-        <h2 style="margin-top:14px">The Whisper (Pippa)</h2>
-        <div class="grid" id="whisperPads"></div>
-        <h2 style="margin-top:14px">The Keeper (Mr. Ashby, Ronald)</h2>
-        <div class="grid" id="keeperPads"></div>
-        <h2 style="margin-top:14px">The Suspect (in their own voice)</h2>
-        <div class="grid" id="suspectPads"></div>
-        <h2 style="margin-top:14px">Made for the demo video (clip only)</h2>
-        <div class="grid" id="demoPads"></div>
-      </div>
+<main id="app" class="app">
+  <section id="stage" class="ui-stage stage-area" aria-label="The stage">
+    <div class="ui-hud">
+      <div id="hudLeft" class="ui-hud-box"></div>
+      <div id="hudRight" class="ui-hud-box ui-hud-box--right"></div>
     </div>
+    <div class="ui-portrait ui-portrait--whisper" id="portrait">
+      <div class="ui-orb ui-orb--whisper" id="orb"></div>
+      <img id="avatar" alt="" hidden>
+      <video id="clip" playsinline hidden></video>
+      <div class="ui-clipnote" id="clipnote" hidden>lip-synced clip</div>
+    </div>
+    <div class="ui-nameplate ui-nameplate--whisper" id="who"></div>
+    <p class="ui-scene" id="scene"></p>
+    <div class="ui-dialogue">
+      <p id="sub" class="ui-speech" aria-hidden="true"></p>
+      <p id="note" class="ui-note"></p>
+      <button id="btnAgain" class="ui-button ui-button--quiet ui-dialogue-action" type="button" aria-label="Say it again" hidden>↻ Again<kbd class="ui-key" aria-hidden="true">R</kbd></button>
+    </div>
+    <p id="sr" class="ui-sr-only" aria-live="polite" aria-atomic="true"></p>
   </section>
 
-  <section>
-    <div class="panel stage" id="stage">
-      <div class="portrait" id="portrait">
-        <div class="orb" id="orb"></div>
-        <img id="avatar" alt="" hidden>
-        <video id="clip" playsinline hidden></video>
-        <div class="clipnote" id="clipnote" hidden>lip-synced clip</div>
+  <nav class="ui-transport transport-area" aria-label="Playback">
+    <button id="btnBack" class="ui-button ui-tool" type="button" aria-label="Back one scene" disabled><span class="ui-tool-glyph" aria-hidden="true">‹‹</span>Back</button>
+    <button id="btnPause" class="ui-button ui-tool" type="button" aria-label="Pause" aria-pressed="false" disabled><span class="ui-tool-glyph" aria-hidden="true">❚❚</span><span id="pauseLabel">Pause</span></button>
+    <button id="btnNext" class="ui-button ui-tool" type="button" aria-label="Next scene" disabled><span class="ui-tool-glyph" aria-hidden="true">››</span>Next</button>
+    <button id="btnStop" class="ui-button ui-tool ui-button--danger" type="button" aria-label="Stop" disabled><span class="ui-tool-glyph" aria-hidden="true">■</span>Stop</button>
+    <button id="btnMute" class="ui-button ui-tool" type="button" aria-label="Sound" aria-pressed="false"><span class="ui-tool-glyph" aria-hidden="true" id="muteGlyph">♪</span><span id="muteLabel">Sound</span></button>
+    <button id="btnDirector" class="ui-button ui-tool ui-tool--narrow-only" type="button" aria-label="Open the Director" aria-expanded="false" aria-controls="director"><span class="ui-tool-glyph" aria-hidden="true">☰</span>Director</button>
+    <p class="ui-keys">Space pause · ← back · → next · R again · Esc stop · M sound</p>
+  </nav>
+
+  <div class="ui-progress scenes-area">
+    <p id="sceneLabel" class="ui-progress-label">No story is playing.</p>
+    <ol id="strip" class="ui-dots" aria-label="Scenes"></ol>
+    <p id="upNext" class="ui-progress-next"></p>
+  </div>
+
+  <aside id="director" class="ui-sheet sheet-area" aria-label="Director">
+    <div class="ui-sheet-head"><h2 class="ui-sheet-title" tabindex="-1" id="dirTitle">Director</h2><button id="dirClose" class="ui-button ui-sheet-close" type="button">Close</button></div>
+
+    <details class="ui-fold" open>
+      <summary>Play a story</summary>
+      <div class="ui-field"><label class="ui-field-label" for="persona">Ghost</label><select class="ui-select" id="persona"><option value="soft">The Whisper (Pippa)</option><option value="dry">Mr. Ashby, the Keeper (Ronald)</option></select></div>
+      <div class="ui-stories">
+        <button id="runWander" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Wander</span><span class="ui-story-sub">Alone with the ghost. Three memories to find.</span></button>
+        <button id="runParty" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Party: the haunting wins</span><span class="ui-story-sub">A wrong accusation. The Haunt rises to 10.</span></button>
+        <button id="runSolved" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Party: the case is solved</span><span class="ui-story-sub">A Suspect confesses. The Keeper closes it.</span></button>
       </div>
-      <div class="scene" id="scene">Press a button, or play a whole session. (Your first click unlocks the sound.)</div>
-      <div class="who" id="who"></div>
-      <div class="sub" id="sub"></div>
-      <div class="note" id="note"></div>
-    </div>
-    <div class="panel" style="margin-top:12px">
-      <h2>What was said</h2>
-      <div class="log" id="log"></div>
-      <div class="status" id="status"></div>
-    </div>
+    </details>
+
+    <details class="ui-fold">
+      <summary>Moments: Wander</summary>
+      <div class="ui-grid" id="wanderPads"></div>
+    </details>
+
+    <details class="ui-fold">
+      <summary>Moments: party</summary>
+      <p class="ui-eyebrow">The Whisper (Pippa)</p>
+      <div class="ui-grid" id="whisperPads"></div>
+      <p class="ui-eyebrow">The Keeper (Mr. Ashby, Ronald)</p>
+      <div class="ui-grid" id="keeperPads"></div>
+      <p class="ui-eyebrow">The Suspect, in their own voice</p>
+      <div class="ui-grid" id="suspectPads"></div>
+      <p class="ui-eyebrow">Made for the demo video (clip only)</p>
+      <div class="ui-grid" id="demoPads"></div>
+    </details>
+
+    <details class="ui-fold">
+      <summary>The world</summary>
+      <div class="ui-field"><label class="ui-field-label" for="weather">Weather</label><select class="ui-select" id="weather"></select></div>
+      <div class="ui-field"><label class="ui-field-label" for="time">Time</label><select class="ui-select" id="time"></select></div>
+      <div class="ui-field"><label class="ui-field-label" for="moon">Moon</label><select class="ui-select" id="moon"></select></div>
+      <div class="ui-field"><label class="ui-field-label" for="bearing">Bearing</label><select class="ui-select" id="bearing"></select></div>
+      <div class="ui-field"><label class="ui-field-label" for="band">Distance</label><select class="ui-select" id="band"></select></div>
+      <div class="ui-field"><label class="ui-field-label" for="nick">Player</label><select class="ui-select" id="nick"></select></div>
+      <div class="ui-field"><label class="ui-field-label" for="zone">Room</label><select class="ui-select" id="zone"></select></div>
+      <div class="ui-field"><label class="ui-field-label" for="suspect">Suspect</label><select class="ui-select" id="suspect"></select></div>
+      <div class="ui-grid ui-grid--one"><button id="resetHud" class="ui-button" type="button">Reset the HUD</button></div>
+    </details>
+
+    <details class="ui-fold">
+      <summary>Settings</summary>
+      <div class="ui-field"><label class="ui-field-label" for="pause">Pause</label><input class="ui-range" id="pause" type="range" min="0" max="5" step="0.5" value="1.5"></div>
+      <p class="ui-hint" id="pauseV">1.5 s between scenes</p>
+      <div class="ui-field"><label class="ui-field-label" for="vol">Volume</label><input class="ui-range" id="vol" type="range" min="0" max="1" step="0.05" value="0.9"></div>
+      <div class="ui-field ui-field--check"><input class="ui-check" id="useClips" type="checkbox" checked><label class="ui-field-label" for="useClips">Use the lip-synced clip when a line has one</label></div>
+    </details>
+  </aside>
+
+  <section class="ui-panel journal-area" aria-label="What was said">
+    <h2 class="ui-eyebrow">What was said</h2>
+    <div class="ui-log" id="log" role="log" aria-live="off"></div>
+    <p class="ui-status" id="status"></p>
   </section>
 </main>
 <script type="module" src="/page.mjs"></script>

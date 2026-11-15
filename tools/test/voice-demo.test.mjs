@@ -2,14 +2,15 @@
 // Nothing here calls a model or touches the network beyond 127.0.0.1.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve as resolvePath } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
-  AVATAR_OF_SUFFIX, CHARACTERS, CLIPS, DEFAULTS, DEMO_ONLY, NICKS, SUSPECT_IDS, VOICE_OF_SUFFIX, ZONES,
-  avatarOf, buildSequence, clipFor, clipKey, fillPlaceholders, finiteCombos, hashOf, lineById, partySteps, pickLine, placeholdersOf, readingMs, resolve, suspectCtx, wanderSteps,
+  AVATAR_OF_SUFFIX, BAND_LEVEL, BEARING_ANGLE, CHARACTERS, CLIPS, DEFAULTS, DEMO_ONLY, HAUNT_EVENTS, HAUNT_MAX, MEMORIES, NICKS, SUSPECT_IDS, VOICE_OF_SUFFIX, ZONES,
+  avatarOf, bandLevel, buildSequence, clipFor, clipKey, compassAngle, fillPlaceholders, finiteCombos, hashOf, hudAfter, hudAnnouncement, hudDelta, hudReduce, initialHud, lineById, partySteps, pickLine, placeholdersOf, readingMs, resolve, revealFraction, sceneLabel, splitWords, suspectCtx, upNextLabel, wanderSteps, wordsShown,
 } from '../voice-demo/lib.mjs';
-import { AVATAR_IDS, CLIP_NAMES, createDemoServer, listenLocal, loadManifest, loadRows } from '../voice-demo/serve.mjs';
+import { AVATAR_IDS, CLIP_NAMES, FONT_NAMES, createDemoServer, listenLocal, loadManifest, loadRows } from '../voice-demo/serve.mjs';
 
 const manifest = loadManifest();
 const rows = loadRows();
@@ -398,4 +399,307 @@ test('server: only GET and HEAD are allowed', async () => {
     const headClip = await get(`${base}/clip/hero-whisper-meet.mp4`, { method: 'HEAD' });
     assert.equal(headClip.r.headers.get('content-length'), '3000');
   });
+});
+
+// ---- the look: black, brown, green and yellow; round portraits; readable text ----
+const root = resolvePath(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const html = readFileSync(join(root, 'tools/voice-demo/index.html'), 'utf8');
+// The look is the design system now (design/elements.css, tested in design-system.test.mjs). This file tests the page: what it puts where and how it is wired.
+const pageStyle = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
+const elementsCss = readFileSync(join(root, 'design/elements.css'), 'utf8');
+const css = `${elementsCss}\n${pageStyle}`;
+const rule = (selector) => { const m = new RegExp(`(?:^|\\n)\\s*${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(css); assert.ok(m, `no CSS rule for ${selector}`); return m[1].replace(/\s+/g, ' '); };
+/** All the declarations of every top-level rule for a selector, joined (a selector may have several rules). */
+const ruleAll = (selector) => { const re = new RegExp(`(?:^|\\n)\\s*${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`, 'g'); const out = [...css.matchAll(re)].map((m) => m[1].replace(/\s+/g, ' ')).join(' '); assert.ok(out, `no CSS rule for ${selector}`); return out; };
+
+test('server: a font is served by name from a fixed list of four, with the content policy allowing fonts from itself', async () => {
+  await withServer(async ({ base }) => {
+    for (const name of FONT_NAMES) {
+      const { r, body } = await get(`${base}/design/fonts/${name}.woff2`);
+      assert.equal(r.status, 200, name);
+      assert.equal(r.headers.get('content-type'), 'font/woff2');
+      assert.equal(body.subarray(0, 4).toString('latin1'), 'wOF2', name);
+      assert.match(r.headers.get('content-security-policy'), /font-src 'self'/);
+    }
+    for (const path of ['/fonts/newsreader-latin-400-normal.woff2', '/design/fonts/nope.woff2', '/design/fonts/OFL-Newsreader.txt', '/design/fonts/README.md', '/design/fonts/../serve.mjs', '/design/fonts/..%2fserve.mjs', '/design/fonts/NEWSREADER-LATIN-400-NORMAL.woff2', '/design/fonts/newsreader-latin-400-normal.woff', '/design/fonts/', '/design/secret.css', '/design/../serve.mjs', '/design/%2e%2e/serve.mjs']) {
+      assert.equal((await get(base + path)).r.status, 404, path);
+    }
+  });
+});
+
+// ---- the HUD and the dialogue (pure) ----
+test('hud: the numbers are the rules\' own: three memories, a Haunt maximum of 10 with Events at 3, 6 and 9, eight bearings, three bands', () => {
+  assert.equal(MEMORIES, 3);
+  assert.equal(HAUNT_MAX, 10, 'the Classic preset (party-mode design: hauntMax 10)');
+  assert.deepEqual([...HAUNT_EVENTS], [3, 6, 9]);
+  assert.equal(Object.keys(BEARING_ANGLE).length, 8);
+  assert.deepEqual(Object.keys(BAND_LEVEL), ['far', 'nearer', 'very close']);
+  assert.deepEqual(Object.keys(BEARING_ANGLE), manifest.finite.bearing, 'the bearings are the Library\'s, in the same order');
+  assert.deepEqual(Object.keys(BAND_LEVEL), manifest.finite.band);
+});
+
+test('hud: the compass turns clockwise from straight ahead, and a distance band fills 1, 2 or 3 bars', () => {
+  assert.deepEqual(['ahead', 'ahead-right', 'right', 'behind-right', 'behind', 'behind-left', 'left', 'ahead-left'].map(compassAngle), [0, 45, 90, 135, 180, 225, 270, 315]);
+  assert.equal(compassAngle('sideways'), null);
+  assert.equal(compassAngle(null), null);
+  assert.deepEqual(['far', 'nearer', 'very close', 'x'].map(bandLevel), [1, 2, 3, 0]);
+});
+
+test('hud: memories light as the ghost reveals them, the ending makes it three, and never more', () => {
+  let h = initialHud();
+  h = hudReduce(h, { kind: 'reveal' });
+  assert.equal(h.memories, 1);
+  h = hudReduce(hudReduce(hudReduce(h, { kind: 'reveal' }), { kind: 'reveal' }), { kind: 'reveal' });
+  assert.equal(h.memories, 3, 'capped at three');
+  assert.equal(hudReduce(initialHud(), { kind: 'ending' }).memories, 3);
+  assert.equal(hudReduce(initialHud(), { kind: 'echo' }).memories, 0, 'going back to a memory finds nothing new');
+});
+
+test('hud: a hint sets the bearing and the band, a tease only the band; the HUD is never changed in place', () => {
+  const start = initialHud();
+  const hint = hudReduce(start, { kind: 'hint', ctx: { bearing: 'behind-left', band: 'very close' } });
+  assert.deepEqual(hint.hint, { bearing: 'behind-left', band: 'very close' });
+  assert.deepEqual(hudReduce(hint, { kind: 'tease', ctx: { band: 'far' } }).hint, { bearing: null, band: 'far' });
+  assert.deepEqual(start, initialHud(), 'the old HUD is untouched');
+  assert.deepEqual(hint.hint, { bearing: 'behind-left', band: 'very close' });
+});
+
+test('hud: the Haunt rises by one, falls by one, stays between 0 and its maximum, and a script may set it', () => {
+  let h = initialHud();
+  assert.equal(hudReduce(h, { kind: 'haunt.lull' }).haunt, 0, 'never below 0');
+  h = hudReduce(h, { kind: 'haunt.rise' });
+  assert.equal(h.haunt, 1);
+  assert.equal(hudReduce(h, { kind: 'haunt.lull' }).haunt, 0);
+  assert.equal(hudReduce(h, { kind: 'x', haunt: 6 }).haunt, 6);
+  assert.equal(hudReduce(h, { kind: 'x', haunt: 99 }).haunt, HAUNT_MAX, 'never above the maximum');
+  assert.equal(hudReduce(hudReduce(initialHud(), { kind: 'x', haunt: 10 }), { kind: 'haunt.rise' }).haunt, HAUNT_MAX);
+});
+
+test('hud: whose hour it is, and who has joined the haunting (once each)', () => {
+  let h = hudReduce(initialHud(), { kind: 'turn-start', ctx: { nick: 'Sam' } });
+  assert.equal(h.activeNick, 'Sam');
+  h = hudReduce(h, { kind: 'poltergeist', ctx: { nick: 'Robin' } });
+  h = hudReduce(h, { kind: 'poltergeist', ctx: { nick: 'Robin' } });
+  assert.deepEqual(h.haunting, ['Robin']);
+});
+
+test('hud: the Wander ends with three memories and the last hint; the haunted round ends at the Haunt maximum with one player haunting', () => {
+  const w = wanderSteps(DEFAULTS, 'soft');
+  assert.deepEqual(hudAfter(w, -1), initialHud());
+  assert.equal(hudAfter(w, 4).memories, 1, 'the first find is the fifth scene');
+  assert.equal(hudAfter(w, 7).memories, 2);
+  const endW = hudAfter(w, w.length - 1);
+  assert.equal(endW.memories, 3);
+  assert.deepEqual(endW.hint, { bearing: 'ahead', band: 'very close' });
+  const p = partySteps(DEFAULTS, 'haunted');
+  const endP = hudAfter(p, p.length - 1);
+  assert.equal(endP.haunt, HAUNT_MAX);
+  assert.deepEqual(endP.haunting, ['Robin']);
+  assert.equal(endP.activeNick, 'Sam');
+  // Back goes to an earlier HUD, because it is worked out from the script and not kept
+  assert.deepEqual(hudAfter(p, 3).haunt, 3);
+});
+
+test('hud: the party script raises the Haunt as the spec has it: an Event at 3, at 6 and at 9, then the maximum', () => {
+  const levels = partySteps(DEFAULTS, 'haunted').filter((s) => s.haunt !== undefined).map((s) => [s.kind, s.haunt]);
+  assert.deepEqual(levels, [['haunt.cold-spot', 3], ['haunt.rise', 4], ['haunt.blackout', 6], ['haunt.restless', 9], ['end.haunting', 10]]);
+  for (const [kind, level] of levels) if (kind.startsWith('haunt.') && kind !== 'haunt.rise') assert.ok(HAUNT_EVENTS.includes(level), `${kind} is an Event at level ${level}`);
+  assert.deepEqual(partySteps(DEFAULTS, 'solved').filter((s) => s.haunt !== undefined).map((s) => s.haunt), [3]);
+  // the Haunt falls by one at the lull, from 9 to 8, before it reaches the maximum
+  const steps = partySteps(DEFAULTS, 'haunted');
+  assert.equal(hudAfter(steps, steps.findIndex((s) => s.kind === 'haunt.lull')).haunt, 8);
+});
+
+test('dialogue: words appear as they are spoken, none before it starts, all at the end, and the last one is never late', () => {
+  assert.deepEqual(splitWords('  Hello.  I was\nwaiting. '), ['Hello.', 'I', 'was', 'waiting.']);
+  assert.deepEqual(splitWords(''), []);
+  assert.equal(wordsShown(10, 0), 0);
+  assert.equal(wordsShown(10, -1), 0);
+  assert.equal(wordsShown(10, Number.NaN), 0);
+  assert.equal(wordsShown(10, 0.01), 1, 'the first word shows as soon as it starts');
+  assert.equal(wordsShown(10, 0.5), 5);
+  assert.equal(wordsShown(10, 1), 10);
+  assert.equal(wordsShown(10, 7), 10);
+  assert.equal(revealFraction(0, 8), 0);
+  assert.equal(revealFraction(4, 0), 0);
+  assert.equal(revealFraction(4, Number.NaN), 0);
+  assert.equal(revealFraction(7.2, 8), 1, 'complete at 90% of the sound, so the last word is not late');
+  assert.equal(revealFraction(8, 8), 1);
+  assert.ok(revealFraction(2, 8) > 0.27 && revealFraction(2, 8) < 0.28);
+  let last = 0;
+  for (let t = 0; t <= 8; t += 0.1) { const n = wordsShown(12, revealFraction(t, 8)); assert.ok(n >= last, 'never goes backwards'); last = n; }
+  assert.equal(last, 12);
+});
+
+test('scenes: the label says where in the story we are', () => {
+  const w = wanderSteps(DEFAULTS, 'soft');
+  assert.equal(sceneLabel(w, 0), 'Scene 1 of 12: You step into the place');
+  assert.equal(sceneLabel(w, 3), 'Scene 4 of 12: You press Hint (far)');
+});
+
+// ---- the page: layout, accessibility, and that the script and the HTML agree ----
+const pageJs = readFileSync(join(root, 'tools/voice-demo/page.mjs'), 'utf8');
+const libExports = await import('../voice-demo/lib.mjs');
+
+test('page: every id the script uses is in the HTML, and every name it imports exists in lib.mjs', () => {
+  const ids = new Set([...html.matchAll(/\sid="([A-Za-z0-9-]+)"/g)].map((m) => m[1]));
+  const used = new Set([...pageJs.matchAll(/\$\('([A-Za-z0-9-]+)'\)/g)].map((m) => m[1]));
+  for (const id of used) assert.ok(ids.has(id), `page.mjs uses #${id} but the HTML has no such id`);
+  assert.ok(used.size > 40, 'the check is looking at the real script');
+  const imported = /import\s*\{([^}]*)\}\s*from\s*'\/lib\.mjs'/.exec(pageJs)[1].split(',').map((x) => x.trim()).filter(Boolean);
+  for (const name of imported) assert.ok(name in libExports, `page.mjs imports ${name} but lib.mjs does not export it`);
+  assert.ok(imported.length > 20);
+});
+
+test('page: stage first, and a Director that is a bottom sheet on a phone and a side panel from 900 px', () => {
+  const order = ['id="intro"', 'id="stage"', 'class="ui-transport transport-area"', 'class="ui-progress scenes-area"', 'id="director"', 'class="ui-panel journal-area"'].map((s) => html.indexOf(s));
+  assert.ok(order.every((i) => i > 0), 'all the regions are there');
+  assert.ok(order[1] < order[2] && order[2] < order[3] && order[3] < order[4], 'the stage comes before the controls in the page');
+  assert.match(css, /grid-template-areas:"stage" "transport" "scenes" "journal"/, 'a phone gets one column, stage first');
+  assert.match(css, /@media \(min-width: 900px\)[\s\S]*grid-template-areas:"stage director"/, 'from 900 px the Director is beside the stage');
+  assert.match(html, /id="director" class="ui-sheet sheet-area"/, 'the Director is the shared sheet element');
+  assert.match(ruleAll('.ui-sheet'), /position: fixed/);
+  assert.match(ruleAll('.ui-sheet'), /transform: translateY\(105%\)/, 'closed, it is below the screen');
+  assert.match(rule('.ui-sheet.is-open'), /transform: none/);
+  assert.match(elementsCss, /@media \(min-width: 900px\) \{\s*\.ui-sheet \{ position: static;/, 'a side panel on a wide screen');
+  assert.match(ruleAll('.ui-transport'), /position: sticky/, 'the transport stays in reach');
+  assert.match(ruleAll('.ui-stage'), /min-height: 0/, 'a phone stage is only as tall as its content');
+  assert.match(pageStyle, /@media \(min-width: 900px\) \{\s*\.stage-area \{ min-height:35rem; \}/, 'a wide stage has room to breathe');
+  assert.ok(!/(?:^|\n)\s*\.(?:ui-)?[a-z-]+\s*\{[^}]*(?:background|color|border)/.test(pageStyle.replace(/@media[\s\S]*$/, '')), 'the page style says where things go, not how they look');
+});
+
+test('page: every control is at least 44 px, and the transport buttons are bigger', () => {
+  assert.match(rule('.ui-button'), /min-height: var\(--target\)/);
+  assert.match(rule('.ui-select, .ui-range'), /min-height: var\(--target\)/);
+  assert.match(rule('.ui-fold > summary'), /min-height: var\(--target\)/);
+  assert.match(rule('.ui-field--check .ui-field-label'), /min-height: var\(--target\)/, 'the words of a tick box are a target too');
+  assert.match(rule('.ui-tool'), /min-height: var\(--target-main\)/);
+  assert.match(rule('.ui-button--main'), /min-height: var\(--target-main\)/);
+  const tokensCss = readFileSync(join(root, 'web/src/styles/tokens.css'), 'utf8');
+  assert.match(tokensCss, /--target: 44px;/);
+  assert.match(tokensCss, /--target-main: 52px;/);
+  for (const m of html.matchAll(/<button\b[^>]*class="([^"]*)"/g)) assert.match(m[1], /\bui-button\b/, `every button uses the shared button: ${m[1]}`);
+});
+
+test('page: accessible: one polite live region, a log for the journal, a modal title card, a skip link, a language, names on every button', () => {
+  assert.match(html, /<html lang="en">/);
+  assert.equal((html.match(/aria-live="polite"/g) ?? []).length, 1, 'one place announces the line');
+  assert.match(html, /id="sr" class="ui-sr-only" aria-live="polite" aria-atomic="true"/);
+  assert.match(html, /class="ui-log" id="log" role="log"/);
+  assert.match(html, /id="intro" class="ui-modal" role="dialog" aria-modal="true" aria-labelledby="introTitle"/);
+  assert.match(html, /id="introTitle"/);
+  assert.match(html, /<a class="ui-skip" href="#stage">/);
+  assert.match(html, /id="sub" class="ui-speech" aria-hidden="true"/, 'the word-by-word text is not announced twice');
+  for (const m of html.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)) {
+    const name = /aria-label="([^"]+)"/.exec(m[1])?.[1] ?? m[2].replace(/<[^>]+>/g, '').trim();
+    assert.ok(name.length > 0, `a button with no name: ${m[0].slice(0, 80)}`);
+  }
+  for (const id of ['weather', 'time', 'moon', 'bearing', 'band', 'nick', 'zone', 'suspect', 'persona', 'pause', 'vol', 'useClips']) assert.match(html, new RegExp(`for="${id}"`), `${id} has a label`);
+});
+
+test('page: the title card carries the content notice and the first click that unlocks the sound, and the steering voice', () => {
+  assert.match(html, /Quiet, dim, may flicker\./);
+  assert.match(html, /&gt; look/);
+  assert.match(html, /You are in a place\./);
+  for (const id of ['introWander', 'introParty', 'introSolved', 'introExplore']) assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(pageJs, /app\.inert = true/, 'the page behind the card cannot be reached until it is closed');
+  assert.match(pageJs, /Escape/);
+});
+
+test('page: the transport and the keyboard: pause, back, next, stop, sound, and Space, arrows, Esc, M', () => {
+  for (const id of ['btnBack', 'btnPause', 'btnNext', 'btnStop', 'btnMute', 'btnDirector']) assert.match(html, new RegExp(`id="${id}"`));
+  assert.match(html, /Space pause · ← back · → next · R again · Esc stop · M sound/);
+  for (const key of [`' '`, `'ArrowRight'`, `'ArrowLeft'`, `'Escape'`, `'m'`, `'r'`]) assert.ok(pageJs.includes(key), `the keyboard handles ${key}`);
+  assert.match(html, /aria-pressed="false" disabled/, 'pause starts disabled until something plays');
+});
+
+test('page: motion is slow and small, and it all stops under prefers-reduced-motion, in the style and in the script', () => {
+  assert.match(elementsCss, /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.ui-orb\.is-speaking \{ animation: none; \}/, 'the looping breath stops');
+  assert.match(readFileSync(join(root, 'web/src/styles/tokens.css'), 'utf8'), /@media \(prefers-reduced-motion: reduce\) \{\s*:root \{\s*--fade: 0ms;\s*--fade-quick: 0ms;\s*--fade-slow: 0ms;/, 'every fade is 0 ms, so every transition stops');
+  assert.match(pageJs, /matchMedia\('\(prefers-reduced-motion: reduce\)'\)/);
+  assert.match(pageJs, /reduceMotion\.matches/);
+  assert.match(pageJs, /duration: tokenMs\('--fade-slow'\), easing: tokenCss\('--ease'\)/, 'the pulse takes its time and easing from the tokens');
+  assert.ok(!/@keyframes\s+(shake|flash|flicker|blink)/i.test(css), 'no screen shake or flicker');
+});
+
+test('page: the HUD shows only what the rules give: memories, a compass with bars, the Haunt with Event marks, the players', () => {
+  assert.match(css, /\.ui-seg--event::after/, 'the marks at 3, 6 and 9');
+  assert.match(css, /\.ui-seg--max\.is-on \{ border-color: var\(--danger\); background: var\(--danger\)/, 'the last segment is the end of the game');
+  assert.match(css, /\.ui-lamp\.is-on \{ border-color: var\(--accent\); background: var\(--accent\)/);
+  assert.match(css, /\.ui-needle \{ transition: transform/, 'the needle turns, it does not jump');
+  assert.match(pageJs, /classList\.add\(`ui-stage--\$\{kind\}`\)/, 'the stage is lit by whoever speaks');
+  assert.match(pageJs, /shortest way|delta = \(\(angle - needleAngle \+ 540\) % 360\) - 180/, 'the needle takes the short way round');
+  assert.match(pageJs, /Haunt \$\{hud\.haunt\} of \$\{HAUNT_MAX\}/);
+  assert.match(pageJs, /joined the haunting/);
+});
+
+// ---- the second pass: palette depth, story cards, feedback, again, loading ----
+test('hud feedback: what just changed is found by index, and only increases count (going back is not celebrated)', () => {
+  const a = initialHud();
+  const b = hudReduce(hudReduce(a, { kind: 'reveal' }), { kind: 'x', haunt: 4 });
+  assert.deepEqual(hudDelta(a, b), { newLamps: [0], newSegs: [0, 1, 2, 3], newActive: null, newlyHaunting: [], newHint: false });
+  assert.deepEqual(hudDelta(b, a), { newLamps: [], newSegs: [], newActive: null, newlyHaunting: [], newHint: false }, 'going back lights nothing');
+  const c = hudReduce(hudReduce(b, { kind: 'turn-start', ctx: { nick: 'Sam' } }), { kind: 'poltergeist', ctx: { nick: 'Robin' } });
+  assert.equal(hudDelta(b, c).newActive, 'Sam');
+  assert.deepEqual(hudDelta(b, c).newlyHaunting, ['Robin']);
+  assert.equal(hudDelta(c, c).newActive, null, 'the same player again is not new');
+  assert.equal(hudDelta(a, hudReduce(a, { kind: 'hint', ctx: { bearing: 'left', band: 'far' } })).newHint, true);
+});
+
+test('hud feedback: the changes are also said in words for a screen reader, and nothing is said when nothing changed', () => {
+  const a = initialHud();
+  assert.equal(hudAnnouncement(a, a), '');
+  assert.equal(hudAnnouncement(a, hudReduce(a, { kind: 'reveal' })), 'Memory 1 of 3 found.');
+  assert.equal(hudAnnouncement(a, hudReduce(a, { kind: 'x', haunt: 3 })), 'The Haunt rises to 3 of 10. A Haunt Event fires at 3.');
+  assert.equal(hudAnnouncement(hudReduce(a, { kind: 'x', haunt: 4 }), hudReduce(a, { kind: 'x', haunt: 4 })), '');
+  assert.equal(hudAnnouncement(hudReduce(a, { kind: 'x', haunt: 4 }), hudReduce(a, { kind: 'x', haunt: 9 })), 'The Haunt rises to 9 of 10. A Haunt Event fires at 6. A Haunt Event fires at 9.');
+  assert.match(hudAnnouncement(hudReduce(a, { kind: 'x', haunt: 9 }), hudReduce(a, { kind: 'x', haunt: 10 })), /The Haunt has reached its maximum\./);
+  assert.equal(hudAnnouncement(hudReduce(a, { kind: 'x', haunt: 9 }), hudReduce(a, { kind: 'x', haunt: 8 })), 'The Haunt falls to 8.');
+  assert.equal(hudAnnouncement(a, hudReduce(a, { kind: 'turn-start', ctx: { nick: 'Alex' } })), "Alex's hour.");
+  assert.equal(hudAnnouncement(a, hudReduce(a, { kind: 'poltergeist', ctx: { nick: 'Robin' } })), 'Robin has joined the haunting.');
+  assert.equal(hudAnnouncement(a, hudReduce(a, { kind: 'hint', ctx: { bearing: 'behind-left', band: 'very close' } })), 'Hint: behind-left, very close.');
+  assert.equal(hudAnnouncement(a, hudReduce(a, { kind: 'tease', ctx: { band: 'far' } })), 'Hint: no bearing, far.');
+});
+
+test('scenes: "up next" says what is coming, and that the last scene is the last', () => {
+  const w = wanderSteps(DEFAULTS, 'soft');
+  assert.equal(upNextLabel(w, 0), 'Up next: A quiet moment (the weather)');
+  assert.equal(upNextLabel(w, 10), 'Up next: You visit the ghost once more');
+  assert.equal(upNextLabel(w, 11), 'The last scene.');
+  assert.equal(upNextLabel([], 0), 'The last scene.');
+});
+
+test('ux: the title card says it is loading, cannot be used until the Library is there, and says so if it fails', () => {
+  assert.match(html, /class="ui-status" id="introStatus" role="status">Loading the Library…/);
+  for (const id of ['introWander', 'introParty', 'introSolved', 'introExplore']) assert.match(html, new RegExp(`id="${id}"[^>]* disabled>`), `${id} starts disabled`);
+  assert.match(pageJs, /for \(const b of introButtons\) b\.disabled = false/);
+  assert.match(pageJs, /The Library could not be loaded/);
+  assert.match(pageJs, /Is \\`pnpm voice-demo\\` still running\?/);
+  assert.match(pageJs, /Ready: \$\{voiced\.length\} voiced lines/);
+  assert.match(css, /\.ui-status\.is-bad \{ color: var\(--danger\)/);
+});
+
+test('ux: a line can be said again (a button and R), the same line, in a story or on its own', () => {
+  assert.match(html, /id="btnAgain" class="ui-button ui-button--quiet ui-dialogue-action" type="button" aria-label="Say it again" hidden>/);
+  assert.match(pageJs, /function again\(\)/);
+  assert.match(pageJs, /forceNext = lastSay\.forceId/, 'in a story it asks for the same line, not a new one');
+  assert.match(pageJs, /lastSay = \{ kind, suffix, scene, over, forceId: line\.id \}/, 'it remembers the line that was said, not the kind');
+  assert.match(pageJs, /\$\('btnAgain'\)\.hidden = false/);
+});
+
+test('ux: what the HUD did is said to a screen reader with the line, and each change pulses once, not under reduced motion', () => {
+  assert.match(pageJs, /pendingAnnounce/);
+  assert.match(pageJs, /\$\('sr'\)\.textContent = `\$\{speakerName\(r, id\)\}: \$\{r\.text\}\$\{pendingAnnounce/);
+  assert.match(pageJs, /function pulse\(node\) \{\s*if \(reduceMotion\.matches/);
+  assert.match(pageJs, /delta\.newLamps\.forEach/);
+  assert.match(pageJs, /delta\.newSegs\.forEach/);
+  assert.match(pageJs, /function resetHud\(\) \{ hud = initialHud\(\); shownHud = hud; pendingAnnounce = ''/, 'a reset is not announced as a fall');
+  assert.match(html, /id="upNext" class="ui-progress-next"/);
+  assert.match(pageJs, /upNextLabel\(steps, i\)/);
+});
+
+test('ux: opening the Director on a phone puts focus on its title, not on the first row', () => {
+  assert.match(html, /<h2 class="ui-sheet-title" tabindex="-1" id="dirTitle">Director<\/h2>/);
+  assert.match(pageJs, /if \(open\) \$\('dirTitle'\)\.focus\(\)/);
+  assert.match(css, /\.ui-sheet-title:focus \{ outline: none; \}/);
 });

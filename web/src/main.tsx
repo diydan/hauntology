@@ -8,6 +8,9 @@ import { loadDemoApi, loadDemoPlatform } from "./app/demo";
 import { createQuotaStore } from "./app/QuotaStore";
 import { createRouter } from "./app/router";
 import "./styles/tokens.css";
+// The shared look (design/): the two self-hosted fonts and the reusable ui-* elements. New screens are built from these (steering/design-system.md).
+import "../../design/fonts.css";
+import "../../design/elements.css";
 import "./styles/app.css";
 
 async function main(): Promise<void> {

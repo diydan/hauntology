@@ -22,8 +22,10 @@ const contrast = (a: string, b: string): number => {
 };
 
 describe("tokens", () => {
+  // tokens.css is generated from design/tokens.json (`pnpm build-tokens`); tools/test/design-tokens.test.mjs checks the whole file. These six names
+  // are the ones steering/visual-style.md has always named, and the rest of this app uses them, so their values must never move.
   it("has the palette from the visual style", () => {
-    expect(palette()).toEqual({ ink: "#0b0d10", bone: "#e9e4d8", lantern: "#e0a43a", ghost: "#9fe8d0", dust: "#6b6f76", alarm: "#d4604a" });
+    expect(palette()).toMatchObject({ ink: "#0b0d10", bone: "#e9e4d8", lantern: "#e0a43a", ghost: "#9fe8d0", dust: "#6b6f76", alarm: "#d4604a" });
   });
 
   it("keeps text at 4.5:1 or more on --ink, and button text on --lantern too", () => {

@@ -1,0 +1,7 @@
+/* The two self-hosted fonts (no third-party font request, as steering/visual-style.md asks). Latin subset only. Licences: fonts/OFL-*.txt.
+   --font-ui is IBM Plex Mono; --font-ghost is Newsreader (design/tokens.json). The paths are relative to this file, so a bundler or the
+   local server finds them next to it. */
+@font-face { font-family: 'Newsreader'; src: url('./fonts/newsreader-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Newsreader'; src: url('./fonts/newsreader-latin-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/ibm-plex-mono-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/ibm-plex-mono-latin-500-normal.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }

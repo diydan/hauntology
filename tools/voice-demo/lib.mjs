@@ -168,7 +168,7 @@ export function partySteps(ctx = DEFAULTS, ending = 'haunted') {
   const [a, b, c] = NICKS;
   const at = (patch) => ({ ...ctx, ...patch });
   const keeper = (label, kind, patch = {}) => ({ label, kind, suffix: 'dry', ctx: at(patch) });
-  const whisper = (label, kind, patch = {}) => ({ label, kind, suffix: 'soft', ctx: at(patch) });
+  const whisper = (label, kind, patch = {}, haunt) => ({ label, kind, suffix: 'soft', ctx: at(patch), ...(haunt === undefined ? {} : { haunt }) });
   const suspect = (label, kind, id, extra = {}) => ({ label, kind, suffix: 'lodger', ctx: at(suspectCtx(id)), ...extra });
   if (ending === 'solved') {
     return [
@@ -176,7 +176,7 @@ export function partySteps(ctx = DEFAULTS, ending = 'haunted') {
       keeper(`${a} offers a theory`, 'suggest', { nick: a, zone: 'library' }),
       suspect('Lady Vane is named (text only)', 'aside', 'vane'),
       keeper('A card is shown to one player', 'shown'),
-      whisper('The Haunt rises: a cold place (Haunt Event)', 'haunt.cold-spot', { zone: 'cellar' }),
+      whisper('The Haunt reaches 3: a cold place (Haunt Event)', 'haunt.cold-spot', { zone: 'cellar' }, 3),
       keeper(`${b}'s hour begins`, 'turn-start', { nick: b }),
       keeper(`${b} seals an Accusation`, 'seal', { nick: b }),
       keeper('The accusations are opened', 'accuse.reveal'),
@@ -189,23 +189,116 @@ export function partySteps(ctx = DEFAULTS, ending = 'haunted') {
     keeper(`${a}'s hour begins`, 'turn-start', { nick: a }),
     keeper(`${a} offers a theory`, 'suggest', { nick: a, zone: 'kitchen' }),
     keeper('A card is shown to one player', 'shown'),
-    whisper('The Haunt rises: a cold place (Haunt Event)', 'haunt.cold-spot', { zone: 'cellar' }),
+    whisper('The Haunt reaches 3: a cold place (Haunt Event)', 'haunt.cold-spot', { zone: 'cellar' }, 3),
     keeper('The hour is nearly spent', 'time-warning', { nick: a }),
-    whisper('The Haunt level rises (text only)', 'haunt.rise'),
+    whisper('The Haunt level rises (text only)', 'haunt.rise', {}, 4),
     keeper(`${b}'s hour begins`, 'turn-start', { nick: b }),
     keeper('Nobody can answer', 'none-shown'),
-    whisper('The Haunt rises again: the lights go out (Haunt Event)', 'haunt.blackout'),
+    whisper('The Haunt reaches 6: the lights go out (Haunt Event)', 'haunt.blackout', {}, 6),
     keeper(`${c} seals an Accusation`, 'seal', { nick: c }),
-    whisper('Restless (Haunt Event)', 'haunt.restless', { zone: 'attic' }),
+    whisper('The Haunt reaches 9: restless (Haunt Event)', 'haunt.restless', { zone: 'attic' }, 9),
     keeper('The accusations are opened', 'accuse.reveal'),
     suspect('Captain Thorne answers it', 'stall', 'thorne'),
     keeper(`${c}'s accusation does not stand`, 'accuse.wrong', { nick: c }),
     whisper(`${c} joins the haunting`, 'poltergeist', { nick: c }),
     whisper('The house settles (Haunt falls)', 'haunt.lull'),
     whisper('Midnight', 'midnight'),
-    whisper('Nobody found the ghost in time', 'end.haunting'),
+    whisper('The Haunt reaches its maximum: nobody found the ghost in time', 'end.haunting', {}, 10),
   ];
 }
 
 /** How long a silent line stays on screen: a slow reader's pace, never under two seconds. */
 export const readingMs = (text) => Math.max(2000, Math.round(text.length * 55));
+
+// ---- the HUD: what a player sees besides the ghost ----------------------------------------------------------------------------------
+// Only facts the rules give: a Wander is three memories; a hint is a bearing (one of eight) and a distance band (one of three); the party
+// Haunt rises to a maximum (10 in the Classic preset) and fires a Haunt Event the first time it reaches 3, 6 and 9; a Player whose Accusation
+// is wrong "joins the haunting" (party-mode requirements and design, ghost-engine requirements).
+
+export const HAUNT_MAX = 10;
+export const HAUNT_EVENTS = Object.freeze([3, 6, 9]);
+export const MEMORIES = 3;
+
+/** The eight bearings of a hint, as the angle of the compass needle: clockwise from straight ahead. */
+export const BEARING_ANGLE = Object.freeze({ ahead: 0, 'ahead-right': 45, right: 90, 'behind-right': 135, behind: 180, 'behind-left': 225, left: 270, 'ahead-left': 315 });
+export const compassAngle = (bearing) => BEARING_ANGLE[bearing] ?? null;
+/** The three distance bands as bars filled: far 1, nearer 2, very close 3. */
+export const BAND_LEVEL = Object.freeze({ far: 1, nearer: 2, 'very close': 3 });
+export const bandLevel = (band) => BAND_LEVEL[band] ?? 0;
+
+export const initialHud = () => ({ memories: 0, haunt: 0, activeNick: null, haunting: [], hint: null });
+
+/**
+ * The HUD after one event: a line of `kind` said in `ctx`. A step may also say the Haunt level outright (`haunt`). Pure.
+ * @param {ReturnType<typeof initialHud>} hud
+ * @param {{ kind: string, ctx?: object, haunt?: number }} ev
+ */
+export function hudReduce(hud, ev) {
+  const ctx = ev.ctx ?? {};
+  const next = { ...hud, haunting: [...hud.haunting], hint: hud.hint === null ? null : { ...hud.hint } };
+  switch (ev.kind) {
+    case 'reveal': next.memories = Math.min(MEMORIES, hud.memories + 1); break;
+    case 'ending': next.memories = MEMORIES; break;
+    case 'hint': next.hint = { bearing: ctx.bearing ?? null, band: ctx.band ?? null }; break;
+    case 'tease': next.hint = { bearing: null, band: ctx.band ?? null }; break;
+    case 'turn-start': next.activeNick = ctx.nick ?? null; break;
+    case 'poltergeist': if (ctx.nick && !next.haunting.includes(ctx.nick)) next.haunting.push(ctx.nick); break;
+    case 'haunt.rise': next.haunt = Math.min(HAUNT_MAX, hud.haunt + 1); break;
+    case 'haunt.lull': next.haunt = Math.max(0, hud.haunt - 1); break;
+    default: break;
+  }
+  if (typeof ev.haunt === 'number') next.haunt = Math.max(0, Math.min(HAUNT_MAX, Math.round(ev.haunt)));
+  return next;
+}
+
+/** The HUD as it is once step `index` of a script has begun (index -1: before the first). */
+export function hudAfter(steps, index) {
+  let hud = initialHud();
+  for (const step of steps.slice(0, Math.max(0, index + 1))) hud = hudReduce(hud, step);
+  return hud;
+}
+
+// ---- the dialogue: words appear as they are spoken ----------------------------------------------------------------------------------
+export const splitWords = (text) => text.split(/\s+/).filter(Boolean);
+/** How many of `total` words are showing when `fraction` (0 to 1) of the line has been spoken: none before it starts, all at the end. */
+export const wordsShown = (total, fraction) => (!(fraction > 0) ? 0 : fraction >= 1 ? total : Math.min(total, Math.ceil(total * fraction)));
+/** The share of a line that has been spoken, reaching 1 slightly BEFORE the sound ends, so the last word is never late. */
+export const revealFraction = (currentTime, duration) => (duration > 0 && currentTime > 0 ? Math.min(1, currentTime / (duration * 0.9)) : 0);
+
+/** "Scene 3 of 12: You press Hint (far)". */
+export const sceneLabel = (steps, index) => `Scene ${index + 1} of ${steps.length}: ${steps[index]?.label ?? ''}`;
+
+// ---- what changed on the HUD: for a pulse on the thing that changed, and for the screen reader ------------------------------------------
+
+/**
+ * Which parts of the HUD are new between two states: the lamps and Haunt segments that just lit (by index), whose hour it just became, and who
+ * just joined the haunting. Only increases count: going back in a story changes the HUD without celebrating it. Pure.
+ */
+export function hudDelta(prev, next) {
+  const range = (from, to) => (to > from ? Array.from({ length: to - from }, (_, i) => from + i) : []);
+  return {
+    newLamps: range(prev.memories, next.memories),
+    newSegs: range(prev.haunt, next.haunt),
+    newActive: next.activeNick && next.activeNick !== prev.activeNick ? next.activeNick : null,
+    newlyHaunting: next.haunting.filter((n) => !prev.haunting.includes(n)),
+    newHint: next.hint !== null && JSON.stringify(next.hint) !== JSON.stringify(prev.hint),
+  };
+}
+
+/** The same changes in words, for the screen reader (a blind player cannot see the lamps, the meter or the compass). Empty when nothing changed. */
+export function hudAnnouncement(prev, next) {
+  const parts = [];
+  if (next.memories > prev.memories) parts.push(`Memory ${next.memories} of ${MEMORIES} found.`);
+  if (next.haunt > prev.haunt) {
+    parts.push(`The Haunt rises to ${next.haunt} of ${HAUNT_MAX}.`);
+    for (const e of HAUNT_EVENTS) if (prev.haunt < e && next.haunt >= e) parts.push(`A Haunt Event fires at ${e}.`);
+    if (next.haunt === HAUNT_MAX) parts.push('The Haunt has reached its maximum.');
+  } else if (next.haunt < prev.haunt) parts.push(`The Haunt falls to ${next.haunt}.`);
+  if (next.activeNick && next.activeNick !== prev.activeNick) parts.push(`${next.activeNick}'s hour.`);
+  for (const n of next.haunting) if (!prev.haunting.includes(n)) parts.push(`${n} has joined the haunting.`);
+  if (next.hint !== null && JSON.stringify(next.hint) !== JSON.stringify(prev.hint)) parts.push(`Hint: ${[next.hint.bearing ?? 'no bearing', next.hint.band].filter(Boolean).join(', ')}.`);
+  return parts.join(' ');
+}
+
+/** "Up next: You press Hint (far)", or a word that this is the last scene. */
+export const upNextLabel = (steps, index) => (index + 1 < steps.length ? `Up next: ${steps[index + 1].label}` : 'The last scene.');
