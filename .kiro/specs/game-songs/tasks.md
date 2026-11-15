@@ -33,3 +33,13 @@
     - _Requirements: 5.2_
   - [ ] 4.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 5.4_
+
+- [ ] 5. Song catalogue and house style (added 2026-11-16; satisfies Requirement 6)
+  - [ ] 5.1 Write the Stock Song list with each song's lyrics and style from `house-style.md`, and a check that no prompt or lyric names a real person, title or character
+    - _Requirements: 6.1, 6.3, 6.4_
+  - [ ] 5.2 Make the Stock Songs with the Song Service (short songs first; the account has about 2 hours of credit), keep one version of each with its captions and a record of its prompt, and commit them under `web/public/sounds/songs/`
+    - _Requirements: 6.1, 6.3_
+  - [ ] 5.3 Play rules: the Haunt loops follow the Haunt level, the stings at Round end, a Relic or Zone Clue Song only when the public log already rules it out, a ghost's theme under its appearances
+    - _Requirements: 6.4, 6.5_
+  - [ ] 5.4 The per-game songs (the opening while the lobby fills, Moment Songs, Clue Songs, the Ballad) in the house style
+    - _Requirements: 6.2, 6.3_

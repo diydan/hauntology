@@ -58,3 +58,20 @@ The screens of this spec are built from `design/elements.css`, with the values o
 | The song line on the ending screen | `ui-panel ui-speech ui-hint` |
 
 A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. Nothing of this spec is built yet, so it is built from the elements the first time.
+
+## Song catalogue and house style (2026-11-16)
+
+| Kind | Songs | Made |
+|---|---|---|
+| Title, lobby | 2 | once |
+| Haunt loops (low, middle, high) | 3 | once |
+| Round-end stings | 3 | once |
+| Fallbacks (joined, wrong Accusation, Becoming, Detectives win, house wins) | 5 | once |
+| Relic Clue Songs | 6 | once |
+| Zone Clue Songs (curated names) | 12 | once |
+| Preset Ghost themes | 8 | once |
+| Gallery World themes | 1 each | once per world |
+| Opening, Moment Songs, Clue Songs, Ballad | 6 to 7 | each game |
+
+Style and lyrics come from `.kiro/steering/house-style.md`. A prompt describes instruments, voices, rhythm and mood only; it names no person or work. Each Stock Song keeps its prompt and lyrics beside its file, so it can be remade.
+

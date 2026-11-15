@@ -67,3 +67,15 @@ Game songs are short songs made for one game, about what really happened in it, 
 2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
 3. THE captions SHALL be `ui-speech` lines in a polite live region, and the Songs setting SHALL be `ui-segments` (off, stock only, on) with mute and skip as `ui-button`s of at least 48 CSS pixels.
 4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.
+
+### Requirement 6
+
+**User Story:** As a Player, I want songs that sound like one gothic storybook and are always there, so that the game has its own sound even with no song made for my game. (Song catalogue and house style, added 2026-11-16)
+
+#### Acceptance Criteria
+
+1. THE game SHALL ship these Stock Songs, made once: a title theme, a lobby loop, three Haunt loops (low, middle, high), three Round-end stings, five fallback songs (joined the haunting, a wrong Accusation, the Becoming, Detectives win, the house wins), a Clue Song for each of the six Relics, a Clue Song for each curated Zone name, a theme for each of the eight Preset Ghosts, and a theme for each Gallery World.
+2. EACH game SHALL have its own songs, when the Songs setting is on: an opening made while the lobby fills, up to three Moment Songs (joined the haunting, a wrong Accusation, the Becoming, a close call), one or two Clue Songs and the Ballad.
+3. EVERY song's style and lyrics SHALL follow `.kiro/steering/house-style.md`: its instruments, voices, rhythms and narrator, and SHALL name no real person, title or character in a prompt or a lyric.
+4. A Stock Song SHALL use no Player's name and no fact of one game, so that it can play in every game; a Relic or Zone Clue Song SHALL hint only that its Relic or Zone is not the answer when the public log already shows that, and SHALL otherwise play as ambience.
+5. A Preset Ghost's theme MAY play under that ghost's appearances; it SHALL carry no fact the public log does not show.
