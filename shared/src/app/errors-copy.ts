@@ -65,6 +65,15 @@ export const ERROR_COPY: Record<ErrorCode, ErrorCopy> = {
   already_suggested: c("Already asked", "That suggestion has been made.", "wait"),
   bad_relic_token: c("We couldn't read that relic", "Try another relic, or pick from the list.", "retry"),
   moderation_unavailable: c("We can't check that picture right now", "Try again soon, or use the gallery.", "retry"),
+  puzzle_disabled: c("Puzzles are off", "The game plays without them.", "home"),
+  puzzle_not_open: c("That lock isn't open", "Go back to the room and try the lock again.", "retry"),
+  puzzle_already_open: c("A lock is already open", "Finish it or leave it first.", "retry"),
+  puzzle_bad_transcript: c("That try didn't work", "Something went wrong with it. Try the lock again.", "retry"),
+  puzzle_too_fast: c("That was too quick", "Take a moment and try again.", "retry"),
+  puzzle_rate_limited: c("Slow down a little", "Wait a moment, then try again.", "wait"),
+  puzzle_attempts_spent: c("No tries left", "The lock stays shut for now. You can try it again later.", "home"),
+  puzzle_bad_placement: c("The locks couldn't be set", "Start the game again.", "home"),
+  sight_unknown: c("We can't find that memory", "Look around the room again.", "retry"),
 };
 
 /** For any string the table does not know, including text a network could send. */

@@ -11,7 +11,7 @@ Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit b
     - On a real Android phone (Chrome) and a real iPhone (Safari and the home-screen web app): does `navigator.vibrate` exist; how exact are the eight patterns of the catalogue; whether toggling a `<input type="checkbox" switch>` from script gives a haptic tick on iPhone (Safari 17.4 or later), whether it needs a tap, how often it can fire and whether it works in the installed web app; and the battery cost of six seconds of buzz. Decide what an iPhone gets: ticks, or the visual twin only. Record which patterns feel different from each other.
     - _Requirements: 9.1, 9.2_
   - [ ] 1.2 Spike puzzles 1.2: motion
-    - On the same two phones: the `DeviceOrientationEvent.requestPermission()` prompt on iPhone (needs a tap, how long the answer lasts, what a denial looks like), no prompt on Android, the real report rate of `deviceorientation`, drift over 30 seconds, whether `tiltForScreen` is right in portrait and landscape, and whether `dialAngle` (twisting the phone like a dial, held upright and held flat) has gimbal trouble. Pick the comfortable tilt range and the dead zone.
+    - On the same two phones: the `DeviceOrientationEvent.requestPermission()` prompt on iPhone (needs a tap, how long the answer lasts, what a denial looks like), no prompt on Android, the real report rate of `deviceorientation`, drift over 30 seconds, whether `tiltForScreen` is right in portrait and landscape, and whether `dialFromGravity` (twisting the phone like a dial, held upright and held flat) has gimbal trouble. Pick the comfortable tilt range and the dead zone.
     - _Requirements: 8.1, 8.2, 8.4_
   - [ ] 1.3 Spike puzzles 1.3: audio
     - Does Web Audio play on an iPhone with the ringer switch on silent; delay from a tap to a note; whether the five notes, the click and the thunk are clear through a phone speaker at 0.5 gain; whether one unlock tap at join covers the rest of the game. Decide the text of the "phone on silent" hint.
@@ -25,69 +25,86 @@ Cut order if time runs short, first to last: the Marble maze (5.4), the Spirit b
 
 - [ ] 2. Pure logic (`shared/src/puzzles/`)
   - [ ] 2.1 `types.ts`: `Kind`, `Level`, `PuzzleSetting`, `LockView`, `LockSecret`, `Lock`, `Sight`, `Transcript`, `Verdict`, `PartyLocks` and `WanderLocks` with zod schemas; add `puzzle_disabled`, `puzzle_not_open`, `puzzle_already_open`, `puzzle_bad_transcript`, `puzzle_too_fast`, `puzzle_rate_limited`, `puzzle_attempts_spent` and `sight_unknown` to `shared/src/errors.ts`
+    - Built so far in `shared/src/puzzles/types.ts`: the Kind list (all eleven), the views, secrets, Sights and Transcript schema (zod) for `lockpick`, `wires` and `clock`, and `Verdict`. The error codes are in `shared/src/errors.ts` (with `puzzle_bad_placement` added for a bad Zone or Kind count) and their plain copy is in `shared/src/app/errors-copy.ts`. The other eight Kinds join with 2.4 and 2.5.
     - _Requirements: 7.2, 7.6_
-  - [ ] 2.2 `rng.ts` (seeded generator) and `words.ts` (the two lists of 24 words, A to Z, 3 to 5 letters, gentle)
+  - [x] 2.2 `rng.ts` (seeded generator) and `words.ts` (the two lists of 24 words, A to Z, 3 to 5 letters, gentle)
+    - Built in `shared/src/puzzles/rng.ts` and `words.ts` (the two lists of 24 words and `BOARD_CLUES`, a short clue for each Spirit board word).
     - _Requirements: 5.2, 5.3, 10.5_
-  - [ ] 2.3 `kinds.ts` registry and `makeLock` for `lockpick`, `wires` and `clock` at both levels, with the level sizes of the design
+  - [x] 2.3 `kinds.ts` registry and `makeLock` for `lockpick`, `wires` and `clock` at both levels, with the level sizes of the design
+    - Built in `shared/src/puzzles/kinds.ts` (registry, `minSolveMs`) and `make.ts`. The `lockpick`, `wires` and `clock` Kinds are made; the rest follow in 2.4 and 2.5.
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
   - [ ] 2.4 `makeLock` for `safe`, `musicbox`, `candles` and `moved`
     - _Requirements: 4.1, 4.2, 4.3, 4.4_
   - [ ] 2.5 `makeLock` for `photo`, `words`, `board` and the optional `maze` (five authored mazes)
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
   - [ ] 2.6 `sight.ts`: `sightFor`, `fadedFor` (only Memory Kinds; the same clue, a shorter time, 8 seconds with Assist)
+    - Built so far for the Memory Kinds that exist (`wires`, `clock`) in `shared/src/puzzles/sight.ts`.
     - _Requirements: 6.2, 6.3_
   - [ ]* 2.7 Write property test for the Sight and its Faded twin
+    - Holds for the Memory Kinds built so far; it covers the others as they land.
     - **Property 4: A Sight and its Faded twin show the same clue**
     - **Validates: Requirements 6.2, 6.3**
   - [ ] 2.8 `verify.ts`: `verify` (schema, size, minimum solve time, answer or plausibility) and `referenceSolve` (touch events only) for every Kind
+    - Built so far for `lockpick`, `wires` and `clock` in `shared/src/puzzles/verify.ts`.
     - _Requirements: 7.2, 7.3, 7.5, 12.1_
   - [ ]* 2.9 Write property test for deterministic generation
+    - Holds for the three built Kinds; it covers the others as they land.
     - **Property 1: Generation is deterministic and never reads the Solution**
     - **Validates: Requirements 1.5, 6.2, 13.2**
   - [ ]* 2.10 Write property test for solvability
+    - Holds for the three built Kinds; it covers the others as they land.
     - **Property 2: Every generated Lock is solvable by the touch path**
     - **Validates: Requirements 3.1, 3.2, 3.3, 4.1, 4.2, 4.3, 4.4, 5.1, 5.2, 5.3, 5.4, 12.1**
   - [ ]* 2.11 Write property test for checking
+    - Holds for the three built Kinds; it covers the others as they land.
     - **Property 3: Checking accepts only the answer and never throws**
     - **Validates: Requirements 7.2, 7.5**
-  - [ ] 2.12 `place.ts`: `placePuzzles` (one Lock per Zone, each Kind at most twice, Sight in the next Zone) and `kindForDiscovery` (the first is never a Memory Kind)
+  - [x] 2.12 `place.ts`: `placePuzzles` (one Lock per Zone, each Kind at most twice, Sight in the next Zone) and `kindForDiscovery` (the first is never a Memory Kind)
+    - Built in `shared/src/puzzles/place.ts`. `placePuzzles` returns `puzzle_bad_placement` for fewer than two Zones, repeated Zones, or more than two Zones for each enabled Kind.
     - _Requirements: 1.5, 2.4_
-  - [ ]* 2.13 Write property test for placement
+  - [x]* 2.13 Write property test for placement
     - **Property 5: Locks are placed one per Zone with a valid Sight source**
     - **Validates: Requirements 1.5, 2.4**
-  - [ ] 2.14 `charge.ts` (`lockCharge`, `capFor`) and `settings.ts` (`presetSetting`: Classic normal, Gentle easy, Quick off; `plainInspect`)
+  - [x] 2.14 `charge.ts` (`lockCharge`, `plainInspectCharge`) and `settings.ts` (`presetSetting`: Classic normal, Gentle easy, Quick off; `capFor`)
+    - Built in `shared/src/puzzles/charge.ts` (`lockCharge`, `plainInspectCharge`) and `settings.ts` (`presetSetting`, `capFor`).
     - _Requirements: 1.2, 1.3, 1.4, 1.7_
-  - [ ]* 2.15 Write property test for the time charged
+  - [x]* 2.15 Write property test for the time charged
     - **Property 7: The time charged stays between ten seconds and the Cap**
     - **Validates: Requirements 1.2, 1.3, 1.7**
-  - [ ] 2.16 `motion.ts`: `smoothTilt`, the dead zone, `tiltForScreen`, `zeroTilt`, the clamp, `tiltToPosition`, `dialAngle`
+  - [x] 2.16 `motion.ts`: `smoothTilt`, the dead zone, `tiltForScreen`, `zeroTilt`, the clamp, `tiltToPosition`, `dialFromGravity`
+    - Built in `shared/src/puzzles/motion.ts`. The twist dial is `dialFromGravity(ax, ay, az)`, from the gravity vector.
     - _Requirements: 8.2_
-  - [ ]* 2.17 Write property test for the tilt maths
+  - [x]* 2.17 Write property test for the tilt maths
     - **Property 12: Tilt maths is total, bounded and rotation-correct**
     - **Validates: Requirements 8.2**
-  - [ ] 2.18 `tiltBall.ts`: `stepBall` and `advanceBall` in fixed 1/60 second steps with a carried remainder, speed cap, friction and a 0.3 bounce
+  - [x] 2.18 `tilt-ball.ts`: `stepBall` and `advanceBall` in fixed 1/60 second steps with a carried remainder, speed cap, friction and a 0.3 bounce
+    - Built in `shared/src/puzzles/tilt-ball.ts` (plus `makeStepper` for real frame times).
     - _Requirements: 8.3_
-  - [ ]* 2.19 Write property test for rate-independent physics
+  - [x]* 2.19 Write property test for rate-independent physics
     - **Property 13: Physics does not depend on the event rate**
     - **Validates: Requirements 8.3**
-  - [ ] 2.20 `haptics.ts`: `PATTERNS`, `hotColdInterval`, `planHaptics` with the caps of 9.2
+  - [x] 2.20 `haptics.ts`: `PATTERNS`, `hotColdInterval`, `planHaptics` with the caps of 9.2
+    - Built in `shared/src/puzzles/haptics.ts`.
     - _Requirements: 9.2, 9.3_
-  - [ ]* 2.21 Write property test for vibration plans
+  - [x]* 2.21 Write property test for vibration plans
     - **Property 14: Vibration plans respect the limits**
     - **Validates: Requirements 9.2, 9.3**
-  - [ ] 2.22 `sound.ts`: `RECIPES`, `planSound` (consent, four voices, 0.5 gain, notes from 300 hertz, own phone only)
+  - [x] 2.22 `sound.ts`: `RECIPES`, `planSound` (consent, four voices, 0.5 gain, notes from 300 hertz, own phone only)
+    - Built in `shared/src/puzzles/sound.ts`.
     - _Requirements: 10.2, 10.4_
-  - [ ]* 2.23 Write property test for sound plans
+  - [x]* 2.23 Write property test for sound plans
     - **Property 15: Sound plans respect consent and limits**
     - **Validates: Requirements 10.2, 10.4**
-  - [ ] 2.24 `dim.ts`: `dimPlan`, `torchPlan`, `candlePlan` (fades, two changes a second, peak under white, a still step for reduced motion)
+  - [x] 2.24 `dim.ts`: `dimPlan`, `torchPlan`, `candlePlan` (fades, two changes a second, peak under white, a still step for reduced motion)
+    - Built in `shared/src/puzzles/dim.ts`.
     - _Requirements: 12.2_
-  - [ ]* 2.25 Write property test for light plans
+  - [x]* 2.25 Write property test for light plans
     - **Property 16: Light plans respect the photosensitivity limits**
     - **Validates: Requirements 12.2**
-  - [ ] 2.26 `blow.ts`: `blowDetect(levels, baseline)` on numbers only
+  - [x] 2.26 `blow.ts`: `blowDetect(levels, baseline)` on numbers only
+    - Built in `shared/src/puzzles/blow.ts`.
     - _Requirements: 11.4_
-  - [ ]* 2.27 Write property test for breath detection
+  - [x]* 2.27 Write property test for breath detection
     - **Property 17: A breath needs sustained loudness**
     - **Validates: Requirements 11.4**
   - [ ] 2.28 `inspect.ts`: `openLock`, `submitAttempt`, `closeLock` (Plain Inspect, Bots, three Attempts, one open Lock, one Attempt a second, the public `inspect` line at open, the call to the party-mode `inspect()` on a solved Lock, the charge, no change to any rule)

@@ -66,6 +66,16 @@ export const ErrorCode = {
   already_suggested:       "already_suggested",
   bad_relic_token:         "bad_relic_token",
   moderation_unavailable:  "moderation_unavailable",
+  // Puzzles
+  puzzle_disabled:         "puzzle_disabled",
+  puzzle_not_open:         "puzzle_not_open",
+  puzzle_already_open:     "puzzle_already_open",
+  puzzle_bad_transcript:   "puzzle_bad_transcript",
+  puzzle_too_fast:         "puzzle_too_fast",
+  puzzle_rate_limited:     "puzzle_rate_limited",
+  puzzle_attempts_spent:   "puzzle_attempts_spent",
+  puzzle_bad_placement:    "puzzle_bad_placement",
+  sight_unknown:           "sight_unknown",
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

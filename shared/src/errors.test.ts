@@ -25,6 +25,13 @@ describe("ErrorCode", () => {
     for (const name of names) expect(Object.keys(ErrorCode)).toContain(name);
   });
 
+  it("has the puzzle codes of the puzzles spec", () => {
+    for (const name of [
+      "puzzle_disabled", "puzzle_not_open", "puzzle_already_open", "puzzle_bad_transcript", "puzzle_too_fast",
+      "puzzle_rate_limited", "puzzle_attempts_spent", "puzzle_bad_placement", "sight_unknown",
+    ]) expect(Object.keys(ErrorCode)).toContain(name);
+  });
+
   it("keeps the party meaning of world_too_small apart from the upload size code", () => {
     expect(ErrorCode.world_too_small).not.toBe(ErrorCode.upload_too_small);
   });

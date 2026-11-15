@@ -31,7 +31,7 @@ Wander uses the same pure code through three thin routes on `PlaySession` (open,
 
 ### `shared/src/puzzles/` (pure; clock and rng injected)
 
-`types.ts` (Kind, Level, PuzzleSetting, LockView, LockSecret, Sight, Transcript, schemas, errors), `rng.ts` (seeded generator), `kinds.ts` (the registry below), `words.ts` (the fixed word lists), `make.ts` (`makeLock(seed, kind, level)` with one function per Kind), `sight.ts` (`sightFor`, `fadedFor`), `place.ts` (`placePuzzles`, `kindForDiscovery`), `verify.ts` (`verify`, `referenceSolve`), `charge.ts` (`lockCharge`, `capFor`), `inspect.ts` (`openLock`, `submitAttempt`, `closeLock`: the Party reducers), `wander.ts` (`gateReveal`, `skipAvailable`, the Wander reducers), `settings.ts` (`presetSetting`, `plainInspect`), `motion.ts` (`smoothTilt`, `tiltForScreen`, `zeroTilt`, `tiltToPosition`, `dialAngle`), `tiltBall.ts` (`stepBall`, `advanceBall`), `haptics.ts` (`PATTERNS`, `hotColdInterval`, `planHaptics`), `sound.ts` (`RECIPES`, `planSound`), `dim.ts` (`dimPlan`, `torchPlan`, `candlePlan`), `blow.ts` (`blowDetect`).
+`types.ts` (Kind, Level, PuzzleSetting, LockView, LockSecret, Sight, Transcript, schemas, errors), `rng.ts` (seeded generator), `kinds.ts` (the registry below), `words.ts` (the fixed word lists and the Spirit board clues), `make.ts` (`makeLock(seed, kind, level)` with one function per Kind), `sight.ts` (`sightFor`, `fadedFor`), `place.ts` (`placePuzzles`, `kindForDiscovery`), `verify.ts` (`verify`, `referenceSolve`), `charge.ts` (`lockCharge`, `plainInspectCharge`), `inspect.ts` (`openLock`, `submitAttempt`, `closeLock`: the Party reducers), `wander.ts` (`gateReveal`, `skipAvailable`, the Wander reducers), `settings.ts` (`presetSetting`, `capFor`), `motion.ts` (`smoothTilt`, `tiltForScreen`, `zeroTilt`, `tiltToPosition`, `dialFromGravity`), `tilt-ball.ts` (`stepBall`, `advanceBall`), `haptics.ts` (`PATTERNS`, `hotColdInterval`, `planHaptics`), `sound.ts` (`RECIPES`, `planSound`), `dim.ts` (`dimPlan`, `torchPlan`, `candlePlan`), `blow.ts` (`blowDetect`).
 
 `shared/src/puzzles/` imports nothing from `web` or `api`, and no function calls `Date.now()` or `Math.random()`.
 
@@ -167,7 +167,7 @@ export type PuzzleFeel = { motion: Motion; haptics: Haptics; synth: Synth; breat
 
 `browserMotion.request()` calls `DeviceOrientationEvent.requestPermission()` from the "Use tilt" tap where that function exists (iPhone) and treats a phone without it as granted; no sensor gives `unsupported`. The listener reads `beta` and `gamma` (not `alpha`, which depends on the compass) at most 30 times a second, and stops when the page is hidden or the Lock closes.
 
-Pure helpers: `smoothTilt(prev, raw, 0.2)`, a 2 degree dead zone, `tiltForScreen(raw, screenAngle)` (swaps and flips the two axes for 90, 180 and 270 degrees), `zeroTilt(zero, raw)`, a clamp to plus or minus 45 degrees, `tiltToPosition(x, range)` (linear, clamped), and `dialAngle(orientation, screenAngle)` (the turn about the screen's own axis, so twisting the phone like a dial works held upright or flat; Spike puzzles 1.2 checks it).
+Pure helpers: `smoothTilt(prev, raw, 0.2)`, a 2 degree dead zone, `tiltForScreen(raw, screenAngle)` (swaps and flips the two axes for 90, 180 and 270 degrees), `zeroTilt(zero, raw)`, a clamp to plus or minus 45 degrees, `tiltToPosition(x, range)` (linear, clamped), and `dialFromGravity(ax, ay, az)` (the turn about the screen's own axis from the gravity vector, so twisting the phone like a dial works held upright; it gives nothing when the phone lies flat; Spike puzzles 1.2 checks it).
 
 `stepBall(state, tilt, dt)` and `advanceBall(state, tiltAt, elapsedMs, carry)` run the pick-and-planchette-and-orb physics in 1/60 second steps: acceleration proportional to tilt, a little friction, a speed cap and a 0.3 bounce off walls (the same feel as the demo). `advanceBall` keeps the leftover time as `carry`, so splitting the same elapsed time into any frames gives the same state.
 
@@ -236,7 +236,7 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 ## Unverified assumptions (each retired by a spike)
 
 19. Vibration: Android Chrome buzzes; iPhone Safari has no `navigator.vibrate`; whether the Safari 17.4 `switch` checkbox gives a usable tick from script, how fast, and in an installed web app (Spike puzzles 1.1).
-20. Motion: the iPhone permission prompt and how long the answer lasts; the real report rate; drift; whether `tiltForScreen` is right in both layouts; whether `dialAngle` has no gimbal problem held upright (Spike puzzles 1.2).
+20. Motion: the iPhone permission prompt and how long the answer lasts; the real report rate; drift; whether `tiltForScreen` is right in both layouts; whether `dialFromGravity` has no gimbal problem held upright (Spike puzzles 1.2).
 21. Audio: whether Web Audio is silenced by the iPhone ringer switch, the delay from tap to note, and how five notes and a thunk sound through a phone speaker (Spike puzzles 1.3).
 22. Breath: whether a breath on the microphone can be told from speech and from wind, with echo cancellation and gain control off, on both platforms (Spike puzzles 1.4).
 23. Balance: solve times for each Kind, the Cap, three Attempts, the minimum solve times, and whether Locks make a 60 second Classic Turn too short (Spike puzzles 1.5).
