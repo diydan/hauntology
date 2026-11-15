@@ -6,6 +6,7 @@
   --bone:#e9e5d8;
   --fog:#98a09a;
   --safelight:#e8593c;
+  --amber:#ffc868;
   --ecto:#9ad3c9;
   --display:"IM Fell English","Iowan Old Style",Georgia,serif;
   --body:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -55,8 +56,8 @@ h1 em{color:var(--fog)}
 .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;border:1px solid var(--bone);background:transparent;color:var(--bone);font:500 .98rem var(--body);text-decoration:none;cursor:pointer}
 .btn:hover{background:rgba(233,229,216,.1)}
-.btn.primary{background:var(--safelight);border-color:var(--safelight);color:#1a0d09}
-.btn.primary:hover{background:#f0715a;border-color:#f0715a}
+.btn.primary{background:var(--amber);border-color:var(--amber);color:var(--ink);box-shadow:0 0 26px rgba(255,200,104,.28)}
+.btn.primary:hover{background:#ffd685;border-color:#ffd685;box-shadow:0 0 32px rgba(255,200,104,.4)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn.small{min-height:40px;padding:0 16px;font-size:.92rem}
 
