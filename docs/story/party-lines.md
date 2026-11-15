@@ -2,13 +2,14 @@
 
 Speakers: **the Keeper** (Inworld Ronald, id suffix `dry`, played by Mr. Ashby on screen) and **the Whisper** (Inworld Pippa, id suffix `soft`). Steering tags (`[whisper]`) are added by the speech code and never written here. Written to the `story-writer` brief, `docs/story/CHARACTERS.md` and the party-mode spec (Directives, Haunt, Cues, Nudges, Frames).
 
-**The Lodger is not in this file.** Its `aside`, `stall` and `confession` lines live in `docs/story/lodger-lines.md`. The Keeper announces `reveal` and `accuse.wrong` (a Lodger `stall` follows), and the Keeper closes `accuse.right` and `end.solved` (a Lodger `confession` comes first). The single-player `meet.*` and `ending.*` lines are not here, and neither are the two demo-only lines.
+**The Lodger is not in this file.** Its `aside`, `stall` and `confession` lines live in `docs/story/lodger-lines.md`. The Keeper announces `accuse.reveal` (the Directive `reveal`) and `accuse.wrong` (a Lodger `stall` follows), and the Keeper closes `accuse.right` and `end.solved` (a Lodger `confession` comes first). The single-player `meet.*` and `ending.*` lines are not here, and neither are the two demo-only lines.
 
 ## Ids and kinds
 
 | Id kind | Directive kind in the spec | Speaker | Spoken or text only |
 |---|---|---|---|
-| `turn-start`, `time-warning`, `achievement`, `suggest`, `shown`, `none-shown`, `inspect`, `seal`, `reveal` | the same | Keeper | spoken |
+| `turn-start`, `time-warning`, `achievement`, `suggest`, `shown`, `none-shown`, `inspect`, `seal` | the same | Keeper | spoken |
+| `accuse.reveal` | `reveal` (named `accuse.reveal` here because `reveal.*` ids are the single-player memory lines in `ghost-lines.md`) | Keeper | spoken |
 | `accuse.wrong`, `accuse.right`, `end.solved` | `accuse-wrong`, `accuse-right`, `ended-solved` | Keeper | spoken |
 | `cue.<sound>`, `nudge.help`, `nudge.spook`, `phone-cue.<sound>` | `cue`, `nudge`, `phone-cue` (scripted only, never a model) | Keeper | text only (proposed: they happen too often to voice) |
 | `not-you` | the private `notYou` message of a House Cue and a Frame | Keeper | text only, on the target's phone |
@@ -25,7 +26,7 @@ How the lines are built:
 - The only placeholders are `{nick}` and `{zone}`. Each sits in a sentence of its own, and that sentence is the last one, so the speech code stops before it and every spoken part stands alone. No line uses a pronoun for a Player. Where a Player is addressed, it is as "you" in the sentence that holds `{nick}`.
 - No line names a card, a Hand, the Residue or the Solution, says who holds what, or says whether a Suggestion was a Bluff. `shown` and `none-shown` say only what the public log says.
 - A wrong Accusation says only that it does not stand and that its Player has joined the haunting, never which part failed. The word "Poltergeist" is never used (Requirement 13.2).
-- A `reveal` line never says how many Accusations there were or how they came out.
+- An `accuse.reveal` line never says how many Accusations there were or how they came out.
 - Cue and Frame lines carry no sender. A Cue by a Player names that Player (it is public under their nickname). A `phone-cue` names only the phone's owner and never says whether the house or a Player made the sound.
 
 ## Keeper: turn-start (spoken)
@@ -115,16 +116,16 @@ An Accusation is sealed. The lines never say what it holds.
 | `seal.dry.3` | A verdict is committed to paper and shut away. I respect that, whatever it says. It is the verdict of {nick}. |
 | `seal.dry.4` | The verdict is sealed. There is no taking it back, and I would not allow it anyway. It belongs to {nick}. |
 
-## Keeper: reveal (spoken)
+## Keeper: accuse.reveal (spoken)
 
 The Keeper opens the sealed Accusations. No line says how many there were, or how they came out. A Lodger stall follows.
 
 | Id | Line |
 |---|---|
-| `reveal.dry.1` | Whatever lies sealed is brought into the light, and I do enjoy this part. Let us see how it stands. |
-| `reveal.dry.2` | Now what lies sealed is opened. I read it aloud with an air of great interest, as is my duty. |
-| `reveal.dry.3` | I look forward to this part, in my own way, and I rarely look forward to anything. Let us open what lies sealed. |
-| `reveal.dry.4` | Now we open what lies sealed. A mind, once made up, may not be changed, and I do love a made up mind. |
+| `accuse.reveal.dry.1` | Whatever lies sealed is brought into the light, and I do enjoy this part. Let us see how it stands. |
+| `accuse.reveal.dry.2` | Now what lies sealed is opened. I read it aloud with an air of great interest, as is my duty. |
+| `accuse.reveal.dry.3` | I look forward to this part, in my own way, and I rarely look forward to anything. Let us open what lies sealed. |
+| `accuse.reveal.dry.4` | Now we open what lies sealed. A mind, once made up, may not be changed, and I do love a made up mind. |
 
 ## Keeper: accuse.wrong (spoken)
 
@@ -374,7 +375,7 @@ Lines per kind (the Keeper has 98, the Whisper 41, 139 in all):
 | `none-shown` | 5 | `haunt.rise` | 4 |
 | `inspect` | 4 | `poltergeist` | 5 |
 | `seal` | 4 | `end.haunting` | 4 |
-| `reveal` | 4 | `midnight` | 4 |
+| `accuse.reveal` | 4 | `midnight` | 4 |
 | `accuse.wrong` | 4 | | |
 | `accuse.right` | 3 | | |
 | `end.solved` | 3 | | |

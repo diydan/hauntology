@@ -10,7 +10,7 @@ How it is used:
 Rules of this bank:
 - Five distinct variants per kind per voice, no near-copies. First person, present tense, 1 to 4 short sentences, at most 240 characters, aim 90 to 130.
 - **No player text.** Single player has no nickname and the engine spec defines no fill-in for `{zone}` or `{memory}`, so none of `{nick}`, `{zone}`, `{memory}` is used in this bank.
-- Finite placeholders only. `{weather}` is one of clear, cloud, fog, rain, storm, snow. `{time}` is dawn, day, dusk, night. `{moon}` is one of the eight phase names. `{bearing}` is ahead, ahead-right, right, behind-right, behind, behind-left, left, ahead-left. `{band}` is far, nearer, very close. Every placeholder sits in a frame that reads correctly for **every** value ("It is {band}.", "Look {bearing}.", "It lies {bearing}.", "The moon goes by {moon} just now.", "It is {time}.") and never at the start of a sentence, so the expansion needs no capital letter.
+- Finite placeholders only. `{weather}` is spoken as an adjective: clear, cloudy, foggy, rainy, stormy or snowy (the table is `shared/src/voice/placeholders.ts`; write "it is {weather}", never "the {weather}"). `{time}` is dawn, day, dusk, night. `{moon}` is one of the eight phase names. `{bearing}` is ahead, ahead-right, right, behind-right, behind, behind-left, left, ahead-left. `{band}` is far, nearer, very close. Every placeholder sits in a frame that reads correctly for **every** value ("It is {band}.", "Look {bearing}.", "It lies {bearing}.", "The moon goes by {moon} just now.", "It is {time}.") and never at the start of a sentence, so the expansion needs no capital letter.
 - `tease` uses only `{band}` (the Directive carries no bearing). `hint` uses only `{bearing}` and `{band}`, always both, with no digits, no coordinates and no memory content. `ambient` may use `{weather}`, `{time}`, `{moon}` and nothing else about the real world.
 - A `reveal` line says that a memory was found, never what it is. No line carries the archetype, a place name, a room, an object, a count of how many are left, or a claim that anyone or anything was lost. No line names the speaker ("caretaker", "keeper") or the place ("house", "kitchen"), because the ghost can be any Ghost Profile in any world.
 - Mood lives in what a person would say. No stage direction, no sound, pause, gesture or body narrated.
@@ -119,7 +119,7 @@ The ghost speaks with nothing to reveal, tease or hint. It is also the only kind
 
 | Id | Line |
 |---|---|
-| `ambient.soft.1` | I keep a little weather by me. Today it is {weather}. It sits beside me and asks for nothing. REVIEW: the bare words "clear" and "cloud" read like labels ("Today it is cloud"). Correct as written for all six, but a person may prefer spoken forms such as "cloudy" in the expansion. |
+| `ambient.soft.1` | I keep a little weather by me. Today it is {weather}. It sits beside me and asks for nothing. |
 | `ambient.soft.2` | It is {time}, as far as I can tell. Time is soft in here. It slips, and I let it. |
 | `ambient.soft.3` | The moon goes by {moon} just now. I like knowing. It is good to be kept company by something far away. |
 | `ambient.soft.4` | Stay a while. Nothing here is in a hurry, least of all me. We can simply be in the place together. |
@@ -129,7 +129,7 @@ The ghost speaks with nothing to reveal, tease or hint. It is also the only kind
 
 | Id | Line |
 |---|---|
-| `ambient.dry.1` | For the record, out there it is {weather}. I am told this is worth knowing. I have never found it so. REVIEW: same bare-word note as `ambient.soft.1`. |
+| `ambient.dry.1` | For the record, out there it is {weather}. I am told this is worth knowing. I have never found it so. |
 | `ambient.dry.2` | It is {time}. I have seen a great many of those. They are all rather alike, and I have grown fond of each. |
 | `ambient.dry.3` | The moon, I notice, goes by {moon} just now. I do not hold it against her. |
 | `ambient.dry.4` | Do not mind me. I have made rather a career of being overlooked. You carry on. |
@@ -203,7 +203,6 @@ Library size, an estimate and not measured: the placeholders expand to 352 spoke
 - `ending.soft.1`: fixed line (clip `demo-n2-whisper-farewell`), REVIEW as the brief's table says. The spec confirms "all three" (Requirement 3.4, Property 5). Kept word for word.
 - `meet.soft.1`, `meet.dry.1`: fixed lines (clips `hero-whisper-meet`, `hero-ashby-welcome`), kept word for word. REVIEW because no `meet` kind exists in the spec (see the Greeting section).
 - `hint.soft.3`: "I am only ever where I already am" is a little riddle. Check it reads warm.
-- `ambient.soft.1`, `ambient.dry.1`: `{weather}` expands to the bare enum words, so "Today it is cloud" and "it is clear" read like labels. They are correct for all six values, but spoken forms ("cloudy") would sound better.
 
 ## Spec gaps and notes for a person (no spec was edited)
 
@@ -211,5 +210,5 @@ Library size, an estimate and not measured: the placeholders expand to 352 spoke
 2. **The trigger for `refuse` is not in the `step` requirements** (Requirement 3 lists reveal, echo, tease, ambient, hint and ending). The lines are written from Requirement 5.6 and `ghost-safety.md` rule 4 (answer in character with confusion and steer back to the place).
 3. **Does the third find speak `reveal`?** Requirement 3.1 says a find issues `reveal`, Requirement 3.4 says the third find issues `ending`. The `reveal` lines say nothing about more to find or nothing left, so they are safe either way.
 4. **A scripted `reveal` becomes the Memory text** (Requirements 5.5 and 8.1), and `pickLine(kind, persona, rng)` takes no archetype. In Scripted Mode the journal and the ending card therefore hold three content-free keepsake lines, not a sound, a person and a promise. A person decides whether to add archetype-specific scripted reveals later (3 archetypes, 5 lines, 2 voices, 30 lines).
-5. **`{weather}` and `{moon}` expand to enum words** ("cloud", "clear", "waxing gibbous"), so every frame is label-like. See `ambient.soft.1` above.
+5. **`{weather}` is spoken as an adjective** (resolved 2026-11-15): "cloud" is said "cloudy", "fog" "foggy", "rain" "rainy", "storm" "stormy", "snow" "snowy", from the table in `shared/src/voice/placeholders.ts`, so "Today it is {weather}" and "out there it is {weather}" read correctly for all six. The ghost engine must fill `{weather}` from the same table when it is built (`weatherWord`). `{moon}` keeps the phase name ("waxing gibbous").
 6. **The samples in `VOICE.md` were not carried over.** `ambient.soft.1`, `ambient.dry.1`, `hint.soft.1` and `hint.dry.1` there break for some values ("to the ahead", "The clear makes the glass hum", "I have watched a great deal of cloud", and "Warmer" is false when the band is far). The ids here (`ambient.*.1`, `hint.*.1`) are new lines. `VOICE.md` stays a sample.

@@ -60,7 +60,8 @@ test('fmtTime is minutes and seconds', () => {
 test('planReel: one reel per voice in manifest order; not rendered and bad files are listed, not guessed at', () => {
   const state = (file) => (file === fileNameFor(entriesOf(MARK)[1].key, 1) ? 'bad' : file === fileNameFor(entriesOf(MARK)[2].key, 1) ? 'missing' : 'ok');
   const all = planReel({ manifest, voice: null, fileState: state });
-  assert.equal(all.length, 6);
+  assert.equal(all.length, 8);
+  assert.equal(all.find((r) => r.voice === 'inworld:Pippa').entries.length, 209);
   const mark = all.find((r) => r.voice === MARK);
   assert.equal(mark.entries.length, 9);
   assert.equal(mark.bad.length, 1);

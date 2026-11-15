@@ -1,6 +1,6 @@
 # Voice Library tool: plan (draft, 2026-11-15)
 
-Status: **steps 1 to 3 of the table below are built (2026-11-15): the banks as data, `buildLibrary` and the key functions with 44 tests, the manifest (66 entries) and the offline check tool. The dry run of the prerender tool (row 6) is built too: `pnpm prerender-voice` plans and prices, and refuses `--render`, `--upload` and `--reel` until they are built. The render step, the upload and the read path are not built.** The open decisions at the end are still open. It turns `ghost-voice` tasks 2.18, 2.19, 3.11 and 3.12 into steps, with the Lodger's six voices as the first thing to render. Requirements 1.8 and 1.9, Property 14, and the "Reuse and pre-generation" rules in `.kiro/specs/ghost-voice/design.md` are the source; where this plan adds something, it says so.
+Status: **built (2026-11-15): the banks as data for the Lodger, the Whisper and the Keeper (generated from `docs/story/`), `buildLibrary` and the key functions, the manifest (503 entries) and the offline check tool; the prerender tool with dry run, `--render` (one voice at a time), `--upload` and `--reel`; the Lodger bank (66 files) rendered. The Whisper's and the Keeper's 437 files are not rendered, and nothing is uploaded or read back by the speak service yet.** The open decisions at the end are answered. It turns `ghost-voice` tasks 2.18, 2.19, 3.11 and 3.12 into steps. Requirements 1.8 and 1.9, Property 14, and the "Reuse and pre-generation" rules in `.kiro/specs/ghost-voice/design.md` are the source; where this plan adds something, it says so.
 
 ## What the Library is
 
@@ -11,9 +11,9 @@ Audio for every **spoken, scripted** line, rendered once ahead of time, kept und
 | Bank | Spoken kinds | Voices | Files | Characters sent | About |
 |---|---|---|---|---|---|
 | **The Lodger** (`docs/story/lodger-lines.md`, exists) | `stall` (5 lines), `confession` (6 lines) | Mark, Conrad, Arjun, Chloe, Eleanor, Victoria | 11 x 6 = **66** | 1,159 per voice with the tag, **6,954** in all | **$0.17** |
-| **Single-player ghost** (`docs/story/ghost-lines.md`, written 2026-11-15) | `reveal`, `echo`, `tease`, `hint`, `ambient`, `ending`, `refuse`, `meet`; the finite placeholders expanded | Pippa, Ronald | **352** (240 of them from the 10 `hint` lines, 24 each) | about 34,400 (measured by script) | about $0.86 |
-| **Party** (`docs/story/party-lines.md`, written 2026-11-15) | the spoken kinds only: 85 texts (54 of the 139 lines are text only; 31 spoken lines are cut before their `{nick}` or `{zone}` sentence) | Pippa, Ronald | **85** | 8,317 (measured by script) | about $0.21 |
-| **All** | | | **503** (66 + 352 + 85) | about 49,700 | **about $1.24** |
+| **Single-player ghost** (`docs/story/ghost-lines.md`) | `reveal`, `echo`, `tease`, `hint`, `ambient`, `ending`, `refuse`, `meet`; the finite placeholders expanded | Pippa, Ronald | **352** (240 from the 10 `hint` lines, 24 each) | 35,057 | about $0.88 |
+| **Party** (`docs/story/party-lines.md`) | the spoken kinds only: 85 texts (54 of the 139 lines are text only; 31 spoken lines are cut before their `{nick}` or `{zone}` sentence) | Pippa, Ronald | **85** | 8,317 | about $0.21 |
+| **All** (measured by `pnpm prerender-voice`) | | | **503** (66 + 352 + 85) | **50,328** | **$1.26** |
 
 - **Asides are never rendered.** The Lodger `aside` is text only (party-mode 7.8), so its 5 lines are left out. Rendering them in six voices would waste about 3,400 characters ($0.09). (An earlier note in the design counted 15 lines and 90 files; that was wrong and is corrected.)
 - Price is $25 per million characters, counting the Steering Tag as sent. Billing of this third-party model on this account is still unverified (Spike 1.1).
@@ -93,7 +93,7 @@ The pilot comes first because the Lodger bank is the only one that exists, and i
 - **The bucket.** Settled: the Library shares `hauntology-worlds`. The hourly cron only touches `uploads/`, `candidates/`, `worlds/` and `sprites/` (checked), so `speech/` is safe from it. Still open: nothing expires the 30-day cache yet (see Decisions).
 - **The Aura-2 fallback is not pre-rendered.** A Library miss falls through to the cache, then a paid call.
 - **Clip audio is not Library audio.** The 17 avatar clips were made from separate renders, so they sound slightly different from the Library files. Only matters if the product ever plays a clip with Library sound.
-- **Losing R2** costs a re-render, about $1.24 for everything. Keep the tool and the manifest in git, and the audio only in R2.
+- **Losing R2** costs a re-render, about $1.26 for everything. Keep the tool and the manifest in git, and the audio only in R2.
 
 ## Decisions (answered 2026-11-15; change any of them and the plan follows)
 

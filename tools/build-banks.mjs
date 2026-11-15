@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseLodgerLines, renderLodgerBankTs } from './lib/story-banks.mjs';
+import { SPEAKER_BANK_TARGETS, parseLodgerLines, renderLodgerBankTs, renderSpeakerTarget } from './lib/story-banks.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
@@ -16,6 +16,7 @@ const targets = [
     out: join(root, 'shared/src/voice/banks/lodger.ts'),
     render: (md) => renderLodgerBankTs(parseLodgerLines(md)),
   },
+  ...SPEAKER_BANK_TARGETS.map((t) => ({ source: join(root, t.source), out: join(root, t.out), render: (md) => renderSpeakerTarget(t, md) })),
 ];
 
 let stale = 0;

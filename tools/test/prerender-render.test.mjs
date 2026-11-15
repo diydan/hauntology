@@ -245,7 +245,7 @@ test('CLI --render: it refuses to start without a budget, one voice, a token or 
 test('CLI --render: a bad file in the folder stops it before any call', { skip }, async () => {
   const dir = tmp();
   try {
-    writeFileSync(join(dir, fileNameFor(manifest.entries[0].key, 1)), 'junk');
+    writeFileSync(join(dir, fileNameFor(manifest.entries.find((e) => e.voice === MARK).key, 1)), 'junk');
     await withServer((n, req, res) => { res.writeHead(200); res.end(GOOD_MP3); }, async (url, seen) => {
       const r = await runCli(['--render', '--voice', 'Mark', '--budget-usd', '0.05', '--out', dir, '--worker', url]);
       assert.equal(r.status, 1);
