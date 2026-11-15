@@ -95,10 +95,12 @@ export type ManifestContext = {
   worldId: string;
   title: string;
   brief: string;
-  source: "upload" | "sketch";
+  source: WorldManifest["source"];
   createdAt: number;
   anchors?: WorldManifest["anchors"];
   ghostPreset?: string;
+  /** A Gallery world's picture credit. */
+  attribution?: WorldManifest["attribution"];
   /** For a Gallery world tuned by hand. */
   pose?: Partial<Pose>;
 };
@@ -142,6 +144,7 @@ export function buildManifest(stored: readonly StoredAsset[], ctx: ManifestConte
     brief: ctx.brief,
     ...(ctx.anchors !== undefined ? { anchors: ctx.anchors } : {}),
     ...(ctx.ghostPreset !== undefined ? { ghostPreset: ctx.ghostPreset } : {}),
+    ...(ctx.attribution !== undefined ? { attribution: ctx.attribution } : {}),
   };
   const parsed = WorldManifestSchema.safeParse(candidate);
   // Every name made here fits the schema's rule; a context that does not (a title that is too long) fails closed.

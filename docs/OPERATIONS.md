@@ -48,3 +48,7 @@ The command sends the token only over https (or http to localhost), never prints
 - The token is the whole protection. There is no limit on wrong guesses, which does not matter for a random 64-character token. A Cloudflare rate-limiting rule or an Access policy on `/admin/*` would add a layer.
 - The spend counter (`SpendGuard`) caps what can be spent whatever the switch says; the switch is for stopping at once, not for budgeting. Keep `WORLD_TOTAL_CAP` and the prepaid balance small.
 - A change of the switch is not logged.
+
+## The Gallery
+
+Gallery Worlds are the ones a visitor can walk into with no key and no credits. They are made by you, once, and live in the bucket under `gallery/<id>/`, where nothing in retention or delete can reach them. `tools/ingest-gallery/` (README inside) checks a plan of worlds you already have the files of, builds each `world.json`, and uploads it: to the local bucket by default, to the real one only with `--remote --yes`. It makes no paid call. Making the worlds themselves costs World API credits and is yours to start.

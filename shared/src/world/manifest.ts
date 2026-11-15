@@ -24,6 +24,41 @@ export const AssetRefSchema = z.object({
 });
 export type AssetRef = z.infer<typeof AssetRefSchema>;
 
+/** True for text with no control, invisible or direction-changing character: what a person reads as one plain line. */
+function isPlainLine(text: string): boolean {
+  for (const ch of text) {
+    const c = ch.codePointAt(0) as number;
+    if (c < 0x20 || (c >= 0x7f && c <= 0x9f) || (c >= 0x200b && c <= 0x200f) || c === 0x2028 || c === 0x2029 || (c >= 0x202a && c <= 0x202e) || (c >= 0x2060 && c <= 0x2069) || c === 0xfeff) return false;
+  }
+  return true;
+}
+
+/**
+ * The page a Gallery picture came from: an `https` address of a public web page, with no login in it, no query and no fragment
+ * (a signed address is a key), on a host with a dot that is not a bare address and not the world service's own. Never an upstream
+ * asset address (steering: never return upstream asset URLs to the browser).
+ */
+export function isSourcePageUrl(text: string): boolean {
+  if (text.length > 300 || /\s/.test(text) || text.includes("?") || text.includes("#")) return false;
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return false;
+  }
+  const host = url.hostname.toLowerCase();
+  const bare = /^[0-9.]+$/.test(host) || host.startsWith("[");
+  return url.protocol === "https:" && url.username === "" && url.password === "" && host.includes(".") && !bare && !/(^|\.)worldlabs\.ai$/.test(host);
+}
+
+/** Who made a Gallery world's picture and on what terms (Requirement 9.1 and 9.2). Shown as text, never as markup. */
+export const AttributionSchema = z.object({
+  credit: z.string().trim().min(1).max(200).refine(isPlainLine),
+  licence: z.string().trim().min(1).max(100).refine(isPlainLine),
+  url: z.string().refine(isSourcePageUrl).optional(),
+});
+export type Attribution = z.infer<typeof AttributionSchema>;
+
 export const WorldManifestSchema = z.object({
   id: z.string().min(1).max(128),
   title: z.string().max(200),
@@ -43,6 +78,8 @@ export const WorldManifestSchema = z.object({
   brief: z.string().max(2000),
   anchors: z.array(AnchorSchema).max(3).optional(),
   ghostPreset: z.string().min(1).max(60).optional(),
+  /** A Gallery world only: the credit and licence of its picture. */
+  attribution: AttributionSchema.optional(),
 });
 export type WorldManifest = z.infer<typeof WorldManifestSchema>;
 

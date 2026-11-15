@@ -16,7 +16,8 @@
     "check-voice-library": "node tools/build-banks.mjs --check && node tools/check-voice-library.mjs",
     "test:tools": "node --test tools/test/*.test.mjs",
     "prerender-voice": "node tools/prerender-voice.mjs",
-    "voice-demo": "node tools/voice-demo/serve.mjs"
+    "voice-demo": "node tools/voice-demo/serve.mjs",
+    "ingest-gallery": "node tools/ingest-gallery/ingest.mjs"
   },
   "workspaces": ["shared", "api", "web"]
 }
