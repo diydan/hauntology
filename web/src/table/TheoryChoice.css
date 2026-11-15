@@ -1,0 +1,6 @@
+/* The Theory choice of the notebook. A plain column from 320 px wide; every control is 48 px or taller. */
+.th-choice { display: grid; gap: var(--space-2); }
+.th-choice, .th-choice * { box-sizing: border-box; }
+.th-rows { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+.th-row { display: grid; gap: var(--space-1); }
+.th-select { min-height: 48px; }

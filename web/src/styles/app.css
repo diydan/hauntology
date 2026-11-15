@@ -102,6 +102,23 @@ video {
   min-width: 0;
 }
 
+/* The solo case: the world on the left, the table on the right; stacked on a narrow screen. */
+.case-split {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.case-split > * {
+  min-width: 0;
+}
+
+@media (min-width: 60rem) {
+  .case-split {
+    grid-template-columns: minmax(0, 3fr) minmax(20rem, 2fr);
+    align-items: start;
+  }
+}
+
 .viewer,
 .viewer-fallback {
   min-height: 12rem;

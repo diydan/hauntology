@@ -247,19 +247,25 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x] 10.1 Mockup of the Clue ring, the question-mark rings, the 0.7 second read, the arrow, the Clue list and "Show all as text", with the made-up values and a guard test
     - Built in `tools/playtest/ar.html`, `js/ar.js`, `css/ar.css` and `test/ar.test.js` (and published to the playtest site). It is a reference and not the real code: it shows the camera as an opt-in (15.10) but draws at full speed, keeps nothing between loads and has no camera indicator beyond the pressed button.
     - _Requirements: 15.2, 15.3, 15.5, 15.7_
-  - [ ] 10.2 `clues.ts`: `SpiritClue`, the fixed lists (`ADDRESSES`, `DATES`, the 555-01xx Phone numbers) and `placeClues(seed, code)`
+  - [x] 10.2 `clues.ts`: `SpiritClue`, the fixed lists (`ADDRESSES`, `DATES`, the 555-01xx Phone numbers) and `placeClues(seed, code)`
+    - Built in `shared/src/puzzles/clues.ts`: the forms, the lists (14 made-up addresses, 14 dates before 1950, 555-01xx numbers), `placeClues`, and the text path (`clueRows`, `codeSoFar`, `readAll`).
     - _Requirements: 15.2, 15.3, 15.4_
-  - [ ]* 10.3 Write property test for the clue ring
+  - [x]* 10.3 Write property test for the clue ring
+    - Built in `shared/src/puzzles/clues.prop.test.ts`.
     - **Property 18: Clue rings are deterministic, spread out and made up**
     - **Validates: Requirements 15.2, 15.3, 15.4**
-  - [ ] 10.4 `read.ts`: `stepRead(progress, angleRad, dtMs)` and the read state
+  - [x] 10.4 `read.ts`: `stepRead(progress, angleRad, dtMs)` and the read state
+    - Built in `shared/src/puzzles/read.ts`: `stepRead`, `stepClue` (a read clue stays read) and `clueAngle`.
     - _Requirements: 15.5_
-  - [ ]* 10.5 Write property test for reading
+  - [x]* 10.5 Write property test for reading
+    - Built in `shared/src/puzzles/read.prop.test.ts`.
     - **Property 19: Reading needs a steady look**
     - **Validates: Requirements 15.5**
   - [ ] 10.6 `ClueRing.tsx` (sprites, tilt or drag, the question-mark rings, the click buzz and its pulse, 30 frames a second, face-down pause) and `ClueList.tsx` (the list, "Code so far", "Show all as text", the arrow after 3 seconds), and the optional camera backdrop (a video element under the canvas, a visible indicator, a stop control, the stand-in backdrop on refusal)
+    - Built so far: `web/src/puzzles/clues/ClueList.tsx` (the list, "Code so far", "Show all as text", 48 pixel targets). Still to do: `ClueRing.tsx` (needs three.js, which the web app does not depend on yet), the arrow and the camera backdrop.
     - _Requirements: 15.5, 15.7, 15.9, 15.10_
-  - [ ]* 10.7 Write property test for the text path
+  - [x]* 10.7 Write property test for the text path
+    - Built in `shared/src/puzzles/clues.prop.test.ts` (Property 20): the list shows the digits of the Sight in order, Show all as text reads every clue, and `verify` gives the same verdict whatever was read.
     - **Property 20: Spirit clues change what is shown and nothing else**
     - **Validates: Requirements 15.1, 15.7**
   - [ ] 10.8 Controller wiring: the "Spirit clues" device switch (off by default, with the motion tap), the ring in place of the 5 second Sight (30 seconds, 45 with Assist), the Faded clue kept as text, the Turn treating the ring as a Sight

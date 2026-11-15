@@ -63,7 +63,8 @@ module prop_15_keypad_pod() {
       hull() {
         linear_extrude(height = 6.0)
           rrect2d(esp32_d + 2.0, esp32_w + 4.0, r = 2.0);
-        translate([0, 0, 18.5])
+        // Ridge raised from Z = 18.5 to 23.6 so the long (Y) slopes are 44 deg from vertical (they were 55 deg, a near-flat roof)
+        translate([0, 0, 23.6])
           linear_extrude(height = 0.5)
             rrect2d(4.0, 24.0, r = 1.0);
       }

@@ -2,6 +2,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
 import { browserRoomDeps, checkWorld, RoomError, startSolo, type RoomClient, type RoomDeps } from "./room-client";
 import type { HostHandle, HostSetup } from "./types";
+import type { ViewerHandle } from "../viewer/types";
 import { eventLine, namesOf, notebook, secondsLeft } from "./words";
 
 /**
@@ -21,8 +22,36 @@ export async function mountHost(setup: HostSetup, deps: RoomDeps = browserRoomDe
     queueMicrotask(() => setup.onMessage({ t: "refused", code: e.code }));
     return { playAgain() {}, async dispose() {} };
   }
-  const root = createRoot(setup.container);
+  // The world beside the table (integration 4.2). It shows the Haunt rising; the table holds every control.
+  const split = document.createElement("div");
+  split.className = "case-split";
+  const worldBox = document.createElement("div");
+  worldBox.className = "case-world";
+  const tableBox = document.createElement("div");
+  split.append(worldBox, tableBox);
+  setup.container.append(split);
+  const root = createRoot(tableBox);
   root.render(<SoloTable client={client} />);
+  let viewer: ViewerHandle | null = null;
+  if (setup.loadViewer) {
+    try {
+      viewer = await (await setup.loadViewer()).mountViewer({ container: worldBox, worldId: setup.worldId, onMessage: () => {} });
+    } catch {
+      viewer = null; // no world view: the case plays on the table alone
+      worldBox.remove();
+    }
+  }
+  let lastHaunt = -1;
+  const showHaunt = (): void => {
+    const v = client.getSnapshot().public;
+    if (viewer === null || v === null) return;
+    const level = v.haunt.max > 0 ? Math.min(1, v.haunt.level / v.haunt.max) : 0;
+    if (level === lastHaunt) return;
+    lastHaunt = level;
+    viewer.send({ t: "apply_view", found: [], anchors: [], hauntLevel: level, ghostVisible: false });
+  };
+  const stopHaunt = client.subscribe(showHaunt);
+  showHaunt();
 
   // Tell the shell what happens, through the same messages the stand-in used.
   let last = client.getSnapshot().status;
@@ -46,8 +75,11 @@ export async function mountHost(setup: HostSetup, deps: RoomDeps = browserRoomDe
       if (!up) return;
       up = false;
       stop();
+      stopHaunt();
       client.close();
       root.unmount();
+      await viewer?.dispose();
+      split.remove();
     },
   };
 }

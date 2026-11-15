@@ -116,9 +116,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.32 Write property test for accusations and termination
     - **Property 15: Accusations decide the game and the game terminates**
     - **Validates: Requirements 6.3, 6.5, 11.1, 11.5**
-  - [ ] 2.33 `parseRelicToken`
+  - [x] 2.33 `parseRelicToken`
     - _Requirements: 6.4_
-  - [ ]* 2.34 Write property test for relic tokens
+  - [x]* 2.34 Write property test for relic tokens
     - **Property 16: Relic tokens parse strictly**
     - **Validates: Requirements 6.4**
   - [x] 2.35 `endingPayload` (with the Frame and House Cue reveal, the winners ranked by `firstDetective` or none when the house wins, the Residue placements, the Most Haunting award, the two Nudge counters and the recap) and `playAgain` (resets the Haunt, Residue, Resolve, Poltergeists, Cue and Nudge counters, Round limits, Cue sources, sealed Accusations, the Bluff ids and the recap), and `buildRecap(publicLog, players, solution, reveal, bluffs)` in `recap.ts`, taking only the redacted public log and the Bluff ids and returning the entries, the per-Player counts, the Solution and the reveal list
@@ -337,26 +337,28 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.119 Write property test for the Seat Portrait look (mono only after joining the haunting, public data only, no Suspect card, speaker badge or narrator ever mono)
     - **Property 62: A Seat Portrait is black and white exactly when its Player has joined the haunting**
     - **Validates: Requirements 19.8, 19.9**
-  - [ ] 2.120 `theory.ts`: `setTheory(theory, suspect, zone | null, zones)` and `theoryOf(notebook)`, kept apart from `autoMarks`, with a source-level check that nothing outside the notebook reads a Theory mark and that no message, view or prompt carries one
+  - [x] 2.120 `theory.ts`: `setTheory(theory, suspect, zone | null, zones)` and `theoryOf(notebook)`, kept apart from `autoMarks`, with a source-level check that nothing outside the notebook reads a Theory mark and that no message, view or prompt carries one
+    - Built in `shared/src/party/theory.ts` (`setTheory`, `theoryOf`). The source-level check is in `theory.prop.test.ts`: nothing else in `shared/src/party/` mentions a Theory mark.
     - _Requirements: 4.7, 4.8_
-  - [ ]* 2.121 Write property test for Theory marks (the player's own, change nothing)
+  - [x]* 2.121 Write property test for Theory marks (the player's own, change nothing)
+    - Built in `shared/src/party/theory.prop.test.ts`.
     - **Property 63: Theory marks are the player's own and change nothing**
     - **Validates: Requirements 4.7, 4.8**
 
-- [ ] 3. Print module (`shared/src/print/`)
-  - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
+- [x] 3. Print module (`shared/src/print/`)
+  - [x] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
     - _Requirements: 8.2_
-  - [ ] 3.2 `qrPlateMesh` heightfield solid and `rasterTop`
+  - [x] 3.2 `qrPlateMesh` heightfield solid and `rasterTop`
     - _Requirements: 8.2_
-  - [ ]* 3.3 Write property test for printed meshes and QR plates
+  - [x]* 3.3 Write property test for printed meshes and QR plates
     - **Property 20: Printed meshes are valid and QR plates round-trip**
     - **Validates: Requirements 8.2**
-  - [ ] 3.4 `pyramidTrapezoid` and `holderParams`
+  - [x] 3.4 `pyramidTrapezoid` and `holderParams`
     - _Requirements: 8.3_
-  - [ ]* 3.5 Write property test for pyramid faces
+  - [x]* 3.5 Write property test for pyramid faces
     - **Property 21: Pyramid faces are consistent**
     - **Validates: Requirements 8.3**
-  - [ ] 3.6 Stretch: `standeeMesh` from an alpha mask, with the same checks
+  - [x] 3.6 Stretch: `standeeMesh` from an alpha mask, with the same checks
     - _Requirements: 8.4_
 
 - [ ] 4. PartyRoom Durable Object
@@ -463,10 +465,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
 
 - [ ] 9. Web: Controller (`web/src/party/controller/`), installable web app
   - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
-    - Built so far (2026-11-15): the join page `web/src/party/controller/JoinPage.tsx` against a port (`controller-port.ts`, with a scripted stand-in `standin-port.ts` for the demo page `web/controller-demo.html` and the tests): the Room Code and nickname rules of `shared/src/party`, plain-word refusals that reveal nothing about any Room, one main button. Still to do: the real port over the Room socket, and reconnect with the stored token.
     - _Requirements: 1.2, 1.4_
   - [ ] 9.2 Pad and panel layouts with switching; 48 px targets, focus, contrast, tap-to-walk pad
-    - Built so far (2026-11-15): the seated frame `SeatedFrame.tsx` (header with Room Code, nickname, Master and the connection in words; a Pad / Panel switch that follows the phone's turn and lets the Player's choice win; named regions for the stick, look area, face buttons, hand, notebook and contributions; a Menu sheet with this phone's settings from `PuzzleSettings`; the Lock in `LockArea.tsx`). The settings are the phone's remembered ones (`web/src/device/`, `useDeviceSettings()`): a tilt choice made in a Lock and in the Menu is one saved setting. Still to do: the contents of the pad and the panel (stick, look, face buttons, tap-to-walk pad, hand, notebook).
     - _Requirements: 2.1, 2.6_
   - [ ] 9.3 Multitouch stick and look, input at ≤ 30 Hz, release on blur and disconnect
     - _Requirements: 2.2, 2.3_
@@ -515,6 +515,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ] 9.25 Controller, Host HUD and ending screen: draw each Player's Seat Portrait (their contributed Ghost Profile in full colour, or a nickname chip) and cross-fade it to black and white, 0.6 s at most and a cut under reduced motion, when `seatLook` turns `'mono'` after the Becoming; the nickname row says "joined the haunting" in words; Suspect cards, the Lodger badge and the narrators never change colour
     - _Requirements: 19.8, 19.9_
   - [ ] 9.26 Controller notebook: Theory marks, a choice of the six Zones or "No mark" for each Suspect (48 pixel targets), stored on the device with the grid, shared with the Spirit table through `setTheory`, nothing sent
+    - Built so far: the room choice, `web/src/table/TheoryChoice.tsx` (six Zones or "No mark" for each Suspect, 48 pixel targets, `setTheory`, a note that the marks are the Player's own). Still to do: keeping the marks on the device with the notebook grid, and the Controller wiring (the Controller does not exist yet).
     - _Requirements: 4.7, 4.8_
 
 - [ ] 10. Web: Display (`web/src/party/display/`)
@@ -523,16 +524,16 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ] 10.2 Event reactions within photosensitivity limits, reduced-motion handling, culprit reveal
     - _Requirements: 7.4_
 
-- [ ] 11. Print Kit (`print/`, `tools/build-print.mjs`)
-  - [ ] 11.1 Six original parametric relic models (music box, wax hand, locket, planchette, silver key, bell) with token bases
+- [x] 11. Print Kit (`print/`, `tools/build-print.mjs`)
+  - [x] 11.1 Six original parametric relic models (music box, wax hand, locket, planchette, silver key, bell) with token bases
     - _Requirements: 8.1_
-  - [ ] 11.2 Parametric pyramid holder
+  - [x] 11.2 Parametric pyramid holder
     - _Requirements: 8.3_
-  - [ ] 11.3 `tools/build-print.mjs`: generate token plates, run `openscad` when present, check every STL, exit non-zero on failure
+  - [x] 11.3 `tools/build-print.mjs`: generate token plates, run `openscad` when present, check every STL, exit non-zero on failure
     - _Requirements: 8.2_
-  - [ ] 11.4 `print/README.md`: materials, settings, assembly, and that printing is optional
+  - [x] 11.4 `print/README.md`: materials, settings, assembly, and that printing is optional
     - _Requirements: 8.5_
-  - [ ] 11.5 Hook `print-validate` runs the build check when `print/` or `shared/src/print/` is saved
+  - [x] 11.5 Hook `print-validate` runs the build check when `print/` or `shared/src/print/` is saved
     - _Requirements: 8.2_
 
 - [ ] 12. Gallery content

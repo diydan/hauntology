@@ -3,7 +3,8 @@
 // Size: 170 W x 108 H x 28 D mm
 // Sticker details: Semi-circular dial face sticker pocket (0 to 12 scale, ticks, ghost icon, "HAUNT")
 // Hardware: Rear SG90 servo pocket centered on pivot, ESP32 bay in base plinth, clip detents at 8, 10 and 12
-// Print orientation: Flat on back face (Z = 0), zero supports.
+// Print orientation: Flat on back face (Z = 0). SUPPORTS NEEDED under the ESP32 bay roof (28.5 x 55.6 mm, flat): a 45 deg roof over a
+// 28 mm board would need 14 mm more height than this 20 mm plate has. The servo pocket roof is only 12.5 mm wide and bridges.
 
 include <_common.scad>
 

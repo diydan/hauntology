@@ -1,5 +1,6 @@
 import type { CaseSetup } from "@hauntology/shared/app/case-setup";
 import type { ConditionsChoice } from "@hauntology/shared/conditions/types";
+import type { LoadViewer } from "../viewer/types";
 
 /**
  * The seam between the shell and the party Host page, for "Play a case" (Requirement 13). The shell
@@ -17,6 +18,8 @@ export type HostSetup = {
   /** The sky the visitor chose on Haunt, or nothing for the Host's own clock and a clear sky. */
   sky: ConditionsChoice | undefined;
   onMessage: (message: unknown) => void;
+  /** The world view to show beside the table. Without it, or if it will not load, the table plays alone. */
+  loadViewer?: LoadViewer;
 };
 
 export type HostHandle = {

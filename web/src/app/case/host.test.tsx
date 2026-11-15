@@ -122,4 +122,28 @@ describe("mountHost", () => {
     expect(calls).toEqual(["/api/worlds/w1"]);
     await h.dispose();
   });
+
+  it("mounts the world beside the table, shows the Haunt rising, and releases both on exit", async () => {
+    const sent: unknown[] = [];
+    let disposed = 0;
+    const sockets: { onopen: (() => void) | null; onmessage: ((e: { data: string }) => void) | null; send(t: string): void; close(): void; onclose: null }[] = [];
+    const deps = {
+      fetch: async (url: string) => new Response(JSON.stringify(url.startsWith("/api/worlds") ? { manifest: { bounds: { min: [-9, 0, -9], max: [9, 3, 9] } } } : url.endsWith("/join") ? { ok: true, seat: 1, token: "t".repeat(32) } : { code: "ABCD" }), { status: 200 }),
+      openSocket: () => { const ws = { onopen: null, onmessage: null, onclose: null, send() {}, close() {} }; sockets.push(ws); return ws as never; },
+      socketOrigin: "ws://x",
+    };
+    const container = document.createElement("div");
+    document.body.append(container);
+    const h = await act(() => mountHost({
+      container, worldId: "w1", setup: { preset: "classic", bots: 2 }, sky: undefined, onMessage: () => {},
+      loadViewer: async () => ({ mountViewer: ({ container: c }) => { c.append(Object.assign(document.createElement("canvas"), { id: "world" })); return { send: (m) => void sent.push(m), dispose: async () => void disposed++ }; } }),
+    }, deps));
+    expect(container.querySelector(".case-split .case-world #world")).not.toBeNull();
+    const { s, now } = game();
+    act(() => sockets[0]!.onmessage?.({ data: JSON.stringify({ t: "public", view: { ...publicSnapshot(s, now), haunt: { ...publicSnapshot(s, now).haunt, level: 5, max: 10 } } }) }));
+    expect(sent.at(-1)).toEqual({ t: "apply_view", found: [], anchors: [], hauntLevel: 0.5, ghostVisible: false });
+    await act(() => h.dispose());
+    expect(disposed).toBe(1);
+    expect(container.querySelector(".case-split")).toBeNull();
+  });
 });

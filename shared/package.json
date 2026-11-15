@@ -17,7 +17,9 @@
     "./ghost/*": "./src/ghost/*.ts",
     "./world/*": "./src/world/*.ts",
     "./puzzles/*": "./src/puzzles/*.ts",
+    "./table/*": "./src/table/*.ts",
     "./party/*": "./src/party/*.ts",
+    "./print/*": "./src/print/*.ts",
     "./voice/*": "./src/voice/*.ts"
   },
   "scripts": {

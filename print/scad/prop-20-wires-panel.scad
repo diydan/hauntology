@@ -5,7 +5,7 @@
 //                  "SET" pocket (26 x 11 mm), "paired" pocket (30 x 8 mm)
 // Hardware: Five left wire-anchor wells (with solid Z=6.0 bottom stop shoulder), five right terminal socket wells
 //           (with solid Z=6.0 bottom stop shoulder), 16 mm SET button hole, 5 mm LED hole, central vaulted ESP32 bay
-// Print orientation: Flat on base (Z = 0), zero supports (all underside cavities have <= 45-deg vaulted roofs!).
+// Print orientation: Flat on base (Z = 0), no supports (all underside cavities have <= 45-deg vaulted roofs).
 
 include <_common.scad>
 
@@ -83,11 +83,13 @@ module prop_20_wires_panel() {
       linear_extrude(height = sticker_depth + 0.6)
         rrect2d(30.0, 8.0, r = 1.0);
 
-    // 7. Central 45-Degree Vaulted Underside ESP32 & Wiring Bay (tapers to a 3.6 mm ridge at Z = 24 -> zero supports!)
+    // 7. Central 45-Degree Vaulted Underside ESP32 & Wiring Bay (tapers to a 3.6 mm ridge at Z = 27.5 -> no supports).
+    //    The ridge used to stop at Z = 24, which made the sides 50.5 deg from vertical, not 45; the ridge is now 3.5 mm higher (46 deg),
+    //    leaving 2.2 mm of skin above it.
     translate([-3.0, 4.0, -0.1])
       hull() {
         linear_extrude(height = 5.0) rrect2d(50.0, 94.0, r = 3.0);
-        translate([0, 0, 24.0]) linear_extrude(height = 0.4) rrect2d(3.6, 56.0, r = 1.2);
+        translate([0, 0, 27.5]) linear_extrude(height = 0.4) rrect2d(3.6, 56.0, r = 1.2);
       }
 
     // 8. Rear USB-C cable exit notch at Y = panel_h / 2 (h = 28.0 reaches Y = 46.0, breaking cleanly into the ESP32 bay!)

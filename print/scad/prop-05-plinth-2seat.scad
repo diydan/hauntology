@@ -4,7 +4,7 @@
 // Sticker details: Two 18 mm circular seat-colour disc pockets on the front face
 // Hardware: Two vertical SG90 servo pockets + 3 Resolve LED windows per seat (with bottom-loading slot for
 //           prop-05-resolve-insert.stl) + continuous underside wire & WS2812B LED bus trench
-// Print orientation: Flat on plinth base (Z = 0), zero supports (1 connected component).
+// Print orientation: Flat on plinth base (Z = 0), no supports: every downward-facing slope is <= 50 deg from vertical (1 connected component).
 
 include <_common.scad>
 
@@ -81,11 +81,13 @@ module prop_05_plinth_2seat() {
         cube([37.0, 2.8, 19.6], center = true);
     }
 
-    // 8. Continuous Underside Wire & WS2812B LED Bus Trench (45-deg roof, runs full X width and illuminates the Resolve slots)
-    translate([0, -2.0, 4.0])
+    // 8. Continuous Underside Wire & WS2812B LED Bus Trench: 19 mm wide (Y = -13..+6, the front edge stays next to the Resolve
+    //    slots so the LEDs still light them), 4 mm tall walls, then a true 45 deg roof (44.7 deg from vertical) up to a 2 mm ridge
+    //    at Z = 12.6. The old roof rose only 2.4 mm over 7 mm each side (71 deg), which is a flat 22 mm bridge: supports needed.
+    translate([0, -3.5, 0])
       hull() {
-        cube([seg_w + 20.0, 22.0, 8.2], center = true);
-        translate([0, 0, 7.0]) cube([seg_w + 20.0, 8.0, 1.0], center = true);
+        translate([0, 0, 1.95]) cube([seg_w + 20.0, 19.0, 4.1], center = true);
+        translate([0, 0, 12.85]) cube([seg_w + 20.0, 2.0, 0.5], center = true);
       }
   }
 }

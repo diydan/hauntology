@@ -28,7 +28,7 @@ export default function Case() {
       async start(setup, sky) {
         const mod = await platform.loadHost();
         if (container.current === null) throw new Error("no container");
-        handle = await mod.mountHost({ container: container.current, worldId, setup, sky, onMessage: (m) => self.onHostMessage(m) });
+        handle = await mod.mountHost({ container: container.current, worldId, setup, sky, onMessage: (m) => self.onHostMessage(m), loadViewer: platform.loadViewer });
       },
       playAgain: () => handle?.playAgain(),
       async dispose() {

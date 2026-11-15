@@ -4,11 +4,12 @@
 //
 // Usage:
 //   node tools/build-print.mjs           # generates the Suspect standees, compiles print/scad/*.scad, checks all STLs
-//   node tools/build-print.mjs --check   # validates every STL (watertight, manifold, positive volume, <= 180 mm bed)
+//   node tools/build-print.mjs --check   # validates every STL (watertight, manifold, positive volume, piece count, bed contact, wide flat roofs)
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { findOverhangs, OVERHANG_DEG, BRIDGE_MAX_MM } from "./lib/stl-overhang.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -387,6 +388,14 @@ function findOpenscad() {
   return null;
 }
 
+// Parts that cannot print without supports, and why. Every other part must pass the support-free check in lib/stl-overhang.mjs
+// (no flat roof wider than BRIDGE_MAX_MM and nothing facing down steeper than OVERHANG_DEG), and the README may only say
+// "Supports needed" for the parts listed here. An entry that stops being true fails the build, so this list cannot go stale.
+const SUPPORTS_NEEDED = {
+  "prop-03-dial-plate.stl":
+    "ESP32 bay roof, 28.5 mm wide and 55.6 mm long. The plate is 20 mm thick; a 45 degree roof over a 28 mm board needs about 14 mm more height",
+};
+
 function checkBinaryStl(filePath, bedMm = 180) {
   const buf = fs.readFileSync(filePath);
   if (buf.length < 84) return { ok: false, errors: ["STL shorter than 84 bytes"] };
@@ -513,6 +522,18 @@ function checkBinaryStl(filePath, bedMm = 180) {
   if (bedAreaMm2 < 100) {
     errors.push(`Insufficient flat bed contact area at minZ: ${bedAreaMm2.toFixed(1)} mm^2`);
   }
+  const overhangs = findOverhangs(buf);
+  const supportsNote = SUPPORTS_NEEDED[baseName];
+  if (overhangs.length > 0 && supportsNote === undefined) {
+    for (const o of overhangs) {
+      errors.push(
+        `needs supports: ${o.widthMm.toFixed(1)} mm wide, ${o.areaMm2.toFixed(0)} mm^2 roof facing down steeper than ${OVERHANG_DEG} deg at z = ${o.zMm.toFixed(1)} mm (x ${o.xMm.map((v) => v.toFixed(0)).join("..")}, y ${o.yMm.map((v) => v.toFixed(0)).join("..")}); slope it to 45 deg, narrow it to ${BRIDGE_MAX_MM} mm, or list the file in SUPPORTS_NEEDED`,
+      );
+    }
+  }
+  if (overhangs.length === 0 && supportsNote !== undefined) {
+    errors.push("is listed in SUPPORTS_NEEDED but has no wide roof any more; remove the entry and the README note");
+  }
   let unmatchedEdges = 0;
   for (const [f, b] of halfEdges.values()) {
     if (f !== b || f === 0) unmatchedEdges++;
@@ -530,6 +551,7 @@ function checkBinaryStl(filePath, bedMm = 180) {
     volumeMm3,
     sizeMm: [sx, sy, sz],
     triangleCount: triCount,
+    supportsNote,
   };
 }
 
@@ -590,8 +612,26 @@ for (const f of files) {
   } else if (!process.argv.includes("--quiet")) {
     const [sx, sy, sz] = res.sizeMm;
     console.log(
-      `ok   ${f.padEnd(34)} ${sx.toFixed(1).padStart(5)} x ${sy.toFixed(1).padStart(5)} x ${sz.toFixed(1).padStart(5)} mm  (${String(res.triangleCount).padStart(5)} tris, ${(res.volumeMm3 / 1000).toFixed(2).padStart(6)} cm³)`,
+      `ok   ${f.padEnd(34)} ${sx.toFixed(1).padStart(5)} x ${sy.toFixed(1).padStart(5)} x ${sz.toFixed(1).padStart(5)} mm  (${String(res.triangleCount).padStart(5)} tris, ${(res.volumeMm3 / 1000).toFixed(2).padStart(6)} cm³)${res.supportsNote === undefined ? "" : "  SUPPORTS NEEDED"}`,
     );
+  }
+}
+
+// 4. The README must say "Supports needed" for exactly the parts in SUPPORTS_NEEDED (it used to say "None" for every part)
+const readmePath = path.join(root, "print", "README.md");
+if (fs.existsSync(readmePath)) {
+  const rows = fs.readFileSync(readmePath, "utf8").split("\n").filter((l) => l.startsWith("|"));
+  for (const f of files) {
+    const mine = rows.filter((l) => l.includes(`\`${f}\``));
+    const says = mine.some((l) => /supports needed/i.test(l));
+    if (f in SUPPORTS_NEEDED && !says) {
+      failed++;
+      console.error(`FAIL ${f}: README.md must say "Supports needed" in its table row (${SUPPORTS_NEEDED[f]})`);
+    }
+    if (!(f in SUPPORTS_NEEDED) && says) {
+      failed++;
+      console.error(`FAIL ${f}: README.md says "Supports needed" but the file passes the support-free check`);
+    }
   }
 }
 
@@ -599,4 +639,4 @@ if (failed > 0) {
   console.error(`${failed} of ${files.length} STL file(s) failed validation.`);
   process.exit(1);
 }
-console.log(`build-print: ${files.length} STL file(s) verified OK (watertight, manifold, positive volume, <= 180 mm bed).`);
+console.log(`build-print: ${files.length} STL file(s) verified OK (watertight, manifold, positive volume, piece count, <= 180 mm bed, support-free apart from the listed parts).`);

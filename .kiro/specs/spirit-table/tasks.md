@@ -40,9 +40,11 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - **Validates: Requirements 4.3, 6.1**
   - [ ] 2.13 Source-level checks: nothing in `shared/src/table/` imports `party/solution`, a Hand, a Residue position or the Room seed, and nothing in it or `web/src/table/` sends a message or stores a Mark, a direction or a picture
     - _Requirements: 1.3, 3.1, 3.4_
-  - [ ] 2.14 `notebook.ts`: `markOf(notebook, card)` (ruled out when some column has the card, maybe when none does and some column is maybe, else none; no inference from lacks) and `tableData` using it for rooms, Suspects and Relics
+  - [x] 2.14 `notebook.ts`: `markOf(notebook, card)` (ruled out when some column has the card, maybe when none does and some column is maybe, else none; no inference from lacks) and `tableData` using it for rooms, Suspects and Relics
+    - Built in `shared/src/table/notebook.ts` (`markOf`, with the `TableNotebook` type). `tableData`, which will call it, is task 2.1.
     - _Requirements: 3.2, 3.5_
-  - [ ] 2.15 **Property 9: A card's mark comes from the notebook grid alone**
+  - [x] 2.15 **Property 9: A card's mark comes from the notebook grid alone**
+    - Built in `shared/src/table/notebook.prop.test.ts` (a game mark and the Player's own mark, lacks everywhere gives none, order and other cards do not matter); 15 deliberate breaks caught across the new tests.
     - **Validates: Requirements 3.2, 3.5**
 
 - [ ] 3. The phone (`web/src/table/`)
@@ -78,21 +80,26 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
   - [ ] 5.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 8.1_
 
-- [ ] 5. Drag to mark (Requirement 8)
-  - [x] 5.1 Mockup: carry a character, the finger holding the head, the lit room and the landing ring, the drop that marks or clears, the rag-doll swing and stand-up, reduced motion, a hook that steps the physics without drawing, and 14 tests
+- [ ] 6. Drag to mark (Requirement 9)
+  - [x] 6.1 Mockup: carry a character, the finger holding the head, the lit room and the landing ring, the drop that marks or clears, the rag-doll swing and stand-up, reduced motion, a hook that steps the physics without drawing, and 14 tests
     - Built in `tools/playtest/js/ar.js`, `ar-rag.js`, `ar-marks.js` and `test/ar-rag.test.js`, `ar-marks.test.js`, `ar.test.js`. It keeps the mark only while the page is open and has no list choice; the real code uses the notebook (8.3) and the Table list (8.5).
-    - _Requirements: 8.1, 8.2, 8.4_
-  - [ ] 5.2 `marks.ts`: `roomAtPoint`, `lineupPos`, `slotPos`, `applyDrop`, and `tableData` reading `placedIn` from the notebook
-    - _Requirements: 2.3, 8.2, 8.3_
-  - [ ] 5.3 **Property 7: A drop only sets or clears the player's own theory mark**
-    - **Validates: Requirements 2.3, 8.2, 8.3**
-  - [ ] 5.4 `rag.ts`: `makeChain`, `stepChain`, `chainUnrest`, `deformVertices` (the rag doll)
-    - _Requirements: 8.1, 8.4_
-  - [ ] 5.5 **Property 8: The rag doll keeps its shape and stands back up**
-    - **Validates: Requirements 8.1, 8.4**
-  - [ ] 5.6 Phone: the carry and the drop in `SpiritTable.tsx` (an 8 pixel threshold, the finger-held head, the lit room, the landing ring, the buzz, the card text, no swing under reduced motion)
-    - _Requirements: 8.1, 8.2, 8.4_
-  - [ ] 5.7 The Theory mark in the notebook (the notebook side is `party-mode` 4.7 and 4.8, tasks 2.120 and 9.26), drawn as a standee in its room with a "maybe here" tag for its owner only, and the Table list's room choice per Suspect (48 pixel targets)
-    - _Requirements: 8.2, 8.3, 8.5_
-  - [ ] 5.8 Checks: a Theory mark is never sent or stored by the Room, a real-browser drag at 320 by 568 and 390 by 844 pixels, and a mutation pass on `applyDrop` and `stepChain`
-    - _Requirements: 8.3, 8.5_
+    - _Requirements: 9.1, 9.2, 9.4_
+  - [ ] 6.2 `marks.ts`: `roomAtPoint`, `lineupPos`, `slotPos`, `applyDrop`, and `tableData` reading `placedIn` from the notebook
+    - Built in `shared/src/table/marks.ts`: `roomAtPoint`, `lineupPos`, `slotPos`, `roomCenter`, `applyDrop` (the notebook's own `setTheory`) and `placeSuspects`. Still to do: `tableData` reading `placedIn` (task 2.1).
+    - _Requirements: 2.3, 9.2, 9.3_
+  - [x] 6.3 **Property 7: A drop only sets or clears the player's own theory mark**
+    - Built in `shared/src/table/marks.prop.test.ts`.
+    - **Validates: Requirements 2.3, 9.2, 9.3**
+  - [x] 6.4 `rag.ts`: `makeChain`, `stepChain`, `chainUnrest`, `deformVertices` (the rag doll)
+    - Built in `shared/src/table/rag.ts` (a TypeScript port of the mockup's `ar-rag.js`).
+    - _Requirements: 9.1, 9.4_
+  - [x] 6.5 **Property 8: The rag doll keeps its shape and stands back up**
+    - Built in `shared/src/table/rag.prop.test.ts` (link stretch under 8 percent at up to 1.5 m/s, flat at rest, upright and still within two seconds, bad input).
+    - **Validates: Requirements 9.1, 9.4**
+  - [ ] 6.6 Phone: the carry and the drop in `SpiritTable.tsx` (an 8 pixel threshold, the finger-held head, the lit room, the landing ring, the buzz, the card text, no swing under reduced motion)
+    - _Requirements: 9.1, 9.2, 9.4_
+  - [ ] 6.7 The Theory mark in the notebook (the notebook side is `party-mode` 4.7 and 4.8, tasks 2.120 and 9.26), drawn as a standee in its room with a "maybe here" tag for its owner only, and the Table list's room choice per Suspect (48 pixel targets)
+    - Built so far: the Table list's room choice, `web/src/table/TheoryChoice.tsx` (a choice of the six Zones or "No mark" for each Suspect, 48 pixel targets, using `setTheory`). Still to do: the notebook storage and the standee with its "maybe here" tag on the table.
+    - _Requirements: 9.2, 9.3, 9.5_
+  - [ ] 6.8 Checks: a Theory mark is never sent or stored by the Room, a real-browser drag at 320 by 568 and 390 by 844 pixels, and a mutation pass on `applyDrop` and `stepChain`
+    - _Requirements: 9.3, 9.5_

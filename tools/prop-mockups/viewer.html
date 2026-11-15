@@ -186,7 +186,7 @@ function parseStl(buf) {
 }
 const cache = new Map();
 function load(name) {
-  if (!cache.has(name)) cache.set(name, fetch(STL_BASE + name + '.stl').then((r) => { if (!r.ok) throw new Error(name + ': HTTP ' + r.status); return r.arrayBuffer(); }).then(parseStl));
+  if (!cache.has(name)) cache.set(name, fetch(STL_BASE + name + '.stl', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(name + ': HTTP ' + r.status); return r.arrayBuffer(); }).then(parseStl));
   return cache.get(name);
 }
 

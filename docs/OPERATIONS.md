@@ -77,6 +77,6 @@ To turn it on:
 
 To turn it off at once, set `GHOST_NARRATION_ENABLED` to `false` and deploy: the ghost speaks only scripted lines and the game goes on. The caps are the usual ones in `SpendGuard`: `LLM_SESSION_CAP` (a visitor, default 40) and `LLM_DAY_CAP` (everyone, default 1500). A game also stops using the model after 40 model turns, after the ending, and for any text that tries to change the ghost's rules.
 
-**Before real players use it, decide about data retention.** What a visitor types (up to 200 characters a turn) goes to the model inside the prompt. Cloudflare's page for Haiku 5.5 carries no "zero data retention" tag (the page for Haiku 4.5 does). To use the tagged model, set `NARRATOR_MODEL_ID=anthropic/claude-haiku-4.5`: ten times the price (about 2 cents for a 20-turn game), accepted by the adapter and not yet run through the gateway.
+**Data retention (you decided on 2026-11-15: fine for Haiku 5.5).** What a visitor types (up to 200 characters a turn) goes to the model inside the prompt. Cloudflare's page for Haiku 5.5 carries no "zero data retention" tag (the page for Haiku 4.5 does), and you accepted that. If you change your mind, set `NARRATOR_MODEL_ID=anthropic/claude-haiku-4.5`: ten times the price (about 2 cents for a 20-turn game), accepted by the adapter and not yet run through the gateway.
 
 The log has one line for each model turn, `play.narrate`, with an outcome (`model`, `invalid`, `refused`, `failed`, `capped` or `off`) and how many calls it took. No word of a prompt or a reply is logged.

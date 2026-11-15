@@ -39,7 +39,7 @@ The Spirit table is an optional private layer of Party Mode: a small 3D haunted 
 
 1. THE Table SHALL have six rooms, one for each Zone of the Public View's pool, each labelled with the Zone's name, in a seeded cosmetic layout that says nothing about where the Zones are in the world.
 2. THE Table SHALL stand a Pawn for every Player in the room of the Zone named by that Player's latest public `suggest` or `inspect` event, or beside the front door WHEN there is none, SHALL draw the Pawn of a Poltergeist in black and white for the rest of the game, and SHALL ring the Pawn of the Player whose Turn it is.
-3. THE Table SHALL stand the six Suspects in a Line-up along the front edge and the six Relics on a Shelf at the side, in the order of the Public View's pool, and SHALL NOT put a Suspect or a Relic in a room of its own accord, because no Suspect or Relic has a place in the rules and a standee in a room would look like a clue; the only Suspect in a room is one the Player has put there with a Theory mark (Requirement 8).
+3. THE Table SHALL stand the six Suspects in a Line-up along the front edge and the six Relics on a Shelf at the side, in the order of the Public View's pool, and SHALL NOT put a Suspect or a Relic in a room of its own accord, because no Suspect or Relic has a place in the rules and a standee in a room would look like a clue; the only Suspect in a room is one the Player has put there with a Theory mark (Requirement 9).
 4. WHERE the Haunt has a Cold Spot THEN the Table SHALL draw a pale cold glow over that room, and the Whisper SHALL float above the Table, hovering over the Cold Spot room when there is one and otherwise drifting from room to room on a seeded tour, glowing more as the Haunt level rises, and none of this SHALL depend on the Solution, a Hand or a Residue position.
 5. THE Controller SHALL draw each Suspect and Pawn as a flat standee of its picture, with a round card where the picture has no cut-out background, that turns about its up axis only to face the Player, and SHALL use no picture, voice or model that the Room does not already hold.
 6. WHEN the Player taps a piece THEN a card SHALL name it and say what the Player may know of it: for a room its Pawns, the Player's own Marks and whether the Player inspected it, for a Suspect or a Relic the Player's own Marks, and for a Pawn the nickname and whether they have joined the haunting.
@@ -108,7 +108,7 @@ The Spirit table is an optional private layer of Party Mode: a small 3D haunted 
 3. THE phone screens SHALL use `ui-panel`, `ui-button`, `ui-notice` and `ui-status`, SHALL draw the Table, the ghost and the clues with colours from `shared/src/design/tokens.ts`, and SHALL keep every control at least 44 CSS pixels.
 4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.
 
-### Requirement 8
+### Requirement 9
 
 **User Story:** As a Player, I want to pick up a suspect and put it on a room, so that I can leave my own "maybe here" theory on the table, and I want the picking up to feel like lifting a limp doll.
 

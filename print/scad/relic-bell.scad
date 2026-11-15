@@ -2,7 +2,7 @@
 // Colour: Lantern (#e0a43a, amber/matte gold)
 // Height: ~51 mm on 33 mm stepped token base
 // Sticker details: Recessed inscription band pocket on front of bell waist (14 x 6 mm)
-// Print orientation: Flat on pedestal base (Z = 0), zero supports.
+// Print orientation: Flat on pedestal base (Z = 0). No supports: every downward-facing slope is <= 45 deg from vertical.
 
 include <_common.scad>
 
@@ -33,21 +33,20 @@ module relic_bell() {
   translate([0, 0, 10.5])
   difference() {
     union() {
-      // Sound bow lip (flared rim)
-      cylinder(h = 2.2, d1 = 28.0, d2 = 26.8);
-      translate([0, 0, 2.2])
-        cylinder(h = 1.4, d1 = 26.8, d2 = 23.6);
-      // Lower waist
-      translate([0, 0, 3.6])
-        cylinder(h = 6.5, d1 = 23.6, d2 = 19.6);
-      // Sound cordon rings
-      translate([0, 0, 10.1])
-        cylinder(h = 1.2, d1 = 20.6, d2 = 19.2);
-      // Upper shoulder dome
-      translate([0, 0, 11.3])
-        cylinder(h = 6.0, d1 = 19.2, d2 = 14.0);
-      translate([0, 0, 17.3])
-        cylinder(h = 2.8, d1 = 14.0, d2 = 8.4);
+      // One turned outer profile (rotate_extrude): no stacked touching cylinders and no flat ledges. The sound bow flares
+      // out from the mouth at 43 deg (it used to start as a flat 3.2 mm underside ledge), the waist and shoulder taper
+      // inward as they rise, and the cordon ring steps out at 45 deg, so nothing faces down at more than 45 deg.
+      rotate_extrude()
+        polygon([
+          [0, 0], [11.6, 0], [14.0, 2.6],     // mouth rim, flaring out to the sound bow
+          [13.4, 3.4],                        // rounded lip
+          [11.8, 4.6],                        // lower waist
+          [9.8, 10.1],                        // waist, tapering in
+          [10.25, 10.6], [9.6, 11.3],         // sound cordon ring (rises out at 42 deg, then in)
+          [7.0, 17.3],                        // upper shoulder dome
+          [4.2, 20.1],                        // neck, meeting the handle
+          [0, 20.1]
+        ]);
 
       // Front raised cartouche plaque for inscription sticker
       translate([0, -10.2, 7.2])
