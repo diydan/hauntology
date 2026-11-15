@@ -3943,9 +3943,10 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
   const GA = [[0.04, -0.14, 0.5, 6.8], [0.14, -0.3, 0.45, 5.2], [0.24, -0.4, 0.4, 3.4], [0.30, -0.35, 0.3, 2.4], [0.34, -0.22, 0.2, 1.9], [QH, -0.08, 0.0, 1.6]];
   // ghost, part 2: over the threshold and into the house (feet positions, world)
   const GQ = [QH, 0.44, 0.50, 0.56];
-  const GB = [V(0, 0, 0), V(0.157, 0.16, 0.55), V(0.157, 0.12, 0.2), V(0.157, 0.12, -0.15)];
+  const FRONT = V(0.157, 0.12, 0.95);          // the ghost's feet just in front of the doorway, dead centre, low: where it lines up to go in
+  const GB = [V(0, 0, 0), V(0.157, 0.12, 0.55), V(0.157, 0.12, 0.2), V(0.157, 0.12, -0.15)];
   // ghost size (1 = its usual size); it shrinks so it fits the doorway
-  const GS = [[0.04, 1], [0.14, 0.85], [0.24, 0.62], [0.30, 0.5], [0.34, 0.42], [QH, 0.36], [0.44, 0.3], [0.50, 0.28], [0.56, 0.26]];
+  const GS = [[0.04, 1], [0.14, 0.8], [0.24, 0.55], [0.30, 0.38], [0.34, 0.3], [QH, 0.24], [0.44, 0.22], [0.50, 0.21], [0.56, 0.2]];
 
 
   /* The door leaf is a plain slab, so we dress its outer face: planks, grain, knots, iron straps with rivets, a lock plate,
@@ -4111,10 +4112,10 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
         const dd = Math.min(d, Math.max(0.8, cp.z - (1.55 - 1.0 * sm(0.28, 0.36, q))));
         size *= dd / d;                                         // keeps it looking the same size on screen
         rel(q, nx, ny, dd, aspect, tmp);
-        tmp.y -= 0.5 * size;                                    // the screen position is its middle; move to its feet
+        tmp.y -= 0.65 * size;                                   // the screen position is its middle (about 1.3 tall at full size); move to its feet
+        tmp.lerp(FRONT, sm(0.18, QH, q));                       // and ease it onto the line of the doorway, so it enters dead centre whatever the framing
       } else {
-        const [, nx, ny, d] = GA[GA.length - 1];
-        rel(QH, nx, ny, d, aspect, GB[0]); GB[0].y -= 0.5 * 0.36;
+        GB[0].copy(FRONT);
         path(GQ, GB, q, tmp);
       }
       out.lerp(tmp, w);
