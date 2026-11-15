@@ -43,7 +43,7 @@ Alone? **Play a case** instead: the same deduction game on one screen against Bo
 | Image → world | World Labs Marble API | async generation of a Gaussian-splat world with a collider |
 | Render and walk | three.js, Spark, three-mesh-bvh | splat rendering, first-person movement, collision |
 | Ghost design | FLUX.2 klein 9B and Cloudflare Images (portrait, background removal) | persona and billboard sprite |
-| Ghost voice | Llama 4 Scout on Workers AI (words), Aura-1 (speech), Whisper (listening) | narrates directives chosen by deterministic code, then speaks them |
+| Ghost voice | Llama 4 Scout on Workers AI (words), Inworld TTS 2 (speech, three characters), Whisper (listening) | narrates directives chosen by deterministic code, then speaks them |
 | The real world | Open-Meteo | the weather, hour and moon of a place, read once per game and frozen |
 | Backend | Cloudflare Workers, Hono, Durable Objects, R2 | spend control, jobs, sessions, party rooms |
 | Phones as pads | WebSocket to a Durable Object, touch, gyro, camera QR scan | controller and private screen |

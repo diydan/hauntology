@@ -31,6 +31,8 @@ hauntology/
     build-print.mjs    generates QR plates, runs openscad if present, checks every STL
     check-traceability.mjs   spec ↔ task ↔ property consistency check
     check-sounds.mjs   fails the build on a sound file with no credit, over a size limit or in the wrong format
+    check-voice-library.mjs   fails the build when a scripted spoken line has no Library entry, an entry has no line, or a text holds a Steering Tag
+    prerender-voice.mjs   owner-run before a deploy: renders the missing Library audio (ghost-voice) into R2 with a manual budget; audio is never committed
   docs/                SUBMISSION.md (overview for readers), PLAN.md (internal), SOUNDS.md (sourcing brief), sounds/CREDITS.md, spikes/
 ```
 

@@ -22,7 +22,7 @@ The ghost creator lets the visitor design the ghost that haunts their place. Cho
 
 #### Acceptance Criteria
 
-1. WHEN the visitor opens the Creator THEN the Creator SHALL offer era (six options), temperament (six), relationship to the place (six), palette (six), translucency (30 to 80 percent in steps of 10), up to two accessories from eight, and voice (two: soft or dry).
+1. WHEN the visitor opens the Creator THEN the Creator SHALL offer era (six options), temperament (six), relationship to the place (six), palette (six), translucency (30 to 80 percent in steps of 10), up to two accessories from eight, and voice (two: soft, spoken by the Whisper, or dry, spoken by the Keeper; the third character, the Lodger, speaks for every Suspect and is not a choice).
 2. WHEN the visitor wants to add a personal touch THEN the Creator SHALL accept an optional free-text detail of at most 140 characters, prompted as "who were they to this place?".
 3. WHEN the visitor taps Randomise or picks one of three presets THEN the Creator SHALL fill all traits with a valid combination.
 4. IF the visitor skips the Creator THEN the Creator SHALL derive a default Ghost Profile deterministically from the world id so the same world always gets the same default ghost.

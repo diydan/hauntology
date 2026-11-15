@@ -47,12 +47,14 @@ type Traits = {
   palette: 'moonlight' | 'ember' | 'moss' | 'rose' | 'slate' | 'dusk';
   translucency: 30 | 40 | 50 | 60 | 70 | 80;
   accessories: Array<'lantern' | 'hat' | 'scarf' | 'spectacles' | 'key' | 'bouquet' | 'ribbon' | 'pocketwatch'>; // 0..2, unique
-  voice: 'soft' | 'dry';
+  voice: 'soft' | 'dry';     // soft is spoken by the Whisper, dry by the Keeper (ghost-voice `speakerForPersona`)
   detail?: string; // sanitised, ≤ 140
 };
 type Persona = { name: string; voice: Traits['voice']; styleRules: string[]; wants: string; avoids: string;
                  archetypes: ['sound', 'person', 'promise'] };
-type GhostProfile = { id: string; traits: Traits; spriteUrl: string; persona: Persona; preset?: boolean };
+type GhostProfile = { id: string; traits: Traits; spriteUrl: string; persona: Persona; preset?: boolean;
+                      monoUrl?: string /* a Preset Ghost's pre-made black and white picture, used when its Player joins the haunting (party-mode 19.8) */;
+                      lodgerVoice?: 'mark' | 'chloe' | 'eleanor' | 'victoria' /* the Lodger Voice this Suspect speaks with (ghost-voice 1.11); a Preset's is fixed, a made-up Suspect's is its Player's pick, else mark */ };
 type AlphaMask = { width: number; height: number; alpha: Uint8Array };
 ```
 

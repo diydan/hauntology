@@ -7,8 +7,8 @@ Depends on `ghost-engine` 2.1 (`parseAction`), 2.3 (`acceptTurn`) and 2.17 (`val
 Tasks marked `*` are optional test tasks that should still be done before submission.
 
 - [ ] 1. Spikes
-  - [ ] 1.1 Spike 1.1: Aura-1, MeloTTS and Whisper
-    - Through the guarded wrappers with a small manual budget set by the owner. Record in `docs/spikes/ghost-voice-1.1.md`: whether `@cf/deepgram/aura-1` is on Workers AI and which speaker names it offers; which two suit the Persona voices soft (a close, quiet whisper) and dry (deadpan and patient), and say how well each fits; output format, price in neurons, and first-audio latency p50 and p95 for a 240-character line, for Aura-1 and for `@cf/myshell-ai/melotts`; how often audio is ready within 4 seconds; whether streaming works. For `@cf/openai/whisper-large-v3-turbo`: input format, whether it accepts what browsers record (webm with opus, mp4 with aac), clip length and size limits, the byte ceiling that fits 8 seconds of each codec and not 16, latency and price for 1-second and 8-second clips. The data-retention terms for audio and text sent to each model. Mark each fact verified or still unverified, and update the list in `tech.md`.
+  - [ ] 1.1 Spike 1.1: Inworld TTS 2, Aura-2 and Whisper
+    - Through the guarded wrappers with a small manual budget set by the owner. Record in `docs/spikes/ghost-voice-1.1.md`: that `inworld/tts-2` is callable from this account through the Workers AI binding, how a third-party model is billed (Workers Paid plan or prepaid AI Gateway credits) and its rate limits; that the voices Pippa (Whisper), Ronald (Keeper) and Mark, Chloe, Eleanor and Victoria (the four Lodger Voices) exist and that `[whisper]` and `[speak nervously]` work on the deployed Worker (the second also on Chloe, Eleanor and Victoria), and which female Aura-2 speaker, not `luna`, is the fallback for the three women (the samples of 2026-11-14 and 2026-11-15 say yes); the response shape (a URL to an MP3 file), the price, and first-audio latency p50 and p95 for a 240-character line, for Inworld and for `@cf/deepgram/aura-2-en`; which Aura-2 speakers fit the three Speakers best, by ear (the defaults are `luna`, `zeus` and `aries`); how often audio is ready within 5 seconds; whether streaming works. MeloTTS is not tested: Cloudflare retires it on 2026-11-20. For `@cf/openai/whisper-large-v3-turbo`: input format, whether it accepts what browsers record (webm with opus, mp4 with aac), clip length and size limits, the byte ceiling that fits 8 seconds of each codec and not 16, latency and price for 1-second and 8-second clips. The data-retention terms for audio and text sent to each model. Mark each fact verified or still unverified, and update the list in `tech.md`.
     - _Requirements: 1.1, 1.3, 3.2, 3.3_
   - [ ] 1.2 Spike 1.2: word rejection and joined clips
     - With at least five real people on at least one iPhone and one Android phone, recording only with their consent and deleting afterwards. Record in `docs/spikes/ghost-voice-1.2.md`: how often Whisper rejects a clean one-second word from a phone microphone, per Word Bank word and per phone; how many retries a player typically needs; the size of a 2-second clip per codec; how joined clips sound through Web Audio scheduling (gaps, clicks, level jumps, mp4 against webm); whether the starter Templates read as gentle; and whether `heardWord` should stay exact.
@@ -22,13 +22,13 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - `limits.ts` names every number in the requirements (the 200-character cap and 1.5-second gap come from `shared/src/ghost/`). `config.ts` has `parseVoiceConfig(env)` with the `VOICE_*` defaults from the design, zod, a bad value falling back to its default, and the room line cap never above 20. `voice.arb.ts` generates texts with sentence ends, long runs, URLs, markup, control characters and banned phrases. Unit tests for the defaults and clamps.
     - _Requirements: 4.1, 2.3_
   - [ ] 2.2 `voices.ts` and `speakable.ts`
-    - The fixed English voice allow-list and `voiceFor(persona voice)` (filled in from Spike 1.1); `splitSentences`; `toVoiceLine` calls the engine's `validateGhostReply` and cuts at the last sentence end within 240 characters, leaving `spoken` empty when none fits. No second banned-phrase list. The synthesis request type has no field for a reference voice.
-    - _Requirements: 1.1, 1.5_
+    - `SPEAKERS` (the three-entry cast: Whisper is Pippa, Keeper is Ronald, Lodger is Mark by default, each with its tag, rate, temperature and Aura-2 fallback speaker), `LODGER_VOICES` (Mark, Chloe, Eleanor and Victoria, same tag, rate and temperature), `lodgerVoiceFor(profile)` (the Profile's `lodgerVoice`, else Mark, reading nothing else), `speakerForPersona` (soft is the Whisper, dry is the Keeper), `voiceFor(speaker, step, lodgerVoice?)` and `steeringTag`; `splitSentences`; `toVoiceLine` takes the Speaker and `playerText`, calls the engine's `validateGhostReply`, stops before the first sentence that contains any player text, cuts at the last sentence end within 240 characters, leaves `spoken` empty when none fits, and never puts a Steering Tag in `text` or `spoken`. No second banned-phrase list. The synthesis request type has no field for a reference voice.
+    - _Requirements: 1.1, 1.5, 1.6, 1.7, 1.10, 1.11_
   - [ ]* 2.3 Write property test for spoken lines
     - **Property 1: Spoken lines are short, safe and validated**
     - **Validates: Requirements 1.1, 1.5**
   - [ ] 2.4 `fallback.ts`: `resolveSpeech`
-    - Cache, Aura-1, MeloTTS, browser, subtitle in order; paid steps skipped on the kill switch or no ticket; no step starts after 4000 ms; the result type has no error member and always reports the Subtitle shown. Includes a test helper that runs the engine's `step` with working and failed voice.
+    - Library, cache, Inworld, Aura-2, browser, subtitle in order (the first two are free reads that ignore the kill switch, the ticket and the caps); paid steps skipped on the kill switch or no ticket; no step starts after 5000 ms; the result type has no error member and always reports the Subtitle shown. Includes a test helper that runs the engine's `step` with working and failed voice.
     - _Requirements: 1.2, 1.3, 4.2, 4.3_
   - [ ]* 2.5 Write property test for the fallback chain
     - **Property 2: The fallback chain always ends in a subtitle**
@@ -64,6 +64,14 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 2.16 `telemetry.ts`: the voice counter whitelist
     - Counters for speech requests, cache hits, fallbacks by step, listen calls, Clips checked, accepted and rejected, stitches played, live slices and stop reasons, added to the ghost engine's whitelist. Unit test: no event carries audio, a transcript, a prompt, a word or text.
     - _Requirements: 3.3, 5.5_
+  - [ ]* 2.17 Write property test for Speakers and Steering Tags
+    - **Property 13: Every line has one Speaker, and a Steering Tag stays in the Inworld request**
+    - **Validates: Requirements 1.6, 1.7, 1.11**
+  - [ ] 2.18 `library.ts`: `buildLibrary` (every scripted spoken text per Speaker, the shared Lodger bank once per Lodger Voice, the finite placeholders expanded, fixed order, no duplicate key) and `prefetchPlan(publicView)` (the next Turn's `turn-start`, the four Haunt Event lines one level below a threshold, the midnight line; takes no secret); the Library key is the speech key under `speech/lib/v1/`
+    - _Requirements: 1.8, 1.9_
+  - [ ]* 2.19 Write property test for the Library, player-text-free speech and secret-free prefetch (two states that differ only in the Solution, a Hand or whether an Accusation is right give the same plan and the same upstream calls)
+    - **Property 14: The Library is complete and free of player text, and nothing is prepared because of a secret**
+    - **Validates: Requirements 1.8, 1.9, 1.10**
 
 - [ ] 3. API (`api/src/voice/` and `api/src/guarded/workersai/`)
   - [ ] 3.1 Error codes
@@ -73,14 +81,14 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Add `tts`, `stt` and `live` to `SpendGuard`'s `Meter` type and cap table (session and room scopes, global day), with the `VOICE_*` variables and kill-switch wiring; `GET /api/quota` returns the three remaining counts and the flags `voice`, `stitch` and `live`. The `live` Meter counts 10-second slices (30 a session, 180 a day by default). Coordinate with `world-pipeline` 4.1.
     - _Requirements: 4.1, 4.2, 6.2_
   - [ ] 3.3 Guarded wrappers `speak` and `transcribe`
-    - In `api/src/guarded/workersai/`, typed by Meter: `speak(ticket: tts or live)` calls Aura-1, then MeloTTS with the same ticket, aborting at 4 seconds from the request; `transcribe(ticket: stt or live)` calls Whisper with `language: 'en'` and the clip passed straight in, never written anywhere. Fake Workers AI that returns good, slow, empty and failing results and counts calls.
-    - _Requirements: 1.1, 1.3, 3.3, 4.1_
+    - In `api/src/guarded/workersai/`, typed by Meter: `speak(ticket: tts or live)` calls Inworld TTS 2 with the Speaker's `voice_id`, rate and temperature and the Steering Tag in front of the text (the only place a tag is added), downloads the returned MP3 file, then calls Aura-2 English with the same ticket and no tag if that fails, aborting at 5 seconds from the request; `transcribe(ticket: stt or live)` calls Whisper with `language: 'en'` and the clip passed straight in, never written anywhere. Fake Workers AI that returns good, slow, empty and failing results and counts calls.
+    - _Requirements: 1.1, 1.3, 1.6, 3.3, 4.1_
   - [ ] 3.4 Speech cache in R2
-    - R2 binding, a `SpeechCache` port, objects under `speech/v1/<hash>` with `storedAt` and `voice` metadata and no text, a 30-day lifecycle rule, a read-side `cacheFresh` check, lookup of the line's own voice key and then the MeloTTS key. Test with a fake R2 and an injected clock.
+    - R2 binding, a `SpeechCache` port, objects under `speech/v1/<hash>` with `storedAt` and `voice` metadata and no text, a 30-day lifecycle rule, a read-side `cacheFresh` check, lookup of the line's own Inworld voice key and then its Aura-2 key. Test with a fake R2 and an injected clock.
     - _Requirements: 1.4_
   - [ ] 3.5 Voice lines in sessions
-    - `api/src/voice/lines.ts`: `PlaySession` makes a `VoiceLine` for each approved reply (`narration` or `ending`), keeps the last 8 for 10 minutes under unguessable ids, and returns `voice {lineId}` with the turn response without delaying the text.
-    - _Requirements: 1.1, 1.2, 2.1_
+    - `api/src/voice/lines.ts`: `PlaySession` makes a `VoiceLine` for each approved reply (`narration` or `ending`), with the Speaker from `speakerForPersona(persona.voice)`, keeps the last 8 for 10 minutes under unguessable ids, and returns `voice {lineId}` with the turn response without delaying the text.
+    - _Requirements: 1.1, 1.2, 1.7, 2.1_
   - [ ] 3.6 `POST /api/voice/speak`
     - Accepts `{playId or roomCode, lineId}` only (a body with any text is refused); origin and cookie for Single player, host token for a room; finds the line, checks the cache, then `withTicket('tts')`, `speak`, cache put; answers audio, or `503 voice_unavailable` that the client treats as a quiet fallback; counters only in logs.
     - _Requirements: 1.1, 1.3, 1.5, 4.1, 4.2_
@@ -96,6 +104,12 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 3.10 Contract tests with fakes
     - The listen handler writes no audio to any storage and logs no transcript; the speak route refuses text and a foreign `lineId`; logs hold only whitelisted counters; no module outside `api/src/guarded/` calls `env.AI.run` for speech or transcription; with the kill switch on and every Meter at zero every route answers quietly and the turn route still works.
     - _Requirements: 1.5, 3.3, 4.2, 4.3_
+  - [ ] 3.11 Library tools and manifest
+    - `shared/fixtures/voice-library.json` (keys and spoken texts, no audio, written from `buildLibrary`); `tools/check-voice-library.mjs` (offline; fails when a scripted spoken text has no entry, an entry has no line, or a text holds a Steering Tag or markup); `tools/prerender-voice.mjs` (run by the owner with a manual budget before a deploy: lists the keys missing in R2, prints the count and the estimated cost, renders only those with the Speaker's settings through the guarded `speak` wrapper, writes them under `speech/lib/v1/`, and never overwrites an existing key). Unit tests with a fake R2 and a fake wrapper. The audio files are not committed.
+    - _Requirements: 1.8_
+  - [ ] 3.12 Library tier, speculative synthesis and single flight
+    - The speak service reads the Library key and then the cache key before any ticket; a Library or cache hit reserves nothing and ignores the kill switch and the caps; `PlaySession` and `PartyRoom` start synthesis the moment a line is validated and speaking is on, under a ticket reserved then, and a later `speak` request joins the same in-flight call (`singleFlight(key)`); `speak {lineId, prefetch: true}` returns Library or cached audio only, never makes a paid call and is not counted as spoken; the R2 lifecycle rule covers `speech/v1/` only. Tests with fakes: two requests for one key make one upstream call; a prefetch of an uncached model line returns nothing and spends nothing.
+    - _Requirements: 1.8, 1.9_
 
 - [ ] 4. Web in Play and on the Host
   - These tasks are built inside the Play screen under the web shell spec `.kiro/specs/haunwallker` (Play tasks 6.1 and 6.2, the Chat and the HUD), and on the Host page from party-mode. They add components and change no part of its Play reducer.
@@ -103,7 +117,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - A button with `aria-pressed`, a 48 CSS pixel target and a text label; on by default in Single player, kept in `sessionStorage`; in Multiplayer it shows the room's switch and only the Master's phone can change it.
     - _Requirements: 2.1, 2.4_
   - [ ] 4.2 Subtitle and audio player
-    - The line's full text goes into the Chat transcript's polite live region when it arrives and is marked while it plays; one `AudioContext` created on the content-notice acknowledgement; a 4-second timer from the request; refusal, timeout or autoplay block falls back to `speechSynthesis` and then the Subtitle alone with a quiet "voice off" mark and no error screen; late audio is dropped; the line stops when the switch goes off.
+    - The line's full text goes into the Chat transcript's polite live region when it arrives and is marked while it plays; one `AudioContext` created on the content-notice acknowledgement; a 5-second timer from the request; refusal, timeout or autoplay block falls back to `speechSynthesis` and then the Subtitle alone with a quiet "voice off" mark and no error screen; late audio is dropped; the line stops when the switch goes off.
     - _Requirements: 1.2, 1.3, 2.4_
   - [ ] 4.3 Talk Button, recorder and microphone indicator
     - Hold with the pointer or hold Space or Enter; `MediaRecorder` for up to 8 seconds; a persistent "Microphone on" badge with a dot while the stream is open (no pulsing under reduced motion); tracks stopped the moment recording ends and the Blob cleared after sending; a denied permission or a missing `MediaRecorder` hides the button and leaves typing; the transcript is shown as the visitor's line and sent through the typed turn route; an empty result shows one quiet line. Not offered in Multiplayer.
@@ -120,6 +134,9 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 4.7 Accessibility and manual checks
     - Keyboard-only run of the speak toggle and Talk Button; a screen-reader pass that a spoken line is announced once; contrast of the indicator at least 4.5:1; a real iPhone and Android run of recording and playback.
     - _Requirements: 1.2, 3.2_
+  - [ ] 4.8 Prefetch and decode ahead
+    - The Host (and Play) asks for each id in the room's prefetch list with `prefetch: true` and decodes the audio ahead into memory: at most 8 lines and 2 MB, cleared when the room ends, never written to disk, so a Library line starts at once. Nothing is prefetched that the server did not list.
+    - _Requirements: 1.9_
 
 - [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
   - [ ] 5.1 Word Bank, Templates and composition

@@ -23,7 +23,7 @@ AI models (all on Cloudflare):
 | Sprite cut-out | Cloudflare Images `segment=foreground` | none |
 | Narration, place brief, photo moderation (image in) | `llama-4-scout-17b-16e-instruct` | `GHOST_MODEL_ID` |
 | Moderation of free text (ghost detail, nicknames, Zone names) | `llama-guard-3-8b` | `GUARD_MODEL_ID` |
-| Ghost voice (speech) | `deepgram/aura-1`, fallback `myshell-ai/melotts` | `VOICE_TTS_MODEL_ID` |
+| Ghost voice (speech): three characters (Whisper = Pippa, Keeper = Ronald, Lodger = Mark, Chloe, Eleanor or Victoria by Suspect) | `inworld/tts-2`, fallback `@cf/deepgram/aura-2-en` (MeloTTS is retired on 2026-11-20 and not used) | `VOICE_TTS_MODEL_ID`, `VOICE_TTS_FALLBACK_MODEL_ID` |
 | Listening and the Stitch word check | `openai/whisper-large-v3-turbo` | `VOICE_STT_MODEL_ID` |
 | Real weather, hour and moon | Open-Meteo (not Workers AI) | `WEATHER_BASE_URL`, `CONDITIONS_ENABLED` |
 
@@ -49,7 +49,7 @@ Still open:
   - `conditions`: temperature bands at 0, 10, 20 and 28 degrees; wind bands at 12 and 29 km/h; particle caps 1200, 400 at low quality and 120 under reduced motion; dawn 5 to 7, day 8 to 17, dusk 18 to 20, night 21 to 4; city search limited to one a second and 30 an hour per session; the "at most 12 ambient loops" is read as six weather classes by day or night; the narrator names a star through a fixed scripted line, not the model prompt; the star catalogue licence is unconfirmed (avoid share-alike lists).
   - `ghost-voice`: day caps `VOICE_TTS_DAY_CAP=1500` and `VOICE_STT_DAY_CAP=750` are not in the amendment (the old `TTS_DAY_CAP` and half of it); **confirmed by the owner on 2026-11-14**; the `live` meter counts 10-second slices (30 a session, 180 a day); a line over 240 characters is spoken only to its last sentence end that fits, and the subtitle shows all of it; a cache hit takes no ticket and is not one of the 40; the word check must hear exactly the asked word; the ten starter Stitch templates are the writer's, **reviewed and kept by the owner on 2026-11-14**; Stitch is on in config by default and the Master switch is off, so use `VOICE_STITCH_ENABLED=false` for a public launch until you have taken advice; clips travel on the seat's own WebSocket and never touch a route, R2, KV or a log; multiplayer audio plays on the Host only.
   - Me: the hour strike is on by default, a stitched line does not count toward the 20 spoken lines, Bots never Nudge, Cue, Frame or Rattle, and the shell reads two voice flags (`voiceEnabled`, `liveEnabled`) from `GET /api/session`.
-- **TTS**: superseded by the `ghost-voice` spec (Aura-1, with the `tts`, `stt` and `live` meters).
+- **TTS**: superseded by the `ghost-voice` spec (Inworld TTS 2 with Aura-2 English as the fallback, three Speakers, and the `tts`, `stt` and `live` meters). The characters and voice picks are in `docs/story/CHARACTERS.md`.
 - **Party contributions**: party requirement 3 now has Photo Prompts (three offered, up to three skips, framed in the world). The earlier relic-sketch idea (a hidden personal photo that is deleted after generation) overlaps it and is not decided.
 - **Security gaps** from the reviews: play-session ownership, sketch-select ownership, own-world read and delete ownership (the shell design assumes it, see "World access" in `.kiro/specs/haunwallker/design.md`). The contract suite for it is written (`api/src/contract/world-access.ts`, shell task 3.2); run it against the real routes as shell task 3.3 once they exist, and the `errors.ts` code list that does not match the `world-pipeline` design.
 
@@ -65,7 +65,7 @@ Still open:
 | Spike | Question | Fallback if it fails |
 |---|---|---|
 | A. Workers AI and Images | Do model IDs and input shapes match? Does `flux-2-klein-9b` turn a 512 px sketch into a photo World Labs can build from? Does Scout return the brief and verdict as clean JSON? Is Llama Guard accurate on short text? Does `segment=foreground` cut out a sprite from a Worker? What is the cost per call in neurons? | `flux-2-dev` for images; else upload-only (sketch becomes a stretch feature) |
-| B. Voice and weather | Is Aura-1 under 4 s for a line, and what does it cost? Does Whisper take a short clip? Does Open-Meteo answer from a Worker? (ghost-voice 1.1, conditions 1.1) | MeloTTS, the browser voice, then subtitles; the default sky |
+| B. Voice and weather | Is Inworld TTS 2 under 5 s for a line on a deployed Worker, and how is it billed on this account? Does Whisper take a short clip? Does Open-Meteo answer from a Worker? (ghost-voice 1.1, conditions 1.1) | Aura-2 English, the browser voice, then subtitles; the default sky |
 | C. World Labs | Response fields, asset expiry, orientation, scale (world-pipeline 1.1) | Adapter per what is real |
 | D. Splat in browser | Spark renders a real world on a phone at usable FPS (world-viewer 1) | Pano fallback |
 | E. Party transport | DO WebSocket latency, six phones at 30 Hz (party 1.1) | Lower rate, coalesce input |
@@ -182,7 +182,7 @@ Decide at the Nov 27 gate. If Phase 2 is not done, cut items 1 to 9 at once and 
 | Personal photos from players | Deleted right after generation, never shown, counters only in logs |
 
 ## Open decisions
-1. Whether Aura-1 is fast and cheap enough for the ghost's voice, or MeloTTS is the default (ghost-voice Spike 1.1 decides)
+1. How Inworld TTS 2 is billed on this account and whether it is fast enough on a deployed Worker; if not, Aura-2 English is the default (ghost-voice Spike 1.1 decides). The three voices were chosen by ear on 2026-11-14 and 2026-11-15.
 2. Whether `flux-2-klein-9b` or `flux-2-dev` is the image model default (Spike A decides)
 3. Domain name and trademark check for "Hauntology"
 4. Eligibility: Luxembourg residency confirmed by you. A written Devpost answer would still be safer

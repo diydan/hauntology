@@ -2,7 +2,7 @@
 
 Depends on `ghost-creator` 1.10 (Persona) and the portrait and sprite routes, `ghost-engine` 2.5 (anchor placement), 2.7 (`sanitizePose`) and 2.17 (reply validation), `world-pipeline` 4.1 (SpendGuard) and 5.2 (WorkersAiClient), and `world-viewer` 6.3 (ViewerBridge). Do the three spikes before any code that depends on their answers. Pure logic first, then the Durable Object, then the three pages, then the Print Kit.
 
-Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (2.84 to 2.89, 4.20, 8.13 whisper part, 9.20), the Rattle and Becoming extras (2.94 to 2.101, 4.21, 9.19), the Spirit lens and light bar (2.76 to 2.83, 4.19, 9.17, 9.18), Frames, House Cues and phone sound (2.67 to 2.70, 4.16, 9.14), Cues and Nudges (2.59 to 2.62, 4.14, 4.15, 8.11, 9.16), Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eavesdrop part; Nudges spend Resolve, so they go first), spoken narration (8.8), then the Display and Print Kit (see `docs/PLAN.md`). Build order for the extras, cheapest first: the sky dome (`conditions`), the Spirit lens, the light bar and tilt to look; Rattle before Stitch. The Haunt, Residue and Poltergeists stay in the core. The presets (9.15) are tiny: keep them if any of Cues, Nudges or Frames ships.
+Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (2.84 to 2.89, 4.20, 8.13 whisper part, 9.20), the Rattle and Becoming extras (2.94 to 2.101, 4.21, 9.19), the Spirit lens and light bar (2.76 to 2.83, 4.19, 9.17, 9.18), Frames, House Cues and phone sound (2.67 to 2.70, 4.16, 9.14), Cues and Nudges (2.59 to 2.62, 4.14, 4.15, 8.11, 9.16), Resolve and Eavesdrop (2.55, 2.56, 4.13, 9.11 Eavesdrop part; Nudges spend Resolve, so they go first), spoken narration (8.8), then the Display and Print Kit (see `docs/PLAN.md`). Build order for the extras, cheapest first: the sky dome (`conditions`), the Spirit lens, the light bar and tilt to look; Rattle before Stitch. The Haunt, Residue and Poltergeists stay in the core, and so does the colour-to-black-and-white Seat Portrait (2.118, 2.119, 9.25), which needs only the public Poltergeist flag. The presets (9.15) are tiny: keep them if any of Cues, Nudges or Frames ships.
 
 - [ ] 1. Spikes (record each in `docs/spikes/party-<n>.md`)
   - [ ] 1.1 Transport and latency
@@ -138,8 +138,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.42 Write property test for bots
     - **Property 22: Bots are legal and blind to other hands**
     - **Validates: Requirements 9.2, 9.3**
-  - [ ] 2.43 `roomCaps`, `narrationRequests`, spend accounting, and a scripted line library with at least five variants per party directive kind
-    - _Requirements: 10.1, 10.2_
+  - [ ] 2.43 `roomCaps`, `narrationRequests`, spend accounting, and a scripted line library with at least five variants per party directive kind in its Speaker's voice (`partyScripted(kind, speaker, rng)`)
+    - _Requirements: 10.1, 10.2, 7.8_
   - [ ]* 2.44 Write property test for spend and narration independence
     - **Property 23: Spend is bounded and narration never changes the game**
     - **Validates: Requirements 10.1, 10.2**
@@ -319,6 +319,21 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.113 Write property test for the solo setup
     - **Property 59: A solo case is an ordinary Room**
     - **Validates: Requirements 9.5**
+  - [ ] 2.114 `speakerFor(kind)` and the Lodger bank: the first split of kinds to the Keeper, the Whisper and the Lodger, a Lodger bank shared by all six Suspects whose lines take no Solution, Hand or guilt flag, the text-only aside, the stall, and the confession built only after `solution` is public and only for the Suspect in it; `PartyRoom` passes `lodgerVoiceFor(profile)` to `toVoiceLine` so each Suspect speaks in the Lodger Voice of its profile; lines written from `docs/story/CHARACTERS.md` (the story-writer agent drafts them in `docs/story/`)
+    - _Requirements: 7.8, 7.9, 3.14_
+  - [ ]* 2.115 Write property test for Speakers and the Lodger's no-tell rule (two states that differ only in the Solution give the same Lodger line and the same voice before the reveal; a picked voice changes no card, turn or line text)
+    - **Property 60: Speakers are fixed by kind and the Lodger gives no tell**
+    - **Validates: Requirements 3.14, 7.8, 7.9**
+  - [ ] 2.116 `selfie.ts`: `selfieAllowed(settings, player)`, `selfieQuality(report)` (`no_face`, `many_faces`, `too_small`, `blurry`, `dark`) and `withTransientSelfie(fn)` (zeroes the buffer and drops the reference exactly once on success, throw or timeout); `settings.selfies` defaults to false and only the Master's token can change it
+    - _Requirements: 3.10, 3.11, 3.12_
+  - [ ]* 2.117 Write property test for selfies (opt-in, transient, rule-neutral)
+    - **Property 61: Selfies are opt-in, transient and never change a rule**
+    - **Validates: Requirements 3.10, 3.11, 3.12, 3.13**
+  - [ ] 2.118 `seatLook(publicView, seat)` (`'mono'` exactly when the seat's public `poltergeist` flag is set, never back to `'colour'`, reads nothing else) and `seatPortrait(player, look)` (the Seat Portrait or a nickname chip; for `'mono'` the Preset's `monoUrl`, else the same picture with `grayscale(1)`); no rule, view field or message is added
+    - _Requirements: 19.8, 19.9_
+  - [ ]* 2.119 Write property test for the Seat Portrait look (mono only after joining the haunting, public data only, no Suspect card, speaker badge or narrator ever mono)
+    - **Property 62: A Seat Portrait is black and white exactly when its Player has joined the haunting**
+    - **Validates: Requirements 19.8, 19.9**
 
 - [ ] 3. Print module (`shared/src/print/`)
   - [ ] 3.1 `writeStl` and `checkMesh` (vertex welding, edge pairing, signed volume, bed fit)
@@ -393,6 +408,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 3.1, 10.3_
   - [ ] 5.4 Room budget wiring: Room-scoped caps through SpendGuard on top of global caps
     - _Requirements: 10.1_
+  - [ ] 5.5 Selfie ghost service (optional): `POST /api/party/:code/contribute/selfie` checks the `selfies` switch and the seat's yes, runs `selfieQuality` and the vision verdict (fail closed), calls the guarded `editPortrait` wrapper (`google/nano-banana-2.1`, selfie plus a narrator style reference, a fixed prompt with no Player text), cuts out the Sprite with the 8% to 85% alpha rule and one retry, holds the selfie only inside `withTransientSelfie`, charges the Room's image budget, and falls back to a Preset Ghost on any failure
+    - _Requirements: 3.10, 3.12, 3.13, 10.1_
 
 - [ ] 6. Party narrator
   - [ ] 6.1 `narratePartyEvent`: one guarded model call per public event at most, validate with `validateGhostReply`, scripted fallback on cap, kill switch or failure
@@ -419,8 +436,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 9.1, 9.3_
   - [ ] 8.7 Regression: Wander (the memory walk) is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
     - _Requirements: 9.4_
-  - [ ] 8.8 Spoken narration through the ghost voice (`ghost-voice`, at most 20 lines per Room), with `speechSynthesis` and then the subtitle as fallbacks; off by default, one tap on the Host to unlock audio, text always shown, mute, replay and skip from the Master
-    - _Requirements: 7.6_
+  - [ ] 8.8 Spoken narration through the Speaker's voice (`ghost-voice`: the Whisper, the Keeper or the Lodger of each line, at most 20 lines per Room, the Lodger only for an Accusation and the reveal), with `speechSynthesis` and then the subtitle as fallbacks; off by default, one tap on the Host to unlock audio, text always shown, mute, replay and skip from the Master
+    - _Requirements: 7.6, 7.8_
   - [ ] 8.9 Haunt visuals: Haunt level meter, Cold Spot marker on its Zone, Blackout dimming within the photosensitivity limits, Restless ghost Sprite move
     - _Requirements: 7.1, 7.4, 11.2_
   - [ ] 8.10 Inspect visuals: a public marker on the Zone being inspected, never what was found
@@ -483,6 +500,10 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 6.8_
   - [ ] 9.23 Controller: the card-choice prompt when holding several named cards, with a 10 s countdown and the default shown in words
     - _Requirements: 6.2_
+  - [ ] 9.24 Controller: the Suspect step offers Preset, designed or (only when the Master's `selfies` switch is on) selfie, with no push towards the selfie; the consent in plain words with a tick; live front camera only with a guide and a retake; the quality check in the browser; a Preset Ghost on any failure; a Master `selfies` switch in the menu, off by default; for a designed or selfie Suspect, the voice pick in plain words ("a lower voice" or "a lighter voice", lower when nothing is picked, no free text, never guessed from a face)
+    - _Requirements: 3.10, 3.11, 3.12, 3.13, 3.14_
+  - [ ] 9.25 Controller, Host HUD and ending screen: draw each Player's Seat Portrait (their contributed Ghost Profile in full colour, or a nickname chip) and cross-fade it to black and white, 0.6 s at most and a cut under reduced motion, when `seatLook` turns `'mono'` after the Becoming; the nickname row says "joined the haunting" in words; Suspect cards, the Lodger badge and the narrators never change colour
+    - _Requirements: 19.8, 19.9_
 
 - [ ] 10. Web: Display (`web/src/party/display/`)
   - [ ] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected

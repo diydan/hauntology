@@ -12,7 +12,8 @@ Decisions:
 - **Audio is transient unless it is a Stitch Clip.** A listening recording is held in memory for one call and dropped. Live audio is never stored. Stitch Clips live only in the `PartyRoom`'s own storage and nowhere else.
 - **Stitch is deliberately small.** Twelve fixed words, a few fixed Templates, a yes from each player for themselves, rare, kept only in the room, and a stitched line can contain nothing but those words.
 - **Live mode is a stretch.** It is a small state machine around the same speaking and listening services, plus a transport that Spike 1.3 must choose. It is first in the cut order, Stitch is second, and either can be cut with nothing else changing.
-- **This spec supersedes the TTS lines of `tech.md`.** `@cf/inworld/tts-2`, `GHOST_TTS_VOICE`, `HOST_TTS_VOICE` and `TTS_*` (and `PARTY_TTS_ROOM_CAP`) are replaced by Aura-1 with MeloTTS as the fallback and the `VOICE_*` variables below. The browser's `speechSynthesis` stays as a free fallback.
+- **This spec supersedes the TTS lines of `tech.md`.** The old `GHOST_TTS_VOICE`, `HOST_TTS_VOICE` and `TTS_*` variables (and `PARTY_TTS_ROOM_CAP`) are replaced by the `VOICE_*` variables below. The speech model is Inworld TTS 2 (`inworld/tts-2`) with Deepgram Aura-2 English (`@cf/deepgram/aura-2-en`) as the paid fallback. An earlier draft of this spec chose Aura-1 with MeloTTS; that was reversed on 2026-11-15 after the voice samples, and MeloTTS is not used because Cloudflare retires it on 2026-11-20. The browser's `speechSynthesis` stays as a free fallback.
+- **Three Speakers, one model.** The ghost speaks as one of three characters (the Whisper, the Keeper and the Lodger). The Whisper and the Keeper each have one fixed Inworld voice with its own delivery; the Lodger has four Lodger Voices (Mark, Chloe, Eleanor and Victoria), one per Suspect, so a woman Suspect no longer speaks with a man's voice. All six voices are one model. The characters are in `docs/story/CHARACTERS.md`.
 
 ## Architecture
 
@@ -37,13 +38,13 @@ sequenceDiagram
       R-->>W: audio
     else miss
       A->>G: reserve(tts)
-      A->>B: Aura-1, then MeloTTS if it fails, all within 4 s
+      A->>B: Inworld TTS 2, then Aura-2 English if it fails, all within 5 s
       B-->>A: audio
       A->>R: put (30 days)
       A-->>W: audio
     end
   end
-  Note over W: no audio in 4 s, a denial or a failure: browser voice, else Subtitle only
+  Note over W: no audio in 5 s, a denial or a failure: browser voice, else Subtitle only
 ```
 
 The Fallback Chain. The Subtitle is shown on every branch.
@@ -52,14 +53,16 @@ The Fallback Chain. The Subtitle is shown on every branch.
 flowchart TD
   L[Line to say] --> P{speaking on and policy allows}
   P -- no --> S[Subtitle only]
-  P -- yes --> C{cached audio younger than 30 days}
-  C -- yes --> A[Play cached audio]
+  P -- yes --> K{Library file exists}
+  K -- yes --> A[Play audio]
+  K -- no --> C{cached audio younger than 30 days}
+  C -- yes --> A
   C -- no --> T{kill switch off and ticket granted}
   T -- no --> B
-  T -- yes --> U[Aura-1]
-  U -- ready within 4 s --> A
-  U -- failed or slow --> M[MeloTTS if time remains]
-  M -- ready within 4 s --> A
+  T -- yes --> U[Inworld TTS 2]
+  U -- ready within 5 s --> A
+  U -- failed or slow --> M[Aura-2 English if time remains]
+  M -- ready within 5 s --> A
   M -- failed or slow --> B{browser voice available}
   B -- yes --> W[Browser speechSynthesis]
   B -- no --> S
@@ -123,20 +126,48 @@ stateDiagram-v2
 Stitch has no HTTP route. Its messages travel on the seat's own WebSocket to the `PartyRoom`, so a Clip never reaches a route handler, R2, KV or a log. The names below are proposed here and written into party-mode Requirement 18 by its owner: Controller to Room `stitchAnswer {yes, tick}` and `stitchClip {word, bytes, durationMs}`; Room to Controller `stitchResult {word, ok, retriesLeft}`; Room to Host `voice {lineId, text, kind}` and `stitch {eventId, subtitle, clips}`; Master to Room `settings {stitch}` and the existing `speech {action}`. Every route checks the origin and the session cookie (or the host or seat token) like every state-changing route, and logs counters only.
 
 ### `shared/src/voice/`
-`limits.ts` (every number in this spec as a named constant; the 200-character cap and 1.5-second turn gap are imported from `shared/src/ghost/`), `config.ts` (`parseVoiceConfig(env)`: zod, defaults, caps may be lowered but the room line cap never above 20), `voices.ts` (the allow-list and `voiceFor`), `speakable.ts` (`splitSentences`, `toVoiceLine`), `fallback.ts` (`resolveSpeech`), `cache.ts` (`canonicalSpeechKey`, `speechCacheKey`, `cacheFresh`), `policy.ts` (`decideSpeak`, `canSwitchSpeaking`), `listen.ts` (`listeningAllowed`, `clipVerdict`, `withTransientClip`), `transcript.ts` (`prepareTurnInput`), `gate.ts` (`withTicket`), `telemetry.ts` (the counter whitelist), and the generators `*.arb.ts`. Stitch and live logic sit in `stitch/` and `live.ts` so that cutting them removes whole files.
+`limits.ts` (every number in this spec as a named constant; the 200-character cap and 1.5-second turn gap are imported from `shared/src/ghost/`), `config.ts` (`parseVoiceConfig(env)`: zod, defaults, caps may be lowered but the room line cap never above 20), `voices.ts` (`SPEAKERS`, `speakerForPersona`, `voiceFor`, `steeringTag`), `speakable.ts` (`splitSentences`, `toVoiceLine`), `fallback.ts` (`resolveSpeech`), `cache.ts` (`canonicalSpeechKey`, `speechCacheKey`, `cacheFresh`), `policy.ts` (`decideSpeak`, `canSwitchSpeaking`), `listen.ts` (`listeningAllowed`, `clipVerdict`, `withTransientClip`), `transcript.ts` (`prepareTurnInput`), `gate.ts` (`withTicket`), `telemetry.ts` (the counter whitelist), and the generators `*.arb.ts`. Stitch and live logic sit in `stitch/` and `live.ts` so that cutting them removes whole files.
 
 ```ts
-type VoiceId = `aura-1:${string}` | 'melotts:en';
-type PersonaVoice = 'soft' | 'dry';                                 // from ghost-creator Persona
+type Speaker = 'whisper' | 'keeper' | 'lodger';
+type LodgerVoice = 'mark' | 'chloe' | 'eleanor' | 'victoria';          // a Suspect's voice, fixed when its Ghost Profile is made (Requirement 1.11)
+type VoiceId = `inworld:${string}` | `aura-2:${string}`;
+type PersonaVoice = 'soft' | 'dry';                                 // from ghost-creator Persona: soft is the Whisper, dry is the Keeper
 type LineKind = 'narration' | 'haunt_event' | 'midnight' | 'ending';
-type VoiceLine = { id: string; kind: LineKind; text: string; spoken: string; voice: VoiceId; createdAt: number };
-  // text: the whole validated line (the Subtitle). spoken: leading whole sentences, at most 240 characters; '' means subtitle only.
+type VoiceLine = { id: string; kind: LineKind; speaker: Speaker; text: string; spoken: string; voice: VoiceId; createdAt: number };
+  // text: the whole validated line (the Subtitle). spoken: leading whole sentences, at most 240 characters, plain text with no Steering Tag; '' means subtitle only.
 
-voiceFor(persona: PersonaVoice): VoiceId;                          // always from the allow-list, always English
+// The whole cast. Three Speakers, fixed. Voice ids are Inworld `voice_id` values; the Aura-2 speakers are the fallback and are picked by Spike 1.1.
+// For the Lodger, `inworld` and `aura` are only the default (Mark); the voice of a line comes from LODGER_VOICES by the Suspect's Lodger Voice.
+const SPEAKERS: Record<Speaker, { inworld: 'Pippa' | 'Ronald' | 'Mark'; tag: '[whisper] ' | '' | '[speak nervously] '; rate: number; temperature: number; aura: string }> = {
+  whisper: { inworld: 'Pippa',  tag: '[whisper] ',         rate: 0.9, temperature: 1.0, aura: 'luna' },
+  keeper:  { inworld: 'Ronald', tag: '',                   rate: 0.9, temperature: 0.7, aura: 'zeus' },
+  lodger:  { inworld: 'Mark',   tag: '[speak nervously] ', rate: 1.1, temperature: 1.2, aura: 'aries' },
+};
+// The four Lodger Voices. Same tag, rate and temperature as `SPEAKERS.lodger`; only the voice differs. The women's Aura-2 fallback is one female speaker
+// picked by Spike 1.1 that is not `luna` (the Whisper's), so a Suspect never falls back to the Whisper's sound.
+const LODGER_VOICES: Record<LodgerVoice, { inworld: 'Mark' | 'Chloe' | 'Eleanor' | 'Victoria'; aura: string }> = {
+  mark:    { inworld: 'Mark',    aura: 'aries' },
+  chloe:   { inworld: 'Chloe',   aura: '<picked by Spike 1.1>' },
+  eleanor: { inworld: 'Eleanor', aura: '<picked by Spike 1.1>' },
+  victoria: { inworld: 'Victoria', aura: '<picked by Spike 1.1>' },
+};
+
+speakerForPersona(v: PersonaVoice): Speaker;                       // soft -> whisper, dry -> keeper
+lodgerVoiceFor(profile: { lodgerVoice?: LodgerVoice }): LodgerVoice;   // profile.lodgerVoice, else 'mark'; reads nothing else
+voiceFor(speaker: Speaker, step: 'inworld' | 'aura', lodgerVoice?: LodgerVoice): VoiceId;   // from SPEAKERS, or LODGER_VOICES when the Speaker is the Lodger; always English
+steeringTag(speaker: Speaker): string;                             // SPEAKERS[speaker].tag; used only by the Inworld wrapper
 splitSentences(text: string): string[];
-toVoiceLine(i: { id: string; text: string; kind: LineKind; voice: VoiceId; now: number }): VoiceLine | null;
+toVoiceLine(i: { id: string; text: string; kind: LineKind; speaker: Speaker; lodgerVoice?: LodgerVoice; playerText: readonly string[]; now: number }): VoiceLine | null;
   // null when validateGhostReply rejects the text. Calls the engine's validator as the Narrator does; no second banned-phrase list.
+  // spoken stops before the first sentence that contains any playerText (nicknames, Zone names, details), case-insensitively.
+buildLibrary(banks: ScriptedBanks): { key: string; voice: VoiceId; spoken: string }[];   // pure, fixed order; the shared Lodger bank is listed once per Lodger Voice (four times)
+prefetchPlan(view: PublicView): string[];                                                   // keys to warm; takes no secret
 ```
+
+**The cast.** The settings in `SPEAKERS` are the ones used in the samples Dan approved on 2026-11-15 (see `docs/story/CHARACTERS.md`). Pippa, Ronald, Mark, Chloe, Eleanor and Victoria are all voices of one model, `inworld/tts-2`, so a Speaker is a `voice_id` plus a tag and two numbers, not a separate model. The Steering Tag is added to the text in exactly one place, the Inworld wrapper in `api/src/guarded/workersai/speak.ts`, so no other step, the Subtitle, a log line or the cache key can ever contain it. A tag is the same on every line of its Speaker; it never depends on the line, the Suspect or the game state.
+
+**The Lodger's four voices** (chosen by Dan, 2026-11-15, after an audition of nine candidates; see `docs/story/CHARACTERS.md`). The Lodger is one character with one shared bank, but a Suspect's own voice depends on who it is: the Preset Suspects Percy, Captain Thorne and Dr. Pike speak in Mark, Cora Bell in Chloe, Lady Vane in Eleanor and Mrs. Dunmore in Victoria. A Ghost Profile carries `lodgerVoice?: LodgerVoice`. A Preset Ghost's is fixed in its data. A designed or selfie Suspect gets the one its Player picks in the contribution step (party-mode Requirement 3.14: "a lower voice" is Mark and "a lighter voice" is Chloe, in plain words, no free text, and never guessed from the face), and Mark when nothing was picked. `lodgerVoiceFor` reads the Profile and nothing else, so a voice is as fixed as the face: it cannot depend on the Solution, a Hand, the Residue, the turn or the line, and a voice therefore tells nothing about guilt. The Library renders the 15-line Lodger bank in each of the four voices (60 files), and the speech cache key already contains the voice, so no key can collide. `[speak nervously]` is proven only on Mark; the audition tried it on Chloe, Eleanor and Victoria, and Spike 1.1 re-checks it on each.
 
 **Speaking policy** (a pure function; the web calls it for Single player, `PartyRoom` calls it for Multiplayer):
 
@@ -152,15 +183,21 @@ canSwitchSpeaking(mode: Mode, actor: 'visitor' | 'master' | 'player'): boolean; 
 **Fallback Chain** (pure; the server runs the first three steps, the Web app the last two):
 
 ```ts
-type Step = 'cache' | 'aura' | 'melo' | 'browser' | 'subtitle';
+type Step = 'library' | 'cache' | 'inworld' | 'aura' | 'browser' | 'subtitle';
 type Outcome = 'ok' | 'miss' | 'error' | 'slow' | 'denied';
 type SpeechResult = { via: Step; subtitle: true; elapsedMs: number; paidCalls: number };   // no error member exists
 resolveSpeech(ctx: { kill: boolean; ticket: boolean; browserVoice: boolean },
-              attempt: (s: 'cache' | 'aura' | 'melo' | 'browser') => { outcome: Outcome; ms: number }): SpeechResult;
+              attempt: (s: 'library' | 'cache' | 'inworld' | 'aura' | 'browser') => { outcome: Outcome; ms: number }): SpeechResult;
 ```
-Order is cache, Aura-1, MeloTTS, browser, subtitle. The paid steps are skipped when `kill` is on or no ticket was granted; one ticket covers the Aura-1 attempt and, if it fails, the MeloTTS attempt, because the unit is one spoken line. Audio counts only if the whole clip is ready within 4000 ms of the request; a step that would start after 4000 ms is skipped. Aura-1 returns whole audio (streaming is unverified), so "ready" means fully arrived and playback never stalls. If Spike 1.1 shows that streaming works, "ready" could mean first audio, and Requirement 1.3 would change only with the owner's approval.
+Order is Library, cache, Inworld TTS 2, Aura-2 English, browser, subtitle. The Library and cache steps are free reads: they run with the kill switch on, with no ticket and with every cap spent. The paid steps are skipped when `kill` is on or no ticket was granted; one ticket covers the Inworld attempt and, if it fails, the Aura-2 attempt, because the unit is one spoken line. Audio counts only if the whole clip is ready within 5000 ms of the request; a step that would start after 5000 ms is skipped. In the 2026-11-14 and 2026-11-15 samples, run through a local Worker, the first Inworld call after the Worker started took 3.6 to 4.8 seconds and later calls took 2.0 to 3.9 seconds, and Aura-2 took 1.7 to 3.1 seconds. So every sample fit inside 5 seconds, but a slow Inworld call can still leave little time for Aura-2 and go straight to the browser voice or the Subtitle (Spike 1.1 measures this on a deployed Worker). The limit was 4 seconds until 2026-11-15 and was raised to 5 because the first Inworld call after a cold start took up to 4.8 seconds. That is by design: the Subtitle is always there. Inworld returns a URL to a finished file, not a stream, so "ready" means the Worker has fetched the file and playback never stalls. If Spike 1.1 shows that streaming works, "ready" could mean first audio, and Requirement 1.3 would change only with the owner's approval.
 
-**Speech cache.** `canonicalSpeechKey(voice, text)` is `JSON.stringify([voice, normalise(text)])`, where `normalise` is NFC plus collapsed and trimmed whitespace, so it is injective. `speechCacheKey` is `speech/v1/` plus the SHA-256 hex of that string, with the digest function injected so `shared/` stays pure (Node's and Workers' `crypto.subtle` are passed in). The R2 object body is the audio; custom metadata holds `storedAt` and `voice` and never the text. `cacheFresh(storedAt, now)` is `now - storedAt < 30 days`. An R2 lifecycle rule deletes objects at 30 days, and the read path also checks `cacheFresh`, so a lifecycle delay never serves old audio. Lookup order is the line's own voice key, then the MeloTTS key. The cache is shared across sessions, but a hit is only ever returned for a line the server itself just validated, never fetched by key from the client.
+**Speech cache.** `canonicalSpeechKey(voice, text)` is `JSON.stringify([voice, normalise(text)])`, where `normalise` is NFC plus collapsed and trimmed whitespace, so it is injective. `speechCacheKey` is `speech/v1/` plus the SHA-256 hex of that string, with the digest function injected so `shared/` stays pure (Node's and Workers' `crypto.subtle` are passed in). The R2 object body is the audio; custom metadata holds `storedAt` and `voice` and never the text. `cacheFresh(storedAt, now)` is `now - storedAt < 30 days`. An R2 lifecycle rule deletes objects under `speech/v1/` at 30 days (never under `speech/lib/v1/`, the Library), and the read path also checks `cacheFresh`, so a lifecycle delay never serves old audio. Lookup order is the line's own Inworld voice key, then its Aura-2 key. The key is made from the voice id and the plain `spoken` text, so a Steering Tag is never in it; the tag is a fixed function of the Speaker, which the voice id already names. The cache is shared across sessions, but a hit is only ever returned for a line the server itself just validated, never fetched by key from the client.
+
+**Reuse and pre-generation.** Four rules, cheapest first.
+1. **The Library.** Every scripted line is rendered once, ahead of time, and kept under `speech/lib/v1/<hash>` with the same key function and no expiry. `buildLibrary(banks)` is pure: it lists every `(speaker, spoken text)` pair of the scripted banks, expanding the finite placeholders (`{weather}` over the weather classes, `{time}` over the parts of the day, `{moon}` over the phases, `{bearing}` and `{band}` over their eight and three values) into concrete texts, in a fixed order. A line whose spoken part would hold player text is not a Library line (rule 3). The list is committed as a manifest (`shared/fixtures/voice-library.json`, keys and text, no audio) and `tools/check-voice-library.mjs` fails the build when a scripted spoken text has no entry, an entry has no line, or a text holds a Steering Tag or markup. `tools/prerender-voice.mjs` is run by the owner, with a manual budget, before a deploy: it skips keys already in R2 and renders the rest with the Speaker's settings, so a change to one line renders one file. The Library makes scripted speech free, instant, and independent of quota and the kill switch, so the zero-quota path (the Gallery) sounds like the real game. Estimate, not measured: about 300 lines of about 90 characters is 27,000 characters, about $0.70 at $25 per million characters before placeholder expansions, plus the shared Lodger bank (15 lines, 1,612 characters with the tag, about $0.04 per voice) in the three extra Lodger Voices, about $0.12. Files are not committed (tens of megabytes); a file is smaller if Spike 1.1 shows that `sample_rate` 24000 and `bit_rate` 64000 sound the same.
+2. **Speculative synthesis and single flight.** A model line is unique, so it cannot be pre-rendered, but its audio can start earlier: `PlaySession` and `PartyRoom` start synthesis the moment a line is validated and speaking is on, in parallel with sending the text, under a ticket reserved then. The later `speak` request joins the same in-flight call (`singleFlight(key)`) or hits the cache. If the visitor never asks, one paid call was spent, and the caps still bound it. Two requests for one key at once make one upstream call.
+3. **No player text in speech.** `toVoiceLine` takes `playerText` (the nicknames, Zone names and details of the room) and cuts `spoken` before the first sentence that contains any of them, case-insensitively. That sentence stays in the Subtitle. This keeps every scripted spoken text finite, so it can be a Library line, and no player-supplied text reaches a speech model. Authors put a nickname in a sentence of its own.
+4. **Prefetch without secrets.** `prefetchPlan(publicView)` is pure and takes only a Public View, as `buildPartyPrompt` does, so it cannot read a secret. It returns the keys worth warming because they play whatever happens: the next Turn's `turn-start` line, the four Haunt Event lines when the Haunt is one level below a threshold (all four, so the seeded choice stays hidden), and the midnight line before the hour. The server makes those `VoiceLine`s early and sends their ids; the Host asks for each with `speak {lineId, prefetch: true}`, which returns Library or cached audio only (never a paid call, never counted as spoken), and the Host decodes it ahead into memory (at most 8 lines, 2 MB, cleared when the room ends, never stored on disk). Nothing is ever prefetched because of the Solution, a Hand or whether an Accusation is right: no confession is warmed before the reveal.
 
 **Listening.**
 ```ts
@@ -225,10 +262,10 @@ liveReduce(state: LiveState, e: LiveEvent, now: number): { state: LiveState; eff
 ```
 Events: `start`, `voice` (the visitor is speaking), `tick`, `utterance_end`, `reply_sentence`, `reply_done`, `stop`, `hidden`, `slice_granted`, `slice_denied`, `transport_error`, `mic_error`. Effects: `open_mic`, `close_mic`, `reserve_slice`, `speak_sentence`, `show_hold_to_talk`. There is no effect that stores audio. The microphone indicator is on exactly while the phase is `listening`. Silence is `now - max(since, lastVoiceAt)` while listening, and listening ends at 10 seconds of it, on `stop`, or on `hidden`. Live time is bought in 10-second slices, each with its own `live` SpendTicket just before it starts, so a denial ends the mode at a slice boundary: the session cap of 5 minutes is 30 slices and the day cap of 30 minutes is 180 slices. Inside Live Mode the slice ticket pays for the transcription, the narration and the speech of that slice, so the `tts` and `stt` session caps do not end a conversation after 20 utterances. Live Mode needs speaking to be on; with it off the Live control is disabled with a line that says why.
 
-Replies are checked per sentence. The narrator may stream tokens in Live Mode to start speaking sooner, so each completed sentence goes through `toVoiceLine` (the engine's `validateGhostReply`, at most 240 characters) before it is spoken. A sentence that fails is not spoken, the rest of the reply is replaced by one scripted line in the persona's voice, and Live Mode continues. The assembled reply is then validated again as a whole and becomes the Subtitle exactly as in text mode. The transport (WebRTC, a WebSocket, or Cloudflare Realtime) and the end-of-speech detection are unverified and chosen by Spike 1.3; the reducer is transport-independent.
+Replies are checked per sentence. The narrator may stream tokens in Live Mode to start speaking sooner, so each completed sentence goes through `toVoiceLine` (the engine's `validateGhostReply`, at most 240 characters) before it is spoken. A sentence that fails is not spoken, the rest of the reply is replaced by one scripted line in the same Speaker's voice, and Live Mode continues. The assembled reply is then validated again as a whole and becomes the Subtitle exactly as in text mode. The transport (WebRTC, a WebSocket, or Cloudflare Realtime) and the end-of-speech detection are unverified and chosen by Spike 1.3; the reducer is transport-independent.
 
 ### `api/src/voice/` and the guarded wrappers
-- `api/src/guarded/workersai/speak.ts`: Aura-1 through `env.AI.run(VOICE_TTS_MODEL_ID, ...)`, then MeloTTS (`VOICE_TTS_FALLBACK_MODEL_ID`) with the same ticket if it fails, under a deadline that aborts the upstream call at 4 seconds from the request.
+- `api/src/guarded/workersai/speak.ts`: Inworld TTS 2 through `env.AI.run(VOICE_TTS_MODEL_ID, { text: steeringTag(speaker) + spoken, voice_id, output_format: 'mp3', temperature, timestamp_type: 'none', speaking_rate })`, then Aura-2 English (`VOICE_TTS_FALLBACK_MODEL_ID`, `{ text: spoken, speaker, encoding: 'mp3' }`, with no tag) with the same ticket if it fails, under a deadline that aborts the upstream call at 5 seconds from the request. Inworld returns `{ audio: <URL> }` (a presigned file), so the wrapper downloads the file inside the deadline, checks it is audio, and returns the bytes. Aura-2 returns a stream. Both are cached as MP3. This is the only code in the repo that adds a Steering Tag.
 - `api/src/guarded/workersai/transcribe.ts`: Whisper (`VOICE_STT_MODEL_ID`) with `language: 'en'`, the clip passed straight in and never written anywhere.
 - `api/src/voice/speak.ts`: the route's service: lookup the line, cache, `withTicket('tts')`, `speak`, cache put, `resolveSpeech` bookkeeping, counters.
 - `api/src/voice/listen.ts`: the route's service: origin and cookie, `clipVerdict`, a clip rate limit of one per 1.5 seconds per Session, `withTicket('stt')`, `withTransientClip(transcribe)`, `{transcript}`.
@@ -239,19 +276,19 @@ Replies are checked per sentence. The narrator may stream tokens in Live Mode to
 These controls are built under the web shell spec `.kiro/specs/haunwallker` (Play tasks 6.1 and 6.2), inside the Chat and HUD, with no change to its reducer.
 - **Speak toggle**: a button with `aria-pressed`, a 48 CSS pixel target and a text label ("Ghost voice: on"). In Single player it starts on and its state is kept in `sessionStorage`, not the cookie. In Multiplayer the Master's switch is the room's `settings.speech`, replacing the browser-voice-only path of party-mode Requirement 7.
 - **Subtitle**: the line's full text appears in the Chat transcript's polite live region (ghost-engine 6.1, world-viewer 6.4) as soon as it arrives, marked while its audio plays. It is the same text, not a second announcement.
-- **Audio player**: one `AudioContext` created on the first gesture (the content notice acknowledgement on Play, the unlock tap on the Host). A 4 second timer runs from the request; at 4 seconds, or on any refusal or an autoplay block, it uses `speechSynthesis` if a voice exists, otherwise the Subtitle alone. A quiet "voice off" mark appears; there is no error screen. Late audio is dropped.
+- **Audio player**: one `AudioContext` created on the first gesture (the content notice acknowledgement on Play, the unlock tap on the Host). A 5 second timer runs from the request; at 5 seconds, or on any refusal or an autoplay block, it uses `speechSynthesis` if a voice exists, otherwise the Subtitle alone. A quiet "voice off" mark appears; there is no error screen. Late audio is dropped.
 - **Talk Button and recorder**: hold with the pointer or hold Space or Enter on the focused button. `MediaRecorder` records at most 8 seconds. The microphone indicator is a persistent badge with a dot and the words "Microphone on", visible for as long as the stream is open (with no pulsing under reduced motion), and the stream tracks are stopped the instant recording ends. A denied permission or no `MediaRecorder` hides the button and leaves typing. A transcript is shown as the visitor's own line, then sent through the typed turn route. An empty or failed transcription shows one quiet line ("Didn't catch that. Try again or type.").
 - **Live controls** (stretch): a Live button, the indicator and a stop button that are visible whenever the microphone is open, and automatic return to the Talk Button on any stop.
 - **Stitch recorder and player** (reusable helpers; the screens belong to party-mode): `recorder.ts` records one word of at most 2 seconds; `stitch-player.ts` decodes the clips and schedules them back to back with Web Audio on the Host.
 
 ### Budget meters and variables
-`SpendGuard` gains three meters: `tts` (one unit per paid speech call), `stt` (one per Whisper call, for listening and for Word Checks) and `live` (one per 10-second slice). A cache hit makes no Workers AI call, so it reserves no ticket and does not count toward the 40; the cap is on paid speech calls, which equals spoken lines whenever the cache misses. A room is a `SpendGuard` scope with its own cap table, so the per-room `stt` cap is 120 Word Checks, not the Single-player 20 heard clips.
+`SpendGuard` gains three meters: `tts` (one unit per paid speech call), `stt` (one per Whisper call, for listening and for Word Checks) and `live` (one per 10-second slice). A Library or cache hit makes no Workers AI call, so it reserves no ticket and does not count toward the 40; the cap is on paid speech calls, which equals spoken lines whenever the cache misses. A room is a `SpendGuard` scope with its own cap table, so the per-room `stt` cap is 120 Word Checks, not the Single-player 20 heard clips.
 
 | Variable | Default | Notes |
 |---|---|---|
 | `VOICE_ENABLED` | `true` | `false` stops all speech, listening, Stitch and Live Mode; Subtitles and typing remain |
-| `VOICE_TTS_MODEL_ID` | `@cf/deepgram/aura-1` | unverified, Spike 1.1 |
-| `VOICE_TTS_FALLBACK_MODEL_ID` | `@cf/myshell-ai/melotts` | unverified, Spike 1.1 |
+| `VOICE_TTS_MODEL_ID` | `inworld/tts-2` | tried in samples on 2026-11-14 and 2026-11-15 through the Workers AI binding; `@cf/` is not part of this id; billing for a third-party model is unverified, Spike 1.1 |
+| `VOICE_TTS_FALLBACK_MODEL_ID` | `@cf/deepgram/aura-2-en` | Cloudflare's named replacement for MeloTTS, which stops answering on 2026-11-20; speakers per `SPEAKERS`, picked by Spike 1.1 |
 | `VOICE_STT_MODEL_ID` | `@cf/openai/whisper-large-v3-turbo` | unverified, Spike 1.1 |
 | `VOICE_TTS_SESSION_CAP` | `40` | spoken lines per Single-player session |
 | `VOICE_TTS_DAY_CAP` | `1500` | not in the amendment; the old `TTS_DAY_CAP` default; confirmed by the owner on 2026-11-14 |
@@ -265,7 +302,7 @@ These controls are built under the web shell spec `.kiro/specs/haunwallker` (Pla
 | `VOICE_LIVE_SESSION_SECONDS` | `300` | 5 minutes a session |
 | `VOICE_LIVE_DAY_SECONDS` | `1800` | 30 minutes a day, read as the `live` Meter's global day cap |
 
-The rules that are not caps (240 characters, 4 seconds, 30 days, the 15th line, 8 seconds, 12 words, 2 seconds, two retries, 60 seconds, one a Round and two a game, 6 hours, 10 seconds of silence, the 10-second slice) are named constants in `limits.ts`, changed only with the requirements.
+The rules that are not caps (240 characters, 5 seconds, 30 days, the 15th line, 8 seconds, 12 words, 2 seconds, two retries, 60 seconds, one a Round and two a game, 6 hours, 10 seconds of silence, the 10-second slice) are named constants in `limits.ts`, changed only with the requirements.
 
 ### Privacy and the EU-child question
 - **Single player.** The microphone opens only while the Talk Button is held (or Live Mode listens, with its indicator and stop button). The browser's own permission prompt is the visitor's consent. The recording is sent to Workers AI Whisper, held in memory for that one call, then zeroed and dropped; nothing is written to R2, KV, Durable Object storage or a log. The transcript is returned to the visitor and from then on is typed text, so the Session keeps it among the last 8 turns for up to 24 hours like any typed line.
@@ -280,11 +317,12 @@ Facts about the models come from search excerpts that were mostly not opened in 
 
 | Fact | Status | Spike |
 |---|---|---|
-| Aura-1 is available on Workers AI as `@cf/deepgram/aura-1` (a partner model), which speaker names it offers, its output format, price in neurons, and latency for a 240-character line | unverified | ghost-voice 1.1 |
-| MeloTTS is available as `@cf/myshell-ai/melotts`, sounds acceptable in English, and its latency and output format | unverified | ghost-voice 1.1 |
+| Inworld TTS 2 (`inworld/tts-2`) on Workers AI: voices Pippa, Ronald, Mark, Chloe, Eleanor and Victoria exist and sound as approved; `[whisper]` and `[speak nervously]` work (the second proven on Mark and heard on Chloe, Eleanor and Victoria in the audition); price is $25 per million characters; the response is a URL; how a third-party model is billed on this account (Workers Paid plan or prepaid AI Gateway credits) and its rate limits | tried in samples (voices, tags and response shape confirmed by listening on 2026-11-15); billing, rate limits and deployed latency unverified | ghost-voice 1.1 |
+| Deepgram Aura-2 English (`@cf/deepgram/aura-2-en`) as the fallback: the speakers `luna`, `zeus` and `aries` suit the Whisper, Keeper and Mark well enough, which female Aura-2 speaker (not `luna`) suits Chloe, Eleanor and Victoria as a fallback, its price ($30 per million characters) and latency for a 240-character line | speaker names, price and the request shape confirmed from Cloudflare's pages; fit by ear and latency unverified | ghost-voice 1.1 |
+| MeloTTS stops answering on 2026-11-20 and is no longer used | confirmed in Cloudflare's changelog of 2026-11-05 | none |
 | Whisper large-v3-turbo on Workers AI accepts the audio formats browsers record (webm with opus, mp4 with aac), its clip length and size limits, latency and price | unverified | ghost-voice 1.1 |
-| The data-retention terms for audio sent to Whisper and for text sent to Aura-1 | unverified | ghost-voice 1.1 |
-| Speech is ready within 4 seconds often enough that the browser fallback is the exception, not the rule | unmeasured; 4 seconds is the owner's rule, not a measurement | ghost-voice 1.1 |
+| The data-retention terms for audio sent to Whisper and for text sent to Aura-2 (Cloudflare's Inworld page states zero data retention for Inworld) | Inworld stated; the others unverified | ghost-voice 1.1 |
+| Speech is ready within 5 seconds often enough that the browser fallback is the exception, not the rule | unmeasured; 5 seconds is the owner's rule, not a measurement | ghost-voice 1.1 |
 | How often Whisper rejects a clean one-second word from a phone microphone (this sets how often a player must retry) | unverified | ghost-voice 1.2 |
 | How joined clips sound with Web Audio scheduling, and whether iOS Safari recordings (mp4) and Android recordings (webm) join without clicks or gaps | unverified | ghost-voice 1.2 |
 | A live voice transport on Cloudflare (WebRTC, a WebSocket or Realtime) and end-of-speech detection | unverified | ghost-voice 1.3 |
@@ -297,9 +335,11 @@ When a spike resolves a fact, record it in `docs/spikes/ghost-voice-<n>.md` and 
 
 ```ts
 // speaking
-type VoiceId = `aura-1:${string}` | 'melotts:en';
+type Speaker = 'whisper' | 'keeper' | 'lodger';
+type LodgerVoice = 'mark' | 'chloe' | 'eleanor' | 'victoria';
+type VoiceId = `inworld:${string}` | `aura-2:${string}`;
 type LineKind = 'narration' | 'haunt_event' | 'midnight' | 'ending';
-type VoiceLine = { id: string; kind: LineKind; text: string; spoken: string; voice: VoiceId; createdAt: number };
+type VoiceLine = { id: string; kind: LineKind; speaker: Speaker; text: string; spoken: string; voice: VoiceId; createdAt: number };
 type SpeakDecision = { speak: true } | { speak: false; reason: 'off' | 'room_cap' | 'late_line' };
 type SpeechCacheEntry = { key: string; voice: VoiceId; storedAt: number; contentType: string; bytes: number };  // R2 metadata; body = audio
 type VoiceConfig = { enabled: boolean; ttsModel: string; ttsFallbackModel: string; sttModel: string;
@@ -328,9 +368,9 @@ Codes added to `shared/src/errors.ts` (stable strings): `voice_unavailable`, `cl
 
 | Failure | Behaviour |
 |---|---|
-| Aura-1 error or slow | MeloTTS if time remains, then the browser voice, then the Subtitle alone |
-| Ticket denied, a cap, `VOICE_ENABLED=false` or the kill switch | no call; browser voice (free) or the Subtitle alone; the speak control stays but says why in one line |
-| No audio within 4 seconds | late audio is dropped; browser voice or the Subtitle alone |
+| Inworld error or slow | Aura-2 English if time remains (with no Steering Tag), then the browser voice, then the Subtitle alone |
+| Ticket denied, a cap, `VOICE_ENABLED=false` or the kill switch | no paid call; a Library or cached line still speaks; otherwise the browser voice (free) or the Subtitle alone; the speak control stays but says why in one line |
+| No audio within 5 seconds | late audio is dropped; browser voice or the Subtitle alone |
 | Autoplay blocked or no audio device | the Subtitle alone |
 | Microphone denied, absent or `MediaRecorder` missing | Talk Button hidden, typing works; Live Mode unavailable |
 | Recording over 8 seconds or over the byte ceiling | `clip_too_long`; the Web app asks the visitor to hold for less |
@@ -352,11 +392,11 @@ Turns, the Hunt and the Haunt never wait on audio. A speech request that fails h
 ## Correctness Properties
 
 ### Property 1: Spoken lines are short, safe and validated
-*For any* string (including empty, very long, URLs, markup, control characters, banned phrases and long runs with no sentence end), `toVoiceLine` yields no line when `validateGhostReply` rejects it, and otherwise a line whose `spoken` text is empty or a whole-sentence prefix of the normalised text of at most 240 characters that `validateGhostReply` accepts; and `voiceFor` returns only a voice from the fixed English allow-list for every persona voice, with no field in any synthesis request that could carry a reference voice.
+*For any* string (including empty, very long, URLs, markup, control characters, banned phrases and long runs with no sentence end), `toVoiceLine` yields no line when `validateGhostReply` rejects it, and otherwise a line whose `spoken` text is empty or a whole-sentence prefix of the normalised text of at most 240 characters that `validateGhostReply` accepts; and `voiceFor` returns only one of the three Inworld voices (Pippa, Ronald, Mark) or the three Aura-2 speakers in `SPEAKERS`, for every Speaker and step, with no field in any synthesis request that could carry a reference voice.
 **Validates: Requirements 1.1, 1.5**
 
 ### Property 2: The fallback chain always ends in a subtitle
-*For any* outcomes and durations of the cache, Aura-1, MeloTTS and browser steps, any kill switch value, any ticket result and any browser-voice availability, `resolveSpeech` ends in cache, Aura-1, MeloTTS, the browser voice or the subtitle and never in an error, reports the Subtitle as shown in every case, makes no paid call when the kill switch is on or no ticket was granted, never uses audio that was ready after 4000 ms, and with every meter at zero the engine's `Progress` sequence for any sequence of actions equals the one with working voice.
+*For any* outcomes and durations of the Library, cache, Inworld, Aura-2 and browser steps, any kill switch value, any ticket result and any browser-voice availability, `resolveSpeech` ends in the Library, cache, Inworld, Aura-2, the browser voice or the subtitle and never in an error, reports the Subtitle as shown in every case, makes no paid call when the kill switch is on or no ticket was granted, never uses audio that was ready after 5000 ms, and with every meter at zero the engine's `Progress` sequence for any sequence of actions equals the one with working voice.
 **Validates: Requirements 1.2, 1.3, 4.2, 4.3**
 
 ### Property 3: The audio cache key depends on voice and text and expires after 30 days
@@ -398,3 +438,11 @@ Turns, the Hunt and the Haunt never wait on audio. A speech request that fails h
 ### Property 12: Live mode obeys its limits and checks every sentence
 *For any* sequence of live events with increasing timestamps (voice heard, ticks, stop, page hidden, slice granted or denied, transport and microphone errors, reply sentences), `liveReduce` shows the microphone indicator if and only if the phase is listening, ends listening after 10 seconds without speech, on stop and when the page is hidden, never lets live time pass 5 minutes in a session or the day's slices (30 minutes), ends in the hold-to-talk state on any problem with no error state, never starts in Multiplayer, emits no effect that stores audio, and speaks only sentences that `validateGhostReply` accepts and that are at most 240 characters, replacing a failing sentence's remainder with a scripted line.
 **Validates: Requirements 6.1, 6.2, 6.3**
+
+### Property 13: Every line has one Speaker, and a Steering Tag stays in the Inworld request
+*For any* line, persona voice and Speaker, `speakerForPersona('soft')` is the Whisper and `speakerForPersona('dry')` is the Keeper; a `VoiceLine` has exactly one Speaker and the voice `voiceFor` returns for it; the text of the Inworld request is `steeringTag(speaker) + spoken` and the Aura-2 request, the browser voice, the Subtitle, the cache key, every log line and every counter contain no Steering Tag; the tag is the same for every line of a Speaker whatever the line, the Suspect or the game state; and `text` and `spoken` never contain a bracketed cue that the Speaker's tag did not add; and for the Lodger, `lodgerVoiceFor(profile)` is the Profile's `lodgerVoice` or Mark and depends on nothing else (two states that differ only in the Solution, a Hand, the Residue, the turn, the line or a guilt flag give the same voice for the same Suspect), the voice is one of Mark, Chloe, Eleanor and Victoria, every Lodger Voice gets the same tag, rate and temperature, and the Library lists the shared Lodger bank once per Lodger Voice with no key collision.
+**Validates: Requirements 1.6, 1.7, 1.11**
+
+### Property 14: The Library is complete and free of player text, and nothing is prepared because of a secret
+*For any* scripted banks, `buildLibrary` lists exactly the spoken texts a scripted line can have for each Speaker (placeholders expanded over their finite values), in a fixed order, with no duplicate key, no Steering Tag and no player text; *for any* line and any `playerText`, `toVoiceLine` yields a `spoken` that contains none of them and ends at a sentence end; a Library step is never subject to a ticket, a cap or the kill switch; *for any* two states that differ only in the Solution, a Hand or whether an Accusation is right, `prefetchPlan` returns the same keys and the same upstream calls are made; a `prefetch` request never makes a paid call and is never counted as spoken; and two requests for one key at once make one upstream call.
+**Validates: Requirements 1.8, 1.9, 1.10**

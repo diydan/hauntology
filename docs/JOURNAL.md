@@ -77,7 +77,7 @@ Log:
 
 ### Tue Nov 17 Spikes, then pure logic starts
 - [ ] **Spike D, splat on a phone.** Render the Spike C world in three.js + Spark on your phone. Note FPS. world-viewer 1.
-- [ ] **Spike B, voice and weather** (ghost-voice 1.1, conditions 1.1). Time a spoken line (under 4 s?), try Whisper on a short clip, call Open-Meteo from a Worker. Write `docs/spikes/ghost-voice-1.1.md` and `docs/spikes/conditions-1.1.md`.
+- [ ] **Spike B, voice and weather** (ghost-voice 1.1, conditions 1.1). Time a spoken line (under 5 s?), try Whisper on a short clip, call Open-Meteo from a Worker. Write `docs/spikes/ghost-voice-1.1.md` and `docs/spikes/conditions-1.1.md`.
 - [ ] Pure logic, world-pipeline 3: errors, caps, quote, world key, upload rules. Property tests with them.
 - [ ] Pin the QR encoder and decoder libraries (party 1.2, desk part).
 
