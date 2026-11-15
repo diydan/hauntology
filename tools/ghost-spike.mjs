@@ -6,6 +6,7 @@
 // Usage: node tools/ghost-spike.mjs [--dry-run] [--list] [--show T3]
 //        GHOST_SPIKE_TOKEN=... node tools/ghost-spike.mjs --run --budget-usd 0.05 [--worker http://127.0.0.1:8799] [--only T3,J4] [--out DIR]
 //        node tools/ghost-spike.mjs --read [--out DIR]
+//        node tools/ghost-spike.mjs --summary [--out DIR]
 //   --list        also print every planned call
 //   --show ID     print the exact instructions and message of one planned call (T chains show the scripted lines in the history; a real run uses the replies)
 //   --run         make the calls, one at a time, in order, with no retries (S1 to S3, then T1 to T20, M1 to M6, J1 to J10)
@@ -14,6 +15,7 @@
 //   --worker      the local Worker (default http://127.0.0.1:8799; only a loopback address is accepted)
 //   --out         where the ledger, the replies and the summary go (default ./.ghost-spike, git-ignored, never committed)
 //   --read        print the replies of the latest run so you can judge the tone (no network)
+//   --summary     the pass marks over every run in <out> (a call run again counts once, as its latest answer), numbers only (no network)
 //   The ledger (<out>/ledger.json) counts calls and spend across runs: 50 calls in all, whatever you run. A damaged ledger is refused, never reset.
 //   The token is read from $GHOST_SPIKE_TOKEN (16+ characters, the same RUN_TOKEN the Worker was started with).
 // Exit: 0 ok, 1 bad input, or a run that stopped early.
@@ -25,7 +27,7 @@ import { BUDGET_CAP_USD, MAX_CALLS, SpikeStop, dryPlan, isLoopbackUrl, openLedge
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_WORKER = 'http://127.0.0.1:8799';
 const FLAGS_WITH_VALUE = ['--show', '--budget-usd', '--worker', '--only', '--out'];
-const FLAGS = ['--dry-run', '--list', '--run', '--read', '--help', ...FLAGS_WITH_VALUE];
+const FLAGS = ['--dry-run', '--list', '--run', '--read', '--summary', '--help', ...FLAGS_WITH_VALUE];
 
 function fail(message, code = 1) {
   console.error(`ghost-spike: ${message}`);
@@ -33,7 +35,7 @@ function fail(message, code = 1) {
 }
 
 function parseArgs(argv) {
-  const opts = { list: false, run: false, read: false, show: null, budget: null, worker: DEFAULT_WORKER, only: null, out: join(root, '.ghost-spike') };
+  const opts = { list: false, run: false, read: false, summary: false, show: null, budget: null, worker: DEFAULT_WORKER, only: null, out: join(root, '.ghost-spike') };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (!FLAGS.includes(a)) fail(`unknown option ${JSON.stringify(a)} (try --help)`);
@@ -41,6 +43,7 @@ function parseArgs(argv) {
     if (a === '--list') opts.list = true;
     else if (a === '--run') opts.run = true;
     else if (a === '--read') opts.read = true;
+    else if (a === '--summary') opts.summary = true;
     else if (a === '--dry-run') opts.run = false;
     else if (FLAGS_WITH_VALUE.includes(a)) {
       const v = argv[i + 1];
@@ -96,6 +99,20 @@ async function main() {
       const r = JSON.parse(line);
       console.log(`${r.id} [${r.persona}, ${r.directive}${r.group === 'J' ? `, parser ${r.parserFlags ? 'would catch it' : 'would miss it'}` : ''}] ${r.valid === false ? `(failed the check: ${r.problem}) ` : ''}\n  visitor: ${r.said ?? '-'}\n  ghost:   ${r.text ?? `(${r.kind})`}\n`);
     }
+    return;
+  }
+
+  if (opts.summary) {
+    if (!existsSync(opts.out)) fail(`no results in ${opts.out}`);
+    const byId = new Map();
+    for (const f of readdirSync(opts.out).filter((x) => /^results-.*\.jsonl$/.test(x)).sort()) {
+      for (const line of readFileSync(join(opts.out, f), 'utf8').split('\n').filter(Boolean)) { const r = JSON.parse(line); byId.set(r.id, r); }
+    }
+    if (byId.size === 0) fail(`no results in ${opts.out}`);
+    const ledger = JSON.parse(readFileSync(join(opts.out, 'ledger.json'), 'utf8'));
+    const md = summaryMarkdown({ results: [...byId.values()], stopped: null, calls: ledger.calls, spentUsd: ledger.spentUsd, mode: ledger.mode });
+    writeFileSync(join(opts.out, 'summary-all.md'), md);
+    console.log(md);
     return;
   }
 

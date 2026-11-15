@@ -222,6 +222,22 @@ test('a tuning pass (--only) needs the mode that was chosen, runs just those cal
   await assert.rejects(run(fakeWorker(() => okAnswer()), await memLedger({ calls: 39, spentUsd: 0, mode: 'low', runs: [] }), { only: [] }), /nothing to run/);
 });
 
+test('a run split after the shape group records the mode it chose, so the next run can go on without it', async () => {
+  const ledger = await memLedger();
+  const first = await run(fakeWorker(() => okAnswer()), ledger, { only: ['S1', 'S2', 'S3'] });
+  assert.equal(first.stopped, null);
+  assert.equal(JSON.parse(ledger.text()).mode, 'off');
+  const w = fakeWorker(() => okAnswer());
+  const second = await run(w, ledger, { only: ['T1', 'T2'] });
+  assert.deepEqual(second.results.map((r) => r.id), ['T1', 'T2']);
+  assert.ok(w.sent.every((b) => b.thinking === 'off'));
+  // when none of the three worked there is no mode to record, and the next run is refused
+  const none = await memLedger();
+  await run(fakeWorker(() => ({ ok: false, kind: 'failed' })), none, { only: ['S1', 'S2', 'S3'] });
+  assert.equal(JSON.parse(none.text()).mode, null);
+  await assert.rejects(run(fakeWorker(() => okAnswer()), none, { only: ['T1'] }), /shape group/);
+});
+
 test('the ledger is saved before each call, so a crash in the middle cannot lose a count', async () => {
   const ledger = await memLedger();
   let seen = null;
@@ -345,6 +361,32 @@ test('CLI: --run refuses, before any network call, without a token, a budget, a 
     const r = cli(['--run', '--budget-usd', '0.05', '--out', dir, '--worker', 'http://127.0.0.1:9'], { GHOST_SPIKE_TOKEN: token });
     assert.equal(r.status, 1);
     assert.match(r.stderr, /will not be reset/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('CLI: --summary judges every run together, counts a call run again once, and prints numbers and no reply text', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ghost-spike-'));
+  try {
+    assert.equal(cli(['--summary', '--out', join(dir, 'nothing')]).status, 1);
+    const row = (id, group, over = {}) => ({ id, group, persona: 'wistful', directive: 'ambient', thinking: 'off', httpStatus: 200, ms: 900, ok: true, kind: 'ok', charged: true, inputTokens: 500, outputTokens: 40, thinkingBlocks: 0, stopReason: 'end_turn', shape: ['content'], costUsd: 0.0001, mode: group === 'S' ? 'off' : 'chosen', text: 'SECRETREPLY words here.', valid: true, problem: null, sentences: 2, copiedRules: group === 'J' ? false : null, ...over });
+    const rows = [row('S1', 'S', { mode: 'default', thinking: 'default' }), row('S2', 'S'), row('S3', 'S', { mode: 'low', thinking: 'low' })];
+    for (let i = 1; i <= 20; i += 1) rows.push(row(`T${i}`, 'T'));
+    for (let i = 1; i <= 6; i += 1) rows.push(row(`M${i}`, 'M'));
+    for (let i = 1; i <= 10; i += 1) rows.push(row(`J${i}`, 'J'));
+    writeFileSync(join(dir, 'results-a.jsonl'), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+    // a later run answers J9 again, and this time the answer passes the check
+    writeFileSync(join(dir, 'results-b.jsonl'), JSON.stringify(row('J9', 'J')) + '\n');
+    writeFileSync(join(dir, 'ledger.json'), JSON.stringify({ calls: 40, spentUsd: 0.004, mode: 'off', runs: [] }));
+    const bad = rows.map((r) => (r.id === 'J9' ? { ...r, valid: false, problem: 'real_world' } : r));
+    writeFileSync(join(dir, 'results-a.jsonl'), bad.map((r) => JSON.stringify(r)).join('\n') + '\n');
+    const r = cli(['--summary', '--out', dir]);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /\| Shape \| PASS \|/);
+    assert.match(r.stdout, /\| Safety \(automated\) \| PASS \| 10 of 10/, 'J9 counts as its latest answer');
+    assert.match(r.stdout, /Calls made in all \(ledger\): 40/);
+    assert.ok(!r.stdout.includes('SECRETREPLY'), 'no reply text');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

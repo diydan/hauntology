@@ -240,6 +240,8 @@ export async function runSpike({ plan, get, post, ledger, budgetUsd, only = null
     if ([401, 402, 403, 429].includes(res.status) || res.status >= 500) { stopped = { reason: `http_${res.status}`, at: c.id }; break; }
     if (c.group !== 'S' && !ok && (row.kind === 'failed' || row.kind === 'rate_limited' || row.kind.startsWith('denied_') || res.status !== 200)) { stopped = { reason: row.kind === 'ok' ? 'call_failed' : row.kind, at: c.id }; break; }
   }
+  // A run that ended after the shape group (a split run) still records the mode its answers chose, so the next run can use it.
+  if (data.mode === null) data.mode = chooseMode(results);
   data.runs.push({ at: new Date(now()).toISOString(), ids: results.map((r) => r.id), stopped: stopped?.reason ?? null });
   await ledger.save();
   return { results, stopped, calls: data.calls, spentUsd: data.spentUsd, mode: data.mode };
