@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
-import { browserRoomDeps, startSolo, type RoomClient, type RoomDeps } from "./room-client";
+import { browserRoomDeps, checkWorld, RoomError, startSolo, type RoomClient, type RoomDeps } from "./room-client";
 import type { HostHandle, HostSetup } from "./types";
 import { eventLine, namesOf, notebook, secondsLeft } from "./words";
 
@@ -11,7 +11,16 @@ import { eventLine, namesOf, notebook, secondsLeft } from "./words";
  * joins later; this page plays a whole case without it.
  */
 export async function mountHost(setup: HostSetup, deps: RoomDeps = browserRoomDeps()): Promise<HostHandle> {
-  const client = await startSolo(deps, setup.setup);
+  let client: RoomClient;
+  try {
+    await checkWorld(deps, setup.worldId, setup.setup);
+    client = await startSolo(deps, setup.setup);
+  } catch (e) {
+    // The Room's own reason (too small, rooms full, party off) goes back to Haunt, which says why in one line.
+    if (!(e instanceof RoomError)) throw e;
+    queueMicrotask(() => setup.onMessage({ t: "refused", code: e.code }));
+    return { playAgain() {}, async dispose() {} };
+  }
   const root = createRoot(setup.container);
   root.render(<SoloTable client={client} />);
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { openRoom, RoomError, startSolo, type RoomDeps, type SocketLike } from "./room-client";
+import { checkWorld, openRoom, RoomError, startSolo, type RoomDeps, type SocketLike } from "./room-client";
 
 class FakeSocket implements SocketLike {
   sent: Record<string, unknown>[] = [];
@@ -89,5 +89,17 @@ describe("openRoom", () => {
     b.sockets[0]!.open();
     expect(b.sockets[0]!.sent).toEqual([{ t: "hello", token: "t" }, { t: "end" }]);
     expect(early.getSnapshot().status).toBe("closed");
+  });
+});
+
+describe("checkWorld", () => {
+  const world = (half: number) => ({ "/api/worlds/w1": { body: { id: "w1", status: "ready", manifest: { bounds: { min: [-half, 0, -half], max: [half, 3, half] } } } } });
+  it("lets a case start in a big enough world, and refuses a small one as world_too_small", async () => {
+    await expect(checkWorld(deps(world(8)).d, "w1", { preset: "classic", bots: 2 })).resolves.toBeUndefined();
+    await expect(checkWorld(deps(world(7)).d, "w1", { preset: "classic", bots: 2 })).resolves.toBeUndefined();
+    await expect(checkWorld(deps(world(6.9)).d, "w1", { preset: "classic", bots: 2 })).rejects.toEqual(new RoomError("world_too_small"));
+  });
+  it("starts no case on a world it cannot read", async () => {
+    await expect(checkWorld(deps({}).d, "w1", { preset: "classic", bots: 2 })).rejects.toEqual(new RoomError("case_failed"));
   });
 });

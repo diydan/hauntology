@@ -3,7 +3,7 @@ import { createEngine, privateSnapshot, publicSnapshot, step, type EngineState }
 import { PRESET_GHOST_IDS } from "@hauntology/shared/party/preset-ghosts";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { SoloTable } from "./host";
+import { mountHost, SoloTable } from "./host";
 import type { RoomClient, RoomSnapshot } from "./room-client";
 import { eventLine, namesOf, notebook } from "./words";
 
@@ -104,5 +104,22 @@ describe("words", () => {
     const n = namesOf(view, 1);
     const line = eventLine({ id: 9, kind: "suggest", seat: 2, zone: view.zones[0]!.id, suspect: view.suspects[0]!.id, relic: view.relics[0]!.id, passed: [], refuter: 1 }, n);
     expect(line).toBe(`Bot2 asked: ${view.suspects[0]!.name}, in the ${view.zones[0]!.name}, with the ${view.relics[0]!.name}? You showed a card.`);
+  });
+});
+
+describe("mountHost", () => {
+  it("a world too small for a case sends the reason back and makes no Room", async () => {
+    const calls: string[] = [];
+    const got: unknown[] = [];
+    const deps = {
+      fetch: async (url: string) => { calls.push(url); return new Response(JSON.stringify({ manifest: { bounds: { min: [-4, 0, -4], max: [4, 3, 4] } } }), { status: 200 }); },
+      openSocket: () => { throw new Error("no socket"); },
+      socketOrigin: "ws://x",
+    };
+    const h = await mountHost({ container: document.createElement("div"), worldId: "w1", setup: { preset: "classic", bots: 2 }, sky: undefined, onMessage: (m) => got.push(m) }, deps);
+    await Promise.resolve();
+    expect(got).toEqual([{ t: "refused", code: "world_too_small" }]);
+    expect(calls).toEqual(["/api/worlds/w1"]);
+    await h.dispose();
   });
 });

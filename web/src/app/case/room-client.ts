@@ -1,5 +1,8 @@
 import type { PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/engine";
 import type { CaseSetup } from "@hauntology/shared/app/case-setup";
+import { walkRadiusOf } from "@hauntology/shared/ghost/anchors";
+import type { Bounds } from "@hauntology/shared/ghost/types";
+import { soloSetup } from "@hauntology/shared/party/solo";
 
 /**
  * The browser's side of a party Room (integration 4.1), with no React in it: it makes the Room, takes seat 1 as the
@@ -45,6 +48,20 @@ const json = async (res: Response): Promise<Record<string, unknown>> => {
 
 export class RoomError extends Error {
   constructor(readonly code: string) { super(code); this.name = "RoomError"; }
+}
+
+/**
+ * Whether a case fits this world (integration 4.3, party-mode 4.5): it reads the world's bounds and asks `soloSetup`.
+ * A Gallery World is public to read; a world that cannot be read cannot be checked, so no case starts on it.
+ */
+export async function checkWorld(deps: RoomDeps, worldId: string, setup: CaseSetup): Promise<void> {
+  const res = await deps.fetch(`/api/worlds/${encodeURIComponent(worldId)}`, { credentials: "same-origin" });
+  const body = await json(res);
+  const bounds = (body.manifest as { bounds?: Bounds } | undefined)?.bounds;
+  if (!res.ok || bounds === undefined) throw new RoomError("case_failed");
+  const walkRadius = walkRadiusOf(bounds);
+  const ok = soloSetup({ world: { id: worldId, walkRadius, authoredZones: false }, preset: setup.preset, bots: setup.bots });
+  if (!ok.ok) throw new RoomError(ok.code);
 }
 
 /**
