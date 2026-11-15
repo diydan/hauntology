@@ -10,21 +10,21 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 1.1, 1.3_
   - [x] 1.2 `soloSetup` and the Bot mind (party-mode Bot tasks, Properties 57 and 59)
     - _Requirements: 1.1, 4.1_
-  - [ ] 1.3 Checkpoint: every party-mode property for these modules green
+  - [x] 1.3 Checkpoint: every party-mode property for these modules green
     - _Requirements: 1.2_
 
 - [ ] 2. Phase 2: the Engine (`shared/src/party/engine.ts`)
   - [ ] 2.1 `RoomGameState`, `Action`, `Outbound`, `StepResult` and the protocol schemas (party-mode `protocol.ts`)
     - _Requirements: 2.1_
-  - [ ] 2.2 `step` for the lobby, start, turns, Suggestions, the answer choice, Accusations, Inspect, the Haunt, alarms and Bots, calling only the rule modules
+  - [ ] 2.2 (core loop done in `shared/src/party/engine.ts`: start, Turns, walk, plain Inspect, Suggestions with the answer choice, Accusations, the clock, Round end, Haunt Events, ending, Bots; still to add: Eavesdrop, Nudges, Cues, Frames, Master pause, reconnects, Locks) `step` for the lobby, start, turns, Suggestions, the answer choice, Accusations, Inspect, the Haunt, alarms and Bots, calling only the rule modules
     - _Requirements: 2.1, 2.2, 2.4_
-  - [ ] 2.3 **Property 1: The Engine is deterministic and refuses without change**
+  - [x] 2.3 **Property 1: The Engine is deterministic and refuses without change**
     - **Validates: Requirements 2.1, 2.2**
-  - [ ] 2.4 **Property 2: No outbound message leaks**
+  - [x] 2.4 **Property 2: No outbound message leaks**
     - **Validates: Requirements 2.3**
-  - [ ] 2.5 **Property 3: One alarm is enough**
+  - [x] 2.5 **Property 3: One alarm is enough**
     - **Validates: Requirements 2.4, 3.1**
-  - [ ] 2.6 Checkpoint: ten thousand random all-Bot games end, with no leak and no stuck alarm
+  - [ ] 2.6 (60 random all-Bot games and 40 solo games end in the test suite; the ten thousand run is next) Checkpoint: ten thousand random all-Bot games end, with no leak and no stuck alarm
     - _Requirements: 1.2, 2.3_
 
 - [ ] 3. Phase 3: the Room server (`api/`)

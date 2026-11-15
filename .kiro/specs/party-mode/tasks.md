@@ -163,9 +163,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.52 Write property test for the Haunt
     - **Property 26: The Haunt rises by the rules and events fire once**
     - **Validates: Requirements 11.1, 11.2**
-  - [ ] 2.53 Poltergeist transition and refusals: keep seat, nickname, Hand and Resolve, no Turns, no move, Suggest, Accuse, Inspect or Eavesdrop, never a winner; the Hand answers by the default choice; may choose Haunt options
+  - [x] 2.53 Poltergeist transition and refusals: keep seat, nickname, Hand and Resolve, no Turns, no move, Suggest, Accuse, Inspect or Eavesdrop, never a winner; the Hand answers by the default choice; may choose Haunt options
     - _Requirements: 11.3_
-  - [ ]* 2.54 Write property test for Poltergeists
+  - [x]* 2.54 Write property test for Poltergeists
     - **Property 27: Poltergeists keep their Hand and never take a Turn**
     - **Validates: Requirements 11.3**
   - [x] 2.55 `gainResolve` (at the start of every Round, Poltergeists included), `canEavesdrop` and `eavesdrop` (one named card that was not shown, 10 s window, never for a Poltergeist, the suggester or the Player who showed the card); Resolve is shared with Nudges
