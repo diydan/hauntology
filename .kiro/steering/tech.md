@@ -35,9 +35,9 @@ Vars (defaults): `GHOST_MODEL_ID=@cf/meta/llama-4-scout-17b-16e-instruct`, `GUAR
 Party Mode vars (defaults): `PARTY_ENABLED=true`, `PARTY_MAX_PLAYERS=6`, `PARTY_ROOM_TTL_HOURS=6`, `PARTY_IMAGE_ROOM_CAP=12`, `PARTY_LLM_ROOM_CAP=60`, `PARTY_ACTIVE_ROOMS_CAP=20`, `PARTY_ROOMS_PER_SESSION=1`.
 
 ## Unverified assumptions (each has a spike; do not build on them blindly)
-1. Exact field names/URLs for splat, collider mesh, pano, thumbnail in the World Labs world response, and whether upstream asset URLs expire.
+1. Whether upstream asset URLs expire, and the formats of the panorama and thumbnail. The field names for splat, collider mesh, pano, thumbnail and the scale metadata are now documented (`worldlabs-api.md`, `docs/spikes/1.1.md`) but not yet confirmed by a run; Spike 1.1 has not been run (it needs a World API key and credits).
 2. Whether FLUX.2 klein 9B (`IMAGE_MODEL_ID`) produces acceptable sketch-to-photo quality from a 512 px sketch used as a reference image (klein's size limit is not stated), and whether that is good enough for World Labs to build from. If not, switch to `flux-2-dev`. Spike 1.2 retires this.
-3. Splat/world orientation and scale conventions (needed for up-vector and eye height).
+3. Splat/world orientation (up axis and handedness; the scale and ground height are documented per world as `semantics_metadata`, `docs/spikes/1.1.md`) (needed for up-vector and eye height).
 4. Whether outpaint-synthesized extra views improve world quality over a single photo.
 5. Spark API surface for opacity/recolor/LOD in the installed version.
 6. Party Mode: WebSocket p50/p95 input latency through a Durable Object with six phones at 30 Hz (party Spike 1.1).
