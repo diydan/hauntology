@@ -23,7 +23,7 @@ const litness = (x: number, y: number, bx: number, by: number): number => clamp(
  * Tap a lit letter, or press Pick for the lit letter nearest the middle of the beam. Keyboard: arrows aim, Enter picks.
  * With Assist on the letters are always faintly visible.
  */
-export default function Words({ view, feel, assist, submit, announce, resetKey }: KindProps<"words">) {
+export default function Words({ view, feel, assist, submit, announce, resetKey, tiltButtons }: KindProps<"words">) {
   const [picked, setPicked] = useState<number[]>([]);
   const [lit, setLit] = useState<number | null>(null);
   const tilt = useFeelValue(feel.motion.subscribe, () => feel.motion.state);
@@ -195,15 +195,20 @@ export default function Words({ view, feel, assist, submit, announce, resetKey }
         role="application" tabIndex={0} aria-label="Dark wall with hidden letters. Arrow keys aim the torch. Enter picks the lit letter."
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel} onKeyDown={onKey}
       />
-      <p className="pz-readout pz-lit" aria-live="off">{litCh === null ? "No letter is lit" : `Lit: ${litCh}`}</p>
-      <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={lit === null || picked.length >= view.n} onClick={() => { if (lit !== null) choose(lit); }}>
-        {litCh === null ? "Pick the lit letter" : `Pick ${litCh}`}
-      </button>
-      <div className="pz-digits" role="img" aria-label={`Letters so far: ${picked.length} of ${view.n}`}>
-        {Array.from({ length: view.n }, (_, i) => <span key={i}>{picked[i] === undefined ? "·" : (view.letters[picked[i] as number]?.ch ?? "·")}</span>)}
+      <div className="pz-field">
+        <p className="pz-readout pz-lit" aria-live="off">{litCh === null ? "No letter is lit" : `Lit: ${litCh}`}</p>
+        <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={lit === null || picked.length >= view.n} onClick={() => { if (lit !== null) choose(lit); }}>
+          {litCh === null ? "Pick the lit letter" : `Pick ${litCh}`}
+        </button>
       </div>
-      <div className="pz-row">
-        <button type="button" className="pz-btn pz-btn-quiet" disabled={picked.length === 0} onClick={clear}>Clear</button>
+      <div className="pz-field">
+        <div className="pz-digits" role="img" aria-label={`Letters so far: ${picked.length} of ${view.n}`}>
+          {Array.from({ length: view.n }, (_, i) => <span key={i}>{picked[i] === undefined ? "·" : (view.letters[picked[i] as number]?.ch ?? "·")}</span>)}
+        </div>
+        <div className="pz-row">
+          <button type="button" className="pz-btn pz-btn-quiet" disabled={picked.length === 0} onClick={clear}>Clear</button>
+          {tiltButtons}
+        </div>
       </div>
     </div>
   );

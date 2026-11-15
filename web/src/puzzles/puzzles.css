@@ -1,15 +1,22 @@
 /*
+ * One spacing scale for every puzzle screen: 4, 8, 12 and 16 px. Blocks sit 12 px apart (--pz-space-3) and the things that
+ * belong together sit 8 px apart (--pz-space-2); 4 px is for a label tucked against what it names, 16 px is for padding
+ * and for setting one group apart from another. A test (spacing.test.ts) keeps every gap, margin and padding on this scale.
+ */
+:root { --pz-space-1: 0.25rem; --pz-space-2: 0.5rem; --pz-space-3: 0.75rem; --pz-space-4: 1rem; }
+
+/*
  * Puzzle screens. Mobile first: every control is at least 48 px, nothing needs hover, nothing scrolls the page while a
  * Puzzle is being played, and every colour comes from the tokens. Nothing here animates except through the one fade.
  */
 .pz-host {
   --pz-target: max(48px, var(--target));
   display: grid;
-  gap: 0.5rem;
+  gap: var(--pz-space-3);
   width: 100%;
   max-width: 30rem;
   margin: 0 auto;
-  padding: 0.5rem max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  padding: var(--pz-space-2) max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
   color: var(--bone);
   -webkit-user-select: none;
   user-select: none;
@@ -25,21 +32,21 @@
 @keyframes pz-glow-a { from { box-shadow: inset 0 0 0 4px rgb(233 228 216 / 22%); } to { box-shadow: inset 0 0 0 0 rgb(233 228 216 / 0%); } }
 @keyframes pz-glow-b { from { box-shadow: inset 0 0 0 4px rgb(233 228 216 / 22%); } to { box-shadow: inset 0 0 0 0 rgb(233 228 216 / 0%); } }
 
-.pz-bar-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 2rem; }
-.pz-pips { display: inline-flex; gap: 0.4rem; }
+.pz-bar-row { display: flex; align-items: center; justify-content: space-between; gap: var(--pz-space-3); min-height: 2rem; }
+.pz-pips { display: inline-flex; gap: var(--pz-space-2); }
 .pz-pip { width: 0.8rem; height: 0.8rem; border-radius: 50%; background: var(--lantern); }
 .pz-pip-used { background: transparent; border: 2px solid var(--bone); }
 .pz-timer { font-variant-numeric: tabular-nums; }
 
-.pz-stage { position: relative; min-height: 20rem; padding: 0.75rem; border: 1px solid var(--dust); border-radius: 12px; touch-action: none; overflow: hidden; }
+.pz-stage { position: relative; min-height: 20rem; padding: var(--pz-space-3); border: 1px solid var(--dust); border-radius: 12px; touch-action: none; overflow: hidden; }
 .pz-skeleton { min-height: 18rem; border-radius: 8px; background: linear-gradient(90deg, #14171c, #1c2027, #14171c); }
 .pz-status { min-height: 1.5rem; margin: 0; text-align: center; }
-.pz-twin { margin: 0; text-align: center; color: var(--ghost); font-size: 0.8rem; }
+.pz-twin { min-height: 1.3rem; margin: 0; text-align: center; color: var(--ghost); font-size: 0.8rem; } /* always there, so the buttons below never jump when it shows */
 
-.pz-foot, .pz-row { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; align-items: center; }
+.pz-foot, .pz-row { display: flex; flex-wrap: wrap; gap: var(--pz-space-2); justify-content: center; align-items: center; }
 .pz-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  min-height: var(--pz-target); min-width: var(--pz-target); padding: 0 1rem;
+  min-height: var(--pz-target); min-width: var(--pz-target); padding: 0 var(--pz-space-4);
   border: 1px solid var(--lantern); border-radius: 12px; background: var(--ink); color: var(--lantern);
   font: inherit; cursor: pointer; touch-action: manipulation;
 }
@@ -47,23 +54,23 @@
 .pz-btn-quiet { border-color: var(--dust); color: var(--bone); }
 .pz-btn[disabled] { opacity: 0.45; cursor: default; }
 
-.pz-card { display: grid; gap: 0.75rem; padding: 1rem; border: 1px solid var(--dust); border-radius: 16px; text-align: center; background: var(--ink); }
+.pz-card { display: grid; gap: var(--pz-space-3); padding: var(--pz-space-4); border: 1px solid var(--dust); border-radius: 16px; text-align: center; background: var(--ink); }
 .pz-title { margin: 0; font-size: 1.1rem; }
 .pz-clue { min-height: 7.5rem; }
 .pz-bar { height: 6px; border-radius: 3px; background: #1c2027; overflow: hidden; }
 .pz-bar > i { display: block; height: 100%; background: var(--lantern); }
-.pz-hint { margin: 0.25rem 0; color: var(--bone); font-size: 0.9rem; text-align: center; }
+.pz-hint { margin: 0; color: var(--bone); font-size: 0.9rem; text-align: center; }
 .pz-muted { margin: 0; color: var(--bone); opacity: 0.8; text-align: center; }
 .pz-muted-text { fill: var(--bone); opacity: 0.8; }
 
-.pz-result { display: grid; gap: 0.5rem; justify-items: center; padding: 1rem; border: 1px solid var(--lantern); border-radius: 12px; }
+.pz-result { display: grid; gap: var(--pz-space-2); justify-items: center; padding: var(--pz-space-4); border: 1px solid var(--lantern); border-radius: 12px; }
 .pz-result[data-outcome="failed"] { border-color: var(--alarm); }
 .pz-result-title { margin: 0; font-size: 1.4rem; }
 
-.pz-digits { display: flex; gap: 0.6rem; justify-content: center; font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pz-digits { display: flex; gap: var(--pz-space-2); justify-content: center; font-size: 2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pz-digits > span { display: grid; place-items: center; width: 2.75rem; height: 3.5rem; border-radius: 10px; background: #1c2027; }
 
-.pz-shelf { display: grid; gap: 0.5rem; margin: 0.5rem 0; }
+.pz-shelf { display: grid; gap: var(--pz-space-2); margin: 0; }
 .pz-slot { display: grid; place-items: center; aspect-ratio: 1; min-height: var(--pz-target); border: 2px solid transparent; border-radius: 12px; background: #1c2027; color: inherit; padding: 0; }
 .pz-slot[aria-pressed="true"] { border-color: var(--lantern); }
 .pz-slot-empty { border: 2px dashed var(--dust); background: transparent; }
@@ -82,7 +89,7 @@
 
 .pz-board { display: block; width: 100%; height: auto; touch-action: none; }
 .pz-canvas { display: block; margin: 0 auto; max-width: 100%; border-radius: 12px; touch-action: none; }
-.pz-readout { margin: 0.25rem 0; text-align: center; font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pz-readout { margin: 0; text-align: center; font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .pz-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
@@ -94,21 +101,53 @@
   .pz-stage { min-height: 14rem; }
 }
 
-.pz-wide { width: 100%; margin-top: 0.5rem; }
+.pz-wide { width: 100%; }
 .pz-clock-board { width: min(86%, 22rem); margin: 0 auto; }
 
 /* the tries and the time say what they are */
-.pz-tries { display: inline-flex; align-items: center; gap: 0.5rem; }
 .pz-bar-label { opacity: 0.8; font-size: 0.85rem; }
 /* Give up sits apart from the play controls, and asks once */
-.pz-foot-wrap { display: grid; gap: 1.25rem; }
-.pz-give { display: grid; gap: 0.5rem; justify-items: center; margin-top: 0.25rem; }
-.pz-peek { margin: 0.5rem 0; }
+.pz-foot-wrap { display: grid; gap: var(--pz-space-4); }
+.pz-give { display: grid; gap: var(--pz-space-2); justify-items: center; }
+.pz-peek { margin: 0; }
 /* controls that line up: equal columns */
-.pz-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+.pz-grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--pz-space-2); }
 .pz-grid4 > .pz-btn, .pz-grid2 > .pz-btn { min-width: 0; padding: 0 0.25rem; white-space: nowrap; }
 .pz-grid4 > .pz-btn { font-size: 0.85rem; }
-.pz-grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
-.pz-twist { display: grid; gap: 0.25rem; justify-items: center; margin: 0.5rem 0; }
+.pz-grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--pz-space-2); }
+.pz-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--pz-space-2); }
+.pz-grid3 > .pz-btn, .pz-contents > .pz-btn { min-width: 0; padding: 0 0.25rem; white-space: nowrap; }
+.pz-contents { display: contents; } /* a named group whose buttons sit in the parent grid */
+.pz-twist { display: grid; gap: var(--pz-space-2); justify-items: center; margin: 0; }
 .pz-twist .pz-hint { margin: 0; }
 .pz-stopped { display: block; margin: 0 auto; }
+/* the two answers to "Give up?" sit side by side, the same width, at any screen width */
+.pz-confirm { width: 100%; }
+.pz-confirm > .pz-btn { font-size: 0.9rem; }
+
+/* the header: "?" and the tries on the left, the time on the right, each with its label above */
+.pz-bar-row { flex-wrap: wrap; }
+.pz-bar-left { display: inline-flex; align-items: center; gap: var(--pz-space-3); }
+.pz-tries { display: grid; gap: var(--pz-space-1); justify-items: start; }
+.pz-timer { display: grid; gap: var(--pz-space-1); justify-items: end; text-align: right; }
+.pz-help-btn {
+  display: inline-grid; place-items: center; width: var(--pz-target); height: var(--pz-target); padding: 0;
+  border: 2px solid var(--lantern); border-radius: 50%; background: var(--ink); color: var(--lantern);
+  font: inherit; font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer; touch-action: manipulation;
+}
+.pz-help-btn[aria-expanded="true"] { background: var(--lantern); color: var(--ink); }
+/* the help card */
+.pz-help { text-align: left; }
+.pz-help .pz-title { text-align: center; }
+.pz-help-steps, .pz-help-list { margin: 0; padding-left: var(--pz-space-4); display: grid; gap: var(--pz-space-2); font-size: 0.95rem; }
+.pz-help-sub { margin: 0; font-size: 1rem; }
+.pz-help-common { opacity: 0.85; font-size: 0.85rem; }
+
+/* A screen's blocks are one even stack, whatever the screen is: 12 px between blocks, and no block brings its own margin. */
+.pz-stage > div:not(.pz-skeleton) { display: grid; gap: var(--pz-space-3); align-content: start; }
+.pz-stage > div > .pz-btn:not(.pz-wide) { justify-self: center; }
+/* a label and the control it names, or two controls that work as one */
+.pz-field { display: grid; gap: var(--pz-space-2); }
+/* what the puzzle says back: the host's message, and the buzz or sound twin, in a place of their own */
+.pz-feedback { display: grid; gap: 0; }
+.pz-foot:empty { display: none; } /* no play controls for this puzzle: no empty row, and no extra gap above Give up */

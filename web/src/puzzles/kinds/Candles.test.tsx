@@ -27,7 +27,7 @@ const outLine = (): string => screen.getByRole("img", { name: /Out so far/ }).ge
 
 describe("Candles", () => {
   it("shows the candles told apart by number and by height, every control named, the microphone off", () => {
-    const lock = lockOf("normal", 1);
+    const lock = lockOf("medium", 1);
     const { feel } = mountKind(Candles, lock.view);
     for (let i = 0; i < lock.view.n; i++) expect(candle(i).textContent).toBe(String(i + 1));
     const heights = Array.from({ length: lock.view.n }, (_, i) => candle(i).querySelector<HTMLElement>(".pz-wax")?.style.height);
@@ -40,7 +40,7 @@ describe("Candles", () => {
   });
 
   it("is solved by tapping the candles in the shown order, on both levels and several seeds, with a gutter and a tick at each", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       for (const seed of [1, 7, 23, 512]) {
         const lock = lockOf(level, seed);
         const { submits, feel, unmount } = mountKind(Candles, lock.view);
@@ -61,7 +61,7 @@ describe("Candles", () => {
   });
 
   it("puts a candle out once only, and says which are out in text", () => {
-    const lock = lockOf("normal", 4);
+    const lock = lockOf("medium", 4);
     const { feel } = mountKind(Candles, lock.view);
     fireEvent.click(candle(2));
     fireEvent.click(candle(2));
@@ -101,7 +101,7 @@ describe("Candles", () => {
 
   it("shows the order: each candle gutters in turn with a gutter sound and a tick, twice at most, and taps wait", () => {
     vi.useFakeTimers();
-    const lock = lockOf("normal", 6);
+    const lock = lockOf("medium", 6);
     const { feel } = mountKind(Candles, lock.view);
     for (let show = 1; show <= 2; show++) {
       const before = feel.synth.played.length;
@@ -187,7 +187,7 @@ describe("Candles", () => {
     });
 
     it("counts one breath for one candle: a breath that goes on does not put out the next pick", async () => {
-      const lock = lockOf("normal", 9);
+      const lock = lockOf("medium", 9);
       const { feel } = mountKind(Candles, lock.view);
       fireEvent.click(micBtn());
       await wait(20);
@@ -332,7 +332,7 @@ describe("Candles", () => {
 
   it("clears every timer when the screen goes: no gutter, no buzz and no error after unmount", () => {
     vi.useFakeTimers();
-    const lock = lockOf("normal", 3);
+    const lock = lockOf("medium", 3);
     const { feel, unmount } = mountKind(Candles, lock.view);
     fireEvent.click(watchBtn());
     advance(900); // one candle has guttered and the next has begun

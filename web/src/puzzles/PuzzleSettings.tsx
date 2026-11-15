@@ -2,6 +2,7 @@ import { useId, type ReactNode } from "react";
 import { presetSetting, type Preset } from "@hauntology/shared/puzzles/settings";
 import { PUZZLE_SETTINGS, type PuzzleSetting } from "@hauntology/shared/puzzles/types";
 import type { FeelSettings, TiltState } from "./feel/types";
+import "./puzzles.css";
 import "./PuzzleSettings.css";
 
 /** The switches that belong to one device. `tilt` is the Player's wish for tilt (on by default where a sensor answers). */
@@ -23,7 +24,7 @@ export type PuzzleSettingsProps = Readonly<{
   canVibrate: boolean;
 }>;
 
-const LEVEL_NAME: Readonly<Record<PuzzleSetting, string>> = { off: "Off", easy: "Easy", normal: "Normal" };
+const LEVEL_NAME: Readonly<Record<PuzzleSetting, string>> = { off: "Off", easy: "Easy", medium: "Medium", hard: "Hard" };
 
 /** One on/off switch: a button with a name, a visible state and a hint, at least 48 pixels tall. */
 function Row({ label, hint, on, onChange, disabled = false }: { label: string; hint: ReactNode; on: boolean; onChange: (on: boolean) => void; disabled?: boolean }): ReactNode {

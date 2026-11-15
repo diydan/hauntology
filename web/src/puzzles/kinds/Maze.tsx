@@ -16,7 +16,7 @@ type Keys = { left: boolean; right: boolean; up: boolean; down: boolean };
  * pulled towards the finger), or use the arrow keys. Walls bump and buzz. The walls are drawn once into a layer and only
  * the orb is drawn each frame, and only while it moves.
  */
-export default function Maze({ view, feel, submit, announce, elapsed, resetKey }: KindProps<"maze">) {
+export default function Maze({ view, feel, submit, announce, elapsed, resetKey, tiltButtons }: KindProps<"maze">) {
   const layout = useMemo(() => {
     const rows = view.grid.length;
     const cols = view.grid[0]?.length ?? 0;
@@ -141,13 +141,16 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey }
   return (
     <div className="pz-maze">
       <p className="pz-hint">Reach the green ring. {tilt === "on" ? "Lean the phone to roll the orb." : "Hold a finger where the orb should go."}</p>
-      <canvas
-        ref={canvas} className="pz-canvas pz-maze-board" width={Math.round(w * dpr)} height={Math.round(h * dpr)}
-        style={{ width: w }} role="application" tabIndex={0} aria-label="Maze. Use the arrow keys, or hold a finger where the orb should go."
-        onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
-        onKeyDown={(e) => setKey(e, true)} onKeyUp={(e) => setKey(e, false)} onBlur={onBlur}
-      />
-      <p className="pz-readout pz-maze-status" role="status">{done ? `You reached the ring. Walls hit: ${hits}` : `Walls hit: ${hits}`}</p>
+      <div className="pz-field">
+        <canvas
+          ref={canvas} className="pz-canvas pz-maze-board" width={Math.round(w * dpr)} height={Math.round(h * dpr)}
+          style={{ width: w }} role="application" tabIndex={0} aria-label="Maze. Use the arrow keys, or hold a finger where the orb should go."
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
+          onKeyDown={(e) => setKey(e, true)} onKeyUp={(e) => setKey(e, false)} onBlur={onBlur}
+        />
+        <p className="pz-readout pz-maze-status" role="status">{done ? `You reached the ring. Walls hit: ${hits}` : `Walls hit: ${hits}`}</p>
+      </div>
+      {tiltButtons ? <div className="pz-row">{tiltButtons}</div> : null}
     </div>
   );
 }

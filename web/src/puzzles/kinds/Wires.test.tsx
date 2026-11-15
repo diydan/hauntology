@@ -38,7 +38,7 @@ const dragToTerminal = (lock: ReturnType<typeof lockOf>, w: number, t: number): 
 
 describe("Wires", () => {
   it("shows every wire and terminal by name, with the check button waiting until all are joined", () => {
-    const lock = lockOf("normal", 3);
+    const lock = lockOf("medium", 3);
     mountKind(Wires, lock.view);
     expect(lock.view.leftOrder.length).toBe(lock.view.n);
     for (const w of lock.view.leftOrder) expect(handle(w).getAttribute("aria-pressed")).toBe("false");
@@ -48,7 +48,7 @@ describe("Wires", () => {
   });
 
   it("is solved by dragging each wire to its terminal, on both levels and several seeds", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       for (const seed of [2, 9, 31, 600]) {
         const lock = lockOf(level, seed);
         const { submits, unmount } = mountKind(Wires, lock.view);
@@ -68,7 +68,7 @@ describe("Wires", () => {
   });
 
   it("is also solved by tapping a wire and then a terminal, and says which is picked", () => {
-    const lock = lockOf("normal", 12);
+    const lock = lockOf("medium", 12);
     const { submits } = mountKind(Wires, lock.view);
     const ys = ysOf(lock.view.n);
     for (const w of lock.view.leftOrder) {
@@ -181,7 +181,7 @@ describe("Wires", () => {
   });
 
   it("is an accessible touch screen: every control is a named button, wires differ by shape as well as colour", () => {
-    const lock = lockOf("normal", 8);
+    const lock = lockOf("medium", 8);
     mountKind(Wires, lock.view);
     const names = lock.view.leftOrder.map((w) => wireLook(w));
     expect(new Set(names.map((l) => l.shape)).size).toBe(names.length);

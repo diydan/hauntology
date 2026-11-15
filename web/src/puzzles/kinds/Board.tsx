@@ -20,7 +20,7 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
  * Touch: drag the planchette, then press Pick (or tap a letter). Tilt: lean to roll it (letters pull it in gently), then tap
  * anywhere or rest on the letter for a moment. Keyboard: arrow keys jump between letters, Enter picks.
  */
-export default function Board({ view, feel, submit, announce, resetKey, hear }: KindProps<"board">) {
+export default function Board({ view, feel, submit, announce, resetKey, hear, tiltButtons }: KindProps<"board">) {
   const [spelled, setSpelled] = useState<string[]>([]);
   const [heard, setHeard] = useState(0);
   const [under, setUnder] = useState<string | null>(null);
@@ -232,15 +232,20 @@ export default function Board({ view, feel, submit, announce, resetKey, hear }: 
         role="application" tabIndex={0} aria-label="Spirit board. Arrow keys jump between letters. Enter picks the letter."
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel} onKeyDown={onKey}
       />
-      <p className="pz-readout pz-under" aria-live="off">{under === null ? "Move the planchette onto a letter" : `On the letter ${under}`}</p>
-      <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={under === null || spelled.length >= view.length} onClick={() => { if (under !== null) choose(under); }}>
-        {under === null ? "Pick the letter" : `Pick ${under}`}
-      </button>
-      <div className="pz-digits" role="img" aria-label={`Letters so far: ${spelled.length} of ${view.length}`}>
-        {Array.from({ length: view.length }, (_, i) => <span key={i}>{spelled[i] ?? "·"}</span>)}
+      <div className="pz-field">
+        <p className="pz-readout pz-under" aria-live="off">{under === null ? "Move the planchette onto a letter" : `On the letter ${under}`}</p>
+        <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={under === null || spelled.length >= view.length} onClick={() => { if (under !== null) choose(under); }}>
+          {under === null ? "Pick the letter" : `Pick ${under}`}
+        </button>
       </div>
-      <div className="pz-row">
-        <button type="button" className="pz-btn pz-btn-quiet" disabled={spelled.length === 0} onClick={clear}>Clear</button>
+      <div className="pz-field">
+        <div className="pz-digits" role="img" aria-label={`Letters so far: ${spelled.length} of ${view.length}`}>
+          {Array.from({ length: view.length }, (_, i) => <span key={i}>{spelled[i] ?? "·"}</span>)}
+        </div>
+        <div className="pz-row">
+          <button type="button" className="pz-btn pz-btn-quiet" disabled={spelled.length === 0} onClick={clear}>Clear</button>
+          {tiltButtons}
+        </div>
       </div>
       <p className="pz-hint">{tilt === "on" ? "Tilt is on: lean the phone to roll the planchette, then tap anywhere or rest on the letter." : "Drag the planchette onto a letter, then press Pick. Or tap a letter."}</p>
     </div>

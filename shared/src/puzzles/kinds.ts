@@ -22,12 +22,12 @@ export function minSolveMs(lock: Lock): number {
   switch (lock.kind) {
     case "lockpick": return 800 * lock.view.pins;
     case "wires": return 2500;
-    case "clock": return 1500;
+    case "clock": return lock.view.stepMin === 1 ? 2500 : 1500;
     case "safe": return 3000;
     case "musicbox": return 600 * lock.view.n;
     case "candles": return 2000;
     case "moved": return 3000;
-    case "photo": return lock.level === "easy" ? 4000 : 6000;
+    case "photo": return 1000 * lock.view.cols * lock.view.rows;
     case "words": return 3000;
     case "board": return 800 * lock.view.length;
     case "maze": return 3000;

@@ -21,7 +21,7 @@ const heatOf = (distance: number, windowDeg: number): Heat => (distance <= windo
  * tension, so one finger is enough. Tilt: lean the phone to move the pick while Tension is held. A pin sets after the pick
  * stays in its window for the dwell time; pins set in order, left to right.
  */
-export default function LockPick({ view, feel, reducedMotion, submit, elapsed, announce, resetKey }: KindProps<"lockpick">) {
+export default function LockPick({ view, feel, reducedMotion, submit, elapsed, announce, resetKey, tiltButtons }: KindProps<"lockpick">) {
   const [lo, hi] = view.range;
   const [cur, setCur] = useState(0);
   const [heat, setHeat] = useState<Heat>("idle");
@@ -111,21 +111,28 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
   return (
     <div>
       <p className="pz-hint">Feel for each pin's sweet spot. Pins set left to right.</p>
-      <ol className={`pz-pins${reducedMotion ? " pz-pins-still" : ""}`} aria-label="Pins">
-        {Array.from({ length: view.pins }, (_, i) => {
-          const state = i < cur ? "set" : i === cur ? "picking" : "waiting";
-          return <li key={i} className={`pz-pin pz-pin-${state}`}><span className="pz-sr">{`Pin ${i + 1} of ${view.pins}: ${state}`}</span><i aria-hidden="true" /></li>;
-        })}
-      </ol>
-      <p className="pz-heat" data-heat={heat}>{HEAT_TEXT[heat]}</p>
-      <label className="pz-slider-label" htmlFor={sliderId}>Pick position: slide left or right</label>
-      <input
-        id={sliderId} ref={slider} type="range" className="pz-slider" min={lo} max={hi} step={0.5} defaultValue={0}
-        onChange={onSlide} onPointerDown={() => hold("slider", true)} onPointerUp={() => hold("slider", false)} onPointerCancel={() => hold("slider", false)}
-      />
-      <button type="button" className="pz-btn pz-hold" aria-pressed={tension} onClick={onButtonClick} onPointerDown={onButtonDown} onPointerUp={() => hold("button", false)} onPointerCancel={() => hold("button", false)}>
-        Tension (hold)
-      </button>
+      <div className="pz-field">
+        <ol className={`pz-pins${reducedMotion ? " pz-pins-still" : ""}`} aria-label="Pins">
+          {Array.from({ length: view.pins }, (_, i) => {
+            const state = i < cur ? "set" : i === cur ? "picking" : "waiting";
+            return <li key={i} className={`pz-pin pz-pin-${state}`}><span className="pz-sr">{`Pin ${i + 1} of ${view.pins}: ${state}`}</span><i aria-hidden="true" /></li>;
+          })}
+        </ol>
+        <p className="pz-heat" data-heat={heat}>{HEAT_TEXT[heat]}</p>
+      </div>
+      <div className="pz-field">
+        <label className="pz-slider-label" htmlFor={sliderId}>Pick position: slide left or right</label>
+        <input
+          id={sliderId} ref={slider} type="range" className="pz-slider" min={lo} max={hi} step={0.5} defaultValue={0}
+          onChange={onSlide} onPointerDown={() => hold("slider", true)} onPointerUp={() => hold("slider", false)} onPointerCancel={() => hold("slider", false)}
+        />
+      </div>
+      <div className="pz-row">
+        <button type="button" className="pz-btn pz-hold" aria-pressed={tension} onClick={onButtonClick} onPointerDown={onButtonDown} onPointerUp={() => hold("button", false)} onPointerCancel={() => hold("button", false)}>
+          Tension (hold)
+        </button>
+        {tiltButtons}
+      </div>
       <p className="pz-hint">{tilt === "on" ? "Tilt is on: hold Tension and lean the phone to move the pick." : "Touching the slider holds the tension for you. Or hold the Tension button."}</p>
     </div>
   );

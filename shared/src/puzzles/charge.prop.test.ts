@@ -34,7 +34,7 @@ describe("Property 7: The time charged stays between ten seconds and the Cap", (
 describe("presets", () => {
   it("map to the settings and Caps of the spec", () => {
     expect(CAPS).toEqual({ classic: 25_000, gentle: 40_000, quick: 20_000 });
-    expect([presetSetting("classic"), presetSetting("gentle"), presetSetting("quick")]).toEqual(["normal", "easy", "off"]);
+    expect([presetSetting("classic"), presetSetting("gentle"), presetSetting("quick")]).toEqual(["medium", "easy", "off"]);
     expect(lockCharge(3000, 25_000)).toBe(10_000);
     expect(lockCharge(12_345, 25_000)).toBe(12_345);
     expect(lockCharge(99_999, 40_000)).toBe(40_000);

@@ -72,7 +72,7 @@ function spellByDrag(m: M, word: string): void {
 
 describe("Board", () => {
   it("shows the clue as text, the empty letters, and tells the Player where the planchette is", () => {
-    const lock = lockOf("normal", 3);
+    const lock = lockOf("medium", 3);
     mountKind(Board, lock.view);
     expect(screen.getByText(new RegExp(`Clue: ${lock.view.clue}`))).toBeTruthy();
     expect(slots()).toBe("·".repeat(lock.view.length));
@@ -82,7 +82,7 @@ describe("Board", () => {
   });
 
   it("is solved with touch alone on both levels: drag the planchette to each letter, press Pick, and the shared checker accepts it", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       for (const seed of [1, 7, 23, 140]) {
         const lock = lockOf(level, seed);
         const m = mountKind(Board, lock.view);
@@ -96,7 +96,7 @@ describe("Board", () => {
   });
 
   it("is also solved by tapping each letter directly", () => {
-    const lock = lockOf("normal", 12);
+    const lock = lockOf("medium", 12);
     const m = mountKind(Board, lock.view);
     for (const ch of lock.secret.word) { const p = letterPos(ch); tap(p.x + 4, p.y - 3); }
     expect(m.submits).toEqual([{ letters: lock.secret.word }]);
@@ -234,7 +234,7 @@ describe("Board", () => {
   });
 
   it("whispers the word through hear, twice at most, and says so when the phone has no voice", async () => {
-    const lock = lockOf("normal", 9);
+    const lock = lockOf("medium", 9);
     let said = 0;
     let result: boolean | void = true;
     const m = mountKind(Board, lock.view, { hear: () => { said++; return result; } });

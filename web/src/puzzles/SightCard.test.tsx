@@ -56,7 +56,7 @@ describe("SightCard", () => {
   });
 
   it("keeps a faded clue shorter than a Sight, and longer with Assist", () => {
-    const lock = makeLock("wires", "normal", 5);
+    const lock = makeLock("wires", "medium", 5);
     expect((fadedFor(lock)?.showMs ?? 0)).toBeLessThan(sightFor(lock)?.showMs ?? 0);
     expect(fadedFor(lock, true)?.showMs).toBe(8000);
   });

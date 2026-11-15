@@ -161,19 +161,21 @@ export default function Candles({ view, feel, reducedMotion, submit, announce, r
       <div className="pz-row">
         <button type="button" className="pz-btn pz-btn-primary" disabled={showing || left <= 0} onClick={watch}>{watchText}</button>
       </div>
-      <div className="pz-candle-row" role="group" aria-label="Candles">
-        {Array.from({ length: view.n }, (_, i) => {
-          const isOut = out.includes(i);
-          const flame = isOut ? "out" : guttering === i ? "gutter" : "lit";
-          return (
-            <button key={i} type="button" className="pz-candle" disabled={showing || isOut} aria-label={`Candle ${i + 1}, ${HEIGHT_NAMES[i]}${isOut ? ", out" : ""}`} aria-pressed={listening && !isOut ? selected === i : undefined} data-flame={flame} data-height={HEIGHT_NAMES[i]} onClick={() => tap(i)}>
-              <span className="pz-flame" ref={(el) => { flames.current[i] = el; }} aria-hidden="true" />
-              <span className="pz-wax" style={{ height: `${HEIGHTS[i]}rem` }} aria-hidden="true">{i + 1}</span>
-            </button>
-          );
-        })}
+      <div className="pz-field">
+        <div className="pz-candle-row" role="group" aria-label="Candles">
+          {Array.from({ length: view.n }, (_, i) => {
+            const isOut = out.includes(i);
+            const flame = isOut ? "out" : guttering === i ? "gutter" : "lit";
+            return (
+              <button key={i} type="button" className="pz-candle" disabled={showing || isOut} aria-label={`Candle ${i + 1}, ${HEIGHT_NAMES[i]}${isOut ? ", out" : ""}`} aria-pressed={listening && !isOut ? selected === i : undefined} data-flame={flame} data-height={HEIGHT_NAMES[i]} onClick={() => tap(i)}>
+                <span className="pz-flame" ref={(el) => { flames.current[i] = el; }} aria-hidden="true" />
+                <span className="pz-wax" style={{ height: `${HEIGHTS[i]}rem` }} aria-hidden="true">{i + 1}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="pz-readout pz-out-so-far" role="img" aria-label={`Out so far: ${out.length === 0 ? "none" : out.map((c) => c + 1).join(", ")}`}>{out.length === 0 ? "Out so far: none" : `Out so far: ${out.map((c) => c + 1).join(" then ")}`}</p>
       </div>
-      <p className="pz-readout pz-out-so-far" role="img" aria-label={`Out so far: ${out.length === 0 ? "none" : out.map((c) => c + 1).join(", ")}`}>{out.length === 0 ? "Out so far: none" : `Out so far: ${out.map((c) => c + 1).join(" then ")}`}</p>
       <p className="pz-hint">Or blow them out: tap Blow to snuff, tap a candle, then blow on the phone. The microphone is optional and only measures loudness. Nothing is recorded.</p>
       <div className="pz-row">
         <button type="button" className="pz-btn pz-btn-quiet" disabled={showing || out.length === 0} onClick={relight}>Relight</button>

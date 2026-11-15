@@ -39,11 +39,14 @@ describe("Safe", () => {
     expect(shown()).toBe(0);
     expect(slots()).toBe("·".repeat(lock.view.digits));
     for (const name of ["Digit minus", "Digit plus", "Twist", "Undo", "Set"]) expect(screen.getByRole("button", { name }), name).toBeTruthy();
+    const row = screen.getByRole("button", { name: "Digit minus" }).parentElement;
+    expect([screen.getByRole("button", { name: "Digit plus" }).parentElement, screen.getByRole("button", { name: "Twist" }).parentElement]).toEqual([row, row]); // one row, not stacked
+    expect(screen.getByRole("button", { name: "Undo" }).parentElement).toBe(screen.getByRole("button", { name: "Set" }).parentElement);
     expect(screen.getByRole("application", { name: "Safe dial" })).toBeTruthy();
   });
 
   it("is solved by dragging the dial and pressing Set, on both levels and several seeds", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium", "hard"] as const) {
       for (const seed of [3, 11, 42, 777]) {
         const lock = lockOf(level, seed);
         const { submits, unmount } = mountKind(Safe, lock.view);
@@ -63,7 +66,7 @@ describe("Safe", () => {
   });
 
   it("can also be solved with the Digit buttons alone, which wrap round from 0 to 9 and back", () => {
-    const lock = lockOf("normal", 5);
+    const lock = lockOf("medium", 5);
     const { submits } = mountKind(Safe, lock.view);
     press("Digit minus");
     expect(shown()).toBe(9);

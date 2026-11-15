@@ -64,7 +64,7 @@ const tap = (x: number, y: number): void => { pointer(wall(), "pointerdown", x, 
 
 describe("Words", () => {
   it("starts with a dark wall: no letter lit, nothing picked, every control named", () => {
-    const lock = lockOf("normal", 3);
+    const lock = lockOf("medium", 3);
     mountKind(Words, lock.view);
     expect(litText()).toBe("No letter is lit");
     expect(slots()).toBe("·".repeat(lock.view.n));
@@ -74,7 +74,7 @@ describe("Words", () => {
   });
 
   it("is solved with touch alone on both levels: aim the torch, tap each lit letter in reading order, and the shared checker accepts it", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       for (const seed of [1, 6, 19, 250]) {
         const lock = lockOf(level, seed);
         const m = mountKind(Words, lock.view);
@@ -93,7 +93,7 @@ describe("Words", () => {
   });
 
   it("is also solved with the Pick button: it picks the lit letter nearest the middle of the beam", () => {
-    const lock = lockOf("normal", 12);
+    const lock = lockOf("medium", 12);
     const m = mountKind(Words, lock.view);
     for (const i of lock.secret.order) {
       const p = spot(lock, i);

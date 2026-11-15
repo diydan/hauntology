@@ -1,7 +1,7 @@
 /* Music box. Five keys in one row that still fit from 320 px wide; a lit key is a fade, never a flash. */
-.pz-keys { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35rem; margin: 0.75rem 0; }
+.pz-keys { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--pz-space-2); margin: 0; }
 .pz-key {
-  display: grid; place-items: center; align-content: center; gap: 0.1rem;
+  display: grid; place-items: center; align-content: center; gap: var(--pz-space-1);
   min-height: max(4.5rem, var(--pz-target, 48px)); min-width: var(--pz-target, 48px); padding: 0;
   border: 2px solid var(--dust); border-radius: 12px; background: var(--ink); color: var(--bone);
   font: inherit; cursor: pointer; touch-action: manipulation;

@@ -66,7 +66,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x]* 2.13 Write property test for placement
     - **Property 5: Locks are placed one per Zone with a valid Sight source**
     - **Validates: Requirements 1.5, 2.4**
-  - [x] 2.14 `charge.ts` (`lockCharge`, `plainInspectCharge`) and `settings.ts` (`presetSetting`: Classic normal, Gentle easy, Quick off; `capFor`)
+  - [x] 2.14 `charge.ts` (`lockCharge`, `plainInspectCharge`) and `settings.ts` (`presetSetting`: Classic medium, Gentle easy, Quick off; `capFor`)
     - Built in `shared/src/puzzles/charge.ts` (`lockCharge`, `plainInspectCharge`) and `settings.ts` (`presetSetting`, `capFor`).
     - _Requirements: 1.2, 1.3, 1.4, 1.7_
   - [x]* 2.15 Write property test for the time charged
@@ -180,7 +180,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
 
 - [ ] 6. First three Kinds, end to end (the demo slice)
   - [x] 6.1 `PuzzleHost`: the full-screen frame with the timer ring, Attempts left, give up, the wrong-Attempt message with no partial count, the touch-path switch, and the Turn or Wander context
-    - Built in `web/src/puzzles/PuzzleHost.tsx`. The Turn or Wander context arrives through its props from the Room. It keeps the screen awake while the Lock is open (`useWakeLock`). It also labels the tries and the time, says the sound and buzz twins in words, asks once before Give up, and offers "See the clue again" with Assist.
+    - Built in `web/src/puzzles/PuzzleHost.tsx`. The Turn or Wander context arrives through its props from the Room. It keeps the screen awake while the Lock is open (`useWakeLock`). It also labels the tries and the time, says the sound and buzz twins in words, asks once before Give up, and offers "See the clue again" with Assist. A "?" on every puzzle opens the how-it-works card (`help.ts`, `HelpCard.tsx`).
     - _Requirements: 7.3, 12.3, 12.4, 13.1_
   - [x] 6.2 `SightCard` and the Faded clue at a Lock, with the heartbeat buzz
     - Built in `web/src/puzzles/SightCard.tsx`.

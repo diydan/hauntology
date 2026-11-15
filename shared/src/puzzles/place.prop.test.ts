@@ -11,7 +11,7 @@ const placementArb = fc
   .chain((zones) =>
     fc.tuple(fc.constant(zones), fc.subarray<Kind>([...KINDS], { minLength: Math.ceil(zones.length / 2), maxLength: KINDS.length })),
   );
-const settingArb = fc.constantFrom("easy" as const, "normal" as const);
+const settingArb = fc.constantFrom("easy" as const, "medium" as const, "hard" as const);
 
 describe("Property 5: Locks are placed one per Zone with a valid Sight source", () => {
   // Feature: puzzles, Property 5: Locks are placed one per Zone with a valid Sight source
@@ -47,7 +47,7 @@ describe("Property 5: Locks are placed one per Zone with a valid Sight source", 
     expect(DEFAULT_KINDS).not.toContain("maze");
     fc.assert(
       fc.property(seedArb, (seed) => {
-        const res = placePuzzles(seed, ["a", "b", "c", "d", "e", "f"], "normal");
+        const res = placePuzzles(seed, ["a", "b", "c", "d", "e", "f"], "medium");
         return res.ok && res.value.every((l) => l.kind !== "maze") && new Set(res.value.map((l) => l.kind)).size >= 3;
       }),
       propParams(),

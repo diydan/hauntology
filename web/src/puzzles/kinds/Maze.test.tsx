@@ -132,7 +132,7 @@ describe("Maze", () => {
   });
 
   it("is solved with touch alone on both levels: hold a finger along the way and the orb is pulled to the ring", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       for (const seed of [1, 4, 9]) {
         const lock = lockOf(level, seed);
         const m = mountKind(Maze, lock.view);

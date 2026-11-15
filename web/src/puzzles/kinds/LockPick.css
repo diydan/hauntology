@@ -1,16 +1,16 @@
 /* Lock pick. Fits from 320 px wide; every control is at least the touch target. */
-.pz-pins { display: flex; gap: 0.6rem; justify-content: center; margin: 0.5rem 0; padding: 0; list-style: none; }
+.pz-pins { display: flex; gap: var(--pz-space-2); justify-content: center; margin: 0; padding: 0; list-style: none; }
 .pz-pin { display: grid; align-items: end; width: 2.5rem; height: 5rem; border: 2px solid var(--dust); border-radius: 8px; background: #14171c; overflow: hidden; }
 .pz-pin > i { display: block; height: 35%; background: var(--dust); transition: height var(--fade), background var(--fade); }
 .pz-pin-picking { border-color: var(--lantern); }
 .pz-pin-picking > i { height: 60%; background: var(--lantern); }
 .pz-pin-set { border-color: var(--ghost); }
 .pz-pin-set > i { height: 90%; background: var(--ghost); }
-.pz-heat { min-height: 1.5rem; margin: 0.25rem 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+.pz-heat { min-height: 1.5rem; margin: 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
 .pz-heat[data-heat="hot"] { color: var(--lantern); }
-.pz-slider-label { display: block; margin: 0.25rem 0 0; text-align: center; font-size: 0.95rem; }
+.pz-slider-label { display: block; margin: 0; text-align: center; font-size: 0.95rem; }
 .pz-slider { display: block; width: 100%; min-height: var(--pz-target); margin: 0; accent-color: var(--lantern); touch-action: pan-y; }
-.pz-hold { width: 100%; margin-top: 0.5rem; touch-action: none; }
+.pz-hold { flex: 1 1 9rem; touch-action: none; } /* wide enough to hold, and Tilt still fits beside it */
 /* A still frame instead of a fade: the Player's setting (reducedMotion) or the system's. */
 .pz-pins-still .pz-pin > i { transition: none; }
 @media (prefers-reduced-motion: reduce) {

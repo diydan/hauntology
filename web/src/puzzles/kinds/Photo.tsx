@@ -158,37 +158,39 @@ export default function Photo({ view, feel, reducedMotion, submit, announce }: K
   return (
     <div className="pz-photo">
       <p className="pz-hint">Put the photo you saw back together. Drag pieces onto the frame. Tap a piece to pick it; tap it again to turn it.</p>
-      <div ref={board} className={`pz-photo-board${reducedMotion ? " pz-photo-still" : ""}`} data-cols={cols} role="group" aria-label="Torn photo" style={{ aspectRatio: `${W} / ${H}` }}>
-        {range(n).map((i) => <span key={`t${i}`} className="pz-photo-cell" style={box(trayAt(i).x + INSET, trayAt(i).y + INSET, CELL - 2 * INSET)} aria-hidden="true" />)}
-        {range(n).map((s) => {
-          const open = !m.slot.includes(s);
-          const style = box(slotAt(s).x + INSET, slotAt(s).y + INSET, CELL - 2 * INSET);
-          return open
-            ? <button key={`s${s}`} type="button" className="pz-photo-slot" style={style} aria-label={`Frame spot ${s + 1}, empty`} onClick={() => tapSlot(s)} />
-            : <span key={`s${s}`} className="pz-photo-slot pz-photo-slot-full" style={style} aria-hidden="true" />;
-        })}
-        {range(n).map((p) => {
-          const c = where(m, p);
-          const s = m.slot[p] ?? null;
-          return (
-            <button
-              key={`p${p}`} type="button" className={`pz-piece${dragging === p ? " pz-piece-drag" : ""}`} style={box(c.x + INSET, c.y + INSET, CELL - 2 * INSET)}
-              aria-label={`Piece ${p + 1}, ${s === null ? "in the tray" : `in frame spot ${s + 1}`}`} aria-pressed={m.picked === p}
-              onPointerDown={(e) => onDown(e, p)} onPointerMove={(e) => onMove(e, p)} onPointerUp={(e) => onUp(e, p)} onPointerCancel={() => onCancel(p)} onClick={(e) => onClick(e, p)}
-            >
-              <span className="pz-piece-art" style={{ transform: `rotate(${((view.turns0[p] ?? 0) + (m.spins[p] ?? 0)) * 90}deg)` }} aria-hidden="true">
-                <PictureSvg picture={view.picture} cols={cols} rows={rows} piece={p} label="" />
-              </span>
-            </button>
-          );
-        })}
+      <div className="pz-field">
+        <div ref={board} className={`pz-photo-board${reducedMotion ? " pz-photo-still" : ""}`} data-cols={cols} role="group" aria-label="Torn photo" style={{ aspectRatio: `${W} / ${H}` }}>
+          {range(n).map((i) => <span key={`t${i}`} className="pz-photo-cell" style={box(trayAt(i).x + INSET, trayAt(i).y + INSET, CELL - 2 * INSET)} aria-hidden="true" />)}
+          {range(n).map((s) => {
+            const open = !m.slot.includes(s);
+            const style = box(slotAt(s).x + INSET, slotAt(s).y + INSET, CELL - 2 * INSET);
+            return open
+              ? <button key={`s${s}`} type="button" className="pz-photo-slot" style={style} aria-label={`Frame spot ${s + 1}, empty`} onClick={() => tapSlot(s)} />
+              : <span key={`s${s}`} className="pz-photo-slot pz-photo-slot-full" style={style} aria-hidden="true" />;
+          })}
+          {range(n).map((p) => {
+            const c = where(m, p);
+            const s = m.slot[p] ?? null;
+            return (
+              <button
+                key={`p${p}`} type="button" className={`pz-piece${dragging === p ? " pz-piece-drag" : ""}`} style={box(c.x + INSET, c.y + INSET, CELL - 2 * INSET)}
+                aria-label={`Piece ${p + 1}, ${s === null ? "in the tray" : `in frame spot ${s + 1}`}`} aria-pressed={m.picked === p}
+                onPointerDown={(e) => onDown(e, p)} onPointerMove={(e) => onMove(e, p)} onPointerUp={(e) => onUp(e, p)} onPointerCancel={() => onCancel(p)} onClick={(e) => onClick(e, p)}
+              >
+                <span className="pz-piece-art" style={{ transform: `rotate(${((view.turns0[p] ?? 0) + (m.spins[p] ?? 0)) * 90}deg)` }} aria-hidden="true">
+                  <PictureSvg picture={view.picture} cols={cols} rows={rows} piece={p} label="" />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="pz-readout pz-photo-count" role="status">{inFrame} of {n} in the frame</p>
       </div>
-      <p className="pz-readout pz-photo-count" role="status">{inFrame} of {n} in the frame</p>
-      <div className="pz-row">
+      <div className="pz-grid3">
         <button type="button" className="pz-btn" disabled={m.picked === null} onClick={() => { if (m.picked !== null) turn(m.picked); }}>Turn</button>
-        <button type="button" className="pz-btn pz-btn-quiet" disabled={!pickedInFrame} onClick={() => { if (m.picked !== null) toTray(m.picked); }}>Back to tray</button>
+        <button type="button" className="pz-btn pz-btn-quiet" aria-label="Back to tray" disabled={!pickedInFrame} onClick={() => { if (m.picked !== null) toTray(m.picked); }}>To tray</button>
+        <button type="button" className="pz-btn pz-btn-primary" aria-label="Check the photo" disabled={inFrame < n} onClick={check}>Check</button>
       </div>
-      <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={inFrame < n} onClick={check}>Check the photo</button>
     </div>
   );
 }

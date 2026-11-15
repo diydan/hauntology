@@ -96,16 +96,18 @@ export default function MusicBox({ view, feel, submit, announce, resetKey }: Kin
       <div className="pz-row">
         <button type="button" className="pz-btn pz-btn-primary" disabled={playing || left <= 0} onClick={wind}>{windText}</button>
       </div>
-      <div className="pz-keys" role="group" aria-label="Keys">
-        {KEYS.map((i) => (
-          <button key={i} type="button" className="pz-key" disabled={playing} aria-label={`Key ${i + 1}, ${SHAPE_NAMES[i]}`} data-lit={lit === i ? "true" : "false"} onClick={() => press(i)}>
-            <span className="pz-key-shape" aria-hidden="true">{SHAPES[i]}</span>
-            <span className="pz-key-num" aria-hidden="true">{i + 1}</span>
-          </button>
-        ))}
-      </div>
-      <div className="pz-digits pz-notes" role="img" aria-label={`Played so far: ${notes.length} of ${view.n} notes`}>
-        {Array.from({ length: view.n }, (_, i) => <span key={i}>{notes[i] === undefined ? "·" : SHAPES[notes[i] as Note]}</span>)}
+      <div className="pz-field">
+        <div className="pz-keys" role="group" aria-label="Keys">
+          {KEYS.map((i) => (
+            <button key={i} type="button" className="pz-key" disabled={playing} aria-label={`Key ${i + 1}, ${SHAPE_NAMES[i]}`} data-lit={lit === i ? "true" : "false"} onClick={() => press(i)}>
+              <span className="pz-key-shape" aria-hidden="true">{SHAPES[i]}</span>
+              <span className="pz-key-num" aria-hidden="true">{i + 1}</span>
+            </button>
+          ))}
+        </div>
+        <div className="pz-digits pz-notes" role="img" aria-label={`Played so far: ${notes.length} of ${view.n} notes`}>
+          {Array.from({ length: view.n }, (_, i) => <span key={i}>{notes[i] === undefined ? "·" : SHAPES[notes[i] as Note]}</span>)}
+        </div>
       </div>
       <div className="pz-row">
         <button type="button" className="pz-btn pz-btn-quiet" disabled={notes.length === 0} onClick={clear}>Clear</button>

@@ -25,6 +25,20 @@ The page is for development only and is not part of the production build.
 |---|---|---|---|---|
 | ![](clue-wires.png) | ![](clue-clock.png) | ![](clue-safe.png) | ![](clue-moved.png) | ![](clue-photo.png) |
 
+## The "?" help card
+
+Every puzzle has a round "?" button at the top left. It opens a short card on **how the puzzle works** (the goal, the
+controls, the limits and what the phone extras do), never on how to solve it. The puzzle underneath keeps where it was,
+the clock keeps running while the card is open, and Escape or "Back to the puzzle" closes it. The words are in
+`web/src/puzzles/help.ts`; a test checks that they use short sentences, no digits and no hint words, and that every
+button they name is really on the screen.
+
+| | | | |
+|---|---|---|---|
+| <img src="help-01-lockpick.png" width="150" alt="Lock pick help"><br>Lock pick | <img src="help-02-wires.png" width="150" alt="Cut wires help"><br>Cut wires | <img src="help-03-clock.png" width="150" alt="Clock time help"><br>Clock time | <img src="help-04-safe.png" width="150" alt="Safe code help"><br>Safe code |
+| <img src="help-05-musicbox.png" width="150" alt="Music box help"><br>Music box | <img src="help-06-candles.png" width="150" alt="Candle order help"><br>Candle order | <img src="help-07-moved.png" width="150" alt="What moved help"><br>What moved | <img src="help-08-photo.png" width="150" alt="Torn photo help"><br>Torn photo |
+| <img src="help-09-words.png" width="150" alt="Hidden words help"><br>Hidden words | <img src="help-10-board.png" width="150" alt="Spirit board help"><br>Spirit board | <img src="help-11-maze.png" width="150" alt="Marble maze help"><br>Marble maze |  |
+
 ## The 11 puzzles
 
 | Screen | Picture | Notes |
@@ -69,3 +83,5 @@ The Hidden words wall is dark on purpose: letters show only in the torch.
 - What a screen says to a screen reader is no longer drawn a second time on screen; each screen gives its instruction once.
 - Candles say "Out so far: none" instead of a dot, and the microphone line sits beside its button.
 - Settings are grouped (Senses on this phone, Help), and Assist lists the three things it does.
+- Spacing is one scale (4, 8, 12 and 16 px). Before, the gaps between blocks were a mix of 0, 4, 8, 12 and 16 px; now every block is 12 px from the next and the things that belong together are 8 px apart (measured in a real browser, and kept by `spacing.test.ts`).
+- A "?" on every puzzle opens a how-it-works card; Give up's two answers sit side by side; the buzz and sound line always has its place, so nothing under the thumb moves when it shows.

@@ -50,11 +50,11 @@ const payloadOf = (lock: PhotoLock, p: unknown): unknown => verify(lock, { kind:
 
 describe("Photo", () => {
   it("draws every piece of the picture, turned as the view says, in a shuffled tray, with the frame spots empty and named", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium", "hard"] as const) {
       const lock = lockOf(level, 4);
       const n = lock.view.cols * lock.view.rows;
       const { unmount } = mountKind(Photo, lock.view);
-      expect(n).toBe(level === "easy" ? 4 : 6);
+      expect(n).toBe({ easy: 4, medium: 6, hard: 9 }[level]);
       const trayIndex: number[] = [];
       for (let p = 0; p < n; p++) {
         expect(where(p)).toBe(`Piece ${p + 1}, in the tray`);
@@ -74,8 +74,16 @@ describe("Photo", () => {
     }
   });
 
+  it("keeps Turn, Back to tray and Check side by side in one row, never stacked", () => {
+    mountKind(Photo, lockOf("hard", 2).view);
+    const row = checkBtn().parentElement;
+    expect(row?.className).toMatch(/pz-grid3/);
+    expect([screen.getByRole("button", { name: "Turn" }).parentElement, trayBtn().parentElement]).toEqual([row, row]);
+    expect(checkBtn().textContent).toBe("Check");
+  });
+
   it("lays the tray out the same way every time for one photo", () => {
-    const lock = lockOf("normal", 4);
+    const lock = lockOf("medium", 4);
     const first = mountKind(Photo, lock.view);
     const a = Array.from({ length: 6 }, (_, p) => `${piece(p).style.left} ${piece(p).style.top}`);
     first.unmount();
@@ -84,7 +92,7 @@ describe("Photo", () => {
   });
 
   it("is solved with no dragging: pick a piece, Turn it, tap an empty spot; on both levels and several seeds", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium", "hard"] as const) {
       for (const seed of [1, 6, 22, 909]) {
         const lock = lockOf(level, seed);
         const n = lock.view.cols * lock.view.rows;
@@ -112,7 +120,7 @@ describe("Photo", () => {
   });
 
   it("is solved by touch with dragging too: tap to pick and turn, drag onto the frame; both levels, several seeds", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium", "hard"] as const) {
       for (const seed of [2, 8, 31, 777]) {
         const lock = lockOf(level, seed);
         lockCur = lock;
@@ -193,7 +201,7 @@ describe("Photo", () => {
   });
 
   it("puts the nearest spot in range under the piece, and a drop outside any spot returns the piece to the tray", () => {
-    const lock = lockOf("normal", 5);
+    const lock = lockOf("medium", 5);
     lockCur = lock;
     mountKind(Photo, lock.view);
     const near = slotCenter(lock, 4);
@@ -291,7 +299,7 @@ describe("Photo", () => {
   });
 
   it("enables Check only when every spot has a piece", () => {
-    const lock = lockOf("normal", 12);
+    const lock = lockOf("medium", 12);
     mountKind(Photo, lock.view);
     for (let p = 0; p < 6; p++) {
       expect(checkBtn().hasAttribute("disabled"), `with ${p} placed`).toBe(true);
@@ -353,7 +361,7 @@ describe("Photo", () => {
   });
 
   it("turns without a transition when motion is reduced, and the CSS keeps fades, 48 px pieces and a 320 px layout", () => {
-    const lock = lockOf("normal", 3);
+    const lock = lockOf("medium", 3);
     mountKind(Photo, lock.view, { reducedMotion: true });
     expect(document.querySelector(".pz-photo-board")?.className).toContain("pz-photo-still");
     expect(css).toMatch(/\.pz-photo-still \.pz-piece-art\s*{\s*transition:\s*none/);

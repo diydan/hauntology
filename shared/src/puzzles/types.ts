@@ -11,9 +11,9 @@ export const DEFAULT_KINDS: readonly Kind[] = KINDS.filter((k) => k !== "maze");
 export const MEMORY_KINDS: readonly Kind[] = ["wires", "clock", "safe", "moved", "photo"];
 export const isMemoryKind = (kind: Kind): boolean => MEMORY_KINDS.includes(kind);
 
-export const LEVELS = ["easy", "normal"] as const;
+export const LEVELS = ["easy", "medium", "hard"] as const;
 export type Level = (typeof LEVELS)[number];
-export const PUZZLE_SETTINGS = ["off", "easy", "normal"] as const;
+export const PUZZLE_SETTINGS = ["off", "easy", "medium", "hard"] as const;
 export type PuzzleSetting = (typeof PUZZLE_SETTINGS)[number];
 
 /** Three Attempts per Lock; a Transcript is at most 64 events and 4 KB. */
@@ -29,16 +29,16 @@ export type WordLetter = Readonly<{ ch: string; x: number; y: number }>;
 
 export type LockPickView = Readonly<{ kind: "lockpick"; pins: number; range: readonly [number, number]; windowDeg: number; dwellMs: number; centers: readonly number[] }>;
 export type WiresView = Readonly<{ kind: "wires"; n: number; leftOrder: readonly number[] }>;
-export type ClockView = Readonly<{ kind: "clock"; stepMin: 5 }>;
+export type ClockView = Readonly<{ kind: "clock"; stepMin: 1 | 5 | 15 }>;
 export type SafeView = Readonly<{ kind: "safe"; digits: number }>;
-export type MusicboxView = Readonly<{ kind: "musicbox"; n: number; plays: 3; tune: readonly number[] }>;
-export type CandlesView = Readonly<{ kind: "candles"; n: number; shows: 2; order: readonly number[] }>;
+export type MusicboxView = Readonly<{ kind: "musicbox"; n: number; plays: number; tune: readonly number[] }>;
+export type CandlesView = Readonly<{ kind: "candles"; n: number; shows: number; order: readonly number[] }>;
 /** `after` is the shelf after the dark: an item id, or -1 for an empty spot. */
-export type MovedView = Readonly<{ kind: "moved"; slots: number; darkMs: 2000; after: readonly number[] }>;
+export type MovedView = Readonly<{ kind: "moved"; slots: number; darkMs: number; after: readonly number[] }>;
 /** `turns0[piece]` is how many quarter turns the piece starts turned. */
 export type PhotoView = Readonly<{ kind: "photo"; cols: number; rows: number; picture: Picture; turns0: readonly number[] }>;
 export type WordsView = Readonly<{ kind: "words"; n: number; letters: readonly WordLetter[] }>;
-export type BoardView = Readonly<{ kind: "board"; length: number; plays: 2; dwellMs: number; clue: string }>;
+export type BoardView = Readonly<{ kind: "board"; length: number; plays: number; dwellMs: number; clue: string }>;
 export type MazeView = Readonly<{ kind: "maze"; grid: readonly string[] }>;
 export type LockView = LockPickView | WiresView | ClockView | SafeView | MusicboxView | CandlesView | MovedView | PhotoView | WordsView | BoardView | MazeView;
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Kind, LockView, Transcript } from "@hauntology/shared/puzzles/types";
 import type { PuzzleFeel } from "../feel/types";
 
@@ -31,4 +32,9 @@ export type KindProps<K extends Kind> = Readonly<{
    * said (no voice), and the screen falls back to the clue. Absent in the other Kinds.
    */
   hear?: (() => boolean | void | Promise<boolean | void>) | undefined;
+  /**
+   * The Kinds that steer with Tilt only: the host's tilt buttons ("Tilt", and "Hold level" while it is on), with no
+   * wrapper. The screen puts them in a row with its own buttons, so tilt sits with the play controls and apart from Give up.
+   */
+  tiltButtons?: ReactNode;
 }>;

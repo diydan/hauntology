@@ -51,7 +51,7 @@ function solveByTouch(m: M, centers: readonly number[]): void {
 
 describe("LockPick", () => {
   it("starts with every pin waiting but the first, and says to hold the tension", () => {
-    const lock = lockOf("normal", 3);
+    const lock = lockOf("medium", 3);
     mountKind(LockPick, lock.view);
     expect(pinStates()).toEqual(["picking", ...Array<string>(lock.view.pins - 1).fill("waiting")]);
     expect(heat()).toMatch(/Hold Tension/);
@@ -61,7 +61,7 @@ describe("LockPick", () => {
   });
 
   it("is solved with touch alone on both levels: slide to each pin's sweet spot, and the shared checker accepts it", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       for (const seed of [1, 8, 20, 99]) {
         const lock = lockOf(level, seed);
         const m = mountKind(LockPick, lock.view);
@@ -125,7 +125,7 @@ describe("LockPick", () => {
   });
 
   it("releasing the tension drops the count", () => {
-    const lock = lockOf("normal", 6);
+    const lock = lockOf("medium", 6);
     const m = mountKind(LockPick, lock.view);
     holdTension();
     slideTo(lock.secret.centers[0] ?? 0);
@@ -140,7 +140,7 @@ describe("LockPick", () => {
   });
 
   it("counts a spot just inside the window's edge, and not a spot just outside it", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       const lock = lockOf(level, 6);
       const half = lock.view.windowDeg / 2;
       const c = lock.secret.centers[0] ?? 0;
@@ -157,7 +157,7 @@ describe("LockPick", () => {
   });
 
   it("sets the pins in order: a later pin's window does nothing until its turn", () => {
-    const lock = lockOf("normal", 6);
+    const lock = lockOf("medium", 6);
     const m = mountKind(LockPick, lock.view);
     const c0 = lock.secret.centers[0] ?? 0;
     const far = lock.secret.centers.findIndex((c, i) => i > 0 && Math.abs(c - c0) > lock.view.windowDeg + 1);
@@ -283,7 +283,7 @@ describe("LockPick", () => {
   });
 
   it("is accessible: the controls are named, and the pin states are text", () => {
-    mountKind(LockPick, lockOf("normal", 2).view);
+    mountKind(LockPick, lockOf("medium", 2).view);
     expect(screen.getByRole("list", { name: "Pins" })).toBeTruthy();
     expect(screen.getByLabelText("Pick position: slide left or right")).toBe(slider()); // a visible label, not a hidden one
     expect(document.querySelector(".pz-track")).toBeNull(); // one position control, not two

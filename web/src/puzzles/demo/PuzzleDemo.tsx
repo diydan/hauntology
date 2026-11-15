@@ -64,7 +64,7 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
         {KINDS.map((k) => <a key={k} href={href(cfg, { kind: k })} {...(k === cfg.kind ? { "aria-current": "page" as const } : {})}>{k}</a>)}
       </nav>
       <div className="pzd-tools">
-        <a className="pz-btn pz-btn-quiet" href={href(cfg, { level: cfg.level === "easy" ? "normal" : "easy" })}>Level: {cfg.level}</a>
+        <a className="pz-btn pz-btn-quiet" href={href(cfg, { level: LEVELS[(LEVELS.indexOf(cfg.level) + 1) % LEVELS.length] as Level })}>Level: {cfg.level}</a>
         <a className="pz-btn pz-btn-quiet" href={href(cfg, { seed: cfg.seed + 1 })}>New seed ({cfg.seed})</a>
         <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={tilt === "on"} onClick={() => { if (tilt === "on") feel.motion.disable(); else void feel.motion.enable(); }}>Tilt: {tilt}</button>
         <button type="button" className="pz-btn pz-btn-quiet" onClick={() => void feel.synth.unlock()}>Sound</button>

@@ -49,7 +49,7 @@ describe("Moved", () => {
   });
 
   it("dims in fades that follow the shared light plan: never white, never a flash", () => {
-    const lock = lockOf("normal", 3);
+    const lock = lockOf("medium", 3);
     mountKind(Moved, lock.view);
     const plan = dimPlan(false);
     expect(worstChangesPerSecond(plan)).toBeLessThanOrEqual(2);
@@ -85,7 +85,7 @@ describe("Moved", () => {
   });
 
   it("is solved by tapping the changed spots and pressing These changed, on both levels and several seeds", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       for (const seed of [1, 5, 19, 404]) {
         const lock = lockOf(level, seed);
         const { submits, unmount } = mountKind(Moved, lock.view);
@@ -105,7 +105,7 @@ describe("Moved", () => {
 
   it("shows a missing thing as an empty dashed spot that can still be tapped", () => {
     let found: { level: Level; seed: number } | null = null;
-    for (let seed = 1; seed < 300 && found === null; seed++) for (const level of ["easy", "normal"] as const) if (found === null && lockOf(level, seed).view.after.includes(-1)) found = { level, seed };
+    for (let seed = 1; seed < 300 && found === null; seed++) for (const level of ["easy", "medium"] as const) if (found === null && lockOf(level, seed).view.after.includes(-1)) found = { level, seed };
     expect(found).not.toBeNull();
     const lock = lockOf(found?.level ?? "easy", found?.seed ?? 1);
     const hole = lock.view.after.indexOf(-1);
@@ -120,7 +120,7 @@ describe("Moved", () => {
   });
 
   it("toggles a spot with aria-pressed, counts the chosen ones, and ticks", () => {
-    const lock = lockOf("normal", 8);
+    const lock = lockOf("medium", 8);
     const { feel } = mountKind(Moved, lock.view);
     advance(2000);
     expect(chosen()).toBe("0 chosen");
@@ -139,7 +139,7 @@ describe("Moved", () => {
   });
 
   it("lays the shelf in 3 columns for six spots and 4 for eight", () => {
-    for (const [level, cols] of [["easy", 3], ["normal", 4]] as const) {
+    for (const [level, cols] of [["easy", 3], ["medium", 4]] as const) {
       const { unmount } = mountKind(Moved, lockOf(level, 2).view);
       advance(2000);
       expect(document.querySelector<HTMLElement>(".pz-shelf")?.style.gridTemplateColumns).toBe(`repeat(${cols}, 1fr)`);
@@ -189,7 +189,7 @@ describe("Moved", () => {
   });
 
   it("clears its timers when the screen goes in the dark: nothing announced or changed after unmount", () => {
-    const lock = lockOf("normal", 3);
+    const lock = lockOf("medium", 3);
     const { unmount, announcements, feel } = mountKind(Moved, lock.view);
     advance(500);
     const said = announcements.length;

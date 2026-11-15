@@ -16,7 +16,7 @@ import { referenceSolve } from "./verify";
 
 const CAP = 25_000;
 const zonesArb = fc.uniqueArray(fc.constantFrom("Hall", "Library", "Kitchen", "Attic", "Cellar", "Garden", "Study", "Porch"), { minLength: 2, maxLength: 6 });
-const settingArb = fc.constantFrom("easy" as const, "normal" as const);
+const settingArb = fc.constantFrom("easy" as const, "medium" as const, "hard" as const);
 const fixtureArb = fc.tuple(seedArb, zonesArb, settingArb).map(([seed, zones, setting]) => {
   const res = placePuzzles(seed, zones, setting);
   if (!res.ok) throw new Error("placement failed");

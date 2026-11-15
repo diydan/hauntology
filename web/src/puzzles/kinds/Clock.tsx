@@ -10,9 +10,11 @@ const wrap180 = (a: number): number => ((a + 540) % 360) - 180;
 
 /**
  * Clock time: set the hands to the time on the stopped clock seen in an earlier room. Drag a hand round the dial, use the
- * step buttons, or switch on "Twist" and turn the phone like a dial. Five-minute steps, a tick at each.
+ * step buttons, or switch on "Twist" and turn the phone like a dial. The minute hand moves in the level's steps (15, 5 or 1
+ * minutes), a tick at each.
  */
-export default function Clock({ feel, submit, announce }: KindProps<"clock">) {
+export default function Clock({ view, feel, submit, announce }: KindProps<"clock">) {
+  const stepMin = view.stepMin;
   const [time, setTime] = useState({ h: 12, m: 0 });
   const [hand, setHand] = useState<Hand>("minute");
   const [twist, setTwist] = useState(false);
@@ -31,7 +33,7 @@ export default function Clock({ feel, submit, announce }: KindProps<"clock">) {
   const setFromAngle = (which: Hand, a: number): void => {
     const cur = latest.current.time;
     if (which === "minute") {
-      const m = (Math.round(a / 30) * 5) % 60;
+      const m = (Math.round(a / (6 * stepMin)) * stepMin) % 60;
       if (m !== cur.m) apply({ ...cur, m });
     } else {
       let h = Math.round(wrap360(a - cur.m * 0.5) / 30) % 12;
@@ -41,7 +43,7 @@ export default function Clock({ feel, submit, announce }: KindProps<"clock">) {
   };
   const step = (which: Hand, delta: number): void => {
     const cur = latest.current.time;
-    apply(which === "minute" ? { ...cur, m: (cur.m + delta * 5 + 60) % 60 } : { ...cur, h: ((cur.h - 1 + delta + 12) % 12) + 1 });
+    apply(which === "minute" ? { ...cur, m: (cur.m + delta * stepMin + 60) % 60 } : { ...cur, h: ((cur.h - 1 + delta + 12) % 12) + 1 });
   };
   const handAngle = (which: Hand): number => (which === "minute" ? minuteAngle(latest.current.time.m) : hourAngle(latest.current.time.h, latest.current.time.m));
   const pick = (a: number, r: number): Hand => {
@@ -97,24 +99,30 @@ export default function Clock({ feel, submit, announce }: KindProps<"clock">) {
   return (
     <div>
       <p className="pz-hint">Set the hands to the time on the stopped clock you saw.</p>
-      <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-clock-board" role="application" aria-label="Clock to set" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-        <ClockDial />
-        <ClockHands h={h} m={m} />
-      </svg>
-      <p className="pz-readout" role="img" aria-label={`The clock shows ${text}`}>{text}</p>
-      <p className="pz-hint">Drag a hand round the dial, or use the buttons.</p>
-      <div className="pz-grid2" role="group" aria-label="Which hand">
-        <button type="button" className="pz-btn" aria-pressed={hand === "hour"} onClick={() => chooseHand("hour")}>Hour hand</button>
-        <button type="button" className="pz-btn" aria-pressed={hand === "minute"} onClick={() => chooseHand("minute")}>Minute hand</button>
+      <div className="pz-field">
+        <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-clock-board" role="application" aria-label="Clock to set" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+          <ClockDial />
+          <ClockHands h={h} m={m} />
+        </svg>
+        <p className="pz-readout" role="img" aria-label={`The clock shows ${text}`}>{text}</p>
       </div>
-      <div className="pz-grid4">
-        <button type="button" className="pz-btn" aria-label="Hour back" onClick={() => step("hour", -1)}>Hour −</button>
-        <button type="button" className="pz-btn" aria-label="Hour forward" onClick={() => step("hour", 1)}>Hour +</button>
-        <button type="button" className="pz-btn" aria-label="Minutes back" onClick={() => step("minute", -1)}>Min −</button>
-        <button type="button" className="pz-btn" aria-label="Minutes forward" onClick={() => step("minute", 1)}>Min +</button>
+      <p className="pz-hint">Drag a hand round the dial, or use the buttons.</p>
+      <div className="pz-field">
+        <div className="pz-grid3">
+          <div className="pz-contents" role="group" aria-label="Which hand">
+            <button type="button" className="pz-btn" aria-pressed={hand === "hour"} aria-label="Hour hand" onClick={() => chooseHand("hour")}>Hour</button>
+            <button type="button" className="pz-btn" aria-pressed={hand === "minute"} aria-label="Minute hand" onClick={() => chooseHand("minute")}>Minute</button>
+          </div>
+          <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
+        </div>
+        <div className="pz-grid4">
+          <button type="button" className="pz-btn" aria-label="Hour back" onClick={() => step("hour", -1)}>Hour −</button>
+          <button type="button" className="pz-btn" aria-label="Hour forward" onClick={() => step("hour", 1)}>Hour +</button>
+          <button type="button" className="pz-btn" aria-label="Minutes back" onClick={() => step("minute", -1)}>Min −</button>
+          <button type="button" className="pz-btn" aria-label="Minutes forward" onClick={() => step("minute", 1)}>Min +</button>
+        </div>
       </div>
       <div className="pz-twist">
-        <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? `Twist: ${hand}` : "Twist"}</button>
         <p className="pz-hint">{twist ? "Hold the phone upright and turn it like a wheel to turn the chosen hand." : "Twist: turn the phone like a wheel to turn a hand."}</p>
         {twist ? <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={flip} onClick={toggleFlip}>Turns the wrong way? Flip it</button> : null}
       </div>

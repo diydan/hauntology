@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { BOARD_CLUES, BOARD_WORDS, BOARD_WORDS_3, BOARD_WORDS_4, READ_WORDS, READ_WORDS_4, READ_WORDS_5 } from "./words";
+import { BOARD_CLUES, BOARD_WORDS, BOARD_WORDS_3, BOARD_WORDS_4, BOARD_WORDS_5, READ_WORDS, READ_WORDS_4, READ_WORDS_5, READ_WORDS_6 } from "./words";
 
 describe("word lists", () => {
-  it("are 24 words each, A to Z only, the right lengths, no repeats", () => {
-    expect(READ_WORDS).toHaveLength(24);
-    expect(BOARD_WORDS).toHaveLength(24);
-    for (const [list, len] of [[READ_WORDS_4, 4], [READ_WORDS_5, 5], [BOARD_WORDS_3, 3], [BOARD_WORDS_4, 4]] as const) {
+  it("are 36 words each (12 per level), A to Z only, the right lengths, no repeats", () => {
+    expect(READ_WORDS).toHaveLength(36);
+    expect(BOARD_WORDS).toHaveLength(36);
+    for (const [list, len] of [[READ_WORDS_4, 4], [READ_WORDS_5, 5], [READ_WORDS_6, 6], [BOARD_WORDS_3, 3], [BOARD_WORDS_4, 4], [BOARD_WORDS_5, 5]] as const) {
       expect(new Set(list).size).toBe(list.length);
       for (const w of list) { expect(w).toMatch(/^[A-Z]+$/); expect(w).toHaveLength(len); }
     }

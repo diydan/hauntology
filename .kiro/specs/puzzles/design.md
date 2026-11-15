@@ -37,7 +37,7 @@ Wander uses the same pure code through three thin routes on `PlaySession` (open,
 
 ### `web/src/puzzles/`
 
-`PuzzleHost.tsx` (the full-screen frame: timer ring, Attempts left, give up, the Touch path switch), `SightCard.tsx`, `kinds/<Kind>.tsx` (one screen each), `feel/haptics.ts` (`browserHaptics`), `feel/synth.ts` (`browserSynth`), `feel/motion.ts` (`browserMotion`), `feel/breath.ts` (`browserBreath`), `fakes.ts` (`FakeMotion`, `FakeHaptics`, `FakeSynth`, `FakeBreath`), `PuzzleSettings.tsx` (Master panel row, Wander switch, device settings), `SightsPage.tsx` (the notebook page, Assist only). The four interfaces arrive through `PlatformKit.puzzleFeel`, so the shell, the tests and the demo swap them in one place.
+`PuzzleHost.tsx` (the full-screen frame: timer ring, Attempts left, give up, the Touch path switch), `SightCard.tsx`, `kinds/<Kind>.tsx` (one screen each), `feel/haptics.ts` (`browserHaptics`), `feel/synth.ts` (`browserSynth`), `feel/motion.ts` (`browserMotion`), `feel/breath.ts` (`browserBreath`), `fakes.ts` (`FakeMotion`, `FakeHaptics`, `FakeSynth`, `FakeBreath`), `PuzzleSettings.tsx` (Master panel row, Wander switch, device settings), `SightsPage.tsx` (the notebook page, Assist only). **Spacing:** every screen uses one scale of 4, 8, 12 and 16 px (`--pz-space-1` to `--pz-space-4` in `puzzles.css`). A screen's blocks are one even stack 12 px apart (`.pz-stage > div`), the things that belong together sit 8 px apart (`.pz-field`, `.pz-twist`, rows and grids), and no block brings its own margin; `spacing.test.ts` keeps every gap, margin and padding on the scale. The four interfaces arrive through `PlatformKit.puzzleFeel`, so the shell, the tests and the demo swap them in one place.
 
 ### `api/src/do/` and routes
 
@@ -48,7 +48,7 @@ Wander uses the same pure code through three thin routes on `PlaySession` (open,
 ```ts
 export const KINDS = ['lockpick','wires','clock','safe','musicbox','candles','moved','photo','words','board','maze'] as const;
 export type Kind = typeof KINDS[number];
-export type Level = 'easy' | 'normal';
+export type Level = 'easy' | 'medium' | 'hard';
 export type PuzzleSetting = 'off' | Level;
 export const MEMORY_KINDS: readonly Kind[] = ['wires','clock','safe','moved','photo'];
 
@@ -103,14 +103,14 @@ export type WanderLocks = { on: boolean; discovered: string[]; seen: string[]; o
 | `musicbox` | no | the tune, played up to 3 times | five keys | none | one pulse per note | five synth notes | yes (tune) | 600 ms per note |
 | `candles` | no | the order, shown up to 2 times | tap each candle | none | tick per gutter | breath-like noise | yes (order) | 2000 ms |
 | `moved` | **yes** | the shelf before the dark | tap changed objects | none | one rumble in the dark | creak | yes (after shelf) | 3000 ms |
-| `photo` | **yes** | the finished picture | tap to turn, drag to place | none | click on a fit | rustle | yes (picture) | 4000 ms (easy), 6000 ms (normal) |
+| `photo` | **yes** | the finished picture | tap to turn, drag to place | none | click on a fit | rustle | yes (picture) | 1000 ms per piece (4, 6 or 9 s) |
 | `words` | no | none | drag the torch | torch aim | pulse on a letter | none | yes (letters) | 3000 ms |
 | `board` | no | the word and a short clue, spoken up to 2 times | drag the planchette, tap letters | planchette rolls and is pulled to a letter; a tap picks it | tick per letter, thunk on choose | the Whisper, tick | no | 800 ms per letter |
 | `maze`* | no | none | finger drag | orb rolls | bump on a wall (100 ms) | bump | yes (layout) | 4000 ms |
 
 Min solve times are starting guesses. Spike puzzles 1.5 sets them.
 
-**Level sizes** (easy / normal): lockpick 3 / 4 pins and 14 / 10 degree windows; wires 4 / 5; clock same board, tolerance exact; safe 3 / 4 digits; musicbox 3 / 4 notes; candles 4 / 5; moved 6 / 8 objects, 2 / 3 changes; photo 4 / 6 pieces; words 4 / 5 letters; board 3 / 4 letters; maze 3 / 5 turns of the path.
+**Level sizes** (easy / medium / hard): lockpick 3 / 4 / 5 pins and 14 / 10 / 8 degree windows; wires 4 / 5 / 6; clock steps of 15 / 5 / 1 minutes; safe 3 / 4 / 5 digits; musicbox 3 / 4 / 5 notes, 3 / 3 / 2 plays; candles 4 / 5 / 6, 2 / 2 / 1 shows; moved 6 / 8 / 9 objects, 2 / 3 / 4 changes, at most 1 / 1 / 2 missing, 2 / 2 / 1.5 s of dark; photo 2x2 / 3x2 / 3x3 pieces; words 4 / 5 / 6 letters; board 3 / 4 / 5 letters, 2 / 2 / 1 hearings; maze 9x11 / 9x13 / 9x15 (hard has one way through). Classic plays medium, Gentle easy; hard is a Master choice only.
 
 **Wires** are told apart by colour and pattern (stripe, dots, zigzag, plain, check). The Sight shows the order; the terminals on the right are only numbered, so the colours must be remembered or read from the notebook.
 
@@ -197,7 +197,7 @@ export type PuzzleFeel = { motion: Motion; haptics: Haptics; synth: Synth; breat
 **Default on.** On a phone with a touch screen, Tilt turns on by itself for the four Kinds that steer with it, and the permission request rides on the tap that starts the Lock (an iPhone only shows its prompt for a direct tap). A phone with no sensor answers `unsupported` within 1.5 seconds and plays by touch. A Player who turns Tilt off keeps it off on that device. (Playtest 2026-11-15: asking for a separate "Use tilt" tap on every puzzle was tedious.)
 
 
-`browserMotion.request()` calls `DeviceOrientationEvent.requestPermission()` from the "Use tilt" tap where that function exists (iPhone) and treats a phone without it as granted; no sensor gives `unsupported`. The listener reads `beta` and `gamma` (not `alpha`, which depends on the compass) at most 30 times a second, and stops when the page is hidden or the Lock closes.
+`browserMotion.request()` calls `DeviceOrientationEvent.requestPermission()` from the "Tilt" tap where that function exists (iPhone) and treats a phone without it as granted; no sensor gives `unsupported`. The listener reads `beta` and `gamma` (not `alpha`, which depends on the compass) at most 30 times a second, and stops when the page is hidden or the Lock closes.
 
 Pure helpers: `smoothTilt(prev, raw, 0.2)`, a 2 degree dead zone, `tiltForScreen(raw, screenAngle)` (swaps and flips the two axes for 90, 180 and 270 degrees), `zeroTilt(zero, raw)`, a clamp to plus or minus 45 degrees, `tiltToPosition(x, range)` (linear, clamped), and `dialFromGravity(ax, ay, az)` (the turn about the screen's own axis from the gravity vector, so twisting the phone like a dial works held upright; it gives nothing when the phone lies flat; Spike puzzles 1.2 checks it).
 
@@ -256,7 +256,7 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 |---|---|
 | `party-mode` Requirement 14.1 (sound) and `steering/party-mode.md` | A Player's own Puzzle sounds are interface sounds and do not count toward the three per phone per Round. **Decided by the owner on 2026-11-15 and applied to both files.** The same consent applies; the sounds stay on the Player's own phone; `soundPlan` in `party-mode` keeps counting only Cues, House Cues, Frames and Rattles (the Becoming is already exempt in 19.6). |
 | `party-mode` Inspect (Requirement 4.6, `residue.ts`) | Keep `inspect()` as is; call it from `submitAttempt` on a solved Lock; add `inspectLine` to the public log at Lock open. |
-| `party-mode` presets and Master panel | Add the Puzzle setting (Classic normal, Gentle easy, Quick off) and the Plain Inspect and Assist device settings. |
+| `party-mode` presets and Master panel | Add the Puzzle setting (Classic medium, Gentle easy, Quick off; hard by Master choice) and the Plain Inspect and Assist device settings. |
 | `party-mode` Public View | Carry `puzzleSetting` only. |
 | `ghost-engine` | `gateReveal` in front of the `reveal` Directive; `WanderLocks` in the Session. |
 | `ghost-voice` | 24 Library lines for the Whisper's board words (`check-voice-library.mjs` will ask for them). |

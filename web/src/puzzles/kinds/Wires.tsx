@@ -123,34 +123,36 @@ export default function Wires({ view, feel, submit, announce }: KindProps<"wires
   return (
     <div>
       <p className="pz-hint">Match each wire to its place in the fuse box you saw. Drag it to a terminal, or tap the wire and then a terminal.</p>
-      <svg ref={board} viewBox={`0 0 ${W} ${H}`} className="pz-board pz-wires-board" role="group" aria-label="Wires board" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>
-        {Object.entries(conn).filter(([w]) => Number(w) !== dragging).map(([w, t]) => {
-          const look = wireLook(Number(w));
-          return <path key={w} d={path(ys(rowOf(Number(w))), RIGHT_X - HANDLE_R, ys(t))} className="pz-wire-line" stroke={look.color} strokeDasharray={look.dash} />;
-        })}
-        <path ref={ghost} d="" className="pz-wire-line pz-wire-ghost" />
-        {view.leftOrder.map((_, t) => {
-          const w = holder(t);
-          return (
-            <g key={t} role="button" tabIndex={0} aria-label={w === undefined ? `Terminal ${t + 1}` : `Terminal ${t + 1}, holds ${wireLook(w).name}`} className="pz-terminal" onClick={() => plugPicked(t)} onKeyDown={onKey(() => plugPicked(t))}>
-              <circle cx={RIGHT_X} cy={ys(t)} r={HANDLE_R} className="pz-terminal-ring" />
-              <text x={RIGHT_X} y={ys(t) + 7} className="pz-terminal-num">{t + 1}</text>
-            </g>
-          );
-        })}
-        {view.leftOrder.map((w, row) => {
-          const look = wireLook(w);
-          const t = conn[w];
-          const label = `Wire ${look.name}${t === undefined ? "" : `, on terminal ${t + 1}`}`;
-          return (
-            <g key={w} data-wire={w} role="button" tabIndex={0} aria-label={label} aria-pressed={picked === w} className="pz-wire-handle" onClick={onAssistClick(() => choose(w))} onKeyDown={onKey(() => choose(w))}>
-              <circle cx={LEFT_X} cy={ys(row)} r={HANDLE_R} className="pz-wire-disc" stroke={look.color} strokeWidth={picked === w ? 6 : 2.5} />
-              <WireShape shape={look.shape} cx={LEFT_X} cy={ys(row)} r={13} fill={look.color} />
-            </g>
-          );
-        })}
-      </svg>
-      <p className="pz-hint" role="status">{joined} of {n} wires joined</p>
+      <div className="pz-field">
+        <svg ref={board} viewBox={`0 0 ${W} ${H}`} className="pz-board pz-wires-board" role="group" aria-label="Wires board" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>
+          {Object.entries(conn).filter(([w]) => Number(w) !== dragging).map(([w, t]) => {
+            const look = wireLook(Number(w));
+            return <path key={w} d={path(ys(rowOf(Number(w))), RIGHT_X - HANDLE_R, ys(t))} className="pz-wire-line" stroke={look.color} strokeDasharray={look.dash} />;
+          })}
+          <path ref={ghost} d="" className="pz-wire-line pz-wire-ghost" />
+          {view.leftOrder.map((_, t) => {
+            const w = holder(t);
+            return (
+              <g key={t} role="button" tabIndex={0} aria-label={w === undefined ? `Terminal ${t + 1}` : `Terminal ${t + 1}, holds ${wireLook(w).name}`} className="pz-terminal" onClick={() => plugPicked(t)} onKeyDown={onKey(() => plugPicked(t))}>
+                <circle cx={RIGHT_X} cy={ys(t)} r={HANDLE_R} className="pz-terminal-ring" />
+                <text x={RIGHT_X} y={ys(t) + 7} className="pz-terminal-num">{t + 1}</text>
+              </g>
+            );
+          })}
+          {view.leftOrder.map((w, row) => {
+            const look = wireLook(w);
+            const t = conn[w];
+            const label = `Wire ${look.name}${t === undefined ? "" : `, on terminal ${t + 1}`}`;
+            return (
+              <g key={w} data-wire={w} role="button" tabIndex={0} aria-label={label} aria-pressed={picked === w} className="pz-wire-handle" onClick={onAssistClick(() => choose(w))} onKeyDown={onKey(() => choose(w))}>
+                <circle cx={LEFT_X} cy={ys(row)} r={HANDLE_R} className="pz-wire-disc" stroke={look.color} strokeWidth={picked === w ? 6 : 2.5} />
+                <WireShape shape={look.shape} cx={LEFT_X} cy={ys(row)} r={13} fill={look.color} />
+              </g>
+            );
+          })}
+        </svg>
+        <p className="pz-hint" role="status">{joined} of {n} wires joined</p>
+      </div>
       <button type="button" className="pz-btn pz-btn-primary pz-wide" disabled={joined !== n} onClick={() => submit({ pairs })}>Check the wires</button>
     </div>
   );

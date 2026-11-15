@@ -5,6 +5,7 @@ import type { FeelEvent, PuzzleFeel } from "./feel/types";
 import { useFeelValue, useWakeLock } from "./hooks";
 import { KIND_SCREENS } from "./kinds/registry";
 import type { KindProps } from "./kinds/types";
+import { HelpCard } from "./HelpCard";
 import { SightCard } from "./SightCard";
 import { SightClue } from "./SightClue";
 import "./puzzles.css";
@@ -59,6 +60,9 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
   const [message, setMessage] = useState("");
   const [spoken, setSpoken] = useState("");
   const [peeking, setPeeking] = useState(false);
+  const [helping, setHelping] = useState(false);
+  const helpButton = useRef<HTMLButtonElement>(null);
+  const wasHelping = useRef(false);
   const [confirmGive, setConfirmGive] = useState(false);
   const [shown, setShown] = useState(0);
   const [twin, setTwin] = useState<FeelEvent | null>(null);
@@ -100,6 +104,12 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
   }, [twin]);
   useEffect(() => () => { feel.closeLock(); }, [feel]);
 
+  const closeHelp = useCallback((): void => setHelping(false), []);
+  // when the card closes, focus goes back to the "?" that opened it
+  useEffect(() => {
+    if (wasHelping.current && !helping) helpButton.current?.focus();
+    wasHelping.current = helping;
+  }, [helping]);
   /** What a screen says to a screen reader only: the screen already shows its own instructions, so this is not drawn a second time. */
   const announce = useCallback((text: string): void => setSpoken(text), []);
 
@@ -125,6 +135,13 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
   }, [phase, kind, onAttempt, feel]);
 
   const Screen = KIND_SCREENS[kind] as unknown as Screen;
+  // Tilt is a way to play, not a way out: its buttons go to the screen, in a row with the screen's own buttons.
+  const tiltButtons = info.usesTilt ? (
+    <>
+      <button type="button" className="pz-btn pz-btn-quiet" aria-pressed={tilt === "on"} onClick={() => (tilt === "on" ? feel.motion.disable() : void feel.motion.enable())}>{tilt === "on" ? "Tilt: on" : "Tilt"}</button>
+      {tilt === "on" ? <button type="button" className="pz-btn pz-btn-quiet" onClick={() => feel.motion.holdLevel()}>Hold level</button> : null}
+    </>
+  ) : null;
   const pips = useMemo(() => Array.from({ length: attempts }, (_, i) => i < wrong), [attempts, wrong]);
   const skipOffered = onSkip !== undefined && (wrong >= 2 || shown >= 20_000);
 
@@ -138,12 +155,16 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
   return (
     <section className={`pz-host${glow === 0 ? "" : glow % 2 === 1 ? " pz-glow-a" : " pz-glow-b"}`} aria-label="Puzzle">
       <header className="pz-bar-row">
-        <div className="pz-tries">
-          <span className="pz-bar-label" aria-hidden="true">Tries</span>
-          <div className="pz-pips" role="img" aria-label={`${attempts - wrong} of ${attempts} tries left`}>{pips.map((used, i) => <span key={i} className={used ? "pz-pip pz-pip-used" : "pz-pip"} />)}</div>
+        <div className="pz-bar-left">
+          <button ref={helpButton} type="button" className="pz-help-btn" aria-label="How this puzzle works" aria-expanded={helping} onClick={() => { setPeeking(false); setHelping((h) => !h); }}>?</button>
+          <div className="pz-tries">
+            <span className="pz-bar-label" aria-hidden="true">Tries</span>
+            <div className="pz-pips" role="img" aria-label={`${attempts - wrong} of ${attempts} tries left`}>{pips.map((used, i) => <span key={i} className={used ? "pz-pip pz-pip-used" : "pz-pip"} />)}</div>
+          </div>
         </div>
         <span className="pz-timer" aria-hidden="true"><span className="pz-bar-label">Time</span> {capMs === null ? fmtS(shown) : `${fmtS(shown)} of ${Math.round(capMs / 1000)} s`}</span>
       </header>
+      {helping ? <HelpCard kind={kind} clock={capMs !== null} onClose={closeHelp} /> : null}
       {peeking && clue ? (
         <div className="pz-card pz-peek" role="dialog" aria-label="The clue">
           <h2 className="pz-title">The clue</h2>
@@ -152,14 +173,16 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
           <button type="button" className="pz-btn pz-btn-primary" onClick={() => setPeeking(false)}>Back to the puzzle</button>
         </div>
       ) : null}
-      <div className="pz-stage" hidden={peeking}>
+      <div className="pz-stage" hidden={peeking || helping}>
         <Suspense fallback={<div className="pz-skeleton" aria-busy="true" aria-label="Loading the puzzle" />}>
-          <Screen view={view as never} feel={feel} assist={assist} reducedMotion={reducedMotion} elapsed={elapsed} submit={submit as never} resetKey={wrong} announce={announce} hear={onHear} />
+          <Screen view={view as never} feel={feel} assist={assist} reducedMotion={reducedMotion} elapsed={elapsed} submit={submit as never} resetKey={wrong} announce={announce} hear={onHear} tiltButtons={tiltButtons} />
         </Suspense>
       </div>
-      <p className="pz-status" role="status" aria-live="polite">{message}</p>
-      <p className="pz-sr" aria-live="polite">{spoken}</p>
-      {twin ? <p className="pz-twin" aria-hidden="true">{twin.type === "buzz" ? `Buzz: ${twin.name}` : `♪ ${twin.name}${twin.muted ? " · sound is off" : ""}`}</p> : null}
+      <div className="pz-feedback">
+        <p className="pz-status" role="status" aria-live="polite">{message}</p>
+        <p className="pz-sr" aria-live="polite">{spoken}</p>
+        <p className="pz-twin" aria-hidden="true">{twin ? (twin.type === "buzz" ? `Buzz: ${twin.name}` : `♪ ${twin.name}${twin.muted ? " · sound is off" : ""}`) : ""}</p>
+      </div>
       {phase === "done" && reply ? (
         <div className="pz-result" data-outcome={reply.outcome}>
           <p className="pz-result-title">{reply.outcome === "solved" ? "Opened" : "Nothing came loose"}</p>
@@ -168,27 +191,19 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
       ) : (
         <footer className="pz-foot-wrap">
           <div className="pz-foot">
-            {info.usesTilt ? (
-              tilt === "on"
-                ? (<><button type="button" className="pz-btn" onClick={() => feel.motion.holdLevel()}>Hold level</button><button type="button" className="pz-btn" onClick={() => feel.motion.disable()}>Tilt off</button></>)
-                : (<button type="button" className="pz-btn" onClick={() => void feel.motion.enable()}>Use tilt</button>)
-            ) : null}
-            {assist && clue ? <button type="button" className="pz-btn" onClick={() => setPeeking(true)}>See the clue again</button> : null}
+            {assist && clue ? <button type="button" className="pz-btn" onClick={() => { setHelping(false); setPeeking(true); }}>See the clue again</button> : null}
             {skipOffered ? <button type="button" className="pz-btn" onClick={onSkip}>Let the ghost open it</button> : null}
+            {confirmGive ? null : <button type="button" className="pz-btn pz-btn-quiet" onClick={() => setConfirmGive(true)}>Give up</button>}
           </div>
-          <div className="pz-give">
-            {confirmGive ? (
-              <>
-                <p className="pz-muted">Give up on this lock? Nothing will open.{capMs !== null ? " The time you used still counts." : ""}</p>
-                <div className="pz-foot">
-                  <button type="button" className="pz-btn pz-btn-primary" onClick={() => setConfirmGive(false)}>Keep playing</button>
-                  <button type="button" className="pz-btn pz-btn-quiet" onClick={onGiveUp}>Yes, give up</button>
-                </div>
-              </>
-            ) : (
-              <button type="button" className="pz-btn pz-btn-quiet" onClick={() => setConfirmGive(true)}>Give up</button>
-            )}
-          </div>
+          {confirmGive ? (
+            <div className="pz-give">
+              <p className="pz-muted">Give up on this lock? Nothing will open.{capMs !== null ? " The time you used still counts." : ""}</p>
+              <div className="pz-grid2 pz-confirm">
+                <button type="button" className="pz-btn pz-btn-primary" onClick={() => setConfirmGive(false)}>Keep playing</button>
+                <button type="button" className="pz-btn pz-btn-quiet" onClick={onGiveUp}>Yes, give up</button>
+              </div>
+            </div>
+          ) : null}
         </footer>
       )}
     </section>

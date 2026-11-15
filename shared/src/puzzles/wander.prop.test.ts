@@ -36,7 +36,7 @@ describe("Property 9: A memory is always reachable", () => {
   // Validates: Requirements 2.2, 2.3
   it("is let through by a solve, or by a skip after 20 s or two wrong Attempts, whatever came before", () => {
     fc.assert(
-      fc.property(seedArb, fc.array(opArb, { maxLength: 25 }), fc.constantFrom("easy" as const, "normal" as const), (seed, ops, level) => {
+      fc.property(seedArb, fc.array(opArb, { maxLength: 25 }), fc.constantFrom("easy" as const, "medium" as const, "hard" as const), (seed, ops, level) => {
         let state: WanderLocks = initWander(true);
         let now = 1000;
         const g = gateReveal(state, { anchorId: "a1", sessionSeed: seed, level }, now);

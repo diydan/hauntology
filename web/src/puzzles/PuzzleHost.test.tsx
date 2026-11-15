@@ -3,10 +3,11 @@ import { act, cleanup, fireEvent, render, screen, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeLock } from "@hauntology/shared/puzzles/make";
 import { fadedFor } from "@hauntology/shared/puzzles/sight";
-import type { Kind, Transcript } from "@hauntology/shared/puzzles/types";
+import { KINDS, type Kind, type Transcript } from "@hauntology/shared/puzzles/types";
 import { createFakeFeel } from "./feel/fakes";
+import { COMMON_HELP, KIND_HELP } from "./help";
 import { PuzzleHost, type AttemptReply, type PuzzleHostProps } from "./PuzzleHost";
-import { stubGeometry, wait } from "./test-utils";
+import { stubCanvas, stubGeometry, wait } from "./test-utils";
 
 let restore = (): void => {};
 beforeEach(() => { restore = stubGeometry(); });
@@ -164,7 +165,12 @@ describe("PuzzleHost", () => {
     fireEvent.click(screen.getByRole("button", { name: "Give up" }));
     expect(h.props.onGiveUp).not.toHaveBeenCalled(); // it asks first, so a stray tap near Use tilt costs nothing
     expect(screen.getByText(/Give up on this lock\? Nothing will open\. The time you used still counts\./)).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Keep playing" }));
+    const keep = screen.getByRole("button", { name: "Keep playing" });
+    const yes = screen.getByRole("button", { name: "Yes, give up" });
+    expect(keep.parentElement).toBe(yes.parentElement); // side by side in one row, not stacked
+    expect(keep.parentElement?.className).toMatch(/pz-grid2/);
+    expect([...(keep.parentElement?.children ?? [])]).toEqual([keep, yes]);
+    fireEvent.click(keep);
     expect(screen.queryByText(/Give up on this lock/)).toBeNull();
     expect(h.props.onGiveUp).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Give up" }));
@@ -177,11 +183,45 @@ describe("PuzzleHost", () => {
     await act(async () => { await Promise.resolve(); });
     fireEvent.click(screen.getByRole("button", { name: "Give up" }));
     expect(screen.getByText(/Nothing will open\.$/)).toBeTruthy();
-    const play = document.querySelector(".pz-foot");
     const give = document.querySelector(".pz-give");
-    expect(play?.contains(screen.getByRole("button", { name: "Use tilt" }))).toBe(true);
-    expect(play?.contains(screen.getByRole("button", { name: "Yes, give up" }))).toBe(false);
     expect(give?.contains(screen.getByRole("button", { name: "Yes, give up" }))).toBe(true);
+  });
+
+  it("puts Tilt in the puzzle, in one row with the puzzle's own buttons, and Give up alone outside it", async () => {
+    const unstub = stubCanvas();
+    for (const [kind, mine] of [["lockpick", "Tension (hold)"], ["words", "Clear"], ["board", "Clear"], ["maze", null]] as const) {
+      const h = host(kind);
+      await screenReady(kind);
+      const tilt = screen.getByRole("button", { name: "Tilt" });
+      expect(tilt.getAttribute("aria-pressed")).toBe("false");
+      expect(document.querySelector(".pz-stage")?.contains(tilt)).toBe(true);
+      expect(document.querySelector(".pz-foot")?.contains(tilt)).toBe(false);
+      if (mine !== null) expect(screen.getByRole("button", { name: mine }).parentElement).toBe(tilt.parentElement);
+      expect(document.querySelector(".pz-stage")?.contains(screen.getByRole("button", { name: "Give up" }))).toBe(false);
+      await act(async () => { fireEvent.click(tilt); await Promise.resolve(); });
+      expect(h.feel.motion.state).toBe("on");
+      const on = screen.getByRole("button", { name: "Tilt: on" });
+      expect(on.getAttribute("aria-pressed")).toBe("true");
+      expect(screen.getByRole("button", { name: "Hold level" }).parentElement).toBe(on.parentElement);
+      await act(async () => { fireEvent.click(on); });
+      expect(h.feel.motion.state).not.toBe("on");
+      cleanup();
+    }
+    host("safe");
+    await screenReady("safe");
+    expect(screen.queryByRole("button", { name: /^Tilt/ })).toBeNull(); // a Kind that does not steer with tilt has no Tilt button
+    unstub();
+  }, 20_000);
+
+  it("keeps a line for the buzz and sound twin even when there is none, so the buttons below never jump", async () => {
+    const h = host("clock");
+    await screenReady("clock");
+    const line = document.querySelector(".pz-twin");
+    expect(line).toBeTruthy();
+    expect(line?.textContent).toBe("");
+    await act(async () => { h.feel.haptics.buzz("tick"); });
+    expect(document.querySelector(".pz-twin")).toBe(line); // the same element, filled in
+    expect(line?.textContent).toBe("Buzz: tick");
   });
 
   it("names the tries and the time, so the dots and the counter explain themselves", async () => {
@@ -316,5 +356,91 @@ describe("PuzzleHost and the clue", () => {
     await screenReady("clock");
     fireEvent.click(screen.getByRole("button", { name: "See the clue again" }));
     expect(screen.queryByText("The clock keeps running.")).toBeNull();
+  });
+});
+
+describe("PuzzleHost help", () => {
+  const helpButton = (): HTMLElement => screen.getByRole("button", { name: "How this puzzle works" });
+
+  it("has a ? on every puzzle that opens a card for that Kind, and shuts the puzzle away behind it", async () => {
+    for (const kind of KINDS) {
+      const h = host(kind);
+      expect(helpButton().textContent, kind).toBe("?");
+      expect(helpButton().getAttribute("aria-expanded"), kind).toBe("false");
+      fireEvent.click(helpButton());
+      const dialog = screen.getByRole("dialog", { name: `How ${KIND_HELP[kind].title} works` });
+      for (const step of KIND_HELP[kind].steps) expect(within(dialog).getByText(step), `${kind}: ${step}`).toBeTruthy();
+      for (const extra of KIND_HELP[kind].extras) expect(within(dialog).getByText(extra), `${kind}: ${extra}`).toBeTruthy();
+      for (const line of COMMON_HELP) expect(within(dialog).getByText(line)).toBeTruthy();
+      expect(helpButton().getAttribute("aria-expanded"), kind).toBe("true");
+      expect((document.querySelector(".pz-stage") as HTMLElement).hidden, kind).toBe(true);
+      h.unmount();
+    }
+  });
+
+  it("lists the phone extras under a heading that says they are optional, only for a Kind that has some", async () => {
+    host("candles");
+    fireEvent.click(helpButton());
+    expect(screen.getByRole("heading", { name: "Phone extras (all optional)" })).toBeTruthy();
+    cleanup();
+    host("clock");
+    fireEvent.click(helpButton());
+    expect(screen.getByRole("heading", { name: "Phone extras (all optional)" })).toBeTruthy(); // Twist
+  });
+
+  it("keeps the puzzle where it was, says the clock keeps running (with a clock only), and closes with its button, the ? or Escape", async () => {
+    host("clock");
+    await screenReady("clock");
+    fireEvent.click(screen.getByRole("button", { name: "Hour forward" }));
+    fireEvent.click(helpButton());
+    expect(screen.getByText("The clock keeps running while you read this.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Back to the puzzle" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect((document.querySelector(".pz-stage") as HTMLElement).hidden).toBe(false);
+    expect(screen.getByRole("img", { name: "The clock shows 1:00" })).toBeTruthy(); // the Player's work was kept
+    expect(document.activeElement).toBe(helpButton()); // focus goes back to the ?
+    fireEvent.click(helpButton());
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    fireEvent.click(helpButton()); // the ? toggles
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(helpButton());
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.keyDown(document, { key: "Escape" }); // nothing open: nothing happens
+    expect(screen.queryByRole("dialog")).toBeNull();
+    cleanup();
+    host("clock", { capMs: null });
+    fireEvent.click(helpButton());
+    expect(screen.queryByText(/The clock keeps running/)).toBeNull();
+  });
+
+  it("moves focus into the card when it opens", async () => {
+    host("clock");
+    fireEvent.click(helpButton());
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Back to the puzzle" }));
+  });
+
+  it("shows the help and the clue one at a time", async () => {
+    const lock = makeLock("clock", "easy", 4);
+    const clue = fadedFor(lock, false);
+    if (clue === null) throw new Error("clock has a Sight");
+    host("clock", { clue, assist: true });
+    await screenReady("clock");
+    fireEvent.click(screen.getByRole("button", { name: "See the clue again" }));
+    expect(screen.getByRole("dialog", { name: "The clue" })).toBeTruthy();
+    fireEvent.click(helpButton());
+    expect(screen.queryByRole("dialog", { name: "The clue" })).toBeNull();
+    expect(screen.getByRole("dialog", { name: /^How .* works$/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "See the clue again" }));
+    expect(screen.queryByRole("dialog", { name: /^How .* works$/ })).toBeNull();
+    expect(screen.getByRole("dialog", { name: "The clue" })).toBeTruthy();
+  });
+
+  it("is still there after a wrong answer and at the result", async () => {
+    host("clock", { onAttempt: () => ({ outcome: "solved" }) });
+    await screenReady("clock");
+    expect(helpButton()).toBeTruthy();
+    await send();
+    expect(helpButton()).toBeTruthy();
   });
 });

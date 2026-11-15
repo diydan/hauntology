@@ -100,7 +100,7 @@ describe("PuzzleSettings", () => {
     expect(document.body.textContent).toMatch(/Tilt is off\. You play with touch/);
   });
 
-  it("shows the Master row only when given one: three choices, the current one checked, and the preset's own level in the hint", () => {
+  it("shows the Master row only when given one: four choices, the current one checked, and the preset's own level in the hint", () => {
     const none = mount();
     expect(screen.queryByRole("radiogroup")).toBeNull();
     none.unmount();
@@ -108,18 +108,20 @@ describe("PuzzleSettings", () => {
     mount({ master: { value: "easy", preset: "classic", onChange } });
     const group = screen.getByRole("radiogroup", { name: "Puzzles" });
     const radios = within(group).getAllByRole("radio");
-    expect(radios.map((r) => r.textContent)).toEqual(["Off", "Easy", "Normal"]);
-    expect(radios.map((r) => r.getAttribute("aria-checked"))).toEqual(["false", "true", "false"]);
+    expect(radios.map((r) => r.textContent)).toEqual(["Off", "Easy", "Medium", "Hard"]);
+    expect(radios.map((r) => r.getAttribute("aria-checked"))).toEqual(["false", "true", "false", "false"]);
+    fireEvent.click(radios[3] as HTMLElement);
+    expect(onChange).toHaveBeenLastCalledWith("hard");
     fireEvent.click(radios[2] as HTMLElement);
-    expect(onChange).toHaveBeenCalledWith("normal");
+    expect(onChange).toHaveBeenLastCalledWith("medium");
     fireEvent.click(radios[0] as HTMLElement);
     expect(onChange).toHaveBeenLastCalledWith("off");
-    expect(group.textContent).toMatch(/preset gives normal/);
+    expect(group.textContent).toMatch(/preset gives medium/);
     expect(group.textContent).toMatch(/applies from the next Inspect/);
   });
 
-  it("names the level each preset gives: Classic normal, Gentle easy, Quick off", () => {
-    for (const [preset, level] of [["classic", "normal"], ["gentle", "easy"], ["quick", "off"]] as const) {
+  it("names the level each preset gives: Classic medium, Gentle easy, Quick off", () => {
+    for (const [preset, level] of [["classic", "medium"], ["gentle", "easy"], ["quick", "off"]] as const) {
       const m = mount({ master: { value: "off", preset, onChange: () => {} } });
       expect(screen.getByRole("radiogroup").textContent, preset).toMatch(new RegExp(`preset gives ${level}`));
       m.unmount();
@@ -145,7 +147,7 @@ describe("PuzzleSettings", () => {
   });
 
   it("is a plain column of named controls: every button has a name, none is a bare icon", () => {
-    mount({ master: { value: "normal", preset: "gentle", onChange: () => {} }, wander: { on: true, onChange: () => {} }, plainInspect: { on: false, onChange: () => {} } });
+    mount({ master: { value: "medium", preset: "gentle", onChange: () => {} }, wander: { on: true, onChange: () => {} }, plainInspect: { on: false, onChange: () => {} } });
     const buttons = [...document.querySelectorAll("button")];
     expect(buttons.length).toBeGreaterThan(8);
     for (const b of buttons) expect((b.textContent ?? "").trim().length, "named").toBeGreaterThan(0);

@@ -39,7 +39,7 @@ describe("MusicBox", () => {
   });
 
   it("is solved on the keys alone (no sound, no buzz needed) and answers by itself at the last note, on both levels and several seeds", () => {
-    for (const level of ["easy", "normal"] as const) {
+    for (const level of ["easy", "medium"] as const) {
       for (const seed of [2, 9, 31, 640]) {
         const lock = lockOf(level, seed);
         const { submits, unmount } = mountKind(MusicBox, lock.view);
@@ -58,7 +58,7 @@ describe("MusicBox", () => {
 
   it("plays every tap: its note, one tick buzz, and lights its key for a moment, also with the sound muted", () => {
     vi.useFakeTimers();
-    const lock = lockOf("normal", 5);
+    const lock = lockOf("medium", 5);
     const { feel } = mountKind(MusicBox, lock.view);
     feel.synth.state = "locked"; // the Player has not unlocked sound: the twin must still show
     fireEvent.click(key(3));
@@ -73,7 +73,7 @@ describe("MusicBox", () => {
 
   it("winds the tune: a note every 650 ms, each lighting its key and buzzing a tick, Wind disabled meanwhile", () => {
     vi.useFakeTimers();
-    const lock = lockOf("normal", 5);
+    const lock = lockOf("medium", 5);
     const tune = lock.view.tune;
     const { feel } = mountKind(MusicBox, lock.view);
     feel.synth.state = "locked"; // muted: the keys still have to show the tune
@@ -170,7 +170,7 @@ describe("MusicBox", () => {
 
   it("clears every timer when the screen goes: no note, no buzz and no error after unmount", () => {
     vi.useFakeTimers();
-    const lock = lockOf("normal", 4);
+    const lock = lockOf("medium", 4);
     const { feel, unmount } = mountKind(MusicBox, lock.view);
     fireEvent.click(wind());
     advance(700); // two notes so far

@@ -12,12 +12,12 @@ import { referenceSolve } from "./verify";
 const CAP = 25_000;
 const zones = ["Hall", "Library", "Kitchen", "Attic", "Cellar", "Garden"];
 function fixture(seed = 11) {
-  const res = placePuzzles(seed, zones, "normal");
+  const res = placePuzzles(seed, zones, "medium");
   if (!res.ok) throw new Error("placement");
   const placed = res.value;
   return { placed, state: initPartyLocks(placed), memory: placed.find((p) => isMemoryKind(p.kind)) as PlacedLock, plain: placed.find((p) => !isMemoryKind(p.kind)) as PlacedLock };
 }
-const ctx = { setting: "normal" as const, capMs: CAP, isBot: false };
+const ctx = { setting: "medium" as const, capMs: CAP, isBot: false };
 const solve = (p: PlacedLock) => referenceSolve(makeLock(p.kind, p.level, p.seed));
 
 describe("openLock", () => {
@@ -142,12 +142,12 @@ describe("pause, reconnect and Plain Inspect", () => {
   it("plans Plain Inspect for off, for Bots and for a seat that chose it (paying the whole Cap), and a Lock otherwise", () => {
     const { state } = fixture();
     expect(inspectPlan("off", state, "s1", false, CAP)).toEqual({ mode: "plain", chargeMs: 10_000 });
-    expect(inspectPlan("normal", state, "b1", true, CAP)).toEqual({ mode: "plain", chargeMs: 10_000 });
-    expect(inspectPlan("normal", state, "s1", false, CAP)).toEqual({ mode: "lock" });
+    expect(inspectPlan("medium", state, "b1", true, CAP)).toEqual({ mode: "plain", chargeMs: 10_000 });
+    expect(inspectPlan("medium", state, "s1", false, CAP)).toEqual({ mode: "lock" });
     const on = setPlain(state, "s1", true);
-    expect(inspectPlan("normal", on, "s1", false, CAP)).toEqual({ mode: "plain", chargeMs: CAP });
-    expect(inspectPlan("normal", on, "s2", false, CAP)).toEqual({ mode: "lock" }); // nobody else is told or changed
-    expect(inspectPlan("normal", setPlain(on, "s1", false), "s1", false, CAP)).toEqual({ mode: "lock" });
+    expect(inspectPlan("medium", on, "s1", false, CAP)).toEqual({ mode: "plain", chargeMs: CAP });
+    expect(inspectPlan("medium", on, "s2", false, CAP)).toEqual({ mode: "lock" }); // nobody else is told or changed
+    expect(inspectPlan("medium", setPlain(on, "s1", false), "s1", false, CAP)).toEqual({ mode: "lock" });
   });
 
   it("moves an acknowledged Sight from pending to seen, for that seat only", () => {

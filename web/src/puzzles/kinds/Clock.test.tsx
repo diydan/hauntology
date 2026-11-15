@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { makeLock } from "@hauntology/shared/puzzles/make";
 import { verify } from "@hauntology/shared/puzzles/verify";
@@ -11,8 +11,10 @@ let restore = (): void => {};
 beforeEach(() => { restore = stubGeometry(); });
 afterEach(() => { cleanup(); restore(); });
 
-const view = makeLock("clock", "easy", 7).view;
+const view = makeLock("clock", "medium", 7).view;
 if (view.kind !== "clock") throw new Error("kind");
+/** The clock's view at a level. */
+const viewAt = (level: "easy" | "medium" | "hard", seed = 7) => { const v = makeLock("clock", level, seed).view; if (v.kind !== "clock") throw new Error("kind"); return v; };
 const readout = (): string => screen.getByRole("img", { name: /The clock shows/ }).textContent ?? "";
 
 /** Press at a hand's tip and drag to an angle on the dial. */
@@ -60,9 +62,33 @@ describe("Clock", () => {
     expect(readout()).toBe("11:00");
   });
 
+  it("steps the minutes by the level: a quarter hour on easy, five on medium, one on hard, by button and by drag", () => {
+    for (const [level, stepMin] of [["easy", 15], ["medium", 5], ["hard", 1]] as const) {
+      mountKind(Clock, viewAt(level));
+      fireEvent.click(screen.getByRole("button", { name: "Minutes forward" }));
+      expect(readout()).toBe(`12:${String(stepMin).padStart(2, "0")}`);
+      fireEvent.click(screen.getByRole("button", { name: "Minutes back" }));
+      fireEvent.click(screen.getByRole("button", { name: "Minutes back" }));
+      expect(readout()).toBe(`12:${String(60 - stepMin).padStart(2, "0")}`);
+      dragHand(screen.getByRole("application", { name: "Clock to set" }), { deg: (60 - stepMin) * 6, r: 120 }, 7 * 6); // to the 7-minute mark
+      expect(readout()).toBe(`12:${String(Math.round(7 / stepMin) * stepMin).padStart(2, "0")}`);
+      cleanup();
+    }
+  });
+
+  it("answers a hard clock, set to the minute, and the shared check passes it", () => {
+    const { submits } = mountKind(Clock, viewAt("hard", 11));
+    const lock = makeLock("clock", "hard", 11);
+    if (lock.kind !== "clock") throw new Error("kind");
+    for (let i = 0; i < lock.secret.h % 12; i++) fireEvent.click(screen.getByRole("button", { name: "Hour forward" }));
+    for (let i = 0; i < lock.secret.m; i++) fireEvent.click(screen.getByRole("button", { name: "Minutes forward" }));
+    fireEvent.click(screen.getByRole("button", { name: "Set this time" }));
+    expect(verify(lock, { kind: "clock", ...submits[0], elapsedMs: 9999 } as never)).toEqual({ ok: true });
+  });
+
   it("answers the answer: a set time that equals the stopped clock passes the shared check", () => {
     const { submits } = mountKind(Clock, view);
-    const lock = makeLock("clock", "easy", 7);
+    const lock = makeLock("clock", "medium", 7);
     if (lock.kind !== "clock") throw new Error("kind");
     for (let i = 0; i < lock.secret.h % 12; i++) fireEvent.click(screen.getByRole("button", { name: "Hour forward" }));
     for (let i = 0; i < lock.secret.m / 5; i++) fireEvent.click(screen.getByRole("button", { name: "Minutes forward" }));
@@ -96,7 +122,7 @@ describe("Clock", () => {
     feel.motion.dial = 100; // 90 degrees from the start: 15 minutes
     await wait(80);
     expect(readout()).toBe("12:15");
-    fireEvent.click(screen.getByRole("button", { name: "Twist: minute" })); // off again
+    fireEvent.click(screen.getByRole("button", { name: "Twist: on" })); // off again
     feel.motion.dial = 200;
     await wait(80);
     expect(readout()).toBe("12:15");
@@ -147,10 +173,13 @@ describe("Clock", () => {
     expect(readout()).toBe("12:15"); // flipping back counts the phone's turn the usual way again: 30 degrees on from 12:10
   });
 
-  it("lays the controls out in aligned groups: which hand, four steps, then Twist", () => {
+  it("lays the controls out side by side, never stacked: which hand and Twist in one row, then the four steps", () => {
     mountKind(Clock, view);
-    expect(screen.getByRole("group", { name: "Which hand" })).toBeTruthy();
+    const group = screen.getByRole("group", { name: "Which hand" });
+    const row = group.parentElement as HTMLElement;
+    expect(row.className).toMatch(/pz-grid3/);
+    expect(within(group).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Hour hand", "Minute hand"]);
+    expect(screen.getByRole("button", { name: "Twist" }).parentElement).toBe(row);
     expect(document.querySelectorAll(".pz-grid4 > button").length).toBe(4);
-    expect(document.querySelectorAll(".pz-grid2 > button").length).toBe(2);
   });
 });

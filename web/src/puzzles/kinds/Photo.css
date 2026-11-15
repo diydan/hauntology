@@ -1,5 +1,5 @@
 /* Torn photo. The board is laid out in percentages of one fixed shape, so it scales to any width from 320 px. */
-.pz-photo-board { position: relative; width: 100%; margin: 0.5rem auto; touch-action: none; user-select: none; -webkit-user-select: none; }
+.pz-photo-board { position: relative; width: 100%; margin: 0 auto; touch-action: none; user-select: none; -webkit-user-select: none; }
 .pz-photo-board[data-cols="2"] { max-width: 13rem; }
 .pz-photo-board[data-cols="3"] { max-width: 21rem; }
 .pz-photo-cell { position: absolute; border: 1px dashed var(--dust); border-radius: 8px; background: rgb(233 228 216 / 4%); box-sizing: border-box; }
