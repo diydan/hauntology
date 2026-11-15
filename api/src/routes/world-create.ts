@@ -8,7 +8,7 @@ import { toBase64Url } from "@hauntology/shared/session-cookie";
 import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
 import { setLastWorld } from "../http/session";
-import type { ImageInfo, ImageStore, TurnstileVerifier, WorldStarter } from "../worlds/ports";
+import type { ImageInfo, ImageStore, ImageVerdictStore, PlaceBriefer, TurnstileVerifier, WorldStarter } from "../worlds/ports";
 import type { WorldStore } from "../worlds/store";
 
 export type CreationDeps = {
@@ -20,6 +20,10 @@ export type CreationDeps = {
   starter?: WorldStarter;
   /** Checks a Turnstile token. Needed when `TURNSTILE_SECRET` is set; without it that check fails closed. */
   turnstile?: TurnstileVerifier;
+  /** The Place Brief check (5.4). Without it, or without `verdicts`, a picture cannot be checked and the route answers `moderation_unavailable`. */
+  briefer?: PlaceBriefer;
+  /** Where the result of that check is written (5.4). */
+  verdicts?: ImageVerdictStore;
   /** Whether new worlds are allowed at all (`WORLD_GEN_ENABLED` and the kill switch). */
   worldGenEnabled: (c: Context<AppEnv>) => Promise<boolean> | boolean;
   /** Epoch milliseconds. Default `Date.now`. */
@@ -44,7 +48,7 @@ const STATUS: Partial<Record<ErrorCode, 400 | 403 | 404 | 422 | 429 | 502 | 503>
 const MAX_ATTEMPTS = 8;
 const NO_PLACES: QuotaSnapshot = { world: 0, image: 0, llm: 0, tts: 0, stt: 0, live: 0 };
 
-function refuse(c: Context<AppEnv>, code: ErrorCode, status?: number) {
+export function refuse(c: Context<AppEnv>, code: ErrorCode, status?: number) {
   c.header("Cache-Control", "no-store");
   return c.json({ ok: false, code }, (status ?? STATUS[code] ?? 400) as 400);
 }
@@ -53,7 +57,7 @@ function refuse(c: Context<AppEnv>, code: ErrorCode, status?: number) {
 /** What a zod schema offers that this needs, so this package does not have to depend on zod. */
 type Parser<T> = { safeParse(value: unknown): { success: true; data: T } | { success: false } };
 
-async function readBody<T>(c: Context<AppEnv>, schema: Parser<T>): Promise<T | null> {
+export async function readBody<T>(c: Context<AppEnv>, schema: Parser<T>): Promise<T | null> {
   const declared = Number(c.req.header("Content-Length") ?? 0);
   if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) return null;
   const text = await c.req.text();
@@ -67,7 +71,7 @@ async function readBody<T>(c: Context<AppEnv>, schema: Parser<T>): Promise<T | n
 }
 
 /** A hash of the visitor's address, never the address itself (security-and-cost: rate limit by hashed IP). */
-async function ipHashOf(c: Context<AppEnv>, secret: string): Promise<string> {
+export async function ipHashOf(c: Context<AppEnv>, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`hauntology/ip/v1\n${c.req.header("CF-Connecting-IP") ?? "unknown"}`));
   return toBase64Url(new Uint8Array(mac).slice(0, 16));

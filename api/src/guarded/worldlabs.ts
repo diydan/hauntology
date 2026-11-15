@@ -1,5 +1,6 @@
 import type { SpendTicket } from "@hauntology/shared/world/spend";
 import type { Ingestor, UpstreamFailure, WorldLabsPort } from "../worlds/ports";
+import { assertTicket } from "./ticket";
 
 /**
  * The only door to the world service (`.kiro/steering/security-and-cost.md`: paid calls live under `api/src/guarded/`).
@@ -7,28 +8,22 @@ import type { Ingestor, UpstreamFailure, WorldLabsPort } from "../worlds/ports";
  * without a reservation from `SpendGuard`. A Ticket from another meter, or one that is not a Ticket, is refused.
  */
 
-export class NoTicketError extends Error {
-  constructor() {
-    super("a paid call needs a SpendTicket for the world meter");
-  }
-}
+export { NoTicketError } from "./ticket";
 
-function assertTicket(ticket: SpendTicket): void {
-  if (ticket === null || typeof ticket !== "object" || ticket.meter !== "world" || typeof ticket.id !== "string" || ticket.id === "") throw new NoTicketError();
-}
+const assertWorldTicket = (ticket: SpendTicket): void => assertTicket(ticket, "world");
 
 export function generateWorld(upstream: WorldLabsPort, ticket: SpendTicket, req: Parameters<WorldLabsPort["generate"]>[0]): ReturnType<WorldLabsPort["generate"]> {
-  assertTicket(ticket);
+  assertWorldTicket(ticket);
   return upstream.generate(req);
 }
 
 export function pollWorld(upstream: WorldLabsPort, ticket: SpendTicket, operationId: string): ReturnType<WorldLabsPort["poll"]> {
-  assertTicket(ticket);
+  assertWorldTicket(ticket);
   return upstream.poll(operationId);
 }
 
 export function ingestWorld(ingestor: Ingestor, ticket: SpendTicket, job: Parameters<Ingestor["ingest"]>[0]): ReturnType<Ingestor["ingest"]> {
-  assertTicket(ticket);
+  assertWorldTicket(ticket);
   return ingestor.ingest(job);
 }
 

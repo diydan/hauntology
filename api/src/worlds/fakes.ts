@@ -3,11 +3,12 @@ import type { Meter, Remaining, ReserveResult, SpendGuard, SpendTicket } from "@
 import { DEFAULT_CAPS, SpendLedger, type CapTable } from "@hauntology/shared/world/spend-ledger";
 import type { ErrorCode } from "@hauntology/shared/errors";
 import type { WorldManifest } from "@hauntology/shared/world/manifest";
-import type { ImageInfo, ImageStore, Ingestor, TurnstileVerifier, UploadStore, UpstreamFailure, WorldLabsPort, WorldStarter } from "./ports";
+import type { BriefVerdict } from "@hauntology/shared/world/brief";
+import type { BriefAnswer, ImageInfo, ImageStore, ImageVerdictStore, Ingestor, PlaceBriefer, TurnstileVerifier, UploadStore, UpstreamFailure, WorldLabsPort, WorldStarter } from "./ports";
 
 /** Stand-ins for the parts of world creation that are not built yet (the job 7.1, uploads 5.1) and an in-process `SpendGuard`, for tests and the test-only dev worker. None of them is durable. */
 
-export class MemoryImageStore implements ImageStore {
+export class MemoryImageStore implements ImageStore, ImageVerdictStore {
   readonly images = new Map<string, { info: ImageInfo; bytes: Uint8Array }>();
   put(info: ImageInfo, bytes: Uint8Array = Uint8Array.from([1, 2, 3])): this {
     this.images.set(info.id, { info, bytes });
@@ -15,6 +16,19 @@ export class MemoryImageStore implements ImageStore {
   }
   async find(imageId: string): Promise<ImageInfo | null> {
     return this.images.get(imageId)?.info ?? null;
+  }
+  /** Every `recordSafe` and `remove`, in order, as `safe:<id>` and `remove:<id>`. */
+  readonly verdicts: string[] = [];
+  async recordSafe(imageId: string, brief: string): Promise<boolean> {
+    const o = this.images.get(imageId);
+    if (o === undefined) return false;
+    this.verdicts.push(`safe:${imageId}`);
+    o.info = { ...o.info, moderation: "safe", brief };
+    return true;
+  }
+  async remove(imageId: string): Promise<void> {
+    this.verdicts.push(`remove:${imageId}`);
+    this.images.delete(imageId);
   }
   async read(imageId: string): Promise<{ body: Uint8Array; size: number; contentType: string } | null> {
     const o = this.images.get(imageId);
@@ -146,5 +160,26 @@ export class FakeIngestor implements Ingestor {
     const a = this.script[Math.min(this.calls.length - 1, this.script.length - 1)] as Scripted<{ ok: true; manifest: WorldManifest }>;
     const r = typeof a === "function" ? await (a as () => Promise<{ ok: true; manifest: WorldManifest } | UpstreamFailure>)() : a;
     return r as { ok: true; manifest: WorldManifest } | { ok: false; code: "ingest_failed" } | UpstreamFailure;
+  }
+}
+
+/**
+ * A `PlaceBriefer` the test controls: it answers from a queue (or the default, a safe brief), records what it was asked,
+ * and can fail. It never calls anything.
+ */
+export class FakeBriefer implements PlaceBriefer {
+  readonly asked: { image: Uint8Array; contentType: string }[] = [];
+  /** Answers, used in order; when empty, `fallback`. */
+  script: BriefAnswer[] = [];
+  fallback: BriefAnswer = { ok: true, verdict: { kind: "safe", brief: "A quiet room with a window and soft light." } satisfies BriefVerdict };
+  /** Make the call fail (throw) this many times. */
+  throws = 0;
+  async brief(req: { image: Uint8Array; contentType: string }): Promise<BriefAnswer> {
+    this.asked.push(req);
+    if (this.throws > 0) {
+      this.throws--;
+      throw new Error("model down");
+    }
+    return this.script.shift() ?? this.fallback;
   }
 }

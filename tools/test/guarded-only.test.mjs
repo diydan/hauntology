@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 
 /**
  * `.kiro/steering/security-and-cost.md`, paid calls, rule 1: the World Labs service is called only from modules under
- * `api/src/guarded/`. No other source file may name its host, its key header, its key or its start path. (Test files may
+ * `api/src/guarded/`, and a Workers AI model is called (`env.AI.run(...)`) only from there too. No other source file may name its
+ * host, its key header, its key or its start path, or call `ai.run`. (Test files may
  * name them, to check that none leaks.) A new file that does is a second way to spend: this test fails it.
  */
 
@@ -14,7 +15,7 @@ const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SOURCE_DIRS = ["api/src", "api/dev", "shared/src", "web/src"];
 // The adapter, and the test-only stand-in of the service (`api/dev/fake-world-api.mjs`), which answers calls and makes none.
 const ALLOWED = /(^|\/)api\/src\/guarded\/|(^|\/)api\/dev\/fake-world-api\.mjs$/;
-const NEEDLES = [/worldlabs\.ai/i, /WLT-Api-Key/i, /WLT_API_KEY/, /worlds:generate/i];
+const NEEDLES = [/worldlabs\.ai/i, /WLT-Api-Key/i, /WLT_API_KEY/, /worlds:generate/i, /\bai\.run\s*\(/i];
 
 function* walk(dir) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -44,6 +45,8 @@ test("the scan reaches the adapter, so an empty result means something", () => {
   const files = sources();
   assert.ok(files.some((f) => f === "api/src/guarded/worldlabs-http.ts"), "the adapter is among the sources");
   const adapter = readFileSync(join(ROOT, "api/src/guarded/worldlabs-http.ts"), "utf8");
-  assert.ok(NEEDLES.every((n) => n.test(adapter)), "the adapter names the host, the key header, the key and the start path");
+  assert.ok(NEEDLES.slice(0, 4).every((n) => n.test(adapter)), "the adapter names the host, the key header, the key and the start path");
+  const scout = readFileSync(join(ROOT, "api/src/guarded/workersai/scout.ts"), "utf8");
+  assert.ok(NEEDLES[4].test(scout), "the Scout adapter calls ai.run");
   assert.ok(files.length > 100, "a real scan");
 });

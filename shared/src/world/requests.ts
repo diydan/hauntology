@@ -6,6 +6,10 @@ const ImageId = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
 export const QuoteRequestSchema = z.object({ imageId: ImageId });
 export type QuoteRequest = z.infer<typeof QuoteRequestSchema>;
 
+/** The body of `POST /api/places/brief`. */
+export const PlaceBriefRequestSchema = z.object({ imageId: ImageId });
+export type PlaceBriefRequest = z.infer<typeof PlaceBriefRequestSchema>;
+
 export const CreateWorldRequestSchema = z.object({
   imageId: ImageId,
   confirmToken: z.string().min(1).max(512),

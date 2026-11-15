@@ -6,6 +6,7 @@ import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
 import { sessionRoutes } from "./routes/session";
+import { placeRoutes } from "./routes/places";
 import { uploadRoutes, type UploadsDeps } from "./routes/uploads";
 import { imageRoutes, worldCreateRoutes, type CreationDeps } from "./routes/world-create";
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
@@ -51,6 +52,17 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     if (creation !== undefined) {
       app.route("/api/worlds", worldCreateRoutes({ store: options.worlds.store, ...creation, now: options.now ?? Date.now, worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled }));
       app.route("/api/images", imageRoutes(creation.images));
+      app.route(
+        "/api/places",
+        placeRoutes({
+          images: creation.images,
+          ...(creation.verdicts !== undefined ? { verdicts: creation.verdicts } : {}),
+          ...(creation.briefer !== undefined ? { briefer: creation.briefer } : {}),
+          ...(creation.guard !== undefined ? { guard: creation.guard } : {}),
+          worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled,
+          now: options.now ?? Date.now,
+        }),
+      );
     }
   }
   return app;

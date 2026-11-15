@@ -1,6 +1,7 @@
 import type { ErrorCode } from "@hauntology/shared/errors";
 import type { SpendTicket } from "@hauntology/shared/world/spend";
 import type { AssetRole, Lod, ServicePose } from "@hauntology/shared/world/ingest";
+import type { BriefVerdict } from "@hauntology/shared/world/brief";
 import type { WorldManifest } from "@hauntology/shared/world/manifest";
 
 /** What the world routes know about a stored Place Image. The bytes are never needed to decide anything. */
@@ -30,6 +31,26 @@ export interface ImageStore {
  */
 export interface UploadStore {
   put(imageId: string, bytes: Uint8Array, meta: { contentType: "image/jpeg" | "image/png" | "image/webp"; ownerSid: string; sha256: string }): Promise<void>;
+}
+
+/** What the Place Brief check made of a picture: a verdict (`safe` with the brief, `unsafe`, or an answer that could not be used). */
+export type BriefAnswer = { ok: true; verdict: BriefVerdict } | { ok: false };
+
+/**
+ * The Place Brief check (world-pipeline 5.4): asks a vision model for a short description and a safety verdict. `ok: false`
+ * means the call itself failed or timed out, which the route treats as "could not check" and does not charge for.
+ * Every call goes through `api/src/guarded/workersai/place-brief.ts`, which needs a Ticket for the `llm` meter.
+ */
+export interface PlaceBriefer {
+  brief(req: { image: Uint8Array; contentType: string }): Promise<BriefAnswer>;
+}
+
+/** Writes the result of the check onto a stored picture, or deletes the picture (an unsafe one). */
+export interface ImageVerdictStore {
+  /** Marks the picture `safe` and keeps its brief. `false` when there is no such picture. */
+  recordSafe(imageId: string, brief: string): Promise<boolean>;
+  /** Deletes the picture. */
+  remove(imageId: string): Promise<void>;
 }
 
 /** Checks a Turnstile result with Cloudflare. `false` for anything that is not a clear yes. */

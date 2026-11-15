@@ -13,3 +13,6 @@ HMAC_SECRET=replace-with-at-least-16-random-characters
 # WORLD_SESSION_CAP=1
 # WORLD_DAY_CAP=3
 # WORLD_TOTAL_CAP=3
+# The model for the Place Brief check (a Workers AI catalog id). Unset is @cf/meta/llama-4-scout-17b-16e-instruct. It also needs the AI
+# binding (see wrangler.jsonc): each check is a small paid call, counted against the llm meter (LLM_SESSION_CAP, LLM_DAY_CAP).
+# GHOST_MODEL_ID=@cf/meta/llama-4-scout-17b-16e-instruct

@@ -40,6 +40,8 @@ export class FakeR2 implements R2BucketLike {
       size: o.bytes.byteLength,
       uploaded: o.uploaded,
       ...(o.contentType ? { httpMetadata: { contentType: o.contentType } } : {}),
+      ...(o.customMetadata ? { customMetadata: o.customMetadata } : {}),
+      arrayBuffer: async () => bytes.slice().buffer as ArrayBuffer,
       body: new Response(bytes).body as ReadableStream<Uint8Array>,
       text: async () => new TextDecoder().decode(bytes),
     };

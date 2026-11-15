@@ -224,6 +224,50 @@ describe("worker: making a world (world-pipeline 6.1, 7.1, 7.3)", () => {
     expect(off.bucket.objects.size).toBe(0);
   });
 
+  it("checks an uploaded photo with the Workers AI binding and makes it usable: upload, brief, then the Quote gives a token", async () => {
+    const calls: { model: string; input: Record<string, any> }[] = [];
+    const AI = { run: async (model: string, input: Record<string, any>) => { calls.push({ model, input }); return { response: JSON.stringify({ brief: "A narrow kitchen with a blue door.", safe: true }) }; } };
+    const { env, bucket } = envWith({ WLT_API_KEY: KEY });
+    (env as unknown as { AI: unknown }).AI = AI;
+    const v = await visit(env);
+    const up = await uploadPhoto(env, v.headers);
+    const imageId = up.json.imageId as string;
+    const quote = () => worker.fetch(new Request(`${ORIGIN}/api/worlds/quote`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId }) }), env, ctx().ctx);
+    expect((await quote()).status).toBe(503); // not yet checked
+
+    const res = await worker.fetch(new Request(`${ORIGIN}/api/places/brief`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId }) }), env, ctx().ctx);
+    expect([res.status, await res.json()]).toEqual([200, { brief: "A narrow kitchen with a blue door.", safe: true }]);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.model).toBe("@cf/meta/llama-4-scout-17b-16e-instruct");
+    expect(calls[0]!.input.messages[1].content[1].image_url.url).toMatch(/^data:image\/jpeg;base64,/);
+    // The stored picture now carries the verdict and the brief, with its bytes, owner and type unchanged.
+    const stored = bucket.objects.get(`uploads/${imageId}`)!;
+    expect(stored.customMetadata).toMatchObject({ moderation: "safe", ownerSid: v.sid, source: "upload" });
+    expect(stored.contentType).toBe("image/jpeg");
+    const after = await quote();
+    expect(after.status).toBe(200);
+    const body = (await after.json()) as { confirmToken: string; quota: { llm: number } };
+    expect(body.confirmToken).toBeTruthy();
+    expect(body.quota.llm).toBe(39); // one unit of the llm meter was used
+  });
+
+  it("cannot check a photo, and so lets none through, when the Worker has no Workers AI binding, a model id it does not accept, or no key", async () => {
+    for (const extra of [{ WLT_API_KEY: KEY }, { WLT_API_KEY: KEY, GHOST_MODEL_ID: "not-a-model" }]) {
+      const { env } = envWith(extra);
+      (env as unknown as { AI?: unknown }).AI = extra.GHOST_MODEL_ID === undefined ? undefined : { run: async () => { throw new Error("must not be called"); } };
+      const v = await visit(env);
+      const up = await uploadPhoto(env, v.headers);
+      const res = await worker.fetch(new Request(`${ORIGIN}/api/places/brief`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId: up.json.imageId }) }), env, ctx().ctx);
+      expect([res.status, await res.json()], JSON.stringify(extra)).toEqual([503, { ok: false, code: "moderation_unavailable" }]);
+    }
+    const none = envWith();
+    (none.env as unknown as { AI: unknown }).AI = { run: async () => { throw new Error("must not be called"); } };
+    const v = await visit(none.env);
+    none.bucket.put("uploads/x", Uint8Array.from([1]), new Date(), { customMetadata: { ownerSid: v.sid, sha256: "ab".repeat(32) } });
+    const res = await worker.fetch(new Request(`${ORIGIN}/api/places/brief`, { method: "POST", headers: v.headers, body: JSON.stringify({ imageId: "x" }) }), none.env, ctx().ctx);
+    expect([res.status, await res.json()]).toEqual([503, { ok: false, code: "world_gen_disabled" }]);
+  });
+
   it("takes no upload while the world switch is off, though a key is set", async () => {
     const { env, bucket } = envWith({ WLT_API_KEY: KEY, WORLD_GEN_ENABLED: "false" });
     const v = await visit(env);

@@ -1,3 +1,4 @@
+import { decodeBrief } from "@hauntology/shared/world/brief";
 import { uploadKey } from "./keys";
 import type { R2BucketLike } from "./cloudflare-store";
 import type { ImageInfo, ImageStore } from "./ports";
@@ -28,7 +29,8 @@ export class CloudflareImageStore implements ImageStore {
       moderation: moderation === "safe" || moderation === "unsafe" ? moderation : "pending",
       contentType: "application/octet-stream",
       source: source === "sketch" ? "sketch" : "upload",
-      brief: typeof brief === "string" && brief.length <= 2000 ? brief : "",
+      // Kept percent-encoded (`CloudflareImageVerdicts`); a plain brief written by hand still reads.
+      brief: typeof brief === "string" && brief.length <= 2000 ? decodeBrief(brief) : "",
     };
   }
 

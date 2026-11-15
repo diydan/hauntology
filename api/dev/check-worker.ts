@@ -12,6 +12,8 @@ import realWorker, { storeFor, type WorkerEnv } from "../src/worker";
 import { SpendGuardClient } from "../src/spend/client";
 import { CloudflareImageStore } from "../src/worlds/cloudflare-images";
 import { CloudflareUploadStore } from "../src/worlds/cloudflare-uploads";
+import { CloudflareImageVerdicts } from "../src/worlds/cloudflare-verdicts";
+import type { BriefAnswer, PlaceBriefer } from "../src/worlds/ports";
 import { WorldJobStarter } from "../src/worlds/job-starter";
 import { WorldIngestor } from "../src/worlds/ingest";
 import type { WorldLabsPort, WorldSource } from "../src/worlds/ports";
@@ -91,6 +93,21 @@ export class WorldJob extends BaseWorldJob {
   }
 }
 
+/**
+ * A stand-in for the Place Brief check, so the route and the verdict store run on the real runtime without a model: a picture
+ * whose bytes contain `UNSAFE` is unsafe, `BROKEN` makes the call fail, `GARBLED` is an answer that cannot be used, and any
+ * other picture is safe with a fixed brief.
+ */
+class StandInBriefer implements PlaceBriefer {
+  async brief(req: { image: Uint8Array }): Promise<BriefAnswer> {
+    const text = new TextDecoder("latin1").decode(req.image);
+    if (text.includes("BROKEN")) return { ok: false };
+    if (text.includes("GARBLED")) return { ok: true, verdict: { kind: "unusable" } };
+    if (text.includes("UNSAFE")) return { ok: true, verdict: { kind: "unsafe" } };
+    return { ok: true, verdict: { kind: "safe", brief: "A stand-in brief: a quiet room with a window." } };
+  }
+}
+
 const apps = new WeakMap<object, ReturnType<typeof createApp>>();
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
@@ -142,7 +159,7 @@ export default {
     let app = apps.get(env);
     if (app === undefined) {
       const guard = new SpendGuardClient(env.SPEND_GUARD);
-      app = createApp({ spend: () => guard.status(), uploads: { store: new CloudflareUploadStore(env.BUCKET) }, worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter: new WorldJobStarter(env.WORLD_JOB) } } });
+      app = createApp({ spend: () => guard.status(), uploads: { store: new CloudflareUploadStore(env.BUCKET) }, worlds: { store: storeFor(env), creation: { images: new CloudflareImageStore(env.BUCKET), guard, starter: new WorldJobStarter(env.WORLD_JOB), verdicts: new CloudflareImageVerdicts(env.BUCKET), briefer: new StandInBriefer() } } });
       apps.set(env, app);
     }
     return app.fetch(request, env, ctx);

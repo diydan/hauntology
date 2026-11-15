@@ -1,5 +1,6 @@
 import { MARBLE_FRAME, MAX_ASSET_BYTES, type AssetRole, type Lod } from "@hauntology/shared/world/ingest";
 import type { SourceAsset, SourceWorld, UpstreamFailure, WorldLabsPort, WorldSource } from "../worlds/ports";
+import { toBase64 } from "./base64";
 
 /**
  * The World Labs World API over HTTP: the real `WorldLabsPort` (start a world, poll it) and `WorldSource` (read the
@@ -77,13 +78,6 @@ const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "obj
 const field = (o: unknown, key: string): unknown => (isObject(o) && Object.hasOwn(o, key) ? o[key] : undefined);
 const text = (v: unknown): string | undefined => (typeof v === "string" && v !== "" ? v : undefined);
 const number = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
-
-function toBase64(bytes: Uint8Array): string {
-  let binary = "";
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
-  return btoa(binary);
-}
 
 /** The format of a picture file from its address: `.jpg`, `.jpeg`, `.png` or `.webp` in the path, else none. */
 export function imageFormatOf(url: string): string | undefined {
