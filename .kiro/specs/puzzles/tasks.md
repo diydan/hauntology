@@ -341,6 +341,11 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ] 14.8 Spike puzzles 1.7 (scenes): on a real phone and a TV, does scrubbing a clip ten times a second keep up (iPhone Safari most of all)? If not, switch the clock shadow to a strip of stills. Is the Reel readable at a glance across a room? Is each Haunt Event seen?
     - _Requirements: 19.5, 20.2_
 
+  - [ ] 14.9 The Event pairing rules in `tools/playtest/js/scenes.js`: `eventPairing(kind)` (the line key, the dim, whether the Haunt falls) and `reelOnFall(level, max)` (the held shot of the lower level), a test that no word of any shot names an Event kind, and a demo on the Reel section of `footage.html` (Cold Spot, Blackout, Restless and Lull buttons that show the line as a caption, the dim and the held step-back); tested over every kind, level and maximum
+    - _Requirements: 20.7, 20.8, 20.9_
+  - [ ]* 14.10 Write property test for the Event pairing
+    - **Property 32: An Event line sits under its shot and changes nothing**
+    - **Validates: Requirements 20.7, 20.8, 20.9**
 - [ ] 15. Scene clues: a clue written on the scene (added 2026-11-15; satisfies Requirement 22)
   - [ ] 15.1 `tools/playtest/js/places.js` (the Place data and a check of its shape: four corners forming a convex shape of the least size, a known surface and ink, `from` before `to`, `to` not past the clip) and `js/scene-clues.js` with the pure rules `placeFor`, `sceneClue`, `inkFor` and `contrastOk`, with tests over every seed in a grid, every shot with a Place and every answer form (a code, a time, a word)
     - _Requirements: 22.1, 22.2, 22.6, 22.8_
