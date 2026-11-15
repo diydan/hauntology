@@ -68,6 +68,8 @@
     - _Requirements: 3.5_
   - [x] 7.6 Buttons that cannot be pressed (done 2026-11-15): an ordinary one is dimmed to 0.75 (the words were 3.3 to 1 at 0.4) with a dashed edge; the main one is the raised surface tinted 25 per cent yellow with a yellow edge and quiet words (they were dark words on faded yellow, 2.3 to 1; now 4.6 to 1). The catalogue shows both. One test reads the colours and the opacity; five deliberate breaks are caught.
     - _Requirements: 3.5_
+  - [x] 7.7 The clock's hands no longer cover its numerals (phone audit item 10, done 2026-11-15): the numerals sit on an outer ring beyond the minute track, the hour hand reaches 72 and the slim minute lance 100 (it ends in the track), so no hand ever reaches a numeral. The clue's stopped clock is the same drawing. `art/safe-clock.test.tsx` checks the ring, the reach of each hand and that every numeral's nearest edge is further out than the longest hand.
+    - _Requirements: 3.5_
 
 - [x] 5. Specs and steering
   - [x] 5.1 `.kiro/steering/design-system.md`, `visual-style.md` and `structure.md` updated

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { ClockDial, ClockHands, StoppedClock, hourAngle, minuteAngle } from "./ClockFace";
+import { CLOCK_C, ClockDial, ClockHands, HOUR_REACH, MINUTE_HAND, MINUTE_REACH, NUMERAL_R, NUMERAL_SIZE, StoppedClock, hourAngle, minuteAngle } from "./ClockFace";
 import { SafeDefs, SafeDial, SafeIndex, SafePlaque, SafePlate } from "./safe";
 
 afterEach(cleanup);
@@ -42,6 +42,50 @@ describe("the clock", () => {
     expect(container.querySelectorAll("line.pz-ck-tick, line.pz-ck-tick-big").length).toBe(60);
     expect(container.querySelectorAll("line.pz-ck-tick-big").length).toBe(12);
     expect(container.querySelector("circle.pz-ck-bezel")).not.toBeNull(); // the brass bezel
+  });
+
+  it("keeps the numerals out of the hands' way: they sit on an outer ring, beyond the minute track, and no hand reaches them (so a hand never covers a numeral)", () => {
+    const { container } = render(<svg><ClockDial /></svg>);
+    const track = [...container.querySelectorAll("circle.pz-ck-track")].map((c) => Number(c.getAttribute("r")));
+    expect(track.length).toBe(2);
+    expect(Math.max(...track)).toBeLessThan(NUMERAL_R - NUMERAL_SIZE / 2); // the track is inside the numerals
+    // where each numeral is: on the ring, at its hour
+    const texts = [...container.querySelectorAll("text.pz-ck-num")];
+    texts.forEach((t, i) => {
+      const x = Number(t.getAttribute("x")) - CLOCK_C;
+      const y = Number(t.getAttribute("y")) - NUMERAL_SIZE * 0.36 - CLOCK_C;
+      expect(Math.hypot(x, y)).toBeCloseTo(NUMERAL_R, 1);
+      expect(((Math.atan2(x, -y) * 180) / Math.PI + 360) % 360).toBeCloseTo(((i + 1) * 30) % 360, 1);
+      expect(Number(t.getAttribute("font-size"))).toBe(NUMERAL_SIZE);
+    });
+    // the nearest edge of each numeral (its box, the glyphs a little narrower) is further out than the longest hand
+    for (let n = 1; n <= 12; n++) {
+      const a = (n * 30 * Math.PI) / 180;
+      const w = String(n).length * NUMERAL_SIZE * 0.6;
+      const h = NUMERAL_SIZE * 0.72;
+      const inner = NUMERAL_R - ((w / 2) * Math.abs(Math.sin(a)) + (h / 2) * Math.abs(Math.cos(a)));
+      expect(inner, `numeral ${n}`).toBeGreaterThan(MINUTE_REACH + 2);
+    }
+    expect(HOUR_REACH).toBeLessThan(MINUTE_REACH);
+  });
+
+  it("draws hands that end where they say they do, the minute hand slim all the way, and neither reaching the numerals", () => {
+    const { container } = render(<svg><ClockHands h={3} m={30} /></svg>);
+    const reach = (d: string): number => {
+      const n = d.match(/-?\d+(?:\.\d+)?/g)!.map(Number);
+      let far = 0;
+      for (let i = 0; i + 1 < n.length; i += 2) far = Math.max(far, Math.hypot(n[i]!, n[i + 1]!));
+      return far;
+    };
+    const paths = [...container.querySelectorAll("path.pz-ck-hand")].map((p) => p.getAttribute("d") ?? "");
+    expect(paths.length).toBe(2);
+    expect(reach(paths[0]!)).toBeCloseTo(HOUR_REACH, 0);
+    expect(reach(paths[1]!)).toBeCloseTo(MINUTE_REACH, 0);
+    expect(paths[1]).toBe(MINUTE_HAND);
+    // the minute hand is no wider than 5 units until its point: where it could cross a numeral it is a thin line
+    const pts = MINUTE_HAND.match(/-?\d+(?:\.\d+)?/g)!.map(Number);
+    const widest = Math.max(...pts.filter((_, i) => i % 2 === 0).map(Math.abs));
+    expect(widest).toBeLessThanOrEqual(4.2);
   });
 
   it("turns each hand to its own angle: the hour hand by the hour and the minutes, the minute hand by the minutes", () => {

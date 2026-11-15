@@ -2,6 +2,15 @@ import { useId, type ReactNode } from "react";
 import "./clock.css";
 
 export const CLOCK_C = 150;
+/**
+ * The numerals sit on an outer ring, beyond the minute track, and the hands stop inside it: a hand never covers a numeral, so the
+ * Player can always read where it points. The hour hand reaches HOUR_REACH, the slim minute lance MINUTE_REACH (it ends in the track).
+ */
+export const NUMERAL_R = 118;
+export const NUMERAL_SIZE = 22;
+export const MINUTE_REACH = 100;
+export const HOUR_REACH = 72;
+export const MINUTE_HAND = `M -2.4 24 L -2.4 -${MINUTE_REACH - 14} L -4.2 -${MINUTE_REACH - 12} L 0 -${MINUTE_REACH} L 4.2 -${MINUTE_REACH - 12} L 2.4 -${MINUTE_REACH - 14} L 2.4 24 Z`;
 
 /** A point on a circle: degrees clockwise from 12 o'clock. */
 export function polar(cx: number, cy: number, r: number, deg: number): [number, number] {
@@ -19,7 +28,7 @@ const idOf = (raw: string): string => raw.replace(/:/g, "");
 
 /**
  * The clock, drawn as the thing it is: an antique clock with an ivory enamel dial (a few hairline cracks), a black minute track, black
- * numerals, in a brass bezel with a soft shadow. The hands and the glass over them are in `ClockHands`. Both are used by the puzzle and by
+ * numerals on an outer ring, in a brass bezel with a soft shadow. The hands and the glass over them are in `ClockHands`. Both are used by the puzzle and by
  * the clue (the stopped clock), and their styles load with them (./clock.css).
  */
 export function ClockDial(): ReactNode {
@@ -38,18 +47,18 @@ export function ClockDial(): ReactNode {
       <circle cx={c} cy={c} r={131} className="pz-ck-face-rim" />
       <circle cx={c} cy={c} r={130} fill={`url(#${id}-enamel)`} className="pz-ck-face" />
       <path d="M 70 62 L 78 70 L 74 80 M 226 228 L 218 222 L 224 212 M 238 112 L 230 118" className="pz-ck-craze" />
-      <circle cx={c} cy={c} r={127} className="pz-ck-track" />
-      <circle cx={c} cy={c} r={113} className="pz-ck-track" />
+      <circle cx={c} cy={c} r={106} className="pz-ck-track" />
+      <circle cx={c} cy={c} r={92} className="pz-ck-track" />
       {Array.from({ length: 60 }, (_, i) => {
         const big = i % 5 === 0;
-        const [x1, y1] = polar(c, c, big ? 109 : 115, i * 6);
-        const [x2, y2] = polar(c, c, 125, i * 6);
+        const [x1, y1] = polar(c, c, big ? 88 : 94, i * 6);
+        const [x2, y2] = polar(c, c, 104, i * 6);
         return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className={big ? "pz-ck-tick-big" : "pz-ck-tick"} />;
       })}
       {Array.from({ length: 12 }, (_, i) => {
         const n = i + 1;
-        const [x, y] = polar(c, c, 88, n * 30);
-        return <text key={n} x={x} y={y + 10} textAnchor="middle" className="pz-ck-num">{n}</text>;
+        const [x, y] = polar(c, c, NUMERAL_R, n * 30);
+        return <text key={n} x={x} y={y + NUMERAL_SIZE * 0.36} textAnchor="middle" fontSize={NUMERAL_SIZE} className="pz-ck-num">{n}</text>;
       })}
     </g>
   );
@@ -62,15 +71,15 @@ export function ClockDial(): ReactNode {
 export function ClockHands({ h, m, active }: { h: number; m: number; active?: "hour" | "minute" | undefined }): ReactNode {
   const id = idOf(useId());
   const c = CLOCK_C;
-  const hour = "M -3.2 17 L -3.2 -32 C -13 -39, -14 -53, 0 -72 C 14 -53, 13 -39, 3.2 -32 L 3.2 17 Z";
-  const minute = "M -2.4 24 L -2.4 -78 L -6 -82 L 0 -110 L 6 -82 L 2.4 -78 L 2.4 24 Z";
+  const hour = `M -3.2 17 L -3.2 -32 C -13 -39, -14 -53, 0 -${HOUR_REACH} C 14 -53, 13 -39, 3.2 -32 L 3.2 17 Z`;
+  const minute = MINUTE_HAND;
   const hand = (which: "hour" | "minute", angle: number, d: string): ReactNode => (
     <g key={which}>
       <g transform={`translate(${c + 2.5} ${c + 4}) rotate(${angle})`}><path d={d} className="pz-ck-hand-shadow" />{which === "minute" ? <circle cy={21} r={6.5} className="pz-ck-hand-shadow" /> : null}</g>
       <g transform={`translate(${c} ${c}) rotate(${angle})`}>
         <path d={d} className={active === which ? "pz-ck-hand pz-ck-hand-active" : "pz-ck-hand"} />
         {which === "minute" ? <circle cy={21} r={6.5} className={active === which ? "pz-ck-hand pz-ck-hand-active" : "pz-ck-hand"} /> : null}
-        <path d={which === "hour" ? "M -1.6 12 L -1.6 -32" : "M -1 20 L -1 -76"} className="pz-ck-hand-shine" />
+        <path d={which === "hour" ? "M -1.6 12 L -1.6 -32" : `M -1 20 L -1 -${MINUTE_REACH - 20}`} className="pz-ck-hand-shine" />
       </g>
     </g>
   );

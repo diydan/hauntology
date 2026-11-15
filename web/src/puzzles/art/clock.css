@@ -14,7 +14,7 @@
 .pz-ck-track { fill: none; stroke: color-mix(in srgb, var(--art-iron) 12%, var(--void)); stroke-width: 1.2; }
 .pz-ck-tick { stroke: color-mix(in srgb, var(--art-iron) 12%, var(--void)); stroke-width: 1.1; }
 .pz-ck-tick-big { stroke: color-mix(in srgb, var(--art-iron) 8%, var(--void)); stroke-width: 3.2; stroke-linecap: butt; }
-.pz-ck-num { fill: color-mix(in srgb, var(--art-iron) 8%, var(--void)); font-family: var(--font-ghost); font-size: 29px; font-weight: 700; }
+.pz-ck-num { fill: color-mix(in srgb, var(--art-iron) 8%, var(--void)); font-family: var(--font-ghost); font-weight: 700; } /* the size is NUMERAL_SIZE, set on the text */
 
 .pz-ck-hand-shadow { fill: var(--void); opacity: 0.32; }
 .pz-ck-hand { fill: color-mix(in srgb, var(--art-iron) 30%, var(--void)); stroke: color-mix(in srgb, var(--art-iron) 20%, var(--void)); stroke-width: 0.8; stroke-linejoin: round; }
