@@ -42,3 +42,12 @@ Look panel, "Face print (test)". Two test portraits: The Whisper and Mr. Ashby (
 - Skirts and dresses (closed between the legs): leg weights go to the hips plus both thighs, each side leaning to its own leg; below the knee the cloth follows both shins, so seated it hangs straight down instead of a stiff tube. Re-run after every hem fit, always from the pack's own weights. Trousers are untouched.
 - Seated skirts: the middle panel follows the hips more (it sags between spread knees), and each side leans only gently to its own leg, so a seated skirt no longer balloons.
 - Skin calibration fix: the loop compared the lit neck (pink rim light, chin shadow) with the printed face and chased the hue to the clamps (Vane: body x2.5 red/green, x0.4 blue = yellow). Now it matches brightness freely (0.5-1.8x) and hue only within 15%, and it draws only the face and neck while measuring (no hand, mic, collar or hair in front of the sample).
+
+## Side faces from one front photo (2026-11-15)
+- Smear fade: where the surface turns away from the camera, the photo is replaced by its own blurred local tone; the skin grain tile adds the detail back.
+- Mirror: the narrow (turned-away) cheek, measured from nose tip to face edge, takes the near cheek's pixels mirrored, at its own brightness (`uFpMirror`, up to 85%).
+- De-light: the photo's baked light and shade is divided out (blurred brightness vs the skin mean, `uFpDelight` 0.6 x Style), so the 3D lights shade the face and the sides match the front.
+
+## Beautify v2 (selfies only)
+- Adds: even tone (blotches take the surrounding skin's hue; saturation and brightness detail kept so the face does not go grey), lighter under-eyes (lifted toward the cheek's brightness, never past it), shine pressed down, slightly softer light.
+- v1 smoothing made gentler (keeps more real texture). Still no slimming and no skin lightening.
