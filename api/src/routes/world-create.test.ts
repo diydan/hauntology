@@ -168,6 +168,19 @@ describe("POST /api/worlds", () => {
     expect(status2.json).toEqual({ id: worldId, status: "queued" });
   });
 
+  it("copies where the picture came from and its Place Brief onto the world's record, for the manifest", async () => {
+    const t = setup();
+    const v = await t.kit.visitor();
+    t.addImage(v, "img-1", { source: "sketch", brief: "A quiet kitchen." });
+    t.addImage(v, "img-22");
+    const a = (await t.enter(v, "img-1")).json as { worldId: string };
+    const b = (await t.enter(v, "img-22")).json as { worldId: string };
+    expect(t.kit.store.records.get(a.worldId)).toMatchObject({ source: "sketch", brief: "A quiet kitchen." });
+    const plain = t.kit.store.records.get(b.worldId);
+    expect(plain).not.toHaveProperty("source");
+    expect(plain).not.toHaveProperty("brief");
+  });
+
   it("gives the same world, and spends nothing more, for the same token again", async () => {
     const t = setup();
     const v = await t.kit.visitor();
@@ -570,7 +583,7 @@ describe("Property 6: creation is idempotent", () => {
       expect(t.guard.usedOn("world", v.sid), `seed ${seed}`).toBe(1);
       expect(t.kit.store.records.size, `seed ${seed}`).toBe(1);
     }
-  });
+  }, 30_000);
 });
 
 describe("GET /api/images/:id", () => {

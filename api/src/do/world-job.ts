@@ -158,7 +158,15 @@ export class WorldJob {
       // ingesting
       const record = StoredWorldSchema.safeParse(await this.state.storage.get(RECORD));
       if (!record.success) return { t: "ingest_failed", code: "ingest_failed" };
-      const res = await ingestWorld(deps.ingestor, ticket, { worldId: record.data.id, operationId: data.operationId as string, ownerSid: record.data.ownerSid });
+      const res = await ingestWorld(deps.ingestor, ticket, {
+        worldId: record.data.id,
+        operationId: data.operationId as string,
+        ownerSid: record.data.ownerSid,
+        title: record.data.title ?? "A place",
+        brief: record.data.brief ?? "",
+        source: record.data.source ?? "upload",
+        createdAt: this.clock(),
+      });
       if (!res.ok) return "code" in res ? { t: "ingest_failed", code: res.code } : failureEvent(res);
       const merged = StoredWorldSchema.safeParse({ ...record.data, manifest: res.manifest });
       if (!merged.success) return { t: "ingest_failed", code: "ingest_failed" };

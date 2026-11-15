@@ -99,12 +99,23 @@ describe("the job", () => {
     expect(t.upstream.generated).toHaveLength(1);
     expect(t.upstream.generated[0]).toEqual({ image: PNG, contentType: "image/png", name: WORLD });
     expect(t.upstream.polled).toEqual(["op-1", "op-1", "op-1"]);
-    expect(t.ingestor.calls).toEqual([{ worldId: WORLD, operationId: "op-1", ownerSid: OWNER }]);
+    expect(t.ingestor.calls).toEqual([{ worldId: WORLD, operationId: "op-1", ownerSid: OWNER, title: "A place", brief: "", source: "upload", createdAt: expect.any(Number) }]);
     const rec = await t.record();
     expect(rec?.status).toBe("ready");
     expect(rec?.manifest).toEqual(sampleManifest(WORLD));
     expect(t.guard.stateOf(ticket.id)).toBe("committed");
     expect(t.parts.alarm.at).toBeNull();
+  });
+
+  it("gives ingest the record's title, Place Brief and origin, and the time", async () => {
+    const t = setup();
+    await t.call("/record", "PUT", { id: WORLD, kind: "user", ownerSid: OWNER, status: "queued", imageId: "img-1", title: "The kitchen", brief: "A quiet kitchen.", source: "sketch" });
+    const r = await t.guard.reserve({ meter: "world", sessionId: OWNER, ipHash: "ip", now: T0 });
+    if (!r.ok) throw new Error("reserve refused");
+    await t.call("/start", "POST", { ticket: r.ticket, imageId: "img-1", ownerSid: OWNER });
+    await t.run();
+    expect(t.ingestor.calls[0]).toMatchObject({ title: "The kitchen", brief: "A quiet kitchen.", source: "sketch" });
+    expect(t.ingestor.calls[0]?.createdAt).toBeGreaterThanOrEqual(T0);
   });
 
   it("shows each state on the record as it goes", async () => {

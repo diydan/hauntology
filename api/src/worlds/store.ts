@@ -24,6 +24,9 @@ export type WorldRecord = {
   candidateIds?: string[];
   /** The Confirm Token that started this world (a short name for it). */
   confirmId?: string;
+  /** The Place Brief and the origin of the picture, copied from it when the world is made. */
+  brief?: string;
+  source?: "upload" | "sketch";
 };
 
 /** An inclusive byte range, as in an HTTP `Range` header. */

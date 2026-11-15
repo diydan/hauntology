@@ -5,6 +5,7 @@ import { NoTicketError, THROWN, generateWorld, ingestWorld, pollWorld } from "./
 
 const ticket = { id: "t-1", meter: "world" as const, sessionId: "sid-a", issuedAt: 1 };
 const req = { image: Uint8Array.from([1]), contentType: "image/png", name: "w-1" };
+const ingestJob = { worldId: "w-1", operationId: "op-1", ownerSid: "sid-a", title: "A place", brief: "", source: "upload" as const, createdAt: 1 };
 
 describe("guarded world service calls", () => {
   it("call through with a ticket for the world meter", async () => {
@@ -14,7 +15,7 @@ describe("guarded world service calls", () => {
     expect(up.generated).toHaveLength(1);
     expect(up.polled).toEqual(["op-1"]);
     const ing = new FakeIngestor(sampleManifest);
-    expect(await ingestWorld(ing, ticket, { worldId: "w-1", operationId: "op-1", ownerSid: "sid-a" })).toMatchObject({ ok: true });
+    expect(await ingestWorld(ing, ticket, ingestJob)).toMatchObject({ ok: true });
   });
 
   it("refuse to call without a proper ticket, and call nothing", async () => {
@@ -24,7 +25,7 @@ describe("guarded world service calls", () => {
     for (const t of bad) {
       expect(() => generateWorld(up, t as never, req)).toThrow(NoTicketError);
       expect(() => pollWorld(up, t as never, "op")).toThrow(NoTicketError);
-      expect(() => ingestWorld(ing, t as never, { worldId: "w", operationId: "o", ownerSid: "s" })).toThrow(NoTicketError);
+      expect(() => ingestWorld(ing, t as never, ingestJob)).toThrow(NoTicketError);
     }
     expect(up.generated).toHaveLength(0);
     expect(up.polled).toHaveLength(0);

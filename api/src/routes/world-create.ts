@@ -177,7 +177,11 @@ export function worldCreateRoutes(deps: CreationDeps): Hono<AppEnv> {
     const ticket = reserved.ticket;
 
     try {
-      const created = await deps.store.create({ id: worldId, kind: "user", ownerSid: sid, status: "queued", imageId: image.id, confirmId });
+      const created = await deps.store.create({
+        id: worldId, kind: "user", ownerSid: sid, status: "queued", imageId: image.id, confirmId,
+        ...(image.source !== undefined ? { source: image.source } : {}),
+        ...(image.brief !== undefined && image.brief !== "" ? { brief: image.brief } : {}),
+      });
       if (!created) {
         // Someone made it between our look and now (a double click): give the unit back and answer with theirs.
         await deps.guard.release(ticket);

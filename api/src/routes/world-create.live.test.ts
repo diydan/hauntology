@@ -83,12 +83,39 @@ describe.skipIf(LIVE_URL === undefined)("world creation on wrangler dev (real R2
     const { worldId } = created.json as { worldId: string };
     const ready = await waitFor(a, worldId, (s) => s.status === "ready");
     expect(ready.status).toBe("ready");
-    const full = (await kit.send(`/api/worlds/${worldId}`, { headers: a.headers })).json as { manifest: { title: string }; thumbUrl: string };
-    expect(full.manifest.title).toBe("A planted place");
+    const body = await kit.send(`/api/worlds/${worldId}`, { headers: a.headers });
+    const full = body.json as { manifest: { title: string; assets: Record<string, unknown> }; thumbUrl: string };
+    expect(full.manifest.title).toBe("A place");
+    expect(Object.keys(full.manifest.assets).sort()).toEqual(["collider", "splat", "thumb"]);
+    // The real ingest wrote the bundle, world.json last, and no address of the service is in what the browser gets.
+    expect(((await kit.dev("exists", { key: `worlds/${worldId}/world.json` })).json as { exists: boolean }).exists).toBe(true);
+    expect(((await kit.dev("exists", { key: `worlds/${worldId}/splat-500k.spz` })).json as { exists: boolean }).exists).toBe(true);
+    const manifestFile = await kit.send(`/api/worlds/${worldId}/assets/world.json`, { headers: a.headers });
+    for (const text of [body.text, manifestFile.text]) expect(text).not.toMatch(/upstream\.invalid|https?:\/\//);
     const thumb = await fetch(`${LIVE_URL}${full.thumbUrl}`, { headers: a.headers });
     expect(thumb.status).toBe(200);
     expect([...new Uint8Array(await thumb.arrayBuffer())]).toEqual([20, 21, 22]);
     expect(await places(a, imageId)).toBe(1); // committed: one of the two worlds is used
+  });
+
+  it("leaves a missing collider out of the manifest and still makes the world", async () => {
+    const a = await kit.visitor();
+    const { worldId } = (await enter(a, await pic(a, 205))).json as { worldId: string };
+    const ready = (await waitFor(a, worldId, (s) => s.status === "ready")) as { status: string; manifest?: { assets: Record<string, unknown> } };
+    expect(ready.status).toBe("ready");
+    expect(Object.keys(ready.manifest?.assets ?? {}).sort()).toEqual(["splat", "thumb"]);
+  });
+
+  it("fails a world whose splat is empty, with nothing left in its bundle and the unit given back", async () => {
+    const a = await kit.visitor();
+    const imageId = await pic(a, 206);
+    const { worldId } = (await enter(a, imageId)).json as { worldId: string };
+    const failed = (await waitFor(a, worldId, (s) => s.status === "failed")) as { failure?: { code: string; quotaReturned: boolean; retryAllowed: boolean } };
+    expect(failed.failure).toEqual({ code: "ingest_failed", quotaReturned: true, retryAllowed: true });
+    for (const name of ["world.json", "splat-500k.spz", "collider.glb", "thumb.jpg"]) {
+      expect(((await kit.dev("exists", { key: `worlds/${worldId}/${name}` })).json as { exists: boolean }).exists, name).toBe(false);
+    }
+    expect(await places(a, imageId)).toBe(2);
   });
 
   it("stops at the session cap once two worlds are made", async () => {

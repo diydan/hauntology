@@ -69,13 +69,16 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - In `shared/src/world/job.prop.test.ts` (100 seeded runs of random events and time): only the allowed edges, `ready` and `failed` absorbing, a wake never after the deadline, a ticket settled exactly once (one commit or one release, never both), a kill only with out-of-credits, and a timeout from any unfinished state.
     - **Property 9: Job state machine is safe**
     - **Validates: Requirements 7.2, 7.6, 5.2**
-  - [ ] 3.14 Manifest builder
+  - [x] 3.14 Manifest builder
     - `buildManifest(worldLabsResponse, ctx)` with defaults for orientation, scale, spawn, floor, bounds from Spike 1.1; optional assets omitted when absent; splat missing → `ingest_failed`.
+    - Built in `shared/src/world/ingest.ts`: `buildManifest(stored, ctx)` takes the files the ingest step stored (role, format, level of detail, bytes) and answers a manifest that fits `WorldManifestSchema` or `ingest_failed`. No usable splat fails it; a collider, panorama or thumbnail that is missing, empty, too big or in a format the role does not have is left out; one file keeps each name; every name is made from role, level and format, never from anything the service sent. The pose (orientation, scale, spawn, floor, bounds) is a **placeholder** (`DEFAULT_POSE`: upright, a unit a metre, standing at the origin at 1.6 m, bounds 20 by 20 by 4) until Spike 1.1 records the service's conventions; `ctx.pose` overrides it a part at a time, for a Gallery world tuned by hand. The input is our own list, not the service's response, because the response's field names are unverified.
     - _Requirements: 8.2, 8.3_
-  - [ ]* 3.15 Write property test for manifest building
+  - [x]* 3.15 Write property test for manifest building
+    - In `shared/src/world/ingest.prop.test.ts`: any list with a usable splat gives a schema-valid manifest holding exactly the usable files, any list without one gives `ingest_failed`. The variants are made from our own lists; the recorded World Labs fixtures the property names do not exist until Spike 1.1.
     - **Property 11: Manifest building is total and fail-closed on splat**
     - **Validates: Requirements 8.2, 8.3**
-  - [ ]* 3.16 Write property test for secret and URL hygiene
+  - [x]* 3.16 Write property test for secret and URL hygiene
+    - In the same file for the manifest (no sentinel key, no address, even when the stored list carries them), and for the status and asset responses in `api/src/routes/worlds.test.ts` and on `wrangler dev`.
     - **Property 12: Browser-facing payloads leak no secrets or upstream URLs**
     - **Validates: Requirements 8.5**
   - [x] 3.17 Retention calculator
@@ -109,7 +112,7 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
 - [ ] 5. Upload, sketch and brief routes
   - [ ] 5.1 `POST /api/uploads`
     - Multipart parse, validate, strip metadata, store in R2 with 24 h expiry under opaque id; reject listing.
-    - Keys come from `api/src/worlds/keys.ts` (`uploads/<imageId>`, and `candidates/<imageId>` for 5.3), because retention and "Delete my place" find objects by key alone; the `WorldJob` record carries `imageId` and `candidateIds` so a delete can reach them. **Each `uploads/<imageId>` object must carry custom metadata `ownerSid`, `sha256` (lowercase hex of the stored bytes) and, once checked, `moderation` (`safe` or `unsafe`), and an image content type (`image/jpeg`, `image/png` or `image/webp`)**: `CloudflareImageStore` refuses an image without an owner and a hash, and treats a missing `moderation` as not yet checked. The picture is served to its owner at `GET /api/images/:id` (`imageUrl` is `/api/images/<imageId>`), built in 6.1.
+    - Keys come from `api/src/worlds/keys.ts` (`uploads/<imageId>`, and `candidates/<imageId>` for 5.3), because retention and "Delete my place" find objects by key alone; the `WorldJob` record carries `imageId` and `candidateIds` so a delete can reach them. **Each `uploads/<imageId>` object must carry custom metadata `ownerSid`, `sha256` (lowercase hex of the stored bytes) and, once checked, `moderation` (`safe` or `unsafe`), and an image content type (`image/jpeg`, `image/png` or `image/webp`), and for the manifest `source` (`upload` or `sketch`) and `brief` (the Place Brief, at most 2000 characters; written by 5.4)**: `CloudflareImageStore` refuses an image without an owner and a hash, and treats a missing `moderation` as not yet checked. The picture is served to its owner at `GET /api/images/:id` (`imageUrl` is `/api/images/<imageId>`), built in 6.1.
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
   - [ ] 5.2 `WorkersAiClient` (wraps `env.AI.run` and the Images call, per Spike 1.2) and its guarded wrappers: image model, Scout text and vision, Llama Guard, cut-out
     - All wrappers live in `api/src/guarded/workersai/` and require a `SpendTicket`. Model ids come from `IMAGE_MODEL_ID`, `GHOST_MODEL_ID` and `GUARD_MODEL_ID`; no route hard-codes one.
@@ -148,7 +151,9 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
   - [ ] 7.3 Ingest
     - Fetch world, copy assets to R2, verify non-empty, write manifest, commit ticket; splat missing → fail and release; optional assets degrade.
     - Store the bundle under `worlds/<worldId>/<name>` and write `world.json` last, using `api/src/worlds/keys.ts`; `PATCH` the `WorldJob` record to `ready` with the validated manifest (`WorldManifestSchema`).
-    - The job calls ingest through the `Ingestor` port in `api/src/worlds/ports.ts`: `ingest({worldId, operationId, ownerSid})` returns the manifest (the job validates it with `WorldManifestSchema` and stores it on the record) or `ingest_failed`, or says the service is rate limited, out of credits or down, which the job waits out. The port copies the files itself.
+    - **Built (the copying), not the reading of the service.** `api/src/worlds/ingest.ts` (`WorldIngestor`, an `Ingestor`): asks a `WorldSource` for the finished world, copies each file into `worlds/<worldId>/` under a name made here, checks each stored object is the size it was told and not empty, builds the manifest (`buildManifest`), and writes `world.json` last, so a bundle without it is never taken for a whole one. A splat that is missing, empty, refused, too big (150 MB) or the wrong size fails the ingest and deletes what was copied; a collider, panorama or thumbnail that is any of those is left out and the world is still ready; a rate limit, a fault or an out-of-credits answer is handed back so the job waits and tries the step again (what was copied is overwritten). The job passes the record's title, Place Brief and origin and the time, and stores the manifest on the record; `commit` and `release` come from the reducer. Nothing returns, stores or logs an address of the service. Tested over a fake bucket and source, and on `wrangler dev` against the real R2 (the full bundle, a missing collider, an empty splat that leaves the bundle empty and returns the unit).
+    - **Still to do:** the real HTTP reading of the service into `SourceWorld` and the download of each file (`WorldSource`), with the adapter for 7.1; both wait for Spike 1.1 to record the field names. Upload metadata also needs `source` (`upload` or `sketch`) and `brief` (the Place Brief) from 5.1, 5.3 and 5.4; a missing one means an upload with no brief.
+    - **Decisions for you to review:** (1) the pose is a placeholder (3.14); (2) one file is refused above 150 MB; (3) a refused optional file is left out, but a rate-limited or failing one makes the job try the whole step again, so a world is not made without its collider because of a passing fault; (4) the title is the record's, or "A place".
     - _Requirements: 8.1, 8.2, 8.3, 5.3_
   - [x] 7.4 `GET /api/worlds/:id` and asset streaming
     - Status payload, manifest when ready, range requests, immutable cache headers, no upstream URLs or keys.

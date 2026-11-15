@@ -1,5 +1,6 @@
 import type { ErrorCode } from "@hauntology/shared/errors";
 import type { SpendTicket } from "@hauntology/shared/world/spend";
+import type { AssetRole, Lod } from "@hauntology/shared/world/ingest";
 import type { WorldManifest } from "@hauntology/shared/world/manifest";
 
 /** What the world routes know about a stored Place Image. The bytes are never needed to decide anything. */
@@ -12,6 +13,9 @@ export type ImageInfo = {
   /** `safe` once the Place Brief check passed; `unsafe` is refused; `pending` means it has not been checked, which also refuses (fail closed). */
   moderation: "safe" | "unsafe" | "pending";
   contentType: string;
+  /** Where the picture came from, and the Place Brief made from it. Absent means an upload with no brief yet. */
+  source?: "upload" | "sketch";
+  brief?: string;
 };
 
 export interface ImageStore {
@@ -48,10 +52,28 @@ export interface WorldLabsPort {
   poll(operationId: string): Promise<{ ok: true; state: "pending" | "done" | "failed" } | UpstreamFailure>;
 }
 
+/** One file of a finished world as the service describes it. `url` is the service's own address and never leaves the Worker. */
+export type SourceAsset = { role: AssetRole; format: string; lod?: Lod; url: string };
+export type SourceWorld = { splats: SourceAsset[]; collider?: SourceAsset; pano?: SourceAsset; thumb?: SourceAsset };
+
 /**
- * Fetches a finished world, copies its files into our storage under `worlds/<worldId>/` and says what the manifest is
- * (world-pipeline 7.3, not built). It never returns an upstream address.
+ * A finished world on the service's side, in our own terms: which files it has, and their bytes. The real HTTP
+ * adapter that reads the service's `GET /worlds/{id}` into `SourceWorld` is not built: the field names are
+ * unverified until Spike 1.1 records them.
+ */
+export interface WorldSource {
+  fetchWorld(operationId: string): Promise<{ ok: true; world: SourceWorld } | UpstreamFailure>;
+  /** The bytes of one file and their size. An adapter that cannot know the size up front reads the file first. */
+  fetchAsset(asset: SourceAsset): Promise<{ ok: true; body: ReadableStream<Uint8Array> | Uint8Array; size: number } | UpstreamFailure>;
+}
+
+/**
+ * Copies a finished world into our storage under `worlds/<worldId>/` and says what its manifest is (world-pipeline 7.3,
+ * `worlds/ingest.ts`). It never returns an upstream address. `title`, `brief`, `source` and `createdAt` come from the
+ * world's record.
  */
 export interface Ingestor {
-  ingest(job: { worldId: string; operationId: string; ownerSid: string }): Promise<{ ok: true; manifest: WorldManifest } | { ok: false; code: "ingest_failed" } | UpstreamFailure>;
+  ingest(job: { worldId: string; operationId: string; ownerSid: string; title: string; brief: string; source: "upload" | "sketch"; createdAt: number }): Promise<
+    { ok: true; manifest: WorldManifest } | { ok: false; code: "ingest_failed" } | UpstreamFailure
+  >;
 }

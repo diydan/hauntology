@@ -11,7 +11,8 @@ import realWorker, { storeFor, type WorkerEnv } from "../src/worker";
 import { SpendGuardClient } from "../src/spend/client";
 import { CloudflareImageStore } from "../src/worlds/cloudflare-images";
 import { WorldJobStarter } from "../src/worlds/job-starter";
-import type { Ingestor, WorldLabsPort } from "../src/worlds/ports";
+import { WorldIngestor } from "../src/worlds/ingest";
+import type { WorldLabsPort, WorldSource } from "../src/worlds/ports";
 import { CloudflareImageStore as Images } from "../src/worlds/cloudflare-images";
 import { galleryKey, bundleKey, uploadKey } from "../src/worlds/keys";
 
@@ -33,9 +34,10 @@ const manifest = (id: string) => ({
 /**
  * A stand-in for the world service, for this test-only Worker. The last byte of the picture picks what happens
  * (the `salt` of `/dev/seed-image`): 201 the service refuses it, 202 it is out of credits, 204 it never finishes,
- * anything else it makes the world after two polls. It also stands in for ingest, writing a small bundle.
+ * 205 the finished world has no collider, 206 its splat is empty, anything else a full world after two polls.
+ * Ingest is the real `WorldIngestor`, reading this stand-in and writing the real R2.
  */
-class StandInUpstream implements WorldLabsPort {
+class StandInUpstream implements WorldLabsPort, WorldSource {
   private readonly polls = new Map<string, number>();
   private readonly salts = new Map<string, number>();
   async generate(req: { image: Uint8Array; name: string }) {
@@ -50,20 +52,31 @@ class StandInUpstream implements WorldLabsPort {
     this.polls.set(operationId, n);
     return { ok: true as const, state: this.salts.get(operationId) === 204 || n <= 2 ? ("pending" as const) : ("done" as const) };
   }
+  async fetchWorld(operationId: string) {
+    const salt = this.salts.get(operationId);
+    const host = "https://upstream.invalid";
+    return {
+      ok: true as const,
+      world: {
+        splats: [{ role: "splat" as const, format: "spz", lod: "500k" as const, url: `${host}/${operationId}/splat-500k` }],
+        ...(salt === 205 ? {} : { collider: { role: "collider" as const, format: "glb", url: `${host}/${operationId}/collider` } }),
+        thumb: { role: "thumb" as const, format: "jpg", url: `${host}/${operationId}/thumb` },
+      },
+    };
+  }
+  async fetchAsset(asset: { role: string; url: string }) {
+    const salt = this.salts.get(asset.url.split("/")[3] as string);
+    const bytes = asset.role === "splat" ? (salt === 206 ? new Uint8Array(0) : FILES["splat-500k.spz"]) : asset.role === "collider" ? FILES["collider.glb"] : FILES["thumb.jpg"];
+    return { ok: true as const, body: bytes as Uint8Array, size: (bytes as Uint8Array).byteLength };
+  }
 }
 
-/** The `WorldJob` with the stand-in service, quick timing and the real `SpendGuard`. */
+/** The `WorldJob` with the stand-in service, the real ingest, quick timing and the real `SpendGuard`. */
 export class WorldJob extends BaseWorldJob {
   constructor(state: DurableObjectState, env: WorkerEnv) {
     const upstream = new StandInUpstream();
-    const ingestor: Ingestor = {
-      async ingest(job) {
-        for (const [name, bytes] of Object.entries(FILES)) await env.BUCKET.put(bundleKey(job.worldId, name), bytes);
-        return { ok: true, manifest: manifest(job.worldId) as never };
-      },
-    };
     const deps: JobDeps = {
-      upstream, ingestor, images: new Images(env.BUCKET),
+      upstream, ingestor: new WorldIngestor(upstream, env.BUCKET), images: new Images(env.BUCKET),
       guard: new SpendGuardClient(env.SPEND_GUARD, { strict: true }),
       timing: { timeoutMs: 6000, pollMs: 300, backoffMaxMs: 1500 },
     };

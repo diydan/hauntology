@@ -22,5 +22,8 @@ export const StoredWorldSchema = z.object({
   candidateIds: z.array(Id).max(16).optional(),
   /** A short name for the Confirm Token that started this world, so the same token cannot start another (Requirement 4.4). */
   confirmId: z.string().regex(/^[A-Za-z0-9_-]{22}$/).optional(),
+  /** The Place Brief and where the picture came from, kept for the manifest the ingest writes. */
+  brief: z.string().max(2000).optional(),
+  source: z.enum(["upload", "sketch"]).optional(),
 });
 export type StoredWorld = z.infer<typeof StoredWorldSchema>;

@@ -41,15 +41,15 @@ export class FakeR2 implements R2BucketLike {
 
   async list(options: { prefix: string; cursor?: string; limit?: number }) {
     this.lists.push(options.prefix);
-    const keys = [...this.objects.keys()].filter((k) => k.startsWith(options.prefix)).sort();
-    const start = options.cursor === undefined ? 0 : Number(options.cursor);
+    // The cursor is the last key of the page before, as in R2, so deleting while listing skips nothing.
+    const keys = [...this.objects.keys()].filter((k) => k.startsWith(options.prefix) && (options.cursor === undefined || k > options.cursor)).sort();
     const size = Math.min(options.limit ?? this.pageSize, this.pageSize);
-    const page = keys.slice(start, start + size);
-    const truncated = start + size < keys.length;
+    const page = keys.slice(0, size);
+    const truncated = keys.length > size;
     return {
       objects: page.map((key) => ({ key, size: (this.objects.get(key) as Held).bytes.byteLength, uploaded: (this.objects.get(key) as Held).uploaded })),
       truncated,
-      ...(truncated ? { cursor: String(start + size) } : {}),
+      ...(truncated ? { cursor: page[page.length - 1] as string } : {}),
     };
   }
 

@@ -10,7 +10,21 @@ describe("CloudflareImageStore", () => {
   it("reads the owner, the hash and the moderation result from the object's metadata", async () => {
     const r2 = new FakeR2();
     put(r2, "uploads/img-1", { ownerSid: "sid-a", sha256: HASH, moderation: "safe" });
-    expect(await new CloudflareImageStore(r2).find("img-1")).toEqual({ id: "img-1", ownerSid: "sid-a", sha256: HASH, moderation: "safe", contentType: "application/octet-stream" });
+    expect(await new CloudflareImageStore(r2).find("img-1")).toEqual({ id: "img-1", ownerSid: "sid-a", sha256: HASH, moderation: "safe", contentType: "application/octet-stream", source: "upload", brief: "" });
+  });
+
+  it("reads where the picture came from and its Place Brief, and falls back to an upload with no brief", async () => {
+    const r2 = new FakeR2();
+    put(r2, "uploads/a", { ownerSid: "s", sha256: HASH, source: "sketch", brief: "A quiet kitchen." });
+    put(r2, "uploads/b", { ownerSid: "s", sha256: HASH, source: "weird", brief: "x".repeat(2001) });
+    put(r2, "uploads/c", { ownerSid: "s", sha256: HASH });
+    const store = new CloudflareImageStore(r2);
+    expect(await store.find("a")).toMatchObject({ source: "sketch", brief: "A quiet kitchen." });
+    expect(await store.find("b")).toMatchObject({ source: "upload", brief: "" });
+    expect(await store.find("c")).toMatchObject({ source: "upload", brief: "" });
+    const edge = new FakeR2();
+    put(edge, "uploads/d", { ownerSid: "s", sha256: HASH, brief: "y".repeat(2000) });
+    expect((await new CloudflareImageStore(edge).find("d"))?.brief).toBe("y".repeat(2000));
   });
 
   it("treats a missing or unknown moderation result as pending, and keeps unsafe", async () => {

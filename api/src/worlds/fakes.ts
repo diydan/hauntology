@@ -119,10 +119,10 @@ export class FakeWorldLabs implements WorldLabsPort {
 
 /** A scriptable ingest step that makes a manifest, or says no. */
 export class FakeIngestor implements Ingestor {
-  readonly calls: { worldId: string; operationId: string; ownerSid: string }[] = [];
+  readonly calls: Parameters<Ingestor["ingest"]>[0][] = [];
   script: Scripted<{ ok: true; manifest: WorldManifest }>[] | null = null;
   constructor(private readonly manifestFor: (worldId: string) => WorldManifest) {}
-  async ingest(job: { worldId: string; operationId: string; ownerSid: string }) {
+  async ingest(job: Parameters<Ingestor["ingest"]>[0]) {
     this.calls.push(job);
     if (this.script === null) return { ok: true as const, manifest: this.manifestFor(job.worldId) };
     const a = this.script[Math.min(this.calls.length - 1, this.script.length - 1)] as Scripted<{ ok: true; manifest: WorldManifest }>;
