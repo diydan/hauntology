@@ -90,16 +90,16 @@ test('the sizes the steering file fixes: a touch target of 44 px, fades of 300 t
   for (const [k, v] of entries(tokens, 'text-size')) assert.ok(/rem|clamp\(/.test(v.value) && !/px/.test(v.value), `text-${k} is in rem, so the player's own text size still works`);
 });
 
-test('the game-art hues (wires, shelf items) are tokens of their own: 14 art-* colours, none of them a role, all bright enough to see on the dark ground', () => {
+test('the game-art colours (wires, shelf items, metals, woods, paper) are tokens of their own: the art-* colours, none of them a role, all bright enough to see on the dark ground', () => {
   const art = entries(tokens, 'color').filter(([, v]) => v.use === 'art');
-  assert.equal(art.length, 14);
+  assert.ok(art.length >= 26);
   const roleColors = new Set(Object.values(tokens.role).map((r) => r.color));
   for (const [k, v] of art) {
     assert.ok(k.startsWith('art-'), k);
     assert.ok(!roleColors.has(k), `${k} is game content, not a role`);
     assert.ok(contrast(v.value, hex('ink')) >= 3, `${k} keeps 3:1 against the dark ground (the wires' own rule)`);
   }
-  assert.equal(new Set(art.map(([, v]) => v.value)).size, 14, 'no two art hues are the same colour');
+  assert.equal(new Set(art.map(([, v]) => v.value)).size, art.length, 'no two art hues are the same colour');
   const css = readFileSync(join(root, 'web/src/styles/tokens.css'), 'utf8');
   for (const [k, v] of art) assert.ok(css.includes(`--${k}: ${v.value};`) && readFileSync(join(root, 'shared/src/design/tokens.ts'), 'utf8').includes(`"${k}": "${v.value}"`), `${k} is generated`);
 });

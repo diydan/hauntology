@@ -57,7 +57,6 @@
 .pz-host .pz-result { display: grid; gap: var(--space-2); justify-items: center; padding: var(--space-4); border-color: var(--accent); }
 .pz-host .pz-result[data-outcome="failed"] { border-color: var(--danger); }
 .pz-result-title { margin: 0; font-size: var(--text-lead); }
-.pz-muted-text { fill: var(--text-quiet); }
 
 .pz-digits { display: flex; gap: var(--space-2); justify-content: center; font-size: var(--text-display); font-weight: 700; font-variant-numeric: tabular-nums; }
 .pz-digits > span { display: grid; place-items: center; width: 2.75rem; height: 3.5rem; border-radius: var(--radius-md); background: var(--surface-raised); }
@@ -70,14 +69,6 @@
 .pz-picture { display: block; width: 100%; height: 100%; border-radius: var(--radius-sm); }
 .pz-sight-picture { width: min(80%, 16rem); aspect-ratio: 3 / 2; margin: 0 auto; border: var(--stroke-ring) solid var(--line-strong); border-radius: var(--radius-md); overflow: hidden; }
 
-/* the clock */
-.pz-clock-ring { fill: var(--surface-sunk); stroke: var(--shape-quiet); stroke-width: 4; }
-.pz-tick { stroke: var(--shape-quiet); stroke-width: 1.5; }
-.pz-tick-big { stroke: var(--text); stroke-width: 3; }
-.pz-clock-num { fill: var(--text); font-size: 24px; font-weight: 650; }
-.pz-hand-hour { stroke: var(--text); stroke-width: 10; stroke-linecap: round; }
-.pz-hand-minute { stroke: var(--accent); stroke-width: 6; stroke-linecap: round; }
-.pz-hand-hub { fill: var(--text); }
 
 .pz-board { display: block; width: 100%; height: auto; touch-action: none; }
 .pz-canvas { display: block; margin: 0 auto; max-width: 100%; border-radius: var(--radius-lg); touch-action: none; }

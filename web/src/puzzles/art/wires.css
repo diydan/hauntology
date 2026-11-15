@@ -1,0 +1,57 @@
+/*
+ * The art of the wires, shared by the puzzle and by the clue (the fuse box you saw), so it loads with the art and not with one screen.
+ * Every wire is drawn as the thing it is: insulated cable out of a steel clamp, a heat-shrink tag with its symbol, a bare copper end,
+ * and, once plugged in, a ring lug under a brass screw on a porcelain terminal block. The wire colours and the metals are the art-* tokens
+ * (game content); the block, the shadows and the labels are the design roles.
+ */
+/* the cable: a shadow, the dark edge of the jacket, the colour, a highlight and the printed stripe */
+.pz-cable { fill: none; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.pz-cable-shadow { stroke: var(--void); stroke-width: 12; opacity: 0.4; transform: translate(0, 3px); }
+.pz-cable-jacket { stroke: color-mix(in srgb, var(--wire) 42%, var(--void)); stroke-width: 10.5; }
+.pz-cable-body { stroke: var(--wire); stroke-width: 8; }
+.pz-cable-shine { stroke: color-mix(in srgb, var(--wire) 45%, var(--text)); stroke-width: 2.2; opacity: 0.55; transform: translate(-0.5px, -1.9px); }
+.pz-cable-mark { stroke-width: 3; stroke-linecap: butt; }
+.pz-cable-mark-light { stroke: var(--text); }
+.pz-cable-mark-dark { stroke: var(--surface-sunk); }
+.pz-wire-ghost-group { opacity: 0.94; pointer-events: none; }
+
+/* the bare end of a cut wire, and the ring lug on a plugged one */
+.pz-tip, .pz-lug, .pz-screw, .pz-tag { pointer-events: none; }
+.pz-tip-cut { fill: var(--surface-sunk); }
+.pz-tip-core { stroke: color-mix(in srgb, var(--art-copper) 45%, var(--void)); stroke-width: 0.8; }
+.pz-tip-strands { fill: none; stroke: var(--art-copper); stroke-width: 1.6; stroke-linecap: round; }
+.pz-lug-barrel { stroke: color-mix(in srgb, var(--art-steel) 40%, var(--void)); stroke-width: 1; }
+.pz-lug-crimp { fill: none; stroke: color-mix(in srgb, var(--art-steel) 35%, var(--void)); stroke-width: 1.2; }
+.pz-lug-ring { stroke: color-mix(in srgb, var(--art-copper) 45%, var(--void)); stroke-width: 1.2; }
+.pz-lug-hole { fill: var(--surface-sunk); }
+
+/* the terminal block, its screws and its numbers; the clamp the cables come out of */
+.pz-block-body { stroke: var(--line-strong); stroke-width: 1.5; }
+.pz-block-ridge { fill: none; stroke: var(--void); stroke-width: 1.6; opacity: 0.55; }
+.pz-block-fix { stroke: color-mix(in srgb, var(--art-steel) 35%, var(--void)); stroke-width: 0.8; }
+.pz-block-num { fill: var(--text); font-size: 17px; font-weight: 700; text-anchor: middle; pointer-events: none; }
+.pz-screw-well { fill: var(--surface-sunk); }
+.pz-screw-head { stroke: color-mix(in srgb, var(--art-brass) 40%, var(--void)); stroke-width: 1; }
+.pz-screw-slot { fill: color-mix(in srgb, var(--art-brass) 25%, var(--void)); transform-box: fill-box; transform-origin: center; transition: transform var(--fade) var(--ease); }
+.pz-clamp-plate { stroke: color-mix(in srgb, var(--art-steel) 40%, var(--void)); stroke-width: 1; }
+.pz-grommet { fill: var(--surface-sunk); stroke: var(--line-strong); stroke-width: 1.5; }
+
+/* the heat-shrink tag: a sleeve in the wire's colour and a label with its symbol */
+.pz-tag-sleeve { fill: var(--wire); stroke: color-mix(in srgb, var(--wire) 42%, var(--void)); stroke-width: 2; }
+.pz-tag-shine { fill: none; stroke: color-mix(in srgb, var(--wire) 40%, var(--text)); stroke-width: 2.2; stroke-linecap: round; opacity: 0.6; }
+.pz-tag-label { fill: var(--text); stroke: color-mix(in srgb, var(--text) 45%, var(--void)); stroke-width: 1.2; }
+.pz-tag-glyph { fill: var(--surface-sunk); }
+
+/* the metals and the porcelain, as gradients (defined once in each svg that draws them) */
+.pz-st-brass-hi { stop-color: color-mix(in srgb, var(--art-brass) 55%, var(--text)); }
+.pz-st-brass { stop-color: var(--art-brass); }
+.pz-st-brass-lo { stop-color: color-mix(in srgb, var(--art-brass) 55%, var(--void)); }
+.pz-st-copper-hi { stop-color: color-mix(in srgb, var(--art-copper) 60%, var(--text)); }
+.pz-st-copper { stop-color: var(--art-copper); }
+.pz-st-copper-lo { stop-color: color-mix(in srgb, var(--art-copper) 55%, var(--void)); }
+.pz-st-steel-hi { stop-color: color-mix(in srgb, var(--art-steel) 60%, var(--text)); }
+.pz-st-steel { stop-color: var(--art-steel); }
+.pz-st-steel-lo { stop-color: color-mix(in srgb, var(--art-steel) 50%, var(--void)); }
+.pz-st-block-hi { stop-color: var(--surface-hover); }
+.pz-st-block-lo { stop-color: var(--surface-raised); }
+

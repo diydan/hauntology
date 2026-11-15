@@ -209,4 +209,14 @@ describe("Moved", () => {
     expect(feel.motion.enabled).toBe(0);
     expect(feel.breath.state).toBe("off");
   });
+
+  it("keeps the shelf as the picture of the puzzle in both phases, so a phone held sideways puts it on the left in the dark and in the light", () => {
+    const lock = lockOf("easy", 3);
+    const { container } = mountKind(Moved, lock.view);
+    expect(container.querySelectorAll(".pz-visual")).toHaveLength(1);
+    expect(container.querySelector(".pz-visual")?.className).toContain("pz-moved-dark");
+    advance(2000);
+    expect(container.querySelectorAll(".pz-visual")).toHaveLength(1);
+    expect(container.querySelector(".pz-visual .pz-shelf")).toBeTruthy();
+  });
 });

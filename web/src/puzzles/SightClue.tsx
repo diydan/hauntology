@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Sight } from "@hauntology/shared/puzzles/types";
 import { PictureSvg } from "./art/Picture";
 import { StoppedClock } from "./art/ClockFace";
+import { SafePlaque } from "./art/safe";
 import { Shelf } from "./art/shelf";
 import { FuseBox } from "./art/wires";
 import "./puzzles.css";
@@ -15,10 +16,10 @@ export function SightClue({ sight }: { sight: Sight }): ReactNode {
     case "safe": return (
       <>
         <p className="ui-hint pz-hint">A brass plaque, scratched with numbers:</p>
-        <div className="pz-digits" role="img" aria-label={`Code: ${p.code.join(" ")}`}>{p.code.map((d, i) => <span key={i}>{d}</span>)}</div>
+        <SafePlaque code={p.code} />
       </>
     );
     case "moved": return (<><p className="ui-hint pz-hint">A shelf:</p><Shelf items={p.shelf} cols={p.shelf.length === 6 ? 3 : 4} /></>);
-    case "photo": return (<><p className="ui-hint pz-hint">A photo, pinned to the wall:</p><div className="pz-sight-picture"><PictureSvg picture={p.picture} cols={p.cols} rows={p.rows} label="The whole photo" /></div></>);
+    case "photo": return (<><p className="ui-hint pz-hint">A photo, pinned to the wall:</p><div className="pz-sight-picture" style={{ aspectRatio: `${p.cols} / ${p.rows}` }}><PictureSvg picture={p.picture} cols={p.cols} rows={p.rows} label="The whole photo" /></div></>);
   }
 }

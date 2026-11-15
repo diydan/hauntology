@@ -1,0 +1,63 @@
+/*
+ * The art of the safe, shared by the puzzle and by the clue (the brass plaque), so it loads with the art and not with one screen. A heavy
+ * steel door plate with rivets, a dark recess with a brass bezel, a steel dial with a knurled edge and engraved numerals, a brass-ringed
+ * knob and a fixed brass index. The metals are the art-* tokens (game content); the shadows and engraving use the design roles.
+ */
+.pz-sf-plate, .pz-sf-index { pointer-events: none; }
+.pz-sf-shadow { fill: var(--void); opacity: 0.45; }
+.pz-sf-door-body { stroke: color-mix(in srgb, var(--art-steel) 30%, var(--void)); stroke-width: 1.5; }
+.pz-sf-door-bevel { fill: none; stroke: color-mix(in srgb, var(--art-steel) 55%, var(--text)); stroke-width: 1.4; opacity: 0.35; }
+.pz-sf-rivet-well { fill: var(--void); opacity: 0.55; }
+.pz-sf-rivet { stroke: color-mix(in srgb, var(--art-steel) 35%, var(--void)); stroke-width: 0.8; }
+.pz-sf-rivet-glint { fill: var(--text); opacity: 0.7; }
+.pz-sf-well { stroke: none; }
+.pz-sf-bezel { fill: none; stroke: var(--art-brass); stroke-width: 4; }
+
+.pz-sf-dial-edge { fill: color-mix(in srgb, var(--art-iron) 30%, var(--void)); }
+.pz-sf-dial-face { stroke: color-mix(in srgb, var(--art-steel) 40%, var(--void)); stroke-width: 1; }
+.pz-sf-knurl { fill: none; stroke-width: 5; }
+.pz-sf-knurl-dark { stroke: color-mix(in srgb, var(--art-steel) 30%, var(--void)); stroke-dasharray: 1.6 1.7; opacity: 0.55; }
+.pz-sf-knurl-light { stroke: color-mix(in srgb, var(--art-steel) 55%, var(--text)); stroke-dasharray: 0.9 2.4; stroke-dashoffset: 0.8; opacity: 0.45; }
+.pz-sf-ticks { fill: none; stroke: color-mix(in srgb, var(--art-iron) 20%, var(--void)); stroke-width: 7; }
+.pz-sf-ticks-long { fill: none; stroke: color-mix(in srgb, var(--art-iron) 15%, var(--void)); stroke-width: 12; }
+.pz-sf-num { fill: color-mix(in srgb, var(--art-iron) 12%, var(--void)); font-size: 30px; font-weight: 700; text-anchor: middle; }
+.pz-sf-num-hi { fill: color-mix(in srgb, var(--art-steel) 40%, var(--text)); font-size: 30px; font-weight: 700; text-anchor: middle; opacity: 0.85; }
+
+.pz-sf-knob-shadow { fill: var(--void); opacity: 0.45; }
+.pz-sf-knob-ring { stroke: color-mix(in srgb, var(--art-brass) 40%, var(--void)); stroke-width: 1; }
+.pz-sf-knob-face { stroke: color-mix(in srgb, var(--art-steel) 35%, var(--void)); stroke-width: 1; }
+.pz-sf-knob-knurl { fill: none; stroke-width: 5; }
+.pz-sf-knob-knurl.pz-sf-knurl-dark { stroke-dasharray: 1.6 2.2; }
+.pz-sf-knob-knurl.pz-sf-knurl-light { stroke-dasharray: 0.9 2.9; stroke-dashoffset: 1; }
+.pz-sf-cap { stroke: color-mix(in srgb, var(--art-brass) 40%, var(--void)); stroke-width: 1; }
+.pz-sf-dimple { fill: color-mix(in srgb, var(--art-brass) 30%, var(--void)); }
+.pz-sf-pointer { fill: color-mix(in srgb, var(--art-brass) 35%, var(--void)); }
+
+.pz-sf-marker { stroke: color-mix(in srgb, var(--art-brass) 35%, var(--void)); stroke-width: 1.2; stroke-linejoin: round; }
+.pz-sf-index-shadow { fill: var(--void); opacity: 0.5; }
+.pz-sf-index-glint { fill: none; stroke: color-mix(in srgb, var(--art-brass) 40%, var(--text)); stroke-width: 2; stroke-linecap: round; opacity: 0.8; }
+
+/* the metals as gradients (defined in each svg that draws them) */
+.pz-sf-door-hi { stop-color: color-mix(in srgb, var(--art-steel) 70%, var(--text)); }
+.pz-sf-door { stop-color: color-mix(in srgb, var(--art-steel) 60%, var(--art-iron)); }
+.pz-sf-door-lo { stop-color: color-mix(in srgb, var(--art-iron) 55%, var(--void)); }
+.pz-sf-well-in { stop-color: var(--void); }
+.pz-sf-well-out { stop-color: color-mix(in srgb, var(--art-iron) 25%, var(--void)); }
+.pz-sf-dial-hi { stop-color: color-mix(in srgb, var(--art-steel) 55%, var(--text)); }
+.pz-sf-dial { stop-color: var(--art-steel); }
+.pz-sf-dial-lo { stop-color: color-mix(in srgb, var(--art-steel) 40%, var(--art-iron)); }
+.pz-sf-brass-hi { stop-color: color-mix(in srgb, var(--art-brass) 55%, var(--text)); }
+.pz-sf-brass { stop-color: var(--art-brass); }
+.pz-sf-brass-lo { stop-color: color-mix(in srgb, var(--art-brass) 55%, var(--void)); }
+.pz-sf-knob-hi { stop-color: color-mix(in srgb, var(--art-steel) 60%, var(--text)); }
+.pz-sf-knob { stop-color: color-mix(in srgb, var(--art-steel) 75%, var(--art-iron)); }
+.pz-sf-knob-lo { stop-color: color-mix(in srgb, var(--art-iron) 70%, var(--void)); }
+
+/* the brass plaque of the clue: the code scratched into it */
+.pz-sf-plaque { display: block; margin: 0 auto; }
+.pz-sf-plaque-body { stroke: color-mix(in srgb, var(--art-brass) 35%, var(--void)); stroke-width: 1.2; }
+.pz-sf-plaque-bevel { fill: none; stroke: color-mix(in srgb, var(--art-brass) 40%, var(--text)); stroke-width: 1.2; opacity: 0.4; }
+.pz-sf-plaque-screw { fill: color-mix(in srgb, var(--art-brass) 60%, var(--void)); stroke: color-mix(in srgb, var(--art-brass) 40%, var(--void)); stroke-width: 0.8; }
+.pz-sf-plaque-slot { stroke: color-mix(in srgb, var(--art-brass) 25%, var(--void)); stroke-width: 1.2; stroke-linecap: round; }
+.pz-sf-scratch { fill: color-mix(in srgb, var(--art-brass) 25%, var(--void)); font-size: 44px; font-weight: 700; text-anchor: middle; }
+.pz-sf-scratch-hi { fill: color-mix(in srgb, var(--art-brass) 40%, var(--text)); font-size: 44px; font-weight: 700; text-anchor: middle; opacity: 0.7; }

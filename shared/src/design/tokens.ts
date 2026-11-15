@@ -36,6 +36,18 @@ export const color = {
   "art-orange": "#ffb27a",
   "art-cream": "#f4efc1",
   "art-sun": "#ffe27a",
+  "art-copper": "#c8793a",
+  "art-brass": "#c2a24a",
+  "art-steel": "#a9b1ba",
+  "art-wood": "#9a6a42",
+  "art-ivory": "#ece3cc",
+  "art-paper": "#d9ccaa",
+  "art-flame": "#ffb54a",
+  "art-glass": "#8fc6d6",
+  "art-iron": "#7b8088",
+  "art-stone": "#857f74",
+  "art-leather": "#a46a40",
+  "art-sepia": "#b08a5a",
 } as const;
 
 export const role = {

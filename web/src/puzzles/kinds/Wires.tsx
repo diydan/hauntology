@@ -1,5 +1,5 @@
-import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
-import { WireShape, wireLook } from "../art/wires";
+import { useId, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { Block, Cable, Clamp, CopperTip, Lug, Screw, Tag, WireDefs, wireLook } from "../art/wires";
 import { useLatest } from "../hooks";
 import type { KindProps } from "./types";
 import "./Wires.css";
@@ -8,6 +8,8 @@ const W = 340;
 const LEFT_X = 50;
 const RIGHT_X = 290;
 const HANDLE_R = 32; // 64 units: the frame leaves about 270 px for the 340-unit board at 320 px wide, so this is 48 px or more
+const CABLE_FROM = 8; // the cable comes out of its clamp at the left edge and runs straight under its tag
+const LUG_BACK = 26; // the cable ends where the lug's barrel starts, 26 units before the screw
 const SNAP_RADIUS = 44;
 const TAP_SLOP = 10;
 type Conn = Readonly<Record<number, number>>;
@@ -15,7 +17,9 @@ type Conn = Readonly<Record<number, number>>;
 /**
  * Cut wires: join each cut end to the terminal that matches its place in the fuse box seen earlier. Drag a wire end to a
  * terminal, or tap a wire and then tap a terminal. Drag a wire away from every terminal to unplug it.
- * A wire is never told apart by colour alone: each has its own dash pattern and end shape.
+ * A wire is never told apart by colour alone: each has its own printed stripe and its own symbol on its tag.
+ * It is drawn as the thing it is: insulated cable out of a clamp, a heat-shrink tag, a ring lug under a brass screw on a
+ * porcelain terminal block. The drawing is all in ../art/wires.tsx; this file is what the finger does.
  */
 export default function Wires({ view, feel, submit, announce }: KindProps<"wires">) {
   const n = view.n;
@@ -25,7 +29,8 @@ export default function Wires({ view, feel, submit, announce }: KindProps<"wires
   const [picked, setPicked] = useState<number | null>(null);
   const [dragging, setDragging] = useState<number | null>(null);
   const board = useRef<SVGSVGElement>(null);
-  const ghost = useRef<SVGPathElement>(null);
+  const ghost = useRef<SVGGElement>(null);
+  const defs = useId().replace(/:/g, "");
   const down = useRef<{ wire: number; x: number; y: number; moved: boolean } | null>(null);
   const latest = useLatest({ conn, picked });
 
@@ -69,14 +74,28 @@ export default function Wires({ view, feel, submit, announce }: KindProps<"wires
     const k = box && box.width > 0 ? W / box.width : 1;
     return { x: (e.clientX - (box?.left ?? 0)) * k, y: (e.clientY - (box?.top ?? 0)) * k };
   };
-  const path = (y1: number, x2: number, y2: number): string => `M ${LEFT_X + HANDLE_R} ${y1} C 170 ${y1}, 170 ${y2}, ${x2} ${y2}`;
+  /** A cable from its clamp, straight under its tag, then a slack curve (it sags a little, it is a cable) to the point (x2, y2). */
+  const path = (y1: number, x2: number, y2: number): string => {
+    const run = (x2 - (LEFT_X + 8)) * 0.45;
+    return `M ${CABLE_FROM} ${y1} L ${LEFT_X + 8} ${y1} C ${LEFT_X + 8 + run} ${y1 + 18}, ${x2 - run} ${y2 + 18}, ${x2} ${y2}`;
+  };
+  /** A cut wire that is not on a terminal hangs from its tag with its bare copper end showing. */
+  const stub = (y: number): string => `M ${CABLE_FROM} ${y} L ${LEFT_X + 8} ${y} C ${LEFT_X + 46} ${y + 4}, ${LEFT_X + 76} ${y + 20}, ${LEFT_X + 96} ${y + 24}`;
   const showGhost = (w: number | null, x = 0, y = 0): void => {
     const el = ghost.current;
     if (!el) return;
-    if (w === null) { el.setAttribute("d", ""); return; }
-    el.setAttribute("d", `M ${LEFT_X + HANDLE_R} ${ys(rowOf(w))} L ${x} ${y}`);
-    el.setAttribute("stroke", wireLook(w).color);
-    el.setAttribute("stroke-dasharray", wireLook(w).dash);
+    const tip = el.querySelector(".pz-tip");
+    if (w === null) { el.querySelectorAll("path.pz-cable-shadow, path.pz-cable-jacket, path.pz-cable-body, path.pz-cable-shine, path.pz-cable-mark").forEach((p) => p.setAttribute("d", "")); tip?.setAttribute("visibility", "hidden"); return; }
+    const look = wireLook(w);
+    const y1 = ys(rowOf(w));
+    const d = path(y1, x, y);
+    el.querySelectorAll("path.pz-cable-shadow, path.pz-cable-jacket, path.pz-cable-body, path.pz-cable-shine, path.pz-cable-mark").forEach((p) => p.setAttribute("d", d));
+    (el.querySelector(".pz-cable") as SVGGElement | null)?.style.setProperty("--wire", look.color);
+    const mark = el.querySelector(".pz-cable-mark");
+    mark?.setAttribute("stroke-dasharray", look.dash || "0 100000");
+    mark?.setAttribute("class", `pz-cable-mark pz-cable-mark-${look.mark}`);
+    tip?.setAttribute("visibility", "visible");
+    tip?.setAttribute("transform", `translate(${x} ${y}) rotate(${(Math.atan2(y - y1, Math.max(x - LEFT_X, 20)) * 180) / Math.PI})`);
   };
 
   const onDown = (e: PointerEvent<SVGSVGElement>): void => {
@@ -125,17 +144,32 @@ export default function Wires({ view, feel, submit, announce }: KindProps<"wires
       <p className="ui-hint pz-hint">Match each wire to its place in the fuse box you saw. Drag it to a terminal, or tap the wire and then a terminal.</p>
       <div className="pz-field pz-visual">
         <svg ref={board} viewBox={`0 0 ${W} ${H}`} className="pz-board pz-wires-board" role="group" aria-label="Wires board" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onCancel}>
-          {Object.entries(conn).filter(([w]) => Number(w) !== dragging).map(([w, t]) => {
-            const look = wireLook(Number(w));
-            return <path key={w} d={path(ys(rowOf(Number(w))), RIGHT_X - HANDLE_R, ys(t))} className="pz-wire-line" stroke={look.color} strokeDasharray={look.dash} />;
-          })}
-          <path ref={ghost} d="" className="pz-wire-line pz-wire-ghost" />
+          <WireDefs id={defs} />
+          <Clamp x={0} y={ys(0) - 34} h={ys(n - 1) - ys(0) + 68} rows={view.leftOrder.map((_, row) => ys(row))} id={defs} />
+          <Block x={RIGHT_X - 40} y={ys(0) - 34} w={86} h={ys(n - 1) - ys(0) + 68} id={defs} dividers={view.leftOrder.slice(0, -1).map((_, t) => (ys(t) + ys(t + 1)) / 2)} />
+          {Object.entries(conn).filter(([w]) => Number(w) !== dragging).map(([w, t]) => (
+            <g key={w} className="pz-wire-run">
+              <Cable look={wireLook(Number(w))} d={path(ys(rowOf(Number(w))), RIGHT_X - LUG_BACK, ys(t))} />
+              <Lug x={RIGHT_X} y={ys(t)} id={defs} />
+            </g>
+          ))}
+          {view.leftOrder.filter((w) => conn[w] === undefined && w !== dragging).map((w) => (
+            <g key={w} className="pz-wire-stub">
+              <Cable look={wireLook(w)} d={stub(ys(rowOf(w)))} />
+              <CopperTip x={LEFT_X + 96} y={ys(rowOf(w)) + 24} angle={9} id={defs} />
+            </g>
+          ))}
+          <g ref={ghost} className="pz-wire-ghost-group">
+            <Cable look={wireLook(0)} d="" ghost />
+            <CopperTip x={0} y={0} angle={0} id={defs} />
+          </g>
           {view.leftOrder.map((_, t) => {
             const w = holder(t);
             return (
               <g key={t} role="button" tabIndex={0} aria-label={w === undefined ? `Terminal ${t + 1}` : `Terminal ${t + 1}, holds ${wireLook(w).name}`} className="pz-terminal" onClick={() => plugPicked(t)} onKeyDown={onKey(() => plugPicked(t))}>
                 <circle cx={RIGHT_X} cy={ys(t)} r={HANDLE_R} className="pz-terminal-ring" />
-                <text x={RIGHT_X} y={ys(t) + 7} className="pz-terminal-num">{t + 1}</text>
+                <Screw cx={RIGHT_X} cy={ys(t)} id={defs} turn={((t * 37) % 90) + (w === undefined ? 0 : 45)} />
+                <text x={RIGHT_X + 31} y={ys(t) + 6} className="pz-block-num">{t + 1}</text>
               </g>
             );
           })}
@@ -144,9 +178,9 @@ export default function Wires({ view, feel, submit, announce }: KindProps<"wires
             const t = conn[w];
             const label = `Wire ${look.name}${t === undefined ? "" : `, on terminal ${t + 1}`}`;
             return (
-              <g key={w} data-wire={w} role="button" tabIndex={0} aria-label={label} aria-pressed={picked === w} className="pz-wire-handle" onClick={onAssistClick(() => choose(w))} onKeyDown={onKey(() => choose(w))}>
-                <circle cx={LEFT_X} cy={ys(row)} r={HANDLE_R} className="pz-wire-disc" stroke={look.color} strokeWidth={picked === w ? 6 : 2.5} />
-                <WireShape shape={look.shape} cx={LEFT_X} cy={ys(row)} r={13} fill={look.color} />
+              <g key={w} data-wire={w} role="button" tabIndex={0} aria-label={label} aria-pressed={picked === w} className={`pz-wire-handle${picked === w ? " pz-wire-picked" : ""}`} onClick={onAssistClick(() => choose(w))} onKeyDown={onKey(() => choose(w))}>
+                <circle cx={LEFT_X} cy={ys(row)} r={HANDLE_R} className="pz-wire-disc" />
+                <Tag look={look} cx={LEFT_X} cy={ys(row)} />
               </g>
             );
           })}

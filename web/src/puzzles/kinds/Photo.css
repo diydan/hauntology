@@ -2,18 +2,31 @@
 .pz-photo-board { position: relative; width: 100%; margin: 0 auto; touch-action: none; user-select: none; -webkit-user-select: none; }
 .pz-photo-board[data-cols="2"] { max-width: min(13rem, calc(var(--pz-h) / var(--pz-ratio, 2.1))); }
 .pz-photo-board[data-cols="3"] { max-width: min(21rem, calc(var(--pz-h) / var(--pz-ratio, 2.1))); }
-.pz-photo-cell { position: absolute; border: var(--stroke-thin) dashed var(--line-strong); border-radius: var(--radius-md); background: color-mix(in srgb, var(--text) 4%, transparent); box-sizing: border-box; }
-.pz-photo-slot { position: absolute; z-index: 1; padding: 0; box-sizing: border-box; border: var(--stroke-ring) dashed var(--line-strong); border-radius: var(--radius-md); background: transparent; color: inherit; cursor: pointer; touch-action: none; }
-.pz-photo-slot-full { border-style: solid; border-color: transparent; }
+.pz-photo-cell { position: absolute; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--void) 30%, transparent); box-shadow: inset 0 1px 4px color-mix(in srgb, var(--void) 75%, transparent); box-sizing: border-box; }
+.pz-photo-slot { position: absolute; z-index: 1; padding: 0; box-sizing: border-box; border: var(--stroke-ring) solid transparent; border-radius: var(--radius-sm); background: transparent; color: inherit; cursor: pointer; touch-action: none; }
+.pz-photo-slot-full { border-color: transparent; }
 .pz-piece {
   position: absolute; z-index: 2; min-width: 48px; min-height: 48px; padding: 0; box-sizing: border-box;
-  border: var(--stroke-ring) solid transparent; border-radius: var(--radius-md); background: transparent; color: inherit; cursor: grab; touch-action: none;
+  border: var(--stroke-ring) solid transparent; border-radius: var(--radius-sm); background: transparent; color: inherit; cursor: grab; touch-action: none;
 }
-.pz-piece[aria-pressed="true"] { border-color: var(--accent); }
-.pz-piece-drag { z-index: 5; cursor: grabbing; box-shadow: var(--shadow-lift); }
-.pz-piece-art { display: block; width: 100%; height: 100%; pointer-events: none; transition: transform var(--fade); }
-.pz-piece-art .pz-picture { border-radius: var(--radius-sm); }
+.pz-piece[aria-pressed="true"] .pz-piece-art { filter: drop-shadow(0 0 2px var(--accent)) drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 65%, transparent)); }
+.pz-piece-drag { z-index: 5; cursor: grabbing; }
+.pz-piece-drag .pz-piece-art { filter: drop-shadow(0 8px 6px color-mix(in srgb, var(--void) 70%, transparent)); }
+.pz-piece-art { display: block; width: 100%; height: 100%; pointer-events: none; transition: transform var(--fade); filter: drop-shadow(0 2px 2px color-mix(in srgb, var(--void) 65%, transparent)); }
 .pz-photo-still .pz-piece-art { transition: none; }
+
+/* the card mount, the felt tray and the photo corners (drawn in svg under and over the pieces) */
+.pz-photo-mount, .pz-photo-corners { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.pz-photo-mount { z-index: 0; }
+.pz-photo-corners { z-index: 3; }
+.pz-mount-card { stroke: color-mix(in srgb, var(--art-leather) 40%, var(--void)); stroke-width: 1.5; }
+.pz-mount-card-hi { stop-color: color-mix(in srgb, var(--art-leather) 36%, var(--void)); }
+.pz-mount-card-lo { stop-color: color-mix(in srgb, var(--art-leather) 22%, var(--void)); }
+.pz-mount-recess { fill: color-mix(in srgb, var(--void) 62%, transparent); stroke: color-mix(in srgb, var(--void) 70%, transparent); stroke-width: 1; }
+.pz-mount-felt { stroke: color-mix(in srgb, var(--art-stone) 30%, var(--void)); stroke-width: 1.2; }
+.pz-mount-felt-hi { stop-color: color-mix(in srgb, var(--art-stone) 22%, var(--void)); }
+.pz-mount-felt-lo { stop-color: color-mix(in srgb, var(--art-stone) 11%, var(--void)); }
+.pz-mount-corner { fill: color-mix(in srgb, var(--art-leather) 14%, var(--void)); stroke: color-mix(in srgb, var(--art-leather) 60%, var(--void)); stroke-width: 0.8; stroke-linejoin: round; }
 .pz-photo-count { min-height: 2rem; font-size: var(--text-title); }
 @media (prefers-reduced-motion: reduce) {
   .pz-piece-art { transition: none; }

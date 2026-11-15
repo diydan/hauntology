@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { makeLock } from "@hauntology/shared/puzzles/make";
 import { verify } from "@hauntology/shared/puzzles/verify";
@@ -113,8 +113,8 @@ describe("Clock", () => {
 
   it("turns the chosen hand with the phone when Twist is on, and says so when tilt is not available", async () => {
     const { feel } = mountKind(Clock, view, { tilt: "on" });
+    expect(screen.getByRole("button", { name: "Twist: on" }).getAttribute("aria-pressed")).toBe("true"); // tilt is on, so Twist starts on
     feel.motion.dial = 10;
-    fireEvent.click(screen.getByRole("button", { name: "Twist" }));
     await wait(80);
     feel.motion.dial = 40; // a quarter-way round: 30 degrees
     await wait(80);
@@ -136,6 +136,40 @@ describe("Clock", () => {
     expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
   });
 
+  it("starts in Twist where tilt is on, and not where it is off, denied or unsupported; the Player can turn it off, and it stays off", async () => {
+    const m = mountKind(Clock, view, { tilt: "on" });
+    expect(screen.getByRole("button", { name: "Twist: on" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Twist: on" })); // the Player turns it off
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+    act(() => { m.feel.motion.setState("off"); });
+    act(() => { m.feel.motion.setState("on"); }); // tilt comes on again by itself: Twist is theirs now, it does not start again
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+    cleanup();
+    for (const state of ["off", "denied", "unsupported"] as const) {
+      mountKind(Clock, view, { tilt: state });
+      expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed"), state).toBe("false");
+      cleanup();
+    }
+  });
+
+  it("keeps the Player's choice: after they pressed Twist, tilt coming on later does not start it by itself", async () => {
+    const m = mountKind(Clock, view, { tilt: "off" });
+    m.feel.motion.enableResult = "denied";
+    fireEvent.click(screen.getByRole("button", { name: "Twist" })); // they try Twist and the phone says no
+    await wait(20);
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+    act(() => { m.feel.motion.setState("on"); }); // tilt comes on later (a tap elsewhere asked)
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("starts in Twist once tilt comes on after the screen opened (the permission came from a tap), and drops Twist when tilt goes off", () => {
+    const m = mountKind(Clock, view, { tilt: "off" });
+    act(() => { m.feel.motion.setState("on"); });
+    expect(screen.getByRole("button", { name: "Twist: on" })).toBeTruthy();
+    act(() => { m.feel.motion.setState("off"); });
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
   it("uses touch alone: no sensor is read when there is no tilt", async () => {
     const { feel } = mountKind(Clock, view, { tilt: "off" });
     await wait(60);
@@ -152,7 +186,6 @@ describe("Clock", () => {
   it("flips the twist direction from the screen itself, when the phone turns the hand the wrong way", async () => {
     const { feel } = mountKind(Clock, view, { tilt: "on" });
     feel.motion.dial = 10;
-    fireEvent.click(screen.getByRole("button", { name: "Twist" }));
     await wait(80);
     feel.motion.dial = 40; // 30 degrees round: five minutes
     await wait(80);
@@ -181,5 +214,16 @@ describe("Clock", () => {
     expect(within(group).getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual(["Hour hand", "Minute hand"]);
     expect(screen.getByRole("button", { name: "Twist" }).parentElement).toBe(row);
     expect(document.querySelectorAll(".pz-grid4 > button").length).toBe(4);
+  });
+
+  it("is an antique clock: the time on a small brass plate, and the hand being turned picked out on the dial", () => {
+    mountKind(Clock, view);
+    expect(screen.getByRole("img", { name: /The clock shows/ }).className).toContain("pz-ck-readout");
+    const turning = (): string[] => [...document.querySelectorAll("g[transform^='translate(150 150) rotate(']")].map((g, i) => (g.querySelector(".pz-ck-hand-active") ? ["hour", "minute"][i] ?? "?" : "")).filter(Boolean);
+    expect(turning()).toEqual(["minute"]); // the minute hand is the one chosen to start with
+    fireEvent.click(screen.getByRole("button", { name: "Hour hand" }));
+    expect(turning()).toEqual(["hour"]);
+    fireEvent.click(screen.getByRole("button", { name: "Minute hand" }));
+    expect(turning()).toEqual(["minute"]);
   });
 });

@@ -16,11 +16,25 @@ export class FakeMotion implements Motion {
   enableResult: TiltState;
   enabled = 0;
   leveled = 0;
+  /** Every `autoEnable` call, as its `fromTap`. */
+  autoCalls: boolean[] = [];
+  /** The Player's wish for tilt and Touch only, as the settings would say. */
+  wish = true;
+  touchOnly = false;
+  /** An iPhone: asks only from a tap. */
+  needsTap = false;
+  userOff = false;
   private readonly sub = subscribable();
   subscribe: Subscribe = this.sub.subscribe;
   constructor(initial: TiltState = "off", enableResult: TiltState = "on") { this.state = initial; this.enableResult = enableResult; }
-  async enable(): Promise<TiltState> { this.enabled++; this.state = this.enableResult; this.sub.fire(); return this.state; }
-  disable(): void { this.state = "off"; this.tilt = { x: 0, y: 0 }; this.sub.fire(); }
+  async enable(): Promise<TiltState> { this.enabled++; this.userOff = false; this.state = this.enableResult; this.sub.fire(); return this.state; }
+  async autoEnable(opts: { fromTap: boolean }): Promise<TiltState> {
+    this.autoCalls.push(opts.fromTap);
+    if (this.touchOnly || !this.wish || this.userOff || this.state !== "off") return this.state;
+    if (this.needsTap && !opts.fromTap) return this.state;
+    return this.enable();
+  }
+  disable(): void { this.userOff = true; this.state = "off"; this.tilt = { x: 0, y: 0 }; this.sub.fire(); }
   holdLevel(): void { this.leveled++; this.tilt = { x: 0, y: 0 }; }
   /** Test helpers. */
   setTilt(x: number, y: number): void { this.tilt = { x, y }; }

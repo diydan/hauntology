@@ -297,9 +297,11 @@ test('screen code writes no hex colour (puzzles, and the 3D viewer and party scr
   const files = ['web/src/puzzles', 'web/src/viewer', 'web/src/party'].filter((d) => existsSync(join(root, d))).flatMap(walk);
   assert.ok(files.filter((f) => f.startsWith('web/src/puzzles/')).length > 30, 'the puzzle code is there');
   for (const f of files) assert.ok(!/#[0-9a-fA-F]{6}\b/.test(read(f).replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')), `${f} writes a hex colour`);
-  for (const f of ['web/src/puzzles/art/wires.tsx', 'web/src/puzzles/art/shelf.tsx']) assert.match(read(f), /from "@hauntology\/shared\/design\/tokens"/, `${f} takes its hues from the tokens`);
+  // art that draws its colours in code takes them from the generated tokens; art that styles them in CSS takes them from var(--art-*) (checked above: no hex, only tokens)
+  assert.match(read('web/src/puzzles/art/wires.tsx'), /from "@hauntology\/shared\/design\/tokens"/, 'the wires take their hues from the tokens');
+  for (const f of ['web/src/puzzles/art/shelf.css', 'web/src/puzzles/art/patina.css']) assert.match(read(f), /var\(--art-[a-z]+\)/, `${f} takes its colours from the art tokens`);
   const art = entries(tokens, 'color').filter(([, v]) => v.use === 'art');
-  assert.equal(art.length, 14);
+  assert.ok(art.length >= 26, `${art.length} art colours: the 6 wire hues, the shelf hues and the materials`);
   for (const [k] of art) assert.ok(k.startsWith('art-'), k);
 });
 

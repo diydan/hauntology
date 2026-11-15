@@ -1,0 +1,61 @@
+/*
+ * The patina of the objects (candles, music box, shelf): each is three gradient stops, a highlight, the colour and a shade, made from the
+ * art-* token of that material. Stops are used by the <Grad> helper in patina.tsx. Light comes from the top left.
+ */
+.pz-pt-brass-hi { stop-color: color-mix(in srgb, var(--art-brass) 62%, var(--text)); }
+.pz-pt-brass { stop-color: var(--art-brass); }
+.pz-pt-brass-lo { stop-color: color-mix(in srgb, var(--art-brass) 52%, var(--void)); }
+.pz-pt-steel-hi { stop-color: color-mix(in srgb, var(--art-steel) 62%, var(--text)); }
+.pz-pt-steel { stop-color: var(--art-steel); }
+.pz-pt-steel-lo { stop-color: color-mix(in srgb, var(--art-steel) 52%, var(--void)); }
+.pz-pt-copper-hi { stop-color: color-mix(in srgb, var(--art-copper) 62%, var(--text)); }
+.pz-pt-copper { stop-color: var(--art-copper); }
+.pz-pt-copper-lo { stop-color: color-mix(in srgb, var(--art-copper) 52%, var(--void)); }
+.pz-pt-wood-hi { stop-color: color-mix(in srgb, var(--art-wood) 62%, var(--text)); }
+.pz-pt-wood { stop-color: var(--art-wood); }
+.pz-pt-wood-lo { stop-color: color-mix(in srgb, var(--art-wood) 52%, var(--void)); }
+.pz-pt-ivory-hi { stop-color: color-mix(in srgb, var(--art-ivory) 62%, var(--text)); }
+.pz-pt-ivory { stop-color: var(--art-ivory); }
+.pz-pt-ivory-lo { stop-color: color-mix(in srgb, var(--art-ivory) 52%, var(--void)); }
+.pz-pt-paper-hi { stop-color: color-mix(in srgb, var(--art-paper) 62%, var(--text)); }
+.pz-pt-paper { stop-color: var(--art-paper); }
+.pz-pt-paper-lo { stop-color: color-mix(in srgb, var(--art-paper) 52%, var(--void)); }
+.pz-pt-flame-hi { stop-color: color-mix(in srgb, var(--art-flame) 62%, var(--text)); }
+.pz-pt-flame { stop-color: var(--art-flame); }
+.pz-pt-flame-lo { stop-color: color-mix(in srgb, var(--art-flame) 52%, var(--void)); }
+.pz-pt-glass-hi { stop-color: color-mix(in srgb, var(--art-glass) 62%, var(--text)); }
+.pz-pt-glass { stop-color: var(--art-glass); }
+.pz-pt-glass-lo { stop-color: color-mix(in srgb, var(--art-glass) 52%, var(--void)); }
+.pz-pt-iron-hi { stop-color: color-mix(in srgb, var(--art-iron) 62%, var(--text)); }
+.pz-pt-iron { stop-color: var(--art-iron); }
+.pz-pt-iron-lo { stop-color: color-mix(in srgb, var(--art-iron) 52%, var(--void)); }
+.pz-pt-stone-hi { stop-color: color-mix(in srgb, var(--art-stone) 62%, var(--text)); }
+.pz-pt-stone { stop-color: var(--art-stone); }
+.pz-pt-stone-lo { stop-color: color-mix(in srgb, var(--art-stone) 52%, var(--void)); }
+.pz-pt-leather-hi { stop-color: color-mix(in srgb, var(--art-leather) 62%, var(--text)); }
+.pz-pt-leather { stop-color: var(--art-leather); }
+.pz-pt-leather-lo { stop-color: color-mix(in srgb, var(--art-leather) 52%, var(--void)); }
+.pz-pt-sepia-hi { stop-color: color-mix(in srgb, var(--art-sepia) 62%, var(--text)); }
+.pz-pt-sepia { stop-color: var(--art-sepia); }
+.pz-pt-sepia-lo { stop-color: color-mix(in srgb, var(--art-sepia) 52%, var(--void)); }
+.pz-pt-blue-hi { stop-color: color-mix(in srgb, var(--art-blue) 62%, var(--text)); }
+.pz-pt-blue { stop-color: var(--art-blue); }
+.pz-pt-blue-lo { stop-color: color-mix(in srgb, var(--art-blue) 52%, var(--void)); }
+.pz-pt-violet-hi { stop-color: color-mix(in srgb, var(--art-violet) 62%, var(--text)); }
+.pz-pt-violet { stop-color: var(--art-violet); }
+.pz-pt-violet-lo { stop-color: color-mix(in srgb, var(--art-violet) 52%, var(--void)); }
+.pz-pt-red-hi { stop-color: color-mix(in srgb, var(--art-red) 62%, var(--text)); }
+.pz-pt-red { stop-color: var(--art-red); }
+.pz-pt-red-lo { stop-color: color-mix(in srgb, var(--art-red) 52%, var(--void)); }
+.pz-pt-green-hi { stop-color: color-mix(in srgb, var(--art-green) 62%, var(--text)); }
+.pz-pt-green { stop-color: var(--art-green); }
+.pz-pt-green-lo { stop-color: color-mix(in srgb, var(--art-green) 52%, var(--void)); }
+.pz-pt-cyan-hi { stop-color: color-mix(in srgb, var(--art-cyan) 62%, var(--text)); }
+.pz-pt-cyan { stop-color: var(--art-cyan); }
+.pz-pt-cyan-lo { stop-color: color-mix(in srgb, var(--art-cyan) 52%, var(--void)); }
+
+/* what every object has: a soft shadow on the shelf, and a dark edge */
+.pz-sg-shadow { fill: color-mix(in srgb, var(--void) 70%, transparent); }
+.pz-sg-edge { stroke: color-mix(in srgb, var(--void) 62%, transparent); stroke-width: 0.9; stroke-linejoin: round; }
+.pz-sg-shine { fill: none; stroke: color-mix(in srgb, var(--text) 70%, transparent); stroke-width: 1.4; stroke-linecap: round; }
+.pz-sg-dark { fill: color-mix(in srgb, var(--void) 78%, transparent); }

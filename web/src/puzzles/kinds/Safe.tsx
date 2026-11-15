@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { CLOCK_C, angleOf, polar } from "../art/ClockFace";
-import { useFrame, useLatest } from "../hooks";
+import { useEffect, useId, useRef, useState, type PointerEvent } from "react";
+import { CLOCK_C, angleOf } from "../art/ClockFace";
+import { SafeDefs, SafeDial, SafeIndex, SafePlate } from "../art/safe";
+import { useFeelValue, useFrame, useLatest } from "../hooks";
 import type { KindProps } from "./types";
 import "./Safe.css";
 
@@ -19,10 +20,20 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
   const [flip, setFlip] = useState(false);
   const board = useRef<SVGSVGElement>(null);
   const face = useRef<SVGGElement>(null);
+  const art = useId().replace(/:/g, "");
   const theta = useRef(0);
   const grab = useRef<{ angle: number; theta: number } | null>(null);
   const base = useRef<{ dial: number; theta: number } | null>(null);
   const latest = useLatest({ digit, code });
+
+  // Tilt starts by itself where the phone has a sensor, and then Twist starts on too, once: the Player can turn it off. If tilt goes off (the
+  // Player's switch), the Twist button says so.
+  const tiltState = useFeelValue(feel.motion.subscribe, () => feel.motion.state);
+  const autoTwist = useRef(true);
+  useEffect(() => {
+    if (tiltState === "on" && autoTwist.current) { autoTwist.current = false; base.current = null; setTwist(true); }
+    else if (tiltState !== "on" && twist) setTwist(false);
+  }, [tiltState, twist]);
 
   const turnTo = (t: number): void => {
     theta.current = t;
@@ -78,6 +89,7 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
   }, twist);
 
   const toggleTwist = async (): Promise<void> => {
+    autoTwist.current = false; // the Player chose: it is theirs from now on
     if (twist) { setTwist(false); return; }
     if (feel.motion.state !== "on" && (await feel.motion.enable()) !== "on") { announce("Tilt is not available. Drag the dial instead."); return; }
     base.current = null;
@@ -108,35 +120,26 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
       <p className="ui-hint pz-hint">Dial the code from the plaque you saw: turn the dial to a digit, then press Set.</p>
       <div className="pz-field pz-visual">
         <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-safe-board" role="application" aria-label="Safe dial" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
-          <circle cx={CLOCK_C} cy={CLOCK_C} r={142} className="pz-safe-ring" />
+          <SafeDefs id={art} />
+          <SafePlate id={art} />
           <g ref={face} transform={`rotate(0 ${CLOCK_C} ${CLOCK_C})`}>
-            {Array.from({ length: 10 }, (_, i) => {
-              const [x, y] = polar(CLOCK_C, CLOCK_C, 112, i * 36);
-              const [x1, y1] = polar(CLOCK_C, CLOCK_C, 138, i * 36 + 18);
-              const [x2, y2] = polar(CLOCK_C, CLOCK_C, 130, i * 36 + 18);
-              return (
-                <g key={i}>
-                  <text x={x} y={y + 11} className="pz-safe-num">{i}</text>
-                  <line x1={x1} y1={y1} x2={x2} y2={y2} className="pz-safe-tick" />
-                </g>
-              );
-            })}
+            <SafeDial id={art} />
           </g>
-          <polygon points="150,26 137,2 163,2" className="pz-safe-marker" />
+          <SafeIndex id={art} />
         </svg>
-        <p className="pz-readout" role="img" aria-label={`Under the marker: ${digit}`}>{digit}</p>
+        <p className="pz-readout pz-safe-readout" role="img" aria-label={`Under the marker: ${digit}`}>{digit}</p>
       </div>
-      <div className="pz-digits" role="img" aria-label={`Code so far: ${code.length} of ${view.digits} digits`}>
+      <div className="pz-digits pz-safe-plates" role="img" aria-label={`Code so far: ${code.length} of ${view.digits} digits`}>
         {Array.from({ length: view.digits }, (_, i) => <span key={i}>{i < code.length ? String(code[i]) : "·"}</span>)}
       </div>
-      <div className="pz-grid3">
+      <div className={twist ? "pz-grid4" : "pz-grid3"}>
         <button type="button" className="ui-button" aria-label="Digit minus" onClick={() => nudge(-1)}>Digit −</button>
         <button type="button" className="ui-button" aria-label="Digit plus" onClick={() => nudge(1)}>Digit +</button>
         <button type="button" className="ui-button" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
+        {twist ? <button type="button" className="ui-button" aria-pressed={flip} aria-label="Turns the wrong way? Flip it" onClick={toggleFlip}>Flip</button> : null}
       </div>
       <div className="pz-twist">
         <p className="ui-hint pz-hint">{twist ? "Hold the phone upright and turn it like a wheel to turn the dial." : "Twist: turn the phone like a wheel to turn the dial."}</p>
-        {twist ? <button type="button" className="ui-button" aria-pressed={flip} onClick={toggleFlip}>Turns the wrong way? Flip it</button> : null}
       </div>
       <div className="pz-grid2">
         <button type="button" className="ui-button" disabled={code.length === 0} onClick={undo}>Undo</button>

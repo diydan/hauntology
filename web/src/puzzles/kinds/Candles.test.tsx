@@ -354,4 +354,24 @@ describe("Candles", () => {
     for (const m of css.matchAll(/transition:\s*([^;]+);/g)) expect(m[1]).toMatch(/var\(--fade\)|^none$/);
     expect(css).not.toMatch(/animation/);
   });
+
+  it("draws each candle as a candle: a flame, a wisp of smoke, a wick, wax and a holder, all hidden from a screen reader and none of them text, with holders that differ", () => {
+    const lock = lockOf("medium", 1);
+    mountKind(Candles, lock.view);
+    const holders = new Set<string>();
+    for (let i = 0; i < lock.view.n; i++) {
+      const c = candle(i);
+      for (const part of [".pz-flame svg", ".pz-smoke svg", ".pz-wick", ".pz-wax", ".pz-holder svg"]) expect(c.querySelector(part), `candle ${i + 1} ${part}`).toBeTruthy();
+      for (const hidden of c.querySelectorAll(".pz-flame, .pz-smoke, .pz-wick, .pz-wax, .pz-holder")) expect(hidden.getAttribute("aria-hidden")).toBe("true");
+      expect(c.textContent).toBe(String(i + 1)); // the number, and nothing the drawing adds
+      holders.add(new XMLSerializer().serializeToString(c.querySelector(".pz-holder svg") as Element).replace(/:r\w+:/g, ""));
+    }
+    expect(holders.size).toBeGreaterThanOrEqual(3); // a pewter saucer, a brass chamberstick, a brass base
+  });
+
+  it("leaves a wisp of smoke when a flame goes out, and takes both the flame and the smoke through the fade token", () => {
+    expect(css).toMatch(/\.pz-candle\[data-flame="out"\] \.pz-flame svg \{[^}]*opacity: 0/);
+    expect(css).toMatch(/\.pz-candle\[data-flame="out"\] \.pz-smoke \{[^}]*opacity: 0\.5/);
+    expect(css).toMatch(/\.pz-smoke \{[^}]*transition: opacity var\(--fade\), transform var\(--fade\)/);
+  });
 });

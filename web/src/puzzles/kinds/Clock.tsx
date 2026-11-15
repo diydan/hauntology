@@ -1,6 +1,6 @@
-import { useRef, useState, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { CLOCK_C, ClockDial, ClockHands, angleOf, hourAngle, minuteAngle } from "../art/ClockFace";
-import { useFrame, useLatest } from "../hooks";
+import { useFeelValue, useFrame, useLatest } from "../hooks";
 import type { KindProps } from "./types";
 
 type Hand = "hour" | "minute";
@@ -23,6 +23,15 @@ export default function Clock({ view, feel, submit, announce }: KindProps<"clock
   const drag = useRef<Hand | null>(null);
   const base = useRef<{ dial: number; angle: number } | null>(null);
   const latest = useLatest({ time, hand });
+
+  // Tilt starts by itself where the phone has a sensor, and then Twist starts on too, once: the Player can turn it off. If tilt goes off (the
+  // Player's switch), the Twist button says so.
+  const tiltState = useFeelValue(feel.motion.subscribe, () => feel.motion.state);
+  const autoTwist = useRef(true);
+  useEffect(() => {
+    if (tiltState === "on" && autoTwist.current) { autoTwist.current = false; base.current = null; setTwist(true); }
+    else if (tiltState !== "on" && twist) setTwist(false);
+  }, [tiltState, twist]);
 
   const apply = (next: { h: number; m: number }): void => {
     latest.current.time = next;
@@ -86,6 +95,7 @@ export default function Clock({ view, feel, submit, announce }: KindProps<"clock
   }, twist);
 
   const toggleTwist = async (): Promise<void> => {
+    autoTwist.current = false; // the Player chose: it is theirs from now on
     if (twist) { setTwist(false); return; }
     if (feel.motion.state !== "on" && (await feel.motion.enable()) !== "on") { announce("Tilt is not available. Drag the hands instead."); return; }
     base.current = null;
@@ -102,18 +112,19 @@ export default function Clock({ view, feel, submit, announce }: KindProps<"clock
       <div className="pz-field pz-visual">
         <svg ref={board} viewBox="0 0 300 300" className="pz-board pz-clock-board" role="application" aria-label="Clock to set" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
           <ClockDial />
-          <ClockHands h={h} m={m} />
+          <ClockHands h={h} m={m} active={hand} />
         </svg>
-        <p className="pz-readout" role="img" aria-label={`The clock shows ${text}`}>{text}</p>
+        <p className="pz-readout pz-ck-readout" role="img" aria-label={`The clock shows ${text}`}>{text}</p>
       </div>
       <p className="ui-hint pz-hint">Drag a hand round the dial, or use the buttons.</p>
       <div className="pz-field">
-        <div className="pz-grid3">
+        <div className={twist ? "pz-grid4" : "pz-grid3"}>
           <div className="pz-contents" role="group" aria-label="Which hand">
             <button type="button" className="ui-button" aria-pressed={hand === "hour"} aria-label="Hour hand" onClick={() => chooseHand("hour")}>Hour</button>
             <button type="button" className="ui-button" aria-pressed={hand === "minute"} aria-label="Minute hand" onClick={() => chooseHand("minute")}>Minute</button>
           </div>
           <button type="button" className="ui-button" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
+          {twist ? <button type="button" className="ui-button" aria-pressed={flip} aria-label="Turns the wrong way? Flip it" onClick={toggleFlip}>Flip</button> : null}
         </div>
         <div className="pz-grid4">
           <button type="button" className="ui-button" aria-label="Hour back" onClick={() => step("hour", -1)}>Hour −</button>
@@ -124,7 +135,6 @@ export default function Clock({ view, feel, submit, announce }: KindProps<"clock
       </div>
       <div className="pz-twist">
         <p className="ui-hint pz-hint">{twist ? "Hold the phone upright and turn it like a wheel to turn the chosen hand." : "Twist: turn the phone like a wheel to turn a hand."}</p>
-        {twist ? <button type="button" className="ui-button" aria-pressed={flip} onClick={toggleFlip}>Turns the wrong way? Flip it</button> : null}
       </div>
       <button type="button" className="ui-button ui-button--primary pz-wide" onClick={() => submit({ h, m })}>Set this time</button>
     </div>

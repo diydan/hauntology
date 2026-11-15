@@ -40,6 +40,14 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
   const tries = useRef(0);
   const [again, setAgain] = useState(0);
   const canVibrate = feel.haptics.supported;
+  // The Player's wish for tilt lives in the device settings. Tilt starts by itself where the phone has a sensor, so a switch must act at once:
+  // turning it on (a tap, which is also what an iPhone needs to ask) asks now, turning it off or choosing Touch only stops it.
+  const changeDevice = (next: DeviceSettings): void => {
+    const was = deviceRef.current;
+    setDevice(next);
+    if ((next.touchOnly && !was.touchOnly) || (was.tilt && !next.tilt)) feel.motion.disable();
+    else if ((!was.tilt && next.tilt && !next.touchOnly) || (was.touchOnly && !next.touchOnly && next.tilt)) void feel.motion.enable();
+  };
   const faded: Sight | null = cfg.faded && lock.sight !== null ? { kind: cfg.kind, payload: lock.sight, showMs: 8000 } : null;
   const clue: Sight | null = lock.sight !== null ? { kind: cfg.kind, payload: lock.sight, showMs: 8000 } : null;
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -57,6 +65,7 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
       <PuzzleHost
         key={`${cfg.kind}-${cfg.level}-${cfg.seed}-${again}`}
         kind={cfg.kind} view={lock.view} faded={faded} clue={clue} capMs={null} attempts={ATTEMPTS} feel={feel} assist={device.assist} reducedMotion={reduced}
+        onTiltChoice={(on) => setDevice((d) => ({ ...d, tilt: on }))}
         onAttempt={onAttempt} onGiveUp={() => { tries.current = 0; setAgain((a) => a + 1); }} onFinish={() => { tries.current = 0; setAgain((a) => a + 1); }}
         {...(hear ? { onHear: hear } : {})}
       />
@@ -66,7 +75,7 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
       <div className="pzd-tools">
         <a className="ui-button" href={href(cfg, { level: LEVELS[(LEVELS.indexOf(cfg.level) + 1) % LEVELS.length] as Level })}>Level: {cfg.level}</a>
         <a className="ui-button" href={href(cfg, { seed: cfg.seed + 1 })}>New seed ({cfg.seed})</a>
-        <button type="button" className="ui-button" aria-pressed={tilt === "on"} onClick={() => { if (tilt === "on") feel.motion.disable(); else void feel.motion.enable(); }}>Tilt: {tilt}</button>
+        <button type="button" className="ui-button" aria-pressed={tilt === "on"} onClick={() => { if (tilt === "on") { setDevice((d) => ({ ...d, tilt: false })); feel.motion.disable(); } else { setDevice((d) => ({ ...d, tilt: true })); void feel.motion.enable(); } }}>Tilt: {tilt}</button>
         <button type="button" className="ui-button" onClick={() => void feel.synth.unlock()}>Sound</button>
       </div>
       <details className="pzd-more">
@@ -75,7 +84,7 @@ export function PuzzleDemo({ search }: { search: string }): ReactNode {
       </details>
       <details className="pzd-more">
         <summary className="ui-button">Settings</summary>
-        <PuzzleSettings device={device} onDevice={setDevice} tiltState={tilt} canVibrate={canVibrate} />
+        <PuzzleSettings device={device} onDevice={changeDevice} tiltState={tilt} canVibrate={canVibrate} />
       </details>
     </>
   );

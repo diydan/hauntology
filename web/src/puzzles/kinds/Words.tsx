@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import { CANVAS, withAlpha } from "../art/palette";
+import { layer } from "../art/canvas-paint";
+import { CANVAS, MATERIAL, withAlpha } from "../art/palette";
+import { paintWall } from "../art/stone-wall";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import type { KindProps } from "./types";
 import "./Words.css";
@@ -13,6 +15,8 @@ const TAP_PX = 34;
 const DRAG_SLOP = 10;
 const KEY_STEP = 24;
 const BG = CANVAS.well;
+const LETTER_FONT = "700 40px Georgia, serif";
+const NUMBER_FONT = "700 16px Georgia, serif";
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
 /** How lit a letter is by a torch at (bx, by): 1 inside the core, falling to 0 at the edge of the beam. */
@@ -23,6 +27,8 @@ const litness = (x: number, y: number, bx: number, by: number): number => clamp(
  * left to right. Aim the torch with a finger or by tilting the phone; the phone ticks when a letter comes into the beam.
  * Tap a lit letter, or press Pick for the lit letter nearest the middle of the beam. Keyboard: arrows aim, Enter picks.
  * With Assist on the letters are always faintly visible.
+ * It is drawn as the thing it is (../art/stone-wall.ts): a stone wall in the dark, the same wall lit warm where the torch falls, and chalked
+ * letters that show only in the beam. The two walls are painted once; the beam is a mask over the lit one.
  */
 export default function Words({ view, feel, assist, submit, announce, resetKey, tiltButtons }: KindProps<"words">) {
   const [picked, setPicked] = useState<number[]>([]);
@@ -31,6 +37,8 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
   const latest = useLatest({ picked, lit, assist });
   const canvas = useRef<HTMLCanvasElement>(null);
   const paint = useRef<CanvasRenderingContext2D | null>(null);
+  const layers = useRef<{ dim: HTMLCanvasElement; lit: HTMLCanvasElement; scratch: HTMLCanvasElement } | null>(null);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
   const beam = useRef({ x: WALL / 2, y: WALL / 2 });
   const target = useRef({ x: WALL / 2, y: WALL / 2 });
   const finger = useRef(false);
@@ -79,14 +87,17 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
 
   // The canvas is scaled for the screen's pixel density (never more than 2) and drawn only when something changed.
   useEffect(() => {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
     const c = canvas.current?.getContext("2d") ?? null;
     if (c) c.setTransform(dpr, 0, 0, dpr, 0, 0);
     paint.current = c;
+    const dim = layer(WALL, WALL, dpr, (l) => paintWall(l, WALL, false));
+    const lit = layer(WALL, WALL, dpr, (l) => paintWall(l, WALL, true));
+    const scratch = layer(WALL, WALL, dpr, () => {});
+    layers.current = dim && lit && scratch ? { dim, lit, scratch } : null;
     drawn.current.count = -1;
     const set = inBeam.current;
-    return () => { paint.current = null; set.clear(); };
-  }, []);
+    return () => { paint.current = null; layers.current = null; set.clear(); };
+  }, [dpr]);
 
   const local = (e: PointerEvent): { x: number; y: number } => {
     const box = canvas.current?.getBoundingClientRect();
@@ -163,25 +174,55 @@ export default function Words({ view, feel, assist, submit, announce, resetKey, 
     c.clearRect(0, 0, WALL, WALL);
     c.fillStyle = BG;
     c.fillRect(0, 0, WALL, WALL);
-    const g = c.createRadialGradient(b.x, b.y, 4, b.x, b.y, BEAM_R);
-    g.addColorStop(0, withAlpha(CANVAS.text, 0.2));
-    g.addColorStop(1, withAlpha(CANVAS.text, 0));
+    const L = layers.current;
+    const sc = L?.scratch.getContext("2d") ?? null;
+    if (L && sc) {
+      c.drawImage(L.dim, 0, 0, WALL, WALL);
+      // the lit wall, kept only where the torch falls: it is masked by the beam on a scratch layer, then laid over the dark wall
+      sc.setTransform(1, 0, 0, 1, 0, 0);
+      sc.globalCompositeOperation = "source-over";
+      sc.clearRect(0, 0, L.scratch.width, L.scratch.height);
+      sc.drawImage(L.lit, 0, 0);
+      sc.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sc.globalCompositeOperation = "destination-in";
+      const mask = sc.createRadialGradient(b.x, b.y, 6, b.x, b.y, BEAM_R * 1.3);
+      mask.addColorStop(0, withAlpha(MATERIAL.dark, 1));
+      mask.addColorStop(0.55, withAlpha(MATERIAL.dark, 0.92));
+      mask.addColorStop(0.82, withAlpha(MATERIAL.dark, 0.34));
+      mask.addColorStop(1, withAlpha(MATERIAL.dark, 0));
+      sc.fillStyle = mask;
+      sc.fillRect(0, 0, WALL, WALL);
+      sc.globalCompositeOperation = "source-over";
+      c.drawImage(L.scratch, 0, 0, WALL, WALL);
+    }
+    // the warmth of the torch itself
+    const g = c.createRadialGradient(b.x, b.y, 4, b.x, b.y, BEAM_R * 1.1);
+    g.addColorStop(0, withAlpha(MATERIAL.flame, 0.2));
+    g.addColorStop(1, withAlpha(MATERIAL.flame, 0));
     c.fillStyle = g;
     c.fillRect(0, 0, WALL, WALL);
-    c.font = "700 40px system-ui, sans-serif";
     c.textAlign = "center";
     c.textBaseline = "middle";
+    c.lineJoin = "round";
     view.letters.forEach((l, i) => {
       const a = seeing(i, b.x, b.y);
       if (a <= 0) return;
       const order = latest.current.picked.indexOf(i);
+      c.font = LETTER_FONT;
+      // chalk on stone: a dark rim to cut it from the wall, the chalk, and a second faint pass for the grain
+      c.globalAlpha = a * 0.9;
+      c.lineWidth = 4;
+      c.strokeStyle = withAlpha(MATERIAL.dark, 0.55);
+      c.strokeText(l.ch, px(i), py(i));
       c.globalAlpha = a * 0.95;
-      c.fillStyle = order >= 0 ? CANVAS.ring : CANVAS.text;
+      c.fillStyle = order >= 0 ? CANVAS.ring : MATERIAL.ivory;
       c.fillText(l.ch, px(i), py(i));
+      c.globalAlpha = a * 0.3;
+      c.fillText(l.ch, px(i) + 0.8, py(i) - 0.6);
+      c.globalAlpha = a * 0.95;
       if (order >= 0) { // a picked letter also shows its place in the word, not only a colour
-        c.font = "700 16px system-ui, sans-serif";
+        c.font = NUMBER_FONT;
         c.fillText(String(order + 1), px(i), py(i) + 30);
-        c.font = "700 40px system-ui, sans-serif";
       }
     });
     c.globalAlpha = 1;

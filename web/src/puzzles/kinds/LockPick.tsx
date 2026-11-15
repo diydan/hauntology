@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, useState, type ChangeEvent, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type CSSProperties, type MouseEvent, type PointerEvent } from "react";
 import { tiltToPosition } from "@hauntology/shared/puzzles/motion";
+import { LIFT, LockDefs, LockPin, LockTools, SLICE, driverTop, keyBottom, liftOf, pickPath, springPath } from "../art/lock";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import type { KindProps } from "./types";
 import "./LockPick.css";
@@ -34,7 +35,22 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
   const held = useRef<Held>({ button: false, slider: false, latch: false });
   const slider = useRef<HTMLInputElement>(null);
   const sliderId = useId();
+  const lockId = useId().replace(/:/g, "");
+  const lock = useRef<HTMLDivElement>(null);
   const latest = useLatest({ cur, tension, heat });
+
+  /** Show the pick and the pin it lifts where the pick position says, without drawing the whole lock again. */
+  const showLift = (position: number): void => {
+    const root = lock.current;
+    const at = latest.current.cur;
+    if (!root || at >= view.pins) return;
+    const s = liftOf(position, lo, hi);
+    const li = root.querySelectorAll(".pz-pin")[at];
+    (li?.querySelector(".pz-key-stack") as SVGGElement | null)?.style.setProperty("transform", `translateY(${-LIFT * s}px)`);
+    li?.querySelector(".pz-spring")?.setAttribute("d", springPath(9, driverTop(s)));
+    const d = pickPath(at * SLICE + 28, keyBottom(s) + 1.5);
+    root.querySelectorAll(".pz-pick path").forEach((p) => p.setAttribute("d", d));
+  };
 
   const feelHeat = (h: Heat): void => { if (latest.current.heat !== h) { latest.current.heat = h; setHeat(h); } };
   const hold = (key: keyof Held, on: boolean): void => {
@@ -63,6 +79,7 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
     if (L.tension && feel.motion.state === "on") {
       pos.current = tiltToPosition(feel.motion.tilt.x, lo, hi);
       if (slider.current) slider.current.value = String(pos.current);
+      showLift(pos.current);
     }
     if (!L.tension) return;
     const center = view.centers[L.cur];
@@ -103,7 +120,7 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
     }
   }, cur < view.pins);
 
-  const onSlide = (e: ChangeEvent<HTMLInputElement>): void => { pos.current = Number(e.currentTarget.value); };
+  const onSlide = (e: ChangeEvent<HTMLInputElement>): void => { pos.current = Number(e.currentTarget.value); showLift(pos.current); };
   // A keyboard or screen-reader press is a click with no pointer (`detail` 0): it latches the tension on or off.
   const onButtonClick = (e: MouseEvent): void => { if (e.detail === 0) hold("latch", !held.current.latch); };
   const onButtonDown = (e: PointerEvent<HTMLButtonElement>): void => { e.currentTarget.setPointerCapture?.(e.pointerId); hold("button", true); };
@@ -112,12 +129,17 @@ export default function LockPick({ view, feel, reducedMotion, submit, elapsed, a
     <div>
       <p className="ui-hint pz-hint">Feel for each pin's sweet spot. Pins set left to right.</p>
       <div className="pz-field pz-visual">
-        <ol className={`pz-pins${reducedMotion ? " pz-pins-still" : ""}`} aria-label="Pins">
-          {Array.from({ length: view.pins }, (_, i) => {
-            const state = i < cur ? "set" : i === cur ? "picking" : "waiting";
-            return <li key={i} className={`pz-pin pz-pin-${state}`}><span className="ui-sr-only pz-sr">{`Pin ${i + 1} of ${view.pins}: ${state}`}</span><i aria-hidden="true" /></li>;
-          })}
-        </ol>
+        <div ref={lock} className="pz-lock" style={{ "--n": view.pins } as CSSProperties}>
+          <LockDefs id={lockId} />
+          <ol className={`pz-pins${reducedMotion ? " pz-pins-still" : ""}`} aria-label="Pins" data-heat={heat}>
+            {Array.from({ length: view.pins }, (_, i) => {
+              const state = i < cur ? "set" : i === cur ? "picking" : "waiting";
+              const lift = state === "set" ? 1 : state === "picking" ? liftOf(pos.current, lo, hi) : 0;
+              return <li key={i} className={`pz-pin pz-pin-${state}`}><span className="ui-sr-only pz-sr">{`Pin ${i + 1} of ${view.pins}: ${state}`}</span><LockPin id={lockId} index={i} lift={lift} /></li>;
+            })}
+          </ol>
+          <LockTools id={lockId} count={view.pins} at={cur} lift={cur < view.pins ? liftOf(pos.current, lo, hi) : 1} held={tension} />
+        </div>
         <p className="pz-heat" data-heat={heat}>{HEAT_TEXT[heat]}</p>
       </div>
       <div className="pz-field">

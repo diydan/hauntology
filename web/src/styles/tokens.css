@@ -36,6 +36,18 @@
   --art-orange: #ffb27a; /* game art: orange. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
   --art-cream: #f4efc1; /* game art: cream. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
   --art-sun: #ffe27a; /* game art: sun yellow. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-copper: #c8793a; /* game art: copper: bare wire and ring lugs. Puzzle content, never interface colour */
+  --art-brass: #c2a24a; /* game art: brass: terminal screws. Puzzle content, never interface colour */
+  --art-steel: #a9b1ba; /* game art: steel: crimp barrels and clamps. Puzzle content, never interface colour */
+  --art-wood: #9a6a42; /* game art: wood: boards, frames, keys. Puzzle material, never interface colour */
+  --art-ivory: #ece3cc; /* game art: ivory: clock faces, wax, bone. Puzzle material, never interface colour */
+  --art-paper: #d9ccaa; /* game art: aged paper and card. Puzzle material, never interface colour */
+  --art-flame: #ffb54a; /* game art: a candle flame, lamplight. Puzzle material, never interface colour */
+  --art-glass: #8fc6d6; /* game art: glass and lenses. Puzzle material, never interface colour */
+  --art-iron: #7b8088; /* game art: cast iron and old steel. Puzzle material, never interface colour */
+  --art-stone: #857f74; /* game art: stone and plaster walls. Puzzle material, never interface colour */
+  --art-leather: #a46a40; /* game art: leather and tanned hide. Puzzle material, never interface colour */
+  --art-sepia: #b08a5a; /* game art: an old photograph. Puzzle material, never interface colour */
 
   /* Colour: roles. Elements use these, never the palette directly */
   --surface-page: var(--ink); /* the page */

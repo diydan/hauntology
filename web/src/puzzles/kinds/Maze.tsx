@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { defaultWorld, makeStepper, newBall, type Ball } from "@hauntology/shared/puzzles/tilt-ball";
-import { CANVAS, withAlpha } from "../art/palette";
+import { paintLabyrinth, paintMarble } from "../art/labyrinth";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import { mazeCellSize, mazeLayout } from "./Maze-geometry";
 import type { KindProps } from "./types";
@@ -15,7 +15,8 @@ type Keys = { left: boolean; right: boolean; up: boolean; down: boolean };
 /**
  * Marble maze (optional): roll the orb to the green ring. Tilt the phone, or hold a finger where the orb should go (it is
  * pulled towards the finger), or use the arrow keys. Walls bump and buzz. The walls are drawn once into a layer and only
- * the orb is drawn each frame, and only while it moves.
+ * the orb is drawn each frame, and only while it moves. It is drawn as the toy it is (../art/labyrinth.ts): a wooden labyrinth box
+ * and a steel marble.
  */
 export default function Maze({ view, feel, submit, announce, elapsed, resetKey, tiltButtons }: KindProps<"maze">) {
   const layout = useMemo(() => {
@@ -74,15 +75,7 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey, 
   }, []);
 
   function drawWalls(c: CanvasRenderingContext2D): void {
-    c.fillStyle = CANVAS.well;
-    c.fillRect(0, 0, w, h);
-    c.fillStyle = CANVAS.wall;
-    for (const wall of walls) c.fillRect(wall.x + 1, wall.y + 1, wall.w - 2, wall.h - 2);
-    c.strokeStyle = CANVAS.ring;
-    c.lineWidth = 4;
-    c.beginPath();
-    c.arc(goal.x, goal.y, cs * 0.34, 0, Math.PI * 2);
-    c.stroke();
+    paintLabyrinth(c, layout);
   }
 
   const local = (e: PointerEvent): { x: number; y: number } => {
@@ -129,14 +122,7 @@ export default function Maze({ view, feel, submit, announce, elapsed, resetKey, 
     last.y = ball.y;
     if (layer.current) c.drawImage(layer.current, 0, 0, w, h);
     else drawWalls(c);
-    c.fillStyle = withAlpha(CANVAS.piece, 0.3);
-    c.beginPath();
-    c.arc(ball.x, ball.y, orbR * 1.6, 0, Math.PI * 2);
-    c.fill();
-    c.fillStyle = CANVAS.piece;
-    c.beginPath();
-    c.arc(ball.x, ball.y, orbR, 0, Math.PI * 2);
-    c.fill();
+    paintMarble(c, ball.x, ball.y, orbR);
   }, !done);
 
   return (

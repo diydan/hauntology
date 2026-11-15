@@ -23,7 +23,7 @@ beforeEach(() => {
   restoreCanvas = proto.getContext;
   const noop = (): void => {};
   const c = new Proxy({}, {
-    get: (t: Record<string, unknown>, k: string) => (k === "arc" ? (x: number, y: number, r: number) => { arcs.push([x, y, r]); } : k === "drawImage" ? () => { images++; } : k in t ? t[k] : noop),
+    get: (t: Record<string, unknown>, k: string) => (k === "arc" ? (x: number, y: number, r: number) => { arcs.push([x, y, r]); } : k === "drawImage" ? () => { images++; } : k === "createLinearGradient" || k === "createRadialGradient" ? () => ({ addColorStop: noop }) : k in t ? t[k] : noop),
     set: (t: Record<string, unknown>, k: string, v: unknown) => { t[k] = v; return true; },
   });
   proto.getContext = () => c;

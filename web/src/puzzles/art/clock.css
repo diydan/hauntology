@@ -1,0 +1,37 @@
+/*
+ * The art of the clock, shared by the puzzle and by the clue (the stopped clock), so it loads with the art. An antique clock: brass bezel,
+ * ivory enamel dial with black numerals and minute track, blued-steel hands, a brass boss and the glint of the glass. The metals and the
+ * enamel are the art-* tokens (game content); the shadows and the engraving use the design roles.
+ */
+.pz-ck-dial, .pz-ck-hands { pointer-events: none; }
+.pz-ck-shadow { fill: var(--void); opacity: 0.45; }
+.pz-ck-bezel-edge { fill: color-mix(in srgb, var(--art-brass) 30%, var(--void)); }
+.pz-ck-bezel { stroke: color-mix(in srgb, var(--art-brass) 40%, var(--void)); stroke-width: 1; }
+.pz-ck-bezel-groove { fill: none; stroke: color-mix(in srgb, var(--art-brass) 25%, var(--void)); stroke-width: 3; opacity: 0.8; }
+.pz-ck-face-rim { fill: color-mix(in srgb, var(--art-brass) 60%, var(--text)); opacity: 0.55; }
+.pz-ck-face { stroke: color-mix(in srgb, var(--art-ivory) 35%, var(--void)); stroke-width: 1; }
+.pz-ck-craze { fill: none; stroke: color-mix(in srgb, var(--art-ivory) 30%, var(--void)); stroke-width: 0.8; opacity: 0.35; stroke-linecap: round; stroke-linejoin: round; }
+.pz-ck-track { fill: none; stroke: color-mix(in srgb, var(--art-iron) 12%, var(--void)); stroke-width: 1.2; }
+.pz-ck-tick { stroke: color-mix(in srgb, var(--art-iron) 12%, var(--void)); stroke-width: 1.1; }
+.pz-ck-tick-big { stroke: color-mix(in srgb, var(--art-iron) 8%, var(--void)); stroke-width: 3.2; stroke-linecap: butt; }
+.pz-ck-num { fill: color-mix(in srgb, var(--art-iron) 8%, var(--void)); font-family: var(--font-ghost); font-size: 29px; font-weight: 700; }
+
+.pz-ck-hand-shadow { fill: var(--void); opacity: 0.32; }
+.pz-ck-hand { fill: color-mix(in srgb, var(--art-iron) 30%, var(--void)); stroke: color-mix(in srgb, var(--art-iron) 20%, var(--void)); stroke-width: 0.8; stroke-linejoin: round; }
+.pz-ck-hand-active { stroke: var(--accent); stroke-width: 1.8; }
+.pz-ck-hand-shine { fill: none; stroke: color-mix(in srgb, var(--art-steel) 70%, var(--text)); stroke-width: 1; opacity: 0.45; stroke-linecap: round; }
+.pz-ck-boss { stroke: color-mix(in srgb, var(--art-brass) 40%, var(--void)); stroke-width: 1; }
+.pz-ck-boss-dimple { fill: color-mix(in srgb, var(--art-brass) 30%, var(--void)); }
+.pz-ck-glint { pointer-events: none; }
+
+.pz-ck-brass-hi { stop-color: color-mix(in srgb, var(--art-brass) 55%, var(--text)); }
+.pz-ck-brass { stop-color: var(--art-brass); }
+.pz-ck-brass-lo { stop-color: color-mix(in srgb, var(--art-brass) 55%, var(--void)); }
+.pz-ck-enamel-hi { stop-color: color-mix(in srgb, var(--art-ivory) 80%, var(--text)); }
+.pz-ck-enamel { stop-color: var(--art-ivory); }
+.pz-ck-enamel-lo { stop-color: color-mix(in srgb, var(--art-ivory) 78%, var(--art-wood)); }
+.pz-ck-glint-in { stop-color: var(--text); stop-opacity: 0.3; }
+.pz-ck-glint-out { stop-color: var(--text); stop-opacity: 0; }
+
+/* the time as a small brass plate under the clock */
+.pz-ck-readout { align-self: center; justify-self: center; min-width: 5.5rem; padding: var(--space-1) var(--space-3); border: var(--stroke-thin) solid color-mix(in srgb, var(--art-brass) 40%, var(--void)); border-radius: var(--radius-sm); background: linear-gradient(180deg, color-mix(in srgb, var(--art-brass) 55%, var(--text)), var(--art-brass) 50%, color-mix(in srgb, var(--art-brass) 55%, var(--void))); color: color-mix(in srgb, var(--art-brass) 22%, var(--void)); text-shadow: 0 1px 0 color-mix(in srgb, var(--art-brass) 45%, var(--text)); }

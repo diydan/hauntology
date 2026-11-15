@@ -16,6 +16,8 @@ export type FeelEvent = Readonly<{ type: "buzz"; name: HapticName }> | Readonly<
 export type FeelSettings = Readonly<{
   /** No tilt, buzz, sound or microphone at all: the Touch path. */
   touchOnly: boolean;
+  /** The Player's wish for tilt on this device. Absent means yes: tilt starts by itself where a sensor answers. False once the Player turned it off. */
+  tilt?: boolean;
   /** Multiplier on tilt, 0.4 to 2.5. */
   sensitivity: number;
   /** `auto` buzzes where the phone can and shows the twin where it cannot. */
@@ -39,6 +41,13 @@ export interface Motion {
   readonly dial: number | null;
   /** Ask for tilt. Must be called from a tap (an iPhone only prompts for a direct tap). Resolves to the new state. */
   enable(): Promise<TiltState>;
+  /**
+   * Turn tilt on by itself, for a Lock that can use it. Does nothing under Touch only, when the Player's wish for tilt is off, after the Player
+   * turned it off, or once it has already been tried (on, denied or unsupported). Where the phone must be asked (an iPhone) it acts only
+   * `fromTap`, inside the tap that starts the Lock or the first tap in it; elsewhere it starts listening at once and says `unsupported`, quietly,
+   * when no reading comes.
+   */
+  autoEnable(opts: { fromTap: boolean }): Promise<TiltState>;
   disable(): void;
   /** The angle the phone is held at now becomes neutral. */
   holdLevel(): void;

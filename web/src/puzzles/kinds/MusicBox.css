@@ -1,15 +1,33 @@
-/* Music box. Five keys in one row that still fit from 320 px wide; a lit key is a fade, never a flash. */
+/* Music box. A wooden box with the lid open: the cylinder and comb above (../art/musicbox.tsx), five brass lever keys below, each one under its tooth. A lit key is a fade, never a flash. */
+.pz-mbox {
+  display: grid; gap: var(--space-1); padding: var(--space-2);
+  border: var(--stroke-ring) solid color-mix(in srgb, var(--art-brass) 55%, var(--void)); border-radius: var(--radius-lg);
+  background: repeating-linear-gradient(94deg, transparent 0 7px, color-mix(in srgb, var(--void) 12%, transparent) 7px 8px), linear-gradient(180deg, color-mix(in srgb, var(--art-wood) 64%, var(--void)), color-mix(in srgb, var(--art-wood) 38%, var(--void)));
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--art-wood) 70%, var(--text)), 0 3px 0 color-mix(in srgb, var(--void) 70%, transparent);
+}
 .pz-keys { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-2); margin: 0; }
 .pz-key {
-  display: grid; place-items: center; align-content: center; gap: var(--space-1);
+  position: relative; display: grid; place-items: center; align-content: center; gap: var(--space-1);
   min-height: max(4.5rem, var(--pz-target, 48px)); min-width: var(--pz-target, 48px); padding: 0;
-  border: var(--stroke-ring) solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text);
+  border: var(--stroke-ring) solid color-mix(in srgb, var(--art-brass) 45%, var(--void)); border-radius: var(--radius-md) var(--radius-md) var(--radius-sm) var(--radius-sm);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--art-brass) 62%, var(--text)) 0%, var(--art-brass) 40%, color-mix(in srgb, var(--art-brass) 52%, var(--void)) 100%);
+  color: color-mix(in srgb, var(--art-brass) 22%, var(--void)); text-shadow: 0 1px 0 color-mix(in srgb, var(--art-brass) 70%, var(--text));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--art-brass) 40%, var(--void)), 0 6px 6px color-mix(in srgb, var(--void) 55%, transparent), inset 0 1px 0 color-mix(in srgb, var(--text) 40%, transparent);
   font: inherit; cursor: pointer; touch-action: manipulation;
-  transition: background-color var(--fade), color var(--fade), border-color var(--fade);
+  transition: border-color var(--fade), box-shadow var(--fade), transform var(--fade);
 }
+/* the warm glow of a lit key is a layer over the brass, so it can fade */
+.pz-key::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--art-flame) 88%, var(--text)) 0%, color-mix(in srgb, var(--art-flame) 62%, transparent) 100%); opacity: 0; transition: opacity var(--fade); pointer-events: none; }
+.pz-key > span { position: relative; z-index: 1; }
+.pz-key:active:not([disabled]) { transform: translateY(2px); box-shadow: 0 2px 0 color-mix(in srgb, var(--art-brass) 40%, var(--void)), 0 3px 4px color-mix(in srgb, var(--void) 55%, transparent), inset 0 1px 0 color-mix(in srgb, var(--text) 40%, transparent); }
 .pz-key-shape { font-size: var(--text-speech); line-height: 1; }
 .pz-key-num { font-size: var(--text-title); font-weight: 700; }
-.pz-key[data-lit="true"] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.pz-key[data-lit="true"] { border-color: color-mix(in srgb, var(--art-flame) 70%, var(--art-brass)); box-shadow: 0 4px 0 color-mix(in srgb, var(--art-brass) 40%, var(--void)), 0 0 1.2rem color-mix(in srgb, var(--art-flame) 55%, transparent), inset 0 1px 0 color-mix(in srgb, var(--text) 40%, transparent); }
+.pz-key[data-lit="true"]::after { opacity: 0.85; }
 .pz-key[disabled] { cursor: default; }
 .pz-key[disabled]:not([data-lit="true"]) { opacity: 0.6; }
-.pz-notes { min-height: 3.5rem; }
+
+/* the notes played so far: engraved wells in a brass-edged strip */
+.pz-notes { min-height: 2.75rem; }
+.pz-digits.pz-notes { font-size: var(--text-speech); }
+.pz-digits.pz-notes > span { height: 2.75rem; background: var(--surface-sunk); border: var(--stroke-thin) solid color-mix(in srgb, var(--art-brass) 55%, var(--void)); box-shadow: inset 0 2px 5px color-mix(in srgb, var(--void) 85%, transparent), 0 1px 0 color-mix(in srgb, var(--art-brass) 35%, transparent); color: var(--art-brass); }

@@ -21,7 +21,7 @@ beforeEach(() => {
   const proto = HTMLCanvasElement.prototype as unknown as { getContext: unknown };
   restoreCanvas = proto.getContext;
   const noop = (): void => {};
-  const c = new Proxy({}, { get: (t: Record<string, unknown>, k: string) => (k === "arc" ? (x: number, y: number, r: number) => { arcs.push([x, y, r]); } : k === "fillRect" ? () => { fills++; } : k in t ? t[k] : noop), set: (t: Record<string, unknown>, k: string, v: unknown) => { t[k] = v; return true; } });
+  const c = new Proxy({}, { get: (t: Record<string, unknown>, k: string) => (k === "arc" ? (x: number, y: number, r: number) => { arcs.push([x, y, r]); } : k === "fillRect" ? () => { fills++; } : k === "createLinearGradient" || k === "createRadialGradient" ? () => ({ addColorStop: noop }) : k in t ? t[k] : noop), set: (t: Record<string, unknown>, k: string, v: unknown) => { t[k] = v; return true; } });
   proto.getContext = () => c;
 });
 afterEach(() => {
@@ -239,10 +239,10 @@ describe("Board", () => {
     let result: boolean | void = true;
     const m = mountKind(Board, lock.view, { hear: () => { said++; return result; } });
     const button = (): HTMLButtonElement => screen.getByRole("button", { name: /Hear the word|No more whispers/ }) as HTMLButtonElement;
-    expect(button().textContent).toBe("Hear the word (2 left)");
+    expect(button().getAttribute("aria-label")).toBe("Hear the word (2 left)");
     await act(async () => { fireEvent.click(button()); });
     expect(said).toBe(1);
-    expect(button().textContent).toBe("Hear the word (1 left)");
+    expect(button().getAttribute("aria-label")).toBe("Hear the word (1 left)");
     await act(async () => { button().click(); button().click(); }); // a double tap in one go: the last whisper is spent once
     expect(said).toBe(2);
     expect(button().textContent).toBe("No more whispers");
@@ -255,7 +255,7 @@ describe("Board", () => {
     const m2 = mountKind(Board, lock.view, { hear: () => { said++; return result; } });
     await act(async () => { fireEvent.click(button()); });
     expect(m2.announcements.at(-1)).toMatch(/no speech voice/i);
-    expect(button().textContent).toBe("Hear the word (2 left)"); // nothing was said, so the whisper is given back
+    expect(button().getAttribute("aria-label")).toBe("Hear the word (2 left)"); // nothing was said, so the whisper is given back
     expect(m.submits.length).toBe(0);
   });
 

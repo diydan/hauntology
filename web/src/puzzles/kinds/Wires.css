@@ -1,9 +1,9 @@
-/* Cut wires board. The wire colours are the game's own content (art/wires.tsx); the board around them is the design system. */
+/* Cut wires board: its size, and what the finger touches. The drawing is in ../art/wires.css. */
 .pz-wires-board { width: min(100%, 26rem, calc(var(--pz-h) * 1.07)); margin: 0 auto; }
-.pz-wire-line { fill: none; stroke-width: 7; stroke-linecap: round; pointer-events: none; }
-.pz-wire-ghost { opacity: 0.8; }
-.pz-wire-disc { fill: var(--surface-sunk); }
+
+/* what the finger touches: the tag (a 64 unit target) and the terminal (the same) */
 .pz-wire-handle, .pz-terminal { cursor: pointer; touch-action: none; outline: none; }
-.pz-wire-handle:focus-visible .pz-wire-disc, .pz-terminal:focus-visible .pz-terminal-ring { stroke: var(--focus); stroke-width: 5; }
-.pz-terminal-ring { fill: var(--surface-raised); stroke: var(--shape-quiet); stroke-width: 2; }
-.pz-terminal-num { fill: var(--text); font-size: 20px; font-weight: 700; text-anchor: middle; pointer-events: none; }
+.pz-wire-disc, .pz-terminal-ring { fill: transparent; stroke: none; }
+.pz-wire-handle:focus-visible .pz-wire-disc, .pz-terminal:focus-visible .pz-terminal-ring { stroke: var(--focus); stroke-width: 4; }
+.pz-wire-picked .pz-wire-disc { stroke: var(--accent); stroke-width: 4; }
+.pz-wire-picked .pz-tag-sleeve { stroke: var(--accent); stroke-width: 3; }

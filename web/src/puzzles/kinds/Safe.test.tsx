@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { makeLock } from "@hauntology/shared/puzzles/make";
 import { verify } from "@hauntology/shared/puzzles/verify";
@@ -142,8 +142,8 @@ describe("Safe", () => {
 
   it("turns the dial with the phone when Twist is on, and says so when tilt is not available", async () => {
     const { feel } = mountKind(Safe, lockOf("easy", 8).view, { tilt: "on" });
+    expect(screen.getByRole("button", { name: "Twist: on" }).getAttribute("aria-pressed")).toBe("true"); // tilt is on, so Twist starts on
     feel.motion.dial = 20;
-    press("Twist");
     await wait(80);
     feel.motion.dial = 56; // 36 degrees round: the dial turns clockwise, so digit 9 comes under the marker
     await wait(80);
@@ -165,6 +165,41 @@ describe("Safe", () => {
     expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
   });
 
+  it("starts in Twist where tilt is on, and not where it is off, denied or unsupported; the Player can turn it off, and it stays off", async () => {
+    const m = mountKind(Safe, lockOf("easy", 8).view, { tilt: "on" });
+    expect(screen.getByRole("button", { name: "Twist: on" })).toBeTruthy();
+    press("Twist: on"); // the Player turns it off
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+    act(() => { m.feel.motion.setState("off"); });
+    act(() => { m.feel.motion.setState("on"); }); // tilt comes on again by itself: Twist is theirs now, it does not start again
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+    cleanup();
+    for (const state of ["off", "denied", "unsupported"] as const) {
+      mountKind(Safe, lockOf("easy", 8).view, { tilt: state });
+      expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed"), state).toBe("false");
+      cleanup();
+    }
+  });
+
+  it("keeps the Player's choice: after they pressed Twist, tilt coming on later does not start it by itself", async () => {
+    const m = mountKind(Safe, lockOf("easy", 8).view, { tilt: "off" });
+    m.feel.motion.enableResult = "denied";
+    press("Twist"); // they try Twist and the phone says no
+    await wait(20);
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+    act(() => { m.feel.motion.setState("on"); }); // tilt comes on later (a tap elsewhere asked)
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("starts in Twist once tilt comes on after the screen opened (the permission came from a tap), and drops Twist when tilt goes off", async () => {
+    const m = mountKind(Safe, lockOf("easy", 8).view, { tilt: "off" });
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+    act(() => { m.feel.motion.setState("on"); });
+    expect(screen.getByRole("button", { name: "Twist: on" })).toBeTruthy();
+    act(() => { m.feel.motion.setState("off"); }); // the Player's switch turned tilt off
+    expect(screen.getByRole("button", { name: "Twist" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
   it("reads no sensor with tilt off, and stops reading when it unmounts", async () => {
     const off = mountKind(Safe, lockOf("easy", 8).view, { tilt: "off" });
     await wait(60);
@@ -173,7 +208,6 @@ describe("Safe", () => {
 
     const m = mountKind(Safe, lockOf("easy", 8).view, { tilt: "on" });
     m.feel.motion.dial = 0;
-    press("Twist");
     await wait(60);
     m.unmount();
     const before = m.feel.haptics.buzzes.length;
@@ -192,7 +226,6 @@ describe("Safe", () => {
   it("flips the twist direction from the screen itself, when the phone turns the dial the wrong way", async () => {
     const { feel } = mountKind(Safe, lockOf("easy", 8).view, { tilt: "on" });
     feel.motion.dial = 20;
-    press("Twist");
     await wait(80);
     feel.motion.dial = 56; // 36 degrees round: digit 9 comes under the marker
     await wait(80);
@@ -208,5 +241,17 @@ describe("Safe", () => {
     feel.motion.dial = 56; // flipped back: 36 degrees forward for the phone turns the dial 36 degrees the usual way
     await wait(80);
     expect(shown()).toBe(7);
+  });
+
+  it("is a real safe: the code so far on small brass plates, the digit under the index on a stamped tag, and a dial that is the only part that turns", () => {
+    mountKind(Safe, lockOf("easy", 5).view);
+    expect(screen.getByRole("img", { name: /Code so far/ }).className).toContain("pz-safe-plates");
+    expect(screen.getByRole("img", { name: /Under the marker/ }).className).toContain("pz-safe-readout");
+    const board = screen.getByRole("application", { name: "Safe dial" });
+    const turning = board.querySelectorAll("g[transform^='rotate(']");
+    expect(turning.length).toBe(1); // the dial's own group
+    expect(turning[0]?.querySelector("text.pz-sf-num")).not.toBeNull(); // the numerals turn with it
+    expect(turning[0]?.querySelector(".pz-sf-marker")).toBeNull(); // the index stays still
+    expect(board.querySelector(".pz-sf-marker")).not.toBeNull(); // and it is there
   });
 });

@@ -159,7 +159,7 @@ describe("Wires", () => {
     const w = lock.view.leftOrder[0] ?? 0;
     pointer(handle(w), "pointerdown", 50, 50);
     pointer(board(), "pointermove", 200, 100);
-    expect(ghost()).toContain("L 200 100");
+    expect(ghost()).toMatch(/^M 8 50 L 58 50 C .* 200 100$/); // the cable leaves its clamp, runs under its tag, then curves to the finger
     pointer(board(), "pointercancel", 200, 100);
     expect(ghost()).toBe("");
     pointer(board(), "pointerup", 290, 50); // after the cancel: nothing to drop

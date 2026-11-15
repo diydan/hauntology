@@ -21,7 +21,7 @@ beforeEach(() => {
   restoreCanvas = proto.getContext;
   const noop = (): void => {};
   const c = new Proxy({}, {
-    get: (t: Record<string, unknown>, k: string) => (k === "createRadialGradient" ? (x: number, y: number) => { gradients.push([x, y]); return { addColorStop: noop }; } : k === "fillRect" ? () => { fills++; } : k in t ? t[k] : noop),
+    get: (t: Record<string, unknown>, k: string) => (k === "createRadialGradient" ? (x: number, y: number) => { gradients.push([x, y]); return { addColorStop: noop }; } : k === "fillRect" ? () => { fills++; } : k === "createLinearGradient" ? () => ({ addColorStop: noop }) : k in t ? t[k] : noop),
     set: (t: Record<string, unknown>, k: string, v: unknown) => { t[k] = v; return true; },
   });
   proto.getContext = () => c;
@@ -165,6 +165,17 @@ describe("Words", () => {
     expect(pickButton().disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
     expect(slots()).toBe("·".repeat(lock.view.n));
+  });
+
+  it("lights the wall and warms it with one torch: the mask that keeps only the beam's part of the lit wall and the warm halo are both centred on the beam", () => {
+    const m = mountKind(Words, lockOf("easy", 6).view, { tilt: "on" });
+    m.feel.motion.setTilt(30, -20);
+    advance(m, 800);
+    const [mask, halo] = gradients.slice(-2);
+    expect(mask).toEqual(halo);
+    expect(mask?.[0]).toBeCloseTo(beamAt().x, 5);
+    expect(mask?.[1]).toBeCloseTo(beamAt().y, 5);
+    expect(beamAt().x).toBeGreaterThan(WALL / 2 + 20); // and the beam really has moved
   });
 
   it("sweeps the torch with the tilt, and ignores the tilt when it is off or a finger is on the wall", () => {

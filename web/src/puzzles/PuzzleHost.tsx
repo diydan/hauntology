@@ -39,6 +39,8 @@ export type PuzzleHostProps = Readonly<{
   onSkip?: () => void;
   /** Spirit board only: say the word (the Whisper's line, or a voice). */
   onHear?: () => boolean | void | Promise<boolean | void>;
+  /** The Player pressed the Tilt button: on (true) or off (false). The device's settings keep that wish, so tilt stays off once they turned it off. */
+  onTiltChoice?: (on: boolean) => void;
   now?: () => number;
 }>;
 
@@ -46,13 +48,16 @@ type Screen = ComponentType<KindProps<Kind>>;
 
 const fmtS = (ms: number): string => `${(Math.max(0, ms) / 1000).toFixed(1)} s`;
 
+/** The Kinds that turn Tilt on by themselves where the phone has a sensor: the four that play by tilt, and the Safe and the Clock, whose Twist is the turn of the phone. */
+const TWIST_KINDS: ReadonlySet<Kind> = new Set<Kind>(["safe", "clock"]);
+
 /**
  * The frame around every Kind: the faded clue (when the Sight was missed), the timer, the Attempts, the Touch-path
  * controls, the result and a live region for screen readers. It owns the clock and the answers; the Kind screen only
  * draws and plays. Heavy screens load only when needed, and nothing here needs motion, sound or buzz.
  */
 export function PuzzleHost(props: PuzzleHostProps): ReactNode {
-  const { kind, view, faded, clue = null, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear } = props;
+  const { kind, view, faded, clue = null, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear, onTiltChoice } = props;
   const now = props.now ?? (() => performance.now());
   const [phase, setPhase] = useState<"faded" | "play" | "done">(faded ? "faded" : "play");
   const [wrong, setWrong] = useState(0);
@@ -76,6 +81,12 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
   const tilt = useFeelValue(feel.motion.subscribe, () => feel.motion.state);
   const info = KIND_INFO[kind];
   useWakeLock(phase === "play"); // the screen stays awake while the Lock is open
+
+  // Tilt starts by itself where the phone has a sensor, for the Kinds that can use it (never for the others). Where the phone must be asked
+  // (an iPhone) that happens inside a tap: the tap that ends the faded clue and starts the Lock, or the first tap in the Lock.
+  const canSense = info.usesTilt || TWIST_KINDS.has(kind);
+  useEffect(() => { if (phase === "play" && canSense) void feel.motion.autoEnable({ fromTap: false }); }, [phase, canSense, feel]);
+  const askFromTap = useCallback((): void => { if (canSense && phase !== "done") void feel.motion.autoEnable({ fromTap: true }); }, [canSense, phase, feel]);
 
   // the clock starts when the Lock itself appears (after the faded clue)
   useEffect(() => { if (phase === "play") startedAt.current = nowRef.current(); }, [phase]);
@@ -138,8 +149,8 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
   // Tilt is a way to play, not a way out: its buttons go to the screen, in a row with the screen's own buttons.
   const tiltButtons = info.usesTilt ? (
     <>
-      <button type="button" className="ui-button" aria-pressed={tilt === "on"} onClick={() => (tilt === "on" ? feel.motion.disable() : void feel.motion.enable())}>{tilt === "on" ? "Tilt: on" : "Tilt"}</button>
-      {tilt === "on" ? <button type="button" className="ui-button" onClick={() => feel.motion.holdLevel()}>Hold level</button> : null}
+      <button type="button" className="ui-button" aria-pressed={tilt === "on"} onClick={() => { if (tilt === "on") { feel.motion.disable(); onTiltChoice?.(false); } else { onTiltChoice?.(true); void feel.motion.enable(); } }}>{tilt === "on" ? "Tilt: on" : "Tilt"}</button>
+      {tilt === "on" ? <button type="button" className="ui-button" aria-label="Hold level" onClick={() => feel.motion.holdLevel()}>Level</button> : null}
     </>
   ) : null;
   const pips = useMemo(() => Array.from({ length: attempts }, (_, i) => i < wrong), [attempts, wrong]);
@@ -147,13 +158,13 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
 
   if (phase === "faded" && faded) {
     return (
-      <section className="pz-host" aria-label="Puzzle">
+      <section className="pz-host" aria-label="Puzzle" onClickCapture={askFromTap} onTouchEndCapture={askFromTap}>
         <SightCard sight={faded} title="A faded memory…" feel={feel} onDone={() => setPhase("play")} now={now} />
       </section>
     );
   }
   return (
-    <section className={`pz-host${glow === 0 ? "" : glow % 2 === 1 ? " pz-glow-a" : " pz-glow-b"}`} data-kind={kind} aria-label="Puzzle">
+    <section className={`pz-host${glow === 0 ? "" : glow % 2 === 1 ? " pz-glow-a" : " pz-glow-b"}`} data-kind={kind} aria-label="Puzzle" onClickCapture={askFromTap} onTouchEndCapture={askFromTap}>
       <header className="pz-bar-row">
         <div className="pz-bar-left">
           <button ref={helpButton} type="button" className="ui-button ui-button--round" aria-label="How this puzzle works" aria-expanded={helping} onClick={() => { setPeeking(false); setHelping((h) => !h); }}>?</button>

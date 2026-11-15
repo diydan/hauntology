@@ -1,25 +1,17 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { BrassMic, CandleFlame, CandleHolder, SmokeWisp } from "../art/candles";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import type { KindProps } from "./types";
 import "./Candles.css";
 
 /** Candle heights in rem (told apart by number and height, never by colour). */
-const HEIGHTS = [6, 3.9, 7.4, 4.9, 6.5] as const;
+const HEIGHTS = [5, 3.2, 6.2, 4.1, 5.4] as const;
 const HEIGHT_NAMES = ["tall", "short", "tallest", "low", "tall"] as const;
 /** How long a candle gutters while the order is shown, and the pause before the next one. */
 const GUTTER_MS = 520;
 const GAP_MS = 260;
 /** The loudness meter scale (the level is 0 to about 0.45 for a hard breath). */
 const METER = 220;
-
-function Mic(): ReactNode {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" className="pz-mic-icon">
-      <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor" />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 /**
  * Candle order: watch the candles gutter one at a time (twice at most), then put them out in that same order by tapping
@@ -168,8 +160,11 @@ export default function Candles({ view, feel, reducedMotion, submit, announce, r
             const flame = isOut ? "out" : guttering === i ? "gutter" : "lit";
             return (
               <button key={i} type="button" className="pz-candle" disabled={showing || isOut} aria-label={`Candle ${i + 1}, ${HEIGHT_NAMES[i]}${isOut ? ", out" : ""}`} aria-pressed={listening && !isOut ? selected === i : undefined} data-flame={flame} data-height={HEIGHT_NAMES[i]} onClick={() => tap(i)}>
-                <span className="pz-flame" ref={(el) => { flames.current[i] = el; }} aria-hidden="true" />
+                <span className="pz-flame" ref={(el) => { flames.current[i] = el; }} aria-hidden="true"><CandleFlame /></span>
+                <span className="pz-smoke" aria-hidden="true"><SmokeWisp /></span>
+                <span className="pz-wick" aria-hidden="true" />
                 <span className="pz-wax" style={{ height: `${HEIGHTS[i]}rem` }} aria-hidden="true">{i + 1}</span>
+                <span className="pz-holder" aria-hidden="true"><CandleHolder kind={i} /></span>
               </button>
             );
           })}
@@ -183,7 +178,7 @@ export default function Candles({ view, feel, reducedMotion, submit, announce, r
       </div>
       {listening ? (
         <div className="pz-mic" role="status">
-          <Mic />
+          <BrassMic />
           <span>Microphone on: listening for a breath</span>
           <span className="pz-meter" aria-hidden="true"><i ref={meter} /><u ref={mark} /></span>
           <button type="button" className="ui-button" onClick={stopMic}>Stop listening</button>

@@ -135,6 +135,117 @@ describe("BrowserMotion", () => {
 });
 
 // ---------------------------------------------------------------- haptics
+describe("BrowserMotion.autoEnable (tilt starts by itself where the phone has a sensor)", () => {
+  const iphone = (asked: string[] = [], answer = "granted") => motionHost({
+    DeviceOrientationEvent: { requestPermission: () => { asked.push("orientation"); return Promise.resolve(answer); } },
+    DeviceMotionEvent: { requestPermission: () => { asked.push("motion"); return Promise.resolve(answer); } },
+  });
+
+  it("starts listening at once where no permission is needed, and says on when a real reading arrives", async () => {
+    const m = motionHost();
+    const motion = new BrowserMotion(m.host, settings());
+    const p = motion.autoEnable({ fromTap: false });
+    expect(m.handlers.get("deviceorientation")?.size).toBe(1); // listening, with no tap
+    m.orientation(30, 0);
+    expect(await p).toBe("on");
+    expect(motion.state).toBe("on");
+  });
+
+  it("says unsupported, quietly, when no reading comes (a desktop), and stops listening", async () => {
+    const m = motionHost();
+    const motion = new BrowserMotion(m.host, settings());
+    const p = motion.autoEnable({ fromTap: false });
+    m.fire("deviceorientation", { alpha: null, beta: null, gamma: null }); // a desktop fires one empty event
+    m.expire();
+    expect(await p).toBe("unsupported");
+    expect(m.handlers.get("deviceorientation")?.size ?? 0).toBe(0);
+  });
+
+  it("waits for a tap where the phone must be asked (an iPhone), and asks inside that tap", async () => {
+    const asked: string[] = [];
+    const m = iphone(asked);
+    const motion = new BrowserMotion(m.host, settings());
+    expect(await motion.autoEnable({ fromTap: false })).toBe("off");
+    expect(asked).toEqual([]); // nothing asked outside a tap
+    expect(m.handlers.get("deviceorientation")?.size ?? 0).toBe(0);
+    const p = motion.autoEnable({ fromTap: true });
+    expect(asked).toEqual(["orientation", "motion"]); // both asked before the first await resolves: inside the tap
+    await Promise.resolve(); await Promise.resolve();
+    m.orientation(20, 5);
+    expect(await p).toBe("on");
+  });
+
+  it("does nothing once the Player turned tilt off, or under Touch only", async () => {
+    const m = motionHost();
+    expect(await new BrowserMotion(m.host, settings({ tilt: false })).autoEnable({ fromTap: true })).toBe("off");
+    expect(await new BrowserMotion(m.host, settings({ touchOnly: true })).autoEnable({ fromTap: true })).toBe("off");
+    expect(m.handlers.get("deviceorientation")?.size ?? 0).toBe(0);
+    // turned off by the Player's own tap in this session: it stays off until they turn it on again
+    const motion = new BrowserMotion(m.host, settings());
+    const on = motion.autoEnable({ fromTap: false });
+    m.orientation(10, 0);
+    await on;
+    motion.disable();
+    expect(await motion.autoEnable({ fromTap: true })).toBe("off");
+    expect(await motion.autoEnable({ fromTap: false })).toBe("off");
+    const again = motion.enable(); // the Player turns it on
+    m.orientation(10, 0);
+    expect(await again).toBe("on");
+  });
+
+  it("never tries again by itself after a denial or an unsupported answer", async () => {
+    const asked: string[] = [];
+    const denied = iphone(asked, "denied");
+    const motion = new BrowserMotion(denied.host, settings());
+    expect(await motion.autoEnable({ fromTap: true })).toBe("denied");
+    expect(asked.length).toBe(2);
+    expect(await motion.autoEnable({ fromTap: true })).toBe("denied");
+    expect(asked.length).toBe(2); // not asked a second time
+
+    const m = motionHost();
+    let adds = 0;
+    const counting: MotionHost = { ...m.host, addEventListener: (t, f) => { adds++; m.host.addEventListener(t, f); } };
+    const none = new BrowserMotion(counting, settings());
+    const p = none.autoEnable({ fromTap: false });
+    m.expire();
+    expect(await p).toBe("unsupported");
+    const added = adds;
+    expect(await none.autoEnable({ fromTap: true })).toBe("unsupported");
+    expect(adds).toBe(added); // it did not start listening again
+  });
+
+  it("asks once at a time: a second call while the first waits shares its answer", async () => {
+    const m = motionHost();
+    const motion = new BrowserMotion(m.host, settings());
+    const a = motion.autoEnable({ fromTap: true });
+    const b = motion.autoEnable({ fromTap: false });
+    expect(m.handlers.get("deviceorientation")?.size).toBe(1);
+    m.orientation(30, 0);
+    expect([await a, await b]).toEqual(["on", "on"]);
+    expect(await motion.autoEnable({ fromTap: true })).toBe("on");
+  });
+
+  it("shares the answer with the Tilt button too, and with a later auto call on an iPhone, while a reading is awaited", async () => {
+    const m = motionHost();
+    const motion = new BrowserMotion(m.host, settings());
+    const auto = motion.autoEnable({ fromTap: true });
+    const button = motion.enable(); // the Player taps Tilt while the first ask waits for a reading
+    expect(m.handlers.get("deviceorientation")?.size).toBe(1);
+    m.orientation(30, 0);
+    expect([await auto, await button]).toEqual(["on", "on"]);
+
+    const asked: string[] = [];
+    const phone = iphone(asked);
+    const iMotion = new BrowserMotion(phone.host, settings());
+    const first = iMotion.autoEnable({ fromTap: true }); // the tap asks
+    const second = iMotion.autoEnable({ fromTap: false }); // the Lock's own start-up call lands while that waits
+    await Promise.resolve(); await Promise.resolve();
+    phone.orientation(20, 5);
+    expect([await first, await second]).toEqual(["on", "on"]); // one answer, not "off" for the second
+    expect(asked).toEqual(["orientation", "motion"]);
+  });
+});
+
 describe("BrowserHaptics", () => {
   const make = (over: { vibrate?: (p: readonly number[]) => boolean; settings?: Partial<FeelSettings> } = {}) => {
     let t = 0;

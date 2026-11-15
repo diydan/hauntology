@@ -41,6 +41,9 @@ export class BrowserMotion implements Motion {
   private last = 0;
   private listening = false;
   private first: (() => void) | null = null;
+  private pending: Promise<TiltState> | null = null;
+  /** The Player turned tilt off: it stays off until they turn it on again. */
+  private userOff = false;
   private readonly listeners = new Set<() => void>();
 
   constructor(private readonly host: MotionHost, private readonly settings: () => FeelSettings) {}
@@ -48,7 +51,30 @@ export class BrowserMotion implements Motion {
   subscribe: Subscribe = (listener) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private set(state: TiltState): TiltState { if (this.state !== state) { this.state = state; for (const l of [...this.listeners]) l(); } return state; }
 
-  async enable(): Promise<TiltState> {
+  /** True where the phone must be asked from a tap (an iPhone). */
+  private needsTap(): boolean {
+    return typeof this.host.DeviceOrientationEvent?.requestPermission === "function" || typeof this.host.DeviceMotionEvent?.requestPermission === "function";
+  }
+
+  async autoEnable(opts: { fromTap: boolean }): Promise<TiltState> {
+    const s = this.settings();
+    if (s.touchOnly || s.tilt === false || this.userOff) return this.state;
+    if (this.pending) return this.pending;
+    if (this.state !== "off") return this.state; // on, denied or unsupported: never try again by itself
+    if (this.needsTap() && !opts.fromTap) return this.state;
+    return this.enable();
+  }
+
+  /** One ask at a time: a second call while the first waits for a reading shares its answer. */
+  enable(): Promise<TiltState> {
+    if (this.pending) return this.pending;
+    this.userOff = false;
+    const run = this.ask().finally(() => { this.pending = null; });
+    this.pending = run;
+    return run;
+  }
+
+  private async ask(): Promise<TiltState> {
     if (this.settings().touchOnly) return this.state;
     if (this.state === "on") return "on";
     const DO = this.host.DeviceOrientationEvent;
@@ -73,6 +99,7 @@ export class BrowserMotion implements Motion {
   }
 
   disable(): void {
+    this.userOff = true;
     this.unlisten();
     this.tilt = { x: 0, y: 0 };
     this.smoothed = { x: 0, y: 0 };

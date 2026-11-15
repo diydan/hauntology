@@ -197,4 +197,27 @@ describe("MusicBox", () => {
     for (const m of css.matchAll(/transition:\s*([^;]+);/g)) expect(m[1]).toMatch(/var\(--fade\)|^none$/);
     expect(css).not.toMatch(/animation/);
   });
+
+  it("shows what is under the lid: a pinned cylinder and a comb of five teeth, one over each key, and the tooth over the sounding key glows with it", () => {
+    vi.useFakeTimers();
+    const lock = lockOf("easy", 1);
+    mountKind(MusicBox, lock.view);
+    const teeth = (): boolean[] => [...document.querySelectorAll(".pz-mech-tooth")].map((t) => t.classList.contains("pz-tooth-lit"));
+    expect(document.querySelectorAll(".pz-mech-tooth")).toHaveLength(5);
+    expect(document.querySelectorAll(".pz-mech-pin").length).toBeGreaterThan(10);
+    expect(document.querySelector(".pz-mech")?.getAttribute("aria-hidden")).toBe("true");
+    expect(teeth()).toEqual([false, false, false, false, false]);
+    fireEvent.click(key(3));
+    expect(teeth()).toEqual([false, false, false, true, false]);
+    expect(lit()).toEqual([3]);
+    advance(300);
+    expect(teeth()).toEqual([false, false, false, false, false]);
+  });
+
+  it("is a wooden box with brass keys: the lit key glows through a fade over the brass, and the wells that show the notes are engraved", () => {
+    expect(css).toMatch(/\.pz-mbox \{[^}]*art-wood/);
+    expect(css).toMatch(/\.pz-key::after \{[^}]*art-flame[^}]*opacity: 0; transition: opacity var\(--fade\)/);
+    expect(css).toMatch(/\.pz-key\[data-lit="true"\]::after \{ opacity: 0\.85; \}/);
+    expect(css).toMatch(/\.pz-digits\.pz-notes > span \{[^}]*art-brass/);
+  });
 });

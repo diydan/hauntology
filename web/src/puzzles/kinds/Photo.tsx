@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from "react";
+import { useId, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type PointerEvent } from "react";
 import { hash, mulberry32, range, shuffle } from "@hauntology/shared/puzzles/rng";
 import { CELL, PictureSvg } from "../art/Picture";
 import { useLatest } from "../hooks";
@@ -47,6 +47,7 @@ export default function Photo({ view, feel, reducedMotion, submit, announce }: K
   const [model, setModel] = useState<Model>(() => ({ slot: Array.from({ length: n }, () => null), spins: Array.from({ length: n }, () => 0), picked: null }));
   const [dragging, setDragging] = useState<number | null>(null);
   const latest = useLatest({ model });
+  const mount = useId().replace(/:/g, "");
   const board = useRef<HTMLDivElement>(null);
   const drag = useRef<Drag | null>(null);
 
@@ -160,6 +161,15 @@ export default function Photo({ view, feel, reducedMotion, submit, announce }: K
       <p className="ui-hint pz-hint">{view.turning ? "Put the photo you saw back together. Drag pieces onto the frame. Tap a piece to pick it; tap it again to turn it." : "Put the photo you saw back together. Drag pieces onto the frame, or tap a piece and then an empty spot."}</p>
       <div className="pz-field pz-visual">
         <div ref={board} className={`pz-photo-board${reducedMotion ? " pz-photo-still" : ""}`} data-cols={cols} role="group" aria-label="Torn photo" style={{ aspectRatio: `${W} / ${H}`, "--pz-ratio": H / W } as CSSProperties}>
+          <svg className="pz-photo-mount" viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id={`${mount}-card`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" className="pz-mount-card-hi" /><stop offset="1" className="pz-mount-card-lo" /></linearGradient>
+              <linearGradient id={`${mount}-felt`} x1="0" y1="0" x2="0" y2="1"><stop offset="0" className="pz-mount-felt-hi" /><stop offset="1" className="pz-mount-felt-lo" /></linearGradient>
+            </defs>
+            <rect x={0.75} y={0.75} width={W - 1.5} height={rows * CELL - 1.5} rx={8} fill={`url(#${mount}-card)`} className="pz-mount-card" />
+            {range(n).map((s) => <rect key={s} x={slotAt(s).x + INSET} y={slotAt(s).y + INSET} width={CELL - 2 * INSET} height={CELL - 2 * INSET} rx={2} className="pz-mount-recess" />)}
+            <rect x={0.75} y={rows * CELL + GAP / 2} width={W - 1.5} height={rows * CELL + GAP / 2 - 0.75} rx={8} fill={`url(#${mount}-felt)`} className="pz-mount-felt" />
+          </svg>
           {range(n).map((i) => <span key={`t${i}`} className="pz-photo-cell" style={box(trayAt(i).x + INSET, trayAt(i).y + INSET, CELL - 2 * INSET)} aria-hidden="true" />)}
           {range(n).map((s) => {
             const open = !m.slot.includes(s);
@@ -183,6 +193,18 @@ export default function Photo({ view, feel, reducedMotion, submit, announce }: K
               </button>
             );
           })}
+          <svg className="pz-photo-corners" viewBox={`0 0 ${W} ${H}`} aria-hidden="true" focusable="false">
+            {range(n).flatMap((s) => {
+              const x = slotAt(s).x + INSET;
+              const y = slotAt(s).y + INSET;
+              const e = CELL - 2 * INSET;
+              const k = 15;
+              return [
+                `M ${x} ${y} h ${k} l ${-k} ${k} Z`, `M ${x + e} ${y} h ${-k} l ${k} ${k} Z`,
+                `M ${x} ${y + e} h ${k} l ${-k} ${-k} Z`, `M ${x + e} ${y + e} h ${-k} l ${k} ${-k} Z`,
+              ].map((d, c) => <path key={`${s}${c}`} d={d} className="pz-mount-corner" />);
+            })}
+          </svg>
         </div>
         <p className="pz-readout pz-photo-count" role="status">{inFrame} of {n} in the frame</p>
       </div>

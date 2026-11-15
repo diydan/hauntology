@@ -1,0 +1,35 @@
+/*
+ * The shelf and the things on it (art/shelf.tsx): a dark wooden shelf in lamplight, a niche for each thing with a plank to stand on. The
+ * dark of "the lights go out" uses the same niches, empty. Colours are the art-* tokens (art/patina.css) and the roles.
+ */
+.pz-shelf-glyph { position: relative; z-index: 1; display: block; width: 88%; height: 88%; overflow: visible; pointer-events: none; }
+
+/* the frame of the shelf */
+.pz-shelf, .pz-moved-dark {
+  padding: var(--space-2);
+  border: var(--stroke-ring) solid color-mix(in srgb, var(--art-wood) 55%, var(--void)); border-radius: var(--radius-lg);
+  background: repeating-linear-gradient(94deg, transparent 0 9px, color-mix(in srgb, var(--void) 10%, transparent) 9px 10px), linear-gradient(180deg, color-mix(in srgb, var(--art-wood) 44%, var(--void)), color-mix(in srgb, var(--art-wood) 28%, var(--void)));
+  box-shadow: inset 0 2px 0 color-mix(in srgb, var(--art-wood) 55%, var(--text)), 0 3px 0 color-mix(in srgb, var(--void) 65%, transparent);
+}
+/* a niche, and the plank its thing stands on */
+.pz-shelf .pz-slot, .pz-moved-dark .pz-slot {
+  position: relative; overflow: hidden;
+  border: var(--stroke-ring) solid color-mix(in srgb, var(--void) 55%, var(--art-wood)); border-radius: var(--radius-sm);
+  background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--art-flame) 9%, var(--art-wood)) 0%, color-mix(in srgb, var(--art-wood) 14%, var(--void)) 75%);
+  box-shadow: inset 0 3px 8px color-mix(in srgb, var(--void) 75%, transparent);
+}
+.pz-shelf .pz-slot::after, .pz-moved-dark .pz-slot::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 12%; background: linear-gradient(180deg, color-mix(in srgb, var(--art-wood) 72%, var(--text)), color-mix(in srgb, var(--art-wood) 55%, var(--void))); box-shadow: 0 -1px 0 color-mix(in srgb, var(--void) 55%, transparent); }
+.pz-shelf .pz-slot[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 3px 8px color-mix(in srgb, var(--void) 75%, transparent), 0 0 0.9rem color-mix(in srgb, var(--accent) 45%, transparent); }
+.pz-shelf .pz-slot-empty, .pz-moved-dark .pz-slot-empty { border-style: dashed; border-color: color-mix(in srgb, var(--art-wood) 70%, var(--void)); background: color-mix(in srgb, var(--void) 45%, var(--art-wood)); }
+
+/* small parts shared by the things */
+.pz-sg-pool { fill: color-mix(in srgb, var(--art-ivory) 80%, var(--text)); }
+.pz-sg-wick { fill: none; stroke: color-mix(in srgb, var(--void) 85%, var(--art-leather)); stroke-width: 1.1; stroke-linecap: round; }
+.pz-sg-line { fill: none; stroke: color-mix(in srgb, var(--void) 50%, transparent); stroke-width: 0.8; stroke-linecap: round; }
+.pz-sg-band { fill: none; stroke: var(--art-blue); stroke-width: 2; }
+.pz-sg-tea { fill: color-mix(in srgb, var(--art-leather) 45%, var(--void)); }
+.pz-sg-spine { fill: color-mix(in srgb, var(--art-leather) 58%, var(--void)); }
+.pz-sg-gilt { fill: none; stroke: var(--art-brass); stroke-width: 1.2; }
+.pz-sg-gilt-dark { fill: none; stroke: color-mix(in srgb, var(--art-brass) 35%, var(--void)); stroke-width: 1.1; stroke-linecap: round; }
+.pz-sg-buckle { fill: none; stroke: var(--art-brass); stroke-width: 1.3; }
+.pz-sg-strap { fill: none; stroke: var(--art-brass); stroke-width: 3; }

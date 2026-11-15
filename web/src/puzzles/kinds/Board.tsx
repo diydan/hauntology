@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { defaultWorld, makeStepper, newBall, type Ball } from "@hauntology/shared/puzzles/tilt-ball";
-import { CANVAS, withAlpha } from "../art/palette";
+import { layer } from "../art/canvas-paint";
+import { CANVAS } from "../art/palette";
+import { paintBoard, paintLitLetter, paintPlanchette } from "../art/spirit-board";
 import { useFeelValue, useFrame, useLatest } from "../hooks";
 import { BOARD_H, BOARD_W, DRAG_SLOP, LETTERS, LETTER_POS, MAGNET_MAX_SPEED, MAGNET_PULL, MAGNET_PX, NEAR_PX, PLANCHETTE_R, REST_SPEED, START, TAP_PX, UNDER_PX, nearestLetter } from "./Board-geometry";
 import type { KindProps } from "./types";
@@ -9,10 +11,7 @@ import "./Board.css";
 const WORLD = { ...defaultWorld(BOARD_W, BOARD_H, [], PLANCHETTE_R), friction: 5, maxSpeed: 260, accel: 22 };
 const NO_TILT = { x: 0, y: 0 } as const;
 const INK = CANVAS.board;
-const LETTER = CANVAS.text;
-const LANTERN = CANVAS.lit;
 const RING = CANVAS.ring;
-const SPIRIT = CANVAS.piece;
 const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
 
 /**
@@ -20,6 +19,8 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
  * on the phone: the Room (or the host) plays the whisper through `hear`, and the clue is shown as text.
  * Touch: drag the planchette, then press Pick (or tap a letter). Tilt: lean to roll it (letters pull it in gently), then tap
  * anywhere or rest on the letter for a moment. Keyboard: arrow keys jump between letters, Enter picks.
+ * It is drawn as the object it is (../art/spirit-board.ts): a wooden talking board, painted once into a layer, and a planchette with a
+ * glass lens that magnifies the letter under it, drawn each frame.
  */
 export default function Board({ view, feel, submit, announce, resetKey, hear, tiltButtons }: KindProps<"board">) {
   const [spelled, setSpelled] = useState<string[]>([]);
@@ -29,6 +30,8 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
   const latest = useLatest({ spelled, heard, under });
   const canvas = useRef<HTMLCanvasElement>(null);
   const paint = useRef<CanvasRenderingContext2D | null>(null);
+  const boardLayer = useRef<HTMLCanvasElement | null>(null);
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
   const sim = useRef<{ ball: Ball; roll: (dtMs: number, tilt: { x: number; y: number }) => number } | null>(null);
   if (sim.current === null) {
     const ball = newBall(START.x, START.y);
@@ -76,11 +79,12 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
   useEffect(() => {
     const cv = canvas.current;
     const c = cv?.getContext("2d") ?? null;
-    if (c) c.setTransform(Math.min(2, window.devicePixelRatio || 1), 0, 0, Math.min(2, window.devicePixelRatio || 1), 0, 0);
+    if (c) c.setTransform(dpr, 0, 0, dpr, 0, 0);
     paint.current = c;
+    boardLayer.current = layer(BOARD_W, BOARD_H, dpr, paintBoard); // the board is painted once; the planchette is drawn on it each frame
     drawn.current.count = -1; // draw once now
-    return () => { paint.current = null; };
-  }, []);
+    return () => { paint.current = null; boardLayer.current = null; };
+  }, [dpr]);
 
   const local = (e: PointerEvent): { x: number; y: number } => {
     const box = canvas.current?.getBoundingClientRect();
@@ -139,13 +143,10 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
   const draw = (c: CanvasRenderingContext2D, b: Ball, dwell: number, letter: string | null): void => {
     c.fillStyle = INK;
     c.fillRect(0, 0, BOARD_W, BOARD_H);
-    c.font = "600 28px Georgia, serif";
-    c.textAlign = "center";
-    c.textBaseline = "middle";
-    for (const p of LETTER_POS) {
-      c.fillStyle = p.ch === letter ? LANTERN : LETTER;
-      c.fillText(p.ch, p.x, p.y);
-    }
+    const under = boardLayer.current;
+    if (under) c.drawImage(under, 0, 0, BOARD_W, BOARD_H);
+    else paintBoard(c);
+    if (letter !== null) paintLitLetter(c, letter);
     const at = letter === null ? undefined : LETTER_POS[LETTERS.indexOf(letter)];
     if (at && dwell > 0) { // the ring fills while the planchette rests on a letter
       c.strokeStyle = RING;
@@ -154,17 +155,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
       c.arc(at.x, at.y, NEAR_PX + 2, -Math.PI / 2, -Math.PI / 2 + Math.min(1, dwell / view.dwellMs) * Math.PI * 2);
       c.stroke();
     }
-    c.fillStyle = withAlpha(SPIRIT, 0.28);
-    c.strokeStyle = SPIRIT;
-    c.lineWidth = 2;
-    c.beginPath();
-    c.arc(b.x, b.y, PLANCHETTE_R, 0, Math.PI * 2);
-    c.fill();
-    c.stroke();
-    c.fillStyle = CANVAS.well;
-    c.beginPath();
-    c.arc(b.x, b.y, 5, 0, Math.PI * 2);
-    c.fill();
+    paintPlanchette(c, b.x, b.y, under, dpr);
   };
 
   useFrame((_t, dt) => {
@@ -222,6 +213,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
 
   const left = view.plays - heard;
   const hearText = !hear ? "No voice here" : left > 0 ? `Hear the word (${left} left)` : "No more whispers";
+  const hearShort = !hear ? hearText : left > 0 ? `Hear (${left} left)` : hearText; // short enough that Clear, Hear and the tilt buttons share one row
   return (
     <div className="pz-board-kind">
       <p className="pz-hint pz-clue-line">Clue: {view.clue} · {view.length} letters</p>
@@ -242,7 +234,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
         </div>
         <div className="ui-row ui-row--center">
           <button type="button" className="ui-button" disabled={spelled.length === 0} onClick={clear}>Clear</button>
-          <button type="button" className="ui-button" disabled={!hear || left <= 0} onClick={() => void speak()}>{hearText}</button>
+          <button type="button" className="ui-button" disabled={!hear || left <= 0} aria-label={hearText} onClick={() => void speak()}>{hearShort}</button>
           {tiltButtons}
         </div>
       </div>

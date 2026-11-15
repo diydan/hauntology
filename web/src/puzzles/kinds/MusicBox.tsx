@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { MusicMechanism } from "../art/musicbox";
 import { useLatest } from "../hooks";
 import type { KindProps } from "./types";
 import "./MusicBox.css";
@@ -97,13 +98,16 @@ export default function MusicBox({ view, feel, submit, announce, resetKey }: Kin
         <button type="button" className="ui-button ui-button--primary" disabled={playing || left <= 0} onClick={wind}>{windText}</button>
       </div>
       <div className="pz-field pz-visual">
-        <div className="pz-keys" role="group" aria-label="Keys">
-          {KEYS.map((i) => (
-            <button key={i} type="button" className="pz-key" disabled={playing} aria-label={`Key ${i + 1}, ${SHAPE_NAMES[i]}`} data-lit={lit === i ? "true" : "false"} onClick={() => press(i)}>
-              <span className="pz-key-shape" aria-hidden="true">{SHAPES[i]}</span>
-              <span className="pz-key-num" aria-hidden="true">{i + 1}</span>
-            </button>
-          ))}
+        <div className="pz-mbox">
+          <MusicMechanism lit={lit} />
+          <div className="pz-keys" role="group" aria-label="Keys">
+            {KEYS.map((i) => (
+              <button key={i} type="button" className="pz-key" disabled={playing} aria-label={`Key ${i + 1}, ${SHAPE_NAMES[i]}`} data-lit={lit === i ? "true" : "false"} onClick={() => press(i)}>
+                <span className="pz-key-shape" aria-hidden="true">{SHAPES[i]}</span>
+                <span className="pz-key-num" aria-hidden="true">{i + 1}</span>
+              </button>
+            ))}
+          </div>
         </div>
         <div className="pz-digits pz-notes" role="img" aria-label={`Played so far: ${notes.length} of ${view.n} notes`}>
           {Array.from({ length: view.n }, (_, i) => <span key={i}>{notes[i] === undefined ? "·" : SHAPES[notes[i] as Note]}</span>)}

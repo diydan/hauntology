@@ -190,7 +190,10 @@ describe("PuzzleHost", () => {
   it("puts Tilt in the puzzle, in one row with the puzzle's own buttons, and Give up alone outside it", async () => {
     const unstub = stubCanvas();
     for (const [kind, mine] of [["lockpick", "Tension (hold)"], ["words", "Clear"], ["board", "Clear"], ["maze", null]] as const) {
-      const h = host(kind);
+      const feel = createFakeFeel();
+      feel.motion.wish = false; // tilt would start by itself: this test is about the button
+      const onTiltChoice = vi.fn();
+      host(kind, { feel, onTiltChoice });
       await screenReady(kind);
       const tilt = screen.getByRole("button", { name: "Tilt" });
       expect(tilt.getAttribute("aria-pressed")).toBe("false");
@@ -199,12 +202,13 @@ describe("PuzzleHost", () => {
       if (mine !== null) expect(screen.getByRole("button", { name: mine }).parentElement).toBe(tilt.parentElement);
       expect(document.querySelector(".pz-stage")?.contains(screen.getByRole("button", { name: "Give up" }))).toBe(false);
       await act(async () => { fireEvent.click(tilt); await Promise.resolve(); });
-      expect(h.feel.motion.state).toBe("on");
+      expect(feel.motion.state, kind).toBe("on");
       const on = screen.getByRole("button", { name: "Tilt: on" });
       expect(on.getAttribute("aria-pressed")).toBe("true");
       expect(screen.getByRole("button", { name: "Hold level" }).parentElement).toBe(on.parentElement);
       await act(async () => { fireEvent.click(on); });
-      expect(h.feel.motion.state).not.toBe("on");
+      expect(feel.motion.state).not.toBe("on");
+      expect(onTiltChoice.mock.calls).toEqual([[true], [false]]); // the Player's choice goes to the device's settings
       cleanup();
     }
     host("safe");
@@ -267,6 +271,106 @@ describe("PuzzleHost", () => {
     h.feel.breath.state = "on";
     h.unmount();
     expect(h.feel.breath.state).toBe("off");
+  });
+});
+
+describe("PuzzleHost turns tilt on by itself where the phone has a sensor", () => {
+  const SENSOR = ["lockpick", "words", "board", "maze", "safe", "clock"] as const;
+  const NO_SENSOR = ["candles", "wires", "moved", "musicbox", "photo"] as const;
+  let unstub = (): void => {};
+  beforeEach(() => { unstub = stubCanvas(); });
+  afterEach(() => { unstub(); });
+  const settle = async (): Promise<void> => { await act(async () => { await Promise.resolve(); await Promise.resolve(); }); };
+
+  it("starts tilt when the Lock opens, for the four tilt Kinds and the Safe and the Clock, with no tap", async () => {
+    for (const kind of SENSOR) {
+      const h = host(kind);
+      await screenReady(kind);
+      await settle();
+      expect(h.feel.motion.autoCalls, kind).toEqual([false]);
+      expect(h.feel.motion.state, kind).toBe("on");
+      if (kind === "safe" || kind === "clock") expect(screen.getByRole("button", { name: "Twist: on" }), kind).toBeTruthy();
+      else expect(screen.getByRole("button", { name: "Tilt: on" }), kind).toBeTruthy();
+      cleanup();
+    }
+  }, 30_000);
+
+  it("never asks for a Kind that has no use for the sensor, not even from a tap", async () => {
+    for (const kind of NO_SENSOR) {
+      const h = host(kind);
+      await screenReady(kind);
+      await settle();
+      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Give up" })); });
+      expect(h.feel.motion.autoCalls, kind).toEqual([]);
+      expect(h.feel.motion.enabled, kind).toBe(0);
+      expect(h.feel.motion.state, kind).toBe("off");
+      cleanup();
+    }
+  }, 30_000);
+
+  it("asks from the first tap where the phone must be asked (an iPhone), and not before", async () => {
+    const feel = createFakeFeel();
+    feel.motion.needsTap = true;
+    host("lockpick", { feel });
+    await screenReady("lockpick");
+    await settle();
+    expect(feel.motion.autoCalls).toEqual([false]);
+    expect(feel.motion.state).toBe("off"); // nothing asked outside a tap
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "How this puzzle works" })); });
+    expect(feel.motion.autoCalls).toEqual([false, true]); // the first tap asks
+    expect(feel.motion.state).toBe("on");
+  });
+
+  it("asks inside the tap that ends the faded clue, and not while the clue shows", async () => {
+    const lock = makeLock("safe", "easy", 4);
+    const faded = fadedFor(lock);
+    if (!faded) throw new Error("faded");
+    const feel = createFakeFeel();
+    feel.motion.needsTap = true;
+    host("safe", { faded, feel });
+    await settle();
+    expect(feel.motion.autoCalls).toEqual([]); // the clue is showing: no Lock yet
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Got it" })); });
+    await screenReady("safe");
+    await settle();
+    expect(feel.motion.autoCalls[0]).toBe(true); // the tap that starts the Lock
+    expect(feel.motion.state).toBe("on");
+    expect(screen.getByRole("button", { name: "Twist: on" })).toBeTruthy();
+  });
+
+  it("stays off once the Player turned tilt off, under Touch only, and after they pressed the Tilt button off", async () => {
+    const wish = createFakeFeel();
+    wish.motion.wish = false;
+    host("maze", { feel: wish });
+    await screenReady("maze");
+    await settle();
+    expect(wish.motion.state).toBe("off");
+    expect(wish.motion.enabled).toBe(0);
+    cleanup();
+
+    const touch = createFakeFeel();
+    touch.motion.touchOnly = true;
+    host("maze", { feel: touch });
+    await screenReady("maze");
+    await settle();
+    expect(touch.motion.enabled).toBe(0);
+    cleanup();
+
+    const feel = createFakeFeel();
+    const onTiltChoice = vi.fn();
+    host("maze", { feel, onTiltChoice });
+    await screenReady("maze");
+    await settle();
+    expect(feel.motion.state).toBe("on");
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Tilt: on" })); });
+    expect(onTiltChoice).toHaveBeenLastCalledWith(false);
+    expect(feel.motion.state).toBe("off");
+    await act(async () => { fireEvent.click(document.querySelector(".pz-stage") as Element); }); // another tap in the Lock
+    await settle();
+    expect(feel.motion.state).toBe("off"); // it does not start again by itself
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Tilt" })); }); // the Player turns it on, on purpose
+    expect(feel.motion.state).toBe("on");
+    expect(onTiltChoice).toHaveBeenLastCalledWith(true);
   });
 });
 

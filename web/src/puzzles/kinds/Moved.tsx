@@ -5,6 +5,9 @@ import { useLatest } from "../hooks";
 import type { KindProps } from "./types";
 import "./Moved.css";
 
+/** The shelf is the picture of this puzzle in both phases (the dark one and the lit one), so a phone held sideways puts it on the left in both. */
+const PICTURE = "pz-visual";
+
 /** The first step of the dim waits one tick, so the lit shelf is painted before it fades. */
 const FIRST_STEP_MS = 30;
 
@@ -68,7 +71,7 @@ export default function Moved({ view, feel, reducedMotion, submit, announce, res
       <div className="pz-moved" data-phase="dark">
         <p className="pz-hint pz-moved-note" role="status">The lights go out…</p>
         {/* the shelf in the dark: only the empty spots, so nothing of the answer shows */}
-        <div className={`pz-moved-dark pz-visual${reducedMotion ? " pz-moved-still" : ""}`} style={{ opacity: lum, gridTemplateColumns: `repeat(${cols}, 1fr)` }} aria-hidden="true">
+        <div className={`pz-moved-dark ${PICTURE}${reducedMotion ? " pz-moved-still" : ""}`} style={{ opacity: lum, gridTemplateColumns: `repeat(${cols}, 1fr)` }} aria-hidden="true">
           {Array.from({ length: view.slots }, (_, i) => <span key={i} className="pz-slot pz-slot-empty" />)}
         </div>
       </div>
@@ -77,7 +80,7 @@ export default function Moved({ view, feel, reducedMotion, submit, announce, res
   return (
     <div className="pz-moved" data-phase="lit">
       <p className="ui-hint pz-hint">Tap everything that changed on the shelf you saw: swapped, new or missing.</p>
-      <div className="pz-field">
+      <div className={`pz-field ${PICTURE}`}>
         <Shelf items={view.after} cols={cols} selected={picked} onPick={toggle} />
         <p className="pz-readout pz-moved-count" role="status">{picked.size} chosen</p>
       </div>
