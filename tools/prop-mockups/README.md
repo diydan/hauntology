@@ -30,4 +30,4 @@ python3 -m http.server 8781 --bind 127.0.0.1
 # open http://127.0.0.1:8781/tools/prop-mockups/viewer.html   (add #built/p01 to open a build)
 ```
 
-The page has no dependencies. It is not deployed to the lab.
+The page has no dependencies. On the lab it is at https://mtest.hauntology.app/props/viewer (the lab build copies it and the STLs into `/props/`).

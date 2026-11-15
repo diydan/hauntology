@@ -30,7 +30,8 @@ for (const f of ['catalogue.mjs', 'elements.css', 'fonts.css', 'tokens.json']) c
 cpSync(resolve(repo, 'web', 'src', 'styles', 'tokens.css'), resolve(design, 'tokens.css'));
 for (const f of readdirSync(resolve(repo, 'design', 'fonts')).filter((n) => /\.(woff2|txt)$/.test(n))) cpSync(resolve(repo, 'design', 'fonts', f), resolve(design, 'fonts', f));
 // The prop mockups (drawings of ESP32 and servo props, for looking at on a phone): /props/.
-// Only the gallery page, the standalone mockup pages and the thumbnails they show. Not the 3D brief, the ideas list or the QR stickers.
+// Only the gallery page, the standalone mockup pages and the thumbnails they show, plus the 3D parts viewer and the STLs it reads
+// (/props/viewer and /props/stl/). Not the 3D brief, the ideas list or the QR stickers.
 const props = resolve(repo, 'tools', 'prop-mockups');
 if (existsSync(resolve(props, 'index.html'))) {
   mkdirSync(resolve(dist, 'props', 'mockups'), { recursive: true });
@@ -38,6 +39,12 @@ if (existsSync(resolve(props, 'index.html'))) {
   cpSync(resolve(props, 'index.html'), resolve(dist, 'props', 'index.html'));
   for (const f of readdirSync(resolve(props, 'mockups')).filter((n) => n.endsWith('.html'))) cpSync(resolve(props, 'mockups', f), resolve(dist, 'props', 'mockups', f));
   for (const f of readdirSync(resolve(props, 'shots')).filter((n) => /^\d\d-.*\.png$/.test(n))) cpSync(resolve(props, 'shots', f), resolve(dist, 'props', 'shots', f));
+  const stlSrc = resolve(repo, 'print', 'stl');
+  if (existsSync(resolve(props, 'viewer.html')) && existsSync(stlSrc)) {
+    mkdirSync(resolve(dist, 'props', 'stl'), { recursive: true });
+    cpSync(resolve(props, 'viewer.html'), resolve(dist, 'props', 'viewer.html'));
+    for (const f of readdirSync(stlSrc).filter((n) => n.endsWith('.stl'))) cpSync(resolve(stlSrc, f), resolve(dist, 'props', 'stl', f));
+  }
 }
 writeFileSync(resolve(dist, 'robots.txt'), 'User-agent: *\nDisallow: /\n');
 writeFileSync(resolve(dist, '_headers'), [
