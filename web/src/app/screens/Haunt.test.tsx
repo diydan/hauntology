@@ -264,7 +264,7 @@ describe("Haunt: the ghost choice", () => {
     await press("Maren");
     expect(ghostState()).toBe("Your ghost: Maren.");
     expect(live()).toBe("Maren is your ghost.");
-    expect(memory.get()).toMatchObject({ ghostPreset: "preset-maren", ghostName: "Maren" });
+    expect(memory.get()).toMatchObject({ ghostPreset: "preset-maren", ghostName: "Maren", ghostSprite: "/demo/ghosts/preset-maren.svg" });
     expect(screen.queryByRole("button", { name: "Odile" })).toBeNull();
     expect(isOff(screen.getByRole("button", { name: "Wander" }))).toBe(false);
     expect(h.p.loadViewer).not.toHaveBeenCalled();
@@ -272,11 +272,17 @@ describe("Haunt: the ghost choice", () => {
     await screen.findByRole("heading", { name: "Wander" });
     await waitFor(() => expect(playStart).toHaveBeenCalledTimes(1));
     expect(playStart.mock.calls[0]![0]).toMatchObject({ worldId: "attic-room", ghostPreset: "preset-maren" });
+    // The ghost the visitor picked is the one on the Chat's stage: its name, its picture and the Speaker its voice is.
+    await goIn();
+    await press("Talk");
+    expect(document.querySelector("[data-nameplate]")!.textContent).toBe("Maren");
+    expect(document.querySelector("[data-portrait] img")!.getAttribute("src")).toBe("/demo/ghosts/preset-maren.svg");
+    expect(document.querySelector("[data-stage]")!.className).toMatch(/ui-stage--(whisper|keeper)/);
   });
 
   it("opens the Ghost Creator only on request, and a ghost made there is chosen and the Creator is released", async () => {
     const memory = createPlayMemory();
-    memory.set({ ghostPreset: "preset-wick", ghostName: "Wick" });
+    memory.set({ ghostPreset: "preset-wick", ghostName: "Wick", ghostSprite: "/demo/ghosts/preset-wick.svg" });
     const h = await enterGalleryHaunt({ memory });
     expect(h.p.loadCreator).not.toHaveBeenCalled();
     await press("Make a ghost");
@@ -290,6 +296,7 @@ describe("Haunt: the ghost choice", () => {
     // A ghost the Creator made is not the preset that was chosen before.
     expect(memory.get().ghostPreset).toBeUndefined();
     expect(memory.get().ghostName).toBeUndefined();
+    expect(memory.get().ghostSprite).toBeUndefined();
     expect(isOff(screen.getByRole("button", { name: "Wander" }))).toBe(false);
   });
 

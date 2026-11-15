@@ -80,3 +80,13 @@ To turn it off at once, set `GHOST_NARRATION_ENABLED` to `false` and deploy: the
 **Data retention (you decided on 2026-11-15: fine for Haiku 5.5).** What a visitor types (up to 200 characters a turn) goes to the model inside the prompt. Cloudflare's page for Haiku 5.5 carries no "zero data retention" tag (the page for Haiku 4.5 does), and you accepted that. If you change your mind, set `NARRATOR_MODEL_ID=anthropic/claude-haiku-4.5`: ten times the price (about 2 cents for a 20-turn game), accepted by the adapter and not yet run through the gateway.
 
 The log has one line for each model turn, `play.narrate`, with an outcome (`model`, `invalid`, `refused`, `failed`, `capped` or `off`) and how many calls it took. No word of a prompt or a reply is logged.
+
+## The real weather of a place (conditions, ghost-engine 3.1)
+
+When a visitor chooses a Place on the sky card, the Worker reads the real weather, hour and moon of that place **once**, when the game starts, and keeps it with the game. It is a free call to Open-Meteo (no key, no credits, no `SpendTicket`; its free tier is for non-commercial use, so a paid plan is needed if the game is ever sold). **No Place chosen means no call at all.** A slow (over 3 seconds) or failing answer gives the normal look, and the game starts.
+
+- **Turn it off:** set `CONDITIONS_ENABLED` to `false` and deploy: no weather call is made and every game has the normal look.
+- **`WEATHER_BASE_URL`** (unset means Open-Meteo's own hosts): only for tests and stand-ins; it must be an `https` address (or `http` on this machine), with no login, query or fragment in it, or the feature turns itself off.
+- **The log** has one line for each read, `conditions.read`, with `source`, `reason` and `cache`. It never holds a place, a label, a position or a date.
+- **What is kept:** the game's own record holds a position rounded to two decimals, its label and the sky, and is deleted with the game (24 hours at most).
+- **Not yet verified against the real service:** the endpoints and answer shapes (conditions Spike 1.1, free). The caches do nothing on `workers.dev`.

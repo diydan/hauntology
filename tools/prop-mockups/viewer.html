@@ -49,6 +49,7 @@
     #app { flex-direction: column-reverse; }
     #side { width: 100%; height: 38%; border-right: 0; border-top: 1px solid #2c2638; }
     #stage { flex: 1; }
+    #ctl > span { display: none; }
   }
 </style>
 </head>
@@ -76,7 +77,8 @@
 <script>
 'use strict';
 const $ = (s, r = document) => r.querySelector(s);
-const STL_BASE = new URLSearchParams(location.search).get('stl') || '../../print/stl/';
+// In the repo the page lives in tools/prop-mockups/ and the STLs in print/stl/; on the lab both sit under /props/.
+const STL_BASE = new URLSearchParams(location.search).get('stl') || (location.pathname.includes('/tools/') ? '../../print/stl/' : 'stl/');
 
 // Core 6 spools + Silver & 6 Seat/Suspect accent colours from 3D_BRIEF.md section 2.
 const SPOOLS = {
@@ -198,10 +200,10 @@ const STAND = [['x', 90]];   // lie-flat part stood up so its flat back faces aw
 const FLIP = [['x', 180]];   // part printed upside down, turned right way up
 const P = (p, at, o = {}) => ({ p, at, rot: o.rot || [], ex: o.ex || [0, 0, 0] });
 const ASSEMBLIES = [
-  { id: 'relics', title: 'Relics on Relic Tokens', note: 'Each Relic plugs into the centre socket of a token base (with no Relic base plate). The QR sticker goes in the base pocket.',
+  { id: 'relics', title: 'Relics on Relic Tokens', note: 'Each Relic has a 6 mm socket under a flat foot and drops onto the 6 mm peg of its token (no Relic base plate). Punch a 6 mm hole in the middle of the QR sticker for the peg.',
     build(S) {
       const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell'], out = [];
-      rel.forEach((r, i) => { const s = S(r); out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [i * 48 + (40 - s[0]) / 2, (40 - s[1]) / 2, 4], { ex: [0, 0, 25] })); });
+      rel.forEach((r, i) => { const s = S(r); out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [i * 48 + (40 - s[0]) / 2, (40 - s[1]) / 2, 6], { ex: [0, 0, 25] })); });
       return out;
     } },
   { id: 'p01', title: '#1 Ghost in the box', note: 'Lid on the body. Slide Explode to lift the lid and see the ghost and lever inside.',
@@ -346,7 +348,9 @@ function rotatedBox(m, rot) {
 function fit() {
   const b = st.bounds; st.target = [0, 1, 2].map((j) => (b.min[j] + b.max[j]) / 2);
   const r = Math.hypot(b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]) / 2;
-  st.dist = Math.max(r / Math.sin(0.4) * 1.08, 60); st.theta = -2.0; st.phi = 0.5;
+  // Fit the bounding sphere across the narrower side: a portrait phone is tighter across than up.
+  const asp = canvas.clientWidth / Math.max(canvas.clientHeight, 1), dv = r / Math.sin(0.4), dh = r / Math.sin(Math.atan(Math.tan(0.4) * asp));
+  st.dist = Math.max(Math.max(dv, dh) * 1.08, 60); st.theta = -2.0; st.phi = 0.5;
 }
 
 // ---------- draw ----------

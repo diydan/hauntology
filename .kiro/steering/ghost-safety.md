@@ -28,6 +28,7 @@ Reject and fall back if: empty, > 600 chars, contains `http`/`www`, markdown or 
 - The engine plays every turn with scripted words first and stores them; the model words the turn afterwards, and its words replace the scripted ones in the reply, the journal and the history only if the game keeps them. A model failure never fails a turn.
 - Scripted always, no model call: after the game has ended, for a visitor text the parser sends to `refuse` (the deflection is scripted, so no input can steer it), at the game's 40 model turns, with the kill switch on (`GHOST_NARRATION_ENABLED=false`), without the `AI` binding or a gateway, and when `SpendGuard` has no `llm` unit to give (the visitor's or the day's cap).
 - The last memory is told by the model and the farewell after it stays scripted.
+- **The visitor is told.** The Chat says, in one line beside the text box, that what they type may be sent to an AI model (ghost-engine Requirement 2.4, `web/src/app/play/Chat.tsx`). The line is always there, also while the model is off, because the screen does not yet know whether it is on.
 - A reply is also refused when it reads out six words in a row of the rules, when it is cut short by the token cap, and when it fails the check of its Directive (below).
 
 ## Hints

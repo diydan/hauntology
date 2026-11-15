@@ -135,7 +135,7 @@ export default function Safe({ view, feel, submit, announce, resetKey }: KindPro
       <div className={twist ? "pz-grid4" : "pz-grid3"}>
         <button type="button" className="ui-button" aria-label="Digit minus" onClick={() => nudge(-1)}>Digit −</button>
         <button type="button" className="ui-button" aria-label="Digit plus" onClick={() => nudge(1)}>Digit +</button>
-        <button type="button" className="ui-button" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
+        <button type="button" className="ui-button" aria-pressed={twist} aria-label={twist ? "Twist: on" : "Twist"} onClick={() => void toggleTwist()}>{twist ? <>Twist<span className="pz-st" aria-hidden="true">: on</span></> : "Twist"}</button>
         {twist ? <button type="button" className="ui-button" aria-pressed={flip} aria-label="Turns the wrong way? Flip it" onClick={toggleFlip}>Flip</button> : null}
       </div>
       <div className="pz-twist">

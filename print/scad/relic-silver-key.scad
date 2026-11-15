@@ -7,30 +7,13 @@
 include <_common.scad>
 
 module relic_silver_key() {
-  // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
+  // 1. Flat 14.6 mm foot with a 6 mm centre socket (z = 0..4.5); the Relic Token has the matching peg
   relic_pedestal_base(h = 4.5, top_d = 18.0);
 
-  // 2. Gothic Escutcheon Collar with Front Sticker Pocket (z = 4.5..14.5)
-  translate([0, 0, 4.5])
-  difference() {
-    union() {
-      cylinder(h = 2.2, d1 = 18.0, d2 = 16.8);
-      translate([0, 0, 1.8])
-        chamfer_box(19.6, 12.8, 8.2, r = 2.6, ch_bot = 0.8, ch_top = 1.0);
-      // Raised front crest frame
-      translate([0, -6.4, 5.8])
-        rotate([90, 0, 0])
-          chamfer_box(16.0, 9.6, 1.0, r = 1.4, ch_bot = 0.3, ch_top = 0.3);
-    }
-    // Front 0.4 mm recessed sticker pocket (14 x 8 mm)
-    translate([0, -7.0, 5.8])
-      rotate([90, 0, 0])
-        linear_extrude(height = sticker_depth + 0.5)
-          rrect2d(14.0, 8.0, r = 0.8);
-  }
+  // 2. No escutcheon plinth or base plate: the key stands straight on the connector neck.
 
-  // 3. Turned Skeleton Key Stem & Collars (z = 13.5..38.0)
-  translate([0, 0, 13.5]) {
+  // 3. Turned Skeleton Key Stem & Collars (z = 4.5..29.0)
+  translate([0, 0, 4.5]) {
     // Main cylindrical shaft
     cylinder(h = 24.5, d = 5.4);
     // Decorative turned barrel collars (45-deg self-supporting profiles)
@@ -58,8 +41,8 @@ module relic_silver_key() {
     }
   }
 
-  // 5. Gothic Quatrefoil Key Bow (Handle) at Top (z = 37.0..52.0)
-  translate([0, 0, 44.5])
+  // 5. Gothic Quatrefoil Key Bow (Handle) at Top (z = 28.0..43.0)
+  translate([0, 0, 35.5])
   difference() {
     union() {
       // Diamond-corbelled outer bow frame (45-deg self-supporting lower cheeks)

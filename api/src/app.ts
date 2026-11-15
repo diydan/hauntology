@@ -7,6 +7,7 @@ import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
 import { playRoutes } from "./routes/play";
+import type { ConditionsService } from "./conditions/snapshot-store";
 import type { Narration } from "./play/narrate";
 import type { PlaySessions } from "./play/ports";
 import { quotaRoutes } from "./routes/quota";
@@ -33,7 +34,13 @@ export type AppOptions = SessionOptions & {
   /** The operator's routes (`/admin/status`, `/admin/kill`). When given, they are served; otherwise there is no such route. */
   admin?: AdminDeps;
   /** The games (ghost-engine 5). When given with `worlds`, `/api/play` is served: a visitor may play in a world they own, a Gallery world, or one whose owner shares the link. */
-  play?: { sessions: PlaySessions; /** The model narrator (ghost-engine 4); without it the ghost speaks only scripted lines. */ narration?: Narration };
+  play?: {
+    sessions: PlaySessions;
+    /** The model narrator (ghost-engine 4); without it the ghost speaks only scripted lines. */
+    narration?: Narration;
+    /** The real world, read once when a game starts (conditions 3.3, ghost-engine 3.1); without it every game has the normal look and the narrator is told no sky. */
+    conditions?: ConditionsService;
+  };
   /** The built web app. When given, a request no route took (a page, a script, a style) is answered from it, the single-page fallback included (world-pipeline task 2); without it such a request is a 404. */
   assets?: AssetsPort;
   /** Where log lines go (world-pipeline 8.2). Default: nowhere, so a test or a caller without one is silent. */
@@ -94,7 +101,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     app.route("/api/worlds", worldRoutes(options.worlds));
     // The Gallery needs the store and nothing else: no key, no quota, no open switch (world-pipeline 9.2, Requirement 9.3).
     app.route("/api/gallery", galleryRoutes({ store: options.worlds.store }));
-    if (options.play !== undefined) app.route("/api/play", playRoutes({ store: options.worlds.store, sessions: options.play.sessions, ...(options.play.narration !== undefined ? { narration: options.play.narration } : {}), log, now: options.now ?? Date.now }));
+    if (options.play !== undefined) app.route("/api/play", playRoutes({ store: options.worlds.store, sessions: options.play.sessions, ...(options.play.narration !== undefined ? { narration: options.play.narration } : {}), ...(options.play.conditions !== undefined ? { conditions: options.play.conditions } : {}), log, now: options.now ?? Date.now }));
     const creation = options.worlds.creation;
     if (creation !== undefined) {
       app.route("/api/worlds", worldCreateRoutes({ store: options.worlds.store, ...creation, now: options.now ?? Date.now, worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled }));

@@ -465,8 +465,10 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
 
 - [ ] 9. Web: Controller (`web/src/party/controller/`), installable web app
   - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
+    - Built so far (2026-11-15): the join page `web/src/party/controller/JoinPage.tsx` against a port (`controller-port.ts`, with a scripted stand-in `standin-port.ts` for the dev page `web/controller-demo.html` and the tests): the Room Code and nickname rules of `shared/src/party`, plain-word refusals that reveal nothing about any Room, one main button. Still to do: the real port over the Room socket, and reconnect with the stored token.
     - _Requirements: 1.2, 1.4_
   - [ ] 9.2 Pad and panel layouts with switching; 48 px targets, focus, contrast, tap-to-walk pad
+    - Built so far (2026-11-15): the seated frame `SeatedFrame.tsx` (header with Room Code, nickname, Master and the connection in words; a Pad / Panel switch that follows the phone's turn and lets the Player's choice win; named regions for the stick, look area, face buttons, hand, notebook and contributions; a Menu sheet with this phone's settings from `PuzzleSettings`; the Lock in `LockArea.tsx`). The settings are the phone's remembered ones (`web/src/device/`, `useDeviceSettings()`): a tilt choice made in a Lock and in the Menu is one saved setting. While a Lock is open the header and the page's padding are not drawn: the Menu (and a connection that is not fine) go in the puzzle's own bar (`PuzzleHost`'s `barExtra`), so a Lock fits a phone as it does on its own page. Still to do: the contents of the pad and the panel (stick, look, face buttons, tap-to-walk pad, hand, notebook).
     - _Requirements: 2.1, 2.6_
   - [ ] 9.3 Multitouch stick and look, input at ≤ 30 Hz, release on blur and disconnect
     - _Requirements: 2.2, 2.3_

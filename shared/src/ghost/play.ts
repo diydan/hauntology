@@ -1,4 +1,5 @@
-import type { Atmosphere } from "../conditions/types";
+import { atmosphereForGame, toPromptFields } from "../conditions/snapshot";
+import type { Atmosphere, ConditionsSnapshot, PromptFields } from "../conditions/types";
 import type { PlayView } from "../app/api";
 import { placeAnchors, ringAnchors, validateAnchors, walkRadiusOf } from "./anchors";
 import { initialState, step, withHistory, withMemory } from "./engine";
@@ -43,6 +44,11 @@ export type StartInput = {
   seed: number;
   now: number;
   atmosphere?: Atmosphere | null;
+  /**
+   * The frozen conditions snapshot read once for this game (conditions 2.14, ghost-engine 3.1), or none. It is kept with the game (only when it holds a Place or a Memory
+   * Day: the pure Default carries nothing), the Atmosphere the client sees is taken from it unless one is given, and the narrator's sky words come from it. Never an input to a rule.
+   */
+  conditions?: ConditionsSnapshot | null | undefined;
 };
 
 /** Where the anchors come from: the world's own, else the client's if they pass, else placed from the seed, else the ring. */
@@ -57,9 +63,17 @@ export function chooseAnchors(world: WorldFacts, clientAnchors: unknown, seed: n
   return placeAnchors({ sampler, spawn: world.spawn, bounds: world.bounds, walkRadius, rng: makeRng(seed) });
 }
 
+/** The sky words for the narrator: three closed words from the stored snapshot, none for the Default; a game with no snapshot kept falls back to its Atmosphere. */
+export function skyFor(session: Pick<PlaySession, "conditions" | "atmosphere">): PromptFields | undefined {
+  return session.conditions === undefined || session.conditions === null ? skyOf(session.atmosphere) : toPromptFields(session.conditions);
+}
+
 export function startSession(input: StartInput): PlaySession {
   const { world, seed, now } = input;
   const anchors = chooseAnchors(world, input.clientAnchors, seed);
+  const conditions = input.conditions ?? null;
+  // The pure Default (nothing chosen, or conditions off) has nothing to keep.
+  const kept = conditions !== null && (conditions.place !== undefined || conditions.memoryDay !== undefined) ? conditions : null;
   return {
     v: 1,
     id: input.id,
@@ -72,13 +86,14 @@ export function startSession(input: StartInput): PlaySession {
     pose: { pos: [world.spawn[0], world.spawn[1], world.spawn[2]], yaw: world.yaw },
     createdAt: now,
     expiresAt: now + SESSION_TTL_MS,
-    atmosphere: input.atmosphere ?? null,
+    atmosphere: input.atmosphere ?? atmosphereForGame(kept),
+    ...(kept === null ? {} : { conditions: kept }),
   };
 }
 
 /** "Haunt again" (Requirement 8.3): the same Session id, owner and voice, a fresh seed, new anchors and seeds, an empty journal. */
 export function resetSession(session: PlaySession, input: { world: WorldFacts; seed: number; now: number }): PlaySession {
-  const fresh = startSession({ id: session.id, worldId: session.worldId, ownerSid: session.ownerSid, world: input.world, seed: input.seed, now: input.now, atmosphere: session.atmosphere });
+  const fresh = startSession({ id: session.id, worldId: session.worldId, ownerSid: session.ownerSid, world: input.world, seed: input.seed, now: input.now, atmosphere: session.atmosphere, conditions: session.conditions ?? null });
   return { ...fresh, voice: session.voice };
 }
 
@@ -151,7 +166,7 @@ export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
             ...(toldSeed !== undefined ? { seed: toldSeed } : {}),
             history: session.state.history,
             player: visitorWords(action),
-            ...(skyOf(session.atmosphere) !== undefined ? { sky: skyOf(session.atmosphere) as NonNullable<ReturnType<typeof skyOf>> } : {}),
+            ...(skyFor(session) !== undefined ? { sky: skyFor(session) as PromptFields } : {}),
           },
         };
 

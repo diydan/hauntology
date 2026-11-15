@@ -71,11 +71,9 @@ video {
   min-height: 100dvh;
 }
 
+/* The Chat is a `ui-sheet`: fixed to the bottom on a phone, and here a column beside the Viewer once the box is wide. */
 .play-layout .chat {
-  grid-row: 2;
-  max-height: 50dvh;
-  overflow-y: auto;
-  margin: 0 var(--space-3) var(--space-3);
+  max-height: 60dvh;
 }
 
 @container play (min-width: 900px) {
@@ -87,6 +85,7 @@ video {
   .play-layout .chat {
     grid-row: 1;
     grid-column: 2;
+    align-self: start;
     max-height: none;
     margin: var(--space-3) var(--space-3) var(--space-3) 0;
   }
@@ -129,10 +128,44 @@ video {
   place-items: center;
 }
 
-.transcript {
+.transcript,
+.journal.ui-log {
   list-style: none;
+  margin: 0;
   padding: 0;
+}
+
+.transcript {
   max-height: 14rem;
+}
+
+/* The Chat's stage: the portrait and the nameplate side by side, the words under them. */
+.chat-stage {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.chat-stage .ui-portrait {
+  width: 5.5rem;
+}
+
+.chat-stage .ui-portrait > img {
+  object-fit: contain;
+}
+
+.chat-stage .ui-orb {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.chat-stage .ui-dialogue {
+  grid-column: 1 / -1;
+}
+
+/* Five quick buttons in a row that wraps, never one tall column. */
+.chat-quick {
+  grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
 }
 
 .debug {

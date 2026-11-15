@@ -14,60 +14,79 @@ Order: the spike first, then pure logic with property tests, then the API module
 - [ ] 2. Pure logic (`shared/src/conditions/`)
   - [x] 2.1 `types.ts`: types and zod schemas from the design (Place, TimeOfDay, WeatherClass, bands, MoonPhase, MemoryDay, SkyStar, ConditionsSnapshot, Atmosphere, PublicConditions, PromptFields); add `conditions_disabled`, `bad_place`, `bad_memory_day` and `geocode_unavailable` to `shared/src/errors.ts`
     - _Requirements: 2.2_
-  - [ ] 2.2 `normalizePlace` and `normalizeMatches` (round to two decimals, drop every other field, at most five matches)
+  - [x] 2.2 `normalizePlace` and `normalizeMatches` (round to two decimals, drop every other field, at most five matches)
+    - **Built 2026-11-15** (`shared/src/conditions/place.ts`): a position outside the globe or not a finite number is `bad_place`; the rest is rounded to two decimals, a zone name the runtime does not know becomes null, a label has control and invisible characters taken out and is cut at 80 characters (or is "Here"), and every other field is dropped.
     - _Requirements: 1.1, 1.3_
-  - [ ]* 2.3 Write property test for place privacy
+  - [x]* 2.3 Write property test for place privacy
+    - **Done 2026-11-15** (`place.prop.test.ts`): only `lat`, `lon`, `tz` and `label` come out, rounded, in range; no unrounded digit in the serialisation; at most five matches.
     - **Property 1: A Place keeps only a position rounded to two decimals**
     - **Validates: Requirements 1.1, 1.3**
-  - [ ] 2.4 `localHour`, `timeOfDay`, `REP_HOUR`, `defaultSnapshot`
+  - [x] 2.4 `localHour`, `timeOfDay`, `REP_HOUR`, `defaultSnapshot`
+    - **Built 2026-11-15** (`time.ts`, `snapshot.ts`): `localHour(nowMs, tz)` (null for an unknown zone or an instant that is not a time, so the caller uses the host's hour), `REP_HOUR` and `defaultSnapshot(now, hostHour)`.
     - _Requirements: 1.4_
-  - [ ]* 2.5 Write property test for time of day
+  - [x]* 2.5 Write property test for time of day
+    - **Done 2026-11-15** (`time.prop.test.ts`).
     - **Property 2: Every hour maps to exactly one time of day**
     - **Validates: Requirements 1.4**
   - [ ] 2.6 `weatherClassFromCode`, `tempBand`, `windBand`, `atmosphereLook`, `particleBudget`
+    - **Partly built 2026-11-15** (`weather.ts`): `weatherClassFromCode`, `tempBand`, `windBand` and `particleBudget`. **Not built:** `atmosphereLook` (the Viewer's, task 4.1: its tint colours must come from `shared/src/design/tokens.ts`). Not ticked until it is.
     - _Requirements: 2.3, 4.2, 4.3_
   - [ ]* 2.7 Write property test for the weather mapping
+    - The part that exists is tested (`weather.prop.test.ts`: any value gives one class and one band, the bands never go down as the number rises, the particle caps); the look values of Property 3 wait for `atmosphereLook`.
     - **Property 3: Weather class and band mapping is total**
     - **Validates: Requirements 2.3, 4.2, 4.3**
-  - [ ] 2.8 `moonPhase` and `moonAge` (eight phases, no service); known-value unit tests
+  - [x] 2.8 `moonPhase` and `moonAge` (eight phases, no service); known-value unit tests
+    - **Built 2026-11-15** (`moon.ts`): known values of April 2024 (new 8 April, first quarter 15 April, full 23 April, last quarter 30 April) pass within the day the design allows.
     - _Requirements: 2.6_
-  - [ ]* 2.9 Write property test for the moon
+  - [x]* 2.9 Write property test for the moon
+    - **Done 2026-11-15** (`moon.prop.test.ts`): one of eight, a month visits all eight in order, a mean month later is the same age.
     - **Property 8: Moon phase is one of eight and cycles in order**
     - **Validates: Requirements 2.6**
-  - [ ] 2.10 `validateMemoryDay` (1940 to yesterday, real calendar dates), `instantFor`, and the archive `WeatherRequest` builder
+  - [x] 2.10 `validateMemoryDay` (1940 to yesterday, real calendar dates), `instantFor`, and the archive `WeatherRequest` builder
+    - **Built 2026-11-15** (`memory-day.ts`): the date is checked in the host's calendar like the photo reader's (`today` is a `Date` passed in); `weatherRequestFor` makes an archive request when a Memory Day is set and a forecast request otherwise. The shell's own `memoryDayError` (`shared/src/app/sky.ts`) says the same thing and could call `validateMemoryDay`.
     - _Requirements: 3.1, 3.2_
-  - [ ]* 2.11 Write property test for Memory Day
+  - [x]* 2.11 Write property test for Memory Day
+    - **Done 2026-11-15** (`memory-day.prop.test.ts`).
     - **Property 6: Memory Day stays in range and uses recorded weather**
     - **Validates: Requirements 3.1, 3.2**
   - [x] 2.12 `readCaptureDate` (JPEG EXIF reader for `DateTimeOriginal` only; returns a date and a Time of Day or nothing; never throws)
-    - Built in `shared/src/conditions/exif.ts` by the shell's photo picker (shell task 7.1), with `timeOfDay` in `time.ts`; the rest of `time.ts` is still this spec's.
+    - Built in `shared/src/conditions/exif.ts` by the shell's photo picker (shell task 7.1), with `timeOfDay` in `time.ts`; the rest of `time.ts` (`localHour`, `REP_HOUR`) is built under 2.4.
     - _Requirements: 3.3_
   - [x]* 2.13 Write property test for the photo timestamp reader
     - **Property 9: Photo timestamp reading keeps only the capture date**
     - **Validates: Requirements 3.3**
-  - [ ] 2.14 `readSnapshot`, `freezeSnapshot`, `cacheKey`, `isFresh`, `toAtmosphere`, `toPromptFields`, `toPublicConditions` (clock, timer, fetch and cache injected; 3000 ms limit; never rejects)
+  - [x] 2.14 `readSnapshot`, `freezeSnapshot`, `cacheKey`, `isFresh`, `toAtmosphere`, `toPromptFields`, `toPublicConditions` (clock, timer, fetch and cache injected; 3000 ms limit; never rejects)
+    - **Built 2026-11-15** (`snapshot.ts`, with `snapshot-kit.ts` for the fakes): the 3000 ms limit, the 15 minute cache by rounded Place, one call for each read, the Default on any failure. Also `atmosphereForGame` (no atmosphere, the normal look, for the pure Default). **Not built:** the stars and `moonSky` of dusk and night (group 6): a snapshot has none until then. `source` is `live` (a forecast was read), `memory` (an archive was read) or `default` (no weather was read: off, no Place, a failure, a timeout or no data), so the narrator is told no sky when the weather is not known.
     - _Requirements: 2.1, 2.2, 2.4, 2.5_
-  - [ ]* 2.15 Write property test for one frozen snapshot
+  - [x]* 2.15 Write property test for one frozen snapshot
+    - **Done 2026-11-15** (`snapshot.prop.test.ts`, Property 4). "The same object on every later read" holds inside one read; a game keeps its snapshot in its stored record, so a later read of the game gives an equal value, not the same object.
     - **Property 4: One frozen snapshot per game, one call, cached 15 minutes**
     - **Validates: Requirements 2.1, 2.5**
-  - [ ]* 2.16 Write property test for the fallback
+  - [x]* 2.16 Write property test for the fallback
+    - **Done 2026-11-15** (`snapshot.prop.test.ts`, Property 5).
     - **Property 5: A timeout or failure falls back to the default**
     - **Validates: Requirements 2.4**
 
 - [ ] 3. API (`api/src/conditions/`)
-  - [ ] 3.1 `open-meteo.ts`: `geocode`, `forecast`, `archive`; the only module that calls an outside weather host; `AbortSignal.timeout(3000)`; `WEATHER_BASE_URL`; zod parse down to the fields used; counters only in logs; no upstream host in any answer
+  - [x] 3.1 `open-meteo.ts`: `geocode`, `forecast`, `archive`; the only module that calls an outside weather host; `AbortSignal.timeout(3000)`; `WEATHER_BASE_URL`; zod parse down to the fields used; counters only in logs; no upstream host in any answer
+    - **Built 2026-11-15** (`api/src/conditions/open-meteo.ts`, answers boiled down in `shared/src/conditions/open-meteo-answers.ts`): `forecast`, `archive`, `geocode` and `weatherFetcher`, a 3 second limit on every call, positions rounded in the address, a city name trimmed to 60 characters and encoded, a body over 200 000 bytes refused, an error that is a bare `weather_unavailable`, `WEATHER_BASE_URL` for all three paths (an https or loopback address with no login, or the feature is off). Tested over a fake host only; **the endpoints, parameters and answer shapes are from the documentation as remembered and unverified until Spike conditions 1.1** (no recorded answers in `shared/fixtures/weather/` yet). `geocode` has no caller until 3.5.
     - _Requirements: 1.1, 2.3, 2.4, 3.2_
-  - [ ] 3.2 `cache.ts`: `ConditionsCache` over the Cache API or KV (as Spike 1.1 decides), TTL 15 minutes
+  - [x] 3.2 `cache.ts`: `ConditionsCache` over the Cache API or KV (as Spike 1.1 decides), TTL 15 minutes
+    - **Built 2026-11-15** (`api/src/conditions/cache.ts`): over the Workers Cache API (`caches.default`) where the Worker has it, else a variable (200 answers at most); the stored value carries its time, so 15 minutes hold whatever the store does. The Cache API does nothing on a `workers.dev` address (a miss, so only more calls); whether KV is needed instead is Spike conditions 1.1's to decide.
     - _Requirements: 2.5_
   - [ ] 3.3 Snapshot store for `PlaySession` and `PartyRoom`: read once at start, store, return the stored Snapshot on every later read, include `atmosphere` in the client view, read again only for a new game
+    - **Built for `PlaySession` 2026-11-15** (ghost-engine 3.1): `api/src/conditions/snapshot-store.ts` reads once at the start of a game; the game keeps the frozen snapshot in its own stored record (`conditions` in the `PlaySession`, only when it holds a Place or a Memory Day), `atmosphere` is in the client view, a turn, the view and "Haunt again" never read again, and the record is deleted with the game. **Not built:** the `PartyRoom` side (party-mode 15.4). Not ticked until it is.
     - _Requirements: 2.1, 2.2, 4.1_
   - [ ] 3.4 Variables `CONDITIONS_ENABLED` (default `true`) and `WEATHER_BASE_URL`; off means the Default and no outside call, and a search answers `conditions_disabled`
+    - **Built 2026-11-15** except the search: `CONDITIONS_ENABLED` (on unless `false`) and `WEATHER_BASE_URL` are read by `conditionsFromEnv` and `api/src/worker.ts`; off, or a base address that is not acceptable, gives the Default and no outside call. `conditions_disabled` for a search waits for 3.5. Not ticked until it is.
     - _Requirements: 2.4_
   - [ ] 3.5 `POST /api/conditions/search`: origin and cookie checks, rate limit, query trimmed to 60 characters, at most five rounded matches, `geocode_unavailable` on failure
     - _Requirements: 1.1, 1.3_
-  - [ ] 3.6 Privacy tests: nothing under `api/src/conditions/` reads `request.cf` location or logs a query, coordinates or label; no module outside `open-meteo.ts` names an Open-Meteo host; no answer carries an upstream host
+  - [x] 3.6 Privacy tests: nothing under `api/src/conditions/` reads `request.cf` location or logs a query, coordinates or label; no module outside `open-meteo.ts` names an Open-Meteo host; no answer carries an upstream host
+    - **Done 2026-11-15** (`tools/test/conditions-privacy.test.mjs`): only `open-meteo.ts` names a weather host (a credit link to open-meteo.com is allowed anywhere), nothing in `api` or `shared` reads `request.cf`, a location header or the browser's position, nothing under `api/src/conditions/` handles a request or logs anything but the three counters of `conditions.read`, and the parsers keep named fields only.
     - _Requirements: 1.2, 1.3_
   - [ ] 3.7 `telemetry.ts` counter whitelist (reads, cache hits, timeouts, errors, defaults, geocode calls, geocode errors)
+    - **Partly built 2026-11-15:** one log event, `conditions.read` (`shared/src/log.ts`: `source`, `reason`, `cache`), gives reads, cache hits, timeouts, errors and defaults; no place, label, date or query can be written. **Not built:** the geocode counters (no search route yet). Not ticked until they are.
     - _Requirements: 2.4_
 
 - [ ] 4. Atmosphere in the viewer (`web/src/viewer/atmosphere/`)
@@ -82,6 +101,7 @@ Order: the spike first, then pure logic with property tests, then the API module
 
 - [ ] 5. Narrator and scripted lines
   - [ ] 5.1 Pass `toPromptFields(snapshot)` into `buildNarrationPrompt` (ghost-engine 2.15): one fixed sentence built from the three enums, none when the source is the Default; add one weather case per persona to ghost-engine Spike 4.1
+    - **Wired 2026-11-15** (ghost-engine 3.1): the narration job of a game started with a snapshot carries `sky` (`skyFor` in `shared/src/ghost/play.ts`: the three closed words, none when the weather was not read), and `buildNarrationPrompt` writes the one sentence. **Not done:** the weather case of ghost-engine Spike 4.1. Not ticked until it is.
     - _Requirements: 5.1_
   - [ ] 5.2 `mentionsRealWorld` word-stem list (news, crime, death, real events) wired into `validateGhostReply` (ghost-engine 2.17): a matching reply is replaced by a scripted line
     - _Requirements: 5.2_
@@ -89,12 +109,14 @@ Order: the spike first, then pure logic with property tests, then the API module
     - _Requirements: 5.2, 5.3_
   - [ ] 5.4 Red-team fixture for real events: 20 or more news, crime, death and real-event strings, and hostile place labels, through `validateGhostReply`, `buildNarrationPrompt` and the scripted library
     - _Requirements: 5.2_
-  - [ ] 5.5 Rules stay free of conditions: a source-level test that `shared/src/ghost/engine.ts` and the Party Mode reducers do not import `shared/src/conditions/`; a model-based run of `step` with and without a Snapshot
+  - [x] 5.5 Rules stay free of conditions: a source-level test that `shared/src/ghost/engine.ts` and the Party Mode reducers do not import `shared/src/conditions/`; a model-based run of `step` with and without a Snapshot
+    - **Built 2026-11-15** (`rules-free.test.ts`: no module of the ghost engine's rules and none of Party Mode's that decides something imports the conditions code; and the conditions code imports no game). The run with and without a snapshot is of `playTurn` (which calls `step`) in `play-conditions.test.ts`; the Party Mode half waits for party-mode 15.4.
     - _Requirements: 4.1, 5.1_
   - [ ]* 5.6 Write property test for the narrator prompt and scripted lines
     - **Property 11: Scripted lines and the narrator prompt carry no news, crime, death or real events**
     - **Validates: Requirements 5.1, 5.2, 5.3**
   - [ ]* 5.7 Write property test for rules unchanged by the real world
+    - The Wander half is written (`play-conditions.test.ts`: the same turns with any snapshot or none give the same progress, anchors, seeds, pose and clocks; the view differs only in `atmosphere`). The Party Mode half waits for party-mode 15.4. Not ticked until it is.
     - **Property 7: The real world never changes a rule**
     - **Validates: Requirements 2.2, 4.1, 5.1**
 

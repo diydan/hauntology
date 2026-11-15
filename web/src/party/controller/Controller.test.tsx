@@ -216,6 +216,51 @@ describe("a Lock in front of the seat", () => {
     expect(document.querySelector(".pc-pad, .pc-panel")).not.toBeNull();
   });
 
+  it("has no bar of its own above the puzzle: the Menu is in the puzzle's bar, and the Controller's header and padding come back when the Lock is gone", async () => {
+    const port = new StandInPort();
+    const { container } = render(<Controller port={port} />);
+    await seat(port);
+    expect(container.querySelector(".pc-bar")).not.toBeNull();
+    expect(container.querySelector(".pc-page--lock")).toBeNull();
+    await lockUp(port);
+    expect(container.querySelector(".pc-bar")).toBeNull(); // no Room Code, name or connection row above the puzzle
+    expect(container.querySelector(".pc-page--lock")).not.toBeNull(); // and no padding of this page around it
+    const bar = container.querySelector("header.pz-bar-row") as HTMLElement;
+    expect(bar.contains(menuButton())).toBe(true); // the Menu sits in the puzzle's bar, after the time
+    expect(bar.querySelector(".pz-bar-right .pz-timer")).not.toBeNull();
+    expect(bar.querySelector(".pz-bar-extra")?.contains(menuButton())).toBe(true);
+    expect(within(bar).queryByText("Connected")).toBeNull(); // a connection that is fine says nothing there
+    fireEvent.click(screen.getByRole("button", { name: "Give up" }));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Yes, give up" })); await Promise.resolve(); });
+    expect(container.querySelector(".pc-bar")).not.toBeNull();
+    expect(container.querySelector(".pc-page--lock")).toBeNull();
+  });
+
+  it("opens the Menu from the puzzle's bar, closes it on Escape with focus back on that button, and the Menu is the same one as without a Lock", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    await lockUp(port);
+    openMenu();
+    const sheet = screen.getByRole("complementary", { name: "Menu" });
+    expect(within(sheet).getByRole("switch", { name: /Touch only/ })).toBeTruthy();
+    fireEvent.keyDown(sheet, { key: "Escape" });
+    expect(screen.queryByRole("complementary", { name: "Menu" })).toBeNull();
+    expect(document.activeElement).toBe(menuButton());
+  });
+
+  it("says in the puzzle's bar when the connection is not fine, and no longer when it is", async () => {
+    const port = new StandInPort();
+    const { container } = render(<Controller port={port} />);
+    await seat(port);
+    await lockUp(port);
+    const bar = container.querySelector("header.pz-bar-row") as HTMLElement;
+    act(() => port.setConnection("reconnecting"));
+    expect(within(bar).getByRole("status").textContent).toBe("Reconnecting…");
+    act(() => port.setConnection("online"));
+    expect(within(bar).queryByText("Reconnecting…")).toBeNull();
+  });
+
   it("keeps a tilt choice made inside the Lock as the phone's setting, and it is there next time", async () => {
     localStorage.setItem(DEVICE_SETTINGS_KEY, JSON.stringify({ tilt: false }));
     const port = new StandInPort();

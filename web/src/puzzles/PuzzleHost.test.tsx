@@ -187,6 +187,19 @@ describe("PuzzleHost", () => {
     expect(give?.contains(screen.getByRole("button", { name: "Yes, give up" }))).toBe(true);
   });
 
+  it("puts what the hosting page gives it (the Controller's Menu) in its own bar after the time, and has no extra box when it is given nothing", () => {
+    const { container, unmount } = host("clock", { barExtra: <button type="button">Menu</button> });
+    const bar = container.querySelector("header.pz-bar-row") as HTMLElement;
+    const right = bar.querySelector(".pz-bar-right") as HTMLElement;
+    expect([...right.children].map((c) => c.className)).toEqual(["pz-timer", "pz-bar-extra"]); // the time, then the extra
+    expect(right.querySelector(".pz-bar-extra")?.textContent).toBe("Menu");
+    expect(bar.querySelector(".pz-bar-left")).not.toBeNull(); // the ? and the tries stay where they were
+    unmount();
+    const plain = host("clock");
+    expect(plain.container.querySelector(".pz-bar-right")).toBeNull();
+    expect(plain.container.querySelector("header.pz-bar-row > .pz-timer")).not.toBeNull();
+  });
+
   it("puts Tilt in the puzzle, in one row with the puzzle's own buttons, and Give up alone outside it", async () => {
     const unstub = stubCanvas();
     for (const [kind, mine] of [["lockpick", "Tension (hold)"], ["words", "Clear"], ["board", "Clear"], ["maze", null]] as const) {

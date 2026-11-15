@@ -26,6 +26,11 @@ export const LOG_SCHEMA = {
   "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
   /** The model's part of a turn (ghost-engine 4): `model`, `invalid`, `refused`, `failed`, `capped` or `off`, and how many calls it took. Never a word of the prompt or the reply. */
   "play.narrate": { outcome: "word", attempts: "int" },
+  /**
+   * The real world was read once for a new game (conditions 3.7): where the weather came from (`live`, `memory` or `default`), why it was the Default when it was (`ok`, `disabled`,
+   * `no_place`, `timeout`, `error` or `empty`) and whether the answer came from the 15 minute cache. Counters of one word each: never a place, a coordinate, a label, a date or a query.
+   */
+  "conditions.read": { source: "word", reason: "word", cache: "bool" },
   /** A game was finished or played again, with how many turns it took. */
   "play.end": { turns: "int" },
   "play.reset": { turns: "int" },

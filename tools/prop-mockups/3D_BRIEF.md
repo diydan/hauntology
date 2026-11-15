@@ -45,7 +45,7 @@ Colours come from the game's own palette (`design/tokens.json`) so the table mat
 
 **QR decision:** a one-colour raised QR scans badly. Our default is a **sticker QR** in a recessed pocket.
 
-**QR stickers: ready** in `qr/`. Six images (`hw-r1-music-box.png` to `hw-r6-bell.png`) and an A4 sheet (`qr-sticker-sheet-A4.pdf` and `.png`, two of each so one set is spare, with cut marks and a 50 mm check bar). The text in each is exactly `hw:r1` to `hw:r6`, the form the game accepts. Each is a version 1 code (21 x 21 modules), error level Q (a scratched sticker still scans), with the standard 4-module white border inside the 36 x 36 mm sticker. That gives 1.24 mm per module, above the game's 1.2 mm minimum. We decoded every image back to its text as a check.
+**QR stickers: ready** in `qr/`. Six images (`hw-r1-music-box.png` to `hw-r6-bell.png`) and an A4 sheet (`qr-sticker-sheet-A4.pdf` and `.png`, two of each so one set is spare, with cut marks and a 50 mm check bar). The text in each is exactly `hw:r1` to `hw:r6`, the form the game accepts. Each is a version 1 code (21 x 21 modules), error level Q (a scratched sticker still scans), with the standard 4-module white border inside the 36 x 36 mm sticker. That gives 1.24 mm per module, above the game's 1.2 mm minimum. We decoded every image back to its text as a check. The Relic Token has a 5.6 mm peg in the middle of its sticker pocket, so punch a 6 mm hole in the middle of each sticker: the A4 sheet marks where (a cross in a dashed circle, ticks at the middle of each side, and 6 mm and 7 mm gauge circles). We checked that all six codes still decode with a 6 mm hole; a 14 mm hole did not.
 
 | Id | Relic |
 |---|---|

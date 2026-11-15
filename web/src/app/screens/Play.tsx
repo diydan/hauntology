@@ -7,6 +7,7 @@ import { DeletePlace } from "../haunt/DeletePlace";
 import { Chat } from "../play/Chat";
 import { ContentNotice } from "../play/ContentNotice";
 import { createPlayController, type PlayController, type ViewerPort } from "../play/controller";
+import { ghostFace } from "../play/ghost-face";
 import { Hud, TOTAL_MEMORIES } from "../play/Hud";
 import { Journal } from "../play/Journal";
 import { createVoice } from "../play/voice";
@@ -168,6 +169,8 @@ export default function Play() {
   }
 
   const chatOpen = ui.play.mode === "chat";
+  // Who the visitor picked on Haunt; it does not change during a visit to this Screen.
+  const ghost = ghostFace(memory.get());
   return (
     <div className="play-layout">
       <main className="play-main ui-stack">
@@ -205,7 +208,7 @@ export default function Play() {
       </main>
       {chatOpen ? (
         <Chat
-          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable}
+          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} ghost={ghost}
           onSubmit={(input) => {
             voice.unlock();
             void controller.submit(input);

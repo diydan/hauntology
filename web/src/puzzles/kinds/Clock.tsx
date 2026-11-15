@@ -123,7 +123,7 @@ export default function Clock({ view, feel, submit, announce }: KindProps<"clock
             <button type="button" className="ui-button" aria-pressed={hand === "hour"} aria-label="Hour hand" onClick={() => chooseHand("hour")}>Hour</button>
             <button type="button" className="ui-button" aria-pressed={hand === "minute"} aria-label="Minute hand" onClick={() => chooseHand("minute")}>Minute</button>
           </div>
-          <button type="button" className="ui-button" aria-pressed={twist} onClick={() => void toggleTwist()}>{twist ? "Twist: on" : "Twist"}</button>
+          <button type="button" className="ui-button" aria-pressed={twist} aria-label={twist ? "Twist: on" : "Twist"} onClick={() => void toggleTwist()}>{twist ? <>Twist<span className="pz-st" aria-hidden="true">: on</span></> : "Twist"}</button>
           {twist ? <button type="button" className="ui-button" aria-pressed={flip} aria-label="Turns the wrong way? Flip it" onClick={toggleFlip}>Flip</button> : null}
         </div>
         <div className="pz-grid4">

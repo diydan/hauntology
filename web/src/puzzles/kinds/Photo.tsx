@@ -7,7 +7,7 @@ import "./Photo.css";
 
 /** The board is drawn in these units and scaled by CSS: the frame on top, the tray of loose pieces below it. */
 const GAP = 24;
-const INSET = 4;
+const INSET = 7; // the pieces and the spots sit this far inside their cell, so two neighbours are 14 units apart: 8 px or more even on the smallest phone, where the board is drawn at 0.64
 /** A drop whose piece middle is within this many units of a frame spot's middle goes into that spot. */
 const RANGE = 62;
 /** A finger that moves less than this many screen pixels between down and up made a tap, not a drag. */

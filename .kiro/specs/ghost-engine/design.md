@@ -157,9 +157,9 @@ The screens of this spec are built from `design/elements.css`, with the values o
 
 | Part of this spec | Elements |
 |---|---|
-| Chat panel | `ui-sheet ui-sheet-head ui-sheet-title ui-log ui-log-row ui-log-who ui-field` |
+| Chat panel | `ui-sheet ui-sheet-head ui-sheet-title ui-log ui-log-row ui-log-who ui-field ui-note` |
 | Quick buttons | `ui-choices ui-button--quiet` |
-| The ghost's reply | `ui-dialogue ui-speech ui-nameplate ui-portrait` |
+| The ghost's reply | `ui-stage ui-dialogue ui-speech ui-nameplate ui-portrait` |
 | Journal | `ui-panel ui-log` |
 
-A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The chat is not built yet, so it is built from the elements the first time.
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The chat and the journal were built from the elements the first time (2026-11-15, tasks 6.1 and 6.2): the sheet is `ui-sheet`, the ghost stands on a `ui-stage` (tinted by its Speaker, green only for the Whisper), and the one line that says typed words may go to a model is a `ui-note` under the text box (Requirement 2.4).
