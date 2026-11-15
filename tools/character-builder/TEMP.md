@@ -57,3 +57,4 @@ Look panel, "Face print (test)". Two test portraits: The Whisper and Mr. Ashby (
 - Step 2, the 3D head (slider "3D beautify"): face shape 25% toward neutral, a faint smile, softer light, weaker grain, whiter 3D teeth.
 - "Show original" turns both off. The shader's old 2D retouch is removed (it lives in step 1 now).
 - Fix: the face's mean brightness for the de-light was never set (a comment swallowed the line); the de-light now also applies to the eyeballs, so no dark ring round the eyes.
+- Face fit fix: the fit is linear about the unstretched face, so a face-width row in the photo is now matched to the mesh row at the same proportion of eye-to-chin (not the same height). Before, a long face's jaw row landed on the short mesh's narrow chin, so the fit maxed out jaw width and cheeks (wide, short look).
