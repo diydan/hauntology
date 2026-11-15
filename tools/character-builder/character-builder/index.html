@@ -746,6 +746,7 @@ const HR_SPEC = `
 const MO = { on: { value: 0 }, k: { value: 0.7 } };
 const MO_GLSL = `uniform float uMoOn, uMoK; varying vec3 vMoP;`;
 const MO_LIGHT = `outgoingLight *= mix( 1.0, mix( 0.22, 0.9, smoothstep( 4.5, 9.6, vMoP.z ) ), uMoOn * uMoK );\n`;
+const SOCK_CUT = { value: 1e9 }; // bind-pose height (cm) above which shoe/sock geometry is not drawn; set by insetBody when a long dress is worn
 const EYE_SINK = { value: 0 }; // cm, set with the face print (realistic style only)
 const FACEKEY = /^(mat_base_[MF]_face|mat_base_eye\.001)$/; // the skin AND the eyeballs: the skin has holes where the eyes sit, so the photo's eyes are printed onto the eyeballs
 async function makeMat(keyName, side) {
@@ -784,10 +785,14 @@ async function makeMat(keyName, side) {
         .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = mix( metalnessFactor, 0.0, uHrShine );')
         .replace('outgoingLight += uTint *', HR_SPEC + 'outgoingLight += uTint *');
     }
+    if (/^mat_shoes\./.test(keyName)) { // under a long dress, the sock or boot shaft above the hem is cut away (it poked through the dress when the cloth folded)
+      sh.uniforms.uSockCut = SOCK_CUT; sh.vertexShader = 'varying float vShoeY;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vShoeY = position.y;');
+      sh.fragmentShader = 'uniform float uSockCut; varying float vShoeY;\n' + sh.fragmentShader.replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n if ( vShoeY > uSockCut ) discard;');
+    }
     if (isCloth) {
       Object.assign(sh.uniforms, { uClDet: CL.det, uClMask: CL.mask, uClTex: CL.tex, uClStr: CL.str, uClInv: CL.inv, uClOn: CL.on, uClFlat: FP.u.uFpFlat, uClAlpha: FP.u.uFpAlpha, uClC: CL.C, uClW: CL.W });
       sh.vertexShader = 'attribute vec3 aGarm; varying vec3 vClP, vClN;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vClP = position; vClN = normal; transformed += aGarm; // aGarm: the hem lengthened or shortened to the photo (fitHem)');
-      sh.fragmentShader = CL_GLSL + '\n' + sh.fragmentShader.replace(anchor, anchor + '\n' + CL_FRAG).replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += clPC * uClFlat * clPA;');
+      sh.fragmentShader = CL_GLSL + '\n' + sh.fragmentShader.replace(anchor, anchor + '\n' + CL_FRAG).replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\n if ( ! gl_FrontFacing ) { reflectedLight.directSpecular *= 0.0; reflectedLight.indirectSpecular *= 0.0; } // inside a garment: no shine (the stage rims lit a fold\'s inside pink)').replace('outgoingLight += uTint *', 'outgoingLight += ( gl_FrontFacing ? 1.0 : 0.0 ) * uTint *').replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += clPC * uClFlat * clPA;');
     }
     if (isMouth) {
       Object.assign(sh.uniforms, { uMoOn: MO.on, uMoK: MO.k });
@@ -875,8 +880,12 @@ function skirtWeights(m) {
     for (let k = 0; k < 4; k++) { SI.setComponent(i, k, top[k] ? top[k][0] : 0); SW.setComponent(i, k, top[k] ? top[k][1] / sum : 0); }
   }
   { // seam points (panels' vertices at the same spot) must share one set of weights, or the seam opens when the legs move (a slit down the front of a dress)
-    const first = new Map(); for (let i = 0; i < P.count; i++) { const k = Math.round(P.getX(i) * 100) + ',' + Math.round(P.getY(i) * 100) + ',' + Math.round(P.getZ(i) * 100), f0 = first.get(k);
-      if (f0 === undefined) first.set(k, i); else for (let c = 0; c < 4; c++) { SI.setComponent(i, c, SI.getComponent(f0, c)); SW.setComponent(i, c, SW.getComponent(f0, c)); } } }
+    // within 3 mm, not only the exact same spot: a slit's two edges meet at rest but not exactly, and must move as one (stitched shut)
+    const TOL = 0.3, cells = new Map(), ck = (x, y, z) => Math.floor(x / TOL) + ',' + Math.floor(y / TOL) + ',' + Math.floor(z / TOL);
+    for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), cx = Math.floor(x / TOL), cy = Math.floor(y / TOL), cz = Math.floor(z / TOL); let f0 = -1;
+      for (let a = -1; a <= 1 && f0 < 0; a++) for (let b = -1; b <= 1 && f0 < 0; b++) for (let c = -1; c <= 1 && f0 < 0; c++) { const l = cells.get((cx + a) + ',' + (cy + b) + ',' + (cz + c)); if (l) for (const j of l) if (Math.hypot(P.getX(j) - x, P.getY(j) - y, P.getZ(j) - z) < TOL) { f0 = j; break; } }
+      if (f0 >= 0) { for (let c = 0; c < 4; c++) { SI.setComponent(i, c, SI.getComponent(f0, c)); SW.setComponent(i, c, SW.getComponent(f0, c)); } }
+      else { const k = ck(x, y, z); (cells.get(k) || cells.set(k, []).get(k)).push(i); } } }
   SI.needsUpdate = SW.needsUpdate = true; m.userData.skirt = between;
 }
 function removePart(slot) { const p = parts[slot]; if (!p) return; for (const o of p.objs) o.parent && o.parent.remove(o); for (const e of p.mats) e.mat && e.mat.dispose && e.mat.dispose(); delete parts[slot]; if (slot === 'hair' || slot === 'bangs') rebuildHairPhysics(); }
@@ -970,6 +979,7 @@ function insetBody() {
   const bodies = []; bodyObj.traverse(o => { if (o.isSkinnedMesh && /^[MF]_body_/.test(o.name) && o.geometry.attributes.position) bodies.push(o); }); if (faceMesh && faceMesh.geometry.attributes.position) bodies.push(faceMesh);
   const setHide = (m, arr) => { const g = m.geometry; if (g.attributes.aHide && g.attributes.aHide.count === g.attributes.position.count) { g.attributes.aHide.array.set(arr); g.attributes.aHide.needsUpdate = true; } else g.setAttribute('aHide', new THREE.BufferAttribute(arr, 1)); };
   const setAll = (m, arr) => { const g = m.geometry; if (g.attributes.aInset && g.attributes.aInset.count === g.attributes.position.count) { g.attributes.aInset.array.set(arr); g.attributes.aInset.needsUpdate = true; } else g.setAttribute('aInset', new THREE.BufferAttribute(arr, 3)); };
+  SOCK_CUT.value = 1e9;
   if (!garments.length) { for (const m of bodies) { if (m.geometry.attributes.aInset) setAll(m, new Float32Array(m.geometry.attributes.position.count * 3)); setHide(m, new Float32Array(m.geometry.attributes.position.count)); } fitHem(); return; }
   const hemLog = fitHem(); // first: the hem is lengthened, and the skin under the lengthened part is covered too
   // garment triangles in a coarse grid
@@ -1007,6 +1017,7 @@ function insetBody() {
     const rad = new Map(); for (let i = 0; i < P.count; i++) { const y = P.getY(i) + (G ? G.getY(i) : 0), dx = P.getX(i) - cx, dz = P.getZ(i) - cz, k = Math.floor(y / SL) + ',' + (((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA); rad.set(k, Math.max(rad.get(k) || 0, Math.hypot(dx, dz))); }
     skirtIn.push({ hemY, topY, inside: (x, y, z) => { if (y < hemY + 5 || y > topY - 12) return false; const dx = x - cx, dz = z - cz, a0 = ((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA; let r = 0; for (const da of [-1, 0, 1]) for (const dy of [-1, 0, 1]) r = Math.max(r, rad.get((Math.floor(y / SL) + dy) + ',' + ((a0 + da + NA) % NA)) || 0); return Math.hypot(dx, dz) < r + 2; } }); } // a little OUTSIDE the resting outline too: a wide step carries the leg out to the dress wall
   if (skirtIn.length) for (const [k, nn] of nrm) if (skirtIn.some(sk => sk.inside(nn[3], nn[4], nn[5]))) hidden.add(k);
+  SOCK_CUT.value = skirtIn.length ? Math.min(...skirtIn.map(sk => sk.hemY)) + 14 : 1e9;
   // keep only skin WELL inside a garment: skin within ER cm of a garment's OPENING (hem, cuff, collar, shoe top: edges with one triangle) stays drawn,
   // because a moving leg or foot brings it out past the opening (holes at knees and ankles). Distance to the opening, not to bare skin: inner thighs are bare but deep inside a skirt
   if (hidden.size) { const ER = 4, CK = 9, cell = new Map(), ck = (x, y, z) => Math.floor(x / CK) + ',' + Math.floor(y / CK) + ',' + Math.floor(z / CK), pk = (x, y, z) => Math.round(x * 20) + ',' + Math.round(y * 20) + ',' + Math.round(z * 20);
