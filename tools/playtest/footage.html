@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<title>Footage test · Hauntology playtest</title>
+<!-- One public-domain clip on three phone screens, in three looks. The rules for footage are Requirement 18 of .kiro/specs/puzzles.
+     The clip, where it came from and why it is free are in media/PROVENANCE.md. -->
+<link rel="stylesheet" href="/design/tokens.css">
+<link rel="stylesheet" href="/design/fonts.css">
+<link rel="stylesheet" href="/design/elements.css">
+<link rel="stylesheet" href="css/footage.css">
+</head>
+<body class="ui-page" data-look="tint">
+<main class="ft ui-stack ui-stack--loose">
+  <header class="ui-header"><h1 class="ui-header-title">Footage test</h1></header>
+  <p class="ui-lead">Nosferatu (1922): the shadow climbing the stairs. 4 seconds, no sound, 77 KB.</p>
+
+  <div class="ui-stack ui-stack--tight">
+    <div class="ui-segments" role="radiogroup" aria-label="Look">
+      <button class="ui-button" type="button" role="radio" aria-checked="true" data-look="tint">Film tint</button>
+      <button class="ui-button" type="button" role="radio" aria-checked="false" data-look="mono">Black and white</button>
+      <button class="ui-button" type="button" role="radio" aria-checked="false" data-look="ink">Yellow ink</button>
+    </div>
+    <div class="ui-row">
+      <button id="ft-play" class="ui-button" type="button">Pause footage</button>
+      <p id="ft-status" class="ui-status" role="status"></p>
+    </div>
+  </div>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-a">
+    <h2 id="ft-a" class="ui-eyebrow">1 · A Sight (full screen behind the clue)</h2>
+    <div class="ft-phone">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack ui-stack--tight" aria-label="The clue">
+        <p class="ui-eyebrow">A Sight · gone in 5 seconds</p>
+        <p class="ui-prompt">The code starts with 7.</p>
+        <p class="ui-hint">Look at the stairs. They will not stay.</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-b">
+    <h2 id="ft-b" class="ui-eyebrow">2 · A Lock (faint, behind the controls)</h2>
+    <div class="ft-phone ft-dim">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack" aria-label="The safe">
+        <p class="ui-eyebrow">Safe · 3 attempts</p>
+        <div class="ui-chips ft-code" role="list" aria-label="Code so far"><span class="ui-chip is-active" role="listitem">7</span><span class="ui-chip" role="listitem">?</span><span class="ui-chip" role="listitem">?</span><span class="ui-chip" role="listitem">?</span></div>
+        <button class="ui-button ui-button--primary" type="button">Open</button>
+        <button class="ui-button" type="button">Let the ghost open it</button>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-c">
+    <h2 id="ft-c" class="ui-eyebrow">3 · Nothing came loose (plays once, on Replay)</h2>
+    <div class="ft-phone">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-once" muted playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-panel--danger ui-stack" aria-label="The result">
+        <p class="ui-prompt">Nothing came loose.</p>
+        <p class="ui-hint">Three attempts. The house keeps it.</p>
+        <button id="ft-replay" class="ui-button" type="button">Replay</button>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-d">
+    <h2 id="ft-d" class="ui-eyebrow">4 · The clock shadow (the Turn Clock, seen by the whole table)</h2>
+    <div class="ft-tv">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-scrub" muted playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack ui-stack--tight" aria-label="The Turn Clock">
+        <p id="ft-clock-text" class="ui-prompt">Turn Clock 0:30</p>
+        <p class="ui-hint">The shadow stands where the clock is. Help steps it back, Spook steps it forward.</p>
+        <div class="ui-row">
+          <button id="ft-clock-start" class="ui-button ui-button--primary" type="button">Start turn</button>
+          <button id="ft-clock-help" class="ui-button" type="button">Help +10 s</button>
+          <button id="ft-clock-spook" class="ui-button" type="button">Spook −10 s</button>
+          <button id="ft-clock-pause" class="ui-button" type="button">Pause clock</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-e">
+    <h2 id="ft-e" class="ui-eyebrow">5 · The Reel (the film plays forward as the Haunt rises)</h2>
+    <div class="ft-tv">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-reel" muted playsinline preload="auto" poster="media/reel-ship.jpg"><source src="media/reel-ship.webm" type="video/webm"><source src="media/reel-ship.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack ui-stack--tight" aria-label="The Haunt">
+        <p id="ft-haunt-text" class="ui-eyebrow">Haunt 0 of 10</p>
+        <div id="ft-meter" class="ui-meter" role="img" aria-label="Haunt 0 of 10"></div>
+        <p id="ft-reel-text" class="ui-hint" role="status">A ship, far out at sea.</p>
+        <div class="ui-row">
+          <button id="ft-haunt-down" class="ui-button" type="button">Haunt −1</button>
+          <button id="ft-haunt-up" class="ui-button ui-button--primary" type="button">Haunt +1</button>
+        </div>
+        <div class="ui-segments" role="radiogroup" aria-label="Haunt maximum">
+          <button class="ui-button" type="button" role="radio" aria-checked="false" data-max="8">Max 8</button>
+          <button class="ui-button" type="button" role="radio" aria-checked="true" data-max="10">Max 10</button>
+          <button class="ui-button" type="button" role="radio" aria-checked="false" data-max="12">Max 12</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-f">
+    <h2 id="ft-f" class="ui-eyebrow">6 · Two endings (a hero shot, then our own title card)</h2>
+    <div class="ft-tv">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-end" muted playsinline preload="auto" poster="media/end-dawn.jpg"><source src="media/end-dawn.webm" type="video/webm"><source src="media/end-dawn.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack ui-stack--tight" aria-label="The ending">
+        <div id="ft-card" class="ui-stack ui-stack--tight" hidden>
+          <p id="ft-card-title" class="ui-title"></p>
+          <p id="ft-card-lines" class="ui-lead" role="status"></p>
+        </div>
+        <div class="ui-row">
+          <button id="ft-end-detectives" class="ui-button" type="button">Detectives win</button>
+          <button id="ft-end-house" class="ui-button" type="button">The house wins</button>
+          <button id="ft-end-skip" class="ui-button" type="button">Skip</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <p class="ui-hint">Clips: Nosferatu (1922), public domain. Picture only: the original music and every title card are left out; the cards are ours. See media/PROVENANCE.md.</p>
+</main>
+<script type="module" src="js/footage.js"></script>
+</body>
+</html>

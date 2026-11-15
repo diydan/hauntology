@@ -63,6 +63,7 @@ sockets are open. Anyone with the link can push, so treat a room code like a pas
 | `/safe` `/musicbox` `/candles` `/moved` | the second set |
 | `/photo` `/words` `/board` `/maze` | the third set (maze is the optional extra) |
 | `/design/` | the design system catalogue: every element and token of the look (`design/` in the repo), to check the look on a phone |
+| `/footage` | one public-domain clip (Nosferatu, 1922, the stair shadow) behind a Sight, a Lock and "Nothing came loose", in three looks (Spikes puzzles 1.7). Rules: Requirement 18; record: `media/PROVENANCE.md`. It uses `/design/`, so serve the built site: `node build.mjs && node serve.mjs 8791 --dist`, then open `http://127.0.0.1:8791/footage.html` |
 
 Each puzzle page has easy and normal, three attempts, a Cap timer, **Touch only**, **Assist**, a Sight / walk delay /
 Faded flow for memory puzzles, and a result card to copy. Add `#seed=12345&level=normal` to replay the same lock.
@@ -73,6 +74,7 @@ Faded flow for memory puzzles, and a result card to copy. Add `#seed=12345&level
 node build.mjs            # copies the public files into dist/ (and design/ to dist/design/); leaves dist/puzzles alone
 wrangler deploy           # Worker + assets + Durable Object, custom domain mtest.hauntology.app
 node serve.mjs            # local static server on 127.0.0.1:8787 (no lab, no https: tilt will not work)
+node serve.mjs 8791 --dist  # the same, but serving the built dist/ (has /design/ and /media/), with byte ranges for Safari video
 ```
 
 Tilt needs https, so test on a phone through the deployed domain. `src/`, `test/` and docs are not uploaded.

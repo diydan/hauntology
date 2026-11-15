@@ -198,7 +198,7 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 
 1. THE Puzzles SHALL make no paid call and no model call, SHALL use no SpendTicket, and WHEN `PUZZLES_ENABLED` is false THEN Party Mode SHALL run a plain Inspect and Wander SHALL show no Locks switch.
 2. THE Room and the Session SHALL delete Transcripts, open Locks and the record of shown Sights with the Room or the Session, SHALL not log a Transcript, and SHALL count only the Kind, the outcome and the number of Attempts (never a time, a Player or a Tilt value) in telemetry.
-3. THE Puzzles SHALL use no third-party game code, picture or sound; the Cyber-Orb demo and its licence (CC BY-NC 4.0) SHALL be referenced as a design source only, and nothing from it SHALL be copied.
+3. THE Puzzles SHALL use no third-party game code, picture or sound, except public-domain footage that meets Requirement 18; the Cyber-Orb demo and its licence (CC BY-NC 4.0) SHALL be referenced as a design source only, and nothing from it SHALL be copied.
 4. THE project SHALL record the phone checks in `docs/spikes/puzzles-<n>.md` and add the unverified assumptions of this spec to `.kiro/steering/tech.md`.
 
 ### Requirement 15
@@ -238,3 +238,55 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 1. WHILE the Puzzle setting is not `off` THEN a human Poltergeist SHALL be able to start one **Haunting puzzle** per Round on their own phone (or the solo screen), at any time except during their own Answer choice, of a Kind with no Sight, at the level of 1.4.
 2. WHEN a Haunting puzzle is solved THEN the Room SHALL give that Poltergeist one Scare point, and a Haunting puzzle SHALL change no card, Hand, Residue, Turn, Turn Clock, Haunt level or win, and SHALL appear in no public log line during the game.
 3. A Haunting puzzle SHALL NOT be offered to a Detective or a Bot, SHALL NOT use a Zone's Lock, and SHALL close without a point when the game ends or the Round ends.
+
+### Requirement 18
+
+**User Story:** As the owner, I want old public-domain film on the phone screens, from a shot of a few seconds to whole scenes, so that the haunting has a real past that no model can make, for the cost of storage and delivery only and without a rights claim on a game I may sell. (Footage rules, added 2026-11-15; lengthened the same day)
+
+#### Acceptance Criteria
+
+1. THE game SHALL use a clip of a film only WHEN the film is free in the United States (published before 1931) and free in the European Union and Luxembourg (the last of its director, screenplay author, dialogue author and composer of music made for the film died more than 70 years ago, Directive 2006/116/EC Art. 2(2)), and a film that is free only in the United States (for example Night of the Living Dead, House on Haunted Hill and Carnival of Souls) SHALL NOT be used.
+2. EVERY clip SHALL have an entry in a `PROVENANCE.md` kept beside the clip, giving the film and year, the shot and its time (a long film gets one entry for each scene cut from it), the source address and the date it was fetched, what the source file is (an original print or a restoration, and who made it), the credited makers with their death years read from at least two sources, why the film is free, the flash check of 18.6, any open point, and who checked it and when, clips cut from one source file MAY share one source record for the rows about that source (the source, what the file is, the makers, why it is free, the open point and the check) while each keeps its own shot, cut, size and flash check, and a test SHALL fail WHEN a clip has no entry or a missing row.
+3. THE clip SHALL be taken from a public archive (Wikimedia Commons or the Internet Archive) and not from a disc, a streaming service or a copy that cannot be traced to a print, WHERE the copy is a restoration THEN the record SHALL say so and name who made it, and the clip SHALL be served from the game's own origin (a static asset, or a bucket behind the game's own Worker) with byte ranges so that a phone can start anywhere, with no hotlink and no third-party player.
+4. THE clip SHALL be picture only: no audio track, none of the film's music, and no title card or intertitle (the original and restored ones are the restorers' work), and the game SHALL use its own sound.
+5. THE screens SHALL treat footage as decoration: muted, `playsinline`, no controls, hidden from a screen reader, never needed to solve, read or finish anything, with no text over the picture (text sits in a solid panel at 4.5 to 1), stopped WHILE the page is hidden, a still poster frame WHEN the Player prefers reduced motion or the browser is set to save data (a tap on Play is the Player's own choice), loading only its metadata until its screen plays it (`preload="metadata"` for a file over 1 MB), a Stop control of at least 48 CSS pixels on the screen WHILE a scene that lasts over 5 seconds plays, and WHERE a clip cannot load THEN the still frame SHALL stay and nothing else SHALL break.
+6. A scene SHALL last at most 10 minutes, each video file SHALL be at most 40 MB and at most 480 pixels high and its poster at most 50 KB, a scene SHALL come as a `.webm`, an `.mp4` (for iPhone) and a `.jpg`, a scene SHALL be screened with `tools/playtest/flash-check.mjs` and SHALL NOT show more than three flashes in any one second (WCAG 2.3.1; the light limits of Property 16 still hold for what the phone adds), a scene with lightning or a strobe SHALL also be watched by a person, and footage SHALL cost nothing per play beyond storage and delivery (no model call and no paid per-view service, 14.1).
+7. THE credits SHALL name each film and year, and a film's title, poster or logo SHALL NOT be used as the game's name or in its store page or marketing.
+8. BEFORE the game is sold, a lawyer SHALL read every `PROVENANCE.md` entry, the restoration point most of all, and a film marked Held or Check in the design SHALL NOT ship until it is checked.
+
+### Requirement 19
+
+**User Story:** As a Player at the table, I want the Turn Clock to be a shadow climbing the stairs on the shared screen, so that everyone feels the time and sees a Help or a Spook change it. (Clock shadow, added 2026-11-15)
+
+#### Acceptance Criteria
+
+1. WHILE a Turn Clock runs THEN the Host MAY show the clock shadow: one clip that is scrubbed and never played, whose position is `1 - remaining / base` of the Turn (0 at the start of the Turn, 1 when the clock reaches zero, held between), where `remaining` and `base` are the public values the Turn Clock shows.
+2. WHEN a Help or a Spook changes the Turn Clock THEN the shadow SHALL step back or forward, within one second, by the share of the Turn that the change is (10 seconds of the base), because the shadow follows the clock and nothing else.
+3. THE clock shadow SHALL take no input but the public Turn Clock, SHALL never move on a private result, a Hand, a Residue, an Inspect or the sender of a Nudge, SHALL stand still WHILE the clock is paused, and SHALL NOT be shown WHERE the Master chose no Turn Clock.
+4. WHEN the Player prefers reduced motion, the browser is set to save data, or the Master has footage off THEN the shadow SHALL move at most once a second and never ahead of the clock, and the Turn Clock SHALL always be shown as numbers beside it (a picture is never the only signal).
+5. THE clip SHALL have a clear picture at every position, the Host SHALL set its time at most ten times a second, and WHEN the clock reaches zero THEN it SHALL show its last frame and say in words that the clock ran out.
+
+### Requirement 20
+
+**User Story:** As a Player, I want the film on the shared screen to play forward as the Haunt rises, so that I read the danger from the picture and not from a number. (The Reel, added 2026-11-15)
+
+#### Acceptance Criteria
+
+1. THE Host MAY show the Reel: one shot for each Haunt level, from `reelShot(level, max)` in `tools/playtest/js/scenes.js`: the ship at levels 0 to 2, the crate at 3, the street at 4 and 5, the stairs at 6, the hand at 7 and 8, the bed from 9 to the level below the maximum, and the house at the maximum, for every maximum the Master can choose (8, 10 and 12), and the shot SHALL never go back to an earlier shot as the level rises.
+2. WHEN the Haunt first reaches 3, 6 or 9 below the maximum (a Haunt Event of `party-mode`) THEN the shot SHALL differ from the shot of the level before, so that an Event is always seen.
+3. WHEN the Haunt level rises THEN the Host SHALL play the shot of the new level once, muted, and SHALL say in words, in the public log and its live region, what the shot shows and that a Haunt Event fired, and the Haunt number and its meter SHALL stay on screen.
+4. THE Reel SHALL move only on the public Haunt level, SHALL NOT play during the 15 second window after a Suggestion or during an answer choice, SHALL always be skippable, and SHALL NOT be shown on the Display under the pyramid in this version (its light limits are those of `party-mode` 7.4).
+5. EVERY shot SHALL be a clip under Requirement 18 of at most 5 seconds, and the game SHALL work with every shot missing, because the Haunt number, the meter and the words carry the meaning.
+
+### Requirement 21
+
+**User Story:** As a Player, I want the game to end on a scene and a card of words, so that a win and a haunting feel different and the end can be shared. (Two endings and title cards, added 2026-11-15)
+
+#### Acceptance Criteria
+
+1. WHEN the game ends with a Detective winner THEN the Host MAY play the shot `dawn` (the sun rises and the window is empty) and then show a title card, and WHEN the house wins THEN it MAY play the shot `house` (something waits in the doorway) and then show a title card.
+2. THE house card SHALL say that the haunting continues, that no one won and who joined the haunting (the rule of `party-mode` on the ending screen), and no card, string or log line of the scenes SHALL use the word Poltergeist.
+3. THE title card SHALL be our own words in the design system's own font on our own card, never a card or intertitle taken from a film, and the ending recap of `party-mode` SHALL follow it.
+4. WHILE an ending shot plays THEN a Skip control of at least 48 CSS pixels SHALL be on screen, and Skip SHALL stop the shot and show the card at once.
+5. WHEN footage is off (reduced motion, data saver, a clip that cannot load) THEN the card SHALL show at once with the still frame, and the ending SHALL read the same in words.
+6. THE shot and the card SHALL show only public state: who won or that the house did, and the nicknames of those who joined the haunting, and never the Solution before the order of the recap allows it.

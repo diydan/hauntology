@@ -291,3 +291,45 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ]* 12.4 Write property test for Haunting puzzles
     - **Property 22: Haunting puzzles change only Scare points**
     - **Validates: Requirements 17.1, 17.2, 17.3**
+
+- [ ] 13. Public-domain footage (added 2026-11-15; satisfies Requirement 18)
+  - [x] 13.1 One clip tried on the playtest site: `stair-shadow` (Nosferatu, 1922, Orlok's shadow on the stairs, 4.2 s), the page `footage.html` with three screens and three looks, the clip files and `media/PROVENANCE.md`, the build copy, and `test/footage-page.test.js`
+    - Built 2026-11-15 in `tools/playtest/` (not deployed). Checked in desktop Chrome at 390 px wide: the clip plays and loops, Replay works, no sideways scroll. Not checked on a phone, in Safari or with a screen reader. Later the same day: the page starts still under data saver, the preload rule, `tools/playtest/flash-check.mjs` (whole-frame brightness, WCAG 2.3.1 counting; 7 tests, 5 mutations caught) and `node serve.mjs 8791 --dist` (the built site with byte ranges, for local testing).
+    - _Requirements: 18.2, 18.3, 18.4, 18.5, 18.6_
+  - [ ]* 13.2 Write the property test for footage
+    - **Property 23: Footage is decoration with a record**
+    - **Validates: Requirements 18.2, 18.3, 18.4, 18.5, 18.6**
+  - [ ] 13.3 Spike puzzles 1.7: footage on a phone. On a real Android phone (Chrome) and an iPhone (Safari and the home-screen web app): does the muted clip start by itself and stay inline, does it loop without a flash, is it smooth on mobile data, which look reads best (tint, black and white, yellow ink), and is the Lock readable over it. Record in `docs/spikes/puzzles-<n>.md`
+    - _Requirements: 18.5, 18.6_
+  - [ ] 13.4 Choose where footage goes in the real game (a Sight, a Lock, "Nothing came loose", a title card), build it as one `Footage` piece from the design elements (added to `design/elements.css` and `design/catalogue.html` first), and keep Requirement 18.5 in it
+    - _Requirements: 18.5, 16.2_
+  - [ ] 13.5 The credits name each film and year; check that no film title, poster or logo is in the game's name, store page or marketing
+    - _Requirements: 18.7_
+  - [ ] 13.6 Rights check: look up *Caligari* (Becce's score), *Phantom of the Opera* (credited makers, and Luxembourg's own text for the shorter-term rule), the 1924 premiere music of *Waxworks* and the credits of *The Haunted Castle* before any is used, and have a lawyer read every `PROVENANCE.md` entry (the restoration point most of all) before the game is sold
+    - _Requirements: 18.1, 18.8_
+  - [ ] 13.7 Find a traceable copy for a long scene. For *Nosferatu*, *The Student of Prague* and *Waxworks*: the oldest unprocessed print in a public archive whose record names it, or a licence from the restorer (the Murnau Foundation, the Deutsche Kinemathek, the Filmmuseum München); until then none of the three has a copy that passes 18.3 for scenes longer than a shot
+    - _Requirements: 18.1, 18.3_
+  - [ ] 13.8 Longer scenes: let the `Footage` piece play a scene of minutes (byte ranges, metadata only until played, a Stop control after 5 seconds), cut the first scene with its `PROVENANCE.md` entry and flash screen, and include a 3 minute scene on mobile data in spike puzzles 1.7
+    - _Requirements: 18.3, 18.5, 18.6_
+
+- [ ] 14. Scenes from footage (added 2026-11-15; satisfies Requirements 19, 20 and 21)
+  - [x] 14.1 The rules and the demos: `tools/playtest/js/scenes.js` (clock shadow position, the Reel's shot for a Haunt level, the ending cards), `js/scenes-page.js`, sections 4 to 6 of `footage.html`, seven new clips (`reel-ship`, `reel-coffin`, `reel-streets`, `reel-hand`, `reel-bed`, `end-dawn`, `end-house`) with their `PROVENANCE.md` entries and flash screens, and `test/scenes.test.js` plus the scene tests in `test/footage-page.test.js` (8 mutations caught)
+    - Built 2026-11-15, not deployed. Checked in jsdom with a stubbed media element and, for the page, in desktop Chrome; not checked on a phone, an iPhone, a TV or with a screen reader.
+    - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 20.1, 20.2, 20.3, 20.5, 21.1, 21.2, 21.3, 21.4, 21.5_
+  - [ ] 14.2 The clock shadow in the Host: read the public Turn Clock readout, scrub `stair-shadow` at most ten times a second, stand still when paused, no piece when the Master chose no clock, a once-a-second step under reduced motion or data saver, numbers always beside it
+    - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5_
+  - [ ] 14.3 The Reel in the Host: on each Haunt rise play the shot of the new level once, say it in the log and the live region (the Event too), keep the meter on screen, never during the Suggestion window or an answer choice, skippable, not on the Display
+    - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5_
+  - [ ] 14.4 The endings in the Host: `end-dawn` or `end-house`, then a title card from the `party-lines` strings (the house card with who joined the haunting), a Skip of 48 pixels, the recap after it
+    - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 21.6_
+  - [ ]* 14.5 Write property test for the clock shadow over the real Host once it exists (the pure rule is already tested over a grid in `test/scenes.test.js`)
+    - **Property 24: The clock shadow follows the clock and nothing else**
+    - **Validates: Requirements 19.1, 19.2, 19.4**
+  - [ ]* 14.6 Write property test for the Reel over the real Host once it exists (the pure rule is already tested over every level and maximum)
+    - **Property 25: The Reel never goes backwards and every Event is seen**
+    - **Validates: Requirements 20.1, 20.2**
+  - [ ]* 14.7 Write property test for the endings over the real Host once it exists
+    - **Property 26: An ending says who joined the haunting and never says Poltergeist**
+    - **Validates: Requirements 21.1, 21.2, 21.3**
+  - [ ] 14.8 Spike puzzles 1.7 (scenes): on a real phone and a TV, does scrubbing a clip ten times a second keep up (iPhone Safari most of all)? If not, switch the clock shadow to a strip of stills. Is the Reel readable at a glance across a room? Is each Haunt Event seen?
+    - _Requirements: 19.5, 20.2_

@@ -1,0 +1,21 @@
+/* Footage test page: where things go, and the three looks. Colours, gaps, corners and sizes come from the design tokens. */
+.ft { max-width: 26rem; margin: 0 auto; padding: var(--space-4) var(--space-3) var(--space-6); }
+
+/* A phone-shaped frame. The clip sits behind everything in .ft-film; text always sits in a solid panel, so it never reads over the picture. */
+/* The TV demos: the picture on top in the film's own 4 by 3, the controls and words in a solid panel under it. */
+.ft-tv { display: grid; gap: var(--space-2); }
+.ft-tv .ft-film { position: relative; z-index: 0; overflow: hidden; aspect-ratio: 4 / 3; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-xl); }
+.ft-phone { position: relative; isolation: isolate; overflow: hidden; display: grid; align-content: end; aspect-ratio: 390 / 640; padding: var(--space-3); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-xl); background: var(--surface-sunk); }
+.ft-film { position: absolute; inset: 0; z-index: -1; background: var(--surface-sunk); }
+.ft-video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ft-dim .ft-film { opacity: 0.28; }
+.ft-code { justify-content: flex-start; }
+
+/* Looks. Film tint is the clip as it is. Black and white takes the colour out. Yellow ink multiplies the grey picture onto the main yellow. */
+[data-look='mono'] .ft-video { filter: grayscale(1) contrast(1.15); }
+[data-look='ink'] .ft-film { background: var(--lantern); }
+[data-look='ink'] .ft-video { filter: grayscale(1) contrast(1.25); mix-blend-mode: multiply; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-video { transition: none; }
+}

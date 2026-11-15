@@ -1,0 +1,68 @@
+// Footage test page: clips on phone screens and on the TV, in three looks. Picture only, muted, no recording.
+// The clip files are the only thing this page loads. Rules: .kiro/specs/puzzles (Requirements 18 to 21).
+import { initScenes } from './scenes-page.js';
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+const looping = [...document.querySelectorAll('video.ft-video[loop]')];
+const once = $('#ft-once');
+const playBtn = $('#ft-play');
+const status = $('#ft-status');
+
+// What the Player asked for. Reduced motion, or a browser set to save data, starts with the footage off (a still frame);
+// a tap on Play is the Player's own choice.
+const saver = navigator.connection?.saveData === true;
+let wanted = !reduce.matches && !saver;
+
+const say = (text) => { status.textContent = text; };
+
+// The clock shadow, the Reel and the endings (js/scenes-page.js). They move only while footage is on and the page is visible.
+const scenes = initScenes({ isOn: () => wanted && !document.hidden, say });
+
+function paint() {
+  playBtn.textContent = wanted ? 'Pause footage' : 'Play footage';
+}
+
+/** Run or stop the looping clips. A hidden page always stops them. */
+function sync() {
+  const run = wanted && !document.hidden;
+  for (const v of looping) {
+    if (run) v.play().catch(() => say('The browser blocked the clip. Tap Play footage.'));
+    else v.pause();
+  }
+  if (!wanted) once.pause();
+  scenes.sync();
+  paint();
+}
+
+playBtn.addEventListener('click', () => {
+  wanted = !wanted;
+  say(wanted ? '' : 'Footage paused: still frame.');
+  sync();
+});
+
+for (const b of document.querySelectorAll('[role="radio"][data-look]')) {
+  b.addEventListener('click', () => {
+    document.body.dataset.look = b.dataset.look;
+    for (const o of document.querySelectorAll('[role="radio"][data-look]')) o.setAttribute('aria-checked', String(o === b));
+  });
+}
+
+$('#ft-replay').addEventListener('click', () => {
+  if (!wanted) { say('Footage is paused: tap Play footage first.'); return; }
+  once.currentTime = 0;
+  once.play().catch(() => say('The browser blocked the clip. Tap Replay again.'));
+});
+
+document.addEventListener('visibilitychange', sync);
+reduce.addEventListener?.('change', (e) => { wanted = !e.matches; sync(); });
+
+// A clip that cannot load leaves its still frame; say so once.
+for (const v of [...looping, once]) {
+  const last = v.querySelector('source:last-of-type');
+  last?.addEventListener('error', () => say('A clip did not load: the still frame is shown.'));
+}
+
+if (reduce.matches) say('Reduced motion is on: still frames. Tap Play footage to run the clip.');
+else if (saver) say('Data saver is on: still frames. Tap Play footage to run the clip.');
+sync();

@@ -428,6 +428,77 @@ A screen's own style says only where things go. A piece that is missing is added
 
 **Design tokens.** The puzzle screens use `pz-` classes and their own variables today (`--pz-space-1..4`, palette names such as `--lantern`, `--ink`, `--dust`, `--ghost`). When they join the real game they move onto the design system (`design-system` tasks 4.1 and 4.4); see the integration spec, task 5.5, for the map.
 
+## Footage (public domain, 2026-11-15)
+
+Requirement 18 in short: **a clip is picture only, short, small, from a public archive, free in both the United States and Europe, with a record beside it, and it is only ever decoration.** The first clip is tried on the playtest site (`/footage.html`, `tools/playtest/media/`), not yet in the real screens.
+
+**Why Europe decides.** The owner lives in Luxembourg and the game is meant for everywhere. The United States lets a film go free by a paperwork miss (no copyright notice, no renewal). Europe counts 70 years from the death of the last of the director, the screenplay author, the dialogue author and the composer of music made for the film, so a 1960s film stays locked there for decades. Silent films from before 1930 whose makers died before the mid 1950s are free in both.
+
+| Film | United States | EU and Luxembourg | Status |
+|---|---|---|---|
+| *Nosferatu* (1922) | free (before 1931) | free: Murnau died 1931, Galeen 1949, Erdmann (music) 1942, so the last term ended with 2019 | **Cleared** (credits read on Wikipedia, Wikidata and Commons). Used: `stair-shadow` |
+| *The Student of Prague* (1913) | free | free: director Rye (d. 1914), screenplay Ewers (d. 1943), Paul Wegener (d. 1948) and Rye, music Josef Weiss (a piano score written for the premiere, d. 1945); the last is 1948, free since 2019 | **Cleared on credits** (Wikipedia in English and German, filmportal and Wikidata agree). **No copy cleared yet**: see "Which copy" |
+| *Waxworks* (1924) | free | free: Leni (d. 1929) and Birinski (d. 1951, credited as Spielleitung), screenplay Galeen (d. 1949); the last is 1951, free since 2022. No composer is credited on Wikipedia or Wikidata and filmportal lists the original as silent; a 1924 premiere score was not found | **Likely cleared.** **No copy cleared yet**: see "Which copy" |
+| *The Haunted Castle* (1921, Murnau) | free | Murnau 1931, Mayer 1944, Viertel 1953 (Wikidata): the last is 1953, free since 2024; no composer named | **Likely.** Credits from Wikipedia and Wikidata only |
+| *The Golem: How He Came into the World* (1920) | free | co-director Carl Boese died 1958: if he counts as a principal director, free only from 2029 (Wegener 1948, Galeen 1949, composer Hans Landsberger 1941) | **Held** |
+| *The Hands of Orlac* (1924) | free | Wiene 1938 and Nerz 1938; the composer Pierre Oser's death year is not known | **Check** |
+| *The Cabinet of Dr. Caligari* (1920) | free | Commons treats it as free across the EU. But Giuseppe Becce is credited with its music and died in 1973: if his score counts as music made for the film, the 70 years run to the end of 2043. His original score is lost (Deutsche Kinemathek), which does not by itself end the term. | **Held.** Not used until a lawyer or a German rights body says |
+| *The Phantom of the Opera* (1925, the 1925 cut) | free | US-made: Directive 2006/116 Art. 7(1) ends the EU term when the term in the country of origin ends (the US term for a 1925 film ended with 2020). Read in the Directive; Luxembourg's own text was not read. Credited writers died as late as 1961, the score's composer (Hinrichs) in 1942 | **Likely, check** before use |
+| *Häxan* (1922), *The Phantom Carriage* (1921), *Faust* (1926) | free | not free: Christensen died 1959 and the composer Grøndahl 1960, Sjöström 1960, the composer Heymann 1961, so free from 2030 to 2032 | **Not yet** |
+| *Night of the Living Dead* (1968) | free (no notice) | not free (Romero died 2017) | **Not allowed** |
+| *House on Haunted Hill* (1959) | free (renewal missed) | not free (Castle died 1977) | **Not allowed** |
+| *Carnival of Souls* (1962) | free (formalities) | not free (Harvey died 1996) | **Not allowed** |
+
+The three rows from 1959 to 1968 are from memory and were not looked up on 2026-11-15; they stay out either way. Nosferatu, Caligari, The Student of Prague and Waxworks were read on Wikipedia, filmportal and Wikimedia Commons the same day; the other rows take their death years from Wikidata only. Luxembourg's rule for a film is Art. 9(2) of the law of 18 April 2001 (the same four people, 70 years), and its moral right ends with the economic term (a secondary source, not the statute). No rights search was done and none of this is legal advice.
+
+**The restoration point.** The complete copies on Commons and the Internet Archive are restorations (tints, rebuilt intertitles). The picture is old and free; the restorers' additions are the only thing that could carry a claim. So a clip uses the picture only (no intertitle, no sound), is re-graded by the page (black and white, or ink yellow multiplied onto the picture) and has its restoration named in `PROVENANCE.md`. Requirement 18.8 sends it to a lawyer before the game is sold.
+
+**Which copy (read 2026-11-15).** A film being free does not make every copy of it free to use.
+
+| Film | Copies found | Problem |
+|---|---|---|
+| Nosferatu | Commons: the 2006 Murnau Foundation restoration (5 GB original; the 360p transcode is what `stair-shadow` was cut from). Also an older print with English titles of 1947 (506 MB), not checked | The tints and rebuilt intertitles are the restorers' work. German law has two small rights a restorer might claim (§ 95 and § 70 UrhG); no ruling was found; Commons kept the file after a deletion request, which is an opinion and not a ruling |
+| The Student of Prague | Commons: 41 minutes, taken from a YouTube upload, no print named. Internet Archive `der-student-von-prag-1913`: 82 minutes, uploader unknown, no source stated | The original runs 85 minutes. The documented complete versions are reconstructions (1987/88; 2012/13 by Wilfried Kugel for ZDF and arte with digital work by Alpha-Omega; a 2016 DVD). A copy that cannot be traced to a print fails 18.3 |
+| Waxworks | Commons: one file from an Absolut Medien Blu-ray, one from a watermarked YouTube upload of an older National Film Library print. Internet Archive: several, no source | A 2019/20 restoration came out on Blu-ray (Deutsche Kinemathek, Cineteca di Bologna, L'Immagine Ritrovata) with new music; the disc was not matched to the file. The older print is watermarked. Neither passes 18.3 yet |
+
+Ways forward, in order of preference: the oldest unprocessed print in a public archive whose record names it; a licence from the restorer (the Murnau Foundation, the Deutsche Kinemathek, the Filmmuseum München); or a short shot, with the restoration point read by a lawyer, as `stair-shadow` is.
+
+**Longer footage (decided 2026-11-15).** The value of footage is its length: whole scenes of real film that no model can make, for the price of storage and delivery. So a scene may run up to 10 minutes (18.6). Sizes: Nosferatu at 360p is 263 MB for 92 minutes (about 380 kbps), so 10 minutes is about 30 MB and fits the 40 MB limit; the 4 second `stair-shadow` is 77 KB. A scene streams with byte ranges from the game's own origin, loads only its metadata until it plays, stops under reduced motion or data saver, and always has a Stop control. The film's rights do not grow with the minutes used, but the restoration point does: more minutes is more of one restorer's work. Where the files live (a static asset or an R2 bucket behind the game's Worker) and the real cost are unmeasured and wait for spike puzzles 1.7. `tools/playtest/flash-check.mjs` screens a scene for flashes (whole-frame brightness, WCAG 2.3.1 counting); it can miss a small bright flash, so a scene with lightning is also watched by a person.
+
+**How a clip is shown (the page, then the real screens).** A `.ft-film` layer sits behind the screen and holds one muted `video` with a poster. Text is always in a solid `ui-panel`, never on the picture. Three looks are on the test page: *Film tint* (the clip as it is: teal, which breaks the rule that green is rare), *Black and white*, and *Yellow ink* (grey picture multiplied onto `--lantern`, which fits the black, brown and yellow palette). Three places are tried: behind a Sight, faint behind a Lock (28% so the controls stay readable) and once on "Nothing came loose".
+
+## Scenes from footage (2026-11-15)
+
+A scene earns its place only if it does one of three jobs: it **shows state**, it **builds the next move**, or it **pays off a moment**. Footage that does none of these is cut. It is the same rule for every kind of scene: a **cut scene** (3 to 8 seconds, shows what changed), a **hero scene** (20 to 60 seconds, pays off a big moment) and a **parallel scene** (plays beside the game and shows a second thing at once).
+
+| Idea | Kind | Moment | Spec |
+|---|---|---|---|
+| Clock shadow | Parallel | Turn Clock | Requirement 19 |
+| The Reel | Cut | Haunt level | Requirement 20 |
+| Two endings | Hero | Game end | Requirement 21 |
+| Our own title cards | Cut | Endings first, then every Keeper line | 21.3 |
+| Sealed reveal, Joined the haunting, Cues from those who joined the haunting, Wander home movies, Film on a wall or the pyramid | Ideas | Not in the spec yet | |
+
+**The Reel, as a ladder** (the Haunt Events are at 3, 6 and 9; the maximum is the ending and not a shot):
+
+| Haunt | Shot | Clip | Event |
+|---|---|---|---|
+| 0 to 2 | The ship at sea | `reel-ship` | |
+| 3 | Orlok rises in his crate | `reel-coffin` | yes |
+| 4 and 5 | An empty street | `reel-streets` | |
+| 6 | The shadow on the stairs | `stair-shadow` | yes |
+| 7 and 8 | The shadow hand at the door | `reel-hand` | |
+| 9 (to the maximum) | The shape over the bed | `reel-bed` | yes |
+| the maximum | Something waits in the doorway | `end-house` | the ending |
+
+For a maximum of 8 the ladder ends at 7 (the hand) and 8 is the house; for 12 the bed holds from 9 to 11. The two ending shots are `end-dawn` (Detectives win) and `end-house` (the house wins).
+
+Rules for every scene: it moves only on public state (the Turn Clock, the Haunt level, who won, who joined the haunting) and never on a private result; it never plays during the 15 second Suggestion window or an answer choice; it can always be skipped; it has no sound of its own; every shot has a line of words for the live region; and the game works with the footage off. The Reel and the endings are not shown on the pyramid Display in this version.
+
+Where it is: `tools/playtest/js/scenes.js` holds the pure rules (tested over every Haunt level for each maximum and a grid of clock readings), `scenes-page.js` the demos, and sections 4 to 6 of `/footage.html` show them on a page. Seven new clips came from the same Nosferatu file (`media/PROVENANCE.md`). Not deployed and not in the real Host yet (tasks 14.2 to 14.4).
+
+Open: whether scrubbing a clip ten times a second keeps up on a real phone or TV (spike puzzles 1.7); if it does not, the fallback is a strip of stills for the clock shadow.
+
 ### Property 21: The level follows the Haunt, and a clue always fits
 For any Puzzle setting, preset, Haunt level and Kind, the level of a Lock is the setting raised one step at Haunt 3 and one more at Haunt 6, never above hard, never below the setting, at most one step under Gentle, and a Memory Kind opens at the level of its Sight.
 **Validates: Requirements 1.4**
@@ -435,3 +506,19 @@ For any Puzzle setting, preset, Haunt level and Kind, the level of a Lock is the
 ### Property 22: Haunting puzzles change only Scare points
 For any game with Haunting puzzles played or not, every card, Hand, Turn, Turn Clock, Haunt level, view and winner is the same, a Poltergeist plays at most one per Round, and each solved one adds exactly one Scare point.
 **Validates: Requirements 17.1, 17.2, 17.3**
+
+### Property 23: Footage is decoration with a record
+For any clip in the game, it has a complete `PROVENANCE.md` entry, an `.mp4`, a `.webm` and a poster within the size limits, no audio track, at most 10 minutes and at most 480 pixels high, and a passed flash screen; every video that shows it is muted, inline, without controls, hidden from a screen reader and loaded by metadata only until played when it is over 1 MB; nothing loads from another origin; and with the clip stopped, hidden or unable to load, every screen still shows its still frame and finishes as before.
+**Validates: Requirements 18.2, 18.3, 18.4, 18.5, 18.6**
+
+### Property 24: The clock shadow follows the clock and nothing else
+For any base, remaining time and nudge, the shadow's position is `1 - remaining / base` held between 0 and 1, rises only as the clock falls, steps back by the share of the Turn that a Help is and forward by a Spook, and under reduced motion moves only on whole seconds and never ahead of the clock.
+**Validates: Requirements 19.1, 19.2, 19.4**
+
+### Property 25: The Reel never goes backwards and every Event is seen
+For every maximum of 8, 10 and 12 and every Haunt level, the shot never comes before the shot of the level below, the maximum is the house, and each Event level below the maximum has a shot different from the level before it; any input at all gives a shot.
+**Validates: Requirements 20.1, 20.2**
+
+### Property 26: An ending says who joined the haunting and never says Poltergeist
+For any list of nicknames, the house card says that the haunting continues, that no one won and, when the list has names, who joined the haunting, and no card, string or log line of the scenes says Poltergeist.
+**Validates: Requirements 21.1, 21.2, 21.3**

@@ -1,11 +1,11 @@
 // Copies the public files into dist/ for deployment. Server code (src/), tests and docs stay out.
-// Usage: node build.mjs
+// Usage: node build.mjs        (PLAYTEST_DIST=/some/folder node build.mjs builds there instead, which the tests use so they do not rebuild dist/ under each other)
 import { cpSync, rmSync, mkdirSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
-const dist = resolve(root, 'dist');
+const dist = process.env.PLAYTEST_DIST ? resolve(process.env.PLAYTEST_DIST) : resolve(root, 'dist');
 // dist/puzzles is built by vite from web/ (see the README) and is not made here, so a rebuild of the rest leaves it alone.
 mkdirSync(dist, { recursive: true });
 for (const name of readdirSync(dist)) if (name !== 'puzzles') rmSync(resolve(dist, name), { recursive: true, force: true });
@@ -13,6 +13,9 @@ for (const f of readdirSync(root).filter((n) => n.endsWith('.html'))) cpSync(res
 cpSync(resolve(root, 'css'), resolve(dist, 'css'), { recursive: true });
 cpSync(resolve(root, 'js'), resolve(dist, 'js'), { recursive: true });
 cpSync(resolve(root, 'art'), resolve(dist, 'art'), { recursive: true });
+// Public-domain footage (see media/PROVENANCE.md): only the clip files go out, not the provenance note.
+mkdirSync(resolve(dist, 'media'), { recursive: true });
+for (const f of readdirSync(resolve(root, 'media')).filter((n) => /\.(mp4|webm|jpg)$/.test(n))) cpSync(resolve(root, 'media', f), resolve(dist, 'media', f));
 // The design system catalogue (every element and token of the look), for checking the look on a phone: /design/.
 // Only public files: the catalogue page, its script, the tokens, the elements, the fonts and their licences.
 const repo = resolve(root, '..', '..');
