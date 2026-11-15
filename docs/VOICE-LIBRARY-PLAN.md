@@ -1,6 +1,6 @@
 # Voice Library tool: plan (draft, 2026-11-15)
 
-Status: **steps 1 to 3 of the table below are built (2026-11-15): the banks as data, `buildLibrary` and the key functions with 44 tests, the manifest (66 entries) and the offline check tool. The prerender tool and the read path are not built.** The open decisions at the end are still open. It turns `ghost-voice` tasks 2.18, 2.19, 3.11 and 3.12 into steps, with the Lodger's six voices as the first thing to render. Requirements 1.8 and 1.9, Property 14, and the "Reuse and pre-generation" rules in `.kiro/specs/ghost-voice/design.md` are the source; where this plan adds something, it says so.
+Status: **steps 1 to 3 of the table below are built (2026-11-15): the banks as data, `buildLibrary` and the key functions with 44 tests, the manifest (66 entries) and the offline check tool. The dry run of the prerender tool (row 6) is built too: `pnpm prerender-voice` plans and prices, and refuses `--render`, `--upload` and `--reel` until they are built. The render step, the upload and the read path are not built.** The open decisions at the end are still open. It turns `ghost-voice` tasks 2.18, 2.19, 3.11 and 3.12 into steps, with the Lodger's six voices as the first thing to render. Requirements 1.8 and 1.9, Property 14, and the "Reuse and pre-generation" rules in `.kiro/specs/ghost-voice/design.md` are the source; where this plan adds something, it says so.
 
 ## What the Library is
 
@@ -31,6 +31,8 @@ Audio for every **spoken, scripted** line, rendered once ahead of time, kept und
 | 7 | **Read path**: the speak service reads the Library key, then the cache key, before any ticket. | `api/src/` speak service | 3.12 |
 
 ## The prerender tool
+
+**Built so far (2026-11-15): the dry run only.** `pnpm prerender-voice [--voice Chloe] [--takes 2] [--budget-usd 0.05] [--list] [--out DIR]` reads the manifest and a local folder, prints the table and the cost, and writes nothing. The folder is `./.voice-library/` (ignored by git) or `$VOICE_LIBRARY_DIR`; a file is `<hash>.take<n>.mp3`. It checks only that folder, not R2. A file that is empty, under 800 bytes or not an MP3 makes the run fail (exit 1) and is never overwritten. With `--budget-usd` it shows how far that budget would get, in order. Length and silence checks need a decoder and come with `--render`. The planning code is `tools/lib/prerender-plan.mjs` with 16 tests in `tools/test/prerender-plan.test.mjs`.
 
 **Default is a dry run.** It prints a table (voice, files missing, characters, estimated cost) and stops. Nothing is spent until the owner adds `--render` and a budget.
 

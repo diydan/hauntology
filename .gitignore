@@ -26,6 +26,9 @@ build/
 .worldlabs/
 worldlabs-credentials*
 
+# Rendered Voice Library audio (tools/prerender-voice.mjs). Audio lives in R2 only; never commit it.
+/.voice-library/
+
 # Dev MCP ledger and recorded raw responses with keys
 tools/worldlabs-mcp/.ledger.json
 

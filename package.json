@@ -12,7 +12,8 @@
     "dev:web":  "pnpm --filter web dev",
     "check-traceability": "node tools/check-traceability.mjs",
     "check-voice-library": "node tools/build-banks.mjs --check && node tools/check-voice-library.mjs",
-    "test:tools": "node --test tools/test/*.test.mjs"
+    "test:tools": "node --test tools/test/*.test.mjs",
+    "prerender-voice": "node tools/prerender-voice.mjs"
   },
   "workspaces": ["shared", "api", "web"]
 }
