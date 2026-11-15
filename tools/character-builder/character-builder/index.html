@@ -356,7 +356,7 @@ function computeHeadTargets(positions, unitsPerCm = 1, list = HEAD_MORPHS) {
 /* ---- REALISTIC HAIR (test): strand cards grown over the pack's hair shell. Each card is a thin strip with see-through strands, lying on the shell and flowing down and back;
    it copies the skin weights of the shell under it (so it swings with the hair bones) and has the same face and hair morphs (so photo fitting moves it too).
    The shell stays underneath as the dark under-layer. Shown in the realistic style only; the photo-facing front keeps the printed photo. Made here, so no licence. */
-const HC = { on: true, tex: null };
+const HC = { on: true, tex: null, wtex: null, wave: { value: 0 } }; // wave: 0 straight .. 1 very wavy, from the photo (fpHairWave)
 function hairCardTex() {
   if (HC.tex) return HC.tex;
   const W = 512, H = 512, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), r = mulberry32(7), V = 8, cw = W / V;
@@ -368,19 +368,31 @@ function hairCardTex() {
   }
   const t = new THREE.CanvasTexture(cv); t.anisotropy = 8; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return (HC.tex = t);
 }
+function hairCardWavyTex() { // the same strand atlas, each strand a sine curve (2-3 waves along its length)
+  if (HC.wtex) return HC.wtex;
+  const W = 512, H = 512, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d'), r = mulberry32(11), V = 8, cw = W / V;
+  g.clearRect(0, 0, W, H); g.lineCap = 'round';
+  for (let v = 0; v < V; v++) for (let s = 0; s < 70; s++) {
+    const x0 = v * cw + 8 + r() * (cw - 16), len = H * (0.55 + 0.45 * r()), amp = cw * (0.08 + 0.1 * r()), ph = r() * 6.28, waves = 2 + r(), lum = 150 + r() * 105 | 0, w0 = 0.8 + r() * 1.6, N = 24;
+    for (let k = 0; k < N; k++) { const t0 = k / N, t1 = (k + 1) / N, X = t => x0 + amp * Math.sin(ph + t * waves * 6.283); g.strokeStyle = `rgba(${lum},${lum},${lum},${(0.95 - 0.7 * t1).toFixed(2)})`; g.lineWidth = w0 * (1 - 0.6 * t0);
+      g.beginPath(); g.moveTo(X(t0), t0 * len); g.lineTo(X(t1), t1 * len); g.stroke(); }
+  }
+  const t = new THREE.CanvasTexture(cv); t.anisotropy = 8; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return (HC.wtex = t);
+}
 function hairCardMat() {
   const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, metalness: 0, side: THREE.DoubleSide, alphaToCoverage: true, transparent: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
   const col = new THREE.Color(0x3a2a20); m.userData = { cardCol: col };
   m.onBeforeCompile = sh => {
-    Object.assign(sh.uniforms, { uCardTex: { value: hairCardTex() }, uCardCol: { value: col }, uHrTexE: HP.texE, uHrPrint: HP.on, uHrFlatK: HP.flat, uHrAlpha: FP.u.uFpAlpha, uHrC: FP.u.uFpC, uHrW: FP.u.uFpW });
-    sh.vertexShader = 'attribute vec3 headP; attribute vec3 aCard; varying vec3 vHrP, vCard;\n' + sh.vertexShader.replace('#include <morphtarget_vertex>', `#include <morphtarget_vertex>
+    Object.assign(sh.uniforms, { uCardTex: { value: hairCardTex() }, uCardWTex: { value: hairCardWavyTex() }, uWave: HC.wave, uCardCol: { value: col }, uHrTexE: HP.texE, uHrPrint: HP.on, uHrFlatK: HP.flat, uHrAlpha: FP.u.uFpAlpha, uHrC: FP.u.uFpC, uHrW: FP.u.uFpW });
+    sh.vertexShader = 'attribute vec3 headP; attribute vec3 aCard; attribute vec4 aSide; uniform float uWave; varying vec3 vHrP, vCard;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+ transformed += aSide.xyz * uWave * 0.32 * smoothstep( 0.0, 0.2, aCard.y ) * sin( 6.2832 * aCard.y * aSide.w / 3.5 + aCard.z * 1.7 + headP.x * 0.9 + headP.z * 0.6 ); // wavy hair: the strand swings side to side along its length (about 3.5 cm a wave); the root stays put`).replace('#include <morphtarget_vertex>', `#include <morphtarget_vertex>
  vHrP = headP; vCard = aCard;
 #ifdef USE_MORPHTARGETS
  for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) { float hw = morphTargetInfluences[ i ]; if ( hw != 0.0 ) vHrP += getMorph( gl_VertexID, i, 0 ).xyz * hw; }
 #endif`);
-    sh.fragmentShader = 'uniform sampler2D uCardTex, uHrTexE; uniform vec3 uCardCol; uniform float uHrPrint, uHrFlatK, uHrAlpha; uniform vec2 uHrC, uHrW; varying vec3 vHrP, vCard; vec3 hcPC = vec3( 0.0 ); float hcPA = 0.0;\n' + sh.fragmentShader
+    sh.fragmentShader = 'uniform sampler2D uCardTex, uCardWTex, uHrTexE; uniform float uWave; uniform vec3 uCardCol; uniform float uHrPrint, uHrFlatK, uHrAlpha; uniform vec2 uHrC, uHrW; varying vec3 vHrP, vCard; vec3 hcPC = vec3( 0.0 ); float hcPA = 0.0;\n' + sh.fragmentShader
       .replace('#include <map_fragment>', `
- vec4 st = texture2D( uCardTex, vec2( ( vCard.z + vCard.x ) / 8.0, vCard.y ) ); // vCard: x across the card, y root (0) to tip (1), z the strand variant
+ vec2 cuv = vec2( ( vCard.z + vCard.x ) / 8.0, vCard.y ); vec4 st = mix( texture2D( uCardTex, cuv ), texture2D( uCardWTex, cuv ), smoothstep( 0.15, 0.6, uWave ) ); // vCard: x across the card, y root (0) to tip (1), z the strand variant
  diffuseColor.a = st.a * smoothstep( 0.0, 0.25, vCard.y );
  vec3 base = uCardCol;
  if ( uHrPrint > 0.5 ) { // the photo's hair colour, wrapped round the head like the shell's print
@@ -426,7 +438,7 @@ function makeHairCards(root, key = '') {
       n.normalize(); q.copy(a).add(b).add(c).multiplyScalar(1 / 3); ell(q, side); if (Math.abs(n.dot(side)) < 0.25) continue; // edge-on leaves add nothing
       tris.push([i0, i1, i2]); tot += ar; cum.push(tot); }
     if (!tris.length) continue;
-    const r = mulberry32(HPa.count * 31 + 5), N = Math.min(4200, Math.round(tot / 1.1)), hp = [], nrm = [], card = [], si = [], sw = [], ind = [];
+    const r = mulberry32(HPa.count * 31 + 5), N = Math.min(4200, Math.round(tot / 1.1)), hp = [], nrm = [], card = [], sd = [], si = [], sw = [], ind = [];
     for (let k = 0; k < N; k++) {
       const pick = r() * tot; let lo2 = 0, hi2 = cum.length - 1; while (lo2 < hi2) { const m = (lo2 + hi2) >> 1; if (cum[m] < pick) lo2 = m + 1; else hi2 = m; }
       const [i0, i1, i2] = tris[lo2]; let u = r(), v = r(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
@@ -447,7 +459,7 @@ function makeHairCards(root, key = '') {
       const base0 = hp.length / 3, sk = [i0, i1, i2][u > v ? (u > 1 - u - v ? 1 : 0) : (v > 1 - u - v ? 2 : 0)], last = path.length - 1;
       path.forEach(([c0, n0, d0], k2) => {
         const tt = k2 / last, wd = W * (1 - 0.45 * tt); side.copy(n0).cross(d0).normalize();
-        for (const sgn of [-1, 1]) { q.copy(c0).addScaledVector(side, sgn * wd / 2); hp.push(q.x, q.y, q.z); nrm.push(n0.x, n0.y, n0.z); card.push(sgn > 0 ? 1 : 0, tt, varK);
+        for (const sgn of [-1, 1]) { q.copy(c0).addScaledVector(side, sgn * wd / 2); hp.push(q.x, q.y, q.z); nrm.push(n0.x, n0.y, n0.z); card.push(sgn > 0 ? 1 : 0, tt, varK); sd.push(side.x, side.y, side.z, L);
           if (SI) { si.push(SI.getX(sk), SI.getY(sk), SI.getZ(sk), SI.getW(sk)); sw.push(SW.getX(sk), SW.getY(sk), SW.getZ(sk), SW.getW(sk)); } }
         if (k2 > 0) { const j = base0 + 2 * (k2 - 1); ind.push(j, j + 1, j + 2, j + 1, j + 3, j + 2); }
       });
@@ -455,7 +467,7 @@ function makeHairCards(root, key = '') {
     if (!ind.length) continue;
     inv.copy(o.matrixWorld).invert(); const HO = HEAD_BONE_OFFSET_CM, lp = new Float32Array(hp.length), nl = new Float32Array(nrm.length);
     for (let i = 0; i < hp.length; i += 3) { q.set(hp[i] - HO[0], hp[i + 1] - HO[1], hp[i + 2] - HO[2]).applyMatrix4(inv); lp[i] = q.x; lp[i + 1] = q.y; lp[i + 2] = q.z; q.set(nrm[i], nrm[i + 1], nrm[i + 2]).transformDirection(inv); nl[i] = q.x; nl[i + 1] = q.y; nl[i + 2] = q.z; }
-    const cg = new T.BufferGeometry(); cg.setAttribute('position', new T.Float32BufferAttribute(lp, 3)); cg.setAttribute('normal', new T.Float32BufferAttribute(nl, 3)); cg.setAttribute('headP', new T.Float32BufferAttribute(hp, 3)); cg.setAttribute('aCard', new T.Float32BufferAttribute(card, 3)); cg.setIndex(ind);
+    const cg = new T.BufferGeometry(); cg.setAttribute('position', new T.Float32BufferAttribute(lp, 3)); cg.setAttribute('normal', new T.Float32BufferAttribute(nl, 3)); cg.setAttribute('headP', new T.Float32BufferAttribute(hp, 3)); cg.setAttribute('aCard', new T.Float32BufferAttribute(card, 3)); { const sl = new Float32Array(sd.length); for (let i = 0; i < sd.length; i += 4) { q.set(sd[i], sd[i + 1], sd[i + 2]).transformDirection(inv); sl[i] = q.x; sl[i + 1] = q.y; sl[i + 2] = q.z; sl[i + 3] = sd[i + 3]; } cg.setAttribute('aSide', new T.Float32BufferAttribute(sl, 4)); } cg.setIndex(ind);
     const ml = cg.morphAttributes.position = [], hpA = new Float32Array(hp), t1 = computeHeadTargets(hpA, 1), t2 = computeHeadTargets(hpA, 1, HAIR_MORPHS);
     for (const m of HEAD_MORPHS) { const at = new T.Float32BufferAttribute(t1[m.id], 3); at.name = 'm_' + m.id; ml.push(at); }
     for (const m of HAIR_MORPHS) { const at = new T.Float32BufferAttribute(t2[m.id], 3); at.name = 'h_' + m.id; ml.push(at); }
@@ -671,6 +683,7 @@ const CLOTHMAT = /^mat_(top|outfit|bot)\./;
 const CL = { det: { value: GREYTEX }, str: { value: 0 }, inv: { value: 1 / 6 }, on: { value: 0 }, mask: { value: WHITE }, tex: { value: WHITE }, C: { value: new THREE.Vector2() }, W: { value: new THREE.Vector2(1, 1) }, want: 0.35, mul: 1, an: null, prev: null, enabled: true };
 const CL_GLSL = `uniform sampler2D uClDet, uClMask, uClTex; uniform float uClStr, uClInv, uClOn, uClFlat, uClAlpha; uniform vec2 uClC, uClW; varying vec3 vClP, vClN; float clPA = 0.0; vec3 clPC = vec3( 0.0 );`;
 const CL_FRAG = `
+ if ( ! gl_FrontFacing ) diffuseColor.rgb *= 0.3; // the inside of a garment is in its own shadow (seen through a slit or an open hem)
  if ( uClStr > 0.0 ) {
    vec3 cw = pow( abs( normalize( vClN ) ), vec3( 4.0 ) ); cw /= ( cw.x + cw.y + cw.z );
    float cd = texture2D( uClDet, vClP.zy * uClInv ).r * cw.x + texture2D( uClDet, vClP.xz * uClInv ).r * cw.y + texture2D( uClDet, vClP.xy * uClInv ).r * cw.z;
@@ -861,6 +874,9 @@ function skirtWeights(m) {
     const top = [...w.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4), sum = top.reduce((a, e) => a + e[1], 0) || 1;
     for (let k = 0; k < 4; k++) { SI.setComponent(i, k, top[k] ? top[k][0] : 0); SW.setComponent(i, k, top[k] ? top[k][1] / sum : 0); }
   }
+  { // seam points (panels' vertices at the same spot) must share one set of weights, or the seam opens when the legs move (a slit down the front of a dress)
+    const first = new Map(); for (let i = 0; i < P.count; i++) { const k = Math.round(P.getX(i) * 100) + ',' + Math.round(P.getY(i) * 100) + ',' + Math.round(P.getZ(i) * 100), f0 = first.get(k);
+      if (f0 === undefined) first.set(k, i); else for (let c = 0; c < 4; c++) { SI.setComponent(i, c, SI.getComponent(f0, c)); SW.setComponent(i, c, SW.getComponent(f0, c)); } } }
   SI.needsUpdate = SW.needsUpdate = true; m.userData.skirt = between;
 }
 function removePart(slot) { const p = parts[slot]; if (!p) return; for (const o of p.objs) o.parent && o.parent.remove(o); for (const e of p.mats) e.mat && e.mat.dispose && e.mat.dispose(); delete parts[slot]; if (slot === 'hair' || slot === 'bangs') rebuildHairPhysics(); }
@@ -989,7 +1005,7 @@ function insetBody() {
   const skirtIn = []; for (const g of garments) { if (!g.userData.skirt) continue; { const P0 = g.geometry.attributes.position, G0 = g.geometry.attributes.aGarm; let lo0 = Infinity, hi0 = -Infinity; for (let i = 0; i < P0.count; i++) { const y = P0.getY(i) + (G0 ? G0.getY(i) : 0); lo0 = Math.min(lo0, y); hi0 = Math.max(hi0, y); } if (hi0 - lo0 < 45) continue; } /* long skirts only: a short skirt's legs are mostly out */ const P = g.geometry.attributes.position, G = g.geometry.attributes.aGarm, SL = 2, NA = 24; let hemY = Infinity, topY = -Infinity, cx = 0, cz = 0, n = 0;
     for (let i = 0; i < P.count; i++) { const y = P.getY(i) + (G ? G.getY(i) : 0); hemY = Math.min(hemY, y); topY = Math.max(topY, y); cx += P.getX(i); cz += P.getZ(i); n++; } cx /= n; cz /= n;
     const rad = new Map(); for (let i = 0; i < P.count; i++) { const y = P.getY(i) + (G ? G.getY(i) : 0), dx = P.getX(i) - cx, dz = P.getZ(i) - cz, k = Math.floor(y / SL) + ',' + (((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA); rad.set(k, Math.max(rad.get(k) || 0, Math.hypot(dx, dz))); }
-    skirtIn.push({ hemY, topY, inside: (x, y, z) => { if (y < hemY + 5 || y > topY - 12) return false; const dx = x - cx, dz = z - cz, a0 = ((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA; let r = 0; for (const da of [-1, 0, 1]) for (const dy of [-1, 0, 1]) r = Math.max(r, rad.get((Math.floor(y / SL) + dy) + ',' + ((a0 + da + NA) % NA)) || 0); return Math.hypot(dx, dz) < r - 0.3; } }); }
+    skirtIn.push({ hemY, topY, inside: (x, y, z) => { if (y < hemY + 5 || y > topY - 12) return false; const dx = x - cx, dz = z - cz, a0 = ((Math.floor((Math.atan2(dx, dz) / (2 * Math.PI) + 0.5) * NA)) % NA + NA) % NA; let r = 0; for (const da of [-1, 0, 1]) for (const dy of [-1, 0, 1]) r = Math.max(r, rad.get((Math.floor(y / SL) + dy) + ',' + ((a0 + da + NA) % NA)) || 0); return Math.hypot(dx, dz) < r + 2; } }); } // a little OUTSIDE the resting outline too: a wide step carries the leg out to the dress wall
   if (skirtIn.length) for (const [k, nn] of nrm) if (skirtIn.some(sk => sk.inside(nn[3], nn[4], nn[5]))) hidden.add(k);
   // keep only skin WELL inside a garment: skin within ER cm of a garment's OPENING (hem, cuff, collar, shoe top: edges with one triangle) stays drawn,
   // because a moving leg or foot brings it out past the opening (holes at knees and ankles). Distance to the opening, not to bare skin: inner thighs are bare but deep inside a skirt
@@ -1956,7 +1972,7 @@ function fpHairWave(img, mask) {
     const coh = Math.sqrt((jxx - jyy) ** 2 + 4 * jxy * jxy) / tr; cs += coh * tr; ws += tr; nb++;
   }
   if (nb < 6) return null; const coh = cs / ws;
-  return { coh: +coh.toFixed(3), blocks: nb, wave: +Math.max(0, Math.min(1, (0.5 - coh) / 0.25)).toFixed(2) };
+  return { coh: +coh.toFixed(3), blocks: nb, wave: +Math.max(0, Math.min(1, (0.66 - coh) / 0.12)).toFixed(2) }; // calibrated on the eight faces and a wavy selfie: straight hair reads 0.66-0.86, the wavy selfie 0.59
 }
 function fpHairBleed(img, mask) {
   const W = mask.W, H = mask.H, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, W, H);
@@ -2111,7 +2127,7 @@ function fitShape(c) {
 async function setFacePrint(id, custom) {
   if (!id) {
     FP.bodyMeas = null; FP.hem = null; if (FP.prevShoes) { const ps = FP.prevShoes; FP.prevShoes = null; await setSlot('shoes', ps.id); S.col.shoes = ps.col; applyEverything(); } await fpClothesOff(); if (FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; applyShape(); syncSlidersUI(); }
-    FP.on = false; FP.id = null; FP.expr = {}; FP.hairMask = null; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0; syncSlidersUI(); SK.str.value = 0; HR.str.value = HR.want; HR.det.value = HR_DEFAULT; MO.on.value = 0; fpBase();
+    FP.on = false; FP.id = null; FP.expr = {}; FP.hairMask = null; HC.wave.value = 0; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0; syncSlidersUI(); SK.str.value = 0; HR.str.value = HR.want; HR.det.value = HR_DEFAULT; MO.on.value = 0; fpBase();
     if (FP.prevSkin) { S.skin = FP.prevSkin; FP.prevSkin = null; }
     if (FP.prevHair) { const h = FP.prevHair; FP.prevHair = null; S.hair = h.hair; S.bangs = h.bangs; await sync(['hair', 'bangs', 'hat']); }
     if (FP.prevHat) { const h = FP.prevHat; FP.prevHat = null; await setSlot('hat', h.hat); S.col.hat = h.col; }
@@ -2140,8 +2156,8 @@ async function setFacePrint(id, custom) {
   if (FP.matchHair && cfg.hat && S.hat !== cfg.hat) { FP.prevHat ||= { hat: S.hat, col: S.col.hat }; await setSlot('hat', cfg.hat); }
   FP.skinMask = await fpClassMask(tex.image, cfg.size, [1, 2, 3], 8); /* skin AND hair: the scalp under the hair shell is printed with the photo's hair colour, so a gap between locks shows hair, not bare skin */ FP.u.uFpSkinMask.value = FP.skinMask ? FP.skinMask.tex : BLACK; // the photo's skin (face + neck), softly edged: the neck is printed where it shows
   // 3. the hair mask: print the photo's hair on the hair shell and bend the shell to the photo's hair outline
-  let hairFit = null; FP.hairMask = null; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0;
-  if (FP.matchHair && parts.hair && !cfg.noHairPrint) { FP.hairMask = await fpHairMask(tex.image, cfg.size); if (FP.hairMask) { HP.mask.value = FP.hairMask.tex; HP.texE.value = fpHairBleed(tex.image, FP.hairMask) || WHITE; FP.hairWave = fpHairWave(tex.image, FP.hairMask); { const fm = await fpClassMask(tex.image, cfg.size, [3], 4); HP.face.value = fm ? fm.tex : BLACK; } hairFit = fitHair(c, FP.hairMask); } }
+  let hairFit = null; FP.hairMask = null; HC.wave.value = 0; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0;
+  if (FP.matchHair && parts.hair && !cfg.noHairPrint) { FP.hairMask = await fpHairMask(tex.image, cfg.size); if (FP.hairMask) { HP.mask.value = FP.hairMask.tex; HP.texE.value = fpHairBleed(tex.image, FP.hairMask) || WHITE; FP.hairWave = fpHairWave(tex.image, FP.hairMask); HC.wave.value = FP.hairWave ? FP.hairWave.wave : 0; { const fm = await fpClassMask(tex.image, cfg.size, [3], 4); HP.face.value = fm ? fm.tex : BLACK; } hairFit = fitHair(c, FP.hairMask); } }
   // 4. body shape from the full-body picture (before the colour loops, which look at the finished body)
   let bodyFit = null; if (FP.matchBody && cfg.full) { bodyFit = await fpBodyFit(cfg.full); if (!bodyFit && FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; } }
   FP.hairMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace); applyBeauty(); fpApply(); applyEverything(); const cal = calibrateSkin(); const hcal = cal && cal.length ? calibrateHair(cal[cal.length - 1].face) : null; if (hcal) applyEverything(); // 5. clothes from the shoulders picture, at the exposure the printed face shows
