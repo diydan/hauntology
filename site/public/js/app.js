@@ -3909,8 +3909,8 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
   const DX = 0.157;                             // doorway centre x (world)
   const HINGE = [-0.343, 1.326];                // hinge x,z in house-local units (left jamb)
   const CLOSED = -1.11, OPEN = 0.5;             // pivot.rotation.y: shut / wide open (radians)
-  // the green eyes and the hand used to wait in the doorway; they now live in the big arched window on the right tower (world coords)
-  const EYES_AT = [1.2, 0.565, 0.495], HAND_AT = [1.3, 0.5, 0.5];
+  // the green eyes and the hand used to wait in the doorway; the eyes now live in the big arched window on the right tower (world coords); the hand is gone
+  const EYES_AT = [1.2, 0.565, 0.495];
   const TAN = Math.tan(22 * Math.PI / 180);     // half the page camera's vertical field of view
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const sm = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -4027,7 +4027,7 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
     part(new SphereGeometry(0.0135, 14, 10), -0.086, 0, 0.122);                                // lever end
   };
 
-  let pivot = null, lamp = null, darkPanel = null, hand = null, paneMesh = null, paneNormal = null, paneBlack = null, eyesOn = false;
+  let pivot = null, lamp = null, darkPanel = null, paneMesh = null, paneNormal = null, paneBlack = null, eyesOn = false;
   const cp = V(0, 0, 0), cl = V(0, 0, 0), tmp = V(0, 0, 0), start = { pos: V(0, 0, 0), look: V(0, 0, 0) };
   const camAt = (q, op, ol) => { CP[0].copy(start.pos); CL[0].copy(start.look); path(CQ, CP, q, op); path(CQ, CL, q, ol); };
   /* a point `d` ahead of the camera at scroll q, at screen position (nx, ny); `asp` is the screen's width/height */
@@ -4068,9 +4068,8 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
         if (grow) o.scale.multiplyScalar(grow);
       };
       put('EvilEyes', EYES_AT, 0, 1);
-      put('WightHand001', HAND_AT, 0, 1.6);                  // same way up and same pose as the model made it, just moved and a little bigger
-      hand = house.getObjectByName('WightHand001');
-      if (hand) hand.visible = false;                        // it only shows while the eyes are on
+      const hand = house.getObjectByName('WightHand001');   // the green hand that lay in the doorway: removed
+      if (hand && hand.parent) hand.parent.remove(hand);
       const pane = house.getObjectByName('Windows001_DarkWindows_0');
       if (pane && pane.material) { paneMesh = pane; paneNormal = pane.material; paneBlack = new MeshBasicMaterial({ color: 0x000000, fog: false }); }
       lamp = new PointLight(0xffa850, 0, 3.4, 1.5);
@@ -4078,11 +4077,10 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
       scene.add(lamp);
       return !!pivot;
     },
-    /* the eyes flash on and off (Morse); while they are on, the window goes pitch black and the hand shows */
+    /* the eyes flash on and off (Morse); while they are on, the window goes pitch black */
     eyes(on) {
       if (on === eyesOn) return;
       eyesOn = on;
-      if (hand) hand.visible = on;
       if (paneMesh) paneMesh.material = on ? paneBlack : paneNormal;
     },
     /* door swing + lamp for scroll q */
