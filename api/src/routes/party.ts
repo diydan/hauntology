@@ -22,7 +22,8 @@ const post = (stub: Stub, path: string, body: unknown): Promise<Response> =>
 
 /**
  * The party routes (party-mode 1.1 to 1.3, integration 3.2), mounted at `/api/party`:
- *   POST /                 create a Room: {code, hostToken, displayToken} | {code: "rooms_full" | "session_has_room"}
+ *   POST / {replace?}      create a Room: {code, hostToken, displayToken} | {code: "rooms_full" | "session_has_room"};
+ *                          with `replace: true` the session's own earlier Room is ended first
  *   POST /:code/join       {nickname} -> {seat, token} | refusal; an unknown or expired code is "room_unknown" and says nothing else
  *   GET  /:code/ws         the socket, handed to the Room; the token goes in the first message, never in the URL
  */
@@ -38,9 +39,18 @@ export function partyRoutes(deps: PartyDeps): Hono {
 
   app.post("/", async (c) => {
     const sessionId = deps.sessionOf(c);
+    const body = (await c.req.json().catch(() => ({}))) as { replace?: unknown };
+    let replaced = false;
     for (let tries = 0; tries < 8; tries++) {
       const code = generateRoomCode(deps.random ?? Math.random);
-      const claim = (await (await post(dir(), "/create", { code, sessionId })).json()) as { ok: boolean; code?: string };
+      const claim = (await (await post(dir(), "/create", { code, sessionId })).json()) as { ok: boolean; code?: string; existing?: string };
+      // `replace`: the visitor's own earlier Room (a reload, a closed tab) ends, and frees its place, once.
+      if (!claim.ok && claim.code === "session_has_room" && body.replace === true && !replaced && typeof claim.existing === "string") {
+        replaced = true;
+        await post(roomOf(claim.existing), "/end", {});
+        await post(dir(), "/delete", { code: claim.existing });
+        continue;
+      }
       if (claim.ok) {
         const tokens = (await (await post(roomOf(code), "/create", { code })).json()) as { hostToken: string; displayToken: string };
         return c.json({ code, ...tokens });

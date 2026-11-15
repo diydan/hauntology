@@ -22,6 +22,9 @@ describe("the demo switches", () => {
     expect(await loadDemoPlatform("")).toBeNull();
     expect(await loadDemoPlatform("?demo=0")).toBeNull();
     const kit = await loadDemoPlatform("?demo=1");
-    expect(kit).toEqual({ loadTurnstile: standinTurnstile });
+    expect(kit?.loadTurnstile).toBe(standinTurnstile);
+    expect(Object.keys(kit ?? {}).sort()).toEqual(["loadHost", "loadTurnstile"]);
+    const host = await kit!.loadHost!();
+    expect(host).toBe(await import("./case/standin"));
   });
 });

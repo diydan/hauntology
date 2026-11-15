@@ -1,9 +1,11 @@
 import { whoIs } from "./auth";
 import { createEngine, step, type EngineSettings, type EngineState, type Outbound } from "./engine";
 import { handOver } from "./master";
+import { PRESET_GHOST_IDS } from "./preset-ghosts";
 import { parseClientMessage } from "./protocol";
 import { createRoomState, isRoomExpired, newToken, parseRoom, serializeRoom, type RoomState, type Seat } from "./room";
-import { seatPlayer } from "./seats";
+import { humanCount, seatPlayer } from "./seats";
+import { BOT_NAMES } from "./solo";
 
 /**
  * The Room server's whole logic (integration Requirement 3), with no Cloudflare in it: the `PartyRoom` Durable Object
@@ -36,7 +38,6 @@ export type ServerState = Readonly<{
 }>;
 
 export const DEFAULT_SETTINGS: EngineSettings = { baseSeconds: 60, hauntMax: 10, nudges: "all", frames: true, sounds: true, puzzles: "medium", preset: "classic" };
-export const PRESET_GHOSTS = ["preset-1", "preset-2", "preset-3", "preset-4", "preset-5", "preset-6", "preset-7", "preset-8"] as const;
 
 const seedFrom = (b: Uint8Array): number => ((b[0] ?? 0) | ((b[1] ?? 0) << 8) | ((b[2] ?? 0) << 16) | ((b[3] ?? 0) << 24)) >>> 0;
 
@@ -81,6 +82,18 @@ export class RoomCore {
       seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, connected: x.connected })) };
   }
   private broadcastLobby(s: ServerState): void { for (const sid of Object.keys(s.sockets)) this.ports.send(sid, this.lobbyView(s)); }
+
+  /** The Engine as it would start now, from the seats and the lobby settings. */
+  /** A Bot's name: the next unused one of `BOT_NAMES`, then "Bot n". */
+  private botName(room: RoomState): string {
+    const used = new Set(room.seats.map((x) => x.nickname));
+    return BOT_NAMES.find((n) => !used.has(n)) ?? `Bot ${room.seats.length + 1}`;
+  }
+
+  private draftEngine(s: ServerState): EngineState {
+    const botLevel = s.lobbySettings.preset === "gentle" ? ("gentle" as const) : ("standard" as const);
+    return createEngine({ seed: s.room.seed, seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })), settings: s.lobbySettings, presetIds: PRESET_GHOST_IDS });
+  }
 
   // ------------------------------------------------------------ HTTP-side calls (from the routes)
   async create(code: string): Promise<{ hostToken: string; displayToken: string }> {
@@ -129,11 +142,40 @@ export class RoomCore {
       }
       if (m.t === "addBot") {
         if (!isMaster) return refuse("not_master");
-        const res = seatPlayer(s.room, `Bot ${s.room.seats.length + 1}`, null, now);
+        const res = seatPlayer(s.room, this.botName(s.room), null, now);
         if (!res.ok) return refuse(res.code);
         const next = { ...s, room: res.state };
         await this.commit(next);
         return this.broadcastLobby(next);
+      }
+      if (m.t === "playAgain") {
+        if (!isMaster && !(me.role === "host" && s.room.seats.every((x) => x.bot))) return refuse("not_master");
+        if (s.engine === null || s.engine.phase !== "ended") return refuse("not_ended");
+        const room = { ...s.room, seed: seedFrom(this.ports.randomBytes(4)), lastActiveMs: now };
+        const fresh = this.draftEngine({ ...s, room });
+        const master = s.engine.masterSeat;
+        let r = step({ ...fresh, masterSeat: master }, { kind: "client", seat: master, msg: { t: "start" } }, now);
+        if (r.refused) return refuse(r.refused);
+        let engine = r.state;
+        let out = [...r.out];
+        // everyone still on a socket is here in the new game too
+        for (const info of Object.values(s.sockets)) if (info.role === "controller" && info.seat !== null) { r = step(engine, { kind: "connect", seat: info.seat }, now); engine = r.state; out = [...out, ...r.out]; }
+        return this.commit({ ...s, room, engine }, out, r.wakeAtMs);
+      }
+      if (m.t === "startBots") {
+        if (me.role !== "host") return refuse("not_host");
+        if (s.engine !== null) return refuse("already_started");
+        if (humanCount(s.room) > 0) return refuse("players_seated");
+        let room = s.room;
+        while (room.seats.length < (m.bots ?? 4)) {
+          const res = seatPlayer(room, this.botName(room), null, now);
+          if (!res.ok) return refuse(res.code);
+          room = res.state;
+        }
+        const draft = this.draftEngine({ ...s, room });
+        const r = step(draft, { kind: "client", seat: draft.masterSeat, msg: { t: "start" } }, now);
+        if (r.refused) return refuse(r.refused);
+        return this.commit({ ...s, room: { ...room, lastActiveMs: now, started: true }, engine: r.state }, r.out, r.wakeAtMs);
       }
       if (m.t === "handOver") {
         const token = s.room.seats.find((x) => x.seat === me.seat)?.token ?? "";
@@ -153,7 +195,7 @@ export class RoomCore {
     if (engine === null) {
       // The lobby: settings and start, by the Master only. The Engine is made at the start, from the seats then.
       if (parsed.msg.t !== "settings" && parsed.msg.t !== "start" && parsed.msg.t !== "sound") return refuse("not_started");
-      const draft = createEngine({ seed: s.room.seed, seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel: lobbySettings.preset === "gentle" ? "gentle" as const : "standard" as const })), settings: lobbySettings, presetIds: PRESET_GHOSTS });
+      const draft = this.draftEngine(s);
       if (parsed.msg.t === "settings") {
         const r = step(draft, { kind: "client", seat: me.seat, msg: parsed.msg }, now);
         if (r.refused) return refuse(r.refused);
@@ -216,6 +258,12 @@ export class RoomCore {
     if (s.engine === null) { await this.ports.setAlarm(s.room.lastActiveMs + s.room.ttlMs); return; }
     const r = step(s.engine, { kind: "alarm" }, now);
     await this.commit({ ...s, engine: r.state }, r.out, r.wakeAtMs);
+  }
+
+  /** Ends the Room from outside (its maker started a new one). Nothing to do when it is already gone. */
+  async endRoom(): Promise<void> {
+    const s = await this.loaded();
+    if (s !== null) await this.end(s);
   }
 
   /** End the Room: tell every socket, close them, and delete everything at once (party-mode 1.5). */

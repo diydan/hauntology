@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mulberry32 } from "../puzzles/rng";
+import { BOT_THINK_MAX_MS, BOT_THINK_MIN_MS } from "./engine";
 import { MAX_MESSAGES_PER_SECOND, RoomCore, type Ports } from "./server";
 
 /** Fake storage, sockets, clock and randomness. Storage survives a new RoomCore, as a Durable Object's does. */
@@ -148,5 +149,90 @@ describe("RoomCore: the game", () => {
     await core.alarm();
     expect(f.disk.text).toBeUndefined();
     expect(f.ended).toEqual(["ABCD"]);
+  });
+});
+
+describe("RoomCore: the Bot runner (integration 3.3, 3.4)", () => {
+  async function botRoom(seed: number) {
+    const f = fakes(seed);
+    const core = new RoomCore(f.ports);
+    const { hostToken } = await core.create("BOTS");
+    await say(core, "tv", { t: "hello", token: hostToken });
+    return { f, core };
+  }
+
+  it("only the host starts an all-Bot game, and only in a lobby with no human", async () => {
+    const f = fakes(2);
+    const core = new RoomCore(f.ports);
+    const { hostToken } = await core.create("BOTS");
+    const a = await core.join("Ana");
+    if (!a.ok) throw new Error("join");
+    await say(core, "ana", { t: "hello", token: a.token });
+    await say(core, "ana", { t: "startBots" });
+    expect(f.of("ana", "refused").at(-1)).toEqual({ t: "refused", code: "not_host" });
+    await say(core, "tv", { t: "hello", token: hostToken });
+    await say(core, "tv", { t: "startBots" });
+    expect(f.of("tv", "refused").at(-1)).toEqual({ t: "refused", code: "players_seated" });
+    const g = await botRoom(3);
+    await say(g.core, "tv", { t: "startBots", bots: 3 });
+    expect(JSON.parse(g.f.disk.text!).engine.phase).toBe("playing");
+    await say(g.core, "tv", { t: "startBots" });
+    expect(g.f.of("tv", "refused").at(-1)).toEqual({ t: "refused", code: "already_started" });
+  });
+
+  for (const seed of [11, 12, 13]) {
+    it(`a whole all-Bot game runs to the ending on the alarm alone, each Bot thinking 1.5 to 6 s (seed ${seed})`, async () => {
+      const { f, core } = await botRoom(seed);
+      await say(core, "tv", { t: "startBots", bots: 4 });
+      let lastLog = JSON.parse(f.disk.text!).engine.log.length as number;
+      let lastActMs = f.clock.t;
+      let wakes = 0;
+      let actions = 0;
+      for (; wakes < 20_000; wakes++) {
+        const st = JSON.parse(f.disk.text!).engine;
+        if (st.phase === "ended") break;
+        expect(f.disk.alarm).not.toBeNull();
+        f.clock.t = Math.max(f.clock.t, f.disk.alarm!);
+        await core.alarm();
+        const after = JSON.parse(f.disk.text!).engine;
+        const fresh = after.log.slice(lastLog) as { kind: string }[];
+        const acted = fresh.filter((e) => ["visit", "suggest", "inspect", "seal"].includes(e.kind));
+        if (acted.length > 0) { expect(f.clock.t - lastActMs).toBeGreaterThanOrEqual(BOT_THINK_MIN_MS); actions += acted.length; }
+        if (acted.length > 0 || fresh.some((e) => e.kind === "turn-start")) lastActMs = f.clock.t;
+        lastLog = after.log.length;
+      }
+      const end = JSON.parse(f.disk.text!).engine;
+      expect(end.phase).toBe("ended");
+      expect(f.of("tv", "public").at(-1)).toMatchObject({ view: { phase: "ended" } });
+      expect(end.turnNo).toBeGreaterThanOrEqual(8);
+      expect(actions).toBeGreaterThanOrEqual(end.turnNo);
+      expect(BOT_THINK_MAX_MS).toBeGreaterThan(BOT_THINK_MIN_MS);
+    });
+  }
+
+  it("Play again: after an ending, a new deal with the same seats; not before the end, and only by the Master", async () => {
+    const { f, core } = await botRoom(21);
+    await say(core, "tv", { t: "startBots", bots: 3 });
+    await say(core, "tv", { t: "playAgain" });
+    expect(f.of("tv", "refused").at(-1)).toEqual({ t: "refused", code: "not_ended" });
+    for (let k = 0; k < 20_000 && JSON.parse(f.disk.text!).engine.phase !== "ended"; k++) { f.clock.t = Math.max(f.clock.t, f.disk.alarm!); await core.alarm(); }
+    const before = JSON.parse(f.disk.text!);
+    expect(before.engine.phase).toBe("ended");
+    await say(core, "tv", { t: "playAgain" });
+    const after = JSON.parse(f.disk.text!);
+    expect(after.engine.phase).toBe("playing");
+    expect(after.engine.seats).toEqual(before.engine.seats);
+    expect(after.engine.seed).not.toBe(before.engine.seed);
+    expect(after.engine.deal).not.toEqual(before.engine.deal);
+  });
+
+  it("the public view names every Suspect and Relic, so a screen can offer them", async () => {
+    const { f, core } = await botRoom(22);
+    await say(core, "tv", { t: "startBots", bots: 3 });
+    const view = f.of("tv", "public").at(-1)!.view as { suspects: { id: string; name: string }[]; relics: { name: string }[] };
+    expect(view.suspects).toHaveLength(6);
+    for (const x of view.suspects) expect(x.name).not.toBe("A visitor's ghost");
+    expect(new Set(view.suspects.map((x) => x.name)).size).toBe(6);
+    expect(view.relics.map((x) => x.name)).toContain("locket");
   });
 });

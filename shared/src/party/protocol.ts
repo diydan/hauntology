@@ -46,6 +46,10 @@ export const RoomMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("addBot") }).strict(),
   z.object({ t: z.literal("end") }).strict(),
   z.object({ t: z.literal("handOver"), seat: z.number().int().min(1).max(6) }).strict(),
+  /** The host only, in an empty lobby: fill the Room with Bots and start (an all-Bot game, integration 3.4). */
+  /** The Master, after an ending: a new case with the same seats and settings, a new deal (party-mode 8.5). */
+  z.object({ t: z.literal("playAgain") }).strict(),
+  z.object({ t: z.literal("startBots"), bots: z.number().int().min(2).max(6).optional() }).strict(),
 ]);
 export type RoomMsg = z.infer<typeof RoomMsgSchema>;
 

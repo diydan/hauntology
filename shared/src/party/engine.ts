@@ -9,6 +9,7 @@ import { buildPool, type Pool } from "./pool";
 import { inspectRefusal, placeResidue, settleInspect, startInspect, type Inspecting } from "./residue";
 import { EAVESDROP_MS, canEavesdrop, eavesdrop, gainResolve, spendResolve, type EavesdropWindow } from "./resolve";
 import { applyNudge, canNudge, type LastSpook, type NudgeKind } from "./nudge";
+import { ghostName } from "./preset-ghosts";
 import { presetRow, type SoloPreset } from "./solo";
 import { capFor } from "../puzzles/settings";
 import { lockLevel } from "../puzzles/level";
@@ -126,6 +127,8 @@ export type PublicSnapshot = Readonly<{
   seats: readonly Readonly<{ seat: number; nickname: string; bot: boolean; poltergeist: boolean; handSize: number; sealed: boolean }>[];
   haunt: Readonly<{ level: number; max: number; coldSpot: string | null; choosing: Readonly<{ options: readonly HauntOption[]; chooser: number | null; deadlineMs: number }> | null }>;
   zones: readonly Readonly<{ id: string; name: string }>[];
+  suspects: readonly Readonly<{ id: string; name: string }>[];
+  relics: readonly Readonly<{ id: string; name: string }>[];
   events: readonly EngineEvent[];
   ending: EndingPayload | null;
 }>;
@@ -640,6 +643,8 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
     seats: s.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, poltergeist: player(s, x.seat)?.poltergeist ?? false, handSize: s.deal?.hands[x.seat]?.length ?? 0, sealed: player(s, x.seat)?.sealed != null })),
     haunt: { level: s.haunt.level, max: s.haunt.max, coldSpot: coldSpotIn(s.haunt, s.round), choosing: p === null ? null : { options: [...p.options], chooser: p.chooser, deadlineMs: p.deadlineMs } },
     zones: s.pool.zones.map((z) => ({ id: z.id, name: z.name })),
+    suspects: s.pool.suspects.map((x) => ({ id: x.id, name: ghostName(x.profileId) })),
+    relics: s.pool.relics.map((x) => ({ id: x.id, name: x.name })),
     events: s.log.map((e) => ({ ...e })),
     ending: s.phase === "ended" ? s.ending : null,
   };

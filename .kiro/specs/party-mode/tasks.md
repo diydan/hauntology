@@ -374,11 +374,11 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 5.4, 6.1, 6.2, 6.3, 6.5, 6.7_
   - [ ] 4.7 Ending payload with the winners, the Residue placements, the Most Haunting award and the recap, built once when the game ends, and Play again
     - _Requirements: 6.6, 6.8, 11.6_
-  - [ ] 4.8 Time-to-live alarm, Master or host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
+  - [x] 4.8 (`shared/src/party/server.ts`, `api/src/do/party-room.ts`, `api/src/routes/party.ts`; a new solo case ends the same visitor's old Room first) Time-to-live alarm, Master or host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
     - _Requirements: 1.5, 10.4, 10.6, 10.7_
-  - [ ] 4.9 Bot runner driven by alarms with think time of 1.5 to 6 s, using `botMind`
+  - [x] 4.9 (the Engine's `botDueMs` and the Room's one alarm; an all-Bot game starts with the host's `startBots`) Bot runner driven by alarms with think time of 1.5 to 6 s, using `botMind`
     - _Requirements: 9.1, 9.2_
-  - [ ] 4.10 PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
+  - [x] 4.10 (`api/src/do/party-directory.ts`) PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
     - _Requirements: 10.6_
   - [ ] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings (including the Classic, Gentle and Quick presets and the Nudge, Frame, sound, auto-cross and Bot switches), hand-over, 60 s Master timeout, host token limited to `end`
     - _Requirements: 1.7, 1.5, 12.5, 14.6_

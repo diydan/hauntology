@@ -11,7 +11,7 @@ export const JOINS_PER_MINUTE = 20;
  * The `PartyDirectory` Durable Object (party-mode design, integration 3.2): one for the whole app, named
  * `party-directory`, and the only place that knows which Rooms are live. Its single-threaded storage makes the cap
  * checks atomic. It keeps only code -> {createdMs, sessionId}; no sockets and no alarm.
- *   POST /create {code, sessionId} -> {ok:true} | {ok:false, code:"rooms_full" | "session_has_room" | "code_taken"}
+ *   POST /create {code, sessionId} -> {ok:true} | {ok:false, code:"rooms_full" | "code_taken"} | {ok:false, code:"session_has_room", existing}
  *   POST /delete {code}            -> 204
  *   POST /has {code}               -> {live}
  *   POST /attempt {ipHash}         -> {ok} (a join attempt; false past the per-minute limit)
@@ -39,7 +39,8 @@ export class PartyDirectory {
       const stale = [...all].filter(([, r]) => now - r.createdMs >= ENTRY_MAX_AGE_MS).map(([k]) => k);
       for (const k of stale) { await this.state.storage.delete(k); all.delete(k); }
       if (all.has(key)) return json({ ok: false, code: "code_taken" });
-      if ([...all.values()].some((r) => r.sessionId === body.sessionId)) return json({ ok: false, code: "session_has_room" });
+      const mine = [...all].find(([, r]) => r.sessionId === body.sessionId);
+      if (mine) return json({ ok: false, code: "session_has_room", existing: mine[0].slice("room:".length) });
       if (all.size >= this.cap) return json({ ok: false, code: "rooms_full" });
       await this.state.storage.put(key, { createdMs: now, sessionId: body.sessionId });
       return json({ ok: true });

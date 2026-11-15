@@ -32,15 +32,15 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 3.1, 3.3_
   - [x] 3.2 (`api/src/do/party-directory.ts` and `api/src/routes/party.ts`, mounted at `/api/party` in `app.ts`, both objects bound in `worker.ts` and `wrangler.jsonc` (migration `v3`); `shared/src/party/protocol.ts` checks every message; limits: 20 join attempts a minute per hashed IP, 40 messages a second per socket; `PARTY_ENABLED` off answers `party_disabled`; an ended Room frees its directory place, and an entry is dropped after a day. Smoke run under `wrangler dev` on 2026-11-15: create, join, sockets, start, privacy, end) `PartyDirectory` caps, rate limits, time to live and deletion; `/api/party` routes (party-mode 4.8, 4.10, 7)
     - _Requirements: 3.2_
-  - [ ] 3.3 Bot runner by alarm with think time (party-mode 4.9)
+  - [x] 3.3 (think time 1.5 to 6 s in the Engine, run by the Room's alarm; tested in `server.test.ts`: three whole all-Bot games end on the alarm alone, no Bot moves sooner than 1.5 s) Bot runner by alarm with think time (party-mode 4.9)
     - _Requirements: 3.1_
-  - [ ] 3.4 Checkpoint: a whole all-Bot game runs on the local server
+  - [x] 3.4 (2026-11-15 under `wrangler dev`: four Bots started by the host's `startBots` played to the ending in 8.3 minutes on the alarm alone, 102 messages to the TV and no private view among them; the same day a solo case through `startSolo` (seat 1 against two Bots, Quick) ended in 3 minutes and its Room was gone after Exit) Checkpoint: a whole all-Bot game runs on the local server
     - _Requirements: 1.2_
 
 - [ ] 4. Phase 4: the solo case (the first playable game)
-  - [ ] 4.1 Back the Case screen's `HostPort` with a real Room via `soloSetup`; the visitor is the Master on the embedded pad; remove the stand-in
+  - [ ] 4.1 (built: `web/src/app/case/room-client.ts` (`startSolo`: the Room, seat 1 as Master, the preset, the Bots, start; `replace` ends the visitor's old Room) and `host.tsx`, the default Host; the stand-in stays only for `?demo=1`; still to do: the world-size check of `soloSetup` with the world's walk radius, with 4.3) Back the Case screen's `HostPort` with a real Room via `soloSetup`; the visitor is the Master on the embedded pad; remove the stand-in
     - _Requirements: 4.1_
-  - [ ] 4.2 The pad on the shared screen sends Controller messages; the Host view, the hand, notebook, suggest and seal screens on one page; the ending screen and Play again
+  - [ ] 4.2 (started: the solo table in `host.tsx`: status, rooms, Search, Ask, End turn, Pass, show a card, the house's choice, the hand, the notebook, the accusation with a second press, the log and the ending with the answer; Play again is a Room message; puzzles are off until 5.3; still to do: the 3D world beside the table, the full ending screen (party-mode 8.5) and the design pass) The pad on the shared screen sends Controller messages; the Host view, the hand, notebook, suggest and seal screens on one page; the ending screen and Play again
     - _Requirements: 4.2_
   - [ ] 4.3 Gallery worlds and Preset Ghosts when nothing is contributed
     - _Requirements: 4.3_

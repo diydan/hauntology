@@ -59,4 +59,18 @@ describe("/api/party routes", () => {
     expect(late.status).toBe(429);
     expect(await late.json()).toEqual({ ok: false, code: "rate_limited" });
   });
+
+  it("with replace, a visitor's new case ends their old Room first, so a reload never blocks a new case", async () => {
+    const { routes, rooms } = app("same");
+    const first = (await (await routes.request("/", { method: "POST" })).json()) as { code: string; hostToken: string };
+    const second = await routes.request("/", { method: "POST", body: JSON.stringify({ replace: true }) });
+    expect(second.status).toBe(200);
+    const room = (await second.json()) as { code: string };
+    expect(room.code).not.toBe(first.code);
+    expect(rooms.data.get(first.code)?.has("room")).toBe(false); // the old Room's data is gone, not just its directory entry
+    expect((await routes.request(`/${first.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "A" }) })).status).toBe(404);
+    expect((await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "A" }) })).status).toBe(200);
+    const third = await routes.request("/", { method: "POST" });
+    expect(await third.json()).toEqual({ code: "session_has_room" });
+  });
 });

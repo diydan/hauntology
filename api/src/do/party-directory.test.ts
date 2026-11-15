@@ -11,7 +11,7 @@ describe("PartyDirectory", () => {
   it("holds the total cap and one live Room per session, and frees a slot on delete", async () => {
     const d = new PartyDirectory(fakeState().state, {}, () => 1, 2);
     expect((await post(d, "/create", { code: "AAAA", sessionId: "s1" })).json).toEqual({ ok: true });
-    expect((await post(d, "/create", { code: "BBBB", sessionId: "s1" })).json).toEqual({ ok: false, code: "session_has_room" });
+    expect((await post(d, "/create", { code: "BBBB", sessionId: "s1" })).json).toEqual({ ok: false, code: "session_has_room", existing: "AAAA" });
     expect((await post(d, "/create", { code: "AAAA", sessionId: "s2" })).json).toEqual({ ok: false, code: "code_taken" });
     expect((await post(d, "/create", { code: "BBBB", sessionId: "s2" })).json).toEqual({ ok: true });
     expect((await post(d, "/create", { code: "CCCC", sessionId: "s3" })).json).toEqual({ ok: false, code: "rooms_full" });

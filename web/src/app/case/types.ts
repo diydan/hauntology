@@ -5,7 +5,7 @@ import type { ConditionsChoice } from "@hauntology/shared/conditions/types";
  * The seam between the shell and the party Host page, for "Play a case" (Requirement 13). The shell
  * knows only this: it hands a container, the setup and a message callback to `mountHost`, and awaits
  * `dispose()` (which ends the Room and releases the Viewer) before it mounts another Screen. The
- * real Host page (party-mode task 8.15) and the demo stand-in both implement it, so the Case
+ * real Host (`host.tsx`, party-mode task 8.15) and the demo stand-in (`?demo=1`) both implement it, so the Case
  * Screen cannot tell them apart. The Host runs `soloSetup`, makes the Room, seats the visitor as
  * Master, adds the Bots and starts; the shell holds no game rule. Messages from the Host arrive as
  * `unknown` and are checked with `parseHostMessage`.
@@ -33,4 +33,4 @@ export type HostModule = {
 export type LoadHost = () => Promise<HostModule>;
 
 /** Loaded only when a case opens, so Home's first load does not carry it (Requirement 10.1). */
-export const defaultLoadHost: LoadHost = () => import("./standin");
+export const defaultLoadHost: LoadHost = () => import("./host");

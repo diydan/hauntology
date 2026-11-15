@@ -41,12 +41,13 @@ export async function loadDemoApi(search: string): Promise<ShellApi | null> {
 /**
  * The parts of the browser kit the demo replaces, when `?demo=1` is set on a non-production build, otherwise
  * `null`: Turnstile becomes a stand-in with two buttons, so the bot check can be walked without calling
- * Cloudflare. The import sits inside the `import.meta.env.PROD` guard, so a production build drops it.
+ * Cloudflare, and the case Host becomes the stand-in. The import sits inside the `import.meta.env.PROD` guard, so a production build drops it.
  */
 export async function loadDemoPlatform(search: string): Promise<Partial<PlatformKit> | null> {
   if (!import.meta.env.PROD && wantsDemo(search)) {
     const { standinTurnstile } = await import("./confirm/turnstile-standin");
-    return { loadTurnstile: standinTurnstile };
+    // No server behind the demo: "Play a case" uses the stand-in Host.
+    return { loadTurnstile: standinTurnstile, loadHost: () => import("./case/standin") };
   }
   return null;
 }

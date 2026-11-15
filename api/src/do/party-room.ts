@@ -12,6 +12,7 @@ type DirectoryNamespace = { idFromName(name: string): unknown; get(id: unknown):
  * Internal addresses, from the Worker's `/api/party` routes only:
  *   POST /create {code}   -> {hostToken, displayToken}
  *   POST /join {nickname} -> {ok, seat, token} | {ok:false, code}
+ *   POST /end             -> 204 (the same session made a new Room: this one ends)
  *   GET  /ws (Upgrade: websocket) -> 101; the first message must be {t:"hello", token}
  */
 export class PartyRoom {
@@ -53,6 +54,7 @@ export class PartyRoom {
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
     if (pathname === "/create" && typeof body?.code === "string") return json(await this.core.create(body.code));
     if (pathname === "/join" && typeof body?.nickname === "string") return json(await this.core.join(body.nickname));
+    if (pathname === "/end") { await this.core.endRoom(); return new Response(null, { status: 204 }); }
     return json({ ok: false, code: "bad_request" }, 400);
   }
 
