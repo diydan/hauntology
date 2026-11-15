@@ -4056,9 +4056,10 @@ function HauntDoorSeq({ Group, Vector3, PointLight, Mesh, BoxGeometry, MeshBasic
         pivot.rotation.y = CLOSED;
         try { dress(pivot); } catch (e) { /* the plain door is fine */ }
       }
-      // pure darkness behind the door: a black panel just inside the doorway, wider than the opening so its edges hide behind the jambs
-      const dark = new Mesh(new BoxGeometry(0.9, 1.0, 0.02), new MeshBasicMaterial({ color: 0x000000, fog: false }));
-      dark.position.set(DX, 0.55, 0.74);
+      // pure darkness behind the door: a black room just inside the doorway (a box seen from inside, so only its far faces draw).
+      // It starts behind the door plane and runs well back, so the open door stays in view against it. Nothing in the house pokes into it.
+      const dark = new Mesh(new BoxGeometry(1.03, 0.94, 1.08), new MeshBasicMaterial({ color: 0x000000, fog: false, side: 1 }));
+      dark.position.set(0.235, 0.53, 0.24);
       dark.visible = false;
       darkPanel = dark;
       scene.add(dark);
