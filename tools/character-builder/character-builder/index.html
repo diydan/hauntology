@@ -539,9 +539,48 @@ const BLACK = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); BLACK
 const STYLE = { k: 1 };
 /* BEAUTIFY (selfies only, never the preset characters): on the device, no upload, and capped so a face stays itself. At 1.0: skin retouch in the print (edge-preserving), grain 60% weaker,
    face-shape morphs pulled 25% toward neutral, a faint resting smile, brighter eyes and teeth. "Show original" turns it off to compare. */
-const BEAUTY = { k: 0.5, compare: false, on: true };
+const BEAUTY = { k: 0.5, photo: 0.5, compare: false, on: true }; // two steps: photo = retouch the 2D selfie before it is printed; k = the 3D head (shape, smile, light, grain, teeth)
 const FACE_SHAPE_IDS = ['jawWidth', 'chinLength', 'chinPoint', 'chinWidth', 'noseLength', 'noseSize', 'noseWidth', 'cheekFullness', 'skullWidth', 'faceLength', 'faceWidth'];
 function beautyK() { return FP.on && FP.id === 'custom' && BEAUTY.on && !BEAUTY.compare ? BEAUTY.k : 0; }
+function photoK() { return FP.on && FP.id === 'custom' && BEAUTY.on && !BEAUTY.compare ? BEAUTY.photo : 0; }
+/* STEP 1, THE PHOTO: retouch the selfie itself, once, with the face landmarks (on the device). Inside the skin only (the face oval minus eyes, brows and lips):
+   edge-preserving smoothing (pores and fine lines soften, real edges stay), even tone (blotches take the hue of the skin around them), lighter under-eyes
+   (toward the cheek's brightness, never past it), shine pressed down. Teeth lose some yellow, eye whites a little brighter. No reshaping, no skin lightening. */
+function fpRetouch(img, lm, N, k) {
+  const W = img.naturalWidth || img.width, H = img.naturalHeight || img.height, sc = W / N, mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+  const P = i => [lm[i][0] * sc, lm[i][1] * sc], poly = (g, ids) => { g.beginPath(); ids.forEach((i, j) => { const [x, y] = P(i); j ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); g.fill(); };
+  const EYE_L = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246], EYE_R = [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398];
+  const BROW_L = [70, 63, 105, 66, 107, 55, 65, 52, 53, 46], BROW_R = [300, 293, 334, 296, 336, 285, 295, 282, 283, 276];
+  const LIPS = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185], MOUTH = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191];
+  const eyeW = Math.hypot(P(33)[0] - P(133)[0], P(33)[1] - P(133)[1]) || 20;
+  const layer = (draw, blur) => { const c = mk(), g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, W, H); g.fillStyle = '#fff'; draw(g); if (!blur) return g.getImageData(0, 0, W, H).data; const c2 = mk(), g2 = c2.getContext('2d', { willReadFrequently: true }); g2.filter = `blur(${blur}px)`; g2.drawImage(c, 0, 0); return g2.getImageData(0, 0, W, H).data; };
+  const skin = layer(g => { poly(g, FACE_OVAL); g.fillStyle = '#000'; for (const ids of [EYE_L, EYE_R, BROW_L, BROW_R, LIPS]) poly(g, ids); }, eyeW * 0.12);
+  const under = layer(g => { for (const [lo, a, b] of [[145, 33, 133], [374, 362, 263]]) { const [x, y] = P(lo), w = Math.hypot(P(a)[0] - P(b)[0], P(a)[1] - P(b)[1]); g.beginPath(); g.ellipse(x, y + 0.3 * w, 0.55 * w, 0.22 * w, 0, 0, 2 * Math.PI); g.fill(); } }, eyeW * 0.15);
+  const teeth = layer(g => poly(g, MOUTH), 1), whites = layer(g => { poly(g, EYE_L); poly(g, EYE_R); }, 1);
+  const blurOf = r => { const c = mk(), g = c.getContext('2d', { willReadFrequently: true }); g.filter = `blur(${r}px)`; g.drawImage(img, 0, 0, W, H); return g.getImageData(0, 0, W, H).data; };
+  const b1 = blurOf(Math.max(1.5, eyeW * 0.06)), b2 = blurOf(Math.max(4, eyeW * 0.3));
+  const c0 = mk(), g0 = c0.getContext('2d', { willReadFrequently: true }); g0.drawImage(img, 0, 0, W, H); const im = g0.getImageData(0, 0, W, H), d = im.data;
+  const L = (a, o) => 0.2126 * a[o] + 0.7152 * a[o + 1] + 0.0722 * a[o + 2]; let ms = 0, mn = 0; for (let o = 0; o < d.length; o += 16) if (skin[o] > 200) { ms += L(b2, o); mn++; } const mean = mn ? ms / mn : 128, hi = mean * 1.3;
+  const st = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+  for (let o = 0; o < d.length; o += 4) {
+    const sk = skin[o] / 255, tt = teeth[o] / 255, ew = whites[o] / 255; if (sk < 0.01 && tt < 0.01 && ew < 0.01) continue;
+    let r = d[o], g = d[o + 1], b = d[o + 2];
+    if (sk > 0) {
+      const l = L(d, o), lb = L(b1, o), keep = st(8, 34, Math.abs(l - lb)), f = 1 - 0.65 * k * (1 - keep); // 1. smooth: fine detail shrinks, strong edges stay
+      let nr = b1[o] + (r - b1[o]) * f, ng = b1[o + 1] + (g - b1[o + 1]) * f, nb = b1[o + 2] + (b - b1[o + 2]) * f;
+      const l0 = Math.max(1, 0.2126 * nr + 0.7152 * ng + 0.0722 * nb), l2 = Math.max(1, L(b2, o)), cp = [nr / l0 - 1, ng / l0 - 1, nb / l0 - 1], cq = [b2[o] / l2 - 1, b2[o + 1] / l2 - 1, b2[o + 2] / l2 - 1];
+      const ap = Math.hypot(...cp), aq = Math.hypot(...cq) || 1e-3, m = 0.45 * k; // 2. even tone: the hue of the skin around, this pixel's own saturation
+      nr = l0 * (1 + cp[0] * (1 - m) + cq[0] * ap / aq * m); ng = l0 * (1 + cp[1] * (1 - m) + cq[1] * ap / aq * m); nb = l0 * (1 + cp[2] * (1 - m) + cq[2] * ap / aq * m);
+      const ue = under[o] / 255, l1 = Math.max(1, 0.2126 * nr + 0.7152 * ng + 0.0722 * nb), lift = 1 + (Math.min(1.35, Math.max(1, mean / l1)) - 1) * 0.6 * k * ue; nr *= lift; ng *= lift; nb *= lift; // 3. under-eyes
+      const l3 = 0.2126 * nr + 0.7152 * ng + 0.0722 * nb; if (l3 > hi) { const q = 1 + ((hi + (l3 - hi) * 0.4) / l3 - 1) * k; nr *= q; ng *= q; nb *= q; } // 4. shine
+      r += (nr - r) * sk; g += (ng - g) * sk; b += (nb - b) * sk;
+    }
+    if (tt > 0) { const l = L(d, o); if (l > mean * 0.7) { const w = 0.5 * k * tt * st(mean * 0.7, mean * 1.1, l); r += (l * 1.06 - r) * w; g += (l * 1.06 - g) * w; b += (l * 1.08 - b) * w; } } // teeth: less yellow
+    if (ew > 0) { const l = L(d, o); if (l > mean * 0.85) { const w = 0.35 * k * ew; r += (l * 1.1 - r) * w; g += (l * 1.1 - g) * w; b += (l * 1.12 - b) * w; } } // eye whites (the darker iris is left alone)
+    d[o] = Math.min(255, Math.max(0, r)); d[o + 1] = Math.min(255, Math.max(0, g)); d[o + 2] = Math.min(255, Math.max(0, b));
+  }
+  g0.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c0); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
+}
 const FP = { on: false, id: null, cfg: null, hideEyes: true, exprK: 1, expr: {}, auto: true, det: null, hairPrint: true, matchClothes: true, matchBody: true, prevShape: null, hairMask: null, bodyGain: 1.0, hairMul: new THREE.Color(1, 1, 1), bodyMul: new THREE.Color(1, 1, 1), overC: new THREE.Color(1, 1, 1), an: null, prevSkin: null, prevHair: null, matchHair: true, skinRatio: [0.9, 0.84, 0.82],
   u: { uFpOn: { value: 0 }, uFpMap: { value: WHITE }, uFpC: { value: new THREE.Vector2(0, 147.8) }, uFpW: { value: new THREE.Vector2(36, 36) }, uFpEll: { value: new THREE.Vector4(0.5, 0.5, 0.2, 0.28) }, uFpTint: { value: 0.25 }, uFpFlat: { value: 0.4 }, uFpSkin: { value: new THREE.Color(0xd9a37c) }, uFpBase: { value: new Float32Array(64) }, uFpSkinMask: { value: BLACK }, uFpAlpha: { value: 1 }, uFpBeauty: { value: 0 }, uFpScalp: { value: new THREE.Color(0x000000) }, uFpDelight: { value: 0 }, uFpMeanL: { value: 0.3 }, uFpMirror: { value: new THREE.Vector2(0, 0) } },
   nudge: { x: 0, y: 0, k: 1 } };
@@ -571,14 +610,6 @@ const FP_FRAG = `
    { float faceW = 1.0 - smoothstep( 0.72, 1.0, length( e ) ), scalpW = smoothstep( 145.0, 149.0, vFpP.y ) * ( 1.0 - faceW ) * ( 1.0 - fpA ) * uFpAlpha; diffuseColor.rgb = mix( diffuseColor.rgb, uFpScalp, scalpW ); } // the scalp under the hair: the hair's own colour
 #endif
    vec3 pc = texture2D( uFpMap, uv ).rgb;
-   if ( uFpBeauty > 0.0 ) { // SELFIE RETOUCH: soften pores, wrinkles and colour blotches but keep real edges (eyes, brows, lips, nostrils); the eyes get a little brighter
-#ifndef FP_EYE
-     vec3 pb = texture2D( uFpMap, uv, 3.0 ).rgb; float dl = dot( pc - pb, vec3( 0.299, 0.587, 0.114 ) ), keep = smoothstep( 0.03, 0.14, abs( dl ) );
-     pc = pb + ( pc - pb ) * mix( 1.0 - 0.6 * uFpBeauty, 1.0, keep ); pc = mix( pc, pb, 0.25 * uFpBeauty * ( 1.0 - keep ) ); // v2: gentler, more real texture kept (over-smoothing reads as plastic)
-#else
-     pc *= 1.0 + 0.10 * uFpBeauty;
-#endif
-   }
 #ifndef FP_EYE
    { // SIDES OF THE FACE from one front photo. fn.z: how squarely the surface faces the camera; low = the photo is stretched across it
      const vec3 LW = vec3( 0.2126, 0.7152, 0.0722 ); vec3 fn = normalize( vFpN ); float away = smoothstep( 0.1, 0.55, 1.0 - fn.z );
@@ -587,18 +618,9 @@ const FP_FRAG = `
      if ( mw > 0.0 ) { vec2 uvm = vec2( ( - vFpP.x - uFpC.x ) / uFpW.x + 0.5, uv.y ); float la = dot( texture2D( uFpMap, uv, 5.0 ).rgb, LW ), lb = dot( texture2D( uFpMap, uvm, 5.0 ).rgb, LW ); pc = mix( pc, texture2D( uFpMap, uvm ).rgb * clamp( la / max( lb, 1e-3 ), 0.5, 2.0 ), mw ); }
      // 1. where the photo is smeared, keep only its local tone (a blurred sample); the skin grain tile adds the detail back
      float smear = 1.0 - smoothstep( 0.22, 0.6, fn.z ); pc = mix( pc, texture2D( uFpMap, uv, 4.0 ).rgb, 0.85 * smear * uFpAlpha );
-     // 3. take the photo's own light and shade out (divide by its blurred brightness), so the 3D lights shade the face and the sides match the front
-     float bl = dot( texture2D( uFpMap, uv, 5.5 ).rgb, LW ); pc *= mix( 1.0, clamp( uFpMeanL / max( bl, 1e-3 ), 0.55, 1.8 ), uFpDelight );
-     if ( uFpBeauty > 0.0 ) { // BEAUTIFY v2 (selfies only): even tone, lighter under-eyes, less shine. Light and shape only; no slimming, no skin lightening
-       float l0 = max( dot( pc, LW ), 1e-4 ); vec3 cb = texture2D( uFpMap, uv, 4.0 ).rgb; float lb2 = max( dot( cb, LW ), 1e-4 );
-       vec3 cp = pc / l0 - 1.0, cq = cb / lb2 - 1.0; cq *= length( cp ) / max( length( cq ), 1e-3 ); pc = l0 * ( 1.0 + mix( cp, cq, 0.4 * uFpBeauty ) ); // even tone: blotches take the HUE of the skin around them (saturation and brightness detail stay, so the face does not go grey)
-       vec2 q1 = ( vFpP.xy - vec2( 3.35, 146.3 ) ) / vec2( 1.8, 0.85 ), q2 = ( vFpP.xy - vec2( -3.35, 146.3 ) ) / vec2( 1.8, 0.85 );
-       float ue = ( 1.0 - smoothstep( 0.4, 1.0, min( length( q1 ), length( q2 ) ) ) ) * smoothstep( 0.5, 0.8, fn.z ); l0 = max( dot( pc, LW ), 1e-4 );
-       pc *= mix( 1.0, clamp( uFpMeanL / l0, 1.0, 1.35 ), 0.55 * uFpBeauty * ue ); // under-eye circles: lifted toward the cheek's brightness, never past it
-       float hi = uFpMeanL * 1.35; l0 = max( dot( pc, LW ), 1e-4 ); if ( l0 > hi ) pc *= mix( 1.0, ( hi + ( l0 - hi ) * 0.35 ) / l0, uFpBeauty ); // shine: hot spots pressed down
-     }
    }
 #endif
+   { float bl = dot( texture2D( uFpMap, uv, 5.5 ).rgb, vec3( 0.2126, 0.7152, 0.0722 ) ); pc *= mix( 1.0, clamp( uFpMeanL / max( bl, 1e-3 ), 0.55, 1.8 ), uFpDelight ); } // the eyeballs too, or the skin round them is lifted and they are not (a dark ring)
    float pl = dot( pc, vec3( 0.299, 0.587, 0.114 ) ), sl = max( dot( uFpSkin, vec3( 0.299, 0.587, 0.114 ) ), 1e-3 );
    pc = mix( pc, vec3( pl ) * uFpSkin / sl, uFpTint ); fpC = pc;
    diffuseColor.rgb = mix( diffuseColor.rgb, pc * ( 1.0 - uFpFlat ), fpA );
@@ -1604,7 +1626,8 @@ function fpProject() {
   FP.u.uFpEll.value.set(c.ell[0] / N, 1 - c.ell[1] / N, c.ell[2] / N, c.ell[3] / N);
 }
 function fpApply() {
-  FP.u.uFpDelight.value = (0.6 + 0.12 * beautyK()) * STYLE.k; // beautify: softer, more even light (selfies are often lit by a harsh phone flash or a window to one side) if (FP.an && FP.an.mean) FP.u.uFpMeanL.value = 0.2126 * FP.an.mean[0] + 0.7152 * FP.an.mean[1] + 0.0722 * FP.an.mean[2];
+  FP.u.uFpDelight.value = (0.6 + 0.12 * beautyK()) * STYLE.k; // 3D beautify: softer, more even light (selfies are often lit by a harsh phone flash or a window to one side)
+  if (FP.an && FP.an.mean) FP.u.uFpMeanL.value = 0.2126 * FP.an.mean[0] + 0.7152 * FP.an.mean[1] + 0.0722 * FP.an.mean[2];
   FP.u.uFpOn.value = FP.on && FP.cfg ? 1 : 0; FP.u.uFpSkin.value.set(S.skin); if (FP.an && FP.an.hair) FP.u.uFpScalp.value.copy(FP.an.hair.dark).multiplyScalar(0.8); MO.on.value = FP.on ? 1 : 0; HR.str.value = HR.want; HP.on.value = FP.on && FP.hairPrint && FP.matchHair && FP.hairMask ? 1 : 0;
   const p = parts.head; if (!p) return;
   for (const e of p.mats) if (e.mat && /^(mat_eyelashes|mat_eyebrows)$/.test(e.key)) e.mat.visible = !(FP.on && FP.hideEyes); // the photo has its own brows and lashes
@@ -1844,13 +1867,17 @@ function applyBodyMeas() {
 }
 /* the master: scale every photo-driven layer, and the body's ranges */
 function applyBeauty() {
-  const k = beautyK(); FP.u.uFpBeauty.value = k * STYLE.k;
+  const k = beautyK(); FP.u.uFpBeauty.value = 0;
+  if (FP.on && FP.origTex) { const pk = photoK(); // STEP 1: the photo (rebuilt only when its strength changes)
+    if (pk > 0 && FP.det) { if (!FP.retouch || FP.retouch.k !== pk) { if (FP.retouch) FP.retouch.tex.dispose(); FP.retouch = { k: pk, tex: fpRetouch(FP.origTex.image, FP.det.lm, FP.cfg.size, pk) }; } FP.u.uFpMap.value = FP.retouch.tex; }
+    else FP.u.uFpMap.value = FP.origTex; }
+  // STEP 2: the 3D head
   if (FP.on && FP.id === 'custom' && FP.rawFace) { for (const id of FACE_SHAPE_IDS) S.face[id] = Math.round(FP.rawFace[id] * (1 - 0.25 * k) * 20) / 20; syncSlidersUI(); applySculptMorphs(); }
   if (FP.on) { const base = FP.exprBase || FP.expr; FP.expr = { ...base }; if (k > 0) FP.expr.happy_01 = Math.min(1, (base.happy_01 || 0) + 0.15 * k); }
   SK.str.value = FP.on ? SK.want * STYLE.k * (1 - 0.6 * k) : 0; applyEverything(); fpApply();
 }
 function applyStyle() {
-  const k = STYLE.k; FP.u.uFpAlpha.value = k; SK.str.value = FP.on ? SK.want * k * (1 - 0.6 * beautyK()) : 0; FP.u.uFpBeauty.value = beautyK() * k; CL.str.value = CL.an && CL.an.tile ? CL.want * k : 0; FP.hideEyes = k > 0.5; fpApply();
+  const k = STYLE.k; FP.u.uFpAlpha.value = k; SK.str.value = FP.on ? SK.want * k * (1 - 0.6 * beautyK()) : 0; CL.str.value = CL.an && CL.an.tile ? CL.want * k : 0; FP.hideEyes = k > 0.5; fpApply();
   if (FP.bodyMeas && FP.on) applyBodyMeas(); else applyShape();
   applyHairCards();
 }
@@ -2042,7 +2069,7 @@ async function setFacePrint(id, custom) {
   const cfg = custom || FACES[id]; if (!cfg) return null;
   if (cfg.gender && S.gender !== cfg.gender) { S.gender = cfg.gender; await applyLook(); } // the pack's body for this character
   const tex = await fpLoad(cfg.url); if (!tex) return { error: 'could not load ' + cfg.url };
-  FP.u.uFpMap.value = tex; FP.id = id; FP.on = true;
+  FP.u.uFpMap.value = tex; FP.origTex = tex; if (FP.retouch) { FP.retouch.tex.dispose(); FP.retouch = null; } FP.id = id; FP.on = true;
   // 1. find the face: the detector's points when it is available, the hand-marked ones otherwise
   let c = cfg, det = null; if (FP.auto) { det = await fpDetect(tex.image, cfg.size); if (det) c = fpAuto(cfg, det, cfg.size); }
   FP.det = det; FP.cfg = c; FP.expr = det ? fpExpression(det.bs) : {};
@@ -2259,8 +2286,9 @@ function buildUI() {
   s = sec('Face print (test)');
   const styRow = el('div', 'rng', '<label>Style</label>'), styInp = el('input'), styCap = el('span', 'cap', 'Realistic'); styInp.type = 'range'; styInp.min = 0; styInp.max = 1; styInp.step = 0.05; styInp.value = STYLE.k; styInp.setAttribute('aria-label', 'Style, stylised to realistic');
   const styText = v => v < 0.15 ? 'Stylised' : v > 0.85 ? 'Realistic' : Math.round(v * 100) + '% real'; styInp.addEventListener('input', () => { STYLE.k = +styInp.value; styCap.textContent = styText(STYLE.k); applyStyle(); }); styRow.append(styInp, styCap); s.appendChild(styRow);
-  const beRow = el('div', 'rng', '<label>Beautify (selfies)</label>'), beInp = el('input'), beCap = el('span', 'cap', Math.round(BEAUTY.k * 100) + '%'); beInp.type = 'range'; beInp.min = 0; beInp.max = 1; beInp.step = 0.05; beInp.value = BEAUTY.k; beInp.setAttribute('aria-label', 'Beautify, selfies only');
-  beInp.addEventListener('input', () => { BEAUTY.k = +beInp.value; beCap.textContent = Math.round(BEAUTY.k * 100) + '%'; applyBeauty(); }); beRow.append(beInp, beCap); s.appendChild(beRow);
+  for (const [key, label, aria, ev] of [['photo', 'Photo retouch (selfies)', 'Retouch the selfie photo, selfies only', 'change'], ['k', '3D beautify (selfies)', 'Beautify the 3D head, selfies only', 'input']]) { // two steps: the photo itself (rebuilt when the slider is let go), then the 3D head
+    const r = el('div', 'rng', `<label>${label}</label>`), inp = el('input'), cap = el('span', 'cap', Math.round(BEAUTY[key] * 100) + '%'); inp.type = 'range'; inp.min = 0; inp.max = 1; inp.step = 0.05; inp.value = BEAUTY[key]; inp.setAttribute('aria-label', aria);
+    inp.addEventListener('input', () => { cap.textContent = Math.round(+inp.value * 100) + '%'; }); inp.addEventListener(ev, () => { BEAUTY[key] = +inp.value; applyBeauty(); }); r.append(inp, cap); s.appendChild(r); }
   const beCmp = el('div', 'row', '<label>Compare</label>'), beBtn = el('button', 'btn mini', 'Show original'); beBtn.type = 'button'; beBtn.setAttribute('aria-pressed', 'false');
   beBtn.addEventListener('click', () => { BEAUTY.compare = !BEAUTY.compare; beBtn.setAttribute('aria-pressed', String(BEAUTY.compare)); beBtn.textContent = BEAUTY.compare ? 'Showing original' : 'Show original'; applyBeauty(); }); beCmp.appendChild(beBtn); s.appendChild(beCmp);
   const hcRow = el('div', 'row', '<label>Real hair</label>'), hcBtn = el('button', 'btn mini', 'Strands on'); hcBtn.type = 'button'; hcBtn.setAttribute('aria-pressed', 'true');

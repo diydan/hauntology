@@ -51,3 +51,9 @@ Look panel, "Face print (test)". Two test portraits: The Whisper and Mr. Ashby (
 ## Beautify v2 (selfies only)
 - Adds: even tone (blotches take the surrounding skin's hue; saturation and brightness detail kept so the face does not go grey), lighter under-eyes (lifted toward the cheek's brightness, never past it), shine pressed down, slightly softer light.
 - v1 smoothing made gentler (keeps more real texture). Still no slimming and no skin lightening.
+
+## Two-step Beautify (selfies only)
+- Step 1, the photo (`fpRetouch`, slider "Photo retouch"): the selfie itself is retouched once on the device, inside the skin only (face oval minus eyes, brows, lips, from the landmarks): edge-preserving smoothing, hue-only tone evening, under-eye lift, shine down; teeth less yellow, eye whites a little brighter. The retouched copy replaces the printed photo; the analysis (skin, hair, clothes colour) still reads the original.
+- Step 2, the 3D head (slider "3D beautify"): face shape 25% toward neutral, a faint smile, softer light, weaker grain, whiter 3D teeth.
+- "Show original" turns both off. The shader's old 2D retouch is removed (it lives in step 1 now).
+- Fix: the face's mean brightness for the de-light was never set (a comment swallowed the line); the de-light now also applies to the eyeballs, so no dark ring round the eyes.
