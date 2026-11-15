@@ -588,13 +588,19 @@ function fpRetouch(img, lm, N, k) {
 const FP = { on: false, id: null, cfg: null, hideEyes: true, exprK: 1, expr: {}, auto: true, det: null, hairPrint: true, matchClothes: true, matchBody: true, prevShape: null, hairMask: null, bodyGain: 1.0, hairMul: new THREE.Color(1, 1, 1), bodyMul: new THREE.Color(1, 1, 1), overC: new THREE.Color(1, 1, 1), an: null, prevSkin: null, prevHair: null, matchHair: true, skinRatio: [0.9, 0.84, 0.82],
   u: { uFpOn: { value: 0 }, uFpMap: { value: WHITE }, uFpC: { value: new THREE.Vector2(0, 147.8) }, uFpW: { value: new THREE.Vector2(36, 36) }, uFpEll: { value: new THREE.Vector4(0.5, 0.5, 0.2, 0.28) }, uFpTint: { value: 0.25 }, uFpFlat: { value: 0.4 }, uFpSkin: { value: new THREE.Color(0xd9a37c) }, uFpBase: { value: new Float32Array(64) }, uFpSkinMask: { value: BLACK }, uFpAlpha: { value: 1 }, uFpBeauty: { value: 0 }, uFpScalp: { value: new THREE.Color(0x000000) }, uFpDelight: { value: 0 }, uFpMeanL: { value: 0.3 }, uFpMirror: { value: new THREE.Vector2(0, 0) } },
   nudge: { x: 0, y: 0, k: 1 } };
-const FP_GLSL = `uniform sampler2D uFpMap, uFpSkinMask; uniform float uFpDelight, uFpMeanL; uniform vec2 uFpMirror; varying vec3 vFpN; uniform float uFpOn, uFpTint, uFpFlat, uFpAlpha, uFpBeauty; uniform vec3 uFpScalp; uniform vec2 uFpC, uFpW; uniform vec4 uFpEll; uniform vec3 uFpSkin; varying vec3 vFpP;`;
+const FP_GLSL = `
+#ifdef FP_EYE
+varying vec3 vFpFwd;
+#endif
+float fpLid = 0.0;
+uniform sampler2D uFpMap, uFpSkinMask; uniform float uFpDelight, uFpMeanL; uniform vec2 uFpMirror; varying vec3 vFpN; uniform float uFpOn, uFpTint, uFpFlat, uFpAlpha, uFpBeauty; uniform vec3 uFpScalp; uniform vec2 uFpC, uFpW; uniform vec4 uFpEll; uniform vec3 uFpSkin; varying vec3 vFpP;`;
 const FP_FRAG = `
  float fpA = 0.0; vec3 fpC = vec3(0.0);
  if ( uFpOn > 0.5 ) {
    vec2 uv = ( vFpP.xy - uFpC ) / uFpW + 0.5, e = ( uv - uFpEll.xy ) / uFpEll.zw;
 #ifdef FP_EYE
    float fe = length( e ) * 0.55; // eyeballs: always printed whole, whatever the oval says (a fade here would show the 3D iris)
+   fpLid = smoothstep( 0.35, 0.75, texture2D( uFpSkinMask, uv ).r ); // where the photo shows eyelid skin on the eyeball (the 3D eye opening is bigger than the photo's): shaded like the face, not like a glossy ball
 #else
    float fe = length( e );
 #endif
@@ -616,12 +622,12 @@ const FP_FRAG = `
    vec3 pc = texture2D( uFpMap, uv ).rgb;
 #ifndef FP_EYE
    { // SIDES OF THE FACE from one front photo. fn.z: how squarely the surface faces the camera; low = the photo is stretched across it
-     const vec3 LW = vec3( 0.2126, 0.7152, 0.0722 ); vec3 fn = normalize( vFpN ); float away = smoothstep( 0.1, 0.55, 1.0 - fn.z );
+     const vec3 LW = vec3( 0.2126, 0.7152, 0.0722 ); vec3 fn = normalize( vFpN ); float outer = smoothstep( 4.8, 6.6, abs( vFpP.x ) ), away = smoothstep( 0.1, 0.55, 1.0 - fn.z ) * outer; // only the outer face: eyelid rims and nose sides also tilt away from the camera, but the photo shows them well (smearing them drew a soft almond round each eye)
      // 2. the face turned in the photo: on the far (narrow) side, take the near side's pixels, mirrored, at this side's own brightness
      float mw = ( vFpP.x < 0.0 ? uFpMirror.x : uFpMirror.y ) * away;
      if ( mw > 0.0 ) { vec2 uvm = vec2( ( - vFpP.x - uFpC.x ) / uFpW.x + 0.5, uv.y ); float la = dot( texture2D( uFpMap, uv, 5.0 ).rgb, LW ), lb = dot( texture2D( uFpMap, uvm, 5.0 ).rgb, LW ); pc = mix( pc, texture2D( uFpMap, uvm ).rgb * clamp( la / max( lb, 1e-3 ), 0.5, 2.0 ), mw ); }
      // 1. where the photo is smeared, keep only its local tone (a blurred sample); the skin grain tile adds the detail back
-     float smear = 1.0 - smoothstep( 0.22, 0.6, fn.z ); pc = mix( pc, texture2D( uFpMap, uv, 4.0 ).rgb, 0.85 * smear * uFpAlpha );
+     float smear = ( 1.0 - smoothstep( 0.22, 0.6, fn.z ) ) * outer; pc = mix( pc, texture2D( uFpMap, uv, 4.0 ).rgb, 0.85 * smear * uFpAlpha );
    }
 #endif
    { float bl = dot( texture2D( uFpMap, uv, 5.5 ).rgb, vec3( 0.2126, 0.7152, 0.0722 ) ); pc *= mix( 1.0, clamp( uFpMeanL / max( bl, 1e-3 ), 0.55, 1.8 ), uFpDelight ); } // the eyeballs too, or the skin round them is lifted and they are not (a dark ring)
@@ -727,6 +733,7 @@ const HR_SPEC = `
 const MO = { on: { value: 0 }, k: { value: 0.7 } };
 const MO_GLSL = `uniform float uMoOn, uMoK; varying vec3 vMoP;`;
 const MO_LIGHT = `outgoingLight *= mix( 1.0, mix( 0.22, 0.9, smoothstep( 4.5, 9.6, vMoP.z ) ), uMoOn * uMoK );\n`;
+const EYE_SINK = { value: 0 }; // cm, set with the face print (realistic style only)
 const FACEKEY = /^(mat_base_[MF]_face|mat_base_eye\.001)$/; // the skin AND the eyeballs: the skin has holes where the eyes sit, so the photo's eyes are printed onto the eyeballs
 async function makeMat(keyName, side) {
   const def = MAN.materials[keyName]; if (!def) return new THREE.MeshStandardMaterial({ color: 0x888899, roughness: 0.8, side });
@@ -783,10 +790,15 @@ async function makeMat(keyName, side) {
 #else
  vFpP = position;
 #endif`); // the print follows the face SHAPE morphs (the last 11 targets) live, plus the RESTING face guessed from the photo (eye size, nose length, ears, smile, brows: uFpBase); blinks, jaw and lip sync then move the skin under it like a printed hood
+      if (keyName === 'mat_base_eye.001') { sh.uniforms.uEyeSink = EYE_SINK; // the head's forward direction, through the same skinning as the normal: the eyelid skin printed on the eyeball is lit as if it faced the way the face does
+        sh.vertexShader = 'varying vec3 vFpFwd; uniform float uEyeSink;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n transformed.z -= uEyeSink; // the pack\'s big eyeballs bulge out past the eyelids; sunk back, the lids frame the photo\'s eye').replace('#include <defaultnormal_vertex>', '#include <defaultnormal_vertex>\n { vec3 fw = vec3( 0.0, 0.0, 1.0 );\n#ifdef USE_SKINNING\n fw = ( skinMatrix * vec4( fw, 0.0 ) ).xyz;\n#endif\n vFpFwd = normalize( normalMatrix * fw ); }');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n normal = normalize( mix( normal, normalize( mix( normalize( vFpFwd ), normal, 0.35 ) ), fpLid ) );').replace('outgoingLight += uTint *', 'outgoingLight += ( 1.0 - fpLid ) * uTint *');
+      }
       sh.fragmentShader = (keyName === 'mat_base_eye.001' ? '#define FP_EYE 1\n' : '') + (isNeck ? '#define FP_NECK 1\n' : '') + FP_GLSL + '\n' + sh.fragmentShader
         .replace(anchor + (isSkin ? '\n' + SK_FRAG : ''), anchor + (isSkin ? '\n' + SK_FRAG : '') + '\n' + FP_FRAG) // the print goes on top of the skin detail
         .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += fpC * uFpFlat * fpA;')
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = mix( roughnessFactor, 0.95, fpA ); // a printed photo is matte: no stage-light glints on the eyeballs')
+        .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = mix( metalnessFactor, 0.0, fpA ); // and not metal: a slightly metallic eyeball took less light than the skin round it (a dark almond round each eye)')
         .replace('outgoingLight += uTint *', 'outgoingLight += ( 1.0 - 0.8 * fpA ) * uTint *'); // the pack\'s coloured rim glow would tint a printed face (blue lids)
     }
   };
@@ -1632,6 +1644,7 @@ function fpProject() {
 function fpApply() {
   FP.u.uFpDelight.value = (0.6 + 0.12 * beautyK()) * STYLE.k; // 3D beautify: softer, more even light (selfies are often lit by a harsh phone flash or a window to one side)
   if (FP.an && FP.an.mean) FP.u.uFpMeanL.value = 0.2126 * FP.an.mean[0] + 0.7152 * FP.an.mean[1] + 0.0722 * FP.an.mean[2];
+  EYE_SINK.value = FP.on && FP.cfg ? 0.4 * STYLE.k : 0;
   FP.u.uFpOn.value = FP.on && FP.cfg ? 1 : 0; FP.u.uFpSkin.value.set(S.skin); if (FP.an && FP.an.hair) FP.u.uFpScalp.value.copy(FP.an.hair.dark).multiplyScalar(0.8); MO.on.value = FP.on ? 1 : 0; HR.str.value = HR.want; HP.on.value = FP.on && FP.hairPrint && FP.matchHair && FP.hairMask ? 1 : 0;
   const p = parts.head; if (!p) return;
   for (const e of p.mats) if (e.mat && /^(mat_eyelashes|mat_eyebrows)$/.test(e.key)) e.mat.visible = !(FP.on && FP.hideEyes); // the photo has its own brows and lashes
@@ -2901,5 +2914,5 @@ initRecruitControls();
 const bootSeed = /seed=(\d+)/.exec(location.hash);
 if (bootSeed) randomLook(+bootSeed[1], true, false);
 const ready = buildAll().catch(e => { console.error(e); status('failed: ' + e.message); });
-window.__cb = { calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
+window.__cb = { EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
 </script></body></html>
