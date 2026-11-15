@@ -66,3 +66,7 @@ Thumbs.db
 
 # Kiro Crew app plumbing (UI state for specs, not part of the spec)
 .kiro/specs/*/.spec-state.json
+
+# Uncut model renders for the web hero media (web/public/media). The cut loops ship; the
+# raw renders carry a burned-in vendor watermark and are kept locally as provenance only.
+web/public/media/src/
