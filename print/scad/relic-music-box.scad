@@ -10,15 +10,10 @@ module relic_music_box() {
   // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
   relic_pedestal_base(h = 4.5, top_d = 18.0);
 
-  // 2. Rounded central riser supporting the casket (z = 4.5..11.5)
-  translate([0, 0, 4.5]) {
-    cylinder(h = 3.0, d1 = 18.0, d2 = 20.5);
-    translate([0, 0, 2.5])
-      chamfer_box(24, 18, 4.5, r = 2.4, ch_bot = 0.6, ch_top = 0.6);
-  }
+  // 2. No riser or base plate: the casket stands straight on the connector neck.
 
-  // 3. Ornate Victorian Music Box Casket (z = 11.5..29.5)
-  translate([0, 0, 11.5]) {
+  // 3. Ornate Victorian Music Box Casket (z = 4.5..22.5)
+  translate([0, 0, 4.5]) {
     // 45-deg corbelled support flare from riser to casket bottom
     hull() {
       linear_extrude(height = 0.2) rrect2d(22, 16, 1.8);

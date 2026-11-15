@@ -18,23 +18,17 @@ module relic_wax_hand() {
   // 1. Compact centre connector plug (z = 0..4.5, no wide circular base plate)
   relic_pedestal_base(h = 4.5, top_d = 18.4);
 
-  // 2. Wax-catcher saucer and a smooth wrist (z = 4.5..15.0).
-  //    The modelled wax drips were removed on purpose: the owner adds real wax to the saucer after printing.
+  // 2. A smooth wrist straight out of the connector neck (z = 4.5..13.0). No saucer, drips or base plate:
+  //    the owner adds real wax after printing.
   translate([0, 0, 4.5]) {
-    // 45-deg corbelled saucer dish
-    cylinder(h = 3.2, d1 = 18.4, d2 = 24.8);
-    translate([0, 0, 3.2])
-      cylinder(h = 1.6, d1 = 24.8, d2 = 21.6);
-
-    // Wrist column (z = 7.0..15.5), a little wider at the foot so the hand grows out of the dish
     hull() {
-      translate([0, 0, 2.5]) scale([1.15, 0.88, 1]) cylinder(h = 1.0, d = 18.0);
-      translate([0, 0, 10.0]) scale([1.2, 0.82, 1]) cylinder(h = 1.0, d = 15.6);
+      translate([0, 0, 0]) scale([1.15, 0.88, 1]) cylinder(h = 1.0, d = 17.0);
+      translate([0, 0, 7.5]) scale([1.2, 0.82, 1]) cylinder(h = 1.0, d = 15.6);
     }
   }
 
-  // 3. Sculpted Anatomical Palm & Five Fingers (z = 15.0..51.0)
-  translate([0, 0, 15.0])
+  // 3. Sculpted Anatomical Palm & Five Fingers (z = 12.5..48.5)
+  translate([0, 0, 12.5])
   difference() {
     union() {
       // Lower palm heel & thenar/hypothenar mounds

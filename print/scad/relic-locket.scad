@@ -12,7 +12,6 @@ module relic_locket() {
 
   // 2. Scrolled Victorian ribbon display cradle (z = 4.5..12.0)
   translate([0, 0, 4.5]) {
-    cylinder(h = 2.5, d1 = 18.0, d2 = 16.0);
     // Side scroll arms cradling the locket body
     for (sx = [-1, 1]) {
       hull() {

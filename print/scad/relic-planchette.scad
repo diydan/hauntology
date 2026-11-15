@@ -24,7 +24,6 @@ module relic_planchette() {
 
   // 2. Three Turned Caster Pillars cradling the planchette at a 72-deg presentation angle
   translate([0, 0, 4.5]) {
-    cylinder(h = 2.4, d1 = 18.4, d2 = 17.6);
     // Two front caster legs + one rear spine pillar
     for (sx = [-6.2, 6.2]) {
       hull() {
