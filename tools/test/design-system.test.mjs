@@ -224,10 +224,29 @@ test('the web app and the puzzle screens write no colour of their own: no hex, n
     const css = read(file).replace(/\/\*[\s\S]*?\*\//g, '');
     assert.ok(!/#[0-9a-fA-F]{3,8}\b/.test(css), `${file} has a hex colour`);
     assert.ok(!/\b(?:rgb|rgba|hsl|hsla)\(/.test(css), `${file} has a colour function`);
-    for (const m of css.matchAll(/var\(--([a-z0-9-]+)/g)) assert.ok(!palette.includes(m[1]) || tokens.color[m[1]].use === 'light', `${file} uses the palette name --${m[1]}: use its role`);
+    for (const m of css.matchAll(/var\(--([a-z0-9-]+)/g)) assert.ok(!palette.includes(m[1]) || ['light', 'art'].includes(tokens.color[m[1]].use), `${file} uses the palette name --${m[1]}: use its role`);
     for (const m of css.matchAll(/var\((--[a-z0-9-]+)/g)) assert.ok(tokenProps.has(m[1]) || localScreenProps.has(m[1]), `${file} reads ${m[1]}, which is neither a token nor a variable a screen sets itself`);
     assert.ok(!/\.(?:button|banner|card|notice)\s*[{,.:]/.test(css) || file.includes('puzzles'), `${file} still styles an old look class`);
   }
+});
+
+test('puzzle code writes no hex colour: the wire and shelf-item hues are the art-* tokens, written once in the token file', () => {
+  const walk = (dir) => readdirSync(join(root, dir), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${dir}/${e.name}`) : /\.tsx?$/.test(e.name) && !/\.test\./.test(e.name) ? [`${dir}/${e.name}`] : []));
+  const files = walk('web/src/puzzles');
+  assert.ok(files.length > 30);
+  for (const f of files) assert.ok(!/#[0-9a-fA-F]{6}\b/.test(read(f).replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')), `${f} writes a hex colour`);
+  for (const f of ['web/src/puzzles/art/wires.tsx', 'web/src/puzzles/art/shelf.tsx']) assert.match(read(f), /from "@hauntology\/shared\/design\/tokens"/, `${f} takes its hues from the tokens`);
+  const art = entries(tokens, 'color').filter(([, v]) => v.use === 'art');
+  assert.equal(art.length, 14);
+  for (const [k] of art) assert.ok(k.startsWith('art-'), k);
+});
+
+test('the elements have a switch (a button with aria-checked), a segmented row, a plain serif list and a danger panel, and a checked button looks pressed', () => {
+  assert.match(rawElements, /\.ui-button\[aria-checked='true'\]:not\(\.ui-button--danger\) \{ border-color: var\(--accent\); color: var\(--accent\); \}/);
+  assert.match(rules.find(([s]) => s === '.ui-switch')[1], /justify-content: space-between/);
+  assert.match(rules.find(([s]) => s === '.ui-lines')[1], /var\(--font-ghost\)/);
+  assert.match(rules.find(([s]) => s === '.ui-panel--danger')[1], /border-color: var\(--danger\)/);
+  assert.ok(!declarations.some((d) => /^\.ui-switch/.test(d.sel) && /background/.test(d.prop)), 'an on switch is a yellow edge, not a yellow block');
 });
 
 test('the old look classes are gone from the screens: no className="button", no pz-btn or pz-help-btn in web/src', () => {

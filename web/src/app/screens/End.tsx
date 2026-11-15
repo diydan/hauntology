@@ -89,9 +89,9 @@ export default function End() {
       {state.k === "ready" ? (
         <>
           {memory.get().farewell ? <blockquote className="farewell ui-line ui-line--whisper">{memory.get().farewell}</blockquote> : null}
-          <ol className="journal ui-log" aria-label="The memories you found">
+          <ol className="journal ui-lines" aria-label="The memories you found">
             {state.view.journal.map((entry) => (
-              <li key={entry.anchorId} className="ui-log-row">{entry.text}</li>
+              <li key={entry.anchorId}>{entry.text}</li>
             ))}
           </ol>
           <p className="ui-row">

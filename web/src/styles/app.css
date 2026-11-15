@@ -118,10 +118,6 @@ video {
   max-height: 14rem;
 }
 
-.journal {
-  padding-left: var(--space-5);
-}
-
 .debug {
   position: fixed;
   left: var(--space-2);

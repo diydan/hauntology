@@ -22,6 +22,20 @@ export const color = {
   "orb-lantern-rim": "#6a4a14",
   "orb-ghost-core": "#effff9",
   "orb-ghost-rim": "#25584a",
+  "art-red": "#ff6b6b",
+  "art-blue": "#6bb6ff",
+  "art-green": "#6be39a",
+  "art-yellow": "#ffd86b",
+  "art-violet": "#c49bff",
+  "art-white": "#e8e8e8",
+  "art-silver": "#c9c9d4",
+  "art-pink": "#ff8b8b",
+  "art-gold": "#e8c27a",
+  "art-cyan": "#7fe0e0",
+  "art-lavender": "#d6d6ee",
+  "art-orange": "#ffb27a",
+  "art-cream": "#f4efc1",
+  "art-sun": "#ffe27a",
 } as const;
 
 export const role = {

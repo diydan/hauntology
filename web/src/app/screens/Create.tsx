@@ -66,7 +66,7 @@ export default function Create() {
       <ScreenHeading>Make a place</ScreenHeading>
 
       {ui.error !== null ? (
-        <section className="create-error ui-notice ui-notice--danger ui-stack" aria-labelledby="create-error-title">
+        <section className="create-error ui-panel ui-panel--danger ui-stack" aria-labelledby="create-error-title">
           <h2 className="ui-heading" id="create-error-title">{errorCopy(ui.error.code).title}</h2>
           <p>{errorCopy(ui.error.code).body}</p>
           <p className="ui-row">

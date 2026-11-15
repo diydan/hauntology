@@ -22,6 +22,20 @@
   --orb-lantern-rim: #6a4a14; /* the Keeper's orb: edge */
   --orb-ghost-core: #effff9; /* the Whisper's orb: centre */
   --orb-ghost-rim: #25584a; /* the Whisper's orb: edge */
+  --art-red: #ff6b6b; /* game art: red. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-blue: #6bb6ff; /* game art: blue. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-green: #6be39a; /* game art: green. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-yellow: #ffd86b; /* game art: yellow. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-violet: #c49bff; /* game art: violet. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-white: #e8e8e8; /* game art: white. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-silver: #c9c9d4; /* game art: silver. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-pink: #ff8b8b; /* game art: pink. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-gold: #e8c27a; /* game art: gold. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-cyan: #7fe0e0; /* game art: cyan. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-lavender: #d6d6ee; /* game art: lavender. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-orange: #ffb27a; /* game art: orange. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-cream: #f4efc1; /* game art: cream. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
+  --art-sun: #ffe27a; /* game art: sun yellow. Puzzle content that tells things apart (wire colours, shelf items), never interface colour */
 
   /* Colour: roles. Elements use these, never the palette directly */
   --surface-page: var(--ink); /* the page */

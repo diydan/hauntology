@@ -47,7 +47,8 @@
   - [x] 4.4 The 11 puzzle phone screens: buttons, panels, hints, status, gauges and rows are `ui-` elements; the game pieces keep `pz-` classes made of roles and tokens; 48 px targets stay (`--pz-target` on the host); `--pz-space-*` is gone, they use `--space-1` to `--space-4`
     - Done 2026-11-15. Checked in a headless browser at 390 px: every kind, no console errors, no sideways scroll, every control at least 48 px.
     - _Requirements: 5.3_
-  - [ ] 4.5 What is left: a `game-art` token group for the wire and shelf-item hues; a `ui-switch` element (or `aria-checked` on `ui-button`) for the puzzle settings switches, which still use `pz-switch`; a plain serif list element for the journal and chat (they use `ui-log` and `ui-line`); `ui-notice` at body size for long errors is done, a danger panel is not
+  - [x] 4.5 The leftovers of the move: 14 `art-*` colour tokens for the wire and shelf-item hues (the puzzle code now holds no hex at all); `ui-switch`, `ui-switch-name`, `ui-switch-state` and `ui-segments` (with `aria-checked` looking pressed) for the puzzle settings; `ui-lines`, a plain serif list, for the journal and the End screen; `ui-panel--danger` for the Create and Confirm error blocks
+    - Done 2026-11-15. The puzzle settings were checked in a headless browser at 390 px; the new pieces are on the catalogue.
     - _Requirements: 4.4, 5.3_
 
 - [x] 5. Specs and steering
@@ -59,4 +60,4 @@
     - _Requirements: 6.1, 6.3, 6.4_
 
 - [ ] 6. Checkpoint
-  - Run `pnpm check-tokens`, `node tools/check-traceability.mjs`, `node --test tools/test/design-tokens.test.mjs tools/test/design-system.test.mjs tools/test/voice-demo.test.mjs`, `pnpm --filter web test` and `pnpm typecheck`; open `/design/` and the play-through on a real phone (`mtest.hauntology.app/design/` after `cd tools/playtest && node build.mjs && wrangler deploy`). Open: task 4.5.
+  - Run `pnpm check-tokens`, `node tools/check-traceability.mjs`, `node --test tools/test/design-tokens.test.mjs tools/test/design-system.test.mjs tools/test/voice-demo.test.mjs`, `pnpm --filter web test` and `pnpm typecheck`; open `/design/` and the play-through on a real phone (`mtest.hauntology.app/design/` after `cd tools/playtest && node build.mjs && wrangler deploy`). Nothing is open.

@@ -245,14 +245,19 @@
     <p class="cat-use"><code>ui-stack</code> puts blocks 12 px apart (tight 8, loose 16); <code>ui-row</code> lays buttons side by side and wraps. A button that is on is <code>aria-pressed="true"</code> (yellow edge and text, not a yellow block); a button that is off but must stay focusable is <code>aria-disabled="true"</code>.</p>
   </div>
   <div class="cat-item">
-    <h3><code>ui-input</code> <code>ui-choice</code> <code>ui-notice--danger</code></h3>
+    <h3><code>ui-input</code> <code>ui-choice</code> <code>ui-switch</code> <code>ui-switch-name</code> <code>ui-switch-state</code> <code>ui-segments</code> <code>ui-notice--danger</code> <code>ui-panel--danger</code></h3>
     <div class="ui-stack cat-box">
       <input class="ui-input" type="text" placeholder="Say something to the ghost" aria-label="Say something">
       <label class="ui-choice"><input type="radio" name="c-r" checked> One player and bots</label>
       <label class="ui-choice"><input type="radio" name="c-r"> Two to six players</label>
       <label class="ui-choice"><input class="ui-check" type="checkbox" checked> Speak aloud (a tick box is the one green control)</label>
+      <button class="ui-button ui-switch" type="button" role="switch" aria-checked="true"><span class="ui-switch-name">Tilt</span><span class="ui-switch-state">On</span></button>
+      <button class="ui-button ui-switch" type="button" role="switch" aria-checked="false"><span class="ui-switch-name">Sound</span><span class="ui-switch-state">Off</span></button>
+      <div class="ui-segments" role="radiogroup" aria-label="Puzzles"><button class="ui-button" type="button" role="radio" aria-checked="false">Off</button><button class="ui-button" type="button" role="radio" aria-checked="true">Easy</button><button class="ui-button" type="button" role="radio" aria-checked="false">Hard</button></div>
       <p class="ui-notice ui-notice--danger">That did not work. Try again.</p>
+      <section class="ui-panel ui-panel--danger ui-stack" aria-label="An error"><h4 class="ui-heading">The place could not be made</h4><p>A long error gets a panel, read at body size, with a red edge.</p></section>
     </div>
+    <p class="cat-use">A switch or one-of-three is a button with <code>role="switch"</code> or <code>role="radio"</code> and <code>aria-checked</code>: yellow edge and text when it is on, never a yellow block.</p>
   </div>
   <div class="cat-item">
     <h3><code>ui-figure</code> <code>ui-figure--thumb</code> <code>ui-facts</code> <code>ui-steps</code> <code>ui-step</code> <code>ui-gauge</code> <code>ui-gauge--thin</code> <code>ui-gauge-fill</code></h3>
@@ -266,13 +271,14 @@
     <p class="cat-use">Loading is a feature: stage steps with a calm bar, not a spinner alone.</p>
   </div>
   <div class="cat-item">
-    <h3><code>ui-line</code> <code>ui-line--whisper</code> <code>ui-line--system</code> <code>ui-line-who</code></h3>
+    <h3><code>ui-lines</code> <code>ui-line</code> <code>ui-line--whisper</code> <code>ui-line--system</code> <code>ui-line-who</code></h3>
     <div class="ui-panel cat-box">
       <p class="ui-line"><span class="ui-line-who">You</span><br>look</p>
       <p class="ui-line ui-line--whisper"><span class="ui-line-who">The Whisper</span><br>A room, once. Quiet now.</p>
       <p class="ui-line ui-line--system">The ghost is not answering. Try again.</p>
     </div>
-    <p class="cat-use">The Whisper's lines get the green edge, never green text.</p>
+    <ol class="ui-lines cat-box"><li>A kettle, a door, someone humming in the next room.</li><li>A name, almost.</li></ol>
+    <p class="cat-use">The Whisper's lines get the green edge, never green text. <code>ui-lines</code> is a plain serif list (the memories you found); <code>ui-log</code> is the scrolling journal of the play-through.</p>
   </div>
 </section>
 

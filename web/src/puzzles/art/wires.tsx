@@ -1,20 +1,21 @@
 import type { ReactNode } from "react";
+import { color as tokenColor } from "@hauntology/shared/design/tokens";
 
 export type WireShapeName = "circle" | "square" | "triangle" | "diamond" | "cross" | "hex";
 export type WireLook = Readonly<{ name: string; color: string; dash: string; shape: WireShapeName }>;
 
 /**
  * Six wire looks. A wire is never told apart by colour alone: each has its own dash pattern and end shape too.
- * The colours keep 3:1 or better against the dark ground. They are the game's own content (a wire is a coloured thing), so they
- * are written here and not taken from the interface palette.
+ * The colours keep 3:1 or better against the dark ground. They are the game's own content (a wire is a coloured thing): the
+ * `art-*` tokens of design/tokens.json, not the interface palette.
  */
 export const WIRE_LOOKS: readonly WireLook[] = [
-  { name: "red circle", color: "#ff6b6b", dash: "", shape: "circle" },
-  { name: "blue square", color: "#6bb6ff", dash: "10 6", shape: "square" },
-  { name: "green triangle", color: "#6be39a", dash: "2 7", shape: "triangle" },
-  { name: "yellow diamond", color: "#ffd86b", dash: "14 5 3 5", shape: "diamond" },
-  { name: "violet cross", color: "#c49bff", dash: "26 6", shape: "cross" },
-  { name: "white hexagon", color: "#e8e8e8", dash: "4 4", shape: "hex" },
+  { name: "red circle", color: tokenColor["art-red"], dash: "", shape: "circle" },
+  { name: "blue square", color: tokenColor["art-blue"], dash: "10 6", shape: "square" },
+  { name: "green triangle", color: tokenColor["art-green"], dash: "2 7", shape: "triangle" },
+  { name: "yellow diamond", color: tokenColor["art-yellow"], dash: "14 5 3 5", shape: "diamond" },
+  { name: "violet cross", color: tokenColor["art-violet"], dash: "26 6", shape: "cross" },
+  { name: "white hexagon", color: tokenColor["art-white"], dash: "4 4", shape: "hex" },
 ];
 export const wireLook = (id: number): WireLook => WIRE_LOOKS[((id % WIRE_LOOKS.length) + WIRE_LOOKS.length) % WIRE_LOOKS.length] as WireLook;
 

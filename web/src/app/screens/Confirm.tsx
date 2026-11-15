@@ -116,7 +116,7 @@ export default function Confirm() {
       ) : null}
 
       {s.k === "rejected" ? (
-        <section className="confirm-error ui-notice ui-notice--danger ui-stack" aria-labelledby="confirm-error-title">
+        <section className="confirm-error ui-panel ui-panel--danger ui-stack" aria-labelledby="confirm-error-title">
           <h2 className="ui-heading" id="confirm-error-title">{errorCopy(s.code).title}</h2>
           <p>{errorCopy(s.code).body}</p>
           <p className="ui-row">

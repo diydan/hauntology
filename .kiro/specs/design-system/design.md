@@ -21,7 +21,7 @@ a page or a screen            loads the three CSS files and says only where thin
 
 | Group | CSS name | Notes |
 |---|---|---|
-| Palette | `--ink --ink-deep --void --wood --wood-2 --wood-3 --ember --wood-line --leather --dust --ash --bone --lantern --lantern-hi --ghost --alarm --orb-*` | `ink bone lantern ghost dust alarm` are frozen (steering). `ash` is the quiet text colour: 6.8 to 1 or better on every surface. `dust` is for shapes only (3.85 to 1). |
+| Palette | `--ink --ink-deep --void --wood --wood-2 --wood-3 --ember --wood-line --leather --dust --ash --bone --lantern --lantern-hi --ghost --alarm --orb-* --art-*` (the 14 `--art-*` are puzzle game art: wire colours and shelf items) | `ink bone lantern ghost dust alarm` are frozen (steering). `ash` is the quiet text colour: 6.8 to 1 or better on every surface. `dust` is for shapes only (3.85 to 1). |
 | Roles | `--surface-page -sunk -panel -raised -hover`, `--line --line-strong`, `--text --text-quiet --shape-quiet`, `--accent --accent-hi --accent-rare --danger --on-accent --focus`, `--speaker-whisper -keeper -suspect` | What elements use. Change a role's colour and every element follows. |
 | Type | `--font-ui --font-ghost`, `--text-micro -small -control -body -title -lead -speech -display` | Sizes in rem (10.5 to 40 px at the default). |
 | Space | `--space-0 .. --space-6` | 2, 4, 8, 12, 16, 24, 32 px. Steps 1 to 4 are the puzzle screens' `--pz-space-1` to `-4`. |
@@ -48,7 +48,7 @@ Black for the page, four dark browns for depth (page, panel, raised, hovered), l
 | Moving | `ui-transport ui-tool ui-tool-glyph ui-tool--narrow-only ui-keys ui-progress-label ui-dots ui-dot ui-progress-next` | Pause, back, next, stop; where in a story |
 | Sheet | `ui-sheet ui-sheet-head ui-sheet-title ui-sheet-close ui-fold` | Bottom sheet on a phone, side panel from 900 px |
 | Journal | `ui-log ui-log-row ui-log-id ui-log-who` | What was said |
-| Screens | `ui-stack ui-stack--tight ui-stack--loose ui-row ui-row--center ui-row--between ui-heading ui-input ui-choice ui-notice--danger ui-button--block ui-button--round ui-figure ui-figure--thumb ui-facts ui-steps ui-step ui-gauge ui-gauge--thin ui-gauge-fill ui-line ui-line--whisper ui-line--system ui-line-who ui-progress` | Layout helpers, headings, inputs, pictures, lists, progress and chat lines for the web app and the puzzle screens; a link used as a button is `a.ui-button` |
+| Screens | `ui-stack ui-stack--tight ui-stack--loose ui-row ui-row--center ui-row--between ui-heading ui-input ui-choice ui-switch ui-switch-name ui-switch-state ui-segments ui-notice--danger ui-panel--danger ui-button--block ui-button--round ui-figure ui-figure--thumb ui-facts ui-steps ui-step ui-gauge ui-gauge--thin ui-gauge-fill ui-lines ui-line ui-line--whisper ui-line--system ui-line-who ui-progress` | Layout helpers, headings, inputs, pictures, lists, progress and chat lines for the web app and the puzzle screens; a link used as a button is `a.ui-button` |
 | State | `is-on is-done is-current is-active is-haunting is-speaking is-open is-warn is-bad is-blackout is-locked is-none` | Set from script |
 
 The class list is the file; the catalogue is the picture. A test keeps them equal.
@@ -68,7 +68,7 @@ The class list is the file; the catalogue is the picture. A test keeps them equa
 ## Left out on purpose
 
 - Light mode. The game is dark only (`color-scheme: dark`).
-- Making the puzzle game art generic. The wires, safe dial, candles, maze, photo board and the rest keep their `pz-` classes, made of roles and tokens; their content hues (wire colours, shelf items) are still hex in `web/src/puzzles/art/` until a `game-art` token group exists (task 4.5).
+- Making the puzzle game art generic. The wires, safe dial, candles, maze, photo board and the rest keep their `pz-` classes, made of roles and tokens; their content hues (wire colours, shelf items) are the 14 `art-*` colour tokens, used only by the puzzle art and never by an element.
 - `site/` (the marketing page) and `tools/prop-mockups` have their own palettes; they may adopt the tokens later.
 - A JavaScript component library. The elements are CSS and markup; React screens use the same class names.
 

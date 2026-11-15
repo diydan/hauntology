@@ -31,9 +31,9 @@ function Row({ label, hint, on, onChange, disabled = false }: { label: string; h
   const hintId = useId();
   return (
     <div className="pz-setting">
-      <button type="button" role="switch" aria-checked={on} aria-describedby={hintId} disabled={disabled} className="ui-button pz-switch" onClick={() => onChange(!on)}>
-        <span className="pz-switch-name">{label}</span>
-        <span className="pz-switch-state">{on ? "On" : "Off"}</span>
+      <button type="button" role="switch" aria-checked={on} aria-describedby={hintId} disabled={disabled} className="ui-button ui-switch" onClick={() => onChange(!on)}>
+        <span className="ui-switch-name">{label}</span>
+        <span className="ui-switch-state">{on ? "On" : "Off"}</span>
       </button>
       <div id={hintId} className="ui-hint">{hint}</div>
     </div>
@@ -65,9 +65,9 @@ export function PuzzleSettings({ master, wander, plainInspect, device, onDevice,
 
       {master && (
         <div className="pz-setting" role="radiogroup" aria-label="Puzzles">
-          <div className="pz-radios">
+          <div className="ui-segments">
             {PUZZLE_SETTINGS.map((level) => (
-              <button key={level} type="button" role="radio" aria-checked={master.value === level} className="ui-button pz-radio" onClick={() => master.onChange(level)}>{LEVEL_NAME[level]}</button>
+              <button key={level} type="button" role="radio" aria-checked={master.value === level} className="ui-button" onClick={() => master.onChange(level)}>{LEVEL_NAME[level]}</button>
             ))}
           </div>
           <p className="ui-hint">{`This game's preset gives ${LEVEL_NAME[presetSetting(master.preset)].toLowerCase()}. A change applies from the next Inspect, for everyone.`}</p>

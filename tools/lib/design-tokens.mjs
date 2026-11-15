@@ -7,7 +7,7 @@ export const PREFIX = {
   glow: 'glow-', shadow: 'shadow-', motion: '', size: '', breakpoint: 'bp-', z: 'z-',
 };
 const GROUP_ORDER = ['color', 'role', 'font', 'text-size', 'space', 'radius', 'stroke', 'glow', 'shadow', 'motion', 'size', 'breakpoint', 'z'];
-export const USES = ['surface', 'light', 'line', 'shape', 'text', 'accent'];
+export const USES = ['surface', 'light', 'line', 'shape', 'text', 'accent', 'art'];
 /** Colours that existed before this file did (steering/visual-style.md and the first tokens.css). Their names and values never change. */
 export const FROZEN = { ink: '#0b0d10', bone: '#e9e4d8', lantern: '#e0a43a', ghost: '#9fe8d0', dust: '#6b6f76', alarm: '#d4604a' };
 

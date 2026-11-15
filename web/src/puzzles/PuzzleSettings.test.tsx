@@ -166,7 +166,7 @@ describe("PuzzleSettings", () => {
     expect(within(senses).queryByRole("switch", { name: /^Assist/ })).toBeNull();
     const order = [...senses.querySelectorAll("[role=switch], input")].map((el) => el.getAttribute("role") ?? "slider");
     expect(order).toEqual(["switch", "switch", "slider", "switch", "switch", "switch"]); // touch only, tilt, strength, twist, buzz, sound
-    const labels = [...senses.querySelectorAll(".pz-switch-name")].map((n) => n.textContent);
+    const labels = [...senses.querySelectorAll(".ui-switch-name")].map((n) => n.textContent);
     expect(labels).toEqual(["Touch only", "Tilt", "Flip the twist", "Buzz", "Sound"]);
   });
 
