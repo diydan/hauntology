@@ -391,3 +391,47 @@ Read for ideas; nothing is copied (CC BY-NC 4.0, and it needs Phaser 2.2.2, a 56
 ## Integration notes (2026-11-15)
 
 Party integration (tasks 3) is Phase 5 of the `integration` spec: Inspect by a human Detective on a phone opens the Lock through `PuzzleHost` at the level of the Room's `puzzles` setting, with the feel layer from the Controller's device settings (`PlatformKit.puzzleFeel`). A Bot, and the solo case's shared-screen pad, get a plain Inspect. Wander integration (tasks 4) is Phase 6.
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| A Lock and its frame | `ui-panel ui-status ui-notice` |
+| Controls | `ui-button` (48 px through `--pz-target`) |
+| Attempts and timer | `ui-lamps ui-lamp` for the pips, `ui-status` for the clock |
+| Gaps | `--space-1` to `--space-4`, the same steps as `--pz-space-1` to `-4` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.
+
+## When to use puzzles (brainstorm, 2026-11-15)
+
+**Rule of thumb.** A puzzle is best when one Player is alone with their phone for a moment and the rest of the room has something to watch or think about. It is worst when the whole room is waiting on it, or when it stands between a Player and the answer they need to finish.
+
+| Moment | Status | Why it works, or the risk |
+|---|---|---|
+| **Inspect in a case** (party, phone) | In the spec (Req 1) | The searcher is busy on their phone while the TV shows them standing in the Zone. Capped by the preset, charged to the Turn. |
+| **Before each memory in Wander** | In the spec (Req 3) | A small reward beat in a solo walk. Skip always works, so it never blocks the story. |
+| **Memory clues (Sights) in an earlier room** | In the spec (Req 5) | Rewards paying attention while walking; Faded and Assist keep it fair. |
+| **Clues in the TV world** | `world-clues` spec, Phase 7 | Everyone watches the active Player walk, so the shared screen matters. |
+| **Inspect in the solo case** (one screen, mouse or touch) | Decided (Req 13.3) | The Lock opens on the laptop and runs on its touch path (no tilt). |
+| **Players who joined the haunting** (between Turns) | Decided (Req 17) | One Haunting puzzle per Round, no-clue Kinds only, one Scare point when solved, nothing else changes. |
+| **A Haunt Event** (for example Lull needs a group puzzle) | Idea | Gives the room a shared beat; risk: it stops everyone at once. Only with a short cap. |
+| **During another Player's Turn** | Avoid | Splits attention from the Suggestion and the shown cards on the TV. |
+| **During the 15 s window after a Suggestion, or the answer choice** | Avoid | Those windows are for sealing or choosing; a Lock there would eat them. |
+| **More than one Lock per Turn** | Avoid | A Turn is short; one Lock already uses most of it. |
+
+**Which Kind, when.** No-clue Kinds (lock pick, music box, candles, words, board, maze) suit the first Lock of a game and Wander's first memory. Memory Kinds (wires, clock, safe, moved, photo) need a Sight first. Tilt Kinds (lock pick, words, board, maze) are best on phones; on the solo laptop they run on touch or mouse. Candles' breath is always optional.
+
+**Which level, when (decided, Req 1.4).** The preset sets the starting level; the level steps up at Haunt 3 and Haunt 6, up to hard, so the house gets harder as it wakes. Gentle rises one step at most. A memory Lock keeps the level its clue was made at. Wander keeps the visitor's setting.
+
+**Design tokens.** The puzzle screens use `pz-` classes and their own variables today (`--pz-space-1..4`, palette names such as `--lantern`, `--ink`, `--dust`, `--ghost`). When they join the real game they move onto the design system (`design-system` tasks 4.1 and 4.4); see the integration spec, task 5.5, for the map.
+
+### Property 21: The level follows the Haunt, and a clue always fits
+For any Puzzle setting, preset, Haunt level and Kind, the level of a Lock is the setting raised one step at Haunt 3 and one more at Haunt 6, never above hard, never below the setting, at most one step under Gentle, and a Memory Kind opens at the level of its Sight.
+**Validates: Requirements 1.4**
+
+### Property 22: Haunting puzzles change only Scare points
+For any game with Haunting puzzles played or not, every card, Hand, Turn, Turn Clock, Haunt level, view and winner is the same, a Poltergeist plays at most one per Round, and each solved one adds exactly one Scare point.
+**Validates: Requirements 17.1, 17.2, 17.3**

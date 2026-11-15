@@ -63,3 +63,13 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
   - [ ] 4.3 Docs: `docs/spikes/spirit-table-1.md`, assumptions T1 to T4 and `SPIRIT_TABLE_ENABLED` in `.kiro/steering/tech.md`, the folders in `structure.md`, the solo-case line and the Controller switch in `party-mode`, and a line in `docs/SUBMISSION.md`
     - _Requirements: 1.2, 6.4_
   - [ ] 4.4 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `tableData`, `tableLayout`, `whisperAt` and `placeTable`. Ensure every test passes; ask the user if questions arise.
+
+- [ ] 5. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 8 and the `design-system` spec)
+  - [ ] 5.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 8.1, 8.3_
+  - [ ] 5.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 8.2_
+  - [ ] 5.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 8.4_
+  - [ ] 5.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 8.1_

@@ -148,19 +148,19 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.46 Write property test for telemetry and abuse caps
     - **Property 24: Telemetry carries no content and abuse is capped**
     - **Validates: Requirements 10.5, 10.6**
-  - [ ] 2.47 `canControl`, `nextMaster` and `handOver` (Master-only room controls, host token may only end, never a Bot as Master)
+  - [x] 2.47 `canControl`, `nextMaster` and `handOver` (Master-only room controls, host token may only end, never a Bot as Master)
     - _Requirements: 1.7_
-  - [ ]* 2.48 Write property test for the Master
+  - [x]* 2.48 Write property test for the Master
     - **Property 25: Room controls obey the Master**
     - **Validates: Requirements 1.7**
-  - [ ] 2.49 `placeResidue`, `canInspect` and `inspect` (10 s inside a Zone, once per Zone per Player, private result, Zone-only public event)
+  - [x] 2.49 `placeResidue`, `canInspect` and `inspect` (10 s inside a Zone, once per Zone per Player, private result, Zone-only public event)
     - _Requirements: 4.6_
-  - [ ]* 2.50 Write property test for Residue and Inspect
+  - [x]* 2.50 Write property test for Residue and Inspect
     - **Property 28: Residue is hidden, and inspection is private and once only**
     - **Validates: Requirements 4.6**
-  - [ ] 2.51 `hauntRise` (a timeout after a Spook raises nothing; a wrong Accusation raises it only in `roundEnd`), `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot blocks Suggestions only and holds until the end of the next Round, Blackout, Restless, Lull; 15 s choice window rotating among Poltergeists in the order they joined)
+  - [x] 2.51 `hauntRise` (a timeout after a Spook raises nothing; a wrong Accusation raises it only in `roundEnd`), `eventOptions`, `fireEvent`, `chooseOption` and `applyEvent` (Cold Spot blocks Suggestions only and holds until the end of the next Round, Blackout, Restless, Lull; 15 s choice window rotating among Poltergeists in the order they joined)
     - _Requirements: 11.1, 11.2_
-  - [ ]* 2.52 Write property test for the Haunt
+  - [x]* 2.52 Write property test for the Haunt
     - **Property 26: The Haunt rises by the rules and events fire once**
     - **Validates: Requirements 11.1, 11.2**
   - [ ] 2.53 Poltergeist transition and refusals: keep seat, nickname, Hand and Resolve, no Turns, no move, Suggest, Accuse, Inspect or Eavesdrop, never a winner; the Hand answers by the default choice; may choose Haunt options
@@ -168,9 +168,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [ ]* 2.54 Write property test for Poltergeists
     - **Property 27: Poltergeists keep their Hand and never take a Turn**
     - **Validates: Requirements 11.3**
-  - [ ] 2.55 `gainResolve` (at the start of every Round, Poltergeists included), `canEavesdrop` and `eavesdrop` (one named card that was not shown, 10 s window, never for a Poltergeist, the suggester or the Player who showed the card); Resolve is shared with Nudges
+  - [x] 2.55 `gainResolve` (at the start of every Round, Poltergeists included), `canEavesdrop` and `eavesdrop` (one named card that was not shown, 10 s window, never for a Poltergeist, the suggester or the Player who showed the card); Resolve is shared with Nudges
     - _Requirements: 11.4, 11.5, 12.2_
-  - [ ]* 2.56 Write property test for Resolve and Eavesdrop
+  - [x]* 2.56 Write property test for Resolve and Eavesdrop
     - **Property 29: Resolve is bounded and Eavesdrop reveals one card that was not shown**
     - **Validates: Requirements 11.4, 11.5, 12.2**
   - [ ] 2.57 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
@@ -535,3 +535,13 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
 
 - [ ] 14. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs` and `node tools/build-print.mjs --check`. Play one full party game with three Bots and one embedded-pad player in scripted mode, one with real phones and the model, and one with a Display and printed relics. Record a short clip of each for the write-up. Playtest the design numbers (Haunt maximum, thresholds, Resolve cap, Inspect time, choice window, Master timeout, Spook cost and limits, Cue limits, Restless spacing), compare Classic with Gentle using the numbers from Spike 1.5, and note changes. Ask the user if questions arise.
+
+- [ ] 15. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 21 and the `design-system` spec)
+  - [ ] 15.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 21.1, 21.3_
+  - [ ] 15.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 21.2_
+  - [ ] 15.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 21.4_
+  - [ ] 15.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 21.1_

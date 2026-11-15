@@ -54,11 +54,15 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 1.1_
   - [ ] 5.2 Host page for party mode (party-mode 8); the Display stays optional
     - _Requirements: 1.1_
-  - [ ] 5.3 Inspect opens a Lock on the phone through `PuzzleHost` at the Puzzle setting's level; a solved Lock gives the plain Inspect result; Bots and the shared pad get a plain Inspect (puzzles 3)
+  - [ ] 5.3 Inspect opens a Lock on the phone through `PuzzleHost` at the Puzzle setting's level; a solved Lock gives the plain Inspect result; Bots get a plain Inspect; the solo case opens the Lock on the shared screen by touch or mouse; the level follows the Haunt (puzzles 3, 1.4)
     - _Requirements: 5.1, 5.2_
   - [ ] 5.4 `PlatformKit.puzzleFeel` from the Controller's device settings; touch-only always works
     - _Requirements: 5.3_
-  - [ ] 5.5 Checkpoint: two phones and a laptop play a party game with at least one puzzle solved on Inspect
+  - [ ] 5.5 Move the puzzle screens onto the design system as they join the game (`design-system` 4.1 and 4.4), in the same change: `--pz-space-1..4` become `--space-1..4` (same values); palette names (`--lantern`, `--ink`, `--dust`, `--bone`) become roles (`--accent`, `--surface-*`, `--line`, `--text`); the raw hex surfaces become surface tokens; `.pz-btn` becomes `ui-button` with one `ui-button--primary` per view (the puzzle's own Set or Check); the frame becomes `ui-panel` and the status line `ui-status`; fades use `--fade-quick`, `--fade` or `--fade-slow`; the 48 px puzzle targets stay (above the 44 px `--target`); the buzz and sound twin line stops using green (green is only the Whisper and the tick box) and uses quiet text; positions and turns stay set through React's style object (the CSSOM), never a `style=""` attribute in HTML; `spacing.test.ts` is moved to check the shared tokens
+    - _Requirements: 5.3, 8.1, 8.2_
+  - [ ] 5.7 Haunting puzzles for Players who joined the haunting: one per Round, Scare points only (puzzles 17)
+    - _Requirements: 5.1_
+  - [ ] 5.6 Checkpoint: two phones and a laptop play a party game with at least one puzzle solved on Inspect
     - _Requirements: 1.2_
 
 - [ ] 6. Phase 6: Wander puzzles
@@ -76,3 +80,13 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 7.1, 7.3_
   - [ ] 7.4 **Property 5: Optional layers change nothing when off**
     - **Validates: Requirements 7.1**
+
+- [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 8 and the `design-system` spec)
+  - [ ] 8.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 8.1, 8.3_
+  - [ ] 8.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 8.2_
+  - [ ] 8.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 8.4_
+  - [ ] 8.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 8.1_

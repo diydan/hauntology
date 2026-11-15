@@ -101,3 +101,14 @@ The ghost can speak, and in Single player it can listen. The voice is a layer on
 1. WHEN the visitor starts Live Mode in Single player THEN the Web app SHALL show a clear microphone indicator and a stop button for as long as it listens, and SHALL stop listening after 10 seconds of silence, when the visitor presses stop, or when the page is hidden.
 2. WHEN Live Mode runs THEN the Voice SHALL charge it to the `live` Meter, at most 5 minutes a session and 30 minutes a day, and on reaching a cap, a refused ticket or any other problem SHALL fall back to hold-to-talk with no error screen.
 3. WHEN the ghost answers in Live Mode THEN the Voice SHALL check every sentence of the reply with `validateGhostReply` before it is spoken, and SHALL store no audio.
+
+### Requirement 7
+
+**User Story:** As a Player, I want the screens of this feature to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Subtitle, speak and listen) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Subtitle SHALL be shown with `ui-dialogue`, `ui-speech` and `ui-word`, the speaking voice with `ui-nameplate` (green only for the Whisper), and the speak and listen controls with `ui-button`; and `tools/voice-demo` (the play-through) SHALL stay the reference for how a spoken line looks.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

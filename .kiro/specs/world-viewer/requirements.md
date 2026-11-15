@@ -105,3 +105,14 @@ The world viewer lets a visitor walk through a World Bundle in the browser (desk
 #### Acceptance Criteria
 
 1. WHERE the Viewer runs on a phone THEN the Viewer MAY offer tilt to look, asking for motion permission once from an explicit tap, using a tap to calibrate the forward direction, ignoring wobbles below a threshold, changing only the look direction and never movement or collision, and keeping drag-to-look as the fallback when permission is denied or no sensor exists.
+
+### Requirement 9
+
+**User Story:** As a Player, I want the screens of this feature to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Play) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Play screen SHALL show the memory lamps, the Hint's compass and bars with `ui-lamps`, `ui-compass` and `ui-bars`, the ghost's speech with `ui-dialogue`, `ui-speech` and `ui-nameplate`, the Chat with `ui-sheet` and `ui-log`, and an always visible Exit with `ui-button`; and the memory card SHALL draw with `shared/src/design/tokens.ts`.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

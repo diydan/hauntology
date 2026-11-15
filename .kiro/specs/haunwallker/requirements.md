@@ -195,3 +195,14 @@ The spec directory is named `haunwallker` because it was created under that name
 2. WHEN the visitor chooses "Play a case" THEN the Shell SHALL show a short setup (a preset: Classic, Relaxed or Quick; Bots: two to five, default two) and a Start action, and WHEN they start THEN the Shell SHALL open the Case Screen at its own address for that world, which hosts the party Host page on one screen as in `party-mode` 9.5 and 9.6, with an always-visible Exit that ends the Room and releases the Viewer before the next Screen mounts.
 3. WHEN the case ends THEN the Case Screen SHALL show the party ending with "Play again", Home and Gallery, WHERE the Zero-Quota Path applies THEN a case SHALL work with a Gallery World, Preset Ghosts and scripted narration, and the scripted indicator of 5.4 SHALL show when lines are scripted.
 4. IF party mode is off (`flags.partyEnabled` is false), or the world is too small for a case (`world_too_small`), or the Room cannot be created THEN the Shell SHALL hide or disable "Play a case" with a one-line reason, keep Wander and the Gallery available, and SHALL NOT show an error screen.
+
+### Requirement 14
+
+**User Story:** As a Player, I want the screens of this feature to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Home, Gallery, Create, Confirm, Play, Haunt, Case and End) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Shell SHALL use `ui-page`, `ui-header`, `ui-panel`, `ui-card` and `ui-modal` for its pages and the confirm step, `ui-button` with one `ui-button--primary` for the main action of a screen, `ui-notice` for the content notice and the offline banner, `ui-status` for progress and errors, the `ui-field` family for the Create form, and `ui-sheet` for the Chat (a bottom sheet on a phone, a side panel from 900 pixels).
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

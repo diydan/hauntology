@@ -548,8 +548,23 @@ Codes: `party_disabled`, `rooms_full`, `world_too_small`, `room_unknown`, `room_
 
 ## Integration notes (2026-11-15)
 
+**Puzzles.** Each Zone has one Lock (the `puzzles` spec places them at game start without reading the Solution). Inspect stays the only way to find Residue; with the Puzzle setting on, a human Detective's Inspect on a phone opens the Lock, and a solved Lock gives the `inspected` result a plain Inspect gives. The Lock time counts against the Turn Clock, capped by the preset (`capFor`), and a Turn can still end while a Lock is open (the Lock closes as failed, the Zone stays uninspected). Bots get a plain Inspect; in the solo case the Lock opens on the shared screen, played by touch or mouse. The level of a Lock follows the Haunt when it opens (`puzzles` 1.4). Players who joined the haunting may play one Haunting puzzle per Round for a Scare point (`puzzles` Requirement 17). Clues for memory Locks (Sights) are shown in an earlier Zone; with `cluePlace: 'world'` some of them stand in the TV world instead (`world-clues`).
+
 The order in which these rules are joined into a running game, and the Engine that joins them, are in the `integration` spec. Three additions there touch this design:
 
 - **Settings** gain `puzzles` (the Puzzle setting of the `puzzles` spec, Classic medium, Gentle easy, Quick off; hard only by the Master), `errands` and `cluePlace` (the `errands` and `world-clues` specs), each Master-only and applied from the next Inspect or Round.
 - **Protocol** gains, behind those switches: `errandDone`, `caught {poltergeist, object}` and `errandAnswer {yes}` (Client to Room); `errand {object, target, ruleLine}` to one Poltergeist, `errandAsk {object, deadlineMs}` to one Target, and the public `errand-done` and `caught` events without the sender (Room to Client); and `worldClues` in the Public View when `cluePlace` is `world`.
 - **The ending recap** lists every Errand with its sender, Target, object and outcome, after the Frames and House Cues.
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Host: the stage and the line | `ui-stage ui-portrait ui-nameplate ui-dialogue ui-speech` |
+| The Haunt and the players | `ui-meter ui-seg ui-seg--event ui-seg--max` (Events at 3, 6 and 9), `ui-chips ui-chip is-active is-haunting` |
+| Controller: actions and menu | `ui-button ui-tool ui-transport ui-sheet ui-fold` |
+| Lobby and ending | `ui-card ui-panel ui-modal` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.

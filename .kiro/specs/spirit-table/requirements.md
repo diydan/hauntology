@@ -94,3 +94,14 @@ The Spirit table is an optional private layer of Party Mode: a small 3D haunted 
 #### Acceptance Criteria
 
 1. WHEN Spirit clues (`puzzles` Requirement 15) are on THEN the Clue ring SHALL hang round the same viewpoint as the Table and turn with the same view, the Clues control SHALL show how many clues are read, and this spec SHALL define nothing about the clues, their placement or their reading.
+
+### Requirement 8
+
+**User Story:** As a Player, I want the screens of this feature to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (phone) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE phone screens SHALL use `ui-panel`, `ui-button`, `ui-notice` and `ui-status`, SHALL draw the Table, the ghost and the clues with colours from `shared/src/design/tokens.ts`, and SHALL keep every control at least 44 CSS pixels.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

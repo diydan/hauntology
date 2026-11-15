@@ -63,8 +63,8 @@ This spec joins the parts that are built and tested on their own into the main g
 
 #### Acceptance Criteria
 
-1. WHEN a human Detective starts Inspect on a phone and the Puzzle setting is not `off` THEN the Room SHALL open that Zone's Lock on that phone through the `PuzzleHost` of `puzzles`, with the level of the Puzzle setting, and a solved Lock SHALL give the same private result a plain Inspect gives.
-2. A Bot, and a Player in the solo case on the shared screen, SHALL get a plain Inspect.
+1. WHEN a human Detective starts Inspect on a phone (or on the solo case's shared screen) and the Puzzle setting is not `off` THEN the Room SHALL open that Zone's Lock there through the `PuzzleHost` of `puzzles`, at the level that `puzzles` 1.4 gives for the current Haunt, and a solved Lock SHALL give the same private result a plain Inspect gives.
+2. A Bot SHALL get a plain Inspect. In the solo case the human's Inspect SHALL open the Lock on the shared screen, played by touch or mouse (the touch path of every Kind, no tilt), as `puzzles` 13.3 says.
 3. THE phone SHALL supply the puzzle feel layer (tilt, buzz, sound, breath) from its own device settings, and every puzzle SHALL stay finishable by touch alone.
 
 ### Requirement 6
@@ -85,3 +85,14 @@ This spec joins the parts that are built and tested on their own into the main g
 1. EACH Optional layer SHALL have its own Master switch, off by default, and turning it off SHALL leave every other rule, view and outcome unchanged.
 2. ERRANDS and World Clues SHALL be joined in Phase 7, through the Engine, with their own specs, and SHALL NOT be started before the Phase 5 checkpoint.
 3. WHEN time runs short THEN the cut order of the `party-mode` tasks SHALL apply, and a cut layer SHALL leave no dead switch or screen behind.
+
+### Requirement 8
+
+**User Story:** As a Player, I want the screens of this feature to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Case and ending) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Case screen and the ending screen SHALL be built from `ui-card`, `ui-panel`, `ui-button` (one `ui-button--primary`, "Play again" on the ending screen), `ui-stage` and `ui-hud`, and a screen joined in a Phase SHALL not bring a look of its own.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

@@ -26,14 +26,16 @@ hauntology/
     sketch/ viewer/ ghost/ creator/   feature folders
     party/             host/ controller/ display/ (three pages of Party Mode)
   print/               optional 3D-print kit: scad/ (relics, pyramid holder), generated STL, README
+  design/              the design system: tokens.json (every value, written once), elements.css (the reusable ui- elements), fonts.css and fonts/ (self-hosted), catalogue.html (every element on one page; open /design/ in `pnpm voice-demo`). See steering/design-system.md
   tools/
+    build-tokens.mjs   writes web/src/styles/tokens.css and shared/src/design/tokens.ts from design/tokens.json (`pnpm build-tokens`; `--check` or `pnpm check-tokens` fails when they are stale or a contrast rule fails)
     worldlabs-mcp/     dev MCP server (spend-capped)
     build-print.mjs    generates QR plates, runs openscad if present, checks every STL
     check-traceability.mjs   spec ↔ task ↔ property consistency check
     check-sounds.mjs   fails the build on a sound file with no credit, over a size limit or in the wrong format
     check-voice-library.mjs   fails the build when a scripted spoken line has no Library entry, an entry has no line, or a text holds a Steering Tag
     build-banks.mjs   generates the typed story banks in shared/src/voice/banks/ (lodger, ghost, party) from lodger-lines.md, ghost-lines.md and party-lines.md in docs/story/ (`--check` fails when one is out of date)
-    voice-demo/        the play-through: a local page (127.0.0.1 only, read-only) that plays the Library audio with the character portraits and lip-synced clips in game order, in a Wander and two party rounds, with subtitles; `pnpm voice-demo`
+    voice-demo/        the play-through (built from the design system, and its visual reference): a local page (127.0.0.1 only, read-only) that plays the Library audio with the character portraits and lip-synced clips in game order, in a Wander and two party rounds, with subtitles; `pnpm voice-demo`
     voice-render/      the local Worker (never deployed) that prerender-voice.mjs calls for Inworld audio; token-guarded, allow-listed
     lib/               helpers shared by the tools above (story-banks.mjs, voice-library-check.mjs, prerender-plan.mjs, prerender-run.mjs, prerender-upload.mjs, reel.mjs, audio-check.mjs); test/ holds their `node --test` tests
     prerender-voice.mjs   owner-run before a deploy: renders the missing Library audio (ghost-voice) into R2 with a manual budget; audio is never committed (dry run, `--render` for one voice, `--upload` to R2 and `--reel` listening reels are all built; see docs/VOICE-LIBRARY-PLAN.md)

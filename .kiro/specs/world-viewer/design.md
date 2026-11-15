@@ -116,3 +116,16 @@ type InputMode = 'play' | 'chat';
 ### Property 12: Atmosphere and tilt are bounded and never touch movement
 *For any* atmosphere (any weather class, time of day, moon and precipitation request) and any Quality Level, `atmosphereParams` keeps the particle count at or below its cap (lower under a low Quality Level or reduced motion), keeps the grade inside the Haunt grade limits, and changes no movement, collision, anchor or Haunt Level value; and for any stream of orientation readings including noise, NaN, infinities and jumps, `tiltLook` ignores readings below the wobble threshold, never changes position, clamps the turn rate, and produces no change when no reading arrives.
 **Validates: Requirements 3.6, 8.1**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Memories and Hint | `ui-hud ui-lamps ui-lamp ui-compass ui-needle ui-bars ui-bar` |
+| The ghost speaking | `ui-stage ui-nameplate ui-dialogue ui-speech ui-word` |
+| Chat | `ui-sheet ui-log ui-field` |
+| Exit, content notice | `ui-button`, `ui-notice` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.

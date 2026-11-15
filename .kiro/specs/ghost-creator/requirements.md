@@ -78,3 +78,14 @@ The ghost creator lets the visitor design the ghost that haunts their place. Cho
 1. WHEN a Ghost Profile exists THEN the Web app SHALL use the Sprite as the circular chat portrait with descriptive alt text and as the in-world billboard texture.
 2. WHEN the visitor reloads THEN the Web app SHALL restore the same Ghost Profile for that world from storage.
 3. WHEN the Creator finishes THEN the Web app SHALL show a short scripted "meet your ghost" line in the Persona's voice without calling any paid model.
+
+### Requirement 7
+
+**User Story:** As a Player, I want the screens of this feature to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Creator) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Creator SHALL be built from `ui-card`, `ui-field`, `ui-select`, `ui-range` and `ui-button` (one `ui-button--primary`), with the picture of the ghost in a `ui-portrait`.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

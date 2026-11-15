@@ -131,3 +131,15 @@ T4. Camera: whether the rear camera backdrop works in the installed web app on i
 ### Property 6: The table obeys its limits
 *For any* sensor state, visibility, WebGL and reduced-motion setting, `tablePlan` draws at most 30 frames a second, does not draw when the phone is face down or the page is hidden, gives the drag view without sensors, the list view without WebGL, and a still view under reduced motion.
 **Validates: Requirements 4.3, 6.1**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Controls and notes | `ui-button ui-notice ui-status` |
+| The board, ghost and clues (3D or canvas) | colours from `shared/src/design/tokens.ts` |
+| The list view | `ui-panel ui-log` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.

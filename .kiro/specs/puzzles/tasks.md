@@ -269,3 +269,25 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - Built 2026-11-15 in `shared/src/app/csp.ts` (`camera=(self)`), `csp.test.ts` and `security-headers.test.ts`; the tests fail if `camera=()` comes back.
     - _Requirements: 15.10_
   - [ ] 10.11 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `placeClues` and `stepRead`. Ensure every test passes; ask the user if questions arise.
+
+- [ ] 11. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 16 and the `design-system` spec)
+  - [ ] 11.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 16.1, 16.3_
+  - [ ] 11.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 16.2_
+  - [ ] 11.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 16.4_
+  - [ ] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 16.1_
+
+- [ ] 12. Decisions of 2026-11-15: the level follows the Haunt, Haunting puzzles, Locks in the solo case
+  - [ ] 12.1 `lockLevel(setting, preset, haunt, kind, sightLevel)` in `shared/src/puzzles/`
+    - _Requirements: 1.4_
+  - [ ]* 12.2 Write property test for the level
+    - **Property 21: The level follows the Haunt, and a clue always fits**
+    - **Validates: Requirements 1.4**
+  - [ ] 12.3 Haunting puzzles: one per Round per human Poltergeist, no-clue Kinds, one Scare point, closed at the Round end or the game end
+    - _Requirements: 17.1, 17.2, 17.3_
+  - [ ]* 12.4 Write property test for Haunting puzzles
+    - **Property 22: Haunting puzzles change only Scare points**
+    - **Validates: Requirements 17.1, 17.2, 17.3**

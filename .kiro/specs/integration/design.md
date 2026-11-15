@@ -41,7 +41,7 @@ The Case screen's `HostPort.start(setup, sky)` creates a Room with `soloSetup`, 
 
 ## Puzzles on phones
 
-Inspect on a phone by a human Detective with the Puzzle setting on opens a Lock: the Engine records an open Lock for that seat and Zone (puzzles task 3), sends the Lock's view privately, and on a verified Attempt sends the same `inspected` result a plain Inspect sends. The Controller mounts `PuzzleHost` with `PlatformKit.puzzleFeel` from the device settings. Bots and the shared-screen pad get a plain Inspect.
+Inspect on a phone by a human Detective with the Puzzle setting on opens a Lock: the Engine records an open Lock for that seat and Zone (puzzles task 3), sends the Lock's view privately, and on a verified Attempt sends the same `inspected` result a plain Inspect sends. The Controller mounts `PuzzleHost` with `PlatformKit.puzzleFeel` from the device settings. Bots get a plain Inspect. In the solo case the Lock opens on the shared screen and is played by touch or mouse. The level follows the Haunt (`puzzles` 1.4). A Player who has joined the haunting may play Haunting puzzles between Turns for Scare points (`puzzles` Requirement 17).
 
 ## Correctness Properties
 
@@ -68,3 +68,15 @@ For any game, turning an Optional layer off gives the same states, views and out
 ## Testing
 
 Properties 1 to 5 as fast-check tests on the Engine (no server). Wiring tests for the DO (socket, save-before-send, alarm) with Miniflare. A Playwright-style run of the solo case through the Case screen at Phase 4, and of a two-phone party at Phase 5, in the CDP harness used for the puzzle screens.
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Case screen | `ui-page ui-card ui-field ui-button--primary` |
+| The solo case on one screen | `ui-stage ui-hud ui-transport` |
+| Ending screen | `ui-card ui-button--primary ui-log` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.

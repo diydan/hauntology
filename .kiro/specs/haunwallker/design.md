@@ -324,3 +324,21 @@ When a world is ready the Haunt screen offers two actions (Requirement 13): "Pla
 ### Property 11: The ink floor gate matches the server
 *For any* canvas bitmap, the shell enables "Make it real" if and only if `inkCoverage(bitmap) ≥ 0.005`, using the same function and constant as the API's sketch route.
 **Validates: Requirements 2.4**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Pages and the confirm step | `ui-page ui-header ui-panel ui-card ui-modal` |
+| Main action, other buttons | `ui-button`, one `ui-button--primary` per screen |
+| Content notice, offline banner, progress, errors | `ui-notice ui-status` |
+| Create form | `ui-field ui-field-label ui-select ui-range ui-check` |
+| Chat | `ui-sheet ui-sheet-head ui-log` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.
+
+## Puzzles (2026-11-15)
+
+Two screens of this shell meet the `puzzles` spec. **Wander:** an optional Lock stands before each memory (Skip always works, after 20 seconds or two wrong tries); the first is a Kind with no clue, later ones may use a clue shown after an earlier memory. **Case screen:** in the solo case Inspect opens the Lock on the laptop screen, played by touch or mouse (tilt Kinds use their touch path); the level follows the Haunt. The Sights page of the notebook (Assist) lists the clues a visitor has seen. Puzzle screens use the `pz-` styles today and move onto the shared elements when next changed (`design-system` task 4.4).

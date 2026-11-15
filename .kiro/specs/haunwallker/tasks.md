@@ -254,3 +254,13 @@ Tasks marked `*` are optional test tasks that should still be done before submis
 - [ ] 11. Checkpoint
   - Run `pnpm -r test`, `pnpm -r typecheck` and `node tools/check-traceability.mjs`; walk the Zero-Quota Path in a real browser with the kill switch on; confirm the world-access test (task 3.2) passes or its failures are listed in `docs/IMPLEMENTATION.md`; tick `world-pipeline` tasks 10.1 to 10.4; ask the user if questions arise.
   - **Run on 2026-11-15 (not ticked, two items open):** `pnpm test` passes in all three packages (shared 308, api 36, web 530, which includes the bundle test). `pnpm typecheck` passes in `api` and `web`; in `shared` it fails in `src/puzzles/place.prop.test.ts` (line 18), which belongs to the puzzles work in progress, not the shell. `node tools/check-traceability.mjs` prints OK. The world-access suite (3.2) passes against its reference app and fails all nine leaky ones; running it against the real routes (3.3) is still blocked, and the gap stays listed under "Security gaps" in `docs/IMPLEMENTATION.md`. `world-pipeline` tasks 10.1 to 10.4 are ticked (the shell built them in groups 7, 8 and 9). **Open:** the walk of the Zero-Quota Path in a real browser (it needs the Playwright dependency from 10.3, or a person; see `docs/spikes/shell.md`), and a green `pnpm -r typecheck` once the puzzles test is fixed.
+
+- [ ] 13. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 14 and the `design-system` spec)
+  - [ ] 13.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 14.1, 14.3_
+  - [ ] 13.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 14.2_
+  - [ ] 13.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 14.4_
+  - [ ] 13.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 14.1_

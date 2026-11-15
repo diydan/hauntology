@@ -26,7 +26,7 @@ Party mode turns Hauntology into a same-room deduction game for two to six playe
 - **First player**: the Detective who takes the first Turn of a Round. It moves one seat clockwise each Round.
 - **Turn Clock**: the countdown for a Turn. **Bonus Seconds**: time earned through Achievements.
 - **Suggestion / Accusation**: a guess at the Zone you stand in, answered by one card; versus a final claim of one Suspect, one Zone and one Relic, sealed during the accuser's Turn and revealed with every other Accusation at the end of that Round. A Player may make one Accusation per game.
-- **Inspect**: an action that spends 10 seconds of a Turn in a Zone to look for Residue there.
+- **Inspect**: an action that spends 10 seconds of a Turn in a Zone to look for Residue there. WHERE the Puzzle setting is on, a human Detective's Inspect on a phone opens that Zone's **Lock** (a short phone puzzle of the `puzzles` spec) instead, and solving it gives the same private result.
 - **Haunt**: a level that rises as the game goes on and ends the game when it reaches its maximum.
 - **Haunt Event**: a change to the game that fires once when the Haunt first reaches level 3, 6 and 9.
 - **Bluff**: a Suggestion that names a Suspect or a Relic from the suggester's own Hand. It is a normal Suggestion, and nothing marks it until the ending recap.
@@ -215,7 +215,7 @@ Party mode turns Hauntology into a same-room deduction game for two to six playe
 3. WHEN a Player's Accusation is revealed as wrong THEN that Player SHALL become a Poltergeist who keeps their seat, nickname, Hand and Resolve, whose Hand answers Suggestions with the default choice of 6.2, who takes no Turns and cannot suggest, accuse, inspect, Eavesdrop or win, and who may send Cues, Nudges, Frames and Rattles and choose Haunt Event options.
 4. WHEN a Round starts THEN each Player, including a Poltergeist, SHALL gain one Resolve up to a maximum of three, and WHEN a card has been shown for another Player's Suggestion THEN each Detective other than the suggester and the Player who showed it MAY spend one Resolve within 10 seconds to Eavesdrop, and the Room SHALL tell each such Player privately one of the other two named cards, chosen from the seed for that Player, SHALL never tell them the card shown, and SHALL publish who eavesdropped; Resolve is also what a Nudge costs (12.3).
 5. THE Public View SHALL carry the Haunt level, the Poltergeist seats, each Player's Hand size and Resolve count, who eavesdropped and how many Accusations are sealed in the current Round, as numbers and names only, and never a Hand, a Residue card, the content of an Accusation or the Solution before the game ends, and every game SHALL end within the Haunt maximum plus three Rounds.
-6. THE Room SHALL give each Poltergeist scare points from the event log (one per Frame sent, one per Rattle accepted, two per Spook applied, three for each Turn that ended by the clock while they had Spooked or Rattled during it), SHALL name the Poltergeist with the most on the ending screen as Most Haunting, and SHALL let the points change no rule.
+6. THE Room SHALL give each Poltergeist scare points from the event log (one per Frame sent, one per Rattle accepted, one per Haunting puzzle solved (`puzzles` Requirement 17), two per Spook applied, three for each Turn that ended by the clock while they had Spooked or Rattled during it), SHALL name the Poltergeist with the most on the ending screen as Most Haunting, and SHALL let the points change no rule.
 
 ### Requirement 12
 
@@ -321,3 +321,14 @@ Party mode turns Hauntology into a same-room deduction game for two to six playe
 1. THE game SHALL use seven sound files (creak, whisper, bell, laugh, wind, rumble, becoming), each mono `.m4a` of at most 50 kilobytes, at most 350 kilobytes in all, at most 3 seconds (the becoming at most 4), levelled to about -16 LUFS, with no words, no real person's voice and nothing from a film, game or song.
 2. WHEN a sound file is absent THEN the game SHALL behave identically except that the phone flashes and vibrates and the Host shows the log line, and nothing SHALL fail or wait.
 3. THE build check SHALL fail on a sound file with no credit in `docs/sounds/CREDITS.md`, over a size limit or in the wrong format.
+
+### Requirement 21
+
+**User Story:** As a Player, I want the screens of this feature to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Host, Controller and Display) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Host SHALL show the stage, the Haunt and the players with `ui-stage`, `ui-meter` and `ui-chips`, and the ghost's and the Keeper's lines with `ui-nameplate` and `ui-dialogue`; THE Controller SHALL use `ui-button`, `ui-tool`, `ui-chips` and `ui-sheet` for its menu; and the HUD SHALL show only what this spec gives a Player.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

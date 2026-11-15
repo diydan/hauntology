@@ -448,3 +448,16 @@ Turns, the Hunt and the Haunt never wait on audio. A speech request that fails h
 ### Property 14: The Library is complete and free of player text, and nothing is prepared because of a secret
 *For any* scripted banks, `buildLibrary` lists exactly the spoken texts a scripted line can have for each Speaker (placeholders expanded over their finite values), in a fixed order, with no duplicate key, no Steering Tag and no player text; *for any* line and any `playerText`, `toVoiceLine` yields a `spoken` that contains none of them and ends at a sentence end; a Library step is never subject to a ticket, a cap or the kill switch; *for any* two states that differ only in the Solution, a Hand or whether an Accusation is right, `prefetchPlan` returns the same keys and the same upstream calls are made; a `prefetch` request never makes a paid call and is never counted as spoken; and two requests for one key at once make one upstream call.
 **Validates: Requirements 1.8, 1.9, 1.10**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| A spoken line | `ui-dialogue ui-speech ui-word ui-speech-tail` |
+| Who speaks | `ui-nameplate`, `ui-portrait ui-orb` |
+| Speak and listen | `ui-button ui-button--quiet`, `ui-tool` |
+| Sound and voice notes | `ui-note ui-status` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.

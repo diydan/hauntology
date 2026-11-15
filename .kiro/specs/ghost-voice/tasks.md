@@ -200,3 +200,13 @@ Tasks marked `*` are optional test tasks that should still be done before submis
 - [ ] 7. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; confirm no test calls a real model; play a full game once with voice on in Single player, once with `VOICE_ENABLED=false` and every Meter at zero (it must reach the Ending by reading and typing), and once in a Multiplayer room with speaking on and Stitch on using fake Clips; confirm which of Stitch (`VOICE_STITCH_ENABLED`) and live mode (`VOICE_LIVE_ENABLED`) ship, and that cutting either leaves the rest working; update `tech.md`, `ghost-safety.md`, `security-and-cost.md` and `structure.md` with what the spikes resolved; ask the user if questions arise.
   - _Requirements: 4.3_
+
+- [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
+  - [ ] 8.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 7.1, 7.3_
+  - [ ] 8.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 7.2_
+  - [ ] 8.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 7.4_
+  - [ ] 8.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 7.1_

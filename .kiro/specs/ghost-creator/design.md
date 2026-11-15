@@ -103,3 +103,15 @@ Property tests for validation, sanitisation, prompt building, sprite validation,
 ### Property 8: Ghost Profiles round-trip
 *For any* valid Ghost Profile, serialising and parsing yields an equal profile, and parsing any corrupted serialisation returns an error rather than a partial profile.
 **Validates: Requirements 6.2, 4.3**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| The form | `ui-card ui-field ui-field-label ui-select ui-range ui-check` |
+| The ghost | `ui-portrait` |
+| Done | `ui-button--primary`, `ui-status` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.
