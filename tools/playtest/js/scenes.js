@@ -44,11 +44,12 @@ export const SHOT_LINE = {
 
 /**
  * When each line starts, in seconds from the start of its shot, so that it falls on the picture it is about (puzzles Requirement 20.8). Found by laying
- * each rendered line over its clip (`narration-preview-4`, then the dawn take 3): `hand` the shadow is already on the wall and the knocks come at 9 seconds;
- * `bed` the mattress sinks at about 6 seconds; `house` the lights go out from 3 seconds; `dawn` "the door opens" is said at 7.3 seconds into the line and the
- * door opens in the picture at 10.4 seconds, so the line starts at 2.9 and "Mind the step" is said as the mist comes out.
+ * each rendered line over its clip, from the pauses in the audio (the shorter lines of 2026-11-16, not yet checked by ear): `hand` the shadow is already on the wall
+ * and the knocks come at 9 seconds, just after "four seems desperate" (said at 8.3 s into the line) and before "I shall wait"; `bed` the mattress sinks at about
+ * 6 seconds, as "Nobody is in it" begins (6.5 s into the line); `house` the lights go out from 3 seconds; `dawn` "the door opens" is said at about 5.7 seconds
+ * into the line and the door opens in the picture at 10.4 seconds, so the line starts at 4.7 and "Mind the step" (7.8 s into the line) is said as the mist comes out.
  */
-export const LINE_AT = { hand: 0.8, bed: 0.5, house: 1.2, dawn: 2.9 };
+export const LINE_AT = { hand: 0.8, bed: 0.3, house: 1.2, dawn: 4.7 };
 
 /** The line written for a shot, or null when it has none. Total: an unknown shot gives null. */
 export function shotLine(shot) {
