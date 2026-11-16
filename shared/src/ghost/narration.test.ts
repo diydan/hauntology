@@ -362,10 +362,10 @@ describe("the hint check: the engine's way and distance, in its own words", () =
   });
 
   it("is a check on the hint reply only through replyChecksFor, and a tease must not say which way", () => {
-    expect(replyChecksFor({ kind: "hint", bearing: "left", band: "far" })).toEqual({ forbidDigits: true, way: { bearing: "left", band: "far" }, maxWords: 20 });
-    expect(replyChecksFor({ kind: "tease", band: "nearer" })).toEqual({ forbidDigits: true, noWay: true, maxWords: 25 });
-    expect(replyChecksFor({ kind: "reveal", anchorId: "a1" })).toEqual({ minSentences: 2, maxWords: 45 });
-    expect(replyChecksFor({ kind: "ending" })).toEqual({ maxWords: 30 });
+    expect(replyChecksFor({ kind: "hint", bearing: "left", band: "far" })).toEqual({ forbidDigits: true, way: { bearing: "left", band: "far" }, maxWords: 30 });
+    expect(replyChecksFor({ kind: "tease", band: "nearer" })).toEqual({ forbidDigits: true, noWay: true, maxWords: 40 });
+    expect(replyChecksFor({ kind: "reveal", anchorId: "a1" })).toEqual({ minSentences: 2, maxWords: 60 });
+    expect(replyChecksFor({ kind: "ending" })).toEqual({ maxWords: 45 });
     for (const d of [{ kind: "echo", anchorId: "a1" }, { kind: "ambient" }, { kind: "refuse" }] as Directive[]) expect(replyChecksFor(d), d.kind).toEqual({});
     const hint = replyChecksFor({ kind: "hint", bearing: "behind", band: "nearer" });
     expect(validateGhostReply("Behind you, and nearer than you think.", hint).ok).toBe(true);
@@ -515,10 +515,10 @@ describe("a pet name at most once (the third play-through, docs/spikes/4.4.md: \
   });
 });
 
-describe("the word caps (owner, 2026-11-16: tease 25, hint 20, memory 45, farewell 30)", () => {
+describe("the word caps (owner, 2026-11-16: tease 40, hint 30, memory 60, farewell 45)", () => {
   const words = (n: number) => Array.from({ length: n }, (_, i) => (i === 0 ? "Still" : "here")).join(" ") + ".";
   it("a reply at its cap passes and one word over is refused, for each capped kind", () => {
-    const cases: [Directive, number][] = [[{ kind: "tease", band: "nearer" }, 25], [{ kind: "reveal", anchorId: "a1" }, 45], [{ kind: "ending" }, 30]];
+    const cases: [Directive, number][] = [[{ kind: "tease", band: "nearer" }, 40], [{ kind: "reveal", anchorId: "a1" }, 60], [{ kind: "ending" }, 45]];
     for (const [d, cap] of cases) {
       const two = (n: number) => `${words(Math.ceil(n / 2))} ${words(Math.floor(n / 2))}`; // two sentences, so a reveal's minimum holds
       expect(validateGhostReply(two(cap), replyChecksFor(d)).ok, `${d.kind} at ${cap}`).toBe(true);
@@ -526,10 +526,10 @@ describe("the word caps (owner, 2026-11-16: tease 25, hint 20, memory 45, farewe
     }
     const hint = replyChecksFor({ kind: "hint", bearing: "behind", band: "nearer" });
     expect(validateGhostReply("Behind you, and nearer than you think.", hint).ok).toBe(true);
-    expect(validateGhostReply(`Behind you, and nearer. ${words(17)}`, hint)).toEqual({ ok: false, reason: "too_many_words" });
+    expect(validateGhostReply(`Behind you, and nearer. ${words(27)}`, hint)).toEqual({ ok: false, reason: "too_many_words" });
   });
   it("the caps are the owner's numbers, and a word is a run of letters, digits and apostrophes", () => {
-    expect(WORD_CAP).toEqual({ tease: 25, hint: 20, reveal: 45, ending: 30 });
+    expect(WORD_CAP).toEqual({ tease: 40, hint: 30, reveal: 60, ending: 45 });
     expect(wordCount("I'm here, and the clock’s hands are still.")).toBe(8);
   });
 });
