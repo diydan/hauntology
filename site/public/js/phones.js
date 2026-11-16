@@ -9,9 +9,9 @@
   var n=0,busy=false,timer=0;
   var MAX=6;
   var words=[
-    ['A creak','The floorboards creak, somewhere below.'],
-    ['Wind','A wind passes through the house.'],
-    ['A rumble','The whole house rumbles.']
+    ['A creak','The floorboards creak, somewhere below. Nobody mentions it.'],
+    ['Wind','A wind passes through the house, though every window is shut.'],
+    ['A rumble','The whole house rumbles, and then, in its way, apologises.']
   ];
   function level(k){return k<=2?1:k<=4?2:3;}
   var BASE='#171c20',MID='#3a4248',PALE='#aeb4b8',DARK='#0a0c0e';
@@ -45,7 +45,7 @@
     var l=level(n);
     var w=words[l-1];
     tag.textContent=w[0]+' \u00b7 level '+l;
-    txt.textContent=w[1]+(n>=MAX?' That is the most the table can do in one turn.':'');
+    txt.textContent=w[1]+(n>=MAX?' That is the most the table can do in one turn. The house is tired, and so, I expect, are you.':'');
     paint();tag.textContent=w[0]+' \u00b7 level '+l;
     busy=true;btn.disabled=true;
     var d=Math.max(4000,play(l));
