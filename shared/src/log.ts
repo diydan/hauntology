@@ -36,6 +36,12 @@ export const LOG_SCHEMA = {
   "play.reset": { turns: "int" },
   /** A play call was refused, with its code (`rate_limited`, `session_expired`, `world_not_found`, ...). */
   "play.refused": { code: "word" },
+  /**
+   * One request to hear a line (ghost-voice 3.6 and 3.12): where the audio came from (`library`, `cache`, `flight`, `inworld`, `aura` or `none`; `flight` is a request that joined a
+   * call already running), how it ended (`ok`, `off`, `bad_body`, `no_line`, `silent`, `not_ready`, `killed`, `denied` or `failed`), whether a paid call was charged for it, whether it
+   * was a prefetch (which never pays), and how long it took in milliseconds. Counters of one word each: never the line's words, its id, the game's id or the audio.
+   */
+  "voice.speak": { via: "word", outcome: "word", paid: "bool", prefetch: "bool", ms: "int" },
 } as const;
 
 export type LogEvent = keyof typeof LOG_SCHEMA;
