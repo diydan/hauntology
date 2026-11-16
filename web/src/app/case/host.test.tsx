@@ -85,11 +85,11 @@ describe("the solo table", () => {
     act(() => f.set({ refused: "not_your_turn" }));
     expect(screen.getByRole("alert").textContent).toBe("It is not your turn.");
     const sol = s.deal!.solution;
-    act(() => f.set({ status: "ended", public: { ...publicSnapshot(s, now), phase: "ended", ending: { solution: sol, residueAt: {}, winners: [1], houseWins: false, mostHaunting: null, scare: {}, nudges: { help: 0, spook: 0 }, recap: [] as never } } }));
+    act(() => f.set({ status: "ended", public: { ...publicSnapshot(s, now), phase: "ended", ending: { solution: sol, residueAt: {}, winners: [1], houseWins: false, mostHaunting: null, scare: {}, nudges: { help: 0, spook: 0 }, recap: { entries: [], counts: {}, solution: sol, reveal: [] } } } }));
     const n = namesOf(publicSnapshot(s, now), 1);
-    expect(screen.getByRole("heading").textContent).toBe("The case is solved");
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("The case is solved");
     expect(document.body.textContent).toContain(`It was ${n.card(sol.suspect)}, in the ${n.card(sol.zone)}, with the ${n.card(sol.relic)}.`);
-    expect(document.body.textContent).toContain("Solved by You.");
+    expect(document.body.textContent).toContain("First DetectiveYou");
   });
 });
 

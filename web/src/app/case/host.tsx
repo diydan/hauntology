@@ -4,6 +4,7 @@ import { browserRoomDeps, checkWorld, RoomError, startSolo, type RoomClient, typ
 import type { HostHandle, HostSetup } from "./types";
 import type { ViewerHandle } from "../viewer/types";
 import { eventLine, namesOf, notebook, secondsLeft } from "./words";
+import { Ending } from "./Ending";
 
 /**
  * The real Host for "Play a case" (integration 4.1, 4.2; party-mode 8.15): a real Room on the server, the visitor in
@@ -110,16 +111,8 @@ export function SoloTable({ client }: { client: RoomClient }) {
   const lines = view.events.map((e) => eventLine(e, n)).filter((x): x is string => x !== null).slice(-8);
 
   if (view.phase === "ended" && view.ending) {
-    const e = view.ending;
-    return (
-      <section className="ui-panel ui-stack" aria-labelledby="solo-end">
-        <h2 id="solo-end" className="ui-heading">{e.houseWins ? "The haunting continues" : "The case is solved"}</h2>
-        <p className="ui-lead">
-          It was {n.card(e.solution.suspect)}, in the {n.card(e.solution.zone)}, with the {n.card(e.solution.relic)}.
-        </p>
-        {e.winners.length > 0 ? <p>Solved by {e.winners.map((w) => n.seat(w)).join(", ")}.</p> : null}
-      </section>
-    );
+    const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return <Ending view={view} n={n} reducedMotion={reduced} />;
   }
 
   return (
