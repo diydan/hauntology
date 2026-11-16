@@ -232,6 +232,10 @@ test('every reason a reply can be refused for is named, from the game\'s own che
     ['the call failed', HINT, raw(null, { ok: false, error: 'Error: boom' }), 'call_failed'],
   ];
   for (const [name, directive, call, reason] of cases) assert.equal(why(call, directive), reason, name);
+  // a second pet name, after one in the game's history (the third play-through, 2026-11-16)
+  const used = [{ role: 'ghost', text: 'Come in, dear. The attic is quiet.' }];
+  assert.equal(explainCall(plan, raw('Go to your left, dear, and it is nearer.'), { directive: HINT, system, history: used }).reason, 'pet_name', 'a second pet name');
+  assert.equal(why(raw('Go to your left, dear, and it is nearer.'), HINT), 'ok', 'the first pet name of a game is let by');
   assert.equal(why(raw('The attic is quiet around you. Dust drifts in the light.', { textChars: 4000 }), AMBIENT), 'ok', 'a reply of exactly 4,000 characters is still read');
   // the order the game uses: a failed call before anything, a refusal before the text, an unreadable text before the token cap, the token cap before the checks
   assert.equal(why(raw('**x**', { ok: false }), HINT), 'call_failed');
@@ -242,7 +246,7 @@ test('every reason a reply can be refused for is named, from the game\'s own che
   assert.equal(why(raw('The attic is quiet around you. Dust drifts in the light.'), AMBIENT), 'ok');
   assert.equal(why(raw('The attic is quiet around you. Dust drifts in the light.'), HINT), 'wrong_way');
   // the whole list of reasons is the list of reasons these cases produce
-  assert.deepEqual(new Set(cases.map((c) => c[3]).filter((r) => r !== 'ok')), new Set(REJECTION_REASONS));
+  assert.deepEqual(new Set([...cases.map((c) => c[3]), 'pet_name'].filter((r) => r !== 'ok')), new Set(REJECTION_REASONS));
 });
 
 test('a recorded call is explained with everything kept: the words, the stop reason, the tokens, the size, the time, the turn it was checked as; and a call that took the game\'s whole 6 seconds is marked late', () => {
