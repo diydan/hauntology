@@ -597,8 +597,7 @@ test('page: accessible: one polite live region, a log for the journal, a modal t
   for (const id of ['weather', 'time', 'moon', 'bearing', 'band', 'nick', 'zone', 'suspect', 'persona', 'pause', 'vol', 'useClips']) assert.match(html, new RegExp(`for="${id}"`), `${id} has a label`);
 });
 
-test('page: the title card carries the content notice and the first click that unlocks the sound, and the steering voice', () => {
-  assert.match(html, /Quiet, dim, may flicker\./);
+test('page: the title card carries the first click that unlocks the sound, and the steering voice', () => {
   assert.match(html, /&gt; look/);
   assert.match(html, /You are in a place\./);
   for (const id of ['introWander', 'introParty', 'introSolved', 'introExplore']) assert.match(html, new RegExp(`id="${id}"`));
@@ -606,9 +605,17 @@ test('page: the title card carries the content notice and the first click that u
   assert.match(pageJs, /Escape/);
 });
 
+test('page: every button is a short label, with no subtitle line under it', () => {
+  assert.doesNotMatch(html, /ui-button-sub|ui-story-sub/, 'no subtitle under a button');
+  for (const m of html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)) {
+    const label = m[1].replace(/<[^>]+>/g, '').trim();
+    assert.ok(label.length <= 40, `a button label over 40 characters: ${label}`);
+  }
+});
+
 test('page: the transport and the keyboard: pause, back, next, stop, sound, and Space, arrows, Esc, M', () => {
   for (const id of ['btnBack', 'btnPause', 'btnNext', 'btnStop', 'btnMute', 'btnDirector']) assert.match(html, new RegExp(`id="${id}"`));
-  assert.match(html, /Space pause · ← back · → next · R again · Esc stop · M sound/);
+  assert.doesNotMatch(html, /Space pause/, 'the page shows no line of key hints: only short labels');
   for (const key of [`' '`, `'ArrowRight'`, `'ArrowLeft'`, `'Escape'`, `'m'`, `'r'`]) assert.ok(pageJs.includes(key), `the keyboard handles ${key}`);
   assert.match(html, /aria-pressed="false" disabled/, 'pause starts disabled until something plays');
 });

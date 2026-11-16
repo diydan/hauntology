@@ -36,13 +36,12 @@
     <p class="ui-prompt">&gt; look</p>
     <h2 class="ui-title" id="introTitle">You are in a place.</h2>
     <p class="ui-lead">Someone has been waiting.</p>
-    <p class="ui-notice">Quiet, dim, may flicker. This page plays sound.</p>
     <p class="ui-status" id="introStatus" role="status">Loading the Library…</p>
     <div class="ui-choices">
-      <button id="introWander" class="ui-button ui-button--main ui-button--primary" type="button" disabled>Begin the Wander<small class="ui-button-sub">You, alone with the Whisper. Three memories to find.</small></button>
-      <button id="introParty" class="ui-button ui-button--main" type="button" disabled>A party round: the haunting wins<small class="ui-button-sub">Mr. Ashby keeps the table. The Haunt rises.</small></button>
-      <button id="introSolved" class="ui-button ui-button--main" type="button" disabled>A party round: the case is solved<small class="ui-button-sub">A Suspect confesses.</small></button>
-      <button id="introExplore" class="ui-button ui-button--main" type="button" disabled>Explore on my own<small class="ui-button-sub">Open the Director and pick any moment.</small></button>
+      <button id="introWander" class="ui-button ui-button--main ui-button--primary" type="button" disabled>Begin the Wander</button>
+      <button id="introParty" class="ui-button ui-button--main" type="button" disabled>A party round: the haunting wins</button>
+      <button id="introSolved" class="ui-button ui-button--main" type="button" disabled>A party round: the case is solved</button>
+      <button id="introExplore" class="ui-button ui-button--main" type="button" disabled>Explore on my own</button>
     </div>
     <p class="ui-status">A test sequence: the voices, pictures and clips are the real ones; the game around them is not built yet.</p>
   </div>
@@ -77,7 +76,6 @@
     <button id="btnStop" class="ui-button ui-tool ui-button--danger" type="button" aria-label="Stop" disabled><span class="ui-tool-glyph" aria-hidden="true">■</span>Stop</button>
     <button id="btnMute" class="ui-button ui-tool" type="button" aria-label="Sound" aria-pressed="false"><span class="ui-tool-glyph" aria-hidden="true" id="muteGlyph">♪</span><span id="muteLabel">Sound</span></button>
     <button id="btnDirector" class="ui-button ui-tool ui-tool--narrow-only" type="button" aria-label="Open the Director" aria-expanded="false" aria-controls="director"><span class="ui-tool-glyph" aria-hidden="true">☰</span>Director</button>
-    <p class="ui-keys">Space pause · ← back · → next · R again · Esc stop · M sound</p>
   </nav>
 
   <div class="ui-progress scenes-area">
@@ -93,9 +91,9 @@
       <summary>Play a story</summary>
       <div class="ui-field"><label class="ui-field-label" for="persona">Ghost</label><select class="ui-select" id="persona"><option value="soft">The Whisper (Pippa)</option><option value="dry">Mr. Ashby, the Keeper (Ronald)</option></select></div>
       <div class="ui-stories">
-        <button id="runWander" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Wander</span><span class="ui-story-sub">Alone with the ghost. Three memories to find.</span></button>
-        <button id="runParty" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Party: the haunting wins</span><span class="ui-story-sub">A wrong accusation. The Haunt rises to 10.</span></button>
-        <button id="runSolved" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Party: the case is solved</span><span class="ui-story-sub">A Suspect confesses. The Keeper closes it.</span></button>
+        <button id="runWander" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Wander</span></button>
+        <button id="runParty" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Party: the haunting wins</span></button>
+        <button id="runSolved" class="ui-button ui-story" type="button"><span class="ui-story-title">▶ Party: the case is solved</span></button>
       </div>
     </details>
 
@@ -134,7 +132,7 @@
       <div class="ui-field"><label class="ui-field-label" for="pause">Pause</label><input class="ui-range" id="pause" type="range" min="0" max="5" step="0.5" value="1.5"></div>
       <p class="ui-hint" id="pauseV">1.5 s between scenes</p>
       <div class="ui-field"><label class="ui-field-label" for="vol">Volume</label><input class="ui-range" id="vol" type="range" min="0" max="1" step="0.05" value="0.9"></div>
-      <div class="ui-field ui-field--check"><input class="ui-check" id="useClips" type="checkbox" checked><label class="ui-field-label" for="useClips">Use the lip-synced clip when a line has one</label></div>
+      <div class="ui-field ui-field--check"><input class="ui-check" id="useClips" type="checkbox" checked><label class="ui-field-label" for="useClips">Lip-synced clips</label></div>
     </details>
   </aside>
 
