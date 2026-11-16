@@ -23,8 +23,8 @@ const terminal = (t: number): Element => screen.getByRole("button", { name: new 
 const status = (): string => screen.getByRole("status").textContent ?? "";
 const checkButton = (): HTMLButtonElement => screen.getByRole("button", { name: "Check the wires" }) as HTMLButtonElement;
 
-/** The board is 340 wide and 70 + 62 n tall; wire ends sit at x 50, terminals at x 290. */
-const ysOf = (n: number) => (i: number): number => 50 + i * ((70 + n * 62 - 100) / (n - 1));
+/** The board is 340 wide and 100 + 72.5 (n - 1) tall; wire ends sit at x 50, terminals at x 290; rows are 72.5 apart. */
+const ysOf = (_n: number) => (i: number): number => 50 + i * 72.5;
 
 function drag(lock: ReturnType<typeof lockOf>, w: number, toX: number, toY: number): void {
   const ys = ysOf(lock.view.n);
