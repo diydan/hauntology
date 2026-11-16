@@ -41,6 +41,8 @@ Audio for every **spoken, scripted** line, rendered once ahead of time, kept und
 
 **Growth (2026-11-16):** seven new party variants in the storybook tone (`docs/story/TONE.md`) took the banks from 503 to 510 entries. They are for the big moments only: three more, for the frequent moments (`turn-start`, `time-warning`), were rendered and then taken out again, so their three audio files in `.voice-library/` are not in the manifest. The seven were rendered on their own through a second local Worker on its own port, with a manifest filtered to those lines (the tool has no per-line filter); about $0.039 was spent in all, counting the three taken out and one reworded line rendered twice. The narration-style work adds more lines that are not rendered yet: 7 for Pippa and 10 for Ronald, about $0.055. With them the manifest holds 527 entries, and the tests that pin the totals say 527 files, 60,093 characters and about $1.50.
 
+**Growth (2026-11-16, evening):** five new Whisper lines for the footage scenes (`scene.ship`, `scene.crate`, `scene.street`, `scene.mirror`, `wander.departure`) and a new last sentence for `scene.lights-out` took the banks to 532 entries; the tests that pin the totals say 532 files, 60,493 characters and about $1.51 (after `wander.letter.soft.1` was reworded for the envelope scene). The six were rendered on their own, about $0.016 with one reworded line. They went up to R2 on 2026-11-16 (6 uploaded and read back, identical), so all 532 files are in.
+
 **Default is a dry run.** It prints a table (voice, files missing, characters, estimated cost) and stops. Nothing is spent until the owner adds `--render` and a budget.
 
 | Flag | What it does |

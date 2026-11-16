@@ -9,11 +9,11 @@ import { EVENT_LEVELS, LINE_AT, SHOTS, SHOT_LINE, SHOT_SOUND, SHOT_TEXT, SOUND_A
 import { root } from './helpers.js';
 
 const MAXES = [8, 10, 12];
-const ORDER = ['ship', 'coffin', 'streets', 'stairs', 'hand', 'bed', 'house'];
+const ORDER = ['ship', 'coffin', 'streets', 'mirror', 'hand', 'bed', 'house'];
 
 test('20.1 the Reel for the default maximum: the film plays forward and each Event has a shot of its own', () => {
   const got = Array.from({ length: 11 }, (_, l) => reelShot(l, 10));
-  assert.deepEqual(got, ['ship', 'ship', 'ship', 'coffin', 'streets', 'streets', 'stairs', 'hand', 'hand', 'bed', 'house']);
+  assert.deepEqual(got, ['ship', 'ship', 'ship', 'coffin', 'streets', 'streets', 'mirror', 'hand', 'hand', 'bed', 'house']);
 });
 
 test('20.1 for every maximum the Reel never goes backwards, ends on the house at the maximum, and an Event always changes the picture', () => {
@@ -135,9 +135,7 @@ test('21.2 no player-facing string of the scenes says Poltergeist', () => {
 
 test('Wander: the scene has its files and its record, the Whisper line is the real scripted one, and the card holds the memory', () => {
   const prov = readFileSync(resolve(root, 'media', 'PROVENANCE.md'), 'utf8');
-  for (const ext of ['webm', 'mp4', 'jpg']) assert.ok(existsSync(resolve(root, 'media', `${WANDER.scene}.${ext}`)), `${WANDER.scene}.${ext}`);
-  assert.match(prov, new RegExp(`^## ${WANDER.scene}$`, 'm'));
-  assert.ok(WANDER.text.length > 20);
+  for (const sc of Object.values(WANDER_SCENES)) assert.match(prov, new RegExp(`^#{2,4} ${sc.clip}$`, 'm'), `${sc.clip} has a record`);
   const bank = readFileSync(resolve(root, '..', '..', 'docs', 'story', 'ghost-lines.md'), 'utf8');
   assert.ok(bank.includes(`| \`reveal.soft.1\` | ${WANDER.reveal} |`), 'the line is reveal.soft.1 of the ghost line bank, word for word');
   assert.doesNotMatch(WANDER.reveal, /\d|poltergeist/i, 'a reveal line has no digits and no Poltergeist');
@@ -200,11 +198,8 @@ const rowOf = (id) => new RegExp(`^\\| \`${id.replace(/\./g, '\\.')}\` \\| (.+?)
 const SIGNS = /\b(moon|key|eye|hand|star|bell)\b/i; // the six Signs: a line never names one, so it can never read as a clue
 const BANNED = /\b(AI|model|prompt|instructions?|rules?|turns?|rounds?|points?|scores?|cards?|hands?|clocks?|seconds?|levels?|games?|play|master|poltergeist|cannot|cold spot|blackout|restless|lull)\b/i;
 
-test('20.7 exactly the AI shots have a line, each is its own story-bank row word for word, and the old film has none', () => {
-  assert.deepEqual(Object.keys(SHOT_LINE).sort(), ['bed', 'dawn', 'hand', 'house']);
-  for (const [shot, file] of Object.entries(SHOTS)) {
-    assert.equal(shot in SHOT_LINE, file.startsWith('ai-'), `${shot} (${file}): a line exactly when the shot is an AI scene`);
-  }
+test('20.7 every shot has a line (the film shots too, since 2026-11-16), each its own story-bank row word for word', () => {
+  assert.deepEqual(Object.keys(SHOT_LINE).sort(), Object.keys(SHOTS).sort());
   const ids = new Set();
   for (const [shot, line] of Object.entries(SHOT_LINE)) {
     assert.equal(rowOf(line.id), line.text, `${shot}: ${line.id} is a row of party-lines.md, word for word`);
@@ -237,20 +232,20 @@ test('20.7 every shot line follows the bank rules and never names a Sign, a clue
   assert.deepEqual(lineProblems('The moon is up. I wait.'), ['a Sign word'], 'the rule can fail: a Sign');
 });
 
-test('20.7 the line of a shot is the line of its level: only the hand, the bed and the house have one, over every level and maximum', () => {
+test('20.7 the line of a shot is the line of its level, and every level has one, over every level and maximum', () => {
   for (const max of MAXES) {
     for (let l = 0; l <= max + 1; l++) {
       const shot = reelShot(l, max);
       assert.equal(reelLine(l, max), shotLine(shot), `level ${l} of ${max}`);
-      assert.equal(reelLine(l, max) === null, !['hand', 'bed', 'house'].includes(shot), `level ${l} of ${max} is ${shot}`);
+      assert.notEqual(reelLine(l, max), null, `level ${l} of ${max} is ${shot}`);
     }
   }
-  assert.deepEqual(Array.from({ length: 11 }, (_, l) => reelLine(l, 10)?.id ?? null), [null, null, null, null, null, null, null, 'scene.hand-door.soft.1', 'scene.hand-door.soft.1', 'scene.bed.soft.1', 'scene.lights-out.soft.1']);
+  assert.deepEqual(Array.from({ length: 11 }, (_, l) => reelLine(l, 10)?.id ?? null), ['scene.ship.soft.1', 'scene.ship.soft.1', 'scene.ship.soft.1', 'scene.crate.soft.1', 'scene.street.soft.1', 'scene.street.soft.1', 'scene.mirror.soft.1', 'scene.hand-door.soft.1', 'scene.hand-door.soft.1', 'scene.bed.soft.1', 'scene.lights-out.soft.1']);
   assert.equal(shotLine('dawn').id, 'scene.dawn-door.dry.1', 'the dawn line belongs to the ending shot, not to a level');
 });
 
 test('20.7 shotLine and reelLine are total: odd input gives a line or null, and never a throw or an inherited property', () => {
-  for (const bad of [undefined, null, 5, 'toString', 'constructor', '__proto__', {}, [], 'ship', '']) assert.equal(shotLine(bad), null, String(bad));
+  for (const bad of [undefined, null, 5, 'toString', 'constructor', '__proto__', {}, [], 'stairs', '']) assert.equal(shotLine(bad), null, String(bad));
   for (const [l, m] of [[NaN, 10], [-3, 10], [99, 10], [3.7, 10], [7, undefined], [7, 'x'], [null, null]]) {
     const r = reelLine(l, m);
     assert.ok(r === null || Object.values(SHOT_LINE).includes(r), `reelLine(${l}, ${m})`);
@@ -260,8 +255,9 @@ test('20.7 shotLine and reelLine are total: odd input gives a line or null, and 
 
 test('20.8 every line starts inside its shot and ends before the shot does, using the rendered length of the line', { skip: probe(resolve(root, 'media', `${SHOTS.hand}.mp4`)) === null && 'ffprobe not installed' }, () => {
   assert.deepEqual(Object.keys(LINE_AT).sort(), Object.keys(SHOT_LINE).sort(), 'a start time for each line, and no other');
-  // The length of each line as rendered into the Voice Library by Inworld (Whisper: Pippa, rate 0.9; Keeper: Ronald, rate 0.9), measured on 2026-11-16 and rounded up.
-  const RENDERED_S = { hand: 10.4, bed: 10.2, house: 13.7, dawn: 9.7 };
+  // How long each line is spoken, as rendered into the Voice Library by Inworld (Whisper: Pippa, rate 0.9; Keeper: Ronald, rate 0.9), measured on 2026-11-16 and
+  // rounded up. For the three short film shots and the house it is when the speech ends (the file's last few tenths are silence); the rest are the file's length.
+  const RENDERED_S = { ship: 3.4, coffin: 4.0, streets: 3.6, mirror: 8.3, hand: 10.4, bed: 10.2, house: 13.4, dawn: 9.7 };
   for (const shot of Object.keys(SHOT_LINE)) {
     const clip = probe(resolve(root, 'media', `${SHOTS[shot]}.mp4`));
     const at = LINE_AT[shot];
@@ -277,7 +273,7 @@ test('20.8 the dawn line is placed so that "the door opens" is said as the door 
 });
 
 // ---- 23: the scenes of Wander ----
-const filmEntry = (file) => new RegExp(`^${file.startsWith('ai-') || file.startsWith('wander-chimes') || file.startsWith('wander-chair') || file.startsWith('wander-letter') ? '#### ' : '## '}${file}$`, 'm');
+const filmEntry = (file) => new RegExp(`^${file.startsWith('ai-') || file.startsWith('wander-chimes') || file.startsWith('wander-chair') || file.startsWith('wander-letter') || file.startsWith('wander-envelope') ? '#### ' : '## '}${file}$`, 'm');
 const size = (file) => { const r = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', file], { encoding: 'utf8' }); return r.status === 0 ? r.stdout.trim().split(',').map(Number) : null; };
 
 test('23.1 the three kinds of memory each have a scene, with files, a record and the words of the scene', () => {
@@ -290,29 +286,26 @@ test('23.1 the three kinds of memory each have a scene, with files, a record and
     assert.ok(sc.text.length > 20 && !/\d/.test(sc.text), `${kind} has its words, with no digit`);
     assert.ok(['portrait', 'landscape'].includes(sc.shape));
   }
-  assert.equal(WANDER_SCENES.promise.clip, WANDER.scene, 'the promise memory keeps the harbour film');
-  assert.equal(WANDER_SCENES.promise.text, WANDER.text);
+  assert.equal(WANDER_SCENES.promise.clip, 'wander-envelope-take1', 'the promise memory is the sealed envelope (AI, 2026-11-16)');
 });
 
 test('23.2 the held-back letter is not used: a clip with writing on it never ships as a scene', () => {
   for (const sc of Object.values(WANDER_SCENES)) assert.doesNotMatch(sc.clip, /letter/);
-  assert.equal(WANDER_SCENES.promise.line, null);
 });
 
-test('23.3 the AI scenes have a Whisper line each, a row of ghost-lines.md word for word, and the film has none', () => {
+test('23.3 every Wander scene has a Whisper line, a row of ghost-lines.md word for word', () => {
   for (const [kind, sc] of Object.entries(WANDER_SCENES)) {
-    if (kind === 'promise') { assert.equal(sc.line, null); assert.equal(sc.lineAt, null); continue; }
     assert.equal(rowOf(sc.line.id), sc.line.text, `${kind}: ${sc.line.id} is a row of ghost-lines.md, word for word`);
     assert.equal(sc.line.speaker, 'whisper');
     assert.ok(sc.line.id.startsWith('wander.') && sc.line.id.endsWith('.soft.1'));
     assert.deepEqual(lineProblems(sc.line.text), [], kind);
     assert.doesNotMatch(sc.line.text, /\b(house|memory|memories|ghost)\b/i, `${kind}: a single-player line names no place and never says what the memory is`);
   }
-  assert.notEqual(WANDER_SCENES.sound.line.id, WANDER_SCENES.person.line.id);
+  assert.equal(new Set(Object.values(WANDER_SCENES).map((sc) => sc.line.id)).size, WANDER_KINDS.length, 'each kind its own line');
 });
 
-test('23.3 each Wander line starts inside its scene and ends before the scene does; each shape matches its clip', { skip: probe(resolve(root, 'media', `${WANDER.scene}.mp4`)) === null && 'ffprobe not installed' }, () => {
-  const RENDERED_S = { sound: 8.5, person: 12.2 }; // the Voice Library renders (Pippa, rate 0.9), measured on 2026-11-16 and rounded up
+test('23.3 each Wander line starts inside its scene and ends before the scene does; each shape matches its clip', { skip: probe(resolve(root, 'media', `${WANDER_SCENES.promise.clip}.mp4`)) === null && 'ffprobe not installed' }, () => {
+  const RENDERED_S = { sound: 8.5, person: 12.2, promise: 8.8 }; // the Voice Library renders (Pippa, rate 0.9), measured on 2026-11-16 and rounded up
   for (const [kind, sc] of Object.entries(WANDER_SCENES)) {
     const file = resolve(root, 'media', `${sc.clip}.mp4`);
     const [w, h] = size(file);

@@ -22,3 +22,6 @@
 @media (prefers-reduced-motion: reduce) {
   .ft-video { transition: none; }
 }
+/* A real app page (the puzzle demo, `?bare=1`) in the phone frame: it fills the frame, over the film, on a clear page so the film shows around its panels. */
+.ft-phone--app { padding: 0; }
+.ft-app { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; color-scheme: dark; }

@@ -194,7 +194,8 @@ New 2026-11-16, in the storybook voice of `narration-style.md`. One line for eac
 |---|---|
 | `wander.chimes.soft.1` | Do you hear that? A row of small bells, and not one in tune. I would not change a single one. |
 | `wander.chair.soft.1` | The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I shall wait. |
-| `wander.letter.soft.1` | A letter, folded in three. A pair of gloves, set down just so. It is not for me to read. |
+| `wander.letter.soft.1` | A sealed envelope, and a pair of gloves set down just so. It is not mine to open. I keep it safe all the same. |
+| `wander.departure.soft.1` | Somebody waves from this window until the road is empty. I wave too, now and then. Nobody has told me to stop. |
 
 ## Greeting (kind not in the spec yet)
 

@@ -44,7 +44,16 @@ export function initScenes({ isOn, say, playSound = () => {}, playVoice = () => 
     const d = scrub.duration;
     if (Number.isFinite(d) && d > 0) {
       const t = frameTime(pos, d);
-      if (Math.abs((scrub.currentTime || 0) - t) > 0.02) scrub.currentTime = t;
+      // The clip runs as long as the turn (30 s), so while the clock runs the film simply plays, at its own speed, and the shadow climbs smoothly.
+      // It is only moved by a seek when it has drifted (Help, Spook, a pause, a hidden tab), or held still when the clock is not running.
+      const flowing = running && isOn() && pos > 0 && pos < 1;
+      if (flowing) {
+        if (scrub.paused) { scrub.currentTime = t; scrub.play?.()?.catch?.(() => {}); }
+        else if (Math.abs((scrub.currentTime || 0) - t) > 0.25) scrub.currentTime = t;
+      } else {
+        if (!scrub.paused) scrub.pause();
+        if (Math.abs((scrub.currentTime || 0) - t) > 0.02) scrub.currentTime = t;
+      }
     }
   }
   const timer = setInterval(() => {
