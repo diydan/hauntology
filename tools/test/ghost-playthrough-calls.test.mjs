@@ -221,7 +221,7 @@ test('every reason a reply can be refused for is named, from the game\'s own che
     ['out of the fiction', AMBIENT, raw('As an AI language model I cannot say.'), 'out_of_fiction'],
     ['not English', AMBIENT, raw('Die Stube ist sehr still, und der Mond scheint durch das runde Fenster herein.'), 'not_english'],
     ['five sentences', AMBIENT, raw('One. Two. Three. Four. Five.'), 'too_many_sentences'],
-    ['over the word cap', TEASE, raw('Something waits close, and it has waited a long while in the dark for someone patient enough to sit with it and listen to the quiet house breathe.'), 'too_many_words'],
+    ['over the word cap', TEASE, raw('Something waits close, and it has waited a long while in the dark for someone patient enough to sit with it and listen to the quiet house breathe, while the moths knock at the round window and the old trunk keeps its brass corners bright for whoever comes up the stairs next.'), 'too_many_words'],
     ['one sentence for a memory', REVEAL, raw('Only one sentence here.'), 'too_few_sentences'],
     ['over 600 characters', AMBIENT, raw('The attic is quiet. '.repeat(40)), 'too_long'],
     ['the rules read out', AMBIENT, raw(rulesRead(system)), 'rules_read_out'],

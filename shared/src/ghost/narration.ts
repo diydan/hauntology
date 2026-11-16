@@ -177,9 +177,10 @@ export type ReplyOptions = {
 
 /**
  * The most words a reply of each kind may have (owner, 2026-11-16: the play-throughs gave teases of 45 words and a farewell of 89, about 30 seconds aloud).
+ * First set at 25, 20, 45 and 30; the model ignored them (47 of 60 replies refused), so the owner loosened them the same night.
  * The prompt asks for it and the check refuses a reply over it, so a scripted line takes its place. Kinds not listed keep only the four-sentence limit.
  */
-export const WORD_CAP = { tease: 25, hint: 20, reveal: 45, ending: 30 } as const;
+export const WORD_CAP = { tease: 40, hint: 30, reveal: 60, ending: 45 } as const;
 
 /** How many words a reply has: runs of letters, digits and apostrophes. */
 export const wordCount = (text: string): number => (text.match(/[\p{L}\p{N}'’]+/gu) ?? []).length;

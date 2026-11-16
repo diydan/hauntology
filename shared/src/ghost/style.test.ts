@@ -145,7 +145,7 @@ describe("the samples in the manner", () => {
 
 describe("the word caps in the prompt (owner, 2026-11-16)", () => {
   it("each capped turn's prompt asks for at most its cap in words, and every sample keeps to it", () => {
-    const turns: [Directive, number][] = [[{ kind: "tease", band: "nearer" }, 25], [{ kind: "hint", bearing: "left", band: "far" }, 20], [{ kind: "ending" }, 30]];
+    const turns: [Directive, number][] = [[{ kind: "tease", band: "nearer" }, 40], [{ kind: "hint", bearing: "left", band: "far" }, 30], [{ kind: "ending" }, 45]];
     for (const voice of ["wistful", "stern"] as const) for (const [d, cap] of turns) {
       const p = buildNarrationPrompt(inputFor(voice, d))!;
       expect(JSON.stringify(p), `${voice} ${d.kind}`).toContain(`at most ${cap} words`);
