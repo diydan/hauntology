@@ -87,7 +87,7 @@ export function nextQuality(state: QualityState, fpsSample: number, nowMs: numbe
 }
 
 /** Splat LOD ranks, lowest first. An asset with no `lod` ranks by nothing: below all tagged ones. */
-const LOD_RANK: Record<string, number> = { "100k": 0, "500k": 1, full: 2 };
+const LOD_RANK: Record<string, number> = { "100k": 0, "150k": 1, "500k": 2, full: 3 };
 const lodRank = (ref: AssetRef): number => (ref.lod ? (LOD_RANK[ref.lod] ?? -1) : -1);
 
 /**
@@ -104,7 +104,7 @@ export function capabilityScore(caps: DeviceCaps): number {
 }
 
 /** The score a device needs before each LOD rank is offered. */
-const LOD_NEEDS = [0, 55, 85];
+const LOD_NEEDS = [0, 35, 55, 85];
 
 /**
  * Picks the best available splat LOD the device can afford (Requirement 1.1): always

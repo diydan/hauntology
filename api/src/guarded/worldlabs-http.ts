@@ -119,7 +119,7 @@ export function readWorld(response: unknown, allowLoopback: boolean): SourceWorl
   const asset = (role: AssetRole, format: string | undefined, url: string | undefined, lod?: Lod): SourceAsset | undefined =>
     url === undefined || format === undefined ? undefined : { role, format, ...(lod !== undefined ? { lod } : {}), url };
 
-  const levels: [string, Lod][] = [["500k", "500k"], ["100k", "100k"], ["full_res", "full"]];
+  const levels: [string, Lod][] = [["500k", "500k"], ["150k", "150k"], ["100k", "100k"], ["full_res", "full"]];
   const found = levels.map(([key, lod]) => asset("splat", "spz", keep(field(urls, key)), lod));
   const sources = found.filter((a): a is SourceAsset => a !== undefined);
   const collider = asset("collider", "glb", keep(field(field(assets, "mesh"), "collider_mesh_url")));

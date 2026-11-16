@@ -65,11 +65,12 @@ describe("Property 8: Quality control obeys its timing rules", () => {
 
 const LODS: readonly AssetRef[] = [
   { path: "splat-100k.spz", bytes: 1000, lod: "100k" },
+  { path: "splat-150k.spz", bytes: 2200, lod: "150k" },
   { path: "splat-500k.spz", bytes: 5000, lod: "500k" },
   { path: "splat-full.spz", bytes: 20000, lod: "full" },
   { path: "splat.spz", bytes: 9000 },
 ];
-const rank = (r: AssetRef): number => (r.lod === "full" ? 2 : r.lod === "500k" ? 1 : r.lod === "100k" ? 0 : -1);
+const rank = (r: AssetRef): number => (r.lod === "full" ? 3 : r.lod === "500k" ? 2 : r.lod === "150k" ? 1 : r.lod === "100k" ? 0 : -1);
 
 const capsArb: fc.Arbitrary<Required<DeviceCaps>> = fc.record({
   mobile: fc.boolean(),
@@ -105,6 +106,11 @@ describe("Property 10: LOD choice is available and monotone", () => {
         }),
       propParams(),
     );
+  });
+
+  it("picks 150k for a middling phone, between 100k and 500k", () => {
+    expect(chooseLod({ mobile: true, memoryGb: 6, cores: 8, maxTexture: 8192, webgl2: true }, LODS).lod).toBe("150k");
+    expect(chooseLod({ mobile: true, memoryGb: 2, cores: 2, maxTexture: 2048, webgl2: true }, LODS).lod).toBe("100k");
   });
 
   it("picks full for a strong desktop and 100k without WebGL2", () => {

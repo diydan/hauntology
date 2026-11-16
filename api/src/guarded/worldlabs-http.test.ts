@@ -335,6 +335,13 @@ describe("fetchWorld", () => {
     }
   });
 
+  it("reads the 150k splat level (seen on a real marble-1.1 world, Spike 1.1)", async () => {
+    const r = await make({}, json(mutate(examples.operationDone, (o) => {
+      o.response.assets.splats.spz_urls = { "500k": `${A}/500k.spz`, "150k": `${A}/150k.spz`, "100k": `${A}/100k.spz`, full_res: `${A}/full_res.spz` };
+    }))).api.fetchWorld(OP);
+    expect(r.ok && r.world.splats.map((s) => s.lod)).toEqual(["500k", "150k", "100k", "full"]);
+  });
+
   it("reads the splat levels by their own names only, and nothing from a name that is not one", async () => {
     const r = await make({}, json(mutate(examples.operationDone, (o) => {
       o.response.assets.splats.spz_urls = { "500k": `${A}/a.spz`, "1m": `${A}/b.spz`, constructor: `${A}/c.spz`, toString: `${A}/d.spz`, __proto__: `${A}/e.spz` };

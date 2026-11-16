@@ -26,6 +26,13 @@ describe("WorldManifestSchema", () => {
     expect(WorldManifestSchema.safeParse(bare).success).toBe(true);
   });
 
+  it("accepts every splat level the service sends, 150k included (Spike 1.1), and no other", () => {
+    for (const lod of ["100k", "150k", "500k", "full"]) {
+      expect(WorldManifestSchema.safeParse({ ...manifest(), assets: { splat: [{ path: "s.spz", bytes: 1, lod }] } }).success, lod).toBe(true);
+    }
+    expect(WorldManifestSchema.safeParse({ ...manifest(), assets: { splat: [{ path: "s.spz", bytes: 1, lod: "1m" }] } }).success).toBe(false);
+  });
+
   it("refuses a world with no splat", () => {
     expect(WorldManifestSchema.safeParse({ ...manifest(), assets: { splat: [] } }).success).toBe(false);
     expect(WorldManifestSchema.safeParse({ ...manifest(), assets: {} }).success).toBe(false);
