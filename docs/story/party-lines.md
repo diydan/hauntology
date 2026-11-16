@@ -38,6 +38,8 @@ How the lines are built:
 | `turn-start.dry.3` | The house is yours to walk. I shall be no help whatever, as is my custom. Do begin, {nick}. |
 | `turn-start.dry.4` | The lamp passes along, as lamps do. I keep the keys and my opinions to myself. Carry on, {nick}. |
 | `turn-start.dry.5` | A fresh hour for a fresh mind, and the same old house. I wish you luck. I am not certain the house listens. |
+| `turn-start.dry.7` | Your hour begins. I have laid out the corridor, a lamp and a great many floorboards, in that order. Only the lamp is of any use. Off you go, {nick}. |
+| `turn-start.dry.8` | A warning, before your hour begins: the stairs are fond of counting. They reached nine yesterday and thirteen the day before, and nobody has had the heart to ask them why. Do carry on, {nick}. |
 
 ## Keeper: time-warning (spoken)
 
@@ -48,6 +50,7 @@ How the lines are built:
 | `time-warning.dry.3` | The sand runs thin. I mention it only because somebody ought to, and it is never the house. |
 | `time-warning.dry.4` | A few breaths remain, and I count each one for you. Choose well, or at the very least choose. |
 | `time-warning.dry.5` | The lamp gutters. I am told that is the polite signal to stop dithering. I have never seen the impolite one. |
+| `time-warning.dry.7` | I have watched four hundred guests dither in this very corridor, and not one improved by it. I say that kindly, and I say it once. The hour is thin. |
 
 ## Keeper: achievement (spoken)
 
@@ -137,6 +140,7 @@ The Keeper announces first and a Lodger stall follows. These lines say only that
 | `accuse.wrong.dry.2` | Wrong, and with great confidence. I admire that in a guest. You have joined the haunting, {nick}. |
 | `accuse.wrong.dry.3` | The seal is opened and the answer does not hold. I am sorry. I am rarely sorry, so do take note. {nick} has joined the haunting. |
 | `accuse.wrong.dry.4` | Not this time. The house keeps its secret, and I keep mine, which is smaller. You have joined the haunting, {nick}. |
+| `accuse.wrong.dry.6` | The accusation does not stand. I regret to report that this is the more usual outcome. You have joined the haunting, which has no uniform and is mostly very pleasant. Welcome, {nick}. |
 
 ## Keeper: accuse.right (spoken, after a Lodger confession)
 
@@ -155,6 +159,7 @@ No nickname: more than one Player can share the win.
 | `end.solved.dry.1` | And that is the haunting, solved. I am almost sorry. It is a pleasure to have you all in the house. |
 | `end.solved.dry.2` | The mystery is closed, and the house breathes easier. I miss the footsteps already. Do come again, and bring better theories. |
 | `end.solved.dry.3` | So it is done. I do not say so often, but I count this a good visit. Mind the stairs on your way out. |
+| `end.solved.dry.5` | It is solved. I waited a long while to say so, and now I find I have no speech. I had one prepared, and it was very short. Thank you for coming. |
 
 ## Keeper: end.haunting (spoken, one fixed line)
 
@@ -261,6 +266,7 @@ A Zone goes cold. A line never says which Zone unless it ends on `{zone}`, and n
 | `haunt.cold-spot.soft.3` | It is cold, and I am sorry for it. I seem to settle wherever I linger. Something has gathered in the {zone}. |
 | `haunt.cold-spot.soft.4` | Do not mind the chill. It is only the place where I linger. I am told I linger rather a lot. |
 | `haunt.cold-spot.soft.5` | The cold gathers in one corner of the house, quite politely. I linger there too long, as usual. Do forgive me. |
+| `haunt.cold-spot.soft.6` | A cold place has arrived, small and neat, about the size of a hat. Please leave it be. It is new, and it is practising. |
 
 ## Whisper: haunt.blackout (spoken)
 
@@ -271,6 +277,7 @@ A Zone goes cold. A line never says which Zone unless it ends on `{zone}`, and n
 | `haunt.blackout.soft.3` | Without the light, the house is more like me. I hope you do not mind. I will be very gentle with the dark. |
 | `haunt.blackout.soft.4` | Shh. The dark is only me, being close. Nobody need be afraid of it. I am hardly a danger to anyone. |
 | `haunt.blackout.soft.5` | I am dimming the house, just a little. It is easier to be near you that way. Forgive the dark, and do not mind me. |
+| `haunt.blackout.soft.7` | The light goes out for a moment. Please do not take it personally. Everyone looks better unseen, and I include myself. |
 
 ## Whisper: haunt.restless (spoken)
 
@@ -281,6 +288,7 @@ A Zone goes cold. A line never says which Zone unless it ends on `{zone}`, and n
 | `haunt.restless.soft.3` | I keep wandering from room to room, and I seem unable to stop. I may be somewhere new when you look. |
 | `haunt.restless.soft.4` | The house is restless, and so am I. A floorboard here, a door there. Forgive me. I mean nothing by it. |
 | `haunt.restless.soft.5` | I move, and the dust moves with me. I only want to rest, and I do not know how. Forgive me. |
+| `haunt.restless.soft.6` | The walls here lean in to listen, and nobody has ever told them to stop. I do not mind. Do watch the corner, though. It has been looking at your shoes. |
 
 ## Whisper: haunt.lull (spoken)
 
@@ -327,6 +335,7 @@ Every line says "joined the haunting" in words, and never "Poltergeist". The fix
 | `poltergeist.soft.3` | You are with me now, and I am so glad. We shall make the old house sing together. {nick} has joined the haunting. |
 | `poltergeist.soft.4` | It is always a comfort to me to have another. The house is warmer for it, in its way. {nick} has joined the haunting. |
 | `poltergeist.soft.5` | Stay close to me, and I will show you the quiet places. There are a great many. You have joined the haunting, {nick}. |
+| `poltergeist.soft.6` | The haunting has a new member, and not a moment too soon. We keep no minutes and no biscuits, but we do keep company. Do sit anywhere, {nick}. |
 
 ## Whisper: end.haunting (spoken, the haunting wins)
 
@@ -338,6 +347,7 @@ No one wins and no line names a Player.
 | `end.haunting.soft.2` | The hour runs out, and I am still here. I am not sorry, only fond. Do come back, and I shall be waiting. |
 | `end.haunting.soft.3` | I am still here, and so are you. That seems a fine place to leave it. The door is just there, if you want it. |
 | `end.haunting.soft.4` | The quiet is mine this time. I would much sooner be found. Next time, perhaps. I do like a next time. |
+| `end.haunting.soft.5` | Nobody found me, and I find I am not sorry. I had hoped to be found, and I had also hoped not to be. There is no tea, but there is me, and I am told that counts. |
 
 ## Whisper: midnight (spoken) PROPOSED
 
