@@ -602,7 +602,7 @@ test('Wander: Find plays the film from the start with the Whisper line and a Sto
   assert.equal(v.__playing, true);
   assert.equal(v.currentTime, 0, 'it starts from the beginning');
   assert.equal($('#ft-wander-whisper').hidden, false);
-  assert.equal($('#ft-wander-whisper').textContent, 'Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks.');
+  assert.equal($('#ft-wander-whisper').textContent, 'Here. I have kept this a long time, and shown it to no one. Hold it gently. I have kept you a little while too, and I find I like it.');
   assert.equal($('#ft-wander-stop').hidden, false, 'a Stop shows while a scene over 5 seconds plays');
   assert.equal($('#ft-wander-card').hidden, true, 'the card waits for the film');
   v.dispatchEvent(new window.Event('ended')); await tick(5);
