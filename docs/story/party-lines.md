@@ -38,8 +38,6 @@ How the lines are built:
 | `turn-start.dry.3` | The house is yours to walk. I shall be no help whatever, as is my custom. Do begin, {nick}. |
 | `turn-start.dry.4` | The lamp passes along, as lamps do. I keep the keys and my opinions to myself. Carry on, {nick}. |
 | `turn-start.dry.5` | A fresh hour for a fresh mind, and the same old house. I wish you luck. I am not certain the house listens. |
-| `turn-start.dry.7` | Your hour begins. I have laid out the corridor, a lamp and a great many floorboards, in that order. Only the lamp is of any use. Off you go, {nick}. |
-| `turn-start.dry.8` | A warning, before your hour begins: the stairs are fond of counting. They reached nine yesterday and thirteen the day before, and nobody has had the heart to ask them why. Do carry on, {nick}. |
 
 ## Keeper: time-warning (spoken)
 
@@ -50,7 +48,6 @@ How the lines are built:
 | `time-warning.dry.3` | The sand runs thin. I mention it only because somebody ought to, and it is never the house. |
 | `time-warning.dry.4` | A few breaths remain, and I count each one for you. Choose well, or at the very least choose. |
 | `time-warning.dry.5` | The lamp gutters. I am told that is the polite signal to stop dithering. I have never seen the impolite one. |
-| `time-warning.dry.7` | I have watched four hundred guests dither in this very corridor, and not one improved by it. I say that kindly, and I say it once. The hour is thin. |
 
 ## Keeper: achievement (spoken)
 

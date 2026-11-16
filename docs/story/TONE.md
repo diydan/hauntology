@@ -1,6 +1,6 @@
 # Tone: a second set of samples (DRAFT, 2026-11-16)
 
-Sits beside `narration-style.md` (the traits and seven rules) and `.kiro/steering/house-style.md` (the decision). Like them it names no maker and no work. It adds samples and a voice card. The ids are drafts (`tone.*`). Ten of the party lines are now in the bank and rendered; see "In the bank" below. The rest are in no bank.
+Sits beside `narration-style.md` (the traits and seven rules) and `.kiro/steering/house-style.md` (the decision). Like them it names no maker and no work. It adds samples and a voice card. The ids are drafts (`tone.*`). Seven of the party lines are now in the bank and rendered; see "In the bank" below. The rest are in no bank.
 
 ## Who gets which flavour
 
@@ -66,12 +66,12 @@ The prompt already carries the manner in `shared/src/ghost/style.ts` (`styleFor`
 
 ## In the bank (2026-11-16)
 
-Ten samples went into `party-lines.md` as new variants and are rendered in the Library (Whisper: Pippa, Keeper: Ronald; 10 clips, about $0.04). Where the bank wording differs from the sample above, the bank wording is the one in use. It was changed so no line repeats a joke already in its kind.
+Seven samples are in `party-lines.md` as new variants and rendered in the Library (Whisper: Pippa, Keeper: Ronald). Three more were put in and then taken out again (see "Where the long lines go"). Where the bank wording differs from the sample above, the bank wording is the one in use. It was changed so no line repeats a joke already in its kind.
 
 | Sample | Bank id | Wording |
 |---|---|---|
-| `tone.turn-start.dry` | `turn-start.dry.7` | changed: "a lamp and a great many floorboards", because the keys-and-opinions joke is already in `turn-start.dry.4` and `.6` |
-| `tone.time-warning.dry` | `time-warning.dry.7` | changed: no candle, because `.1` and `.3` already use it |
+| `tone.turn-start.dry` | taken out | was `turn-start.dry.7`: too long for a line that comes every turn |
+| `tone.time-warning.dry` | taken out | was `time-warning.dry.7`: too long for a line that comes every game |
 | `tone.accuse-wrong.dry` | `accuse.wrong.dry.6` | as the sample |
 | `tone.end-solved.dry` | `end.solved.dry.5` | changed: no "mind the stairs", because `.3` ends that way |
 | `tone.haunt-blackout.soft` | `haunt.blackout.soft.7` | changed: opens "The light goes out for a moment" |
@@ -79,7 +79,19 @@ Ten samples went into `party-lines.md` as new variants and are rendered in the L
 | `tone.poltergeist.soft` | `poltergeist.soft.6` | changed: ends "Do sit anywhere, {nick}." |
 | `tone.end-haunting.soft` | `end.haunting.soft.5` | changed: "I had hoped to be found, and I had also hoped not to be." |
 | `tone.dark.wall.soft` | `haunt.restless.soft.6` | as the sample. It fits a restless house: the walls listen and a corner moves |
-| `tone.dark.stairs.dry` | `turn-start.dry.8` | changed: opens "A warning, before your hour begins", counts nine and thirteen (not eleven) and ends "Do carry on, {nick}.", because `turn-start.dry.6` already has a staircase of eleven steps |
+| `tone.dark.stairs.dry` | taken out | was `turn-start.dry.8`: too long for a line that comes every turn |
+
+## Where the long lines go (decided 2026-11-16)
+
+The long storybook lines are for the big spoken moments only. The frequent moments keep their shorter lines, because a player reads and hears them many times in one game.
+
+| Moment | Lines |
+|---|---|
+| Frequent: `turn-start`, `time-warning`, `achievement`, `suggest`, `shown`, `none-shown`, `inspect`, `seal`, `hint`, `ambient` | Keep the plain length of the first lines: about 100 to 130 characters, two or three short sentences. No new long variants. |
+| Big: `accuse.reveal`, `accuse.wrong`, `accuse.right`, `end.solved`, `end.haunting`, the Haunt Events (`haunt.cold-spot`, `haunt.blackout`, `haunt.restless`, `haunt.lull`), `poltergeist`, `midnight`, `scene.*` | The long storybook lines are fine here. |
+| Text only: cues, nudges, phone cues, `not-you`, `round-end`, `hand-over`, `haunt.choose`, `haunt.rise`, the Lodger `aside` | Short and plain, like the buttons around them. |
+
+Buttons, labels and settings stay plain, as `house-style.md` says.
 
 Not put in the bank: the single-player samples (meet, ambient, hint: a hint line is rendered 24 times, one per way and distance), and the memory targets (the model writes those).
 
