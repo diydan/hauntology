@@ -965,3 +965,12 @@ test('19 the turn timer plays its 30 second clip while the clock runs (smooth, n
   click(btn('Pause clock')); await tick(130);
   assert.equal(scrub.__playing, false, 'paused clock, still film');
 }));
+
+test('18 the clue and puzzle screens loop the study (Frankenstein, 1910), and a failed puzzle plays the mirror fade once', () => {
+  const html = read('footage.html');
+  const film = (id) => { const a = html.indexOf(`id="${id}"`); const sec = html.slice(a, html.indexOf('</section>', a)); return [...sec.matchAll(/<source src="media\/([\w-]+)\.webm"/g)].map((m) => m[1]); };
+  assert.deepEqual(film('ft-a'), ['study-desk']);
+  assert.deepEqual(film('ft-b'), ['study-desk']);
+  assert.deepEqual(film('ft-c'), ['mirror-fade']);
+  assert.match(html, /<video class="ft-video" id="ft-once" muted playsinline[^>]*>/, 'the fade plays once: no loop');
+});

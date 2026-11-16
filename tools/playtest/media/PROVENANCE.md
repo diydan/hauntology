@@ -33,7 +33,7 @@ A clip cut from a source file already described in a **Source record** points to
 | | |
 |---|---|
 | Record | Source record: Nosferatu (1922) |
-| Shot | Count Orlok's shadow climbing the stairs, 1:26:56 to 1:27:00. The film behind the clue, the puzzle and the failed puzzle. The clock shadow is cut from it (`clock-shadow`). |
+| Shot | Count Orlok's shadow climbing the stairs, 1:26:56 to 1:27:00. Not shown on the page since 2026-11-16: the clock shadow is cut from it (`clock-shadow`). |
 | Picture only | No audio track (`-an`). No title card or intertitle. No music. |
 | Cut by | `ffmpeg`, 4.2 s from 5215.9 s, scaled to 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 2.2 s |
 | Size | `.mp4` 77 KB, `.webm` 99 KB, `.jpg` 9 KB |
@@ -148,6 +148,28 @@ A clip cut from a source file already described in a **Source record** points to
 | Cut by | `ffmpeg`, 12.5 s from 13 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 6 s |
 | Size | `.mp4` 528 KB, `.webm` 692 KB, `.jpg` 13 KB |
 | Flash check | `node flash-check.mjs media/wander-departure.mp4 media/wander-departure.webm` on 2026-11-16: 300 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## study-desk
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The study: Frankenstein alone at his desk, writing, with skeletons and bones on the shelves around him, 0:52 for 8 s. It loops behind the clue screen and the puzzle screen. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 8 s from 52 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 4 s |
+| Size | `.mp4` 268 KB, `.webm` 448 KB, `.jpg` 19 KB |
+| Flash check | `node flash-check.mjs media/study-desk.mp4 media/study-desk.webm` on 2026-11-16: 192 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## mirror-fade
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The creature stands before the mirror and is gone: from about 7 s only its reflection is left in the glass, 11:22 for 13.5 s. The clip ends before Frankenstein comes in. The film of a failed puzzle (it got away), played once. |
+| Picture only | No audio track (`-an`). No title card or intertitle (the card before it is cut out). Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 13.5 s from 682 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 11 s |
+| Size | `.mp4` 196 KB, `.webm` 220 KB, `.jpg` 10 KB |
+| Flash check | `node flash-check.mjs media/mirror-fade.mp4 media/mirror-fade.webm` on 2026-11-16: 324 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
 
 ## AI clips: the eight scenes of `docs/story/ai-scene-prompts.md`
 
