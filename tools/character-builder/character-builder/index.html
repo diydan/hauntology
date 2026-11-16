@@ -1088,7 +1088,7 @@ async function makeMat(keyName, side) {
 /* ---- the character ---- */
 const zeroFace = () => { const f = { eye: 0, nose: 0, ears: 0 }; for (const m of HEAD_MORPHS) f[m.id] = 0; return f; };
 const S = { gender: Q.get('g') === 'F' ? 'F' : 'M', head: 'head.001', hair: 'hair.short.001', bangs: null, hat: null, glasses: null, scarf: null, top: 'top.002', bot: 'bot.004', outfit: null, shoes: 'shoes.006',
-  skin: '#d9a37c', eyes: '#3b6fb5', hairCol: null, expr: 'neutral', blink: true, lip: true, clip: 'Singing', prop: true, variant: {}, col: {}, face: zeroFace(), shape: { legs: 0.5, arms: 0.5, build: 0.5, head: 0.5 } };
+  skin: '#d9a37c', eyes: '#3b6fb5', hairCol: null, expr: 'neutral', blink: true, lip: true, clip: 'Idle', prop: true, variant: {}, col: {}, face: zeroFace(), shape: { legs: 0.5, arms: 0.5, build: 0.5, head: 0.5 } };
 S.hairShape = {};
 const character = new THREE.Group(); character.scale.setScalar(0.01); character.visible = false; scene.add(character);
 const propsRoot = new THREE.Group(); propsRoot.scale.setScalar(0.01); scene.add(propsRoot); // instruments live here, so a taller or shorter character does not lift them off the floor
@@ -2423,7 +2423,7 @@ function play(name) {
   [...$('clipSeg').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === name)));
   if (typeof syncCardClipRole === 'function') syncCardClipRole();
 }
-function buildClipUI() { const seg = $('clipSeg'); seg.innerHTML = ''; const ORDER = ['Singing', 'Rapping', 'Guitar_Playing', 'Guitar_Playing_2', 'Piano_Seated', 'Drums_Seated']; for (const n of Object.keys(clips).sort((a, b) => (ORDER.indexOf(a) + 99) % 99 - (ORDER.indexOf(b) + 99) % 99)) { const b = document.createElement('button'); b.dataset.n = n; b.textContent = CLIPNAME[n] || n.replace(/_/g, ' '); b.setAttribute('aria-pressed', String(n === S.clip)); b.addEventListener('click', () => play(n)); seg.appendChild(b); } }
+function buildClipUI() { const seg = $('clipSeg'); seg.innerHTML = ''; const ORDER = ['Idle', 'Breathing_Idle', 'Happy_Idle', 'Weight_Shift', 'Bored', 'Thinking_1_', 'Nervously_Look_Around', 'Looking_Behind', 'Scared', 'Terrified', 'Waving', 'Pointing_Gesture', 'Pick_Up_Item']; for (const n of Object.keys(clips).sort((a, b) => (ORDER.indexOf(a) + 99) % 99 - (ORDER.indexOf(b) + 99) % 99)) { const b = document.createElement('button'); b.dataset.n = n; b.textContent = CLIPNAME[n] || n.replace(/_/g, ' '); b.setAttribute('aria-pressed', String(n === S.clip)); b.addEventListener('click', () => play(n)); seg.appendChild(b); } }
 
 /* ---- FACE PRINT: landmarks, shape fit, projection ----
    Landmarks are pixel positions in a square portrait (y down). rows = [y, leftEdgeX, rightEdgeX] of the face outline; ell = the oval that gets printed
@@ -2968,7 +2968,7 @@ async function setFacePrint(id, custom) {
 /* ---- the Look panel ---- */
 const lb = $('lbody'), refs = {}, chips = [], shapeUI = {}, faceUI = {}, hairUI = {};
 let eyeShapeSel = null, presetSel = null;
-const CLIPNAME = { Guitar_Playing: 'Guitar', Guitar_Playing_2: 'Electric', Piano_Seated: 'Keyboard', Drums_Seated: 'Drums' };
+const CLIPNAME = { Breathing_Idle: 'Breathing', Happy_Idle: 'Happy', Weight_Shift: 'Shift weight', Thinking_1_: 'Thinking', Nervously_Look_Around: 'Look around', Looking_Behind: 'Look behind', Pointing_Gesture: 'Point', Pick_Up_Item: 'Pick up', Guitar_Playing: 'Guitar', Guitar_Playing_2: 'Electric', Piano_Seated: 'Keyboard', Drums_Seated: 'Drums' };
 const nice = it => it.label.replace(/ 0+(\d)/, ' $1');
 function sec(title, actionBtn) { const d = document.createElement('div'); d.className = 'sec'; const h = el('h3', null, `<span>${title}</span>`); if (actionBtn) h.appendChild(actionBtn); d.appendChild(h); lb.appendChild(d); return d; }
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
