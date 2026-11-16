@@ -217,7 +217,7 @@ const P = (p, at, o = {}) => ({ p, at, rot: o.rot || [], ex: o.ex || [0, 0, 0] }
 const ASSEMBLIES = [
   { id: 'relics', title: 'Relics on Relic Tokens', note: 'Each Relic has a 6 mm socket under a flat foot and drops onto the 6 mm peg of its token (no Relic base plate). Punch a 6 mm hole in the middle of the QR sticker for the peg.',
     build(S) {
-      const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell'], out = [];
+      const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell', 'relic-ghost'], out = [];
       rel.forEach((r, i) => {
         const s = S(r);
         const bx = i * 48 + (40 - s[0]) / 2, by = (40 - s[1]) / 2;

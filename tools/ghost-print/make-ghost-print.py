@@ -51,7 +51,7 @@ PROFILES = {
     # The Relic version: a smaller ghost with no flare, so its base is narrow enough to sit on the relic foot (relic-ghost.scad
     # imports this file and adds the 14.6 mm foot with its 6.1 mm socket). Centred on the base, so the foot can go under it.
     "relic": dict(out=os.path.join(REPO, "print", "reference", "relic-ghost-body.stl"), flare=0.0, scale=0.68, centre=True,
-                  eye=dict(half_w=2.3, half_h=3.4, depth=2.5, shift=2.0, spacing=9.0, z_frac=0.72)),
+                  eye=dict(half_w=2.3, half_h=3.4, depth=2.5, shift=2.0, spacing=6.5, z_frac=0.80)),
 }
 
 
