@@ -11,19 +11,19 @@ Every model in `print/scad/` and `print/stl/` is authored to print cleanly on a 
 - **Build Volume:** Every piece fits inside a **`180 × 180 mm`** bed (`<= 177.8 mm` longest dimension).
 - **Nozzle & Layer Height:** `0.4 mm` nozzle at **`0.20 mm`** standard layer height (`0.16 mm` optional for the 6 Relic miniatures).
 - **Walls & Infill:** `3` perimeter walls (`>= 1.6 mm` minimum wall thickness across all structural models), `15%` gyroid or grid infill, `4` top / `4` bottom solid layers.
-- **Supports:** every single piece across all **44 STLs prints 100% support-free** (`0` parts need supports). `node tools/build-print.mjs --check` enforces it: no ceiling may be a flat roof wider than `15 mm`, nothing may face down steeper than `50°` from vertical (the design target is `45°`), and the README must stay in exact sync with the validator. Every part has `>= 100 mm²` flat bed contact at `z = 0`.
+- **Supports:** every single piece across all **45 STLs prints 100% support-free** (`0` parts need supports). `node tools/build-print.mjs --check` enforces it: no ceiling may be a flat roof wider than `15 mm`, nothing may face down steeper than `50°` from vertical (the design target is `45°`), and the README must stay in exact sync with the validator. Every part has `>= 100 mm²` flat bed contact at `z = 0`.
 - **Moving Clearances:** `0.30 mm` (`tol`) radial/sliding clearance on all hinges, levers, dovetails, and snap sockets; `0.15 mm` (`clear_fit`) tight clearance on SG90 servo spline hubs and single-arm horn recesses.
 - **One Solid Spool Colour per STL:** No multi-material AMS/MMU required. All lettering, dial ticks, portraits, and resistor bands live on the **1:1 scale printable SVG sticker sheets** in [`print/stickers/`](./stickers/), which sit inside **`0.4 mm` recessed pockets** on the 3D prints so sticker edges never peel.
 - **Reference Hardware (`scad/_common.scad`):**
   - **Micro Servo:** Reference **`TowerPro SG90 9g`** (`22.8 × 12.2 × 22.5 mm` body, `32.5 × 2.5 mm` mounting ears at `16.0 mm` from bottom, `27.5 mm` M2 screw hole centres, `Ø12.0 × 4.0 mm` output boss, `Ø4.8 mm` spline shaft, `19.5 mm` single-arm horn). *Note:* Clone SG90/MG90S servos vary by `±0.5 mm` in ear height and body length — measure your servos with calipers before printing all enclosures and tweak `sg90_*` in [`scad/_common.scad`](./scad/_common.scad) if needed.
   - **Microcontroller:** Reference **`Espressif ESP32-WROOM-32E DevKitC V4`** (`55.0 × 28.0 mm` PCB footprint, `56.0 × 29.0 mm` pocket with `0.5 mm` clearance per side, `4×` M2 corner standoffs on a `48.26 × 22.86 mm` rectangle (`1.90 × 0.90 in`), and a `18 × 10 mm` PCB trace-antenna keep-out window at the opposite end from the USB-C port). All 5 electronic props are powered via their rear USB-C port (`5 V` USB power bank or wall adapter; no internal LiPo battery bay).
-- **Validation Command:** Run `node tools/build-print.mjs --check` at any time to verify that all **44 STL files** in `print/stl/` and `dist/print/` are binary STLs, watertight 2-manifolds (`0` open/non-manifold edges, `0` degenerate triangles), exact expected connected-component counts (`1` solid for all single-piece parts, `10` for `prop-20-plug-heads.stl`, `12` for `prop-20-terminal-blocks.stl`), `>= 100 mm²` flat bed contact at `z = 0`, positive volume, and within bed bounds.
+- **Validation Command:** Run `node tools/build-print.mjs --check` at any time to verify that all **45 STL files** in `print/stl/` and `dist/print/` are binary STLs, watertight 2-manifolds (`0` open/non-manifold edges, `0` degenerate triangles), exact expected connected-component counts (`1` solid for all single-piece parts, `10` for `prop-20-plug-heads.stl`, `12` for `prop-20-terminal-blocks.stl`), `>= 100 mm²` flat bed contact at `z = 0`, positive volume, and within bed bounds.
 
 ---
 
 ## 2. Filament & Preview Palette
 
-The 44-piece collection prints from **6 core PLA spools**, plus optional **Tarnished Silver** for the silver key (`r5`) and **6 Seat / Suspect accent colours** matching the `3D_BRIEF.md` player seats (`s1`–`s6`):
+The 45-piece collection prints from **6 core PLA spools**, plus optional **Tarnished Silver** for the silver key (`r5`) and **6 Seat / Suspect accent colours** matching the `3D_BRIEF.md` player seats (`s1`–`s6`):
 
 | Spool Name | Role / `design/tokens.json` Match | Hex | Recommended Filament | Used For |
 |---|---|---|---|---|
@@ -38,9 +38,9 @@ The 44-piece collection prints from **6 core PLA spools**, plus optional **Tarni
 
 ---
 
-## 3. Complete Bill of Materials & Print Orientation Table (44 STLs)
+## 3. Complete Bill of Materials & Print Orientation Table (45 STLs)
 
-All 44 compiled binary STL files live in [`print/stl/`](./stl/) (and are mirrored to `dist/print/` for static distribution), with matching coloured preview renders in [`print/renders/`](./renders/).
+All 45 compiled binary STL files live in [`print/stl/`](./stl/) (and are mirrored to `dist/print/` for static distribution), with matching coloured preview renders in [`print/renders/`](./renders/).
 
 ### 3A. Core Game Pieces (17 STLs)
 
@@ -68,6 +68,7 @@ All 44 compiled binary STL files live in [`print/stl/`](./stl/) (and are mirrore
 | **#1 Ghost in the Box** | `prop-01-chest-body.stl` | Treasure chest enclosure with tapered gothic corner buttresses, keyhole crest, crooked plank V-grooves, horizontal-shaft SG90 pedestal (shaft `-Y`, `M2` pilot bores), left/right ghost side U-tracks, ESP32 DevKitC V4 cradle (`4× M2` bosses + antenna keep-out), USB-C port & `32×20 mm` front brass latch pocket | `169.0 × 104.6 × 72.9` | Warm Wood | Base flat on bed (`+Z` up) | None | `stickers-prop-01-ghost-in-box.svg` |
 | **#1 Ghost in the Box** | `prop-01-chest-lid.stl` | Hinged chest lid with front iron corner bolsters & diagonal plank V-grooves, printed upside-down (`FLIP` aligns hinge knuckles coaxially with chest body at `Y = +51.2, Z = 69.0 mm` with `0.3 mm` rim clearance), underside cam ramp, arched side skirts & `0.4 mm` top strap pockets | `164.6 × 102.2 × 25.2` | Warm Wood | Crown flat on bed (`+Z` up as exported) | None | `stickers-prop-01-ghost-in-box.svg` |
 | **#1 Ghost in the Box** | `prop-01-ghost-figure.stl` | 2D layered landing-page Hero ghost silhouette (`68×73.5 mm`, shrouded dome, U-track cloak wings, pleated cloth folds & ragged tails; clears closed lid) with `-Y` cam follower pin, return tie tab & Hero eye/mouth sockets | `68.0 × 73.5 × 16.6` | Ectoplasm Mint | Flat back on bed (`+Z` up) | None | `stickers-prop-01-ghost-in-box.svg` |
+| **Stand-alone figure** | `ghost-original-printable.stl` | The original draped-sheet ghost (`Ghost.fbx`) made printable: one smooth solid, flat base (`705 mm²` on the bed), shoulders chamfered at 45°, two shallow oval eye dimples to paint black. Not for the chest (no cam pin or tracks). Made by `tools/ghost-print/make-ghost-print.py` from `print/reference/ghost-original.stl` | `54.8 × 28.9 × 64.8` | Bone / Ivory | Flat base on bed (`+Z` up) | None | none |
 | **#1 Ghost in the Box** | `prop-01-lever-arm.stl` | `64 mm` XZ vertical-sweep slotted fork push-arm (`4.4 mm` fork gap) with stepped `11.5 mm` `clear_fit` SG90 horn boss (`-X` pocket) & upper `+54°` lid-kicker cam nose | `83.0 × 54.4 × 11.5` | Dark Iron | Flat side on bed (`+Z` up) | None | — |
 | **#3 Haunt Needle** | `prop-03-dial-plate.stl` | Semi-circular gothic gauge body with steeple crest, upper-left cusps, splayed plinth buttresses, `0.4 mm` recessed scale pocket, flush rear tabletop base plinth (zero bezel/needle interference), through-bored `Ø12.4 mm` SG90 boss hole (shaft protrudes `5.5 mm` past front face), 45°-vaulted rear ESP32 DevKitC bay & 3 max-tab detents (`8, 10, 12`) | `177.8 × 116.5 × 26.4` | Dark Iron | Back flat on bed (`+Z` up) | None (45° vaulted ESP32 roof) | `stickers-prop-03-haunt-needle.svg` |
 | **#3 Haunt Needle** | `prop-03-bezel-ring.stl` | Snap-fit gothic arched bezel ring with steeple crest, upper-left cusps, 12 rivet bosses & threshold sight notches | `177.8 × 109.2 × 4.8` | Antique Brass | Flat back on bed (`+Z` up) | None | — |
