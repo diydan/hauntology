@@ -1,13 +1,13 @@
 // Hauntology Tabletop Print Kit — Relic r1: Haunted Coffin-Casket Lid (From-Scratch FDM Design)
-// Colour: Antique Brass (#d4a84b) — rich contrast against Crimson `relic-music-box` casket body
-// Size: ~41.2 W x 28.4 D x 10.6 H mm (outer eaves overlap rim to Z_world = 26.8 mm; peak at Z_world = 34.4 mm)
-// Mates closed onto `relic-music-box.stl` at `translate([0, 0, 34.4]) rotate([180, 0, 0])`:
+// Colour: Dark Iron (#262229) — rich contrast against the Ectoplasm Mint `relic-music-box` casket body
+// Size: ~41.2 W x 28.4 D x 10.6 H mm (outer eaves overlap rim to Z_world = 26.8 mm; peak at Z_world = 34.6 mm)
+// Mates closed onto `relic-music-box.stl` at `translate([0, 0, 34.6]) rotate([180, 0, 0])` (0.2 mm higher than the first design, for clearance):
 //   - Y-mirrored hexagonal gothic coffin mansard roof so all asymmetric prow/shoulder/apse angles match 1:1
-//   - Overhanging brass eaves drip skirt (Z_lid = 6.4 .. 7.4 -> Z_world = 27.0 .. 28.0) with +0.45 mm/side
+//   - Overhanging eaves drip skirt (Z_lid = 6.4 .. 7.4 -> Z_world = 27.2 .. 28.2) with +0.45 mm/side
 //     radial clearance outside body cornice (+0.30 vs +0.75) + 6 pointed gargoyle corner eaves to Z_world = 26.7
-//   - Inner shelf (Z_lid = 6.4 -> Z_world = 28.0) provides 0.10 mm clean nominal shadow seat over Z_body = 27.9
+//   - Inner shelf (Z_lid = 6.4 -> Z_world = 28.2) leaves a 0.30 mm gap over Z_body = 27.9 (it was 0.10, which fuses on a real printer)
 //   - Self-centering 45-deg chamfered inner coffin plug collar (0.45 mm/side free clearance +
-//     4 normal-aligned guide/friction ribs at 0.10 mm nominal slip fit)
+//     4 normal-aligned guide ribs at 0.25 mm clearance: a printer is good for about +-0.1 mm, so a 0.10 mm fit welds shut)
 //   - Recessed 0.45 mm 45-deg V-carved coffin frame & diamond motif in top crown (prints face-down support-free)
 //   - Upward-facing 0.4 mm recessed inner lid song-score pocket (18.2 x 9.2 mm for 17.6 x 8.6 mm decal)
 // Print orientation: Flat upside-down on its gothic coffin roof crown at Z = 0 (>260 mm² contact, zero supports).
@@ -67,16 +67,17 @@ module relic_music_box_lid() {
       }
 
       // 4. Underside Self-Centering Coffin Plug Collar (Z = 6.2 .. 9.0 -> Z_world = 25.4 .. 28.2)
-      //    Body pit wall at extra = -2.5; collar outer wall at extra = -2.95 -> 0.45 mm/side free clearance
+      //    Body pit wall at extra = -2.5; collar outer wall at extra = -3.20 -> 0.70 mm/side nominal clearance (the pit flares near its top, so the
+      //    nearest it came was 0.17 mm at the collar top edge when the wall was at -2.95)
       translate([0, 0, 6.2])
         hull() {
-          linear_extrude(height = 1.9) coffin_lid_2d(scale_xy = 1.00, extra = -2.95, r = 1.0);
+          linear_extrude(height = 1.9) coffin_lid_2d(scale_xy = 1.00, extra = -3.20, r = 1.0);
           translate([0, 0, 2.6]) linear_extrude(height = 0.2) coffin_lid_2d(scale_xy = 1.00, extra = -3.75, r = 0.8);
         }
 
-      // 5. Four Normal-Aligned Slip-Detent Guide Ribs (protrude to extra = -2.60 -> 0.10 mm clear inside -2.5 pit)
+      // 5. Four Normal-Aligned Slip-Detent Guide Ribs (protrude to extra = -2.75 -> 0.25 mm clear inside -2.5 pit)
       //    Front prow (+Y_lid = +10.0 pit wall) & Back apse (-Y_lid = -10.0 pit wall)
-      for (ry = [-9.62, 9.62]) {
+      for (ry = [-9.47, 9.47]) {
         hull() {
           translate([-1.3, ry, 6.4]) cylinder(h = 1.7, r = 0.28);
           translate([ 1.3, ry, 6.4]) cylinder(h = 1.7, r = 0.28);
@@ -84,19 +85,19 @@ module relic_music_box_lid() {
         }
       }
       //    Left & right angled back-cheek flats (edge [+-13.0, -12.5] -> [+-18.4, -1.5], exact inward normal)
-      //    Pit wall delta=-2.5; rib center delta=-2.86, r=0.26 -> reaches -2.60 (0.10 mm crisp clearance)
+      //    Pit wall delta=-2.5; rib center delta=-3.01, r=0.26 -> reaches -2.75 (0.25 mm clearance): centres moved 0.15 mm along the inward normal
       for (sx = [-1, 1]) {
         hull() {
-          translate([sx * (13.133 - 0.53), -5.740 - 1.08, 6.4]) cylinder(h = 1.7, r = 0.26);
-          translate([sx * (13.133 + 0.53), -5.740 + 1.08, 6.4]) cylinder(h = 1.7, r = 0.26);
-          translate([sx * 13.133, -5.740, 8.6]) cylinder(h = 0.1, r = 0.08);
+          translate([sx * (13.133 - 0.53 - 0.1355), -5.740 - 1.08 + 0.0665, 6.4]) cylinder(h = 1.7, r = 0.26);
+          translate([sx * (13.133 + 0.53 - 0.1355), -5.740 + 1.08 + 0.0665, 6.4]) cylinder(h = 1.7, r = 0.26);
+          translate([sx * (13.133 - 0.1355), -5.740 + 0.0665, 8.6]) cylinder(h = 0.1, r = 0.08);
         }
       }
     }
 
     // 6. Eaves Under-Recess Annulus around Body Cornice (Z_lid = 6.4 .. 8.2, radial channel -2.55 .. +0.75)
     //    Cuts ONLY the rim seat channel back to Z_lid = 6.4 while preserving inner plug collar (<= -2.60)
-    //    and outer 1.0 mm brass drip skirt (+0.75 .. +1.75) wrapping outside body cornice (+0.30 -> +0.45 mm gap)
+    //    and outer 1.0 mm drip skirt (+0.75 .. +1.75) wrapping outside body cornice (+0.30 -> +0.45 mm gap)
     translate([0, 0, 6.4])
       linear_extrude(height = 1.8)
         difference() {
@@ -135,21 +136,9 @@ module relic_music_box_lid() {
       }
     }
 
-    // 10. Front (+Y_lid) & Side Cheek 45-deg Fingernail-Lift Grip Coves along straight Drip Skirt lips
-    //     Placed centered on the flat front & front-cheek spans well clear of all 6 corner gargoyle spurs!
-    for (sx = [-1, 1]) {
-      translate([sx * 16.36, 6.30, 0])
-        rotate([0, 0, sx * 27.2])
-          hull() {
-            translate([sx * 0.45, 0, 7.5]) cube([1.1, 6.0, 0.35], center = true);
-            translate([-sx * 0.15, 0, 6.7]) cube([0.35, 4.8, 0.20], center = true);
-          }
-    }
-    hull() {
-      translate([0, 14.25, 7.5]) cube([8.0, 1.1, 0.35], center = true);
-      translate([0, 13.55, 6.7]) cube([6.6, 0.35, 0.20], center = true);
-    }
+    // 10. (The three fingernail-lift grip coves are gone: they were cut to leave a 0.1 to 0.45 mm wall in a 1.0 mm drip skirt,
+    //     thinner than one 0.4 mm extrusion line. The 1.75 mm overhanging skirt is the lift lip: pinch it at the sides.)
   }
 }
 
-color(col_lantern) relic_music_box_lid();
+color(col_ink) relic_music_box_lid();
