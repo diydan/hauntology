@@ -225,7 +225,7 @@
   var MAX=10,MARKS=[3,6,9];
   var PAIRS={3:['Cold Spot','Blackout'],6:['Restless','Lull'],9:['Blackout','Lull']};
   var FX={'Cold Spot':'No one can make a suggestion in one zone for a round.','Blackout':'The next turn is 15 seconds shorter and the lights dim.','Restless':'The ghost drifts to another zone.','Lull':'The Haunt falls by 1.'};
-  var START='Press a button to push the Haunt up. It rises very politely.';
+  var START='Press a button to push the Haunt up.';
   var track=document.getElementById('track'),out=document.getElementById('hv'),msg=document.getElementById('msg'),opts=document.getElementById('opts');
   var adds=Array.prototype.slice.call(document.querySelectorAll('[data-add]'));
   var level=0,fired={},pending=false,over=false,segs=[],i;
