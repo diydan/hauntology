@@ -36,7 +36,7 @@ export async function narrateTurn(deps: Narration, job: NarrationJob, who: { ses
   if (prompt === null) return { outcome: "off", attempts: 0, text: null };
   const now = deps.now ?? Date.now;
   const started = now();
-  const checks = replyChecksFor(job.input.directive);
+  const checks = replyChecksFor(job.input.directive, job.input.history);
 
   let outcome: NarrationOutcome = "failed";
   let attempts = 0;

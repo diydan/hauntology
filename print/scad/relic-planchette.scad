@@ -24,9 +24,13 @@ module relic_planchette() {
   relic_pedestal_base(h = 4.5, top_d = 18.4);
 
   // 2. A short post from the foot to the point of the planchette (no legs, discs or base plate)
-  hull() {
-    translate([0, 0, 5.0]) sphere(r = 3.6);
-    translate([0, -3.0, 9.6]) sphere(r = 2.4);
+  // (the socket is cut out again: the lower half of the first sphere would otherwise fill it and stop the peg seating)
+  difference() {
+    hull() {
+      translate([0, 0, 5.0]) sphere(r = 3.6);
+      translate([0, -3.0, 9.6]) sphere(r = 2.4);
+    }
+    translate([0, 0, -0.01]) cylinder(h = relic_sock_h + 0.01, d = relic_sock_d);
   }
 
   // 3. Sculpted Planchette Body (tilted 16 deg back from vertical = 74 deg from horizontal, 100% print-safe!)

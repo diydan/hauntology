@@ -3733,9 +3733,9 @@
       ]
     },
     {
-      "key": "speech/lib/v1/81b73ee0ccc43de6975df10e0ac3c9a467c1b2b18ba60ba31d0b8db5134eac60",
+      "key": "speech/lib/v1/8a2f37813465f08ab18bdf343ff1da03d38c1b7a88f5364649fc0e27caeca8af",
       "voice": "inworld:Ronald",
-      "spoken": "Morning has arrived, a little late and quite sure of itself. I shall open the door now. Mind the step.",
+      "spoken": "Well done. The case is closed, and the night has gone quietly home. I shall open the door now. Mind the step, and come again.",
       "sources": [
         "scene.dawn-door.dry.1"
       ]

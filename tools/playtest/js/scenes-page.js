@@ -23,10 +23,11 @@ export function setShot(video, name) {
 
 /**
  * @param {{ isOn: () => boolean, say: (text: string) => void, playSound?: (name: string) => void }} io
- *   isOn: footage may move now; say: the page's live region; playSound: plays one of our own sounds by name (the page supplies it)
+ *   isOn: footage may move now; say: the page's live region; playSound: plays one of our own sounds by name (the page supplies it);
+ *   playVoice: says a scene line aloud by its id (the narration, when the Voice switch is on); stopVoice: cuts the line that is being said
  * @returns {{ sync: () => void }}  call sync when isOn may have changed
  */
-export function initScenes({ isOn, say, playSound = () => {} }) {
+export function initScenes({ isOn, say, playSound = () => {}, playVoice = () => {}, stopVoice = () => {} }) {
   // ---- 4. the clock shadow: the Turn Clock, drawn as a shadow climbing the stairs
   const scrub = $('#ft-scrub');
   const clockText = $('#ft-clock-text');
@@ -90,6 +91,16 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
   soundSwitch.addEventListener('click', () => { soundOn = !soundOn; drawSound(); say(soundOn ? 'Sound on.' : 'Sound off.'); });
   drawSound();
 
+  // Voice is the narration of a scene line, said aloud when the line comes (the words are on screen either way). The Master's choice, like Sound.
+  const voiceSwitch = $('#ft-voice');
+  let voiceOn = true;
+  function drawVoice() {
+    voiceSwitch.setAttribute('aria-checked', String(voiceOn));
+    $('.ui-switch-state', voiceSwitch).textContent = voiceOn ? 'On' : 'Off';
+  }
+  voiceSwitch.addEventListener('click', () => { voiceOn = !voiceOn; if (!voiceOn) stopVoice(); drawVoice(); say(voiceOn ? 'Narration on.' : 'Narration off.'); });
+  drawVoice();
+
   function seg(n) {
     const s = document.createElement('span');
     s.className = `ui-seg${n <= haunt ? ' is-on' : ''}${isEventLevel(n, max) ? ' ui-seg--event' : ''}${n === max ? ' ui-seg--max' : ''}`;
@@ -101,6 +112,7 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
     el.textContent = line.text;
     el.dataset.speaker = line.speaker;
     el.hidden = false;
+    if (voiceOn) playVoice(line.id);
   }
   let turn = 0; // each redraw of the Reel is a new turn: a sound or a line still waiting for its moment in an older shot is dropped
   let soundTimer = 0;
@@ -109,6 +121,7 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
     const mine = ++turn;
     clearTimeout(soundTimer);
     clearTimeout(lineTimer);
+    stopVoice();
     reelLineEl.hidden = true;
     reelLineEl.textContent = '';
     const shot = reelShot(haunt, max);
@@ -153,7 +166,7 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
   let pending = null;
   let endTurn = 0; // each ending, and each Skip, is a new turn: a line still waiting for its moment is dropped
   let endTimer = 0;
-  function dropEndLine() { endTurn += 1; clearTimeout(endTimer); endLine.hidden = true; endLine.textContent = ''; }
+  function dropEndLine() { endTurn += 1; clearTimeout(endTimer); stopVoice(); endLine.hidden = true; endLine.textContent = ''; }
   function showCard() {
     if (!pending) return;
     $('#ft-card-title').textContent = pending.title;
@@ -192,7 +205,7 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
   let kind = 'promise';
   let wturn = 0; // each Find, each Stop and each change of kind is a new turn: a line still waiting for its moment in the scene is dropped
   let wtimer = 0;
-  function dropWanderLine() { wturn += 1; clearTimeout(wtimer); wline.hidden = true; wline.textContent = ''; }
+  function dropWanderLine() { wturn += 1; clearTimeout(wtimer); stopVoice(); wline.hidden = true; wline.textContent = ''; }
   function applyKind() { const sc = wanderScene(kind); setClip(wander, sc.clip); wanderFilm.dataset.shape = sc.shape; }
   function showWanderCard() {
     const c = wanderCard(STAND_IN_MEMORY);
@@ -223,6 +236,7 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
     wcard.hidden = true;
     whisper.textContent = WANDER.reveal;
     whisper.hidden = false;
+    if (voiceOn) playVoice(WANDER.revealId); // the Whisper says it first; the scene's own line waits until she has finished
     if (!isOn()) { show(); showWanderCard(); return; } // footage off: the card and the line at once, the same words
     say(sc.text);
     wander.currentTime = 0;
@@ -234,7 +248,7 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
 
   return {
     sync() {
-      if (!isOn()) { reel.pause(); end.pause(); wander.pause(); }
+      if (!isOn()) { reel.pause(); end.pause(); wander.pause(); stopVoice(); }
       drawClock();
     },
   };

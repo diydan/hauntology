@@ -15,7 +15,7 @@ const env = {
   ASSETS: {
     fetch: async (req) => {
       seen.push({ url: req.url, range: req.headers.get('range'), method: req.method });
-      if (!/\.(mp4|webm|jpg|m4a)$/.test(new URL(req.url).pathname) || /missing/.test(req.url)) return new Response('nope', { status: 404 });
+      if (!/\.(mp4|webm|jpg|m4a|mp3)$/.test(new URL(req.url).pathname) || /missing/.test(req.url)) return new Response('nope', { status: 404 });
       return new Response(BYTES, { status: 200, headers: { 'content-type': 'video/mp4', 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow' } });
     },
   },
@@ -50,7 +50,15 @@ test('the Reel sounds (.m4a) are served in ranges too, because Safari asks for a
   assert.deepEqual(await bytes(res), [0, 1]);
   assert.equal(res.headers.get('accept-ranges'), 'bytes');
   assert.equal((await get('/media/scrape.m4a')).status, 200);
-  assert.equal((await get('/media/knock.mp3')).status, 404, 'only the .m4a files are the sounds');
+  assert.equal((await get('/media/knock.wav')).status, 404, 'only the .m4a and .mp3 files are sounds');
+});
+
+test('the narration lines (.mp3) are served in ranges too', async () => {
+  const res = await get('/media/voice-scene.bed.soft.1.mp3', { range: 'bytes=2-4' });
+  assert.equal(res.status, 206);
+  assert.deepEqual(await bytes(res), [2, 3, 4]);
+  assert.equal(res.headers.get('accept-ranges'), 'bytes');
+  assert.equal((await get('/media/lip-hero-whisper-meet.mp4', { range: 'bytes=0-1' })).status, 206, 'a lip-synced clip is a clip');
 });
 
 test('a suffix range and an open range cut the right bytes', async () => {

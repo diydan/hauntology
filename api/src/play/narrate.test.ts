@@ -74,6 +74,17 @@ describe("narrateTurn (ghost-engine 4.1, Requirements 5.1, 5.3 and 6)", () => {
     expect(guard.usedOn("llm", "visitor-1")).toBe(1);
   });
 
+  it("refuses a second pet name for the visitor, from the game's own history, and uses the first (docs/spikes/4.4.md)", async () => {
+    const job = jobFor("ambient");
+    const PET = "The rain is soft on the glass tonight, dear, and the window has noticed you.";
+    const fresh = { ...job, input: { ...job.input, history: [] } };
+    expect(await narrateTurn(setup([ok(PET)]).deps, fresh, WHO)).toEqual({ outcome: "model", attempts: 1, text: PET });
+    const used = { ...job, input: { ...job.input, history: [{ role: "ghost" as const, text: "Come in, dear. It is quiet." }] } };
+    const { deps, n } = setup([ok(PET), ok(GOOD)]);
+    expect(await narrateTurn(deps, used, WHO)).toEqual({ outcome: "model", attempts: 2, text: GOOD });
+    expect(n.seen).toHaveLength(2);
+  });
+
   it("retries once when a reply fails its check, and uses the second, and keeps a unit for each call", async () => {
     const { deps, n, guard } = setup([ok("As an AI language model, I cannot assist."), ok(GOOD)]);
     const r = await narrateTurn(deps, jobFor("ambient"), WHO);

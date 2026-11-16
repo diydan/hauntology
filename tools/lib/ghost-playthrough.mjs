@@ -211,17 +211,17 @@ export function predictDirective(plan, { action, pose, view, idle, sinceProgress
 export const NARRATOR_REPLY_MAX = 4000;
 /** The game gives a model call this long (`CALL_TIMEOUT_MS` in `api/src/play/narrate.ts`); a call that took as long finished after the game stopped waiting, and may be counted with the next turn. */
 export const CALL_TIMEOUT_MS = 6000;
-export const REJECTION_REASONS = ['call_failed', 'refused', 'unusable', 'cut_short', 'empty', 'too_long', 'link', 'markup', 'control', 'out_of_fiction', 'real_world', 'not_english', 'digits', 'too_many_sentences', 'too_few_sentences', 'wrong_way', 'rules_read_out'];
+export const REJECTION_REASONS = ['call_failed', 'refused', 'unusable', 'cut_short', 'empty', 'too_long', 'link', 'markup', 'control', 'out_of_fiction', 'real_world', 'not_english', 'digits', 'too_many_sentences', 'too_few_sentences', 'wrong_way', 'pet_name', 'rules_read_out'];
 
 /** One recorded call, with the reason the game would refuse it (`ok` when it would not). `directive` is the one the reply was checked against; `system` the instructions of the voice. */
-export function explainCall(plan, call, { directive, system }) {
+export function explainCall(plan, call, { directive, system, history = [] }) {
   let reason;
   if (call.ok !== true) reason = 'call_failed';
   else if (call.stopReason === 'refusal') reason = 'refused';
   else if (typeof call.text !== 'string' || call.text === '' || call.textChars > NARRATOR_REPLY_MAX) reason = 'unusable';
   else if (call.stopReason === 'max_tokens') reason = 'cut_short';
   else {
-    const checked = plan.narration.validateGhostReply(call.text, plan.narration.replyChecksFor(directive));
+    const checked = plan.narration.validateGhostReply(call.text, plan.narration.replyChecksFor(directive, history));
     reason = !checked.ok ? checked.reason : plan.narration.readsOutRules(checked.text, system) ? 'rules_read_out' : 'ok';
   }
   return {
@@ -312,6 +312,8 @@ export async function runPlaythrough({ plan, net, ledger, budgetUsd, only = null
   const stop = (reason, at, detail) => { stopped = { reason, at, ...(detail === undefined ? {} : { detail }) }; };
 
   for (const game of wanted) {
+    // The ghost's own lines shown so far in this game: the game keeps its last 16 history lines (about 8 of the ghost's), and the pet-name check reads them.
+    const shown = [];
     if (stopped !== null) break;
     const visitor = await net.visitor();
     const started = await visitor.post('/api/play/start', { worldId, ...(game.ghostPreset === undefined ? {} : { ghostPreset: game.ghostPreset }) });
@@ -373,12 +375,13 @@ export async function runPlaythrough({ plan, net, ledger, budgetUsd, only = null
       const body = res.json;
       const ok = res.status === 200 && typeof body?.reply?.text === 'string' && body?.view !== undefined;
       const row = { kind: 'turn', game: game.id, id: step.id, note: step.note, skipped: false, said: step.input.text ?? step.input.button, inputKind: step.input.text !== undefined ? 'text' : 'button', eligible, expected, pose, status: res.status, ms, unitsDrawn: drawn };
-      // What the model said this turn, and why the game refused it if it did.
+      // What the model said this turn, and why the game refused it if it did. `prior` is the ghost's lines before this turn, for the pet-name check.
+      const prior = shown.slice(-8);
       if (recorder) {
         const got = await readCalls(net, cursor);
         if (!got.ok) { row.calls = null; row.callsNote = `the recorder could not be read (${got.note})`; }
         else {
-          row.calls = got.calls.map((c) => explainCall(plan, c, { directive: checkDirective(expected), system: plan.systems[game.voice] }));
+          row.calls = got.calls.map((c) => explainCall(plan, c, { directive: checkDirective(expected), system: plan.systems[game.voice], history: prior }));
           if (got.restarted) row.callsNote = 'the Worker started again during the run: calls before that are not in this record';
           if (got.lost > 0) row.callsLost = got.lost;
         }
@@ -389,13 +392,13 @@ export async function runPlaythrough({ plan, net, ledger, budgetUsd, only = null
         const revealedId = newView.found.find((id) => !view.found.includes(id)) ?? null;
         const journalText = revealedId === null ? null : (newView.journal.find((j) => j.anchorId === revealedId)?.text ?? null);
         Object.assign(row, {
-          scripted: scriptedFlag, text: body.reply.text, found: newView.found.length, ended: newView.ended === true,
+          scripted: scriptedFlag, text: (shown.push({ role: 'ghost', text: body.reply.text }), body.reply.text), found: newView.found.length, ended: newView.ended === true,
           revealedId, journalText, journalMatch: revealedId === null ? null : journalText !== null && body.reply.text.startsWith(journalText),
         });
         // The checks a reply must pass: the plain ones for any reply; the way and distance for a hint; a memory told is checked as the memory (the farewell after the last is scripted).
         const wording = revealedId === null ? body.reply.text : (journalText ?? body.reply.text);
         const directive = checkDirective(expected);
-        const check = plan.narration.validateGhostReply(wording, plan.narration.replyChecksFor(directive));
+        const check = plan.narration.validateGhostReply(wording, plan.narration.replyChecksFor(directive, prior));
         row.check = { ok: check.ok, problem: check.ok ? null : check.reason };
         row.copiedRules = plan.narration.readsOutRules(wording, plan.systems[game.voice]);
         view = newView;

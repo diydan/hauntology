@@ -261,7 +261,7 @@ test('20.7 shotLine and reelLine are total: odd input gives a line or null, and 
 test('20.8 every line starts inside its shot and ends before the shot does, using the rendered length of the line', { skip: probe(resolve(root, 'media', `${SHOTS.hand}.mp4`)) === null && 'ffprobe not installed' }, () => {
   assert.deepEqual(Object.keys(LINE_AT).sort(), Object.keys(SHOT_LINE).sort(), 'a start time for each line, and no other');
   // The length of each line as rendered into the Voice Library by Inworld (Whisper: Pippa, rate 0.9; Keeper: Ronald, rate 0.9), measured on 2026-11-16 and rounded up.
-  const RENDERED_S = { hand: 10.4, bed: 10.2, house: 13.7, dawn: 7.3 };
+  const RENDERED_S = { hand: 10.4, bed: 10.2, house: 13.7, dawn: 9.7 };
   for (const shot of Object.keys(SHOT_LINE)) {
     const clip = probe(resolve(root, 'media', `${SHOTS[shot]}.mp4`));
     const at = LINE_AT[shot];
@@ -271,7 +271,7 @@ test('20.8 every line starts inside its shot and ends before the shot does, usin
 });
 
 test('20.8 the dawn line is placed so that "the door opens" is said as the door opens in the picture (10.4 s)', () => {
-  const DOOR_OPENS_IN_LINE = 4.9; // seconds into the rendered line (the 2026-11-16 render: the second sentence starts at 4.3 s, "open the door" about 0.6 s in)
+  const DOOR_OPENS_IN_LINE = 6.1; // seconds into the rendered line (the 2026-11-16 render: the third sentence starts at 5.6 s, "open the door" about 0.5 s in)
   const at = LINE_AT.dawn + DOOR_OPENS_IN_LINE;
   assert.ok(Math.abs(at - 10.4) <= 0.5, `said at ${at.toFixed(1)} s of the shot, the door opens at 10.4 s`);
 });

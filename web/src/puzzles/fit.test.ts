@@ -113,6 +113,18 @@ describe("puzzle fit", () => {
     expect((100 - 2 * inset) * 0.64).toBeGreaterThanOrEqual(48); // and a piece is still a finger wide (a cell is 100 units)
   });
 
+  it("keeps the wires' tags and terminals a finger wide (48 px) and 8 px apart on a 320 px phone, with 4, 5 or 6 wires", () => {
+    const src = sources["./kinds/Wires.tsx"]!;
+    const radius = Number(/const HANDLE_R = (\d+)/.exec(src)?.[1]);
+    const pitch = Number(/const PITCH = ([\d.]+)/.exec(src)?.[1]);
+    expect(src).toMatch(/const H = 100 \+ \(n - 1\) \* PITCH;/);
+    expect(src).toMatch(/50 \+ i \* PITCH/);
+    // the 340 unit board is drawn at 0.79 at the least (about 270 px at 320 px wide): a disc is 2 x radius units across, two are pitch apart
+    const scale = 0.79;
+    expect(2 * radius * scale).toBeGreaterThanOrEqual(48);
+    expect((pitch - 2 * radius) * scale).toBeGreaterThanOrEqual(8);
+  });
+
   it("lays a phone held sideways out in two columns: the picture left, the controls beside it, the header, the message and Give up in a narrow column", () => {
     const land = /@media \(orientation: landscape\) and \(max-height: 32rem\) \{([\s\S]*?)\n\}\n/.exec(puzzlesCss)![1]!;
     expect(land).toMatch(/grid-template-areas: "stage bar" "stage feedback" "stage foot"/);

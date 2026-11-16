@@ -1,8 +1,11 @@
 // Copies the public files into dist/ for deployment. Server code (src/), tests and docs stay out.
 // Usage: node build.mjs        (PLAYTEST_DIST=/some/folder node build.mjs builds there instead, which the tests use so they do not rebuild dist/ under each other)
-import { cpSync, rmSync, mkdirSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
+import { cpSync, rmSync, mkdirSync, readdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { basename, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SHOT_LINE, WANDER, WANDER_SCENES } from './js/scenes.js';
+import { LIPSYNC } from './js/lipsync-data.js';
+import { planVoiceFiles } from './voice-files.mjs';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const dist = process.env.PLAYTEST_DIST ? resolve(process.env.PLAYTEST_DIST) : resolve(root, 'dist');
@@ -25,6 +28,21 @@ for (const f of readdirSync(resolve(root, 'media')).filter((n) => /\.(mp4|webm|j
 // Our own two sounds for the Reel (puzzles Requirement 20.6) come from the game's own folder, so there is one copy to credit and to check.
 // They go in media/ so the Worker's range handler (src/route.js) serves them too: Safari asks for audio in ranges as well.
 for (const name of ['knock', 'scrape']) cpSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${name}.m4a`), resolve(dist, 'media', `${name}.m4a`));
+// The narration of the scene lines (the Whisper's and the Keeper's Library audio) and the lip-synced talking clips, for the footage page's Voice switch and section 8.
+// Both come from folders that are not in git (.voice-library, docs/story/art/clips). When a folder is not there, nothing is copied and the page falls back to the words
+// (the Voice switch finds no file; the lip-sync section says its clips are not on this build).
+{
+  const repoRoot = resolve(root, '..', '..');
+  const libDir = process.env.VOICE_LIBRARY_DIR ? resolve(process.env.VOICE_LIBRARY_DIR) : resolve(repoRoot, '.voice-library');
+  const ids = [...Object.values(SHOT_LINE), ...Object.values(WANDER_SCENES).map((w) => w.line)].filter(Boolean).map((l) => l.id).concat(WANDER.revealId);
+  const manifest = JSON.parse(readFileSync(resolve(repoRoot, 'shared', 'fixtures', 'voice-library.json'), 'utf8'));
+  const plan = planVoiceFiles(ids, manifest, (f) => existsSync(resolve(libDir, f)));
+  for (const c of plan.copy) cpSync(resolve(libDir, c.from), resolve(dist, 'media', c.to));
+  const clipDir = resolve(repoRoot, 'docs', 'story', 'art', 'clips');
+  let clips = 0;
+  for (const c of LIPSYNC) if (existsSync(resolve(clipDir, `${c.name}.mp4`))) { cpSync(resolve(clipDir, `${c.name}.mp4`), resolve(dist, 'media', `lip-${c.name}.mp4`)); clips += 1; }
+  console.log(`narration: ${plan.copy.length} of ${plan.copy.length + plan.missing.length} lines copied${plan.missing.length ? ` (missing: ${plan.missing.join(', ')})` : ''}; lip-synced clips: ${clips} of ${LIPSYNC.length}`);
+}
 // The design system catalogue (every element and token of the look), for checking the look on a phone: /design/.
 // Only public files: the catalogue page, its script, the tokens, the elements, the fonts and their licences.
 const repo = resolve(root, '..', '..');

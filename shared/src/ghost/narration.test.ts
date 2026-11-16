@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { MOON_PHASES, TIMES_OF_DAY, WEATHER_CLASSES } from "../conditions/types";
-import { HISTORY_TURNS, LINE_MAX, MEMORY_MAX, MODEL_TURN_CAP, NARRATION_MAX_TOKENS, PROMPT_CHARS_MAX, REPLY_MAX_CHARS, buildNarrationPrompt, looksEnglish, narrationMode, replyChecksFor, sentenceCount, skyOf, validateGhostReply, visitorWords, wayIsRight, type NarrationInput } from "./narration";
+import { HISTORY_TURNS, LINE_MAX, MEMORY_MAX, MODEL_TURN_CAP, NARRATION_MAX_TOKENS, PROMPT_CHARS_MAX, REPLY_MAX_CHARS, buildNarrationPrompt, looksEnglish, narrationMode, replyChecksFor, sentenceCount, skyOf, validateGhostReply, visitorWords, wayIsRight, petNameUsed, type NarrationInput } from "./narration";
 import { BEARING_PHRASE } from "./scripted";
 import { LINES } from "./scripted";
 import { ACTION_KINDS, ANCHOR_IDS, BANDS, BEARINGS, VOICES, type Directive, type HistoryLine, type Memory, type Seed } from "./types";
@@ -476,12 +476,40 @@ describe("the words the ghost has worn out are in the prompt (the repetition of 
   });
 
   it("asks for different openings and a pet name only now and then, as one of the rules", () => {
-    for (const voice of VOICES) expect(sys({ voice })).toContain("Never open two lines the same way, and call the visitor by a pet name or title only now and then, never in two lines running.");
+    for (const voice of VOICES) expect(sys({ voice })).toContain('Never open two lines the same way, and use a pet name such as "dear" at most once a visit.');
   });
 
   it("describes the whisper as too fond of the visitor rather than gentle with them, and leaves the stern ghost without endearments", () => {
     expect(sys({ voice: "wistful" })).toContain("rather too fond of the visitor");
     expect(sys({ voice: "wistful" })).not.toContain("gentle with the visitor");
     expect(sys({ voice: "stern" })).toContain('never \"dear\"');
+  });
+});
+
+describe("a pet name at most once (the third play-through, docs/spikes/4.4.md: \"dear\" opened 19 of 24 hints)", () => {
+  const ghost = (text: string): HistoryLine => ({ role: "ghost", text });
+  const used: HistoryLine[] = [ghost("Ahead and to the right, dear, and you will find it very close.")];
+
+  it("sees a pet name in the ghost's own lines only, and not \"dear\" as a plain adjective", () => {
+    expect(petNameUsed(used)).toBe(true);
+    for (const t of ["Oh, my dear, it is close.", "Come in, dear one.", "Go on, darling.", "Yes, dear. It waits.", "It is here, dearest.", "Look up, dear and see."]) expect(petNameUsed([ghost(t)]), t).toBe(true);
+    expect(petNameUsed([{ role: "visitor", text: "thanks, dear" }])).toBe(false);
+    for (const t of ["A dear little room, kept very still.", "The attic is quiet.", "It is dearer to me than the window."]) expect(petNameUsed([ghost(t)]), t).toBe(false);
+  });
+
+  it("lets the first pet name of a game through, and refuses a second for every kind of turn", () => {
+    const reply = "Ahead and to the right, dear, and you will find it very close.";
+    const hint: Directive = { kind: "hint", bearing: "ahead-right", band: "very close" };
+    expect(validateGhostReply(reply, replyChecksFor(hint, [])).ok).toBe(true);
+    expect(validateGhostReply(reply, replyChecksFor(hint, used))).toEqual({ ok: false, reason: "pet_name" });
+    expect(validateGhostReply("Ahead and to the right, and you will find it very close.", replyChecksFor(hint, used)).ok).toBe(true);
+    for (const d of [{ kind: "ambient" }, { kind: "tease", band: "far" }, { kind: "echo" }] as Directive[]) {
+      expect(validateGhostReply("The room is quiet, dear. It has noticed you.", replyChecksFor(d, used)), d.kind).toEqual({ ok: false, reason: "pet_name" });
+    }
+  });
+
+  it("tells the model when one is used, and only then", () => {
+    expect(buildNarrationPrompt({ ...base, history: used })!.system).toContain("You have already called the visitor by a pet name. Use none now");
+    expect(buildNarrationPrompt({ ...base, history: [] })!.system).not.toContain("already called the visitor by a pet name");
   });
 });

@@ -356,7 +356,7 @@ The Keeper's one picture line: the dawn shot (the detectives win). It is a scene
 
 | Id | Line |
 |---|---|
-| `scene.dawn-door.dry.1` | Morning has arrived, a little late and quite sure of itself. I shall open the door now. Mind the step. |
+| `scene.dawn-door.dry.1` | Well done. The case is closed, and the night has gone quietly home. I shall open the door now. Mind the step, and come again. |
 
 ## Whisper: scene (spoken, narration over a Reel shot)
 

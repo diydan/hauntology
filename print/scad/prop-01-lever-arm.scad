@@ -1,9 +1,9 @@
 // Hauntology Tabletop Print Kit — Prop #1: Ghost in the Box (Dual-Stage Servo Lever Arm)
 // Colour: Ink (#0b0d10) or Leather (#6b4d33)
-// Size: 82 L x 55 W x 11.5 H mm
+// Size: 92 L x 55 W x 11.5 H mm
 // Mechanism: Driven by -Y SG90 shaft in XZ plane (arm at Y = -11.0..-6.5; stepped boss reaches Y = +0.5
 //            to engage the SG90 horn outside the ghost track). Stage 1 cam nose (+54 deg in XZ -> -54 deg in STL)
-//            cracks lid ramp; Stage 2 slotted fork (4.4 mm slot for 3.8 mm ghost pin) lifts ghost +35 mm!
+//            opens the lid 30 deg; Stage 2 slotted fork (4.4 mm slot for 3.8 mm ghost pin) lifts ghost +35 mm!
 // Print orientation: Flat on base (Z = 0), zero supports.
 
 include <_common.scad>
@@ -17,10 +17,12 @@ module prop_01_lever_arm() {
         translate([-14.5, 0, 0]) cylinder(h = 11.5, d = 7.6);
       }
 
-      // 2. Stage 1 Lid-Lift Cam Nose (at -54 deg, R = 52 mm -> becomes +54 deg upward in XZ when mounted via Rx(-90))
+      // 2. Stage 1 Lid-Lift Cam Nose (at -54 deg, R = 85 mm -> becomes +54 deg upward in XZ when mounted via Rx(-90))
+      //    R = 85 (was 52) so the nose pushes the lid ramp on to 30 deg, enough for the ghost's full 35 mm lift (it needs 25 deg).
+      //    The nose swings into the chest's left wall past about 50 deg of fork travel, so the servo must stop at 30 deg.
       hull() {
-        cylinder(h = 4.5, d = 14.0);
-        translate([52.0 * cos(-54), 52.0 * sin(-54), 0])
+        cylinder(h = 4.5, d = 10.0);   // 10 mm root: a 14 mm root leaves sliver triangles where it meets the hub circle
+        translate([85.0 * cos(-54), 85.0 * sin(-54), 0])
           cylinder(h = 4.5, d = 9.0);
       }
 

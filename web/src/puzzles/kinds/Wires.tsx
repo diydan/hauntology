@@ -7,7 +7,9 @@ import "./Wires.css";
 const W = 340;
 const LEFT_X = 50;
 const RIGHT_X = 290;
-const HANDLE_R = 32; // 64 units: the frame leaves about 270 px for the 340-unit board at 320 px wide, so this is 48 px or more
+const HANDLE_R = 31; // 62 units: the frame leaves about 270 px for the 340-unit board at 320 px wide (0.79), so this is 48 px or more
+/** Two neighbouring touch targets are this far apart centre to centre: (72.5 - 62) units is 8 px or more at 0.79 and above, with 4, 5 or 6 wires. */
+const PITCH = 72.5;
 const CABLE_FROM = 8; // the cable comes out of its clamp at the left edge and runs straight under its tag
 const LUG_BACK = 26; // the cable ends where the lug's barrel starts, 26 units before the screw
 const SNAP_RADIUS = 44;
@@ -23,8 +25,8 @@ type Conn = Readonly<Record<number, number>>;
  */
 export default function Wires({ view, feel, submit, announce }: KindProps<"wires">) {
   const n = view.n;
-  const H = 70 + n * 62;
-  const ys = (i: number): number => 50 + i * ((H - 100) / (n - 1));
+  const H = 100 + (n - 1) * PITCH;
+  const ys = (i: number): number => 50 + i * PITCH;
   const [conn, setConn] = useState<Conn>({});
   const [picked, setPicked] = useState<number | null>(null);
   const [dragging, setDragging] = useState<number | null>(null);

@@ -594,7 +594,7 @@ The first idea was to let the Whisper's Haunt Event line (Cold Spot, Blackout, R
 | Hand | `ai-hand-door-take2` | `scene.hand-door.soft.1` | Whisper | 0.8 s | the shadow already on the wall; the knocks come at 9 s |
 | Bed | `ai-empty-bed-take1` | `scene.bed.soft.1` | Whisper | 0.3 s | the bed, still; the mattress sinks at 6 s |
 | House | `ai-lights-out-take1` | `scene.lights-out.soft.1` | Whisper | 1.2 s | every window warm; the lights go out from 3 s |
-| Dawn | `ai-dawn-door-take3` | `scene.dawn-door.dry.1` | Keeper | 5.5 s | the quiet house at dusk; "the door opens" is said as it opens, at 10.4 s |
+| Dawn | `ai-dawn-door-take3` | `scene.dawn-door.dry.1` | Keeper | 4.3 s | the quiet house at dusk; "the door opens" is said as it opens, at 10.4 s |
 
 The ship, the crate, the street and the stairs are old film with no picture of ours, and the stairs are scrubbed by the clock: they have no line. The lines are rows of `docs/story/party-lines.md` (the `scene.*` sections) and are in the Voice Library like every spoken line; a test compares the rows with `SHOT_LINE` word for word, and checks that each line ends before its shot does (`LINE_AT`, and the rendered length of the line). A line is a `scene.*` row on purpose: it is never drawn as an `end.solved` or an Event line, so it cannot be said over another moment or twice.
 

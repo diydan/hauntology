@@ -161,5 +161,5 @@ export const PARTY_KEEPER_BANK: readonly BankLine[] = [
   { id: "hand-over.dry.2", kind: "hand-over", text: "A new custodian of the house is named. I am not offended, being only the caretaker. Do look after the keys, {nick}.", spoken: false },
   { id: "hand-over.dry.3", kind: "hand-over", text: "The house has a new custodian. I find the keys heavy and the doors many, myself. Good luck to {nick}.", spoken: false },
   { id: "hand-over.dry.4", kind: "hand-over", text: "The keys pass along, and I note that nothing in the house is different except the owner of the ring. That is {nick}.", spoken: false },
-  { id: "scene.dawn-door.dry.1", kind: "scene.dawn-door", text: "Morning has arrived, a little late and quite sure of itself. I shall open the door now. Mind the step.", spoken: true },
+  { id: "scene.dawn-door.dry.1", kind: "scene.dawn-door", text: "Well done. The case is closed, and the night has gone quietly home. I shall open the door now. Mind the step, and come again.", spoken: true },
 ];
