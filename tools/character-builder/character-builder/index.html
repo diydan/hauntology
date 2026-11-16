@@ -220,6 +220,7 @@ body.thumbs #charCardWrap{display:none!important}
 </aside>
 <div id="bar" class="hud">
   <div class="grp"><span>Clip</span><div class="seg" id="clipSeg"></div></div>
+  <div class="grp"><span>Prop</span><div class="seg" id="propSeg"></div></div>
   <div class="grp"><span>View</span><div class="seg"><button id="spin" aria-pressed="true">Spin</button><button id="rnd">Random</button></div><label class="chk" hidden><input id="rndAll" type="checkbox" checked> also gender, eyes, hair &amp; outfit</label></div>
 </div>
 <div id="boot" class="hud" hidden><b id="bootT">Getting dressed…</b><span id="bootN"></span><i><u id="bootBar"></u></i></div>
@@ -1088,7 +1089,7 @@ async function makeMat(keyName, side) {
 /* ---- the character ---- */
 const zeroFace = () => { const f = { eye: 0, nose: 0, ears: 0 }; for (const m of HEAD_MORPHS) f[m.id] = 0; return f; };
 const S = { gender: Q.get('g') === 'F' ? 'F' : 'M', head: 'head.001', hair: 'hair.short.001', bangs: null, hat: null, glasses: null, scarf: null, top: 'top.002', bot: 'bot.004', outfit: null, shoes: 'shoes.006',
-  skin: '#d9a37c', eyes: '#3b6fb5', hairCol: null, expr: 'neutral', blink: true, lip: true, clip: 'Idle', prop: true, variant: {}, col: {}, face: zeroFace(), shape: { legs: 0.5, arms: 0.5, build: 0.5, head: 0.5 } };
+  skin: '#d9a37c', eyes: '#3b6fb5', hairCol: null, expr: 'neutral', blink: true, lip: true, clip: 'Idle', prop: true, hand: 'lantern', variant: {}, col: {}, face: zeroFace(), shape: { legs: 0.5, arms: 0.5, build: 0.5, head: 0.5 } };
 S.hairShape = {};
 const character = new THREE.Group(); character.scale.setScalar(0.01); character.visible = false; scene.add(character);
 const propsRoot = new THREE.Group(); propsRoot.scale.setScalar(0.01); scene.add(propsRoot); // instruments live here, so a taller or shorter character does not lift them off the floor
@@ -1741,7 +1742,7 @@ async function buildBody(gen) {
   try { const gl = await new GLTFLoader().parseAsync(await fetchBuf('assets/clips_' + S.gender + '.glb'), ''); clips = {}; for (const c of gl.animations) clips[c.name] = c; } catch (e) { clips = {}; }
   if (gen !== genToken) return false;
   mixer = new THREE.AnimationMixer(root); buildClipUI(); if (clips[S.clip]) play(S.clip); else { const n = Object.keys(clips)[0]; if (n) play(n); }
-  addMic(); progress.step(); return true;
+  addMic(); buildPropUI(); setGameProp(S.hand || 'none'); progress.step(); return true;
 }
 /* the whole character: hidden behind smoke until the body and every chosen piece are in, then revealed together */
 async function buildAll(quick = false) {
@@ -1875,6 +1876,9 @@ function poseHands(clipName) {
     }
     curl('R', 'Index', 1, 0.18); curl('R', 'Index', 2, 0.24); curl('R', 'Index', 3, 0.18);
     curl('R', 'Thumb', 2, 0.20); curl('R', 'Thumb', 3, 0.16);
+  } else if (clipName === 'grip') { // closing the right hand round a held game prop
+    for (const f of ['Index', 'Mid', 'Ring', 'Pinky']) { curl('R', f, 1, 0.55); curl('R', f, 2, 0.6); curl('R', f, 3, 0.4); }
+    curl('R', 'Thumb', 1, 0.15, 0.1); curl('R', 'Thumb', 2, 0.3); curl('R', 'Thumb', 3, 0.25);
   } else if (clipName === 'Piano_Seated') {
     for (const f of ['Index', 'Mid', 'Ring', 'Pinky']) {
       curl('R', f, 1, 0.30); curl('R', f, 2, 0.22); curl('R', f, 3, 0.14);
@@ -1926,6 +1930,41 @@ const _mY = new THREE.Vector3(0, 1, 0);
 const _micPosL = new THREE.Vector3(1.88, 4.95, 0.55), _micPosR = new THREE.Vector3(-1.88, 4.95, 0.55);
 const _micDirL = new THREE.Vector3(0.06, 0.74, 0.67).normalize(), _micDirR = new THREE.Vector3(-0.06, 0.74, 0.67).normalize();
 const _micQL = new THREE.Quaternion().setFromUnitVectors(_mY, _micDirL), _micQR = new THREE.Quaternion().setFromUnitVectors(_mY, _micDirR);
+/* ---- GAME PROPS (the things the game is about), held in the right hand. Built from simple shapes in cm, grip at the origin, handle along +y
+   (the palm channel the mic uses). hang: the prop keeps its own up pointing at the sky (a lantern or a bell swings from the hand). ---- */
+const GP = {}, gpM = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.6, metalness: 0, ...o });
+const gpAdd = (g, geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); g.add(m); return m; };
+const GAME_PROPS = {
+  none: { label: 'None' },
+  lantern: { label: 'Lantern', hang: true, make(g) { const brass = gpM(0x8a6a2e, { metalness: 0.7, roughness: 0.35 }), glass = gpM(0xffd27a, { emissive: 0xffb347, emissiveIntensity: 1.4, transparent: true, opacity: 0.85 });
+    gpAdd(g, new THREE.TorusGeometry(2.2, 0.35, 8, 20), brass, 0, 0, 0, 0, Math.PI / 2, 0); gpAdd(g, new THREE.ConeGeometry(4.5, 3, 6), brass, 0, -4, 0); gpAdd(g, new THREE.CylinderGeometry(3.6, 3.6, 9, 6, 1, true), glass, 0, -10, 0);
+    gpAdd(g, new THREE.CylinderGeometry(4.6, 4.6, 1.2, 6), brass, 0, -15, 0); const l = new THREE.PointLight(0xffb060, 1.2, 120, 2); l.position.y = -10; g.add(l); } },
+  candle: { label: 'Candle', upright: true, make(g) { const pew = gpM(0x6e5a3a, { metalness: 0.5 }); /* a chamberstick held by its ring; the candle stands in front of the hand */
+    gpAdd(g, new THREE.TorusGeometry(1.6, 0.35, 8, 14), pew, 0, -1, 0, 0, Math.PI / 2, 0); gpAdd(g, new THREE.BoxGeometry(0.8, 0.5, 4), pew, 0, -2.5, 2.5); gpAdd(g, new THREE.CylinderGeometry(4, 4.2, 0.8, 20), pew, 0, -2.8, 7.5);
+    gpAdd(g, new THREE.CylinderGeometry(1.2, 1.3, 10, 14), gpM(0xf3ead2), 0, 2.6, 7.5); gpAdd(g, new THREE.SphereGeometry(0.7, 10, 8), gpM(0xffc04d, { emissive: 0xff9a2a, emissiveIntensity: 2 }), 0, 8.4, 7.5).scale.set(0.8, 1.6, 0.8);
+    const l = new THREE.PointLight(0xff9a40, 0.9, 90, 2); l.position.set(0, 8.6, 7.5); g.add(l); } },
+  key: { label: 'Old key', make(g) { const iron = gpM(0x5b4a32, { metalness: 0.8, roughness: 0.45 }); gpAdd(g, new THREE.TorusGeometry(1.8, 0.45, 8, 18), iron, 0, -1.5, 0); gpAdd(g, new THREE.CylinderGeometry(0.35, 0.35, 8, 8), iron, 0, 4, 0);
+    gpAdd(g, new THREE.BoxGeometry(1.6, 0.6, 0.5), iron, 0.8, 7.2, 0); gpAdd(g, new THREE.BoxGeometry(1.1, 0.6, 0.5), iron, 0.55, 6.2, 0); } },
+  bell: { label: 'Hand bell', hang: true, make(g) { const brass = gpM(0xb08a3a, { metalness: 0.85, roughness: 0.3 }); gpAdd(g, new THREE.CylinderGeometry(0.9, 1.1, 7, 12), gpM(0x3b2716), 0, 2, 0);
+    const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(1 + 3.2 * t * t, -t * 6)); } gpAdd(g, new THREE.LatheGeometry(pts, 24), brass, 0, -1.5, 0).material.side = THREE.DoubleSide; g.children[0].position.y = 4; g.children[1].position.y = 0.5; } },
+  notebook: { label: 'Notebook', make(g) { gpAdd(g, new THREE.BoxGeometry(10, 14, 1.6), gpM(0x4a2a1e), 0, 3, 0); gpAdd(g, new THREE.BoxGeometry(9.4, 13.4, 1.65), gpM(0xe9dfc6), 0.3, 3, 0); } },
+  camera: { label: 'Camera', make(g) { const blk = gpM(0x222226, { roughness: 0.4 }); gpAdd(g, new THREE.BoxGeometry(5, 8, 13), blk, 0, 2, 4); gpAdd(g, new THREE.CylinderGeometry(2.4, 2.6, 4, 18), gpM(0x101012, { metalness: 0.4 }), -4, 2, 4, 0, 0, Math.PI / 2);
+    gpAdd(g, new THREE.BoxGeometry(1.2, 2, 3), gpM(0xc0c4cc, { metalness: 0.8 }), 0, 6.8, 7); } },
+  map: { label: 'Map', make(g) { const m = gpAdd(g, new THREE.PlaneGeometry(18, 14, 6, 4), gpM(0xd8c49a, { side: THREE.DoubleSide, roughness: 0.9 }), 0, 6, 1.5, 0, 0, Math.PI / 2); const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin(P.getX(i) * 0.5) * 0.6); m.geometry.computeVertexNormals(); } },
+  planchette: { label: 'Planchette', make(g) { const sh = new THREE.Shape(); sh.moveTo(0, 6); sh.quadraticCurveTo(5, 0, 3, -3); sh.lineTo(-3, -3); sh.quadraticCurveTo(-5, 0, 0, 6);
+    const p = gpAdd(g, new THREE.ExtrudeGeometry(sh, { depth: 0.8, bevelEnabled: true, bevelSize: 0.3, bevelThickness: 0.3, bevelSegments: 2 }), gpM(0x6b4a2a, { roughness: 0.5 }), 0, 2, -0.4); gpAdd(g, new THREE.TorusGeometry(1.2, 0.25, 8, 16), gpM(0xc9b27a, { metalness: 0.8 }), 0, 4, 0.5); } },
+  musicbox: { label: 'Music box', make(g) { gpAdd(g, new THREE.BoxGeometry(9, 6, 7), gpM(0x5c3a22, { roughness: 0.45 }), 4, 3, 0); gpAdd(g, new THREE.CylinderGeometry(0.3, 0.3, 2.5, 8), gpM(0xc9b27a, { metalness: 0.8 }), 9.5, 3, 0, 0, 0, Math.PI / 2); } },
+};
+let gameProp = null; const _gpUp = new THREE.Vector3(0, 1, 0), _gpQ = new THREE.Quaternion(), _gpQp = new THREE.Quaternion();
+function setGameProp(id) {
+  if (gameProp) { gameProp.parent && gameProp.parent.remove(gameProp); gameProp = null; } S.hand = id;
+  const d = GAME_PROPS[id]; if (d && d.make && handR) { const g = new THREE.Group(); d.make(g); g.userData.hang = !!(d.hang || d.upright); g.userData.up = d.upright ? 1 : 0; g.position.copy(_micPosR); g.quaternion.copy(_micQR); handR.add(g); gameProp = g; }
+  [...document.querySelectorAll('#propSeg button')].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === id)));
+}
+function updateGameProp() { // a hanging prop keeps its +y pointing at the sky, whatever the wrist does
+  if (!gameProp || !gameProp.userData.hang || !gameProp.parent) return; gameProp.parent.getWorldQuaternion(_gpQp); _gpQ.copy(_gpQp).invert(); gameProp.quaternion.copy(_gpQ); gameProp.updateMatrixWorld(true);
+}
+function buildPropUI() { const seg = $('propSeg'); if (!seg) return; seg.innerHTML = ''; for (const [id, d] of Object.entries(GAME_PROPS)) { const b = document.createElement('button'); b.type = 'button'; b.textContent = d.label; b.dataset.n = id; b.addEventListener('click', () => setGameProp(id)); seg.appendChild(b); } }
 function addMic() {
   const mic = new THREE.Group();
   const mBody = new THREE.MeshStandardMaterial({ color: 0x171429, roughness: 0.46, metalness: 0.22 });
@@ -3748,7 +3787,7 @@ renderer.setAnimationLoop(now => {
   const dt = Math.min(0.05, (now - last) / 1000); last = now; clock += dt;
   smoke.update(dt, clock);
   hairLights();
-  if (mixer) { restoreProcPose(); mixer.update(dt); saveProcPose(); fixShapeAnimation(); poseHands(appMode === 'makeover' ? 'makeover' : S.clip); groundFeet(); character.updateMatrixWorld(true); updateHair(dt); faceUpdate(dt, clock); S.prop = true; if (micNode) micNode.visible = /Singing|Rapping/.test(S.clip) && appMode !== 'makeover'; for (const n of propNodes) n.visible = true; fixMic(dt); updateArmTwist(); updateDrums(dt); }
+  if (mixer) { restoreProcPose(); mixer.update(dt); saveProcPose(); fixShapeAnimation(); poseHands(appMode === 'makeover' ? 'makeover' : S.clip); if (gameProp) poseHands('grip'); groundFeet(); character.updateMatrixWorld(true); updateGameProp(); updateHair(dt); faceUpdate(dt, clock); S.prop = true; if (micNode) micNode.visible = /Singing|Rapping/.test(S.clip) && appMode !== 'makeover'; for (const n of propNodes) n.visible = true; fixMic(dt); updateArmTwist(); updateDrums(dt); }
   if (hipBone) { hipBone.getWorldPosition(hipPos); if (auditionSet.visible) { const k2 = 1 - Math.exp(-6 * dt); auditionSet.position.x += (hipPos.x - auditionSet.position.x) * k2; auditionSet.position.z += (hipPos.z - auditionSet.position.z) * k2; } const k = 1 - Math.exp(-5 * dt), dx = (hipPos.x - controls.target.x) * k, dz = (hipPos.z - controls.target.z) * k; controls.target.x += dx; controls.target.z += dz; camera.position.x += dx; camera.position.z += dz; }
   if ($('spin').getAttribute('aria-pressed') === 'true' && !controls._dragging) { const a = dt * 0.3, x = camera.position.x - controls.target.x, z = camera.position.z - controls.target.z; camera.position.x = controls.target.x + x * Math.cos(a) - z * Math.sin(a); camera.position.z = controls.target.z + x * Math.sin(a) + z * Math.cos(a); }
   if (appMode === 'recruit' && !controls._dragging) { const a = Math.sin(clock * 0.55) * 0.5, d = a - swayLast; swayLast = a; const x = camera.position.x - controls.target.x, z = camera.position.z - controls.target.z; camera.position.x = controls.target.x + x * Math.cos(d) - z * Math.sin(d); camera.position.z = controls.target.z + x * Math.sin(d) + z * Math.cos(d); }
@@ -3760,7 +3799,7 @@ initRecruitControls();
 const bootSeed = /seed=(\d+)/.exec(location.hash);
 if (bootSeed) randomLook(+bootSeed[1], true, false);
 const ready = buildAll().catch(e => { console.error(e); status('failed: ' + e.message); });
-window.__cb = { groundFeet, poseHands, updateArmTwist, applyHairCards, fixMic, micNode: () => micNode, syncSkinUniforms, SK_DEFAULT, fpHairWave, HC, EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
+window.__cb = { setGameProp, GAME_PROPS, gameProp: () => gameProp, groundFeet, poseHands, updateArmTwist, applyHairCards, fixMic, micNode: () => micNode, syncSkinUniforms, SK_DEFAULT, fpHairWave, HC, EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
 /* BACKGROUND MUSIC: the title theme on loop. Browsers only allow sound after a click or key, so it starts on the first one. The note button turns it off and on (remembered). Off in thumbnail mode. */
 if (!THUMBS) {
   const bgm = new Audio('media/dark-title.mp3'); bgm.loop = true; bgm.volume = 0.35; let musicOn = localStorage.getItem('cbMusic') !== 'off';
