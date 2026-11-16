@@ -39,17 +39,17 @@ export const SHOT_LINE = {
   hand: { id: 'scene.hand-door.soft.1', speaker: 'whisper', text: 'That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait.' },
   bed: { id: 'scene.bed.soft.1', speaker: 'whisper', text: 'I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway.' },
   house: { id: 'scene.lights-out.soft.1', speaker: 'whisper', text: 'One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely.' },
-  dawn: { id: 'scene.dawn-door.dry.1', speaker: 'keeper', text: 'Morning has arrived, a little late and quite sure of itself. I shall open the door now. Mind the step.' },
+  dawn: { id: 'scene.dawn-door.dry.1', speaker: 'keeper', text: 'Well done. The case is closed, and the night has gone quietly home. I shall open the door now. Mind the step, and come again.' },
 };
 
 /**
  * When each line starts, in seconds from the start of its shot, so that it falls on the picture it is about (puzzles Requirement 20.8). Found by laying
  * each rendered line over its clip, from the pauses in the audio (the shorter lines of 2026-11-16, not yet checked by ear): `hand` the shadow is already on the wall
  * and the knocks come at 9 seconds, just after "four seems desperate" (said at 8.3 s into the line) and before "I shall wait"; `bed` the mattress sinks at about
- * 6 seconds, as "Nobody is in it" begins (6.5 s into the line); `house` the lights go out from 3 seconds; `dawn` "open the door" is said at about 4.9 seconds
- * into the line and the door opens in the picture at 10.4 seconds, so the line starts at 5.5 and "Mind the step" (5.9 s into the line) is said as the mist comes out.
+ * 6 seconds, as "Nobody is in it" begins (6.5 s into the line); `house` the lights go out from 3 seconds; `dawn` "open the door" is said at about 6.1 seconds
+ * into the line and the door opens in the picture at 10.4 seconds, so the line starts at 4.3 and "Mind the step" (7.5 s into the line) is said as the mist comes out.
  */
-export const LINE_AT = { hand: 0.8, bed: 0.3, house: 1.2, dawn: 5.5 };
+export const LINE_AT = { hand: 0.8, bed: 0.3, house: 1.2, dawn: 4.3 };
 
 /** The line written for a shot, or null when it has none. Total: an unknown shot gives null. */
 export function shotLine(shot) {
