@@ -36,10 +36,10 @@ export const SHOT_TEXT = {
  * have none: they are old film, and the stairs are scrubbed by the clock. A line is the speaker's own, never an Event line and never a clue.
  */
 export const SHOT_LINE = {
-  hand: { id: 'scene.hand-door.soft.1', speaker: 'whisper', text: 'That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it.' },
-  bed: { id: 'scene.bed.soft.1', speaker: 'whisper', text: 'I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit.' },
+  hand: { id: 'scene.hand-door.soft.1', speaker: 'whisper', text: 'That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait.' },
+  bed: { id: 'scene.bed.soft.1', speaker: 'whisper', text: 'I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway.' },
   house: { id: 'scene.lights-out.soft.1', speaker: 'whisper', text: 'One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely.' },
-  dawn: { id: 'scene.dawn-door.dry.1', speaker: 'keeper', text: 'The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out.' },
+  dawn: { id: 'scene.dawn-door.dry.1', speaker: 'keeper', text: 'The house is quiet, and I note its lamp has kept watch all night. Now the door opens to meet the morning. Mind the step.' },
 };
 
 /**
@@ -92,7 +92,7 @@ export const WANDER_SCENES = {
     clip: 'wander-chair-take1',
     shape: 'portrait',
     text: 'A kitchen in the morning. A coat on a pulled-out chair, and a cup of tea still steaming.',
-    line: { id: 'wander.chair.soft.1', speaker: 'whisper', text: 'The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I keep the kettle patient, in case of a quick return.' },
+    line: { id: 'wander.chair.soft.1', speaker: 'whisper', text: 'The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I shall wait.' },
     lineAt: 1.5,
   },
   promise: { clip: WANDER.scene, shape: 'landscape', text: WANDER.text, line: null, lineAt: null },

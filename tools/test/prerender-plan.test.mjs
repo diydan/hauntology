@@ -31,15 +31,15 @@ test('the character count is computed here, not copied: the spoken text plus the
   assert.equal(planPrerender({ manifest: lodgerOnly, lookup: nothingDone }).totals.chars, expected);
 });
 
-test('the whole manifest, nothing rendered: 527 files in 8 voices, 53,568 characters, about $1.34', () => {
+test('the whole manifest, nothing rendered: 527 files in 8 voices, 53,353 characters, about $1.33', () => {
   const p = planPrerender({ manifest, lookup: nothingDone });
   assert.equal(p.jobs.length, 527);
   assert.equal(p.rows.length, 8);
-  assert.equal(p.totals.chars, 53_568);
-  assert.equal(p.totals.usd, 1.3392);
+  assert.equal(p.totals.chars, 53_353);
+  assert.equal(p.totals.usd, 1.3338);
   const row = (v) => p.rows.find((r) => r.voice === v);
-  assert.deepEqual([row('inworld:Pippa').lines, row('inworld:Pippa').chars], [221, 23_363]);
-  assert.deepEqual([row('inworld:Ronald').lines, row('inworld:Ronald').chars], [240, 23_251]);
+  assert.deepEqual([row('inworld:Pippa').lines, row('inworld:Pippa').chars], [221, 23_183]);
+  assert.deepEqual([row('inworld:Ronald').lines, row('inworld:Ronald').chars], [240, 23_216]);
 });
 
 test('the character count carries each voice\'s own tag: [whisper] for Pippa, none for Ronald, [speak nervously] for the Lodger', () => {
@@ -144,8 +144,8 @@ test('CLI: the default is a dry run; it prints the table, says nothing was spent
     const r = run(['--out', dir]);
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /DRY RUN\. Nothing is spent, nothing is written\./);
-    assert.match(r.stdout, /Total\s+527\s+0\s+527\s+0\s+53,568\s+\$1\.3392/);
-    assert.match(r.stdout, /inworld:Pippa\s+221\s+0\s+221\s+0\s+23,363/);
+    assert.match(r.stdout, /Total\s+527\s+0\s+527\s+0\s+53,353\s+\$1\.3338/);
+    assert.match(r.stdout, /inworld:Pippa\s+221\s+0\s+221\s+0\s+23,183/);
     assert.deepEqual(readdirSync(dir), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

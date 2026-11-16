@@ -1461,17 +1461,17 @@
       ]
     },
     {
-      "key": "speech/lib/v1/cb1c29810618ea3f0ac0fa590e01dabc02ce6227a89cb0cb9b8c1a959f07add0",
+      "key": "speech/lib/v1/04854ba9976366fa1c5308daf000abc9aa40df1d45f3b068291ee30308460dde",
       "voice": "inworld:Pippa",
-      "spoken": "The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I keep the kettle patient, in case of a quick return.",
+      "spoken": "The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I shall wait.",
       "sources": [
         "wander.chair.soft.1"
       ]
     },
     {
-      "key": "speech/lib/v1/f82673a0a3ac9cbb0ceff51adec0b79684b91cc7c959a3b6251288d7d55d65eb",
+      "key": "speech/lib/v1/df5c27e6397241a1c65a9f5cbc2565e05a4520b003387cc216e1f0546f6d2bbd",
       "voice": "inworld:Pippa",
-      "spoken": "A letter, folded in three. A pair of gloves, set down just so. The breeze lifts one corner and puts it back, very politely. It is not for me to read.",
+      "spoken": "A letter, folded in three. A pair of gloves, set down just so. It is not for me to read.",
       "sources": [
         "wander.letter.soft.1"
       ]
@@ -1765,17 +1765,17 @@
       ]
     },
     {
-      "key": "speech/lib/v1/d8e31fb8af2a559e2eadd7aad2874ceb1ef674439a53ec3877cef091a7fcfa27",
+      "key": "speech/lib/v1/a743d6ae8300f07abac96c2f444623a9a00b330253bbd90f8150c3ea625cbdb0",
       "voice": "inworld:Pippa",
-      "spoken": "That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it.",
+      "spoken": "That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait.",
       "sources": [
         "scene.hand-door.soft.1"
       ]
     },
     {
-      "key": "speech/lib/v1/a865913860938708c57086f2baf7932badafde3eb97c27a7268dd131ecebeb82",
+      "key": "speech/lib/v1/1ace2d510556148d01091bf69201ddc947ec9cf8e3148f58f5030b03fa7b83e9",
       "voice": "inworld:Pippa",
-      "spoken": "I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit.",
+      "spoken": "I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway.",
       "sources": [
         "scene.bed.soft.1"
       ]
@@ -3733,9 +3733,9 @@
       ]
     },
     {
-      "key": "speech/lib/v1/22668ded78ffa6b19ff8ae4cd96f04b7cf6cfb07a5c1e6edfa111ec18f23515c",
+      "key": "speech/lib/v1/9abc5ece967a1d9f4f9f8be0088694f4f37fa248455aa20b877c39820ccde076",
       "voice": "inworld:Ronald",
-      "spoken": "The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out.",
+      "spoken": "The house is quiet, and I note its lamp has kept watch all night. Now the door opens to meet the morning. Mind the step.",
       "sources": [
         "scene.dawn-door.dry.1"
       ]

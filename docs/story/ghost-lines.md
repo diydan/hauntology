@@ -193,8 +193,8 @@ New 2026-11-16, in the storybook voice of `narration-style.md`. One line for eac
 | Id | Line |
 |---|---|
 | `wander.chimes.soft.1` | Do you hear that? A row of small bells, and not one in tune. I would not change a single one. |
-| `wander.chair.soft.1` | The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I keep the kettle patient, in case of a quick return. |
-| `wander.letter.soft.1` | A letter, folded in three. A pair of gloves, set down just so. The breeze lifts one corner and puts it back, very politely. It is not for me to read. |
+| `wander.chair.soft.1` | The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I shall wait. |
+| `wander.letter.soft.1` | A letter, folded in three. A pair of gloves, set down just so. It is not for me to read. |
 
 ## Greeting (kind not in the spec yet)
 

@@ -356,7 +356,7 @@ The Keeper's one picture line: the dawn shot (the detectives win). It is a scene
 
 | Id | Line |
 |---|---|
-| `scene.dawn-door.dry.1` | The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out. |
+| `scene.dawn-door.dry.1` | The house is quiet, and I note its lamp has kept watch all night. Now the door opens to meet the morning. Mind the step. |
 
 ## Whisper: scene (spoken, narration over a Reel shot)
 
@@ -364,8 +364,8 @@ New 2026-11-16, in the storybook voice of `narration-style.md`. One line for eac
 
 | Id | Line |
 |---|---|
-| `scene.hand-door.soft.1` | That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it. |
-| `scene.bed.soft.1` | I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit. |
+| `scene.hand-door.soft.1` | That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait. |
+| `scene.bed.soft.1` | I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway. |
 | `scene.lights-out.soft.1` | One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely. |
 
 ## Whisper: midnight (spoken) PROPOSED
