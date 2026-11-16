@@ -2,6 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { LINES, briefPhrase, memoryText, narrate, pick, voiceOfPreset } from "./scripted";
 import { HOOKS, makeSeeds } from "./seeds";
+import { replyChecksFor, validateGhostReply } from "./narration";
 import { makeRng } from "./rng";
 import { ANCHOR_IDS, ARCHETYPES, BANDS, BEARINGS, VOICES, type Directive, type Seed } from "./types";
 
@@ -123,5 +124,30 @@ describe("voiceOfPreset and the seeds", () => {
       expect(makeSeeds(makeRng(s))).toEqual(seeds);
     }
     expect(new Set(Array.from({ length: 40 }, (_, s) => makeSeeds(makeRng(s)).map((x) => x.archetype).join())).size).toBeGreaterThan(3);
+  });
+});
+
+describe("the scripted lines are in the horror manner (2026-11-16)", () => {
+  const MENACE = /\b(?:keep|kept|keeping|watch|watching|noticed|notices|counting|counts|waiting|wait|listens|listening|expecting|looking forward|fond|welcome|obliging|remember|remembers|attentive|in no hurry|have not stopped)\b/i;
+  const HARD = /\b(blood|bleed|gore|corpse|grave|knife|blade|rope|scream|shout|stupid|idiot|fool|will never leave|cannot leave|trapped|forever)\b/i;
+
+  it("every line passes the same reply check a model's words must pass, for its own kind of turn", () => {
+    for (const voice of VOICES) for (const kind of KINDS) for (const [i, line] of LINES[voice][kind].entries()) {
+      for (const bearing of BEARINGS) for (const band of BANDS) {
+        const directive: Directive = kind === "hint" ? { kind, bearing, band } : kind === "tease" ? { kind, band } : ({ kind } as Directive);
+        const text = narrate({ directive, voice, brief: BRIEF, seeds: [], r: [(i + 0.5) / 5, (i + 0.5) / 5] });
+        const r = validateGhostReply(text, replyChecksFor(directive));
+        expect(r.ok, `${voice} ${kind} ${i}: ${text} (${r.ok ? "" : r.reason})`).toBe(true);
+        if (kind !== "hint" && kind !== "tease") break;
+      }
+    }
+  });
+
+  it("every kind in each voice has at least two lines that keep, watch or wait for the visitor, and none says it outright or goes past a hard line", () => {
+    for (const voice of VOICES) for (const kind of KINDS) {
+      const lines = LINES[voice][kind];
+      expect(lines.filter((l) => MENACE.test(l)).length, `${voice} ${kind}`).toBeGreaterThanOrEqual(2);
+      for (const l of lines) expect(HARD.test(l), l).toBe(false);
+    }
   });
 });
