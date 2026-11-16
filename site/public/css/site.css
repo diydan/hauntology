@@ -441,7 +441,7 @@ footer .credits a{color:inherit;text-decoration:underline;text-underline-offset:
    exact and deadpan (centred chapter cards, figure numbers, counted lists). Colours are the design tokens: black page, brown panels, yellow first, green rare. */
 :root{--wood-2:#21170f;--wood-3:#2e2015;--leather:#6b4d33;--alarm-text:#f08a76}
 :focus-visible{outline-color:var(--amber)}
-.lead{font-family:var(--display);font-style:italic;font-size:clamp(1.18rem,2vw,1.38rem);line-height:1.45;color:var(--fog)}
+.lead{line-height:1.6}
 .rot{color:var(--amber)}
 .ic{background:var(--wood-2);color:var(--amber);border-radius:6px 14px 8px 16px/14px 6px 16px 8px}
 .mode li::before{background:var(--amber);border-radius:1px;rotate:45deg}
@@ -472,7 +472,7 @@ section::after{content:"";position:absolute;top:0;left:50%;width:9px;height:9px;
 footer{border-top:1px solid var(--line)}
 
 /* the sad ghost: a chapter mark */
-.sg{display:block;width:34px;height:46px;margin:0 auto 12px;color:var(--fog);fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.sg{display:block;width:27px;height:37px;margin:0 auto 12px;color:var(--fog);fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .sg .f{fill:currentColor;stroke:none}
 
 /* chapter cards: one centred plate at the head of each section */
@@ -483,7 +483,7 @@ section:nth-of-type(even) .chapter .sg{rotate:-6deg}
 .ch-no{color:var(--amber);letter-spacing:.22em;margin-bottom:12px}
 .chapter h2{max-width:none;margin-inline:auto;font-size:clamp(1.85rem,4.4vw,3rem);line-height:1.08}
 .chapter h2::after{content:"\00b7  \00b7  \00b7";display:block;margin-top:14px;color:var(--amber);letter-spacing:.35em;font-size:1.3rem;line-height:1}
-.chapter .lead{margin:14px auto 0;max-width:36ch}
+.chapter .lead{margin:14px auto 0;max-width:40ch;font-family:var(--display);font-style:italic;font-size:clamp(1.15rem,2vw,1.3rem);line-height:1.45}
 .chapter .lead+.lead{margin-top:10px}
 .sim .chapter,.sim .sec-head.chapter{max-width:46rem}
 #machine .chapter{max-width:50rem}
@@ -513,7 +513,7 @@ section:nth-of-type(even) .chapter .sg{rotate:-6deg}
 .note{border-left-color:var(--amber);font-family:var(--display);font-style:italic;font-size:1.08rem;margin-inline:auto;text-align:left}
 .coda{margin:0 0 6px;font-family:var(--display);font-style:italic;font-size:1.15rem;color:var(--bone)}
 .coda-wrap{text-align:center;padding-bottom:30px;margin-bottom:30px;border-bottom:1px solid var(--line)}
-footer .sg{margin:0 auto 10px;width:28px;height:38px;rotate:-5deg}
+footer .sg{margin:0 auto 10px;width:22px;height:30px;rotate:-5deg}
 footer .row{align-items:flex-start}
 .chapter .note{border-left:0;border-top:1px solid var(--line);padding:16px 0 0;margin:22px auto 0;text-align:center;max-width:46ch}
 
