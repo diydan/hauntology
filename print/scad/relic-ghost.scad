@@ -4,7 +4,7 @@
 // The ghost is the smooth, support-free body from tools/ghost-print/make-ghost-print.py (profile "relic": 0.68 x the printable ghost,
 // no flare, centred on its base), saved as print/reference/relic-ghost-body.stl. It stands on the standard Relic foot: a flat
 // Ø14.6 mm foot with a Ø6.1 mm socket for the token peg and a 45-degree corbel up to the body. The shoulders under the cloth are
-// 45-degree chamfers, and each eye is a deep socket (about 2.5 mm) to paint black. No sticker: the QR is on the token.
+// 45-degree chamfers, and each eye is a deep socket (about 2.5 mm) to paint black, 6.5 mm apart and high on the head. No sticker: the QR is on the token.
 // Print orientation: Flat on the foot (Z = 0), zero supports.
 // Not one of the six Relics the game knows (r1 to r6): it has no token text yet.
 

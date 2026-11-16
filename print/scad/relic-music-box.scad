@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Relic r1: Haunted Coffin-Casket Music Box (From-Scratch FDM Design)
-// Colour: Dark Iron (#262229) body — pairs with the Antique Brass `relic-music-box-lid`
+// Colour: Tarnished Silver (#c9c9d4) body — pairs with the Tarnished Silver `relic-music-box-lid`
 // Size: ~44.0 W (incl. +X skeleton key) x 26.8 D x 27.9 H mm (34.6 H mm when closed with lid, which sits 0.3 mm clear above the rim)
 // Sticker details: Front keyhole escutcheon pocket (16.0 x 7.0 x 0.4 mm) on -Y face (for 15.6 x 6.6 mm decal)
 // From-Scratch FDM & Tim Burton Design Choices:
@@ -275,4 +275,4 @@ module relic_music_box() {
   }
 }
 
-color(col_ink) relic_music_box();
+color(col_silver) relic_music_box();

@@ -98,10 +98,24 @@ svg.board { display: block; width: 100%; height: auto; touch-action: none; }
 .slot.empty { border: 2px dashed var(--line); background: transparent; }
 .dark { transition: opacity .6s ease; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-.cards a { display: block; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px; color: var(--fg); min-height: 96px; }
-.cards a b { display: block; font-size: 17px; margin-bottom: 4px; }
+.cards--tools { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.cards a { display: flex; flex-direction: column; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px; color: var(--fg); min-height: 96px; transition: border-color .15s ease, transform .15s ease; }
+.cards a:hover, .cards a:focus-visible { border-color: var(--accent); outline: none; }
+.cards a:active { transform: translateY(1px); }
+.cards a.accent-gold { border-color: #d4a84b; }
+.cards a.accent-ghost { border-color: #8fe3d4; }
+.cards a.accent-lab { border-color: #b9a6ff; }
+.cards a b { display: block; font-size: 17px; }
 .cards a small { display: block; }
-.tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 9px; background: var(--panel2); color: var(--muted); margin-right: 4px; }
+.cards a .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; padding-top: 6px; }
+.tag { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 9px; background: var(--panel2); color: var(--muted); }
+.menu { max-width: 980px; margin: 0 auto; }
+.menu-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; }
+.menu-nav a { display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 18px; background: var(--panel); border: 1px solid var(--line); color: var(--fg); font-size: 13px; font-weight: 500; }
+.menu-nav a:hover, .menu-nav a:focus-visible { border-color: var(--accent); outline: none; }
+.menu-sec { margin-top: 22px; }
+.menu-sec h2 { margin: 0 0 8px; }
+@media (prefers-reduced-motion: reduce) { .cards a { transition: none; } }
 .mono { font-family: ui-monospace, Menlo, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
 textarea.out { width: 100%; min-height: 160px; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 10px; font: 12px ui-monospace, Menlo, monospace; -webkit-user-select: text; user-select: text; }
 .meter { height: 18px; background: var(--panel2); border-radius: 9px; overflow: hidden; position: relative; }

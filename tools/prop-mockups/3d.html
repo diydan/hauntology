@@ -201,7 +201,7 @@
   <div class="summary-bar">
     <div class="stat"><strong>44 STLs</strong><span>All verified watertight, 2-manifold, support-free</span></div>
     <div class="stat"><strong>&le; 180 &times; 180 mm</strong><span>Fits Bambu A1 Mini, Prusa MINI+, Ender 3</span></div>
-    <div class="stat"><strong>5 Spool Colours</strong><span>Iron, Brass, Mint, Bone, Wood</span></div>
+    <div class="stat"><strong>6 Spool Colours</strong><span>Iron, Brass, Mint, Bone, Wood, Silver</span></div>
     <div class="stat"><strong>0.4 mm Pockets</strong><span>Recessed 1:1 SVG stickers never peel at edges</span></div>
     <div class="stat"><strong>SG90 + ESP32</strong><span>Built-in servo cradles, keyed horn recesses &amp; DevKitC V4 mounts</span></div>
   </div>
@@ -261,17 +261,18 @@ const SPOOLS = {
   brass:      { name: "Antique Brass",    bg: "#d4a84b", fg: "#181209" },
   mint:       { name: "Ectoplasm Mint",   bg: "#5ce6b8", fg: "#092118" },
   bone:       { name: "Bone / Ivory",     bg: "#e8dec8", fg: "#1b181f" },
+  silver:     { name: "Tarnished Silver", bg: "#c9c9d4", fg: "#181820" },
   wood:       { name: "Warm Wood",        bg: "#422818", fg: "#f5eadc" },
 };
 
 const RELICS = [
-  ["relic-music-box",    "iron",   "44.9 × 27.4 × 27.9 mm", "Relic r1 (body): From-scratch Dark Iron gothic coffin casket with 41° faceted pedestal flare, 6 corner buttresses, continuous front arch keyhole shield, 38° open-diamond bat-wing crank key, 5-chime comb on flush bed, octagonal drum, bevel gear & Ø14.6 mm foot / 6 mm socket."],
-  ["relic-music-box-lid","brass",  "42.1 × 28.5 × 9.0 mm",  "Relic r1 (lid): Contrasting Antique Brass mansard coffin lid printed upside-down with V-carved crown inlay, overhanging drip skirt + 6 gargoyle corner eaves, 4-rib slip-fit collar, finger-lift coves & underside 18.2×9.2 mm score pocket."],
+  ["relic-music-box",    "silver",   "44.9 × 27.4 × 27.9 mm", "Relic r1 (body): From-scratch Tarnished Silver gothic coffin casket with 41° faceted pedestal flare, 6 corner buttresses, continuous front arch keyhole shield, 38° open-diamond bat-wing crank key, 5-chime comb on flush bed, octagonal drum, bevel gear & Ø14.6 mm foot / 6 mm socket."],
+  ["relic-music-box-lid","silver",  "42.1 × 28.5 × 9.0 mm",  "Relic r1 (lid): Tarnished Silver mansard coffin lid printed upside-down with V-carved crown inlay, overhanging drip skirt + 6 gargoyle corner eaves, 4-rib slip-fit collar, finger-lift coves & underside 18.2×9.2 mm score pocket."],
   ["relic-wax-hand",     "bone",   "24.6 × 17.6 × 51.4 mm", "Relic r2: Sculpted anatomical palmistry hand with blended tendons, MCP knuckles, segmented fingers, fingernails, palm pocket & centre socket."],
   ["relic-locket",       "brass",  "31.5 × 18.0 × 50.0 mm", "Relic r3 (back bowl): Hinged oval locket stand with vaulted keepsake hollow, lower Ø2.15 mm filament hinge knuckle, clasp catch & centre socket."],
   ["relic-locket-lid",   "brass",  "33.7 × 35.4 × 5.3 mm",  "Relic r3 (front door): Separate hinged cameo lid with crooked gothic crown crest, coaxial Ø2.15 mm filament hinge bore, beaded pearls, snap-clasp & 16×22 mm cameo pocket."],
   ["relic-planchette",   "wood",   "28.8 × 18.4 × 43.5 mm", "Relic r4: Heart-shaped spirit-board pointer with twin crooked gothic upper horn curls pointing down on a short post, with magnifier oculus & 6 mm centre socket."],
-  ["relic-silver-key",   "brass" , "20.2 × 18.0 × 46.7 mm", "Relic r5: Gothic skeleton key with diamond pierced bow, shoulder thorns, skewed crown spire, collared stem, notched ward bit & centre connector."],
+  ["relic-silver-key",   "silver", "20.2 × 18.0 × 46.7 mm", "Relic r5: Gothic skeleton key with diamond pierced bow, shoulder thorns, skewed crown spire, collared stem, notched ward bit & centre connector."],
   ["relic-bell",         "brass",  "28.0 × 28.0 × 47.6 mm", "Relic r6: Flared Victorian service bell with solid flared body, turned handle & centre connector."],
   ["relic-token-pocket", "iron",   "43.6 × 43.6 × 9.0 mm",  "Universal 40×40 mm rounded token base with 4 splayed corner iron lug ears, rim V-notches, 0.4 mm top QR sticker pocket & Ø5.6 mm centre peg for the Relics' sockets (punch a 6 mm hole in the QR sticker)."],
 ];
@@ -294,8 +295,8 @@ const PROPS = [
   ["prop-01-lever-arm",       "iron",    "83.0 × 54.4 × 11.5 mm",  "Prop #1: 64 mm XZ vertical-sweep slotted fork push-arm (4.4 mm fork gap) with stepped 11.5 mm clear_fit SG90 horn boss & lid-kicker cam nose."],
   ["prop-03-dial-plate",      "iron",    "177.8 × 116.5 × 26.4 mm","Prop #3: Semi-circular gothic Haunt gauge plate with steeple crest, upper-left cusps, splayed plinth buttresses, Ø12.4 mm SG90 boss bore, ESP32 cradle & max-tab notches (8/10/12)."],
   ["prop-03-bezel-ring",      "brass",   "177.8 × 109.2 × 4.8 mm", "Prop #3: Snap-fit gothic arched bezel ring with steeple crest, upper-left cusps, 12 rivet bosses & threshold sight notches."],
-  ["prop-03-needle",          "brass",   "73.8 × 18.6 × 6.6 mm",   "Prop #3: 72 mm gnarled pointer needle with wrought-iron spiral spur & pierced spearhead, keyed single-arm SG90 horn recess & M2 screw bores."],
-  ["prop-03-max-tab",         "brass"  , "23.5 × 21.0 × 25.2 mm",  "Prop #3: Gothic-crowned clip-on MAX threshold marker tab for 8 (Quick), 10 (Classic), or 12 (Gentle)."],
+  ["prop-03-needle",          "silver",   "73.8 × 18.6 × 6.6 mm",   "Prop #3: 72 mm gnarled pointer needle with wrought-iron spiral spur & pierced spearhead, keyed single-arm SG90 horn recess & M2 screw bores."],
+  ["prop-03-max-tab",         "silver", "23.5 × 21.0 × 25.2 mm",  "Prop #3: Gothic-crowned clip-on MAX threshold marker tab for 8 (Quick), 10 (Classic), or 12 (Gentle)."],
   ["prop-05-plinth-2seat",    "iron",    "105.0 × 44.8 × 45.0 mm", "Prop #5: Modular 2-seat dovetail plinth (100.0 mm exact pitch, gothic lancet pier arches, crypt pilasters, winged seat bezels, open diffuser slot, 2 SG90 bays; print 3×)."],
   ["prop-05-flap-pawn",       "bone",    "41.8 × 77.2 × 10.0 mm",  "Prop #5: Crooked coffin-headstone portrait flap with shoulder ears, open bottom SG90 shaft bore & keyed anti-rotation horn slot on a 10 mm stem (print 6×)."],
   ["prop-05-resolve-insert",  "mint",    "36.4 × 14.0 × 2.4 mm",   "Prop #5: Translucent 3-pip Resolve window lens diffuser insert (print 6×)."],
@@ -313,8 +314,8 @@ const PROPS = [
   ["prop-15-relic-tray",      "iron",    "152.0 × 100.0 × 15.0 mm","Prop #15: Removable 6-bay Relic Token organizer tray with finger scoops & bay icon pockets."],
   ["prop-15-keypad-pod",      "wood",    "94.9 × 124.0 × 39.1 mm", "Prop #15: Angled gothic keypad console with side buttresses, scroll ears, 71×78 mm pocket for a standard 70×77 mm 3×4 keypad & 45° internal ceiling."],
   ["prop-20-wires-panel",     "iron",    "155.0 × 125.0 × 32.8 mm","Prop #20: Patchbay with gothic tapered corner pilasters, corner deck rivets, 5 left wire-anchor wells, 5 right terminal socket wells (14.3 mm), SET button, PAIRED LED & 45° ESP32 roof."],
-  ["prop-20-terminal-blocks", "brass",   "129.0 × 47.0 × 14.0 mm", "Prop #20: 5 terminal sockets + 5 wire anchors + 1 SET button bezel (11 parts)."],
-  ["prop-20-plug-heads",      "brass"  , "116.0 × 40.8 × 22.0 mm", "Prop #20: 5 octagonal coffin-knurled resistor plug barrels (1.9 mm nose wall, axial resistor grip cavity) + 5 snap-in back caps (10 parts)."],
+  ["prop-20-terminal-blocks", "silver",   "129.0 × 47.0 × 14.0 mm", "Prop #20: 5 terminal sockets + 5 wire anchors + 1 SET button bezel (11 parts)."],
+  ["prop-20-plug-heads",      "silver", "116.0 × 40.8 × 22.0 mm", "Prop #20: 5 octagonal coffin-knurled resistor plug barrels (1.9 mm nose wall, axial resistor grip cavity) + 5 snap-in back caps (10 parts)."],
 ];
 
 function renderCards(targetId, items) {
