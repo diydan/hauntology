@@ -2,7 +2,7 @@
 // Colour: Leather (#6b4d33)
 // Size: 174 W x 130 H x 59.4 D mm
 // Sticker details: Scalloped valance gold-trim groove & "THE SOLUTION" nameplate pocket (66 x 12 mm)
-// Hardware: Top-right SG90 servo pocket, top-left idler pulley post, curtain rail slots, backstage bezel cleats
+// Hardware: Top-right SG90 back plate (servo hangs behind the frame), top-left idler pulley post, curtain rail sockets, backstage bezel cleats
 // Print orientation: Flat on back edge (Z = 0, 174 x 130 mm footprint, 59.4 mm height), zero supports (1 connected component).
 
 include <_common.scad>
@@ -10,6 +10,19 @@ include <_common.scad>
 stage_w = 170.0;
 stage_h = 130.0; // Along Y in print orientation so back lies flat on Z = 0
 stage_d = 56.0;  // Along Z in print orientation
+
+// Curtain drive layout. ONE thread plane at thread_z (the idler groove, the middle of the capstan drum's two grooves and the panels'
+// cord eyes all sit on it), measured on the compiled STLs; see print/README.md (Prop #9). The SG90 hangs BEHIND the frame: its case
+// goes down through a hole in a plate on the back (Z = 0), its ears rest on top of the plate, and the capstan drum sits on the
+// servo's round boss inside the chamber. The SG90 heights above the ears (4.0 mm boss, 3.5 mm spline) are from memory: a 1 mm error
+// moves the capstan's grooves 1 mm against the idler and the eyes.
+thread_z    = 20.2;  // the thread plane
+plate_t     = 2.2;   // servo back plate; the ears' underside is at Z = plate_t, so the drum's middle is at plate_t + 18.0 = thread_z
+servo_x     = 66.0;  // X of the servo spline and the capstan drum axis
+servo_y     = 47.0;  // Y of the spline (the case runs along Y, the spline end toward +Y, 5.5 mm from the case's middle)
+idler_x     = -68.0; // X of the idler pulley post
+idler_y     = 49.5;  // Y of the idler post (0.5 mm lower than before: the wheel's top flange reached the Y = 58 wall)
+rail_z0     = 22.5;  // bottom of the 6 mm curtain rail bar, resting on the socket pockets' floor
 
 module prop_09_stage_frame() {
   difference() {
@@ -107,32 +120,28 @@ module prop_09_stage_frame() {
   }
 
   // 10. Internal Backstage Mounts (solidly bridged to the top/side frame walls and sitting on Z = 0!)
-  // a) Top-Right SG90 Curtain Servo Cradle at (60.5, 51.8, Z = 0..19.0; flanges run along X so entire 32.5 x 12.2 mm servo
-  //    stays below Z = 27.5 proscenium taper, above screen bezel Y <= 45.0, clear of curtain rail Y = 31.5, and inside X <= 80 / Y <= 58!)
-  translate([60.5, 51.8, 0])
+  // a) Top-Right SG90 Curtain Servo Back Plate (Z = 0..plate_t, X = 58..82, Y = 24.5..59, fused into the right and top walls).
+  //    The case (12.5 x 23.1 mm hole) goes down through it to the back; the ears (32.5 mm along Y) sit on top and take two M2 screws.
+  //    X >= 58 keeps 1 mm clear of the screen bezel (X <= 57); the drum (r 8.8 at Y = 47) clears the Y = 58 wall and the open panels.
   difference() {
-    union() {
-      chamfer_box(36.0, 13.0, 19.0, r = 2.0, ch_bot = 0.4, ch_top = 0.6);
-      // Solid structural webs into right outer wall (X = +17..+23) & top outer wall (Y = +4.5..+11.5)
-      translate([15.0, 4.0, 0])
-        chamfer_box(16.0, 15.0, 19.0, r = 1.5, ch_bot = 0.4, ch_top = 0.6);
-    }
-    translate([0, -0.1, 10.0])
-      cube([sg90_body_w, sg90_body_d, 20.5], center = true);
-    for (sx = [-1, 1])
-      translate([sx * sg90_hole_span / 2, -0.1, 8.0])
-        cylinder(h = 13.0, d = sg90_m2_pilot_d);
+    translate([58.0, 24.5, 0]) cube([24.0, 34.5, plate_t]);
+    translate([servo_x - sg90_body_d / 2, servo_y - 5.5 - sg90_body_w / 2, -0.1])
+      cube([sg90_body_d, sg90_body_w, plate_t + 0.2]);
+    for (sy = [-1, 1])
+      translate([servo_x, servo_y - 5.5 + sy * sg90_hole_span / 2, -0.1])
+        cylinder(h = plate_t + 0.2, d = sg90_m2_pilot_d);
   }
 
-  // b) Top-Left Idler Pulley Axle Boss (X = -68, Y = 50, Z = 0..31; clears X = -57 screen bezel & Y <= 35 curtain track)
-  translate([-68.0, 50.0, 0]) {
+  // b) Top-Left Idler Pulley Post: the wheel's groove (4.4 mm above its base) must sit on thread_z, so the boss is thread_z - 4.4 tall.
+  idler_boss_h = thread_z - 4.4;
+  translate([idler_x, idler_y, 0]) {
     hull() {
-      cylinder(h = 21.0, d1 = 14.0, d2 = 10.0);
-      translate([-12.0, 0, 0]) cube([6.0, 14.0, 21.0]);
-      translate([-4.0, 8.0, 0]) cube([14.0, 6.0, 21.0]);
+      cylinder(h = idler_boss_h, d1 = 14.0, d2 = 10.0);
+      translate([-12.0, 0, 0]) cube([6.0, 14.0, idler_boss_h]);
+      translate([-4.0, 8.0, 0]) cube([14.0, 6.0, idler_boss_h]);
     }
-    // 4.0 mm axle pin for 4.6 mm idler pulley bore (Z = 21..31)
-    cylinder(h = 31.0, d = 4.0);
+    // 4.0 mm axle pin for the 4.6 mm idler pulley bore: 10 mm above the boss, 1.6 mm above the wheel top
+    cylinder(h = idler_boss_h + 10.0, d = 4.0);
   }
 
   // c) Left & Right Curtain Rail Cleat Sockets (at X = +/-80, Y = 31.5, Z = 0..34, clears open curtains X <= 74.5!)
@@ -140,9 +149,9 @@ module prop_09_stage_frame() {
     translate([sx * (stage_w / 2 - 4.5), 31.5, 0])
     difference() {
       chamfer_box(8.0, 12.0, 34.0, r = 1.4, ch_bot = 0.4, ch_top = 0.4);
-      // Pocket at Z = 20..35 that receives the ends of the 158 x 8 x 6 mm curtain rail bar
-      translate([-sx * 2.0, 0, 27.5])
-        cube([7.0, 8.6, 15.0], center = true);
+      // Pocket Z = rail_z0..35 that receives the ends of the 158 x 8 x 6 mm curtain rail bar (the floor sets the bar at rail_z0)
+      translate([-sx * 2.0, 0, (rail_z0 + 35.0) / 2])
+        cube([7.0, 8.6, 35.0 - rail_z0], center = true);
     }
   }
 
