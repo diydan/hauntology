@@ -211,7 +211,7 @@ export function predictDirective(plan, { action, pose, view, idle, sinceProgress
 export const NARRATOR_REPLY_MAX = 4000;
 /** The game gives a model call this long (`CALL_TIMEOUT_MS` in `api/src/play/narrate.ts`); a call that took as long finished after the game stopped waiting, and may be counted with the next turn. */
 export const CALL_TIMEOUT_MS = 6000;
-export const REJECTION_REASONS = ['call_failed', 'refused', 'unusable', 'cut_short', 'empty', 'too_long', 'link', 'markup', 'control', 'out_of_fiction', 'real_world', 'not_english', 'digits', 'too_many_sentences', 'too_few_sentences', 'wrong_way', 'pet_name', 'rules_read_out'];
+export const REJECTION_REASONS = ['call_failed', 'refused', 'unusable', 'cut_short', 'empty', 'too_long', 'link', 'markup', 'control', 'out_of_fiction', 'real_world', 'not_english', 'digits', 'too_many_sentences', 'too_many_words', 'too_few_sentences', 'wrong_way', 'pet_name', 'rules_read_out'];
 
 /** One recorded call, with the reason the game would refuse it (`ok` when it would not). `directive` is the one the reply was checked against; `system` the instructions of the voice. */
 export function explainCall(plan, call, { directive, system, history = [] }) {
