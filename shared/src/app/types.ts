@@ -37,6 +37,8 @@ export type ShellFlags = {
   liveEnabled: boolean;
   /** `PARTY_ENABLED`: a Party Room may be made, a solo case included. Off hides "Play a case"; Wander stays. */
   partyEnabled: boolean;
+  /** The ghost's words may come from an AI model: a narrator exists (the `AI` binding and a gateway are set) and its kill switch (`GHOST_NARRATION_ENABLED`) is not off. The Chat says so beside the text box only then (ghost-engine Requirement 2.4). */
+  ghostModel: boolean;
 };
 
 export type CapabilityReason = "kill_switch" | "day_cap" | "total_cap" | "quota_image" | "quota_world";

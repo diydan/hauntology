@@ -26,7 +26,7 @@ Draw or upload any place (one you miss, one you love, or one you made up), walk 
 ## Principles (these override convenience)
 1. **Never spend without consent.** No paid upstream call (World Labs, Workers AI text, vision, moderation or image, Cloudflare Images) unless the user confirmed and the SpendGuard reserved quota.
 2. **Never dead-end.** Gallery worlds, preset ghosts and scripted ghost lines mean a judge can finish the whole experience with zero quota and zero LLM.
-3. **Gentle haunting.** Melancholy and wonder, not gore. No death-circumstance prompts. No real people and no real events or news at a place. Photosensitivity-safe.
+3. **Gentle haunting.** Melancholy and wonder, not gore. It is horror, told calmly (a deadpan storybook narrator, a moonlit tenderness, an exact dry formality), and the ghost's menace is aimed at the visitor by hint and politeness, implied and never carried out: dread from small things that are slightly wrong, never from gore, harm done or described, insults or a jump scare (`house-style.md`, `ghost-safety.md`). No death-circumstance prompts. No real people and no real events or news at a place. Photosensitivity-safe.
 4. **Personal photos are private.** Strip metadata, short retention, unguessable ids, no analytics.
 5. **Honest scope.** Worlds are static; the ghost is a billboard sprite; the pyramid is an optical illusion, not a true hologram. Say so in UI copy where it matters.
 6. **Secrets stay on the server.** In Party Mode no hidden card, solution or private note is ever sent to a screen or prompt that should not see it.

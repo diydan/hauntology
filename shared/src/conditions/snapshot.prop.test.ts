@@ -7,6 +7,9 @@ import { weatherRequestFor } from "./memory-day";
 import { normalizePlace } from "./place";
 import { ConditionsSnapshotSchema, type ConditionsChoice } from "./types";
 
+/** 100 games of up to a dozen steps each, with a fake clock and timers: about 3 to 5 seconds, which is the default limit of 5, so it flaked on a busy machine (one run in three). The work is fixed by the seed, so this is room, not a retry. */
+const SLOW_MS = 30_000;
+
 const PLACES = [
   { lat: 51.50735, lon: -0.127758, tz: "Europe/London", label: "London" },
   { lat: 48.8566, lon: 2.3522, tz: "Europe/Paris", label: "Paris" },
@@ -59,7 +62,7 @@ describe("Property 4: one frozen snapshot per game, one call, cached 15 minutes"
       }),
       propParams(),
     );
-  });
+  }, SLOW_MS);
 });
 
 type Failure = Behaviour | "disabled" | "no_place";
@@ -93,7 +96,7 @@ describe("Property 5: a timeout or failure falls back to the default", () => {
       }),
       propParams(),
     );
-  });
+  }, SLOW_MS);
 
   it("with no Place and conditions on or off, the Time of Day depends only on the host's hour", async () => {
     await fc.assert(
@@ -104,5 +107,5 @@ describe("Property 5: a timeout or failure falls back to the default", () => {
       }),
       propParams(),
     );
-  });
+  }, SLOW_MS);
 });

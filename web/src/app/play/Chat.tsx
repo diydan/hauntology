@@ -16,19 +16,21 @@ import type { VoiceUi } from "./voice";
 
 const WHO: Record<"you" | "ghost" | "system", string> = { you: "You", ghost: "Ghost", system: "Note" };
 
-/** One line, under the text box: the words a visitor types may go to a model (ghost-engine 6.1; `ghost-safety.md`). It says so where they type. */
+/** One line, under the text box: the words a visitor types may go to a model (ghost-engine Requirement 2.4; `ghost-safety.md`). It says so where they type, and only when the server says a model is really on (`flags.ghostModel`), so it never tells a visitor something that is not so. */
 export const MODEL_NOTE = "What you type may be sent to an AI model (Claude Haiku) to help word the ghost's replies.";
 
 /** Shown on the stage before the ghost has said anything. */
 export const STAGE_WAITING = "Press a button, or say something.";
 
 export function Chat({
-  ui, voice, voiceAvailable, ghost, onSubmit, onClose, onSpeak, onPress, onRelease,
+  ui, voice, voiceAvailable, modelOn, ghost, onSubmit, onClose, onSpeak, onPress, onRelease,
 }: {
   ui: PlayUi;
   voice: VoiceUi;
   /** `flags.voiceEnabled`: when false the voice controls are not shown at all. */
   voiceAvailable: boolean;
+  /** `flags.ghostModel`: the ghost's words may come from an AI model. Only then is the note about typed words shown. */
+  modelOn: boolean;
   /** Who the visitor is talking to: a name, a portrait and the Speaker's colour. */
   ghost: GhostFace;
   onSubmit: (input: { text: string } | { button: QuickButton }) => void;
@@ -112,11 +114,11 @@ export function Chat({
           <label className="ui-field-label" htmlFor="chat-input">Say something</label>
           <input
             className="ui-input" id="chat-input" ref={input} type="text" value={text} maxLength={MAX_INPUT_CHARS} autoComplete="off"
-            aria-describedby="chat-model-note"
+            {...(modelOn ? { "aria-describedby": "chat-model-note" } : {})}
             onChange={(e) => setText(e.target.value)}
           />
         </div>
-        <p className="ui-note" id="chat-model-note" data-model-note>{MODEL_NOTE}</p>
+        {modelOn ? <p className="ui-note" id="chat-model-note" data-model-note>{MODEL_NOTE}</p> : null}
         <button className="ui-button ui-button--primary" type="submit" disabled={waiting || text.trim() === ""}>
           Send
         </button>

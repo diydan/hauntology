@@ -70,6 +70,8 @@ export default function Play() {
   const voiceUi = useSyncExternalStore(voice.subscribe, voice.getSnapshot, voice.getSnapshot);
   const announce = useAnnounce();
   const voiceAvailable = boot.status === "ready" && boot.session.flags.voiceEnabled;
+  // The note that typed words may go to a model is shown only when the server says one is on.
+  const modelOn = boot.status === "ready" && boot.session.flags.ghostModel;
 
   useEffect(() => {
     void controller.begin();
@@ -208,7 +210,7 @@ export default function Play() {
       </main>
       {chatOpen ? (
         <Chat
-          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} ghost={ghost}
+          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} modelOn={modelOn} ghost={ghost}
           onSubmit={(input) => {
             voice.unlock();
             void controller.submit(input);

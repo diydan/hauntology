@@ -46,6 +46,8 @@ export function parseArchive(json: unknown, hour: number): RawWeather | null {
 
 /** At most five Places from a city search answer, each rounded to two decimals, with a label made of the name, the region and the country; an answer with no results is an empty list. `null` when it is not an answer. */
 export function parseGeocode(json: unknown): Place[] | null {
+  // The service says a refused request as `{ error: true, reason }` (it comes with a 400, which the caller already refuses); an answer with no `results` and no `error` is a search that found nothing.
+  if (typeof json === "object" && json !== null && (json as { error?: unknown }).error === true) return null;
   const r = GeocodeSchema.safeParse(json);
   if (!r.success) return null;
   return normalizeMatches(

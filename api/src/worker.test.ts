@@ -136,6 +136,8 @@ describe("worker", () => {
         const c = ctx().ctx;
         const r0 = await worker.fetch(new Request(`${ORIGIN}/api/session`), env, c);
         const who = { Cookie: (r0.headers.get("Set-Cookie") as string).split(";")[0] as string, Origin: ORIGIN };
+        // What the Chat is told: the model is on only when the game really has a narrator.
+        const ghostModel = ((await r0.clone().json()) as { flags: { ghostModel: boolean } }).flags.ghostModel;
         const { verifySession } = await import("@hauntology/shared/session-cookie");
         const sid = (await verifySession(who.Cookie.slice(who.Cookie.indexOf("=") + 1), SECRET, Math.floor(Date.now() / 1000)))?.sid;
         await jobs.get("w-mine").fetch("https://world-job/record", { method: "PUT", body: JSON.stringify({ id: "w-mine", kind: "user", ownerSid: sid, status: "ready", manifest: sampleManifest("w-mine") }) });
@@ -144,7 +146,7 @@ describe("worker", () => {
         vi.setSystemTime(Date.now() + 2000);
         const turn = (await (await call(`/api/play/${started.playId}/turn`, { input: { button: "look" }, pose: { pos: started.view.anchors[0]!.pos, yaw: 0 } })).json()) as { reply: { text: string; scripted: boolean }; view: { journal: Array<{ text: string }> } };
         const quota = (await (await call("/api/quota")).json()) as { llm?: number };
-        return { turn, seen, quota, spendHeld: spend.data.size };
+        return { turn, seen, quota, ghostModel, spendHeld: spend.data.size };
       } finally {
         vi.useRealTimers();
       }
@@ -160,6 +162,7 @@ describe("worker", () => {
       expect(Object.keys(r.seen[0]!.input).sort()).toEqual(["max_tokens", "messages", "system", "thinking"]);
       expect(r.seen[0]!.input).toMatchObject({ max_tokens: 220, thinking: { type: "disabled" } });
       expect(r.quota.llm).toBe(39); // 40 for a visitor, one taken
+      expect(r.ghostModel).toBe(true); // the Chat says typed words may go to a model
     });
 
     it("speaks only scripted lines, and calls no model, without a gateway, without the binding, or with the kill switch on", async () => {
@@ -169,6 +172,7 @@ describe("worker", () => {
         expect(r.turn.reply.text, JSON.stringify(extra)).not.toBe(REPLY);
         expect(r.seen, JSON.stringify(extra)).toHaveLength(0);
         expect(r.quota.llm, JSON.stringify(extra)).toBe(40);
+        expect(r.ghostModel, JSON.stringify(extra)).toBe(false); // nothing can go to a model, so the Chat does not say so
       }
     });
   });

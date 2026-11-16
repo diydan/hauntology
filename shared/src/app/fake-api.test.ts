@@ -28,7 +28,7 @@ function makeWorld(b: FakeBackend, now: number, turnstile?: string): string {
 describe("session, quota and Gallery", () => {
   it("starts with an empty Session, the tech.md session caps and the world switch on", () => {
     const b = createFakeBackend();
-    expect(value(b.session(0))).toEqual({ ackNotice: false, flags: { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true } });
+    expect(value(b.session(0))).toEqual({ ackNotice: false, flags: { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false } });
     expect(value(b.quota(0))).toEqual({ world: 2, image: 8, llm: 40, tts: 40, stt: 20, live: 30 });
   });
 

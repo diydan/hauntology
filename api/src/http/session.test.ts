@@ -2,6 +2,9 @@ import { SESSION_TTL_SEC, verifySession } from "@hauntology/shared/session-cooki
 import { describe, expect, it } from "vitest";
 import { createApp, type AppOptions } from "../app";
 import type { Bindings } from "./env";
+import { MemoryPlaySessions } from "../play/memory";
+import type { Narrator } from "../guarded/workersai/narrator";
+import { DEFAULT_CAPS, MemorySpendGuard } from "../worlds/fakes";
 import { flagsFrom } from "./flags";
 import { SESSION_COOKIE, forgetWorld, requireSession, setLastPlay, setLastWorld } from "./session";
 
@@ -40,7 +43,7 @@ describe("GET /api/session", () => {
     const { call } = setup();
     const res = await call("/api/session");
     expect(res.status).toBe(200);
-    expect(await json(res)).toEqual({ ackNotice: false, flags: { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true } });
+    expect(await json(res)).toEqual({ ackNotice: false, flags: { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false } });
     const sc = setCookie(res) as string;
     expect(sc).toContain(`${SESSION_COOKIE}=`);
     expect(sc).toMatch(/HttpOnly/i);
@@ -215,7 +218,7 @@ describe("flags", () => {
 
   it("reports what SpendGuard says once it is wired in", async () => {
     const { call } = setup({ spend: () => ({ dayCapReached: true, totalCapReached: false, killed: true }) });
-    expect((await json(await call("/api/session"))).flags).toEqual({ worldGenEnabled: false, dayCapReached: true, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true });
+    expect((await json(await call("/api/session"))).flags).toEqual({ worldGenEnabled: false, dayCapReached: true, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false });
   });
 
   it("reports the voice switches: voice on unless VOICE_ENABLED says off, live off unless VOICE_LIVE_ENABLED says on", () => {
@@ -225,7 +228,7 @@ describe("flags", () => {
     for (const [value, expected] of [["true", true], ["1", true], ["ON", true], ["false", false], ["", false], ["yes", false]] as const) {
       expect(flagsFrom({ VOICE_LIVE_ENABLED: value }).liveEnabled, JSON.stringify(value)).toBe(expected);
     }
-    expect(flagsFrom(undefined)).toMatchObject({ voiceEnabled: true, liveEnabled: false, partyEnabled: true });
+    expect(flagsFrom(undefined)).toMatchObject({ voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false });
   });
 
   it("reports whether Party Rooms may be made: on unless PARTY_ENABLED says off", () => {
@@ -237,9 +240,34 @@ describe("flags", () => {
   });
 
   it("flagsFrom treats a missing environment as everything on", () => {
-    expect(flagsFrom(undefined)).toEqual({ worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true });
+    expect(flagsFrom(undefined)).toEqual({ worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false });
     expect(flagsFrom({ WORLD_GEN_ENABLED: "off" }, { dayCapReached: false, totalCapReached: true, killed: false })).toEqual({
-      worldGenEnabled: false, dayCapReached: false, totalCapReached: true, voiceEnabled: true, liveEnabled: false, partyEnabled: true,
+      worldGenEnabled: false, dayCapReached: false, totalCapReached: true, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false,
     });
+  });
+});
+
+describe("the ghostModel flag: whether the ghost's words may come from an AI model", () => {
+  const sessions = new MemoryPlaySessions(() => NOW_MS);
+  const narrator = { narrate: async () => ({ ok: false }) } as unknown as Narrator;
+  const spend = new MemorySpendGuard({ ...DEFAULT_CAPS }, () => NOW_MS);
+  const flag = async (options: AppOptions = {}) => ((await json(await setup(options).call("/api/session"))).flags as { ghostModel: boolean }).ghostModel;
+
+  it("is on only for a game that has a narrator and its switch on", async () => {
+    expect(await flag({ play: { sessions, narration: { narrator, spend, enabled: true } } })).toBe(true);
+  });
+
+  it("is off with the kill switch, with no narrator, with no narration at all, and with no games at all", async () => {
+    expect(await flag({ play: { sessions, narration: { narrator, spend, enabled: false } } })).toBe(false);
+    expect(await flag({ play: { sessions, narration: { narrator: null, spend, enabled: true } } })).toBe(false);
+    expect(await flag({ play: { sessions } })).toBe(false);
+    expect(await flag({})).toBe(false);
+  });
+
+  it("flagsFrom says it only when told so, and never from the environment", () => {
+    expect(flagsFrom(undefined, undefined, { ghostModel: true }).ghostModel).toBe(true);
+    expect(flagsFrom(undefined, undefined, { ghostModel: false }).ghostModel).toBe(false);
+    expect(flagsFrom(undefined, undefined, {}).ghostModel).toBe(false);
+    expect(flagsFrom({ AI_GATEWAY_ID: "default", GHOST_NARRATION_ENABLED: "true" } as Bindings).ghostModel).toBe(false);
   });
 });
