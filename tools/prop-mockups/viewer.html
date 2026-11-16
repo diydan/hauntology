@@ -105,7 +105,7 @@ const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics',
 const G0 = 'Core game pieces', G1 = '#1 Ghost in the box', G3 = '#3 Haunt needle', G5 = '#5 Haunting flipper',
       G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board', GR = 'Reference (not printed)';
 const PARTS = [
-  ['relic-music-box',   'Relic r1 music box',      G0, 'wood',       'S', 1],
+  ['relic-music-box',   'Relic r1 music box',      G0, 'crimson',    'S', 1],
   ['relic-music-box-lid','Relic r1 music box lid', G0, 'brass',      'S', 1],
   ['relic-wax-hand',    'Relic r2 wax hand',       G0, 'bone',       'S', 1],
   ['relic-locket',      'Relic r3 locket',         G0, 'brass',      'S', 1],
@@ -223,10 +223,11 @@ const ASSEMBLIES = [
       const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell'], out = [];
       rel.forEach((r, i) => {
         const s = S(r);
-        out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [i * 48 + (40 - s[0]) / 2, (40 - s[1]) / 2, 6], { ex: [0, 0, 25] }));
+        const bx = i * 48 + (40 - s[0]) / 2, by = (40 - s[1]) / 2;
+        out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [bx, by, 6], { ex: [0, 0, 25] }));
         if (r === 'relic-music-box') {
           const l = S('relic-music-box-lid', FLIP);
-          out.push(P('relic-music-box-lid', [i * 48 + (40 - s[0]) / 2 + 0.1, (40 - s[1]) / 2 + 0.6, 6 + s[2] - 2.4], { rot: FLIP, ex: [0, 0, 40] }));
+          out.push(P('relic-music-box-lid', [bx - 1.69, by - 0.27, 6 + s[2] - 2.50], { rot: FLIP, ex: [0, 0, 40] }));
         }
         if (r === 'relic-locket') {
           const l = S('relic-locket-lid', STAND);

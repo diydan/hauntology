@@ -1,81 +1,153 @@
-// Hauntology Tabletop Print Kit — Relic r1: Victorian Music Box Lid (Ground-Up FDM Print Design)
-// Colour: Antique Brass (#e0a43a / #d4a84b) — contrasts cleanly with Warm Wood `relic-music-box`
-// Size: 32.4 W x 24.4 D x 8.2 H mm (25.4 W x 17.4 D x 3.2 H closed reveal above casket rim)
-// Mates closed onto `relic-music-box.stl` at `translate([0, 0, 34.8]) rotate([180, 0, 0])`:
-//   - Outer cornice skirt (32.4 x 24.4 mm) seats flush on the Z = 29.0 mm casket crown (top at Z = 34.8 mm)
-//   - Self-centering 4-rib compliant snap collar (23.6 x 15.6 mm main + 4x 0.28 mm crush-detent ribs ->
-//     0.12 mm/side kiss-fit at 4 low-friction points inside the 24.4 x 16.4 mm well) never binds across tolerances!
-//   - Hollow vaulted brass dome clears all <= 26.1 mm drum/comb hardware by >= 5.5 mm when shut
-//   - Symmetric in X and Y so it fits seamlessly either way; left/right thumb-lift finger coves at seam
-// Sticker details: Recessed 0.4 mm inner lid song/score pocket (18.2 x 9.2 mm for 17.6 x 8.6 mm decal) facing UP
-// Print orientation: Flat upside-down on its coffered crown at Z = 0 (>380 mm² contact, zero supports, <= 42 deg).
+// Hauntology Tabletop Print Kit — Relic r1: Haunted Coffin-Casket Lid (From-Scratch FDM Design)
+// Colour: Antique Brass (#d4a84b) — rich contrast against Crimson `relic-music-box` casket body
+// Size: ~41.2 W x 28.4 D x 10.6 H mm (outer eaves overlap rim to Z_world = 26.8 mm; peak at Z_world = 34.4 mm)
+// Mates closed onto `relic-music-box.stl` at `translate([0, 0, 34.4]) rotate([180, 0, 0])`:
+//   - Y-mirrored hexagonal gothic coffin mansard roof so all asymmetric prow/shoulder/apse angles match 1:1
+//   - Overhanging brass eaves drip skirt (Z_lid = 6.4 .. 7.4 -> Z_world = 27.0 .. 28.0) with +0.45 mm/side
+//     radial clearance outside body cornice (+0.30 vs +0.75) + 6 pointed gargoyle corner eaves to Z_world = 26.7
+//   - Inner shelf (Z_lid = 6.4 -> Z_world = 28.0) provides 0.10 mm clean nominal shadow seat over Z_body = 27.9
+//   - Self-centering 45-deg chamfered inner coffin plug collar (0.45 mm/side free clearance +
+//     4 normal-aligned guide/friction ribs at 0.10 mm nominal slip fit)
+//   - Recessed 0.45 mm 45-deg V-carved coffin frame & diamond motif in top crown (prints face-down support-free)
+//   - Upward-facing 0.4 mm recessed inner lid song-score pocket (18.2 x 9.2 mm for 17.6 x 8.6 mm decal)
+// Print orientation: Flat upside-down on its gothic coffin roof crown at Z = 0 (>260 mm² contact, zero supports).
 
 include <_common.scad>
+
+// Y-mirrored (`y -> -y`) relative to `coffin_box_2d` so `rotate([180, 0, 0])` mates every corner 1:1!
+module coffin_lid_2d(scale_xy = 1.0, extra = 0, r = 1.4) {
+  pts = [
+    [-13.0 * scale_xy, -12.5 * scale_xy],  // lands at +12.5 (back-left crypt vertex)
+    [ 13.0 * scale_xy, -12.5 * scale_xy],  // lands at +12.5 (back-right crypt vertex)
+    [ 18.4 * scale_xy,  -1.5 * scale_xy],  // lands at +1.5 (right gothic coffin shoulder)
+    [ 11.2 * scale_xy,  12.5 * scale_xy],  // lands at -12.5 (front-right prow)
+    [-11.2 * scale_xy,  12.5 * scale_xy],  // lands at -12.5 (front-left prow)
+    [-18.4 * scale_xy,  -1.5 * scale_xy]   // lands at +1.5 (left gothic coffin shoulder)
+  ];
+  offset(delta = extra, chamfer = true)
+    offset(r = r) offset(r = -r)
+      polygon(pts);
+}
 
 module relic_music_box_lid() {
   difference() {
     union() {
-      // 1. Flat Coffered Brass Crown on build plate (26.6 x 18.6 mm -> >380 mm² bed contact at Z = 0)
-      chamfer_box(26.6, 18.6, 1.3, r = 2.8, ch_bot = 0.4, ch_top = 0);
-
-      // 2. Stepped 42-deg Victorian Dome Flare outward to Cornice Rim (Z = 0.8 .. 5.8, <= 42 deg at corners!)
-      hull() {
-        translate([0, 0, 0.8]) linear_extrude(height = 0.2) rrect2d(26.6, 18.6, r = 2.8);
-        translate([0, 0, 5.0]) linear_extrude(height = 0.8) rrect2d(32.4, 24.4, r = 3.4);
-      }
-      // Subtle Tim Burton gothic corner lugs along outer cornice corners (Z = 1.4 .. 5.8, clear of well!)
-      for (sx = [-1, 1], sy = [-1, 1]) {
+      // 1. Flat Coffin Crown Slab on build plate at Z = 0..1.1 (>320 mm² flat bed contact, zero supports)
+      translate([0, 0, 0])
         hull() {
-          translate([sx * 12.2, sy * 8.2, 1.4]) cylinder(h = 0.6, d = 2.4);
-          translate([sx * 15.2, sy * 11.2, 5.0]) cylinder(h = 0.8, d = 3.0);
+          linear_extrude(height = 0.2) coffin_lid_2d(scale_xy = 1.00, extra = -3.6);
+          translate([0, 0, 0.35]) linear_extrude(height = 0.85) coffin_lid_2d(scale_xy = 1.00, extra = -3.3);
+        }
+
+      // 2. Uniform 42.5-deg Mansard Gothic Coffin Roof Flare to Cornice & Overhanging Drip Skirt (Z = 0.9 .. 7.4)
+      hull() {
+        translate([0, 0, 0.9]) linear_extrude(height = 0.2) coffin_lid_2d(scale_xy = 1.00, extra = -3.3);
+        translate([0, 0, 6.2]) linear_extrude(height = 0.4) coffin_lid_2d(scale_xy = 1.00, extra = 1.75);
+      }
+      // Vertical overhanging eaves wall wrapping around upper body rim (Z_lid = 6.2 .. 7.4 -> Z_world = 27.0..28.2)
+      translate([0, 0, 6.2])
+        linear_extrude(height = 1.2)
+          coffin_lid_2d(scale_xy = 1.00, extra = 1.75);
+
+      // 3. Six Tim Burton Gothic Corner Gargoyle Eave Spurs (<= 42-deg flare + downward tips to Z = 7.7)
+      //    Mirrored Y to match Y-mirrored `coffin_lid_2d` vertices
+      corners = [
+        [-12.4, -11.9], [ 12.4, -11.9],
+        [ 17.8,  -1.5], [ 10.6,  11.9],
+        [-10.6,  11.9], [-17.8,  -1.5]
+      ];
+      for (i = [0 : len(corners) - 1]) {
+        pt = corners[i];
+        skew = (i % 2 == 0) ? 0.35 : -0.35;
+        hull() {
+          translate([pt[0] * 0.80, pt[1] * 0.80, 1.3]) cylinder(h = 0.6, d = 2.2);
+          translate([pt[0] * 1.09 + skew, pt[1] * 1.09, 6.0]) cylinder(h = 1.2, d = 2.6);
+          translate([pt[0] * 1.11 + skew, pt[1] * 1.11, 7.6]) cylinder(h = 0.2, d = 1.0);
         }
       }
 
-      // 3. Underside Locating Collar with 45-deg Lead-In & 4 Compliant Friction-Click Ribs (Z = 5.8 .. 8.2)
-      //    Main collar is 23.6 x 15.6 mm (0.40 mm/side free clearance inside 24.4 x 16.4 well -> corners never jam!)
-      translate([0, 0, 5.7])
-        chamfer_box(23.6, 15.6, 2.5, r = 1.8, ch_bot = 0, ch_top = 0.7);
+      // 4. Underside Self-Centering Coffin Plug Collar (Z = 6.2 .. 9.0 -> Z_world = 25.4 .. 28.2)
+      //    Body pit wall at extra = -2.5; collar outer wall at extra = -2.95 -> 0.45 mm/side free clearance
+      translate([0, 0, 6.2])
+        hull() {
+          linear_extrude(height = 1.9) coffin_lid_2d(scale_xy = 1.00, extra = -2.95, r = 1.0);
+          translate([0, 0, 2.6]) linear_extrude(height = 0.2) coffin_lid_2d(scale_xy = 1.00, extra = -3.75, r = 0.8);
+        }
 
-      //    Four 3.2 mm wide smooth vertical crush-detent ribs reaching 24.12 x 16.12 mm (0.14 mm/side kiss-fit)
+      // 5. Four Normal-Aligned Slip-Detent Guide Ribs (protrude to extra = -2.60 -> 0.10 mm clear inside -2.5 pit)
+      //    Front prow (+Y_lid = +10.0 pit wall) & Back apse (-Y_lid = -10.0 pit wall)
+      for (ry = [-9.62, 9.62]) {
+        hull() {
+          translate([-1.3, ry, 6.4]) cylinder(h = 1.7, r = 0.28);
+          translate([ 1.3, ry, 6.4]) cylinder(h = 1.7, r = 0.28);
+          translate([ 0.0, ry, 8.6]) cylinder(h = 0.1, r = 0.08);
+        }
+      }
+      //    Left & right angled back-cheek flats (edge [+-13.0, -12.5] -> [+-18.4, -1.5], exact inward normal)
+      //    Pit wall delta=-2.5; rib center delta=-2.86, r=0.26 -> reaches -2.60 (0.10 mm crisp clearance)
       for (sx = [-1, 1]) {
         hull() {
-          for (yy = [-1.2, 1.2]) {
-            translate([sx * 11.78, yy, 5.8]) cylinder(h = 1.9, r = 0.28);
-            translate([sx * 11.45, yy, 5.8]) cylinder(h = 1.9, r = 0.28);
-            translate([sx * 11.62, yy, 8.0]) cylinder(h = 0.1, r = 0.08);
-          }
-        }
-      }
-      for (sy = [-1, 1]) {
-        hull() {
-          for (xx = [-1.2, 1.2]) {
-            translate([xx, sy * 7.78, 5.8]) cylinder(h = 1.9, r = 0.28);
-            translate([xx, sy * 7.45, 5.8]) cylinder(h = 1.9, r = 0.28);
-            translate([xx, sy * 7.62, 8.0]) cylinder(h = 0.1, r = 0.08);
-          }
+          translate([sx * (13.133 - 0.53), -5.740 - 1.08, 6.4]) cylinder(h = 1.7, r = 0.26);
+          translate([sx * (13.133 + 0.53), -5.740 + 1.08, 6.4]) cylinder(h = 1.7, r = 0.26);
+          translate([sx * 13.133, -5.740, 8.6]) cylinder(h = 0.1, r = 0.08);
         }
       }
     }
 
-    // 4. Vaulted Interior Hollow (19.6 x 11.2 mm -> >= 2.0 mm perimeter collar wall, Z = 3.2 .. 8.4)
-    translate([0, 0, 3.2])
-      linear_extrude(height = 5.5)
-        rrect2d(19.6, 11.2, r = 1.2);
+    // 6. Eaves Under-Recess Annulus around Body Cornice (Z_lid = 6.4 .. 8.2, radial channel -2.55 .. +0.75)
+    //    Cuts ONLY the rim seat channel back to Z_lid = 6.4 while preserving inner plug collar (<= -2.60)
+    //    and outer 1.0 mm brass drip skirt (+0.75 .. +1.75) wrapping outside body cornice (+0.30 -> +0.45 mm gap)
+    translate([0, 0, 6.4])
+      linear_extrude(height = 1.8)
+        difference() {
+          coffin_lid_2d(scale_xy = 1.00, extra = 0.75, r = 1.4);
+          coffin_lid_2d(scale_xy = 1.00, extra = -2.55, r = 1.0);
+        }
 
-    // 5. Upward-Facing 0.4 mm Recessed Lid Song-Score Sticker Pocket (18.2 x 9.2 mm at Z = 2.8 .. 3.2)
-    //    Leaves a rock-solid 2.8 mm solid crown below and fits the printed 17.6 x 8.6 mm decal
-    translate([0, 0, 3.2 - sticker_depth])
-      linear_extrude(height = 0.9)
+    // 7. Vaulted Interior Coffin Dome Hollow (offset -5.0 mm -> >= 2.05 mm sturdy plug collar wall, Z = 3.2 .. 9.4)
+    translate([0, 0, 3.2])
+      linear_extrude(height = 6.3)
+        coffin_lid_2d(scale_xy = 1.00, extra = -5.0, r = 0.8);
+
+    // 8. Upward-Facing 0.4 mm Recessed Inner Lid Song-Score Sticker Pocket (18.2 x 9.2 mm at Z = 2.8 .. 3.2)
+    //    Offset -0.8 Y_lid toward wider apse so corners clear inner hollow wall with generous margin
+    translate([0, -0.8, 3.2 - sticker_depth])
+      linear_extrude(height = 1.0)
         rrect2d(18.2, 9.2, r = 1.0);
 
-    // 6. Left & Right 45-deg Fingernail-Lift Grip Coves along the mating rim seam (Z = 5.1 .. 5.9)
-    for (sx = [-1, 1]) {
+    // 9. Support-Free 45-deg V-Carved Gothic Coffin Trim & Center Diamond Emblem on Roof Crown (Z_lid = 0..0.42)
+    //    Diff of two convex frustums creates a clean 45-deg V-trench perimeter around `extra = -5.4` (>260 mm² center!)
+    difference() {
       hull() {
-        translate([sx * 16.3, 0, 5.85])
-          cube([1.6, 12.0, 0.3], center = true);
-        translate([sx * 15.6, 0, 5.25])
-          cube([0.4, 9.6, 0.2], center = true);
+        translate([0, 0, -0.04]) linear_extrude(height = 0.05) coffin_lid_2d(scale_xy = 1.00, extra = -4.95);
+        translate([0, 0,  0.40]) linear_extrude(height = 0.03) coffin_lid_2d(scale_xy = 1.00, extra = -5.39);
       }
+      hull() {
+        translate([0, 0, -0.06]) linear_extrude(height = 0.05) coffin_lid_2d(scale_xy = 1.00, extra = -5.85);
+        translate([0, 0,  0.42]) linear_extrude(height = 0.05) coffin_lid_2d(scale_xy = 1.00, extra = -5.41);
+      }
+    }
+    //    Center Tim Burton crooked gothic diamond-cross inlay groove at Z = 0..0.42
+    for (ang = [45, -45]) {
+      hull() {
+        translate([0, 0, -0.02]) rotate([0, 0, ang]) cube([5.4, 0.85, 0.04], center = true);
+        translate([0, 0,  0.40]) rotate([0, 0, ang]) cube([4.6, 0.08, 0.04], center = true);
+      }
+    }
+
+    // 10. Front (+Y_lid) & Side Cheek 45-deg Fingernail-Lift Grip Coves along straight Drip Skirt lips
+    //     Placed centered on the flat front & front-cheek spans well clear of all 6 corner gargoyle spurs!
+    for (sx = [-1, 1]) {
+      translate([sx * 16.36, 6.30, 0])
+        rotate([0, 0, sx * 27.2])
+          hull() {
+            translate([sx * 0.45, 0, 7.5]) cube([1.1, 6.0, 0.35], center = true);
+            translate([-sx * 0.15, 0, 6.7]) cube([0.35, 4.8, 0.20], center = true);
+          }
+    }
+    hull() {
+      translate([0, 14.25, 7.5]) cube([8.0, 1.1, 0.35], center = true);
+      translate([0, 13.55, 6.7]) cube([6.6, 0.35, 0.20], center = true);
     }
   }
 }
