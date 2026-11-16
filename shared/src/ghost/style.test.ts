@@ -32,9 +32,10 @@ describe("the manner of the ghost's words in the prompt", () => {
     expect(STYLE_COMMON).toMatch(/storybook/);
     expect(STYLE_COMMON).toMatch(/deadpan/);
     expect(STYLE_COMMON).toMatch(/horror told calmly/); // it is still a horror game
-    expect(STYLE_COMMON).toMatch(/The house wants the visitor, patiently and politely/); // the menace is toward the visitor
+    expect(STYLE_COMMON).toMatch(/The house has been expecting the visitor and is pleased to keep them/); // the menace is toward the visitor
+    expect(STYLE_COMMON).toMatch(/speak to them directly, notice something small about them \(their footsteps, their breathing, how long they have stayed\)/);
+    expect(STYLE_COMMON).toMatch(/say it kindly and slightly wrong/);
     expect(STYLE_COMMON).toMatch(/implied and never carried out/); // and only implied
-    expect(STYLE_COMMON).toMatch(/small things be slightly wrong/);
     expect(STYLE_COMMON).toMatch(/Never gore, harm described, insults, a shout or a jump/); // the hard lines of the manner
     expect(STYLE_COMMON).toMatch(/Misfortune is the house's/);
     expect(STYLE_COMMON).toMatch(/the visitor is never mocked/);
@@ -45,6 +46,8 @@ describe("the manner of the ghost's words in the prompt", () => {
     expect(STYLE_BY_VOICE.wistful).toMatch(/tenderness itself is a threat/);
     expect(STYLE_BY_VOICE.stern).toMatch(/understatement/);
     expect(STYLE_BY_VOICE.stern).toMatch(/in no hurry to see you out/);
+    expect(STYLE_BY_VOICE.stern).toMatch(/hospitality that cannot be refused/);
+    expect(STYLE_BY_VOICE.wistful).toMatch(/You want the visitor to stay, and say so sweetly/);
     expect(styleFor("wistful")).not.toBe(styleFor("stern"));
     expect(styleFor("wistful").startsWith(STYLE_COMMON)).toBe(true);
     expect(styleFor("stern").startsWith(STYLE_COMMON)).toBe(true);

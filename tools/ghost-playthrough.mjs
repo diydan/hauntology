@@ -16,8 +16,8 @@
 //   --only        run just these games (A, B or C)
 //   --worker      the local Worker (default http://127.0.0.1:8801; only a loopback address is accepted)
 //   --out         where the ledger, the replies and the summary go (default ./.ghost-playthrough, git-ignored, never committed)
-//   --read        print the replies of the latest run (no network)
-//   --summary     the pass marks of the latest run, numbers only (no network)
+//   --read        print the replies of the latest run, and under each turn the model calls the Worker recorded: what was said, and why the game refused it if it did (no network)
+//   --summary     the pass marks of the latest run, numbers only: the rejected replies by reason, the tokens the service reported and the real cost (no network)
 //   --rehearsal   --read and --summary look at the rehearsal's files, not the paid run's (a rehearsal never touches the paid run's ledger)
 //   The ledger (<out>/ledger.json) counts calls and spend across paid runs: 60 calls in all, whatever you run. A damaged ledger is refused, never reset.
 //   The token is read from $GHOST_PLAYTHROUGH_TOKEN (16+ characters, the same RUN_TOKEN the Worker was started with).
@@ -25,7 +25,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BUDGET_CAP_USD, MAX_CALLS, PROMPT_CHARS_MAX, PlaythroughStop, WORST_CALL_USD, dryPlan, isLoopbackUrl, ledgerFileName, openLedger, planPlaythrough, resultsFileName, runPlaythrough, summaryMarkdown } from './lib/ghost-playthrough.mjs';
+import { BUDGET_CAP_USD, MAX_CALLS, PROMPT_CHARS_MAX, PlaythroughStop, WORST_CALL_USD, callLines, dryPlan, isLoopbackUrl, ledgerFileName, openLedger, planPlaythrough, resultsFileName, runPlaythrough, summaryMarkdown } from './lib/ghost-playthrough.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_WORKER = 'http://127.0.0.1:8801';
@@ -101,6 +101,7 @@ function makeNet(base, token) {
   return {
     status: () => dev('/dev/status'),
     units: async () => { try { return await dev('/dev/units'); } catch { return null; } },
+    calls: (since) => dev(`/dev/calls?since=${Number.isInteger(since) && since > 0 ? since : 0}`),
     seed: (id) => dev('/dev/seed-gallery', { method: 'POST', body: { id } }),
     async visitor() {
       const first = await request('/api/session', { headers: { origin } });
@@ -122,7 +123,7 @@ async function main() {
     for (const r of readRows(join(opts.out, files[files.length - 1]))) {
       if (r.kind !== 'turn') continue;
       if (r.skipped) { console.log(`${r.id} (skipped: ${r.reason})\n`); continue; }
-      console.log(`${r.id} [${r.expected?.kind ?? '-'}${r.expected?.bearing ? ` ${r.expected.bearing}, ${r.expected.band}` : ''}${r.eligible ? '' : ', no model call'}] ${r.scripted === undefined ? '' : r.scripted ? '(scripted) ' : '(model) '}${r.check && r.check.ok === false ? `(failed the check: ${r.check.problem}) ` : ''}\n  visitor: ${r.said}\n  ghost:   ${r.text ?? `(status ${r.status})`}\n`);
+      console.log(`${r.id} [${r.expected?.kind ?? '-'}${r.expected?.bearing ? ` ${r.expected.bearing}, ${r.expected.band}` : ''}${r.eligible ? '' : ', no model call'}] ${r.scripted === undefined ? '' : r.scripted ? '(scripted) ' : '(model) '}${r.check && r.check.ok === false ? `(failed the check: ${r.check.problem}) ` : ''}\n  visitor: ${r.said}\n  ghost:   ${r.text ?? `(status ${r.status})`}${callLines(r).map((l) => `\n${l}`).join('')}\n`);
     }
     return;
   }
@@ -186,7 +187,7 @@ async function main() {
     plan, net, ledger, budgetUsd: opts.budget, only: opts.only, live: opts.live,
     onRow: (r) => {
       writeFileSync(resultsFile, `${JSON.stringify(r)}\n`, { flag: 'a' });
-      if (r.kind === 'turn') console.log(r.skipped ? `${r.id.padEnd(4)} skipped` : `${r.id.padEnd(4)} ${String(r.expected?.kind ?? '-').padEnd(7)} ${r.eligible ? 'may call' : 'no call'} ${String(r.ms).padStart(5)} ms  ${r.scripted === undefined ? `HTTP ${r.status}` : r.scripted ? 'scripted' : 'model'}  ${r.check === undefined ? '' : r.check.ok ? 'check ok' : `check: ${r.check.problem}`}`);
+      if (r.kind === 'turn') console.log(r.skipped ? `${r.id.padEnd(4)} skipped` : `${r.id.padEnd(4)} ${String(r.expected?.kind ?? '-').padEnd(7)} ${r.eligible ? 'may call' : 'no call'} ${String(r.ms).padStart(5)} ms  ${r.scripted === undefined ? `HTTP ${r.status}` : r.scripted ? 'scripted' : 'model'}  ${r.check === undefined ? '' : r.check.ok ? 'check ok' : `check: ${r.check.problem}`}${Array.isArray(r.calls) && r.calls.some((c) => c.reason !== 'ok') ? `  rejected: ${r.calls.filter((c) => c.reason !== 'ok').map((c) => c.reason).join(', ')}` : ''}`);
       else console.log(`${r.game}    end of game: found ${r.found}, ended ${r.ended}, game and turns agree: ${r.agrees}`);
     },
   });

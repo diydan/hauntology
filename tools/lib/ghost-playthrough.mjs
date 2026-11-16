@@ -13,8 +13,8 @@ export { isLoopbackUrl };
 
 export const MAX_CALLS = 60;
 export const BUDGET_CAP_USD = 0.02;
-/** The prompt builder keeps a call under 5,300 characters in (4,500 before the manner of the ghost's words was added, `shared/src/ghost/style.ts`, and 5,000 before its menace; a test checks this is the builder's own number); a reply is at most 220 tokens. At 3 characters a token that is the worst a call can cost. */
-export const PROMPT_CHARS_MAX = 5300;
+/** The prompt builder keeps a call under 5,700 characters in (4,500 before the manner of the ghost's words was added, `shared/src/ghost/style.ts`, 5,000 before its menace, and 5,300 before the worn-out phrases; a test checks this is the builder's own number); a reply is at most 220 tokens. At 3 characters a token that is the worst a call can cost. */
+export const PROMPT_CHARS_MAX = 5700;
 export const TURN_MAX_TOKENS = 220;
 export const WORST_CALL_USD = costUsd(Math.ceil(PROMPT_CHARS_MAX / CHARS_PER_TOKEN), TURN_MAX_TOKENS);
 /** The game answers a turn only every 1.5 seconds; the runner leaves a little more. */
@@ -202,6 +202,59 @@ export function predictDirective(plan, { action, pose, view, idle, sinceProgress
   return band === null || band === 'far' ? { kind: 'ambient', certain: !timeRisk, eligible: true } : { kind: 'tease', band, certain: !timeRisk, eligible: true };
 }
 
+/**
+ * The model calls the Worker recorded (`api/dev/playthrough-calls.ts`, read with `GET /dev/calls`) and what the game made of each. A reply the game throws away is asked for again
+ * once, so a turn can hold two calls, and the runner, which sees only the final reply, would not know what was said or why it was refused. The reasons are worked out the way the
+ * game works them out (`narrateTurn`, `api/src/play/narrate.ts`): a failed call, a refusal by the model, a reply that is empty or too long to read, one cut short by the token cap,
+ * then the reply check of the turn (`validateGhostReply`) and the check that the rules are not read out (`readsOutRules`).
+ */
+export const NARRATOR_REPLY_MAX = 4000;
+/** The game gives a model call this long (`CALL_TIMEOUT_MS` in `api/src/play/narrate.ts`); a call that took as long finished after the game stopped waiting, and may be counted with the next turn. */
+export const CALL_TIMEOUT_MS = 6000;
+export const REJECTION_REASONS = ['call_failed', 'refused', 'unusable', 'cut_short', 'empty', 'too_long', 'link', 'markup', 'control', 'out_of_fiction', 'real_world', 'not_english', 'digits', 'too_many_sentences', 'too_few_sentences', 'wrong_way', 'rules_read_out'];
+
+/** One recorded call, with the reason the game would refuse it (`ok` when it would not). `directive` is the one the reply was checked against; `system` the instructions of the voice. */
+export function explainCall(plan, call, { directive, system }) {
+  let reason;
+  if (call.ok !== true) reason = 'call_failed';
+  else if (call.stopReason === 'refusal') reason = 'refused';
+  else if (typeof call.text !== 'string' || call.text === '' || call.textChars > NARRATOR_REPLY_MAX) reason = 'unusable';
+  else if (call.stopReason === 'max_tokens') reason = 'cut_short';
+  else {
+    const checked = plan.narration.validateGhostReply(call.text, plan.narration.replyChecksFor(directive));
+    reason = !checked.ok ? checked.reason : plan.narration.readsOutRules(checked.text, system) ? 'rules_read_out' : 'ok';
+  }
+  return {
+    n: call.n, ok: call.ok === true, text: call.text ?? null, textChars: call.textChars ?? 0, truncated: call.truncated === true, stopReason: call.stopReason ?? null,
+    inputTokens: call.inputTokens ?? null, outputTokens: call.outputTokens ?? null, inputChars: call.inputChars ?? null, ms: call.ms ?? null, error: call.error ?? null,
+    reason, checkedAs: directive.kind, late: typeof call.ms === 'number' && call.ms >= CALL_TIMEOUT_MS,
+  };
+}
+
+/**
+ * The calls the Worker recorded since the cursor, and the cursor moved on. `cursor` is `{ epoch, since }`. When the Worker started again (its `epoch` changed) its numbers began again,
+ * so everything it holds now is read. Never throws: a recorder that cannot be read answers `{ ok: false, note }`, and the run goes on without the record.
+ */
+export async function readCalls(net, cursor) {
+  const ask = async (since) => {
+    let r;
+    try { r = await net.calls(since); } catch (error) { return { bad: `unreachable: ${String(error?.message ?? error).slice(0, 80)}` }; }
+    const j = r?.json;
+    if (r?.status !== 200 || !Array.isArray(j?.calls) || typeof j?.epoch !== 'string' || !Number.isInteger(j?.next)) return { bad: `status ${r?.status ?? 'none'}` };
+    return { j };
+  };
+  const first = await ask(cursor.since);
+  if (first.bad !== undefined) return { ok: false, note: first.bad, calls: [], lost: 0, restarted: false };
+  if (cursor.epoch !== null && first.j.epoch !== cursor.epoch) {
+    const again = await ask(0);
+    if (again.bad !== undefined) return { ok: false, note: again.bad, calls: [], lost: 0, restarted: true };
+    cursor.epoch = again.j.epoch; cursor.since = again.j.next;
+    return { ok: true, calls: again.j.calls, lost: Number.isInteger(again.j.lost) ? again.j.lost : 0, restarted: true };
+  }
+  cursor.epoch = first.j.epoch; cursor.since = first.j.next;
+  return { ok: true, calls: first.j.calls, lost: Number.isInteger(first.j.lost) ? first.j.lost : 0, restarted: false };
+}
+
 /** A ledger over plain functions, so a file or a test object can hold it. A damaged one is refused, never reset (that would lift the hard stop). */
 export async function openLedger({ read, write }) {
   const text = await read();
@@ -250,6 +303,11 @@ export async function runPlaythrough({ plan, net, ledger, budgetUsd, only = null
   const rows = [];
   let stopped = null;
   let unitsAt = unitsStart;
+
+  // What the model said is read from the Worker's recorder after each turn. Whatever it held before this run is not ours: the cursor starts after it.
+  const recorder = typeof net.calls === 'function';
+  const cursor = { epoch: null, since: 0 };
+  if (recorder) await readCalls(net, cursor);
 
   const stop = (reason, at, detail) => { stopped = { reason, at, ...(detail === undefined ? {} : { detail }) }; };
 
@@ -315,6 +373,16 @@ export async function runPlaythrough({ plan, net, ledger, budgetUsd, only = null
       const body = res.json;
       const ok = res.status === 200 && typeof body?.reply?.text === 'string' && body?.view !== undefined;
       const row = { kind: 'turn', game: game.id, id: step.id, note: step.note, skipped: false, said: step.input.text ?? step.input.button, inputKind: step.input.text !== undefined ? 'text' : 'button', eligible, expected, pose, status: res.status, ms, unitsDrawn: drawn };
+      // What the model said this turn, and why the game refused it if it did.
+      if (recorder) {
+        const got = await readCalls(net, cursor);
+        if (!got.ok) { row.calls = null; row.callsNote = `the recorder could not be read (${got.note})`; }
+        else {
+          row.calls = got.calls.map((c) => explainCall(plan, c, { directive: checkDirective(expected), system: plan.systems[game.voice] }));
+          if (got.restarted) row.callsNote = 'the Worker started again during the run: calls before that are not in this record';
+          if (got.lost > 0) row.callsLost = got.lost;
+        }
+      }
       if (ok) {
         const newView = body.view;
         const scriptedFlag = body.reply.scripted === true;
@@ -326,9 +394,7 @@ export async function runPlaythrough({ plan, net, ledger, budgetUsd, only = null
         });
         // The checks a reply must pass: the plain ones for any reply; the way and distance for a hint; a memory told is checked as the memory (the farewell after the last is scripted).
         const wording = revealedId === null ? body.reply.text : (journalText ?? body.reply.text);
-        const directive = expected.certain === true && ['hint', 'tease', 'reveal', 'ending'].includes(expected.kind)
-          ? { kind: expected.kind === 'ending' ? 'reveal' : expected.kind, ...(expected.kind === 'hint' ? { bearing: expected.bearing, band: expected.band } : {}), ...(expected.kind === 'tease' ? { band: expected.band } : {}) }
-          : { kind: 'ambient' };
+        const directive = checkDirective(expected);
         const check = plan.narration.validateGhostReply(wording, plan.narration.replyChecksFor(directive));
         row.check = { ok: check.ok, problem: check.ok ? null : check.reason };
         row.copiedRules = plan.narration.readsOutRules(wording, plan.systems[game.voice]);
@@ -361,6 +427,11 @@ export async function runPlaythrough({ plan, net, ledger, budgetUsd, only = null
   await ledger.save();
   return { rows, stopped, calls: data.calls, spentUsd: data.spentUsd, narrator, unitsUsed, unitsStart, worldId };
 }
+
+/** The directive a reply is checked against: the engine's own when the runner is certain of it, else only the plain checks. */
+const checkDirective = (expected) => (expected.certain === true && ['hint', 'tease', 'reveal', 'ending'].includes(expected.kind)
+  ? { kind: expected.kind === 'ending' ? 'reveal' : expected.kind, ...(expected.kind === 'hint' ? { bearing: expected.bearing, band: expected.band } : {}), ...(expected.kind === 'tease' ? { band: expected.band } : {}) }
+  : { kind: 'ambient' });
 
 const sortedMs = (rs) => rs.map((r) => r.ms).sort((a, b) => a - b);
 const median = (xs) => xs[Math.floor(xs.length / 2)];
@@ -410,6 +481,24 @@ export function summarize(plan, run) {
     const drawnModel = model.every((r) => (r.unitsDrawn ?? 1) >= 1);
     out.push(['Units counted vs calls', mark(unitsUsed <= calls && drawnModel, true), `the guard counted ${unitsUsed} units this day; the ledger counted ${calls} calls; every model-worded turn drew at least one unit: ${drawnModel}`]);
   }
+  // What the Worker's recorder kept: how many model calls there were, and whether the runner's copy of the game's checks sees them as the game did.
+  const recordedRows = rows.filter((r) => r.kind === 'turn' && r.skipped === false && Array.isArray(r.calls));
+  if (!narrator) { na('Recorded calls match the guard', 'the model is off: this is the rehearsal'); na('Recorded reasons agree with the game', 'the model is off: this is the rehearsal'); }
+  else if (recordedRows.length === 0) { na('Recorded calls match the guard', 'no calls were recorded (an older Worker, or the recorder could not be read)'); na('Recorded reasons agree with the game', 'no calls were recorded'); }
+  else {
+    const recorded = recordedRows.reduce((a, r) => a + r.calls.length, 0);
+    const failed = recordedRows.reduce((a, r) => a + r.calls.filter((c) => c.ok !== true).length, 0);
+    const drawn = recordedRows.reduce((a, r) => a + (r.unitsDrawn ?? 0), 0);
+    out.push(['Recorded calls match the guard', mark(recorded - failed === drawn, true), `${recorded} calls recorded (${failed} of them failed, and the guard gives those back), ${drawn} units drawn by the guard`]);
+    // The runner's reasons are a copy of the game's checks. If the game used words the copy refuses, or threw away words the copy accepts, the copy is wrong and the reasons cannot be trusted.
+    const disagree = [];
+    for (const r of recordedRows) {
+      if (r.eligible !== true) continue;
+      if (r.scripted === false && !r.calls.some((c) => c.reason === 'ok')) disagree.push(`${r.id}: the game used the model's words, but no recorded reply passes the checks`);
+      if (r.scripted === true && r.calls.length > 0 && r.calls[r.calls.length - 1].reason === 'ok') disagree.push(`${r.id}: the game fell back, but its last reply passes the checks`);
+    }
+    out.push(['Recorded reasons agree with the game', mark(disagree.length === 0, true), disagree.length === 0 ? `${recordedRows.filter((r) => r.eligible === true).length} turns: the game and the runner's checks treated every reply alike` : disagree.join('; ')]);
+  }
   out.push(['Tone', 'FOR YOU', 'read the replies with --read']);
   return out;
 }
@@ -424,6 +513,49 @@ export function hintGrid(plan, rows) {
   return [`| distance | ${BEARINGS.join(' | ')} |`, `|---|${BEARINGS.map(() => '---').join('|')}|`, ...BANDS.map((band) => `| ${band} | ${BEARINGS.map((b) => cell(b, band)).join(' | ')} |`)];
 }
 
+const callsOf = (rows) => rows.filter((r) => r.kind === 'turn' && Array.isArray(r.calls)).flatMap((r) => r.calls.map((c) => ({ ...c, turn: r.id })));
+
+/** Rejected replies by reason and by the kind of turn they were for: counts only, never the words. */
+export function rejectionTable(rows) {
+  const calls = callsOf(rows);
+  if (calls.length === 0) return [];
+  const bad = calls.filter((c) => c.reason !== 'ok');
+  const head = `Rejected replies: ${bad.length} of ${calls.length} recorded calls (a reply the game threw away; the words are in the results file and in --read, never here):`;
+  if (bad.length === 0) return [head, '', 'None.', ''];
+  const kinds = [...new Set(calls.map((c) => c.checkedAs))].sort();
+  const reasons = REJECTION_REASONS.filter((r) => bad.some((c) => c.reason === r));
+  return [head, '', `| Reason | ${kinds.join(' | ')} | all |`, `|---|${kinds.map(() => '---').join('|')}|---|`,
+    ...reasons.map((r) => `| ${r} | ${kinds.map((k) => bad.filter((c) => c.reason === r && c.checkedAs === k).length).join(' | ')} | ${bad.filter((c) => c.reason === r).length} |`), ''];
+}
+
+/** What the service said the calls were: tokens in and out, the real cost at the listed price, and the largest prompt, next to what the runner counted at the worst case. */
+export function costLines(rows, worstUsd) {
+  const calls = callsOf(rows);
+  if (calls.length === 0) return [];
+  const counted = calls.filter((c) => c.inputTokens !== null && c.outputTokens !== null);
+  const tin = counted.reduce((a, c) => a + c.inputTokens, 0);
+  const tout = counted.reduce((a, c) => a + c.outputTokens, 0);
+  const biggest = Math.max(0, ...calls.map((c) => c.inputChars ?? 0));
+  return [
+    `Tokens the service reported: ${tin} in and ${tout} out, from ${counted.length} of ${calls.length} recorded calls${counted.length < calls.length ? ' (a call with no count is not in the real figure)' : ''}. Real cost at the listed price ($0.10 per million in, $0.50 per million out): $${costUsd(tin, tout).toFixed(5)}, against $${worstUsd.toFixed(5)} counted at the worst case for each call. Largest prompt sent: ${biggest} characters (the bound is ${PROMPT_CHARS_MAX}).`,
+    '',
+  ];
+}
+
+/** The lines `--read` prints under a turn for what the model said: each call with the reason the game refused it, and the words of a refused reply. */
+export function callLines(row) {
+  if (!Array.isArray(row.calls)) return row.callsNote === undefined ? [] : [`  calls:   (${row.callsNote})`];
+  const lines = row.calls.map((c) => {
+    const size = `${c.inputTokens ?? '-'} in, ${c.outputTokens ?? '-'} out, ${c.ms ?? '-'} ms${c.late ? ', late: the game had stopped waiting' : ''}`;
+    if (c.reason === 'ok') return `  call ${c.n}: accepted (${size})`;
+    const said = c.reason === 'call_failed' ? (c.error ?? 'no answer') : c.text === null ? '(no text)' : `${c.text}${c.truncated ? ' [cut: the record keeps the first characters]' : ''}`;
+    return `  call ${c.n}: rejected: ${c.reason}: ${said}\n          (${size}; checked as ${c.checkedAs})`;
+  });
+  if (row.callsNote !== undefined) lines.push(`  calls:   (${row.callsNote})`);
+  if (row.callsLost > 0) lines.push(`  calls:   (${row.callsLost} calls were dropped from the recorder for room and are not here)`);
+  return lines;
+}
+
 /** Numbers and verdicts only: no reply text, so it is safe to keep. */
 export function summaryMarkdown(plan, run) {
   const marks = summarize(plan, run).map(([a, b, c]) => `| ${a} | ${b} | ${c} |`);
@@ -432,6 +564,7 @@ export function summaryMarkdown(plan, run) {
     `Mode: ${run.narrator ? 'LIVE (the model was on)' : 'rehearsal (no model, nothing could be spent)'}. Calls counted (ledger): ${run.calls} of ${MAX_CALLS}. Spent counted (worst case for each call): $${run.spentUsd.toFixed(5)} of $${BUDGET_CAP_USD}. ${run.stopped === null ? 'The run finished.' : `Stopped: ${run.stopped.reason} at ${run.stopped.at}.`}`,
     '', '| Check | Result | Detail |', '|---|---|---|', ...marks, '',
     'Hints (P: the model\'s words passed the check, F: the scripted hint took over, -: not asked):', '', ...hintGrid(plan, run.rows), '',
+    ...rejectionTable(run.rows), ...costLines(run.rows, run.spentUsd),
     '| Turn | Directive | Could reach the model | HTTP | ms | Words |', '|---|---|---|---|---|---|', ...per, '',
   ].join('\n');
 }

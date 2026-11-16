@@ -136,10 +136,10 @@ test('the plan is three games on a made-up attic: A 18 turns (17 may call the mo
   assert.equal(plan.games[1].steps.every((s) => s.input.button === 'hint' && s.at.kind === 'hint'), true);
 });
 
-test('the money: a call is 0.029 cent at its worst, the plan 1.6 cents, all 60 calls 1.7 cents, and the cap 2 cents is above it; the limits are the approved ones', () => {
-  assert.equal(WORST_CALL_USD, costUsd(1767, 220));
-  assert.ok(Math.abs(WORST_CALL_USD - 0.0002867) < 1e-9);
-  assert.ok(dryPlan(plan).totalUsd < 0.0155 + 1e-9);
+test('the money: a call is 0.030 cent at its worst, the plan 1.6 cents, all 60 calls 1.8 cents, and the cap 2 cents is above it; the limits are the approved ones', () => {
+  assert.equal(WORST_CALL_USD, costUsd(1900, 220));
+  assert.ok(Math.abs(WORST_CALL_USD - 0.0003) < 1e-9);
+  assert.ok(dryPlan(plan).totalUsd < 0.016 + 1e-9);
   assert.ok(MAX_CALLS * WORST_CALL_USD < BUDGET_CAP_USD, '60 calls at their worst stay under the cap');
   assert.equal(MAX_CALLS, 60);
   assert.equal(BUDGET_CAP_USD, 0.02);
@@ -665,7 +665,7 @@ const devDeps = (over = {}) => {
   const puts = [];
   return {
     puts,
-    deps: { token: TOKEN, bucket: { put: async (k, v) => { puts.push([k, v]); } }, galleryKey: (id, name) => `gallery/${id}/${name}`, llmRemaining: async () => 60, caps: { day: '60', session: '60' }, narrator: false, aiBinding: false, ...over },
+    deps: { token: TOKEN, bucket: { put: async (k, v) => { puts.push([k, v]); } }, galleryKey: (id, name) => `gallery/${id}/${name}`, llmRemaining: async () => 60, caps: { day: '60', session: '60' }, narrator: false, aiBinding: false, calls: { since: () => ({ epoch: 'e', next: 0, lost: 0, calls: [] }) }, ...over },
   };
 };
 const call = (deps, path, { method = 'GET', host = '127.0.0.1:8801', token = TOKEN, body } = {}) =>
@@ -725,7 +725,8 @@ test('/dev/status says whether the model is on, and /dev/units reads the guard e
 test('the Worker file itself wires the real Worker unchanged and gates only /dev/ (no route of the game is behind the token)', () => {
   const source = readFileSync(join(ROOT, 'api', 'dev', 'playthrough-worker.ts'), 'utf8');
   assert.match(source, /import realWorker, \{[^}]*\} from "\.\.\/src\/worker"/);
-  assert.match(source, /startsWith\("\/dev\/"\)\)\s*return realWorker\.fetch\(request, env, ctx\)/);
+  // the real Worker gets the same environment with the AI binding recorded (`recordEnv`, tested in ghost-playthrough-calls.test.mjs), and nothing else of the game is touched
+  assert.match(source, /startsWith\("\/dev\/"\)\)\s*return realWorker\.fetch\(request, recordEnv\(env, log, recorded\), ctx\)/);
   assert.ok(!/\bAI\.run\b|\.run\(/.test(source), 'the Worker never calls the model itself');
 });
 
@@ -740,8 +741,8 @@ test('the dry run prints the plan and the cap, opens no connection and writes no
     const r = cli(['--out', out]);
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /Planned: up to 53 model calls of the 60 approved/);
-    assert.match(r.stdout, /\$0\.01520/);
-    assert.match(r.stdout, /\$0\.00029 a call at its worst: 5,300 characters in at 3 a token/);
+    assert.match(r.stdout, /\$0\.01590/);
+    assert.match(r.stdout, /\$0\.00030 a call at its worst: 5,700 characters in at 3 a token/);
     assert.match(r.stdout, /Cap: \$0\.02, and a hard stop at 60 calls/);
     assert.match(r.stdout, /This was a dry run\. Nothing was sent, no file was written, nothing was spent\./);
     assert.equal(existsSync(out), false, 'the dry run made a directory');
