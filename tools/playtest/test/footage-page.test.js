@@ -708,7 +708,7 @@ test('20.8 a picture the browser blocked has no moment either: the line shows at
   });
 });
 
-test('21 the endings have their lines at their moments: the house at 1.2 s, the dawn at 4.7 s, and Skip drops one that is waiting', { skip }, async () => {
+test('21 the endings have their lines at their moments: the house at 1.2 s, the dawn at 5.5 s, and Skip drops one that is waiting', { skip }, async () => {
   open();
   await load(); await tick(5);
   const endLine = () => $('#ft-end-line');
@@ -722,10 +722,10 @@ test('21 the endings have their lines at their moments: the house at 1.2 s, the 
     assert.equal(endLine().dataset.speaker, 'whisper');
     click(btn('Detectives win')); await flush();
     assert.equal(endLine().hidden, true, 'a new ending clears the old line');
-    await go(4699);
-    assert.equal(endLine().hidden, true, 'the dawn line is not yet there at 4.699 s');
+    await go(5499);
+    assert.equal(endLine().hidden, true, 'the dawn line is not yet there at 5.499 s');
     await go(1);
-    assert.match(endLine().textContent, /^The house is quiet, and I note/);
+    assert.match(endLine().textContent, /^Morning has arrived/);
     assert.equal(endLine().dataset.speaker, 'keeper');
     click(btn('The house wins')); await flush(); await go(500);
     click(btn('Skip')); await flush(); await go(SETTLE);
