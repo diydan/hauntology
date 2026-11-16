@@ -61,4 +61,30 @@ describe("the ending screen", () => {
     expect(rows()).toBe(3);
     expect(screen.queryByRole("button", { name: "Skip to the end" })).toBeNull();
   });
+  it("plays the matching ending song only on a tap, and always shows its words", async () => {
+    const made: string[] = [];
+    const play = vi.fn(() => Promise.resolve());
+    vi.stubGlobal("Audio", class { onended = null; onerror = null; pause() {} play = play; constructor(src: string) { made.push(src); } });
+    for (const [houseWins, id] of [[false, "fb-detectives"], [true, "fb-house"]] as const) {
+      const view = ended({ houseWins, winners: houseWins ? [] : [1] });
+      render(<Ending view={view} n={namesOf(view, 1)} />);
+      expect(made).not.toContain(`/songs/${id}.mp3`);
+      expect(document.querySelector(".ui-lyrics")!.textContent!.length).toBeGreaterThan(40);
+      await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Play the song" })); });
+      expect(made).toContain(`/songs/${id}.mp3`);
+      expect(screen.getByRole("button", { name: "Stop the song" })).toBeTruthy();
+      cleanup();
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps the words and says so when the song will not play", async () => {
+    vi.stubGlobal("Audio", class { onended = null; onerror = null; pause() {} play() { return Promise.reject(new Error("no")); } });
+    const view = ended({ houseWins: false, winners: [1] });
+    render(<Ending view={view} n={namesOf(view, 1)} />);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Play the song" })); });
+    expect(screen.getByRole("status").textContent).toContain("would not play");
+    expect(document.querySelector(".ui-lyrics")).toBeTruthy();
+    vi.unstubAllGlobals();
+  });
 });
