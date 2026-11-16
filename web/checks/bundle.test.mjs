@@ -86,7 +86,7 @@ describe("the production build", () => {
 
   it("loads Play, Create and the case only when they are opened: their code is in their own files, not in the first one", () => {
     const initial = new Set(initialScripts());
-    const only = { "Opening the door…": "Play", "Pick the one that feels right": "Create", "Setting the scene…": "the Case Screen", "Stand-in view.": "the Viewer" };
+    const only = { "Opening the door…": "Play", "Pick the one that feels right": "Create", "Setting the scene…": "the Case Screen", "Finding the place": "the Viewer" };
     for (const [marker, who] of Object.entries(only)) {
       const holders = scripts().filter(([, text]) => text.includes(marker)).map(([name]) => name);
       expect(holders.length, `${who} (${marker}) is in some file`).toBeGreaterThan(0);

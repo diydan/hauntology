@@ -34,9 +34,22 @@ const demoPlaceholders = (): Plugin => ({
   },
 });
 
+// Spark's distributed module carries console.log calls, most inside its embedded worker source,
+// where esbuild's `pure` cannot reach. Debug output never ships (Requirement 9.5), so the calls
+// are rewritten to `void` in that one dependency; console.error and console.warn stay.
+const quietSparkLogs = (): Plugin => ({
+  name: "quiet-spark-logs",
+  apply: "build",
+  transform(code, id) {
+    if (!id.includes("@sparkjsdev/spark")) return null;
+    const out = code.replaceAll("console.log(", "void(").replaceAll("console.debug(", "void(").replaceAll("console.info(", "void(");
+    return out === code ? null : out;
+  },
+});
+
 // The Worker serves `dist/` and answers `/api/*`; in development the API runs under `wrangler dev`.
 export default defineConfig({
-  plugins: [react(), dropDemoAssets(), demoPlaceholders()],
+  plugins: [react(), dropDemoAssets(), demoPlaceholders(), quietSparkLogs()],
   server: { proxy: { "/api": "http://localhost:8787" } },
   build: { outDir: "dist", target: "es2022" },
   // Debug output never ships. `console.error` stays for the logger (src/app/logger.ts).

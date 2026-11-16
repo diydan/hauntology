@@ -64,18 +64,19 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
     - _Requirements: 1.2_
     - Progress (2026-11-16): the decision half is in `loadWorld`: no WebGL2, or the splat start failing, gives the pano rung, then the thumbnail, then a fatal code; the shell keeps the Chat at every rung (it only receives a `degraded` message). Not done: reading real device capabilities in the browser and drawing the panorama — both wait on task 1, which picks the Spark and three versions.
 
-- [ ] 4. Player controls and collision
-  - [ ] 4.1 Desktop controls: pointer lock, WASD/arrows, Shift, Esc
+- [x] 4. Player controls and collision
+  - [x] 4.1 Desktop controls: pointer lock, WASD/arrows, Shift, Esc
     - _Requirements: 2.1_
-  - [ ] 4.2 Touch controls: movement stick, look drag, scroll/zoom prevention
+  - [x] 4.2 Touch controls: movement stick, look drag, scroll/zoom prevention
     - _Requirements: 2.2_
-  - [ ] 4.3 `CollisionWorld`: build BVH from Collider, capsule resolve, floor snap, slope limit; disc fallback when absent; last-safe-position reset
+  - [x] 4.3 `CollisionWorld`: build BVH from Collider, capsule resolve, floor snap, slope limit; disc fallback when absent; last-safe-position reset
     - _Requirements: 2.3, 2.4, 2.5, 2.6_
-  - [ ]* 4.4 Write property test for collision
+  - [x]* 4.4 Write property test for collision
     - **Property 3: Collision resolution never leaves the player inside geometry**
     - **Validates: Requirements 2.4**
-  - [ ] 4.5 Tilt to look on phones: one motion-permission tap, a calibration tap, wobble threshold, drag-to-look as the fallback, movement and collision untouched
+  - [x] 4.5 Tilt to look on phones: one motion-permission tap, a calibration tap, wobble threshold, drag-to-look as the fallback, movement and collision untouched
     - _Requirements: 8.1_
+  - Done (2026-11-16): the real Viewer mounts behind the shell seam (`web/src/app/viewer/mount.ts`, the default `LoadViewer`; the demo keeps the stand-in). Controls mapping is pure and tested (`controls.ts`); collision is a BVH capsule with floor snap and the 35 degree slope limit (`collision.ts`, Property 3 over generated rooms); tilt uses the pure `tiltLook`. Deps pinned by Spike 2.1: three 0.187.0, Spark 2.4.0, three-mesh-bvh 0.9.18. Verified headless end to end with the recorded kitchen world served through intercepted routes: spawn upright, W walks forward at the clamped rate, poses flow at 4 Hz. Two build notes: Spark's console.log calls are rewritten out of its module at build (Requirement 9.5), and the bundle test's Viewer marker and the demo platform keys were updated for the real Viewer.
 
 - [ ] 5. Haunt layer
   - [ ] 5.1 Grade overlay (desaturate, vignette, grain, dim) driven by Haunt Level with smoothing
