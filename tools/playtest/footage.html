@@ -15,7 +15,7 @@
 <body class="ui-page" data-look="tint">
 <main class="ft ui-stack ui-stack--loose">
   <header class="ui-header"><h1 class="ui-header-title">Footage test</h1></header>
-  <p class="ui-lead">Nosferatu (1922): the shadow climbing the stairs. 4 seconds, no sound, 77 KB.</p>
+  <p class="ui-lead">Public-domain film (Nosferatu 1922, Frankenstein 1910) and AI scenes, in black and white, behind the game's screens.</p>
 
   <div class="ui-stack ui-stack--tight">
     <div class="ui-segments" role="radiogroup" aria-label="Look">
@@ -30,34 +30,31 @@
   </div>
 
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-a">
-    <h2 id="ft-a" class="ui-eyebrow">1 · A Sight (full screen behind the clue)</h2>
-    <div class="ft-phone">
-      <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
-      <section class="ui-panel ui-stack ui-stack--tight" aria-label="The clue">
-        <p class="ui-eyebrow">A Sight · gone in 5 seconds</p>
-        <p class="ui-prompt">The code starts with 7.</p>
-        <p class="ui-hint">Look at the stairs. They will not stay.</p>
-      </section>
+    <h2 id="ft-a" class="ui-eyebrow">1 · Clue screen (a real clue, the film behind it)</h2>
+    <div class="ft-phone ft-phone--app">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="auto" poster="media/study-desk.jpg"><source src="media/study-desk.webm" type="video/webm"><source src="media/study-desk.mp4" type="video/mp4"></video></div>
+      <iframe id="ft-clue-app" class="ft-app" title="A real clue: the safe's code, shown for 8 seconds, then the safe" src="puzzles/?kind=safe&amp;level=easy&amp;seed=3&amp;bare=1" loading="lazy"></iframe>
+    </div>
+    <p class="ui-hint">The real clue card of the safe. It shows for 8 seconds, then the safe opens. <button id="ft-clue-again" class="ui-button" type="button">Show the clue again</button></p>
+  </section>
     </div>
   </section>
 
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-b">
-    <h2 id="ft-b" class="ui-eyebrow">2 · A Lock (faint, behind the controls)</h2>
-    <div class="ft-phone ft-dim">
-      <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
-      <section class="ui-panel ui-stack" aria-label="The safe">
-        <p class="ui-eyebrow">Safe · 3 attempts</p>
-        <div class="ui-chips ft-code" role="list" aria-label="Code so far"><span class="ui-chip is-active" role="listitem">7</span><span class="ui-chip" role="listitem">?</span><span class="ui-chip" role="listitem">?</span><span class="ui-chip" role="listitem">?</span></div>
-        <button class="ui-button ui-button--primary" type="button">Open</button>
-        <button class="ui-button" type="button">Let the ghost open it</button>
-      </section>
+    <h2 id="ft-b" class="ui-eyebrow">2 · Puzzle screen (a real puzzle, the film faint behind it)</h2>
+    <div class="ft-phone ft-phone--app ft-dim">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="auto" poster="media/study-desk.jpg"><source src="media/study-desk.webm" type="video/webm"><source src="media/study-desk.mp4" type="video/mp4"></video></div>
+      <iframe class="ft-app" title="A real puzzle: the wires" src="puzzles/?kind=wires&amp;level=easy&amp;seed=2&amp;faded=0&amp;bare=1" loading="lazy"></iframe>
+    </div>
+    <p class="ui-hint">The real wires puzzle. It works: try it.</p>
+  </section>
     </div>
   </section>
 
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-c">
-    <h2 id="ft-c" class="ui-eyebrow">3 · Nothing came loose (plays once, on Replay)</h2>
+    <h2 id="ft-c" class="ui-eyebrow">3 · Puzzle failed (the film plays once, on Replay)</h2>
     <div class="ft-phone">
-      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-once" muted playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-once" muted playsinline preload="auto" poster="media/mirror-fade.jpg"><source src="media/mirror-fade.webm" type="video/webm"><source src="media/mirror-fade.mp4" type="video/mp4"></video></div>
       <section class="ui-panel ui-panel--danger ui-stack" aria-label="The result">
         <p class="ui-prompt">Nothing came loose.</p>
         <p class="ui-hint">Three attempts. The house keeps it.</p>
@@ -67,12 +64,13 @@
   </section>
 
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-d">
-    <h2 id="ft-d" class="ui-eyebrow">4 · The clock shadow (the Turn Clock, seen by the whole table)</h2>
+    <h2 id="ft-d" class="ui-eyebrow">4 · Turn timer (on the TV: the shadow climbs as the time runs out)</h2>
     <div class="ft-tv">
-      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-scrub" muted playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-scrub" muted playsinline preload="auto" poster="media/clock-shadow.jpg"><source src="media/clock-shadow.webm" type="video/webm"><source src="media/clock-shadow.mp4" type="video/mp4"></video></div>
       <section class="ui-panel ui-stack ui-stack--tight" aria-label="The Turn Clock">
+        <p class="ui-eyebrow">Mara's turn</p>
         <p id="ft-clock-text" class="ui-prompt">Turn Clock 0:30</p>
-        <p class="ui-hint">The shadow stands where the clock is. Help steps it back, Spook steps it forward.</p>
+        <p class="ui-hint">The shadow reaches the top of the stairs when the time is up. Help gives Mara 10 seconds and the shadow slides back; Spook takes 10.</p>
         <div class="ui-row">
           <button id="ft-clock-start" class="ui-button ui-button--primary" type="button">Start turn</button>
           <button id="ft-clock-help" class="ui-button" type="button">Help +10 s</button>
@@ -131,14 +129,14 @@
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-g">
     <h2 id="ft-g" class="ui-eyebrow">7 · Wander: a memory is found (a scene for its kind, then our card)</h2>
     <div class="ft-tv">
-      <div class="ft-film" data-shape="landscape" aria-hidden="true"><video class="ft-video" id="ft-wander" muted playsinline preload="metadata" poster="media/wander-harbour.jpg"><source src="media/wander-harbour.webm" type="video/webm"><source src="media/wander-harbour.mp4" type="video/mp4"></video></div>
+      <div class="ft-film" data-shape="landscape" aria-hidden="true"><video class="ft-video" id="ft-wander" muted playsinline preload="metadata" poster="media/wander-envelope-take1.jpg"><source src="media/wander-envelope-take1.webm" type="video/webm"><source src="media/wander-envelope-take1.mp4" type="video/mp4"></video></div>
       <section class="ui-panel ui-stack ui-stack--tight" aria-label="A memory">
         <div class="ui-segments" role="radiogroup" aria-label="Kind of memory">
           <button class="ui-button" type="button" role="radio" aria-checked="false" data-kind="sound">A sound</button>
           <button class="ui-button" type="button" role="radio" aria-checked="false" data-kind="person">A person</button>
           <button class="ui-button" type="button" role="radio" aria-checked="true" data-kind="promise">A promise</button>
         </div>
-        <p id="ft-wander-kind-hint" class="ui-hint">A sound and a person have a short AI scene and a line written for it. A promise keeps the old harbour film (the AI letter scene shows faint writing, so it is held back).</p>
+        <p id="ft-wander-kind-hint" class="ui-hint">Each kind has its own scene and a line written for it. All three are AI scenes: wind chimes, an empty chair, and a sealed envelope by a window.</p>
         <p id="ft-wander-whisper" class="ui-lead" role="status" hidden></p>
         <p id="ft-wander-line" class="ui-lead" role="status" hidden></p>
         <div id="ft-wander-card" class="ui-stack ui-stack--tight" hidden>
@@ -162,6 +160,41 @@
         <p id="ft-lip-text" class="ui-lead" role="status"></p>
         <label class="ui-field"><span class="ui-field-label">Clip</span><select id="ft-lip-pick" class="ui-select"></select></label>
         <p id="ft-lip-hint" class="ui-hint">Tap the clip to play it, with sound. The mouth follows the voice. These are the clips made for the demo video; the line under the picture is the same words.</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-i">
+    <h2 id="ft-i" class="ui-eyebrow">9 · Choosing pieces (on the TV, while players pick)</h2>
+    <div class="ft-tv">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="metadata" poster="media/study-skull.jpg"><source src="media/study-skull.webm" type="video/webm"><source src="media/study-skull.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack ui-stack--tight" aria-label="Choosing pieces">
+        <p class="ui-prompt">Choose your piece.</p>
+        <p class="ui-hint">Each player picks a piece on their phone. Two of four have chosen.</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-j">
+    <h2 id="ft-j" class="ui-eyebrow">10 · Sealing an accusation (faint, behind the phone's form)</h2>
+    <div class="ft-phone ft-dim">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="metadata" poster="media/study-writing.jpg"><source src="media/study-writing.webm" type="video/webm"><source src="media/study-writing.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack" aria-label="Your accusation">
+        <p class="ui-eyebrow">Your accusation · sealed until the reveal</p>
+        <p class="ui-prompt">Who haunts this house?</p>
+        <button class="ui-button ui-button--primary" type="button">Seal it</button>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-k">
+    <h2 id="ft-k" class="ui-eyebrow">11 · Puzzle solved (the film plays once, on Replay)</h2>
+    <div class="ft-phone">
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-once-solved" muted playsinline preload="metadata" poster="media/study-eureka.jpg"><source src="media/study-eureka.webm" type="video/webm"><source src="media/study-eureka.mp4" type="video/mp4"></video></div>
+      <section class="ui-panel ui-stack" aria-label="The result">
+        <p class="ui-prompt">Opened.</p>
+        <p class="ui-hint">Second attempt. The lock gives way.</p>
+        <button id="ft-replay-solved" class="ui-button" type="button">Replay</button>
       </section>
     </div>
   </section>

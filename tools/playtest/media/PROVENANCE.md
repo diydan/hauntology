@@ -16,12 +16,24 @@ A clip cut from a source file already described in a **Source record** points to
 | Open point | The restoration. The picture is old; the tints and the rebuilt intertitles are the restorers' work. Every clip uses the picture only (no intertitle, no sound) and is re-graded by the page, but a lawyer should look at it before the game is sold. |
 | Checked | Credits and death years read on Wikipedia and Commons on 2026-11-15. No rights search, and no legal advice. |
 
+## Source record: Frankenstein (1910)
+
+| | |
+|---|---|
+| Film | *Frankenstein* (1910), Edison Manufacturing Company, director J. Searle Dawley, about 12 minutes |
+| Source | Wikimedia Commons, `File:Frankenstein - Edison Mfg. Co., 1910.webm`, the 480p transcode, fetched 2026-11-16 |
+| What that file is | The Library of Congress print (Commons credits the LOC, item 2017600664), with its tints. Commons marks it public domain. |
+| Credited makers | J. Searle Dawley (director and screenplay, died 1949), Thomas A. Edison (producer, died 1931). Silent: no music was made for it. |
+| Why it is free | USA: published 1910, before 1931. EU and Luxembourg: 70 years from the death of the last of director and screenplay author: 1949 + 70, so free since 2020. |
+| Open point | The film's own tints (brown, red, blue) are the print's; every clip here is turned to black and white and uses the picture only. A lawyer should look at it before the game is sold. |
+| Checked | Credits and death years read on Commons and Wikipedia on 2026-11-16. No rights search, and no legal advice. |
+
 ## stair-shadow
 
 | | |
 |---|---|
 | Record | Source record: Nosferatu (1922) |
-| Shot | Count Orlok's shadow climbing the stairs, 1:26:56 to 1:27:00. The Reel's Haunt 6 shot, and the clock shadow. |
+| Shot | Count Orlok's shadow climbing the stairs, 1:26:56 to 1:27:00. Not shown on the page since 2026-11-16: the clock shadow is cut from it (`clock-shadow`). |
 | Picture only | No audio track (`-an`). No title card or intertitle. No music. |
 | Cut by | `ffmpeg`, 4.2 s from 5215.9 s, scaled to 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 2.2 s |
 | Size | `.mp4` 77 KB, `.webm` 99 KB, `.jpg` 9 KB |
@@ -104,16 +116,93 @@ A clip cut from a source file already described in a **Source record** points to
 | Size | `.mp4` 192 KB, `.webm` 221 KB, `.jpg` 10 KB |
 | Flash check | `node flash-check.mjs` on 2026-11-15: 160 frames, at most 0 flashes in any second (limit 3). |
 
-## wander-harbour
+## clock-shadow
 
 | | |
 |---|---|
 | Record | Source record: Nosferatu (1922) |
-| Shot | One unbroken run of the film, 1:01:48 to 1:03:27 (99.4 s), with no title card in it: a tree by a house, the ship at sea, the sea, the sails, a woman at a window sill (small and dim, no close-up), and the ship coming into the harbour. Wander's home movie, played when a memory is found. It is the longest run in the film without a title card or a close-up of a face; the next shot after it is a face at a window. |
+| Shot | The same shadow climbing the stairs as `stair-shadow`, slowed to 30 seconds (the length of a turn) with blended frames, so the shadow climbs smoothly as the Turn Clock runs. |
 | Picture only | No audio track (`-an`). No title card or intertitle. No music. |
-| Cut by | `ffmpeg`, 99.4 s from 3708.1 s, 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 75 s (the harbour) |
-| Size | `.mp4` 2.7 MB, `.webm` 3.9 MB, `.jpg` 11 KB |
-| Flash check | `node flash-check.mjs` on 2026-11-15: 1787 frames, at most 1 flash in any second (limit 3). A screen of whole-frame brightness; there is no lightning or strobe in the scene. |
+| Cut by | `ffmpeg` from `stair-shadow.mp4`: `setpts=7.2*PTS,framerate=fps=24` (frame blending), 480 x 360, H.264 (main, crf 30, a key frame every 12) and VP9 (crf 38); poster copied from `stair-shadow` |
+| Size | `.mp4` 405 KB, `.webm` 450 KB, `.jpg` 9 KB |
+| Flash check | `node flash-check.mjs media/clock-shadow.mp4 media/clock-shadow.webm` on 2026-11-16: 721 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## reel-mirror
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The parlour: Frankenstein rests in his chair and a figure appears in the tall mirror behind him, 7:37.5 for 10 s. The clip ends before the figure steps into the room. The Reel's shot for the Haunt 6 Event. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 10 s from 457.5 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 7 s |
+| Size | `.mp4` 296 KB, `.webm` 394 KB, `.jpg` 16 KB |
+| Flash check | `node flash-check.mjs media/reel-mirror.mp4 media/reel-mirror.webm` on 2026-11-16: 240 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## wander-departure
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The farewell: the young man says goodbye in the parlour and leaves, and the woman goes to the window and waves after him, 0:13 for 12.5 s (between the two title cards). A spare scene for a promise memory (the promise memory uses `wander-envelope-take1` since 2026-11-16). |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 12.5 s from 13 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 6 s |
+| Size | `.mp4` 528 KB, `.webm` 692 KB, `.jpg` 13 KB |
+| Flash check | `node flash-check.mjs media/wander-departure.mp4 media/wander-departure.webm` on 2026-11-16: 300 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## study-desk
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The study: Frankenstein alone at his desk, writing, with skeletons and bones on the shelves around him, 0:52 for 8 s. It loops behind the clue screen and the puzzle screen. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 8 s from 52 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 4 s |
+| Size | `.mp4` 268 KB, `.webm` 448 KB, `.jpg` 19 KB |
+| Flash check | `node flash-check.mjs media/study-desk.mp4 media/study-desk.webm` on 2026-11-16: 192 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## mirror-fade
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The creature stands before the mirror and is gone: from about 7 s only its reflection is left in the glass, 11:22 for 13.5 s. The clip ends before Frankenstein comes in. The film of a failed puzzle (it got away), played once. |
+| Picture only | No audio track (`-an`). No title card or intertitle (the card before it is cut out). Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 13.5 s from 682 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 11 s |
+| Size | `.mp4` 196 KB, `.webm` 220 KB, `.jpg` 10 KB |
+| Flash check | `node flash-check.mjs media/mirror-fade.mp4 media/mirror-fade.webm` on 2026-11-16: 324 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## study-skull
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The study: Frankenstein sits at his desk, picks up a skull and turns it over, then rises, 0:41.5 for 5 s. Loops on the TV while players choose their pieces. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 5 s from 41.5 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 1.5 s |
+| Size | `.mp4` 194 KB, `.webm` 318 KB, `.jpg` 19 KB |
+| Flash check | `node flash-check.mjs media/study-skull.mp4 media/study-skull.webm` on 2026-11-16: 120 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## study-writing
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The study: Frankenstein sits at his desk and writes, 0:51 for 10 s. Loops faint behind the phone while a player seals an accusation. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 10 s from 51 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 5 s |
+| Size | `.mp4` 333 KB, `.webm` 545 KB, `.jpg` 19 KB |
+| Flash check | `node flash-check.mjs media/study-writing.mp4 media/study-writing.webm` on 2026-11-16: 240 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## study-eureka
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The study: Frankenstein leans back and laughs, then jumps up from the desk, 1:02.5 for 6 s. The film of a solved puzzle, played once. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 6 s from 62.5 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 2.5 s |
+| Size | `.mp4` 213 KB, `.webm` 363 KB, `.jpg` 18 KB |
+| Flash check | `node flash-check.mjs media/study-eureka.mp4 media/study-eureka.webm` on 2026-11-16: 144 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
 
 ## AI clips: the eight scenes of `docs/story/ai-scene-prompts.md`
 
@@ -514,6 +603,24 @@ A windowsill table in afternoon light: a folded letter with no legible writing, 
 ### Scene 4, "Dawn at the door" (the detectives win; replaces the parlour)
 
 Not in `docs/story/ai-scene-prompts.md` yet. It replaces scene 4, "Dawn in the parlour", because the parlour takes show no event: mist leaves a room and a chair rocks once. This scene mirrors "The lights go out": the light comes back, the lamps go out one by one as morning takes over, the front door opens and the mist drifts out.
+
+#### wander-envelope-take1
+
+| | |
+|---|---|
+| Record | AI clip. Generated, not filmed and not cut from a film. |
+| Scene | Scene 8, "The letter" (Wander, a promise memory), made again with a sealed envelope lying face down so there is no surface to write on. Wander's scene for a promise memory. |
+| Overlay place | none (Wander has its own card) |
+| Model | MiniMax-H3, 1280 x 720 source (16:9; the 3:4 ratio was not used), 15 s. |
+| Take | 1 of 1. The envelope is blank and sealed with plain wax; checked by eye on frames every second: no writing, no face, no person. |
+| Sound | The model's own native audio track, kept: AAC in `.mp4`, Opus in `.webm` (mean about -36 dB, peak about -18 dB: breeze and room tone). |
+| Picture | Came back with a faint warm tint, so turned to black and white (`format=gray`). Cropped from 16:9 to 4:3 (960 x 720 from x 160), keeping the envelope, the gloves and the curtain. No platform stamp seen. |
+| Cut by | `ffmpeg`, 15.0 s, scaled to 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 7 s |
+| Size | `.mp4` 460 KB, `.webm` 430 KB, `.jpg` 13 KB |
+| Flash check | `node flash-check.mjs media/wander-envelope-take1.mp4 media/wander-envelope-take1.webm` on 2026-11-16: 360 frames, at most 0 flashes in any second (limit 3). |
+| Where it came from | Made by the owner on 2026-11-16 from the prompt in `docs/story/ai-scene-prompts.md` (scene 8, the envelope version) and handed over as `Sunlight_moving_across_windowsil…_2e00dcd0.mp4`. |
+| Price | The owner's own generation; the amount is not recorded here. For scale, the price table in `docs/story/ai-scene-prompts.md` lists H3 768P at $1.20 for a 15 s take. |
+| Terms | MiniMax's terms for commercial use of generated output have not been read. Read them before the game is sold, and label the clip as AI-generated where the law asks for it. |
 
 #### ai-dawn-door-take1
 
