@@ -93,6 +93,8 @@
         <p id="ft-reel-text" class="ui-hint" role="status">A tall ship at the quay, its sails loose.</p>
         <p id="ft-reel-line" class="ui-lead" role="status" hidden></p>
         <button id="ft-sound" class="ui-button ui-switch" type="button" role="switch" aria-checked="true" aria-describedby="ft-sound-hint"><span class="ui-switch-name">Sound</span><span class="ui-switch-state">On</span></button>
+        <button id="ft-voice" class="ui-button ui-switch" type="button" role="switch" aria-checked="true" aria-describedby="ft-voice-hint"><span class="ui-switch-name">Narration</span><span class="ui-switch-state">On</span></button>
+        <p id="ft-voice-hint" class="ui-hint">The line written for a shot is spoken aloud (the Whisper, or the Keeper at dawn) when it comes, in sections 5, 6 and 7. Its words are on screen either way.</p>
         <p id="ft-sound-hint" class="ui-hint">A claw scrapes the rim of the crate at Haunt 3, as it grips. A knock sounds at Haunt 7 and 8, as the shadow hand raps on the door, 9 seconds in. The hand, the bed and the house shots each have a line written for their own picture, shown here as words when its moment comes.</p>
         <div class="ui-row">
           <button id="ft-haunt-down" class="ui-button" type="button">Haunt −1</button>
@@ -147,6 +149,19 @@
           <button id="ft-wander-find" class="ui-button ui-button--primary" type="button">Find the memory</button>
           <button id="ft-wander-stop" class="ui-button" type="button" hidden>Stop</button>
         </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-h">
+    <h2 id="ft-h" class="ui-eyebrow">8 · The talking ghost (lip-synced clips, with their own voice)</h2>
+    <div class="ft-tv">
+      <div class="ft-film" data-shape="square"><video class="ft-video" id="ft-lip" playsinline controls preload="metadata"></video></div>
+      <section class="ui-panel ui-stack ui-stack--tight" aria-label="A talking clip">
+        <p id="ft-lip-who" class="ui-eyebrow"></p>
+        <p id="ft-lip-text" class="ui-lead" role="status"></p>
+        <label class="ui-field"><span class="ui-field-label">Clip</span><select id="ft-lip-pick" class="ui-select"></select></label>
+        <p id="ft-lip-hint" class="ui-hint">Tap the clip to play it, with sound. The mouth follows the voice. These are the clips made for the demo video; the line under the picture is the same words.</p>
       </section>
     </div>
   </section>

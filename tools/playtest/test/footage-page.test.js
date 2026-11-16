@@ -114,7 +114,11 @@ test('18.3, 18.5 and 18.6 the page: muted, no controls, own origin only, a poste
   const scenesPage = strip(read('js/scenes-page.js'));
   const videos = html.match(/<video\b[\s\S]*?<\/video>/g) || [];
   assert.ok(videos.length >= 1);
-  for (const v of videos) {
+  // The one exception is the talking ghost of section 8 (#ft-lip): a lip-synced clip has its own voice, so it has controls, is not muted, and plays only when tapped.
+  const lip = videos.filter((v) => /\bid="ft-lip"/.test(v));
+  assert.equal(lip.length, 1, 'one lip-synced video');
+  assert.match(lip[0], /\bcontrols\b/); assert.match(lip[0], /\bplaysinline\b/); assert.doesNotMatch(lip[0], /\bautoplay\b|\bmuted\b/); assert.doesNotMatch(lip[0], /\bsrc="https?:/);
+  for (const v of videos.filter((x) => !lip.includes(x))) {
     assert.match(v, /\bmuted\b/, 'muted');
     assert.match(v, /\bplaysinline\b/, 'playsinline');
     assert.doesNotMatch(v, /\bcontrols\b|\bautoplay\b/, 'no controls, no autoplay attribute');
@@ -127,8 +131,11 @@ test('18.3, 18.5 and 18.6 the page: muted, no controls, own origin only, a poste
       assert.ok(existsSync(resolve(root, m[1])), `${m[1]} exists`);
     }
   }
-  for (const m of html.matchAll(/<div class="ft-film"([^>]*)>/g)) assert.match(m[1], /aria-hidden="true"/, 'the picture is decoration');
-  for (const [name, src] of [['footage.html', html], ['footage.js', js], ['footage.css', css], ['scenes.js', scenes], ['scenes-page.js', scenesPage]]) assert.doesNotMatch(src, /https?:\/\//, `${name} loads nothing from another origin`);
+  for (const m of html.matchAll(/<div class="ft-film"([^>]*)>/g)) {
+    if (/data-shape="square"/.test(m[1])) assert.doesNotMatch(m[1], /aria-hidden/, 'the talking ghost has controls, so it is not hidden'); // section 8
+    else assert.match(m[1], /aria-hidden="true"/, 'the picture is decoration');
+  }
+  for (const [name, src] of [['footage.html', html], ['footage.js', js], ['footage.css', css], ['scenes.js', scenes], ['scenes-page.js', scenesPage], ['lipsync-page.js', strip(read('js/lipsync-page.js'))], ['lipsync-data.js', strip(read('js/lipsync-data.js'))]]) assert.doesNotMatch(src, /https?:\/\//, `${name} loads nothing from another origin`);
   for (const [name, src] of [['footage.js', js], ['scenes.js', scenes], ['scenes-page.js', scenesPage]]) assert.doesNotMatch(src, /\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|MediaRecorder|captureStream|drawImage/, `${name}: no network, no recording`);
   assert.match(js, /prefers-reduced-motion/);
   assert.match(js, /visibilitychange/);
@@ -141,7 +148,11 @@ test('18.3 the build copies the clip files, the poster and the two Reel sounds, 
   try {
     const r = spawnSync(process.execPath, [resolve(root, 'build.mjs')], { cwd: root, encoding: 'utf8', env: { ...process.env, PLAYTEST_DIST: dist } });
     assert.equal(r.status, 0, r.stderr);
-    assert.deepEqual(readdirSync(resolve(dist, 'media')).sort(), [...clips.flatMap((c) => [`${c}.jpg`, `${c}.mp4`, `${c}.webm`]), 'knock.m4a', 'scrape.m4a'].sort());
+    const built = readdirSync(resolve(dist, 'media')).sort();
+    // narration (voice-<line id>.mp3) and lip-synced clips (lip-<name>.mp4) come from folders that are not in git, so they are there only when those folders are
+    assert.ok(built.filter((n) => /^voice-/.test(n)).every((n) => /^voice-(scene|wander)\.[a-z-]+\.(soft|dry)\.1\.mp3$/.test(n)), 'narration files are named by line id');
+    assert.ok(built.filter((n) => /^lip-/.test(n)).every((n) => /^lip-hero-[a-z-]+\.mp4$/.test(n)), 'lip-synced clips are named lip-hero-<name>.mp4');
+    assert.deepEqual(built.filter((n) => !/^(voice|lip)-/.test(n)), [...clips.flatMap((c) => [`${c}.jpg`, `${c}.mp4`, `${c}.webm`]), 'knock.m4a', 'scrape.m4a'].sort());
     for (const n of ['knock', 'scrape']) assert.deepEqual(readFileSync(resolve(dist, 'media', `${n}.m4a`)), readFileSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${n}.m4a`)), `${n}.m4a is the game's own file`);
     assert.ok(existsSync(resolve(dist, 'footage.html')));
   } finally {
@@ -159,8 +170,9 @@ function open({ reduce = false, hidden = false } = {}) {
   const log = [];
   // the sounds: an Audio that records the file it was asked to play (jsdom has none that plays), and can be made to refuse
   const heard = [];
+  const voices = []; // the narration files asked for (media/voice-<id>.mp3), kept apart from the two Reel sounds
   const audio = { refuse: false, broken: false };
-  globalThis.Audio = class { constructor(src) { if (audio.broken) throw new Error('no audio'); this.src = src; this.currentTime = 0; } play() { heard.push(this.src); return audio.refuse ? Promise.reject(new Error('blocked')) : Promise.resolve(); } };
+  globalThis.Audio = class { constructor(src) { if (audio.broken) throw new Error('no audio'); this.src = src; this.currentTime = 0; } pause() { this.paused = true; } play() { (this.src.endsWith('.mp3') ? voices : heard).push(this.src); return audio.refuse ? Promise.reject(new Error('blocked')) : Promise.resolve(); } };
   w.HTMLMediaElement.prototype.play = function () { log.push(['play', this.id || this.className]); this.__playing = true; return Promise.resolve(); };
   w.HTMLMediaElement.prototype.pause = function () { log.push(['pause', this.id || this.className]); this.__playing = false; };
   Object.defineProperty(w.document, 'hidden', { value: hidden, configurable: true });
@@ -168,7 +180,7 @@ function open({ reduce = false, hidden = false } = {}) {
   Object.defineProperty(w.HTMLMediaElement.prototype, 'currentTime', { get() { return this.__t || 0; }, set(v) { this.__t = v; }, configurable: true });
   Object.defineProperty(w.HTMLMediaElement.prototype, 'duration', { get() { return 4.2; }, configurable: true });
   w.HTMLMediaElement.prototype.load = function () { this.__loads = (this.__loads || 0) + 1; };
-  return { w, log, listeners, heard, audio };
+  return { w, log, listeners, heard, voices, audio };
 }
 let n = 0;
 const load = () => import(`../js/footage.js?run=${++n}`);
@@ -581,12 +593,12 @@ test('21 with footage off an ending shows its card at once and plays nothing', {
 test('21 every control of the scene demos is a real button with a name, and the pictures are hidden from a screen reader', { skip }, async () => {
   open();
   await load(); await tick(5);
-  for (const id of ['ft-clock-start', 'ft-clock-help', 'ft-clock-spook', 'ft-clock-pause', 'ft-haunt-up', 'ft-haunt-down', 'ft-sound', 'ft-end-detectives', 'ft-end-house', 'ft-end-skip', 'ft-wander-find', 'ft-wander-stop']) {
+  for (const id of ['ft-clock-start', 'ft-clock-help', 'ft-clock-spook', 'ft-clock-pause', 'ft-haunt-up', 'ft-haunt-down', 'ft-sound', 'ft-voice', 'ft-end-detectives', 'ft-end-house', 'ft-end-skip', 'ft-wander-find', 'ft-wander-stop']) {
     const b = $(`#${id}`);
     assert.equal(b.tagName, 'BUTTON', id);
     assert.ok(b.textContent.trim().length > 2, `${id} has a name`);
   }
-  for (const f of document.querySelectorAll('.ft-film')) assert.equal(f.getAttribute('aria-hidden'), 'true');
+  for (const f of document.querySelectorAll('.ft-film')) assert.equal(f.getAttribute('aria-hidden'), f.dataset.shape === 'square' ? null : 'true'); // the talking ghost's frame holds a video with controls, so it is not hidden
   assert.equal($('#ft-reel-text').getAttribute('role'), 'status');
 });
 
@@ -855,3 +867,38 @@ test('23.5 with footage off a Wander scene gives its line and its card at once; 
   });
 });
 
+
+// ---- narration and the talking ghost (section 8)
+test('22 the narration is said when a scene line comes, one voice at a time, and the Narration switch silences it', { skip }, async () => {
+  const { voices } = open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    click(btn('Detectives win')); await flush();
+    await go(4299);
+    assert.deepEqual(voices, [], 'the dawn line is not said before its moment');
+    await go(1);
+    assert.deepEqual(voices, ['media/voice-scene.dawn-door.dry.1.mp3']);
+    click(btn('The house wins')); await flush(); await go(1200);
+    assert.deepEqual(voices, ['media/voice-scene.dawn-door.dry.1.mp3', 'media/voice-scene.lights-out.soft.1.mp3']);
+    click($('#ft-voice')); await flush();
+    assert.equal($('#ft-voice').getAttribute('aria-checked'), 'false');
+    voices.length = 0;
+    click(btn('Detectives win')); await flush(); await go(4300);
+    assert.deepEqual(voices, [], 'Narration off: the words only');
+    assert.match($('#ft-end-line').textContent, /^Well done/, 'the words are there either way');
+  });
+});
+
+test('22 the talking ghost: one lip-synced video with its own controls, the line as words, and a picker over all 13 clips', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  const video = $('#ft-lip');
+  const pick = $('#ft-lip-pick');
+  assert.equal(pick.options.length, 13);
+  assert.equal(video.getAttribute('src'), 'media/lip-hero-whisper-meet.mp4');
+  assert.match($('#ft-lip-text').textContent, /^Hello\. I was waiting/);
+  pick.value = '6'; pick.dispatchEvent(new window.Event('change'));
+  assert.equal(video.getAttribute('src'), 'media/lip-hero-ashby-closing.mp4');
+  assert.match($('#ft-lip-who').textContent, /Mr\. Ashby/);
+  assert.match($('#ft-lip-text').textContent, /^Well\. That is that/);
+});

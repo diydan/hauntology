@@ -7,7 +7,7 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), { status
 // The footage clips (media/*.mp4, .webm, .jpg) and the two Reel sounds (.m4a). Cloudflare's static assets answer a Range request with the whole file, and Safari
 // will not play or seek a video that way, so the Worker serves these itself: the file from the assets binding, cut to the range.
 // Fine for clips of a few MB; a long scene (Requirement 18.6 allows 40 MB) belongs in R2, which answers ranges natively.
-const MEDIA_RE = /^\/media\/[\w.-]+\.(mp4|webm|jpg|m4a)$/;
+const MEDIA_RE = /^\/media\/[\w.-]+\.(mp4|webm|jpg|m4a|mp3)$/;
 
 async function media(request, env) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return new Response(null, { status: 405, headers: { allow: 'GET, HEAD' } });

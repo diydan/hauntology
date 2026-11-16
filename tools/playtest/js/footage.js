@@ -1,6 +1,7 @@
-// Footage test page: clips on phone screens and on the TV, in three looks. Picture only, muted, no recording.
+// Footage test page: clips on phone screens and on the TV, in three looks. Picture only and muted, except the lip-synced clips of section 8 (their own voice, played only when tapped). No recording.
 // The clip files (and two sound files) are the only thing this page loads. Rules: .kiro/specs/puzzles (Requirements 18 to 21).
 import { initScenes } from './scenes-page.js';
+import { initLipsync } from './lipsync-page.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -27,7 +28,23 @@ function playSound(name) {
     a.play().catch(() => {});
   } catch { /* no sound on this browser: the words carry it */ }
 }
-const scenes = initScenes({ isOn: () => wanted && !document.hidden, say, playSound });
+// The narration of a scene line (the Library audio of the Whisper or the Keeper) is one Audio at a time: a new line cuts the old one. Missing or blocked: the words carry it.
+let voice = null;
+function stopVoice() {
+  try { voice?.pause(); } catch { /* nothing to stop */ }
+  voice = null;
+}
+function playVoice(id) {
+  stopVoice();
+  try {
+    const a = new Audio(`media/voice-${id}.mp3`);
+    voice = a;
+    a.play().catch(() => {});
+  } catch { /* no sound on this browser: the words carry it */ }
+}
+const scenes = initScenes({ isOn: () => wanted && !document.hidden, say, playSound, playVoice, stopVoice });
+
+initLipsync({ say });
 
 function paint() {
   playBtn.textContent = wanted ? 'Pause footage' : 'Play footage';
