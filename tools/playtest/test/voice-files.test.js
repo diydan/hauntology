@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { libraryFile, planVoiceFiles, voiceFile } from '../voice-files.mjs';
 import { LIPSYNC, lipsyncFile } from '../js/lipsync-data.js';
-import { SHOT_LINE, WANDER_SCENES } from '../js/scenes.js';
+import { SHOT_LINE, WANDER, WANDER_SCENES } from '../js/scenes.js';
 import { root } from './helpers.js';
 
 const H = (c) => c.repeat(64);
@@ -29,8 +29,9 @@ test('a line is copied when its file is in the folder, and listed as missing whe
 
 test('every scene line of the page has an entry in the real manifest, so the build can find its audio', () => {
   const real = JSON.parse(readFileSync(resolve(root, '..', '..', 'shared', 'fixtures', 'voice-library.json'), 'utf8'));
-  const ids = [...Object.values(SHOT_LINE), ...Object.values(WANDER_SCENES).map((w) => w.line)].filter(Boolean).map((l) => l.id);
-  assert.ok(ids.length >= 6);
+  const ids = [...Object.values(SHOT_LINE), ...Object.values(WANDER_SCENES).map((w) => w.line)].filter(Boolean).map((l) => l.id).concat(WANDER.revealId);
+  assert.ok(ids.length >= 7);
+  assert.equal(WANDER.revealId, 'reveal.soft.1');
   const p = planVoiceFiles(ids, real, () => true);
   assert.deepEqual(p.missing, [], 'each id is in the manifest');
   for (const id of ids) assert.match(libraryFile(real.entries.find((e) => e.sources.includes(id)).key), /^[0-9a-f]{64}\.take1\.mp3$/);

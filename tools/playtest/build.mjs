@@ -3,7 +3,7 @@
 import { cpSync, rmSync, mkdirSync, readdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SHOT_LINE, WANDER_SCENES } from './js/scenes.js';
+import { SHOT_LINE, WANDER, WANDER_SCENES } from './js/scenes.js';
 import { LIPSYNC } from './js/lipsync-data.js';
 import { planVoiceFiles } from './voice-files.mjs';
 
@@ -29,7 +29,7 @@ for (const name of ['knock', 'scrape']) cpSync(resolve(root, '..', '..', 'web', 
 {
   const repoRoot = resolve(root, '..', '..');
   const libDir = process.env.VOICE_LIBRARY_DIR ? resolve(process.env.VOICE_LIBRARY_DIR) : resolve(repoRoot, '.voice-library');
-  const ids = [...Object.values(SHOT_LINE), ...Object.values(WANDER_SCENES).map((w) => w.line)].filter(Boolean).map((l) => l.id);
+  const ids = [...Object.values(SHOT_LINE), ...Object.values(WANDER_SCENES).map((w) => w.line)].filter(Boolean).map((l) => l.id).concat(WANDER.revealId);
   const manifest = JSON.parse(readFileSync(resolve(repoRoot, 'shared', 'fixtures', 'voice-library.json'), 'utf8'));
   const plan = planVoiceFiles(ids, manifest, (f) => existsSync(resolve(libDir, f)));
   for (const c of plan.copy) cpSync(resolve(libDir, c.from), resolve(dist, 'media', c.to));

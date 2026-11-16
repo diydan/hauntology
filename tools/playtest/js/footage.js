@@ -2,6 +2,9 @@
 // The clip files (and two sound files) are the only thing this page loads. Rules: .kiro/specs/puzzles (Requirements 18 to 21).
 import { initScenes } from './scenes-page.js';
 import { initLipsync } from './lipsync-page.js';
+import { WANDER } from './scenes.js';
+
+const REVEAL_ID = WANDER.revealId;
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -30,17 +33,27 @@ function playSound(name) {
 }
 // The narration of a scene line (the Library audio of the Whisper or the Keeper) is one Audio at a time: a new line cuts the old one. Missing or blocked: the words carry it.
 let voice = null;
+let voiceId = null;
+let waiting = null; // a scene line that waits for the Whisper's reveal to end, so the two never talk over each other
 function stopVoice() {
   try { voice?.pause(); } catch { /* nothing to stop */ }
   voice = null;
+  voiceId = null;
+  waiting = null;
 }
-function playVoice(id) {
-  stopVoice();
+function start(id) {
   try {
     const a = new Audio(`media/voice-${id}.mp3`);
     voice = a;
+    voiceId = id;
+    a.addEventListener?.('ended', () => { if (voice !== a) return; voice = null; voiceId = null; const next = waiting; waiting = null; if (next) start(next); });
     a.play().catch(() => {});
   } catch { /* no sound on this browser: the words carry it */ }
+}
+function playVoice(id) {
+  if (voice && voiceId === REVEAL_ID && id !== REVEAL_ID) { waiting = id; return; } // the reveal is being said: queue this line behind it
+  stopVoice();
+  start(id);
 }
 const scenes = initScenes({ isOn: () => wanted && !document.hidden, say, playSound, playVoice, stopVoice });
 

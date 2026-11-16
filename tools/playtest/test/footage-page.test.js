@@ -150,7 +150,7 @@ test('18.3 the build copies the clip files, the poster and the two Reel sounds, 
     assert.equal(r.status, 0, r.stderr);
     const built = readdirSync(resolve(dist, 'media')).sort();
     // narration (voice-<line id>.mp3) and lip-synced clips (lip-<name>.mp4) come from folders that are not in git, so they are there only when those folders are
-    assert.ok(built.filter((n) => /^voice-/.test(n)).every((n) => /^voice-(scene|wander)\.[a-z-]+\.(soft|dry)\.1\.mp3$/.test(n)), 'narration files are named by line id');
+    assert.ok(built.filter((n) => /^voice-/.test(n)).every((n) => /^voice-((scene|wander)\.[a-z-]+|reveal)\.(soft|dry)\.1\.mp3$/.test(n)), 'narration files are named by line id');
     assert.ok(built.filter((n) => /^lip-/.test(n)).every((n) => /^lip-hero-[a-z-]+\.mp4$/.test(n)), 'lip-synced clips are named lip-hero-<name>.mp4');
     assert.deepEqual(built.filter((n) => !/^(voice|lip)-/.test(n)), [...clips.flatMap((c) => [`${c}.jpg`, `${c}.mp4`, `${c}.webm`]), 'knock.m4a', 'scrape.m4a'].sort());
     for (const n of ['knock', 'scrape']) assert.deepEqual(readFileSync(resolve(dist, 'media', `${n}.m4a`)), readFileSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${n}.m4a`)), `${n}.m4a is the game's own file`);
@@ -170,9 +170,11 @@ function open({ reduce = false, hidden = false } = {}) {
   const log = [];
   // the sounds: an Audio that records the file it was asked to play (jsdom has none that plays), and can be made to refuse
   const heard = [];
+  const played = []; // every narration Audio made, so a test can end one
   const voices = []; // the narration files asked for (media/voice-<id>.mp3), kept apart from the two Reel sounds
   const audio = { refuse: false, broken: false };
-  globalThis.Audio = class { constructor(src) { if (audio.broken) throw new Error('no audio'); this.src = src; this.currentTime = 0; } pause() { this.paused = true; } play() { (this.src.endsWith('.mp3') ? voices : heard).push(this.src); return audio.refuse ? Promise.reject(new Error('blocked')) : Promise.resolve(); } };
+  globalThis.Audio = class { constructor(src) { if (audio.broken) throw new Error('no audio'); this.src = src; this.currentTime = 0; } pause() { this.paused = true; } addEventListener(t, f) { if (t === 'ended') this.onended = f; } play() { if (this.src.endsWith('.mp3')) played.push(this);
+    (this.src.endsWith('.mp3') ? voices : heard).push(this.src); return audio.refuse ? Promise.reject(new Error('blocked')) : Promise.resolve(); } };
   w.HTMLMediaElement.prototype.play = function () { log.push(['play', this.id || this.className]); this.__playing = true; return Promise.resolve(); };
   w.HTMLMediaElement.prototype.pause = function () { log.push(['pause', this.id || this.className]); this.__playing = false; };
   Object.defineProperty(w.document, 'hidden', { value: hidden, configurable: true });
@@ -180,7 +182,7 @@ function open({ reduce = false, hidden = false } = {}) {
   Object.defineProperty(w.HTMLMediaElement.prototype, 'currentTime', { get() { return this.__t || 0; }, set(v) { this.__t = v; }, configurable: true });
   Object.defineProperty(w.HTMLMediaElement.prototype, 'duration', { get() { return 4.2; }, configurable: true });
   w.HTMLMediaElement.prototype.load = function () { this.__loads = (this.__loads || 0) + 1; };
-  return { w, log, listeners, heard, voices, audio };
+  return { w, log, listeners, heard, voices, played, audio };
 }
 let n = 0;
 const load = () => import(`../js/footage.js?run=${++n}`);
@@ -901,4 +903,33 @@ test('22 the talking ghost: one lip-synced video with its own controls, the line
   assert.equal(video.getAttribute('src'), 'media/lip-hero-ashby-closing.mp4');
   assert.match($('#ft-lip-who').textContent, /Mr\. Ashby/);
   assert.match($('#ft-lip-text').textContent, /^Well\. That is that/);
+});
+
+test('22 Wander: the Whisper says the reveal first, and the scene line waits until she has finished', { skip }, async () => {
+  const { voices, played } = open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    click(btn('A person')); await flush();
+    click(btn('Find the memory')); await flush();
+    assert.deepEqual(voices, ['media/voice-reveal.soft.1.mp3'], 'the reveal at once');
+    await go(5000);
+    assert.match($('#ft-wander-line').textContent, /^The tea is still warm/, 'the words come on time');
+    assert.deepEqual(voices, ['media/voice-reveal.soft.1.mp3'], 'the scene line is not said over the reveal');
+    played[0].onended(); await flush();
+    assert.deepEqual(voices, ['media/voice-reveal.soft.1.mp3', 'media/voice-wander.chair.soft.1.mp3'], 'it follows when she has finished');
+  });
+});
+
+test('22 Wander: Stop and the Narration switch cut the reveal, and a queued line is dropped with it', { skip }, async () => {
+  const { voices, played } = open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    click(btn('A person')); await flush();
+    click(btn('Find the memory')); await flush();
+    await go(5000);
+    click(btn('Stop')); await flush();
+    assert.equal(played[0].paused, true, 'the reveal is cut');
+    played[0].onended?.(); await flush();
+    assert.deepEqual(voices, ['media/voice-reveal.soft.1.mp3'], 'the queued scene line never sounds');
+  });
 });

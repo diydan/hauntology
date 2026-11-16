@@ -236,6 +236,7 @@ export function initScenes({ isOn, say, playSound = () => {}, playVoice = () => 
     wcard.hidden = true;
     whisper.textContent = WANDER.reveal;
     whisper.hidden = false;
+    if (voiceOn) playVoice(WANDER.revealId); // the Whisper says it first; the scene's own line waits until she has finished
     if (!isOn()) { show(); showWanderCard(); return; } // footage off: the card and the line at once, the same words
     say(sc.text);
     wander.currentTime = 0;
