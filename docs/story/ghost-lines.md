@@ -134,6 +134,7 @@ The ghost speaks with nothing to reveal, tease or hint. It is also the only kind
 | `ambient.dry.3` | The moon, I notice, goes by {moon} just now. I do not hold it against her. |
 | `ambient.dry.4` | Do not mind me. I have made rather a career of being overlooked. You carry on. |
 | `ambient.dry.5` | Take your time. I have never once been in a hurry, and it has done me no harm at all. |
+| `ambient.dry.6` | It is {weather} out. By my reckoning, a quiet evening is one in which the door opens only twice. I treasure the few I get. |
 
 ## ending
 
@@ -182,6 +183,18 @@ The visitor tries to change the ghost's rules or to leave the fiction. The ghost
 | `refuse.dry.3` | You are welcome to try, but I have no idea what you are talking about. Shall we go back to the place, where I at least have opinions? |
 | `refuse.dry.4` | I have been here a long time, and I have not once been asked that. I shall not start answering now. Do look around instead. |
 | `refuse.dry.5` | No, I do not think so. I am far too set in my ways. Come now, there is a place here worth looking at. |
+
+## wander (narration over a Wander scene)
+
+New 2026-11-16, in the storybook voice of `narration-style.md`. One line for each of the three Wander scenes (a sound, a person, a promise). A Wander place belongs to the player, so each line sets a mood and never says what the memory is: the card after the scene does that. Written for the picture and timed to it (`ai-scene-prompts.md`). No `house`, as the rest of this file.
+
+### wander, soft (the Whisper)
+
+| Id | Line |
+|---|---|
+| `wander.chimes.soft.1` | Do you hear that? A row of small bells, and not one in tune. I would not change a single one. |
+| `wander.chair.soft.1` | The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I keep the kettle patient, in case of a quick return. |
+| `wander.letter.soft.1` | A letter, folded in three. A pair of gloves, set down just so. The breeze lifts one corner and puts it back, very politely. It is not for me to read. |
 
 ## Greeting (kind not in the spec yet)
 

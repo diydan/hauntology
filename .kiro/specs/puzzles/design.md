@@ -489,11 +489,11 @@ A scene earns its place only if it does one of three jobs: it **shows state**, i
 | 3 | Orlok rises in his crate | `reel-coffin` | yes |
 | 4 and 5 | An empty street | `reel-streets` | |
 | 6 | The shadow on the stairs | `stair-shadow` | yes |
-| 7 and 8 | The shadow hand at the door | `reel-hand` | |
-| 9 (to the maximum) | The shape over the bed | `reel-bed` | yes |
-| the maximum | Something waits in a doorway, a woman hides her face at a window | `end-house` | the ending |
+| 7 and 8 | The shadow hand at the door (AI scene, 15 s) | `ai-hand-door-take2` | |
+| 9 (to the maximum) | The shadow over the empty bed (AI scene, 15 s) | `ai-empty-bed-take1` | yes |
+| the maximum | The windows go dark one by one and the door swings open on the dark (AI scene, 15 s) | `ai-lights-out-take1` | the ending |
 
-For a maximum of 8 the ladder ends at 7 (the hand) and 8 is the house; for 12 the bed holds from 9 to 11. The two ending shots are `end-dawn` (Detectives win) and `end-house` (the house wins).
+For a maximum of 8 the ladder ends at 7 (the hand) and 8 is the house; for 12 the bed holds from 9 to 11. The two ending shots are `ai-dawn-door-take3` (Detectives win: the same house at dusk, the light rises and the door opens on the morning) and `ai-lights-out-take1` (the house wins). The hand, the bed, the dawn and the house are AI scenes, which have lines of their own (below); the older film clips `reel-hand`, `reel-bed`, `end-dawn` and `end-house` stay in `media/` but no shot uses them.
 
 Rules for every scene: it moves only on public state (the Turn Clock, the Haunt level, who won, who joined the haunting) and never on a private result; it never plays during the 15 second Suggestion window or an answer choice; it can always be skipped; it has no sound of its own; every shot has a line of words for the live region; and the game works with the footage off. The Reel and the endings are not shown on the pyramid Display in this version.
 
@@ -585,23 +585,25 @@ For every Place and every answer text the game can make, the ink is at least 4.5
 For every clip that has a Place, every frame of the Place's window carries no mark at the Place, and the clip's entry in `PROVENANCE.md` names its model, date, prompt and take when a model made it.
 **Validates: Requirements 22.3, 22.10**
 
-## Event lines over the Reel (2026-11-15)
+## Lines written for the pictures (2026-11-16; replaces "Event lines over the Reel" of 2026-11-15)
 
-The game already speaks at the moments the Reel plays: a Haunt Event fires when the Haunt first reaches 3, 6 or 9 below the maximum (`party-mode` 11.2), and the Whisper says its line (`docs/story/party-lines.md`). The footage gives that line a picture. It adds no voice of its own.
+The first idea was to let the Whisper's Haunt Event line (Cold Spot, Blackout, Restless, Lull) sit under whichever shot the level gave, with the Event shots kept as mood shots that show no Event kind. It was judged wrong on 2026-11-15: a line that does not match its picture breaks the scene, and the shot and the Event kind come from different draws, so a pair could never be written for. The rule now is the opposite: **a line is written for a picture, and said only over it.**
 
-The shot comes from the level (`reelShot`) and the Event kind is drawn from four by the seed, or chosen by a human Poltergeist within 15 seconds, so a shot cannot know which kind it will sit under (twelve pairs for each maximum). So the two are kept apart: the Event shots are **mood shots** that show no kind, and the line carries the kind.
+| Shot | Clip | Line | Speaker | Starts at | The picture at that moment |
+|---|---|---|---|---|---|
+| Hand | `ai-hand-door-take2` | `scene.hand-door.soft.1` | Whisper | 0.8 s | the shadow already on the wall; the knocks come at 9 s |
+| Bed | `ai-empty-bed-take1` | `scene.bed.soft.1` | Whisper | 0.5 s | the bed, still; the mattress sinks at 6 s |
+| House | `ai-lights-out-take1` | `scene.lights-out.soft.1` | Whisper | 1.2 s | every window warm; the lights go out from 3 s |
+| Dawn | `ai-dawn-door-take3` | `scene.dawn-door.dry.1` | Keeper | 2.9 s | the quiet house at dusk; "the door opens" is said as it opens, at 10.4 s |
 
-| Event | Whisper line | What the Reel does |
-|---|---|---|
-| Cold Spot | `haunt.cold-spot` | Nothing extra. |
-| Blackout | `haunt.blackout` | The shot dims with the Host scene, by the same amount over the same time. |
-| Restless | `haunt.restless` | Nothing extra. |
-| Lull | `haunt.lull` | The Haunt falls by one: the shot of the lower level is held on its last frame and not played, so the picture lets go with the line. |
+The ship, the crate, the street and the stairs are old film with no picture of ours, and the stairs are scrubbed by the clock: they have no line. The lines are rows of `docs/story/party-lines.md` (the `scene.*` sections) and are in the Voice Library like every spoken line; a test compares the rows with `SHOT_LINE` word for word, and checks that each line ends before its shot does (`LINE_AT`, and the rendered length of the line). A line is a `scene.*` row on purpose: it is never drawn as an `end.solved` or an Event line, so it cannot be said over another moment or twice.
 
-Timing: the shot plays when the Haunt reaches the level and the line plays when the Event applies, at once with no human Poltergeist and up to 15 seconds later with one. So every Event shot must look right held on its last frame, which is where most lines will land. Spoken narration is off by default (`party-mode` 7.6), the same line is always in the log, the live region and the captions, and the Master can mute, replay or skip a spoken line, so a Room without narration reads the same.
+The Room's own lines stay as they are: the Whisper still says her Event line when a Haunt Event applies (`party-mode` 11.2) and the Keeper still closes the game after a Lodger confession. Two voices never speak at once, so when a Room line is speaking or due the shot's line is shown in words only for that turn. A Blackout still dims the shot as it dims the scene, and a Lull still holds the lower shot on its last frame with no line.
 
-Not added: a spoken line for the Reel itself; a line that describes the picture; a Lodger line over a shot (the Lodger never speaks before the Accusation, and never tells); lip-sync dubbing of a real actor's face. A line over a held frame may feel late; that is checked on a phone and a TV in spike puzzles 1.7.
+Spoken narration is off by default (`party-mode` 7.6). The same words are always in the log, the live region and the captions, and the Master can mute, replay or skip a spoken line, so a Room without narration reads the same. On `/footage.html` the line is shown as words at its moment (no audio): in the Reel and in the endings.
 
-### Property 32: An Event line sits under its shot and changes nothing
-For every Event kind and every Event level of each maximum of 8, 10 and 12, the line is the one the Room already speaks for the kind (the Reel adds none), it plays once and only where narration is on, no shot's words name an Event kind, a Blackout dims the shot as it dims the scene, and a Lull shows the shot of the lower level held and not played; with narration or footage off the Event reads the same in the log.
+Not added: a line that names an Event kind, a Sign or a clue; a Lodger line over a shot (the Lodger never speaks before the Accusation, and never tells); lip-sync dubbing of a real actor's face. A line over a shot that is paused by Skip is dropped.
+
+### Property 32: A line is written for its picture and is said over it only
+For every shot, Haunt level and maximum of 8, 10 and 12: exactly the shots made for the game have a line, each line is a `scene.*` row of the story banks word for word and follows the bank rules and names no Sign, clue, card or Event kind, a level gives the line of its own shot or none, a line starts inside its shot at its moment and ends before the shot does, it is said once and only on a rise, a line still waiting is dropped when the Reel moves or the ending is skipped, a still or blocked picture has its line at once, and the Event line of the Room, a Blackout dim and a Lull hold are unchanged; with narration or footage off the words are the same in the log.
 **Validates: Requirements 20.7, 20.8, 20.9**

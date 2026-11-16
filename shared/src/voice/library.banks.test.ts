@@ -11,31 +11,31 @@ describe("buildLibrary: every real bank", () => {
   const all = [...(SCRIPTED_BANKS.whisper ?? []), ...(SCRIPTED_BANKS.keeper ?? []), ...(SCRIPTED_BANKS.lodger ?? [])];
   const entries = buildLibrary(SCRIPTED_BANKS, FINITE_VALUES);
 
-  it("has the banks the story writer produced: 72 single-player and 146 party lines, 16 Lodger lines", () => {
-    expect(GHOST_WHISPER_BANK.length + GHOST_KEEPER_BANK.length).toBe(72);
-    expect(PARTY_WHISPER_BANK.length + PARTY_KEEPER_BANK.length).toBe(146);
+  it("has the banks the story writer produced: 76 single-player and 154 party lines, 16 Lodger lines", () => {
+    expect(GHOST_WHISPER_BANK.length + GHOST_KEEPER_BANK.length).toBe(76);
+    expect(PARTY_WHISPER_BANK.length + PARTY_KEEPER_BANK.length).toBe(154);
     expect(SCRIPTED_BANKS.lodger).toHaveLength(16);
-    expect(all.length).toBe(72 + 146 + 16);
+    expect(all.length).toBe(76 + 154 + 16);
   });
 
   it("uses each id once", () => {
     expect(new Set(all.map((l) => l.id)).size).toBe(all.length);
   });
 
-  it("lists 510 files: 66 Lodger, 214 for the Whisper (Pippa) and 230 for the Keeper (Ronald)", () => {
-    expect(entries).toHaveLength(510);
+  it("lists 527 files: 66 Lodger, 221 for the Whisper (Pippa) and 240 for the Keeper (Ronald)", () => {
+    expect(entries).toHaveLength(527);
     expect(entries.filter((e) => e.speaker === "lodger")).toHaveLength(66);
-    expect(entries.filter((e) => e.voice === "inworld:Pippa")).toHaveLength(214);
-    expect(entries.filter((e) => e.voice === "inworld:Ronald")).toHaveLength(230);
+    expect(entries.filter((e) => e.voice === "inworld:Pippa")).toHaveLength(221);
+    expect(entries.filter((e) => e.voice === "inworld:Ronald")).toHaveLength(240);
   });
 
-  it("estimates about 51,400 characters and $1.28 for everything", () => {
+  it("estimates about 53,600 characters and $1.34 for everything", () => {
     const est = estimateLibrary(entries);
-    expect(est.files).toBe(510);
-    expect(est.chars).toBeGreaterThan(51_000);
-    expect(est.chars).toBeLessThan(52_000);
-    expect(est.usd).toBeGreaterThan(1.2);
-    expect(est.usd).toBeLessThan(1.3);
+    expect(est.files).toBe(527);
+    expect(est.chars).toBeGreaterThan(53_000);
+    expect(est.chars).toBeLessThan(54_500);
+    expect(est.usd).toBeGreaterThan(1.3);
+    expect(est.usd).toBeLessThan(1.4);
   });
 
   it("renders no text-only line: no cue, nudge, phone cue, not-you, choice prompt, haunt rise, round end, hand-over or aside", () => {
@@ -63,9 +63,9 @@ describe("buildLibrary: every real bank", () => {
     }
   });
 
-  it("stops before the sentence that holds a player's name: 33 spoken lines are cut", () => {
+  it("stops before the sentence that holds a player's name: 35 spoken lines are cut", () => {
     const cut = all.filter((l) => l.spoken && PLAYER_PLACEHOLDERS.some((p) => l.text.includes(p)));
-    expect(cut).toHaveLength(33);
+    expect(cut).toHaveLength(35);
     const turn = all.find((l) => l.id === "turn-start.dry.1");
     expect(turn?.text).toContain("{nick}");
     expect(spokenPart(turn?.text ?? "")).toBe("It is your hour. I am the soul of patience, though the house is rather less so.");

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EVENT_LEVELS, SHOTS, SHOT_SOUND, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, reelSound, shadowPosition, stepPosition, wanderCard } from '../js/scenes.js';
+import { EVENT_LEVELS, LINE_AT, SHOTS, SHOT_LINE, SHOT_SOUND, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelLine, reelShot, reelSound, shadowPosition, shotLine, stepPosition, wanderCard } from '../js/scenes.js';
 import { root } from './helpers.js';
 
 const MAXES = [8, 10, 12];
@@ -123,7 +123,7 @@ test('20.3 and 21.3 every shot has its three files, a line of words for the live
   for (const [name, file] of Object.entries(SHOTS)) {
     for (const ext of ['webm', 'mp4', 'jpg']) assert.ok(existsSync(resolve(root, 'media', `${file}.${ext}`)), `${file}.${ext}`);
     assert.ok(SHOT_TEXT[name] && SHOT_TEXT[name].length > 5, `${name} has its words`);
-    assert.match(prov, new RegExp(`^## ${file}$`, 'm'), `${file} has an entry`);
+    assert.match(prov, new RegExp(`^${file.startsWith('ai-') ? '#### ' : '## '}${file}$`, 'm'), `${file} has an entry (film: ## name, AI clip: #### name)`);
   }
   assert.deepEqual(Object.keys(SHOT_TEXT).sort(), Object.keys(SHOTS).sort());
 });
@@ -183,7 +183,7 @@ test('20.6 each sound has its words, its file in the game folder, a credit, and 
 
 const probe = (file) => { const r = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], { encoding: 'utf8' }); return r.status === 0 ? Number(r.stdout) : null; };
 
-test('20.6 every sound has a start time inside its shot, and the shot is long enough for the sound to begin and be heard', { skip: probe(resolve(root, 'media', 'reel-hand.mp4')) === null && 'ffprobe not installed' }, () => {
+test('20.6 every sound has a start time inside its shot, and the shot is long enough for the sound to begin and be heard', { skip: probe(resolve(root, 'media', `${SHOTS.hand}.mp4`)) === null && 'ffprobe not installed' }, () => {
   assert.deepEqual(Object.keys(SOUND_AT).sort(), Object.keys(SOUND_TEXT).sort(), 'a start time for each sound, and no other');
   for (const [shot, sound] of Object.entries(SHOT_SOUND)) {
     const at = SOUND_AT[sound];
@@ -191,5 +191,80 @@ test('20.6 every sound has a start time inside its shot, and the shot is long en
     assert.ok(Number.isFinite(at) && at >= 0, `${sound} starts at a real time`);
     assert.ok(at < clip - 0.5, `${sound} starts at ${at} s of a ${clip.toFixed(2)} s shot, at least half a second before the end`);
   }
-  assert.ok(SOUND_AT.scrape > SOUND_AT.knock, 'the claw lands later in its shot than the fingers reach the door (frames of the two clips)');
+  assert.ok(SOUND_AT.knock > 8 && SOUND_AT.knock < 10, 'the knock is the first rap of the AI hand-at-the-door clip, at about 9 s (measured on its own sound, 8.99 s)');
+});
+
+// ---- 20.7 to 20.9: a line written for each shot's own picture ----
+const story = readFileSync(resolve(root, '..', '..', 'docs', 'story', 'party-lines.md'), 'utf8');
+const rowOf = (id) => new RegExp(`^\\| \`${id.replace(/\./g, '\\.')}\` \\| (.+?) \\|\\s*$`, 'm').exec(story)?.[1];
+const SIGNS = /\b(moon|key|eye|hand|star|bell)\b/i; // the six Signs: a line never names one, so it can never read as a clue
+const BANNED = /\b(AI|model|prompt|instructions?|rules?|turns?|rounds?|points?|scores?|cards?|hands?|clocks?|seconds?|levels?|games?|play|master|poltergeist|cannot|cold spot|blackout|restless|lull)\b/i;
+
+test('20.7 exactly the AI shots have a line, each is its own story-bank row word for word, and the old film has none', () => {
+  assert.deepEqual(Object.keys(SHOT_LINE).sort(), ['bed', 'dawn', 'hand', 'house']);
+  for (const [shot, file] of Object.entries(SHOTS)) {
+    assert.equal(shot in SHOT_LINE, file.startsWith('ai-'), `${shot} (${file}): a line exactly when the shot is an AI scene`);
+  }
+  const ids = new Set();
+  for (const [shot, line] of Object.entries(SHOT_LINE)) {
+    assert.equal(rowOf(line.id), line.text, `${shot}: ${line.id} is a row of party-lines.md, word for word`);
+    assert.ok(line.id.startsWith('scene.'), `${line.id} is a scene line, never an Event or an ending line the Room can also draw`);
+    assert.equal(line.speaker, line.id.endsWith('.soft.1') ? 'whisper' : 'keeper', `${shot}: the speaker matches the id's voice`);
+    assert.ok(line.id.endsWith('.soft.1') || line.id.endsWith('.dry.1'));
+    assert.ok(!ids.has(line.id), `${line.id} is used by one shot only`);
+    ids.add(line.id);
+  }
+});
+
+test('20.7 every shot line follows the bank rules and never names a Sign, a clue, a card or an Event kind', () => {
+  for (const [shot, { text }] of Object.entries(SHOT_LINE)) {
+    assert.ok(text.length <= 240, `${shot}: at most 240 characters`);
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    assert.ok(sentences.length >= 1 && sentences.length <= 4, `${shot}: one to four sentences`);
+    assert.doesNotMatch(text, /\d/, `${shot}: no digit`);
+    assert.doesNotMatch(text, /[\[\]<>`*#{}|]/, `${shot}: no markup or placeholder`);
+    assert.match(text, /\b(I|me|my|we|us)\b/, `${shot}: first person`);
+    assert.doesNotMatch(text, SIGNS, `${shot}: no Sign word`);
+    assert.doesNotMatch(text, BANNED, `${shot}: no banned or Event word`);
+    assert.doesNotMatch(text, /\b(was|were|had|did|have been)\b/i, `${shot}: present tense`);
+  }
+});
+
+test('20.7 the line of a shot is the line of its level: only the hand, the bed and the house have one, over every level and maximum', () => {
+  for (const max of MAXES) {
+    for (let l = 0; l <= max + 1; l++) {
+      const shot = reelShot(l, max);
+      assert.equal(reelLine(l, max), shotLine(shot), `level ${l} of ${max}`);
+      assert.equal(reelLine(l, max) === null, !['hand', 'bed', 'house'].includes(shot), `level ${l} of ${max} is ${shot}`);
+    }
+  }
+  assert.deepEqual(Array.from({ length: 11 }, (_, l) => reelLine(l, 10)?.id ?? null), [null, null, null, null, null, null, null, 'scene.hand-door.soft.1', 'scene.hand-door.soft.1', 'scene.bed.soft.1', 'scene.lights-out.soft.1']);
+  assert.equal(shotLine('dawn').id, 'scene.dawn-door.dry.1', 'the dawn line belongs to the ending shot, not to a level');
+});
+
+test('20.7 shotLine and reelLine are total: odd input gives a line or null, and never a throw or an inherited property', () => {
+  for (const bad of [undefined, null, 5, 'toString', 'constructor', '__proto__', {}, [], 'ship', '']) assert.equal(shotLine(bad), null, String(bad));
+  for (const [l, m] of [[NaN, 10], [-3, 10], [99, 10], [3.7, 10], [7, undefined], [7, 'x'], [null, null]]) {
+    const r = reelLine(l, m);
+    assert.ok(r === null || Object.values(SHOT_LINE).includes(r), `reelLine(${l}, ${m})`);
+  }
+  assert.equal(reelLine(99, 10), SHOT_LINE.house, 'past the maximum is the house');
+});
+
+test('20.8 every line starts inside its shot and ends before the shot does, using the rendered length of the line', { skip: probe(resolve(root, 'media', `${SHOTS.hand}.mp4`)) === null && 'ffprobe not installed' }, () => {
+  assert.deepEqual(Object.keys(LINE_AT).sort(), Object.keys(SHOT_LINE).sort(), 'a start time for each line, and no other');
+  // The length of each line as rendered by Inworld (Whisper: Pippa, rate 0.9; Keeper: Ronald, rate 0.9), measured on 2026-11-16.
+  const RENDERED_S = { hand: 13.1, bed: 13.8, house: 13.5, dawn: 11.1 };
+  for (const shot of Object.keys(SHOT_LINE)) {
+    const clip = probe(resolve(root, 'media', `${SHOTS[shot]}.mp4`));
+    const at = LINE_AT[shot];
+    assert.ok(Number.isFinite(at) && at >= 0, `${shot} starts at a real time`);
+    assert.ok(at + RENDERED_S[shot] <= clip - 0.1, `${shot}: starts at ${at} s, runs ${RENDERED_S[shot]} s, in a ${clip.toFixed(2)} s shot`);
+  }
+});
+
+test('20.8 the dawn line is placed so that "the door opens" is said as the door opens in the picture (10.4 s)', () => {
+  const DOOR_OPENS_IN_LINE = 7.3; // seconds into the rendered line (the pauses of the render: the second sentence starts at 5.15 s)
+  const at = LINE_AT.dawn + DOOR_OPENS_IN_LINE;
+  assert.ok(Math.abs(at - 10.4) <= 0.5, `said at ${at.toFixed(1)} s of the shot, the door opens at 10.4 s`);
 });

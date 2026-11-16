@@ -1,7 +1,7 @@
 // The scene demos of the footage test page: the clock shadow, the Reel, the two endings (Requirements 19 to 21) and Wander's home movie.
 // Everything here is driven by public state only (a clock, a Haunt level, a list of nicknames). The video is decoration:
 // its meaning is always also said in words (the text twin of each shot) and the page works with the footage off.
-import { SHOTS, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelShot, reelSound, shadowPosition, stepPosition, wanderCard } from './scenes.js';
+import { LINE_AT, SHOTS, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelLine, reelShot, reelSound, shadowPosition, shotLine, stepPosition, wanderCard } from './scenes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const clock = (ms) => { const s = Math.ceil(Math.max(0, ms) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
@@ -90,11 +90,22 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
     s.className = `ui-seg${n <= haunt ? ' is-on' : ''}${isEventLevel(n, max) ? ' ui-seg--event' : ''}${n === max ? ' ui-seg--max' : ''}`;
     return s;
   }
-  let turn = 0; // each redraw of the Reel is a new turn: a sound still waiting for its moment in an older shot is dropped
+  // The line written for a shot's picture (Requirement 20.7) is on screen as words, in its own live region, once its moment of the picture comes.
+  const reelLineEl = $('#ft-reel-line');
+  function showLine(el, line) {
+    el.textContent = line.text;
+    el.dataset.speaker = line.speaker;
+    el.hidden = false;
+  }
+  let turn = 0; // each redraw of the Reel is a new turn: a sound or a line still waiting for its moment in an older shot is dropped
   let soundTimer = 0;
+  let lineTimer = 0;
   function drawHaunt(play, rose = false) {
     const mine = ++turn;
     clearTimeout(soundTimer);
+    clearTimeout(lineTimer);
+    reelLineEl.hidden = true;
+    reelLineEl.textContent = '';
     const shot = reelShot(haunt, max);
     meter.replaceChildren(...Array.from({ length: max }, (_, i) => seg(i + 1)));
     meter.setAttribute('aria-label', `Haunt ${haunt} of ${max}`);
@@ -109,6 +120,12 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
       // The sound belongs to a moment of the shot (SOUND_AT): once the picture is moving, wait for that moment. A still picture has no moment, so it sounds at once.
       if (!started) fire();
       else started.then((moving) => { if (mine !== turn) return; if (moving) soundTimer = setTimeout(fire, SOUND_AT[sound] * 1000); else fire(); });
+    }
+    const line = reelLine(haunt, max);
+    if (rose && line) { // a line is said only on a rise, like a sound, and only over the shot it was written for
+      const fire = () => { if (mine === turn) showLine(reelLineEl, line); };
+      if (!started) fire();
+      else started.then((moving) => { if (mine !== turn) return; if (moving) lineTimer = setTimeout(fire, LINE_AT[shot] * 1000); else fire(); });
     }
   }
   $('#ft-haunt-up').addEventListener('click', () => { haunt = Math.min(max, haunt + 1); drawHaunt(true, true); });
@@ -127,7 +144,11 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
   // ---- 6. the two endings: a hero shot, then our own title card
   const end = $('#ft-end');
   const card = $('#ft-card');
+  const endLine = $('#ft-end-line');
   let pending = null;
+  let endTurn = 0; // each ending, and each Skip, is a new turn: a line still waiting for its moment is dropped
+  let endTimer = 0;
+  function dropEndLine() { endTurn += 1; clearTimeout(endTimer); endLine.hidden = true; endLine.textContent = ''; }
   function showCard() {
     if (!pending) return;
     $('#ft-card-title').textContent = pending.title;
@@ -137,17 +158,22 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
     pending = null;
   }
   function playEnding(outcome) {
+    dropEndLine();
+    const mine = endTurn;
     pending = endingCard(outcome, ['Mara', 'Joss']);
+    const shot = pending.shot;
+    const line = shotLine(shot);
+    const show = () => { if (mine === endTurn && line) showLine(endLine, line); };
     card.hidden = true;
-    setShot(end, pending.shot);
-    say(SHOT_TEXT[pending.shot]);
-    if (isOn()) end.play().catch(() => showCard());
-    else showCard();
+    setShot(end, shot);
+    say(SHOT_TEXT[shot]);
+    if (!isOn()) { show(); showCard(); return; } // footage off: no moment to wait for, the line and the card at once
+    end.play().then(() => { if (mine === endTurn && line) endTimer = setTimeout(show, LINE_AT[shot] * 1000); }, () => { show(); showCard(); });
   }
   end.addEventListener('ended', showCard);
   $('#ft-end-detectives').addEventListener('click', () => playEnding('detectives'));
   $('#ft-end-house').addEventListener('click', () => playEnding('house'));
-  $('#ft-end-skip').addEventListener('click', () => { end.pause(); showCard(); });
+  $('#ft-end-skip').addEventListener('click', () => { end.pause(); dropEndLine(); showCard(); });
 
   // ---- 7. Wander: a memory is found, the Whisper's line, a long silent film, then our own card
   const wander = $('#ft-wander');

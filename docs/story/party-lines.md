@@ -38,6 +38,7 @@ How the lines are built:
 | `turn-start.dry.3` | The house is yours to walk. I shall be no help whatever, as is my custom. Do begin, {nick}. |
 | `turn-start.dry.4` | The lamp passes along, as lamps do. I keep the keys and my opinions to myself. Carry on, {nick}. |
 | `turn-start.dry.5` | A fresh hour for a fresh mind, and the same old house. I wish you luck. I am not certain the house listens. |
+| `turn-start.dry.6` | It is your hour. I must warn you that the staircase has eleven steps, and the house has twelve opinions on the matter. Go on, {nick}. |
 
 ## Keeper: time-warning (spoken)
 
@@ -48,6 +49,7 @@ How the lines are built:
 | `time-warning.dry.3` | The sand runs thin. I mention it only because somebody ought to, and it is never the house. |
 | `time-warning.dry.4` | A few breaths remain, and I count each one for you. Choose well, or at the very least choose. |
 | `time-warning.dry.5` | The lamp gutters. I am told that is the polite signal to stop dithering. I have never seen the impolite one. |
+| `time-warning.dry.6` | The candle has about a finger of wax left. I mention it as a kindness. The house, I regret to say, mentions nothing. |
 
 ## Keeper: achievement (spoken)
 
@@ -137,6 +139,7 @@ The Keeper announces first and a Lodger stall follows. These lines say only that
 | `accuse.wrong.dry.2` | Wrong, and with great confidence. I admire that in a guest. You have joined the haunting, {nick}. |
 | `accuse.wrong.dry.3` | The seal is opened and the answer does not hold. I am sorry. I am rarely sorry, so do take note. {nick} has joined the haunting. |
 | `accuse.wrong.dry.4` | Not this time. The house keeps its secret, and I keep mine, which is smaller. You have joined the haunting, {nick}. |
+| `accuse.wrong.dry.5` | That does not stand, and it came with great confidence, which I consider the finest way to be wrong. You have joined the haunting. There is a chair for you, {nick}, and it is the cold one. |
 | `accuse.wrong.dry.6` | The accusation does not stand. I regret to report that this is the more usual outcome. You have joined the haunting, which has no uniform and is mostly very pleasant. Welcome, {nick}. |
 
 ## Keeper: accuse.right (spoken, after a Lodger confession)
@@ -274,6 +277,7 @@ A Zone goes cold. A line never says which Zone unless it ends on `{zone}`, and n
 | `haunt.blackout.soft.3` | Without the light, the house is more like me. I hope you do not mind. I will be very gentle with the dark. |
 | `haunt.blackout.soft.4` | Shh. The dark is only me, being close. Nobody need be afraid of it. I am hardly a danger to anyone. |
 | `haunt.blackout.soft.5` | I am dimming the house, just a little. It is easier to be near you that way. Forgive the dark, and do not mind me. |
+| `haunt.blackout.soft.6` | I am dimming the house, one lamp at a time. The dark is rather lonely, and it will be shy of you. Be kind to it. |
 | `haunt.blackout.soft.7` | The light goes out for a moment. Please do not take it personally. Everyone looks better unseen, and I include myself. |
 
 ## Whisper: haunt.restless (spoken)
@@ -345,6 +349,24 @@ No one wins and no line names a Player.
 | `end.haunting.soft.3` | I am still here, and so are you. That seems a fine place to leave it. The door is just there, if you want it. |
 | `end.haunting.soft.4` | The quiet is mine this time. I would much sooner be found. Next time, perhaps. I do like a next time. |
 | `end.haunting.soft.5` | Nobody found me, and I find I am not sorry. I had hoped to be found, and I had also hoped not to be. There is no tea, but there is me, and I am told that counts. |
+
+## Keeper: scene (spoken, narration over a Reel shot)
+
+The Keeper's one picture line: the dawn shot (the detectives win). It is a scene line, so it is never drawn as an `end.solved` line and cannot be said twice. The Room's own `end.solved` line follows the shot. Written for the picture and timed to it (`ai-scene-prompts.md`, scene 4; the take with the lights-out house, `ai-dawn-door-take3`).
+
+| Id | Line |
+|---|---|
+| `scene.dawn-door.dry.1` | The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out. |
+
+## Whisper: scene (spoken, narration over a Reel shot)
+
+New 2026-11-16, in the storybook voice of `narration-style.md`. One line for each of three AI shots (the hand at the door, the empty bed, the lights going out). Each is written for its picture and timed to the picture's moment (`ai-scene-prompts.md`), never over a different shot. One line per shot, not five: the picture decides what is said, so there is nothing to pick between. No line names a Player.
+
+| Id | Line |
+|---|---|
+| `scene.hand-door.soft.1` | That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it. |
+| `scene.bed.soft.1` | I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit. |
+| `scene.lights-out.soft.1` | One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely. |
 
 ## Whisper: midnight (spoken) PROPOSED
 

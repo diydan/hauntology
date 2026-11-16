@@ -14,7 +14,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const manifest = JSON.parse(readFileSync(join(root, 'shared/fixtures/voice-library.json'), 'utf8'));
 const cli = join(root, 'tools/prerender-voice.mjs');
 const nothingDone = () => 'missing';
-// The Lodger's 66 files, for the tests about them. The whole manifest also holds the Whisper's and the Keeper's (510 in all).
+// The Lodger's 66 files, for the tests about them. The whole manifest also holds the Whisper's and the Keeper's (527 in all).
 const lodgerOnly = { ...manifest, entries: manifest.entries.filter((e) => manifest.lodgerVoices.includes(e.voice)) };
 
 test('the Lodger bank, nothing rendered: 66 files, 6,954 characters, about $0.17 (the numbers in docs/VOICE-LIBRARY-PLAN.md)', () => {
@@ -31,15 +31,15 @@ test('the character count is computed here, not copied: the spoken text plus the
   assert.equal(planPrerender({ manifest: lodgerOnly, lookup: nothingDone }).totals.chars, expected);
 });
 
-test('the whole manifest, nothing rendered: 510 files in 8 voices, 51,354 characters, about $1.28', () => {
+test('the whole manifest, nothing rendered: 527 files in 8 voices, 53,568 characters, about $1.34', () => {
   const p = planPrerender({ manifest, lookup: nothingDone });
-  assert.equal(p.jobs.length, 510);
+  assert.equal(p.jobs.length, 527);
   assert.equal(p.rows.length, 8);
-  assert.equal(p.totals.chars, 51_354);
-  assert.equal(p.totals.usd, 1.2839);
+  assert.equal(p.totals.chars, 53_568);
+  assert.equal(p.totals.usd, 1.3392);
   const row = (v) => p.rows.find((r) => r.voice === v);
-  assert.deepEqual([row('inworld:Pippa').lines, row('inworld:Pippa').chars], [214, 22_378]);
-  assert.deepEqual([row('inworld:Ronald').lines, row('inworld:Ronald').chars], [230, 22_022]);
+  assert.deepEqual([row('inworld:Pippa').lines, row('inworld:Pippa').chars], [221, 23_363]);
+  assert.deepEqual([row('inworld:Ronald').lines, row('inworld:Ronald').chars], [240, 23_251]);
 });
 
 test('the character count carries each voice\'s own tag: [whisper] for Pippa, none for Ronald, [speak nervously] for the Lodger', () => {
@@ -62,7 +62,7 @@ test('files that are done are skipped and cost nothing; bad files are reported a
   const p = planPrerender({ manifest, lookup: (f) => (f === a ? 'ok' : f === b ? 'bad' : 'missing') });
   assert.equal(p.totals.done, 1);
   assert.equal(p.totals.bad, 1);
-  assert.equal(p.jobs.length, 508);
+  assert.equal(p.jobs.length, 525);
   assert.ok(!p.jobs.some((j) => j.file === a || j.file === b));
   assert.deepEqual(p.bad.map((x) => x.file), [b]);
 });
@@ -85,7 +85,7 @@ test('a budget stops the run before the next file would pass it, in manifest ord
   assert.equal(planPrerender({ manifest, lookup: nothingDone, budgetUsd: exact - 0.000001 }).budget.affordable, 2);
   const all = planPrerender({ manifest, lookup: nothingDone, budgetUsd: 2 }).budget;
   assert.equal(all.fitsAll, true);
-  assert.equal(planPrerender({ manifest, lookup: nothingDone, budgetUsd: 1 }).budget.fitsAll, false, 'all 510 files cost more than $1');
+  assert.equal(planPrerender({ manifest, lookup: nothingDone, budgetUsd: 1 }).budget.fitsAll, false, 'all 527 files cost more than $1');
   const none = planPrerender({ manifest, lookup: nothingDone, budgetUsd: 0 }).budget;
   assert.equal(none.affordable, 0);
 });
@@ -144,8 +144,8 @@ test('CLI: the default is a dry run; it prints the table, says nothing was spent
     const r = run(['--out', dir]);
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /DRY RUN\. Nothing is spent, nothing is written\./);
-    assert.match(r.stdout, /Total\s+510\s+0\s+510\s+0\s+51,354\s+\$1\.2839/);
-    assert.match(r.stdout, /inworld:Pippa\s+214\s+0\s+214\s+0\s+22,378/);
+    assert.match(r.stdout, /Total\s+527\s+0\s+527\s+0\s+53,568\s+\$1\.3392/);
+    assert.match(r.stdout, /inworld:Pippa\s+221\s+0\s+221\s+0\s+23,363/);
     assert.deepEqual(readdirSync(dir), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
@@ -156,7 +156,7 @@ test('CLI: a good file in the folder counts as done; a bad one fails the run wit
     writeFileSync(join(dir, fileNameFor(manifest.entries[0].key, 1)), Buffer.concat([Buffer.from([0x49, 0x44, 0x33]), Buffer.alloc(4000)]));
     let r = run(['--out', dir]);
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout, /Total\s+510\s+1\s+509/);
+    assert.match(r.stdout, /Total\s+527\s+1\s+526/);
     writeFileSync(join(dir, fileNameFor(manifest.entries[1].key, 1)), '{"error":"quota"}'.repeat(100));
     r = run(['--out', dir]);
     assert.equal(r.status, 1);

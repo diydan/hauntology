@@ -2,16 +2,20 @@
 // for a Haunt level, and the title cards of the two endings. Pure functions: no page, no clock, nothing private.
 // Every input is public state (the Turn Clock, the Haunt level, who joined the haunting), never a hidden card or a private result.
 
-/** The shots, by the name the Reel uses. Each is `media/<file>.webm`, `.mp4` and `.jpg`, with an entry in media/PROVENANCE.md. */
+/**
+ * The shots, by the name the Reel uses. Each is `media/<file>.webm`, `.mp4` and `.jpg`, with an entry in media/PROVENANCE.md.
+ * The ship, the crate, the street and the stairs are cut from old film (5 seconds or less). The hand, the bed, the dawn and the house are AI scenes of 15 seconds
+ * (the AI clips of Requirement 18.9), made for the game and written lines for (SHOT_LINE): the real film has no picture of ours to narrate.
+ */
 export const SHOTS = {
   ship: 'reel-ship',
   coffin: 'reel-coffin',
   streets: 'reel-streets',
   stairs: 'stair-shadow',
-  hand: 'reel-hand',
-  bed: 'reel-bed',
-  dawn: 'end-dawn',
-  house: 'end-house',
+  hand: 'ai-hand-door-take2',
+  bed: 'ai-empty-bed-take1',
+  dawn: 'ai-dawn-door-take3',
+  house: 'ai-lights-out-take1',
 };
 
 /** What each shot shows, in words. The picture is decoration, so this line is its twin for the live region and the log. */
@@ -20,11 +24,41 @@ export const SHOT_TEXT = {
   coffin: 'Something rises in the ship\'s hold.',
   streets: 'An empty street, and no one at the windows.',
   stairs: 'A shadow climbs the stairs.',
-  hand: 'A shadow hand reaches the door.',
-  bed: 'A shape leans over the bed.',
-  dawn: 'The sun rises. The window is empty.',
-  house: 'Something waits in a doorway. A woman hides her face at a window.',
+  hand: 'A shadow hand creeps along the wall to the door, and knocks.',
+  bed: 'A shadow leans over an empty bed.',
+  dawn: 'Morning comes to the quiet house. The door opens on the light.',
+  house: 'The windows go dark, one by one, and the front door swings open on the dark.',
 };
+
+/**
+ * The narration line written for a shot's own picture (puzzles Requirement 20.7), by shot. Each is a row of the story banks, word for word
+ * (`docs/story/party-lines.md`, the `scene.*` sections; a test compares them), so the Voice Library speaks it. The ship, the crate, the street and the stairs
+ * have none: they are old film, and the stairs are scrubbed by the clock. A line is the speaker's own, never an Event line and never a clue.
+ */
+export const SHOT_LINE = {
+  hand: { id: 'scene.hand-door.soft.1', speaker: 'whisper', text: 'That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it.' },
+  bed: { id: 'scene.bed.soft.1', speaker: 'whisper', text: 'I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit.' },
+  house: { id: 'scene.lights-out.soft.1', speaker: 'whisper', text: 'One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely.' },
+  dawn: { id: 'scene.dawn-door.dry.1', speaker: 'keeper', text: 'The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out.' },
+};
+
+/**
+ * When each line starts, in seconds from the start of its shot, so that it falls on the picture it is about (puzzles Requirement 20.8). Found by laying
+ * each rendered line over its clip (`narration-preview-4`, then the dawn take 3): `hand` the shadow is already on the wall and the knocks come at 9 seconds;
+ * `bed` the mattress sinks at about 6 seconds; `house` the lights go out from 3 seconds; `dawn` "the door opens" is said at 7.3 seconds into the line and the
+ * door opens in the picture at 10.4 seconds, so the line starts at 2.9 and "Mind the step" is said as the mist comes out.
+ */
+export const LINE_AT = { hand: 0.8, bed: 0.5, house: 1.2, dawn: 2.9 };
+
+/** The line written for a shot, or null when it has none. Total: an unknown shot gives null. */
+export function shotLine(shot) {
+  return Object.hasOwn(SHOT_LINE, shot) ? SHOT_LINE[shot] : null;
+}
+
+/** The line for a Haunt level of the Reel, or null. Total, like reelShot. */
+export function reelLine(level, max) {
+  return shotLine(reelShot(level, max));
+}
 
 /**
  * Wander's home movie: the long silent scene that plays when a memory is found (a 99 second run of the film with no title card).
@@ -72,7 +106,7 @@ export function reelShot(level, max) {
 
 /**
  * The two sounds of our own that go with a Reel shot (puzzles Requirement 20.6): a claw scrapes the wooden rim of the crate in the coffin
- * shot (Haunt 3), and someone knocks as the shadow hand reaches the door (Haunt 7 and 8). The files are `web/public/sounds/<name>.m4a`.
+ * shot (Haunt 3), and someone knocks as the shadow hand raps on the door (Haunt 7 and 8). The files are `web/public/sounds/<name>.m4a`.
  * The footage has no sound of its own, and a sound is never the only signal: SOUND_TEXT is its twin in words.
  */
 export const SHOT_SOUND = { coffin: 'scrape', hand: 'knock' };
@@ -84,9 +118,9 @@ export const SOUND_TEXT = {
 /**
  * When each sound starts, in seconds from the start of its shot: the moment of the picture it belongs to, found frame by frame on the clips.
  * `scrape`: in reel-coffin the claw comes down on the rim of the crate at 3.2 s, and the file has 0.1 s of lead-in before the grip, so it starts at 3.1.
- * `knock`: in reel-hand the fingertips reach the door frame at 2.1 s, and the file's first knock is at once, so it starts at 2.1.
+ * `knock`: in ai-hand-door-take2 the shadow hand is on the door and the first rap is at 9.0 s (the clip's own sound, measured at 8.99 s), and the file's first knock is at once, so it starts at 9.0.
  */
-export const SOUND_AT = { scrape: 3.1, knock: 2.1 };
+export const SOUND_AT = { scrape: 3.1, knock: 9.0 };
 
 /**
  * The sound for a Haunt level, or null when its shot has none. Total, like reelShot.

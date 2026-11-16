@@ -510,3 +510,64 @@ A windowsill table in afternoon light: a folded letter with no legible writing, 
 
 **The wind arc is flatter than written.** In every take the sails, curtains and mist move at a more even pace than the three-phase build the document describes. Treat the clips as a steady atmosphere rather than a timed sequence.
 
+
+### Scene 4, "Dawn at the door" (the detectives win; replaces the parlour)
+
+Not in `docs/story/ai-scene-prompts.md` yet. It replaces scene 4, "Dawn in the parlour", because the parlour takes show no event: mist leaves a room and a chair rocks once. This scene mirrors "The lights go out": the light comes back, the lamps go out one by one as morning takes over, the front door opens and the mist drifts out.
+
+#### ai-dawn-door-take1
+
+| | |
+|---|---|
+| Record | AI clip. Generated, not filmed and not cut from a film. |
+| Scene | "Dawn at the door" (the detectives win). Slot for the ending is not wired up yet; the clip is a take, not a replacement. **Superseded on 2026-11-16 by take 3, the only take that starts from the lights-out house (the shot uses take 3).** |
+| Overlay place | None declared yet: the brief did not set aside a blank surface. |
+| Model | MiniMax. The model name, tier and task id were lost with the generating session. 1280 x 720 source (16:9), 15 s. The brief asked for the first frame of `ai-lights-out-take1`, but the house in this clip is a different one (two storeys, a chimney), so that frame was probably not used. |
+| Take | 1 of 1 so far. |
+| Sound | The model's own native audio track, kept: AAC in `.mp4`, Opus in `.webm`. Measured: about -36.0 LUFS, peak -16.6 dBFS, very quiet. Not checked by ear. |
+| Picture | Black and white already (measured saturation 0.5 on average, 0.66 at most, of 255), so no desaturation was needed. No platform stamp was visible in the lower right corner or along the bottom edge (looked at on frames at 7 s and 12 s), so no `delogo` was applied and the frame was not cropped. The original file is kept, untracked, at `tools/playtest/media/source/ai-dawn-door-take1-original.mp4`. |
+| Cut by | `ffmpeg`, 15.0 s, scaled to 854 x 480 (16:9, its own shape), H.264 (main, crf 29) and VP9 (crf 37); poster frame at 2 s |
+| Size | `.mp4` 535 KB, `.webm` 503 KB, `.jpg` 21 KB |
+| Flash check | `node flash-check.mjs media/ai-dawn-door-take1.mp4 media/ai-dawn-door-take1.webm` on 2026-11-16: 360 frames, at most 0 flashes in any second (limit 3). |
+| Where it came from | Saved by the owner on 2026-11-16 as `ai-dawn-door-take1.mp4`. The generating session was lost, so there is no task id. |
+| Prompt | The from-scratch brief given to the owner on 2026-11-16: the black-and-white style line, then "Continue from the first frame: the same stone house at night ..." with the 0-4, 4-10, 10-13 and 13-15 s timeline. The text actually submitted was not captured. |
+| Price | Not recorded. |
+| Terms | MiniMax's terms for commercial use of generated output have not been read. Read them before the game is sold, and label the clip as AI-generated where the law asks for it. |
+
+#### ai-dawn-door-take2
+
+| | |
+|---|---|
+| Record | AI clip. Generated, not filmed and not cut from a film. |
+| Scene | "Dawn at the door" (the detectives win), the second take. Slot for the ending is not wired up yet; the clip is a take, not a replacement. **Superseded on 2026-11-16 by take 3, the only take that starts from the lights-out house (the shot uses take 3).** |
+| Overlay place | None declared yet: the brief did not set aside a blank surface. |
+| Model | MiniMax. The model name, tier and task id were lost with the generating session. 1280 x 720 source (16:9), 15 s. Seen from the front: a symmetrical two-storey stone house with a central gable. It is not the house of take 1 (angled, with a chimney) and not the house of `ai-lights-out`, so the first frame of that scene was probably not used. |
+| Take | 2 of 2. |
+| Sound | The model's own native audio track, kept: AAC in `.mp4`, Opus in `.webm`. Measured: about -35.2 LUFS, peak -9.9 dBFS. Not checked by ear. |
+| Picture | Black and white already (measured saturation 0.53 on average, 0.71 at most, of 255), so no desaturation was needed. No platform stamp was visible in the lower right corner (looked at on a frame at 12 s), so no `delogo` was applied and the frame was not cropped. The original file is kept, untracked, at `tools/playtest/media/source/ai-dawn-door-take2-original.mp4`. |
+| Cut by | `ffmpeg`, 15.0 s, scaled to 854 x 480 (16:9, its own shape), H.264 (main, crf 29) and VP9 (crf 37); poster frame at 2 s |
+| Size | `.mp4` 658 KB, `.webm` 618 KB, `.jpg` 22 KB |
+| Flash check | `node flash-check.mjs media/ai-dawn-door-take2.mp4 media/ai-dawn-door-take2.webm` on 2026-11-16: 360 frames, at most 0 flashes in any second (limit 3). |
+| Where it came from | Saved by the owner on 2026-11-16 as `ai-dawn-door-take2.mp4`. The generating session was lost, so there is no task id. |
+| Prompt | The same from-scratch brief as take 1. The text actually submitted was not captured. |
+| Price | Not recorded. |
+| Terms | MiniMax's terms for commercial use of generated output have not been read. Read them before the game is sold, and label the clip as AI-generated where the law asks for it. |
+
+#### ai-dawn-door-take3
+
+| | |
+|---|---|
+| Record | AI clip. Generated, not filmed and not cut from a film. |
+| Scene | "Dawn at the door" (the detectives win). **The take the shot uses.** It starts from the house of `ai-lights-out-take1` (the same three dormers, the doorway with a pediment, the plaque at the right of the door, the two bare trees and the lantern on the doorstep), seen closer and wider, which the first two takes did not. Slot for the ending is not wired up yet: see the puzzles spec, Requirement 21. |
+| Overlay place | None: the title card follows the shot. |
+| Model | MiniMax, made by the owner with the lights-out first frame. The model name, tier and task id were not given. 1280 x 720 source (16:9), 15.0 s. |
+| Take | 3 of 3 (takes 1 and 2 are superseded). |
+| Sound | The model's own native audio track, kept: AAC in `.mp4`, Opus in `.webm`. Measured after the cut: about -32.8 LUFS, peak -16.8 dBFS, very quiet. A latch or creak at about 10.1 s and the door opening at 10.5 to 10.9 s. Not checked by ear. A loud click at 0.04 to 0.11 s of the source was cut away (see Picture). |
+| Picture | Black and white already (measured saturation 0.4 on average, 2.9 at most, of 255), and desaturated with `hue=s=0` anyway. No platform stamp seen. **The first frame of the source is a single odd frame** (an open, lit door with mist), then the clip runs from a closed door with its lantern: the first 4 frames (0.1667 s) and the first 0.1667 s of sound were cut away. The beats after the cut: dusk and a quiet house 0 to 9.8 s, the light rises from 9 s, the door opens on warm light from 10.4 s and is fully lit at 11.6 s, mist at the foot of the door to the end. The original is kept, untracked, at `tools/playtest/media/source/ai-dawn-door-take3-original.mp4`. |
+| Cut by | `ffmpeg`, 14.83 s, scaled to 854 x 480 (16:9, its own shape), H.264 (main, crf 29) and VP9 (crf 37); poster frame at 2 s |
+| Size | `.mp4` 389 KB, `.webm` 303 KB, `.jpg` 34 KB |
+| Flash check | `node flash-check.mjs media/ai-dawn-door-take3.mp4 media/ai-dawn-door-take3.webm` on 2026-11-16: 356 frames, at most 0 flashes in any second (limit 3). |
+| Where it came from | Saved by the owner on 2026-11-16 as `Stone_house_morning_transition_e2ae209f.mp4` (first in the Downloads folder, which the assistant cannot read; then in `media/`), renamed to take 3. |
+| Prompt | Not captured: the owner made it. It continues from the first frame of `ai-lights-out-take1` and follows the dawn beats of `docs/story/ai-scene-prompts.md` scene 4. |
+| Price | Not recorded. |
+| Terms | MiniMax's terms for commercial use of generated output have not been read. Read them before the game is sold, and label the clip as AI-generated where the law asks for it. |

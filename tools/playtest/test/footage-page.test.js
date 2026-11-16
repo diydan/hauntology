@@ -26,20 +26,64 @@ function records() {
   return out;
 }
 
+/**
+ * The AI clips (the "AI clips" section of PROVENANCE.md): each has a `#### name` entry, a table of its own shape. They are generated, not cut from a
+ * film, so the rules of Requirement 18 for public-domain footage (a source record, no sound) do not cover them: that section says so itself.
+ */
+function aiRecords() {
+  const out = {};
+  const section = readFileSync(resolve(media, 'PROVENANCE.md'), 'utf8').split(/^## /m).find((b) => b.startsWith('AI clips')) ?? '';
+  for (const block of section.split(/^#### /m).slice(1)) {
+    const [heading, ...rest] = block.split('\n');
+    out[heading.trim()] = Object.fromEntries(rest.filter((l) => /^\| [^|]+ \| /.test(l) && !/^\| (-+|) /.test(l)).map((l) => l.split('|').slice(1, 3).map((c) => c.trim())));
+  }
+  return out;
+}
+const aiClips = Object.keys(aiRecords());
+/** The clips cut from a public-domain film: the AI clips are the rest. */
+const filmClips = clips.filter((c) => !aiClips.includes(c));
+
+/** The rule on a file's streams: a film clip is picture only (18.4); an AI clip is a picture and may keep the model's own sound. */
+const streamsOk = (kinds, isAi) => (isAi ? kinds.includes('video') && kinds.every((k) => k === 'video' || k === 'audio') : kinds.length === 1 && kinds[0] === 'video');
+
+/** The highest mean saturation (of 255) over the frames of a clip, sampled twice a second. */
+function maxSaturation(file) {
+  const r = spawnSync('ffmpeg', ['-hide_banner', '-nostats', '-i', file, '-vf', 'fps=2,signalstats,metadata=print:key=lavfi.signalstats.SATAVG', '-f', 'null', '-'], { encoding: 'utf8' });
+  const v = [...r.stderr.matchAll(/SATAVG=([\d.]+)/g)].map((m) => Number(m[1]));
+  assert.ok(v.length > 0, `no frames measured in ${file}`);
+  return Math.max(...v);
+}
+const MAX_AI_SATURATION = 10; // of 255: the AI clips measure 0.02 to 4.6 on their worst frame (one frame of wander-letter-take2 is the highest), a tinted film frame is above 30
+
 test('18.2 each clip has an mp4, a webm and a poster, and a full entry in PROVENANCE.md that points to a full source record', () => {
-  assert.ok(clips.length >= 1, 'there is at least one clip');
+  assert.ok(filmClips.length >= 1, 'there is at least one clip');
   const rec = records();
   const sources = Object.keys(rec).filter((h) => h.startsWith('Source record: '));
   assert.ok(sources.length >= 1, 'there is a source record');
   for (const h of sources) for (const label of ['Film', 'Source', 'What that file is', 'Credited makers', 'Why it is free', 'Open point', 'Checked']) assert.ok(rec[h][label], `${h} has a "${label}" row`);
-  for (const c of clips) {
+  for (const c of filmClips) {
     for (const ext of ['mp4', 'webm', 'jpg']) assert.ok(existsSync(resolve(media, `${c}.${ext}`)), `${c}.${ext}`);
     assert.ok(rec[c], `${c} has a heading in PROVENANCE.md`);
     for (const label of ['Record', 'Shot', 'Picture only', 'Cut by', 'Size', 'Flash check']) assert.ok(rec[c][label], `${c} has a "${label}" row`);
     assert.ok(sources.includes(rec[c].Record), `${c} points to a source record that exists (${rec[c].Record})`);
     assert.match(rec[c]['Flash check'], /at most \d+ flash/, `${c}: the flash check has a result`);
   }
-  assert.deepEqual(Object.keys(rec).filter((h) => !h.startsWith('Source record: ')).sort(), [...clips].sort(), 'every entry is a clip in media/ and every clip has an entry');
+  assert.deepEqual(Object.keys(rec).filter((h) => !h.startsWith('Source record: ') && !h.startsWith('AI clips')).sort(), [...filmClips].sort(), 'every entry is a clip in media/ and every film clip has an entry');
+});
+
+test('18.2 for the AI clips: an mp4, a webm and a poster, and an entry of the AI shape (model, take, sound, cut, size, flash check, where it came from, terms), every AI clip in media/ and every entry a clip', () => {
+  const ai = aiRecords();
+  assert.ok(aiClips.length >= 1, 'the AI section lists clips');
+  for (const c of aiClips) {
+    assert.ok(clips.includes(c), `${c} is a clip in media/`);
+    for (const ext of ['mp4', 'webm', 'jpg']) assert.ok(existsSync(resolve(media, `${c}.${ext}`)), `${c}.${ext}`);
+    for (const label of ['Record', 'Scene', 'Model', 'Take', 'Sound', 'Picture', 'Cut by', 'Size', 'Flash check', 'Where it came from', 'Terms']) assert.ok(ai[c][label], `${c} has a "${label}" row`);
+    assert.match(ai[c].Record, /^AI clip\./, `${c}: the record says it is an AI clip, not footage`);
+    assert.match(ai[c]['Flash check'], /at most \d+ flash/, `${c}: the flash check has a result`);
+    assert.match(ai[c].Terms, /have not been read|label/i, `${c}: the terms row says what is still to do before the game is sold`);
+  }
+  assert.deepEqual([...aiClips].sort(), clips.filter((c) => !filmClips.includes(c)).sort());
+  assert.match(readFileSync(resolve(media, 'PROVENANCE.md'), 'utf8'), /The prompts, exactly as submitted/, 'the section gives the prompts the clips were made from');
 });
 
 test('18.6 a scene is within the limits: at most 40 MB a video file, the poster at most 50 KB', () => {
@@ -51,11 +95,12 @@ test('18.6 a scene is within the limits: at most 40 MB a video file, the poster 
 });
 
 const probe = spawnSync('ffprobe', ['-version']);
-test('18.4 and 18.6 a scene has no audio track, runs at most 10 minutes and is at most 480 pixels high', { skip: probe.status !== 0 && 'ffprobe not installed' }, () => {
+test('18.4 and 18.6 a film scene has no audio track (an AI clip may keep the model\'s own), and every scene runs at most 10 minutes and is at most 480 pixels high', { skip: probe.status !== 0 && 'ffprobe not installed' }, () => {
   for (const c of clips) for (const ext of ['mp4', 'webm']) {
     const r = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type,height:format=duration', '-of', 'json', resolve(media, `${c}.${ext}`)], { encoding: 'utf8' });
     const j = JSON.parse(r.stdout);
-    assert.deepEqual([...new Set(j.streams.map((s) => s.codec_type))], ['video'], `${c}.${ext} has only a video stream`);
+    const kinds = [...new Set(j.streams.map((s) => s.codec_type))];
+    assert.ok(streamsOk(kinds, aiClips.includes(c)), `${c}.${ext} has the streams [${kinds}]: a film clip is picture only, an AI clip is a picture with at most the model's own sound`); // generated clips keep the model's audio (PROVENANCE.md, AI clips)
     assert.ok(Number(j.format.duration) <= 600, `${c}.${ext} is at most 10 minutes`);
     assert.ok(j.streams[0].height <= 480, `${c}.${ext} is at most 480 pixels high`);
   }
@@ -193,6 +238,27 @@ test('18.5 a browser set to save data starts with still frames, and a tap on Pla
   assert.ok(looping().every((v) => v.__playing === true));
 });
 
+test('18.4 the stream rule tells a film clip from an AI clip: film is picture only, an AI clip may keep the model\'s own sound and nothing else', () => {
+  assert.equal(streamsOk(['video'], false), true);
+  assert.equal(streamsOk(['video', 'audio'], false), false, 'a film clip with a sound track is refused');
+  assert.equal(streamsOk([], false), false);
+  assert.equal(streamsOk(['video', 'audio'], true), true);
+  assert.equal(streamsOk(['video'], true), true);
+  assert.equal(streamsOk(['audio'], true), false, 'a clip with no picture is refused');
+  assert.equal(streamsOk(['video', 'audio', 'subtitle'], true), false, 'an AI clip may carry sound and nothing else');
+});
+
+test('AI clips are black and white (decided 2026-11-15): the measure tells colour from grey, and every AI clip is grey', { skip: probe.status !== 0 && 'ffprobe not installed' }, () => {
+  const dir = mkdtempSync(resolve(tmpdir(), 'saturation-'));
+  try {
+    const make = (name, vf) => { const f = resolve(dir, name); const r = spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc2=size=320x240:duration=2:rate=12', '-vf', vf, '-pix_fmt', 'yuv420p', f], { encoding: 'utf8' }); assert.equal(r.status, 0, r.stderr); return f; };
+    assert.ok(MAX_AI_SATURATION < 30, 'the limit sits well under a tinted film frame');
+    assert.ok(maxSaturation(make('colour.mp4', 'null')) > MAX_AI_SATURATION, 'a colour picture measures above the limit');
+    assert.ok(maxSaturation(make('grey.mp4', 'hue=s=0')) <= MAX_AI_SATURATION, 'a grey picture measures at or under it');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+  for (const c of aiClips) assert.ok(maxSaturation(resolve(media, `${c}.mp4`)) <= MAX_AI_SATURATION, `${c}.mp4 is black and white (saturation of at most ${MAX_AI_SATURATION} of 255)`);
+});
+
 test('18.5 the preload rule: a small clip may preload, a big scene may not', () => {
   assert.ok(preloadOk('<video preload="auto">', 100 * 1024));
   assert.ok(!preloadOk('<video preload="auto">', 5 * 1024 * 1024));
@@ -284,7 +350,7 @@ test('20 the Reel: each Haunt rise swaps the shot, says an Event in words, and t
   assert.equal(src(), 'media/stair-shadow.webm');
   for (let i = 0; i < 4; i++) click(btn('Haunt +1'));
   assert.equal($('#ft-haunt-text').textContent, 'Haunt 10 of 10');
-  assert.equal(src(), 'media/end-house.webm');
+  assert.equal(src(), 'media/ai-lights-out-take1.webm');
   assert.match($('#ft-reel-text').textContent, /^The house wins\. /);
   click(btn('Haunt +1'));
   assert.equal($('#ft-haunt-text').textContent, 'Haunt 10 of 10', 'the Haunt stops at the maximum');
@@ -313,8 +379,9 @@ async function onClock(fn) {
   try { await fn(async (ms) => { await flush(); mock.timers.tick(ms); await flush(); }); } finally { mock.timers.reset(); }
 }
 const rise = (n) => { for (let i = 0; i < n; i++) click(btn('Haunt +1')); };
+const SETTLE = 12000; // long enough for any sound or line to have its moment (the latest is the knock at 9.0 s)
 
-test('20.6 the scrape starts 3.1 seconds into its shot and the knock 2.1 seconds into its shot, not before', { skip }, async () => {
+test('20.6 the scrape starts 3.1 seconds into its shot and the knock 9.0 seconds into its shot, not before', { skip }, async () => {
   const { heard } = open();
   await load(); await tick(5);
   await onClock(async (go) => {
@@ -324,8 +391,8 @@ test('20.6 the scrape starts 3.1 seconds into its shot and the knock 2.1 seconds
     await go(1);
     assert.deepEqual(heard, ['media/scrape.m4a'], 'at 3.1 s the claw is on the rim');
     rise(4); // 4, 5, 6 and 7
-    await go(2099);
-    assert.equal(heard.length, 1, 'the knock waits for the fingers to reach the door');
+    await go(8999);
+    assert.equal(heard.length, 1, 'the knock waits for the first rap on the door');
     await go(1);
     assert.deepEqual(heard, ['media/scrape.m4a', 'media/knock.m4a']);
   });
@@ -336,7 +403,7 @@ test('20.6 the Reel scrapes at Haunt 3 and knocks at 7 and 8, once for each rise
   await load(); await tick(5);
   await onClock(async (go) => {
     const rises = [];
-    for (let i = 1; i <= 11; i++) { const before = heard.length; rise(1); await go(5000); rises.push(heard.slice(before)); }
+    for (let i = 1; i <= 11; i++) { const before = heard.length; rise(1); await go(SETTLE); rises.push(heard.slice(before)); }
     const none = [];
     assert.deepEqual(rises, [none, none, ['media/scrape.m4a'], none, none, none, ['media/knock.m4a'], ['media/knock.m4a'], none, none, none], 'level 1 to 10, then a tap at the maximum');
   });
@@ -346,14 +413,14 @@ test('20.6 a step back never makes the sound, even onto a level that has one, an
   const { heard } = open();
   await load(); await tick(5);
   await onClock(async (go) => {
-    rise(9); await go(5000);
+    rise(9); await go(SETTLE);
     heard.length = 0;
-    for (let i = 0; i < 9; i++) { click(btn('Haunt −1')); await go(5000); } // 8, 7 (knock levels) and 3 (the scrape level) on the way down
+    for (let i = 0; i < 9; i++) { click(btn('Haunt −1')); await go(SETTLE); } // 8, 7 (knock levels) and 3 (the scrape level) on the way down
     assert.deepEqual(heard, []);
     rise(3); // the scrape is waiting for its moment...
     await go(1000);
     click(btn('Haunt −1')); // ...and the Reel steps back to the ship
-    await go(5000);
+    await go(SETTLE);
     assert.deepEqual(heard, [], 'the waiting scrape is dropped');
   });
 });
@@ -362,18 +429,18 @@ test('20.6 a sound still waiting is dropped when the Reel moves on: the next lev
   const { heard } = open();
   await load(); await tick(5);
   await onClock(async (go) => {
-    rise(3); await go(1000); rise(1); await go(5000); // Haunt 3 then 4: the street has no sound
+    rise(3); await go(1000); rise(1); await go(SETTLE); // Haunt 3 then 4: the street has no sound
     assert.deepEqual(heard, [], 'the scrape of level 3 never sounds over the street');
-    rise(3); await go(5000); // 5, 6, 7: the knock
+    rise(3); await go(SETTLE); // 5, 6, 7: the knock
     heard.length = 0;
-    rise(1); await go(1000); rise(0); click(btn('Max 12')); await go(5000); // 8 is waiting; a new maximum redraws the Reel
+    rise(1); await go(1000); rise(0); click(btn('Max 12')); await go(SETTLE); // 8 is waiting; a new maximum redraws the Reel
     assert.deepEqual(heard, [], 'a new maximum drops the waiting knock');
     rise(1); await go(2100); // 9 at max 12 is the bed: silent
     click(btn('Haunt −1')); click(btn('Haunt −1')); // back to 7
     heard.length = 0;
     rise(1); await go(500); // 8 again: knock waiting
     click($('#ft-sound')); // Sound off
-    await go(5000);
+    await go(SETTLE);
     assert.deepEqual(heard, [], 'Sound switched off while the knock waits: silence');
   });
 });
@@ -383,10 +450,10 @@ test('20.6 a rise straight after the one to a sound, before its picture has star
   await load(); await tick(5);
   await onClock(async (go) => {
     rise(3); rise(1); // 3 and at once 4, in the same moment: the play() of level 3 has not settled yet
-    await go(5000);
+    await go(SETTLE);
     assert.deepEqual(heard, [], 'the scrape of level 3 never sounds over the street');
     rise(2); rise(1); // 5, 6 and at once 7: a knock for 7 only
-    await go(5000);
+    await go(SETTLE);
     assert.deepEqual(heard, ['media/knock.m4a']);
   });
 });
@@ -395,13 +462,15 @@ test('20.6 two rises in a row to levels of the same shot sound once, from the la
   const { heard } = open();
   await load(); await tick(5);
   await onClock(async (go) => {
-    rise(6); await go(5000); // 6
+    rise(6); await go(SETTLE); // 6
     heard.length = 0;
     rise(1); await go(1000); // 7: the knock waits
     rise(1); // 8: a new turn starts its own wait
-    await go(2100);
+    await go(8999);
+    assert.deepEqual(heard, [], 'the later rise waits its own 9.0 s: the earlier knock was dropped, not played at 8.0 s');
+    await go(1);
     assert.deepEqual(heard, ['media/knock.m4a'], 'one knock, not two');
-    await go(5000);
+    await go(SETTLE);
     assert.equal(heard.length, 1);
   });
 });
@@ -430,13 +499,13 @@ test('20.6 the Sound switch is on to begin with, silences both sounds when off, 
     assert.equal(sw.getAttribute('aria-checked'), 'false');
     assert.equal(sw.querySelector('.ui-switch-state').textContent, 'Off');
     assert.equal($('#ft-status').textContent, 'Sound off.');
-    rise(3); await go(5000);
+    rise(3); await go(SETTLE);
     assert.deepEqual(heard, [], 'with Sound off the scrape does not play');
     assert.match($('#ft-reel-text').textContent, /A claw scrapes the wooden rim\./, 'and its words are still there');
     assert.equal($('#ft-reel').querySelector('source[type="video/webm"]').getAttribute('src'), 'media/reel-coffin.webm', 'the shot still changes');
     click(sw);
     assert.equal($('#ft-status').textContent, 'Sound on.');
-    rise(4); await go(5000);
+    rise(4); await go(SETTLE);
     assert.deepEqual(heard, ['media/knock.m4a'], 'switched on again, the next rise to a sound plays it');
   });
 });
@@ -465,13 +534,13 @@ test('20.6 a blocked sound, a missing Audio and a failed load change nothing: th
   await load(); await tick(5);
   await onClock(async (go) => {
     audio.refuse = true;
-    rise(3); await go(5000); // a rejected play() must not surface as an error
+    rise(3); await go(SETTLE); // a rejected play() must not surface as an error
     await flush();
     assert.deepEqual(heard, ['media/scrape.m4a'], 'it tried');
     assert.match($('#ft-reel-text').textContent, /scrapes/);
     assert.deepEqual(window.__errors, []);
     audio.broken = true;
-    rise(4); await go(5000); // the knock at 7, with no Audio at all
+    rise(4); await go(SETTLE); // the knock at 7, with no Audio at all
     assert.match($('#ft-reel-text').textContent, /knocks/);
     assert.equal($('#ft-haunt-text').textContent, 'Haunt 7 of 10', 'the page carried on');
     assert.deepEqual(window.__errors, []);
@@ -484,7 +553,7 @@ test('21 the endings: a hero shot, then our own title card; the house card names
   const end = $('#ft-end');
   assert.equal($('#ft-card').hidden, true);
   click(btn('The house wins')); await tick(5);
-  assert.equal(end.querySelector('source[type="video/webm"]').getAttribute('src'), 'media/end-house.webm');
+  assert.equal(end.querySelector('source[type="video/webm"]').getAttribute('src'), 'media/ai-lights-out-take1.webm');
   assert.equal(end.__playing, true);
   assert.equal($('#ft-card').hidden, true, 'the card waits for the shot to end');
   end.dispatchEvent(new window.Event('ended')); await tick(5);
@@ -494,7 +563,7 @@ test('21 the endings: a hero shot, then our own title card; the house card names
   assert.doesNotMatch(document.body.textContent, /poltergeist/i);
   click(btn('Detectives win')); await tick(5);
   assert.equal($('#ft-card').hidden, true, 'a new ending hides the old card');
-  assert.equal(end.querySelector('source[type="video/webm"]').getAttribute('src'), 'media/end-dawn.webm');
+  assert.equal(end.querySelector('source[type="video/webm"]').getAttribute('src'), 'media/ai-dawn-door-take3.webm');
   click(btn('Skip')); await tick(5);
   assert.equal(end.__playing, false, 'Skip stops the shot');
   assert.equal($('#ft-card-title').textContent, 'The night is over.');
@@ -557,3 +626,120 @@ test('Wander: with footage off the card shows at once, the film never plays, and
   assert.equal($('#ft-wander-stop').hidden, true);
   assert.match($('#ft-wander-whisper').textContent, /^Here\. I have kept this/);
 });
+
+// ---- 20.7 and 20.8: the line written for a shot's picture, on screen as words at its moment ----
+const reelLineEl = () => $('#ft-reel-line');
+const HAND = 'That is me, at the door.';
+const BED = 'I sit on the edge of the bed';
+const HOUSE = 'One window, then the next';
+
+test('20.8 the line of the hand shot is hidden until its moment (0.8 s into the shot), then shows in its own live region', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  assert.equal(reelLineEl().getAttribute('role'), 'status');
+  assert.equal(reelLineEl().hidden, true, 'no line before the Reel has risen');
+  await onClock(async (go) => {
+    rise(7);
+    await go(799);
+    assert.equal(reelLineEl().hidden, true, 'not yet: 799 ms');
+    await go(1);
+    assert.equal(reelLineEl().hidden, false, 'at 0.8 s the line is on screen');
+    assert.match(reelLineEl().textContent, new RegExp(`^${HAND}`));
+    assert.equal(reelLineEl().dataset.speaker, 'whisper');
+  });
+});
+
+test('20.7 the line is the shot\'s own: the hand at 7 and 8, the bed at 9, the house at the maximum, and none over the old film', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    const seen = [];
+    for (let i = 1; i <= 10; i++) { rise(1); await go(SETTLE); seen.push(reelLineEl().hidden ? null : reelLineEl().textContent.slice(0, 24)); }
+    assert.deepEqual(seen, [null, null, null, null, null, null, HAND, HAND, BED.slice(0, 24), HOUSE.slice(0, 24)].map((x) => x && x.slice(0, 24)), 'Haunt 1 to 10');
+    assert.equal(reelLineEl().dataset.speaker, 'whisper');
+  });
+});
+
+test('20.8 a line is said only on a rise, and a line still waiting is dropped when the Reel moves on', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    rise(9); await go(SETTLE); // the bed
+    assert.equal(reelLineEl().hidden, false);
+    click(btn('Haunt −1')); await go(SETTLE); // 8: the hand, by a step back
+    assert.equal(reelLineEl().hidden, true, 'a step back clears the line and says none');
+    rise(1); await go(300); // 9: the bed line is waiting for 0.5 s
+    rise(1); await go(SETTLE); // 10: the house takes over before the bed line came
+    assert.match(reelLineEl().textContent, new RegExp(`^${HOUSE}`), 'only the house line, from the later rise');
+    click(btn('Haunt −1')); click(btn('Haunt −1')); // back to 8
+    rise(1); await go(100); // 9 again: waiting
+    click(btn('Max 12')); await go(SETTLE); // a new maximum redraws the Reel
+    assert.equal(reelLineEl().hidden, true, 'a new maximum drops the waiting line');
+  });
+});
+
+test('20.8 rises in the same moment, before the first picture has started, leave only the last shot\'s line', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    rise(9); // 7, 8 and 9 in one breath: the play() of the hand has not settled when the bed arrives
+    await go(SETTLE);
+    assert.match(reelLineEl().textContent, new RegExp(`^${BED}`), 'the bed line, and not the hand line of a rise that was already over');
+    assert.equal(reelLineEl().textContent.includes(HAND), false);
+  });
+});
+
+test('20.8 a still picture has no moment: with footage off the line shows at once, and the footage stays still', { skip }, async () => {
+  const { log } = open({ reduce: true });
+  await load(); await tick(5);
+  rise(7);
+  assert.equal(reelLineEl().hidden, false, 'at once, with no wait');
+  assert.match(reelLineEl().textContent, new RegExp(`^${HAND}`));
+  assert.equal(log.filter(([a, id]) => a === 'play' && id === 'ft-reel').length, 0);
+});
+
+test('20.8 a picture the browser blocked has no moment either: the line shows at once', { skip }, async () => {
+  const { w } = open();
+  w.HTMLMediaElement.prototype.play = function () { return Promise.reject(new Error('blocked')); };
+  await load(); await tick(5);
+  await onClock(async () => {
+    rise(7); await flush();
+    assert.equal(reelLineEl().hidden, false);
+  });
+});
+
+test('21 the endings have their lines at their moments: the house at 1.2 s, the dawn at 2.9 s, and Skip drops one that is waiting', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  const endLine = () => $('#ft-end-line');
+  assert.equal(endLine().hidden, true);
+  await onClock(async (go) => {
+    click(btn('The house wins')); await flush();
+    await go(1199);
+    assert.equal(endLine().hidden, true, 'not yet');
+    await go(1);
+    assert.match(endLine().textContent, new RegExp(`^${HOUSE}`));
+    assert.equal(endLine().dataset.speaker, 'whisper');
+    click(btn('Detectives win')); await flush();
+    assert.equal(endLine().hidden, true, 'a new ending clears the old line');
+    await go(2899);
+    assert.equal(endLine().hidden, true, 'the dawn line is not yet there at 2.899 s');
+    await go(1);
+    assert.match(endLine().textContent, /^The house is quiet, and I note/);
+    assert.equal(endLine().dataset.speaker, 'keeper');
+    click(btn('The house wins')); await flush(); await go(500);
+    click(btn('Skip')); await flush(); await go(SETTLE);
+    assert.equal(endLine().hidden, true, 'Skip drops the line that was waiting');
+    assert.equal($('#ft-card').hidden, false);
+  });
+});
+
+test('21 with footage off an ending shows its line and its card at once', { skip }, async () => {
+  open({ reduce: true });
+  await load(); await tick(5);
+  click(btn('Detectives win')); await tick(5);
+  assert.equal($('#ft-end-line').hidden, false);
+  assert.equal($('#ft-card').hidden, false);
+  assert.equal($('#ft-end-line').dataset.speaker, 'keeper');
+});
+
