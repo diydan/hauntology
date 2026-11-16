@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Prop #3: Haunt Needle (Wrought-Iron Skeletal Gauge Pointer)
-// Colour: Lantern (#e0a43a, amber/matte gold)
+// Colour: Tarnished Silver (#c9c9d4)
 // Size: ~74 L x 18 W x 6.6 H mm (64 mm spear tip radius, compact tail clears lower bezel opening)
 // Mechanism: Underside pocket fits SG90 servo horn with 0.15 mm press-fit clearance
 // Print orientation: Flat on back (Z = 0), zero supports.
@@ -84,4 +84,4 @@ module prop_03_needle() {
   }
 }
 
-color(col_lantern) prop_03_needle();
+color(col_silver) prop_03_needle();
