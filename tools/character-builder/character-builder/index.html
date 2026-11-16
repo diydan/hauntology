@@ -923,7 +923,7 @@ function makeHairCards(root, key = '') {
     const triN = idx ? idx.count / 3 : HPa.count / 3, lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
     for (let i = 0; i < HPa.count; i++) for (let k = 0; k < 3; k++) { const v = HPa.getComponent(i, k); lo[k] = Math.min(lo[k], v); hi[k] = Math.max(hi[k], v); }
     const cen = [0, 1, 2].map(k => (lo[k] + hi[k]) / 2), rx = Math.max((hi[0] - lo[0]) / 2, 1), rz = Math.max((hi[2] - lo[2]) / 2, 1); cen[1] = Math.min(cen[1], hi[1] - rx);
-    const spanH = hi[1] - lo[1], skipCards = /short|buzz|crop|pixie|afro|curly|tied|bangs/i.test(key + o.name) || lo[1] > 141.5;
+    const spanH = hi[1] - lo[1], fine = /short|crop/i.test(key + o.name) && !/buzz|pixie|afro|curly|tied|bangs/i.test(key + o.name), skipCards = fine ? false : /short|buzz|crop|pixie|afro|curly|tied|bangs/i.test(key + o.name) || lo[1] > 141.5; // short cuts get a layer of thin short strands (below); long hair gets long cards
     if (skipCards) continue; // keep scalp caps, short cuts, afros, curls and bangs free of ribbon card intersections
     const maxL = Math.max(18, spanH * 0.85);
     const NB = 36, hem = new Float32Array(NB).fill(1e9), bin = (x, z) => ((Math.floor((Math.atan2(x - cen[0], z - cen[2]) / (2 * Math.PI) + 0.5) * NB) % NB) + NB) % NB;
@@ -968,7 +968,7 @@ function makeHairCards(root, key = '') {
       outP.set(p.x, p.y, p.z).addScaledVector(outN, (sx - p.x) * outN.x + (sy - p.y) * outN.y + (sz - p.z) * outN.z + lift);
       return true;
     };
-    const r = mulberry32(HPa.count * 31 + 5), N = Math.min(1800, Math.round(tot / 1.9)), hp = [], nrm = [], card = [], sd = [], si = [], sw = [], ind = [], sP = new T.Vector3();
+    const r = mulberry32(HPa.count * 31 + 5), N = fine ? Math.min(5200, Math.round(tot / 0.45)) : Math.min(1800, Math.round(tot / 1.9)), hp = [], nrm = [], card = [], sd = [], si = [], sw = [], ind = [], sP = new T.Vector3();
     for (let k = 0; k < N; k++) {
       const pick = r() * tot; let lo2 = 0, hi2 = cum.length - 1; while (lo2 < hi2) { const m = (lo2 + hi2) >> 1; if (cum[m] < pick) lo2 = m + 1; else hi2 = m; }
       const [i0, i1, i2] = tris[lo2]; let u = r(), v = r(); if (u + v > 1) { u = 1 - u; v = 1 - v; }
@@ -978,20 +978,30 @@ function makeHairCards(root, key = '') {
         vNrm[3 * i0 + 1] * (1 - u - v) + vNrm[3 * i1 + 1] * u + vNrm[3 * i2 + 1] * v,
         vNrm[3 * i0 + 2] * (1 - u - v) + vNrm[3 * i1 + 2] * u + vNrm[3 * i2 + 2] * v
       ).normalize();
+      let tdir, L, W;
+      if (fine) { // thin short strands over the whole shell, lying along the flow of the hair: out from the crown whorl and down
+        const hLim0 = hemAt(p.x, p.z); if (p.y < hLim0 + 0.4) continue;
+        const flow = new T.Vector3(p.x - cen[0], 0, p.z - cen[2] - 1.5); flow.y = -0.35 * Math.max(0.3, flow.length() * 0.2);
+        tdir = flow.sub(nn.clone().multiplyScalar(nn.dot(flow)));
+        if (tdir.lengthSq() < 1e-6) tdir.set(0, -1, 0); tdir.normalize().applyAxisAngle(nn, (r() - 0.5) * 0.7);
+        L = 1.3 + 1.7 * r(); W = 0.32 + 0.3 * r();
+      } else {
       if (p.y > 149.5 || nn.y > 0.18 || p.z > 0.2) continue; // never plaster cards over the crown dome, parting or bangs zone; only feather flowing back/side locks
       if (p.z > -2.0 && p.x * nn.x < 0.2 && nn.y < 0.55) continue;
       const hLim = hemAt(p.x, p.z), drop = Math.max(0, p.y - hLim); if (drop < 2.2) continue;
       const down = new T.Vector3(0, -1, -0.14);
-      const tdir = down.sub(nn.clone().multiplyScalar(nn.dot(down)));
+      tdir = down.sub(nn.clone().multiplyScalar(nn.dot(down)));
       if (tdir.lengthSq() < 1e-6) tdir.set(0, -1, 0); tdir.normalize().applyAxisAngle(nn, (r() - 0.5) * 0.26);
-      const L = Math.min(maxL * (0.72 + 0.28 * r()), Math.max(3.5, drop * (0.88 + 0.16 * r()))), W = 1.45 + 0.95 * r(), varK = (r() * 8) | 0, NS = Math.max(4, Math.min(20, Math.round(L / 1.5))), step = L / NS;
+      L = Math.min(maxL * (0.72 + 0.28 * r()), Math.max(3.5, drop * (0.88 + 0.16 * r()))); W = 1.45 + 0.95 * r();
+      }
+      const varK = (r() * 8) | 0, NS = fine ? 3 : Math.max(4, Math.min(20, Math.round(L / 1.5))), step = L / NS;
       let cur = p.clone().addScaledVector(nn, 0.14 + 0.08 * r()), dir = tdir.clone(), nor = nn.clone(); const path = [[cur.clone(), nor.clone(), dir.clone()]];
       for (let s2 = 0; s2 < NS; s2++) {
         const prev = cur.clone(); cur.addScaledVector(dir, step);
         if (cur.y < hemAt(cur.x, cur.z) + 0.25 || (cur.z > 1.5 && Math.abs(cur.x) < 7.8 && cur.y < 156)) break;
         if (!snapToShell(cur, sP, nor, 3.4)) break;
         cur.copy(sP); dir.copy(cur).sub(prev); if (dir.lengthSq() < 1e-5) break; dir.normalize();
-        dir.addScaledVector(nor, -nor.dot(dir)).add(q.set(0, -0.42, 0).addScaledVector(nor, 0.42 * nor.y)).normalize();
+        { const gv = fine ? 0.1 : 0.42; dir.addScaledVector(nor, -nor.dot(dir)).add(q.set(0, -gv, 0).addScaledVector(nor, gv * nor.y)).normalize(); }
         path.push([cur.clone(), nor.clone(), dir.clone()]);
       }
       if (path.length < 3) continue;
@@ -1358,6 +1368,9 @@ const SK_FRAG = `
      float limbCalm = mix( 1.0, mix( 0.50, 0.90, handW ), bodyBelowNeck );
      skGrain = ( sd - 0.5 ) * 2.0 * uSkStr * limbCalm * ( 1.0 + 0.36 * handW ) * ( 1.0 - 0.72 * nailW );
    }
+   { float bbn = 1.0 - smoothstep( 130.0, 138.0, vSkP.y ); vec3 sw2 = pow( abs( normalize( vSkN ) ), vec3( 4.0 ) ); sw2 /= ( sw2.x + sw2.y + sw2.z );
+     float mt = texture2D( uSkDet, vSkP.zy * uSkInv * 0.16 + 0.3 ).r * sw2.x + texture2D( uSkDet, vSkP.xz * uSkInv * 0.16 + 0.6 ).r * sw2.y + texture2D( uSkDet, vSkP.xy * uSkInv * 0.16 ).r * sw2.z;
+     diffuseColor.rgb *= 1.0 + 0.40 * ( mt - 0.5 ) * vec3( 1.0, -0.6, -0.9 ) * bbn * uSkReal; } // large soft patches of redder and yellower skin on the body, so a limb is not one flat colour
    // microvascular blood warmth under knuckles, fingertips, earlobes, nose wings
    diffuseColor.rgb *= mix( vec3( 1.0 ), vec3( 1.06, 0.85, 0.80 ), warmW * 0.85 );
    diffuseColor.rgb *= 1.0 - 0.30 * handW * vTisA.y * clamp( 0.5 - skGrain * 4.0, 0.0, 1.0 ) * uSkReal; // darker folds in the knuckle skin
@@ -1591,7 +1604,7 @@ async function makeMat(keyName, side) {
       Object.assign(sh.uniforms, { uHrDet: HR.det, uHrStr: HR.str, uHrM: HR.m, uHrShine: HR.shine, uHrRoot: HR.root, uHrFlip: HR.flip, uHrCoil: { value: hrCoil }, uHrKey: HR.key, uHrRim1: HR.rim1, uHrRim2: HR.rim2 });
       Object.assign(sh.uniforms, { uHrMask: HP.mask, uHrFace: HP.face, uHrTexE: HP.texE, uHrTex: FP.u.uFpMap, uHrPrint: HP.on, uHrFlatK: HP.flat, uHrAlpha: FP.u.uFpAlpha, uHrC: FP.u.uFpC, uHrW: FP.u.uFpW, uHrEll: FP.u.uFpEll });
       sh.vertexShader = 'attribute vec3 headP, aShellN; uniform float uHrAlpha, uHrPrint; varying vec3 vHrP, vHrN;\n' + sh.vertexShader.replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
- if ( dot( aShellN, aShellN ) > 0.5 ) objectNormal = normalize( mix( objectNormal, aShellN, max( 0.50 * uHrPrint * uHrAlpha * ( 1.0 - smoothstep( -2.0, 4.0, headP.z ) ), 0.25 * smoothstep( 0.62, 0.90, aShellN.y ) ) ) ); // smooth crown seams while preserving side/front locks`).replace('#include <morphtarget_vertex>', `#include <morphtarget_vertex>
+ if ( dot( aShellN, aShellN ) > 0.5 ) objectNormal = normalize( mix( objectNormal, aShellN, max( 0.62 * uHrPrint * uHrAlpha * ( 1.0 - smoothstep( -2.0, 4.0, headP.z ) ), max( 0.40 * smoothstep( 0.62, 0.90, aShellN.y ), 0.36 * uHrAlpha ) ) ) ); // smooth crown seams and, in the realistic style, soften the pack's leaf shapes everywhere (the leaves stay in the silhouette)`).replace('#include <morphtarget_vertex>', `#include <morphtarget_vertex>
  vHrP = headP; vHrN = normal;
 #ifdef USE_MORPHTARGETS
  for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) { float hw = morphTargetInfluences[ i ]; if ( hw != 0.0 ) vHrP += getMorph( gl_VertexID, i, 0 ).xyz * hw; }
@@ -2187,6 +2200,14 @@ function tagSkinAnatomy(root, slot) {
         tisA[2 * i + 1] = hWarm * fade;
         tisB[2 * i] = hNail * fade;
         tisB[2 * i + 1] = fade;
+      }
+    } else if (/^[MF]_body_arms_(upper|lower)$/.test(m.name) && m.isSkinnedMesh && g.attributes.skinIndex && g.attributes.skinWeight) {
+      // bare arms: the elbow gets blood warmth and fine creases (through the knuckle channel), the whole arm gets the hand's finer, stronger skin grain
+      const SI = g.attributes.skinIndex, SW = g.attributes.skinWeight, bones = m.skeleton.bones, role = bones.map(b => /^CC_BaseUpperarm[LR]$/.test(b.name) ? 1 : /^CC_BaseForearm(Twist0[12])?[LR]?(_end)?$/.test(b.name) || /^CC_BaseForearm/.test(b.name) ? 2 : 0);
+      for (let i = 0; i < cnt; i++) {
+        let wU = 0, wF = 0; for (let c = 0; c < 4; c++) { const w = SW.getComponent(i, c); if (!w) continue; const r = role[SI.getComponent(i, c)]; if (r === 1) wU += w; else if (r === 2) wF += w; }
+        const elbow = Math.min(1, 4 * wU * wF); // both bones pull on the vertex: the elbow
+        tisA[2 * i] = 0.1; tisA[2 * i + 1] = Math.min(1, 0.12 + 0.8 * elbow); tisB[2 * i + 1] = 0.8;
       }
     } else {
       for (let i = 0; i < cnt; i++) tisA[2 * i] = 0.08;
