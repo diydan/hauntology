@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildNarrationPrompt, readsOutRules, replyChecksFor, validateGhostReply, sentenceCount, type NarrationInput } from "./narration";
+import { WORD_CAP, wordCount, buildNarrationPrompt, readsOutRules, replyChecksFor, validateGhostReply, sentenceCount, type NarrationInput } from "./narration";
 import { STYLE_BY_VOICE, STYLE_COMMON, STYLE_NAMES, STYLE_SAMPLES, styleFor } from "./style";
 import type { Directive, Seed, Voice } from "./types";
 
@@ -139,6 +139,20 @@ describe("the samples in the manner", () => {
     // implied, never carried out: no sample does anything to the visitor, says what will happen to them, or insults them
     for (const s of STYLE_SAMPLES) {
       expect(s.text, s.text).not.toMatch(/\b(?:you will (?:not leave|never leave|be (?:taken|hurt|kept)|suffer|regret)|i will (?:take|hurt|keep|get) you|fool|idiot|stupid|ugly|pathetic|worthless)\b/i);
+    }
+  });
+});
+
+describe("the word caps in the prompt (owner, 2026-11-16)", () => {
+  it("each capped turn's prompt asks for at most its cap in words, and every sample keeps to it", () => {
+    const turns: [Directive, number][] = [[{ kind: "tease", band: "nearer" }, 25], [{ kind: "hint", bearing: "left", band: "far" }, 20], [{ kind: "ending" }, 30]];
+    for (const voice of ["wistful", "stern"] as const) for (const [d, cap] of turns) {
+      const p = buildNarrationPrompt(inputFor(voice, d))!;
+      expect(JSON.stringify(p), `${voice} ${d.kind}`).toContain(`at most ${cap} words`);
+    }
+    for (const s of STYLE_SAMPLES) {
+      const cap = (WORD_CAP as Record<string, number>)[s.directive.kind];
+      if (cap !== undefined) expect(wordCount(s.text), s.text).toBeLessThanOrEqual(cap);
     }
   });
 });
