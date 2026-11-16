@@ -35,7 +35,10 @@ const lod = ["150k", "500k", "full"].includes(q.get("lod")) ? q.get("lod") : "10
 const status = document.getElementById("status");
 const say = (lines) => { status.textContent = lines.join("\n"); };
 
-const SCALE = 1.438571, FLOOR_Y = -1.414676;
+// Per-world pose from each recording's semantics_metadata: ?world=sharp is the upscaled-photo run.
+const POSES = { orig: { scale: 1.438571, ground: 1.414676 }, sharp: { scale: 1.091861, ground: 1.3802699 } };
+const worldName = q.get("world") === "sharp" ? "sharp" : "orig";
+const SCALE = POSES[worldName].scale, FLOOR_Y = -POSES[worldName].ground;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.01, 1000);
@@ -46,7 +49,7 @@ document.body.appendChild(renderer.domElement);
 scene.add(new SparkRenderer({ renderer }));
 
 const t0 = performance.now();
-const mesh = new SplatMesh({ url: `/assets/splat-${lod}.spz` });
+const mesh = new SplatMesh({ url: `/assets/${worldName === "sharp" ? "sharp" : "splat"}-${lod}.spz` });
 if (view !== "nofix") {
   mesh.quaternion.set(1, 0, 0, 0); // orientation.upFix, three's (x,y,z,w) order
   mesh.scale.setScalar(SCALE);     // orientation.scale
@@ -63,7 +66,7 @@ if (view === "back") { camera.position.set(0, FLOOR_Y + 3.2, 5.5); camera.lookAt
 else { camera.position.set(0, FLOOR_Y + 1.6, 0); camera.lookAt(0, FLOOR_Y + 1.6, -1); }
 
 let frames = 0, fps = "…", load = "loading", measure = "measuring fps over 5 s after load…";
-const paint = () => say([`view=${view} lod=${lod}`, load, `fps=${fps}`, measure]);
+const paint = () => say([`view=${view} lod=${lod} world=${worldName}`, load, `fps=${fps}`, measure]);
 mesh.initialized.then(() => {
   let info = "bounds n/a";
   try {

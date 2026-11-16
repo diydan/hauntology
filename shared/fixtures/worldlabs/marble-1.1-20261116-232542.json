@@ -1,0 +1,70 @@
+{
+  "operation_id": "<operation_id>",
+  "created_at": "2026-11-16T23:25:48Z",
+  "updated_at": "2026-11-16T23:30:46Z",
+  "expires_at": "2026-11-17T02:25:48Z",
+  "done": true,
+  "error": null,
+  "metadata": {
+    "progress": {
+      "status": "SUCCEEDED",
+      "description": "World generation completed successfully"
+    },
+    "world_id": "<world_id>",
+    "operation_type": "world_generation",
+    "public_model_name": "marble-1.1"
+  },
+  "response": {
+    "world_id": "<world_id>",
+    "display_name": "",
+    "tags": null,
+    "assets": {
+      "mesh": {
+        "collider_mesh_url": "<url>",
+        "hq_mesh_url": null,
+        "full_res_mesh_url": null
+      },
+      "imagery": {
+        "pano_url": "<url>"
+      },
+      "splats": {
+        "spz_urls": {
+          "500k": "<url>",
+          "100k": "<url>",
+          "150k": "<url>",
+          "full_res": "<url>"
+        },
+        "semantics_metadata": {
+          "metric_scale_factor": 1.091861,
+          "ground_plane_offset": 1.3802699
+        }
+      },
+      "thumbnail_url": "<url>",
+      "caption": "The scene is a cozy kitchen, captured in a realistic style, exuding warmth and functionality with its Scandinavian-inspired design. The overall tone is inviting and homely, suggesting a space well-used and cherished. The kitchen is equipped with light wooden flooring, which continues throughout the entire area, creating a consistent and spacious feel. To the left, a large, cream-colored retro-style refrigerator stands against a light-colored wall, marking the transition from the kitchen area to an adjacent room or hallway. A window on the far left allows natural light to softly illuminate the space, enhancing the bright and airy atmosphere. The main kitchen counter features dark wooden cabinetry below a white countertop, providing ample storage and workspace. A built-in oven with a visible red and white striped towel hanging from its handle is integrated into the cabinetry, beneath a modern stovetop. Above the countertop, dark wooden shelving extends across the wall, displaying various kitchen items such as glassware, ceramics, and cutting boards, all neatly organized. A black sink with a sleek black faucet is set into the countertop on the right side, flanked by a small potted plant and other cooking essentials. A simple, spherical light fixture with a brass base hangs from the ceiling, centrally located above the main kitchen area. The light wooden flooring extends from the visible kitchen area into the refrigerator's space, and further into the room to the left. The light fixture is centered above the main cooking and sink area, providing direct illumination. The dark wooden cabinetry is arranged in an L-shape, maximizing the use of the corner, with the stovetop and oven integrated into the longer section. The refrigerator stands to the left of the main kitchen setup, set slightly back from the counter line. The 360 scene is faultless."
+    },
+    "created_at": null,
+    "updated_at": null,
+    "permission": {
+      "public": false,
+      "allowed_readers": [],
+      "allowed_writers": [],
+      "allow_id_access": false
+    },
+    "world_prompt": null,
+    "world_marble_url": "<world_marble_url>",
+    "model": null
+  },
+  "cost": {
+    "total_credits": 1580,
+    "line_items": [
+      {
+        "name": "Pano generation (image, non-pano)",
+        "credits": 80
+      },
+      {
+        "name": "World generation",
+        "credits": 1500
+      }
+    ]
+  }
+}
