@@ -1178,7 +1178,7 @@ function skinTile() {
 }
 const SK_DEFAULT = skinTile();
 const SK = { det: { value: SK_DEFAULT }, str: { value: 0.14 }, inv: { value: 1 / 5.5 }, want: 0.3, base: 0.14, real: { value: 1 } };
-const SK_GLSL = `uniform sampler2D uSkDet; uniform float uSkStr, uSkInv, uSkReal; uniform vec3 uSkKey, uSkRim1, uSkRim2; varying vec3 vSkP, vSkN; varying vec2 vTisA, vTisB; float skGrain = 0.0, skFlat = 0.0; vec3 skBase = vec3( 0.0 );`;
+const SK_GLSL = `uniform sampler2D uSkDet; uniform float uSkStr, uSkInv, uSkReal; uniform vec3 uSkKey, uSkRim1, uSkRim2; varying vec3 vSkP, vSkN; varying vec2 vTisA, vTisB; float skGrain = 0.0, skFlat = 0.0; vec3 skBase = vec3( 0.0 ); float skSock = 0.0;`;
 const SK_FRAG = `
  {
    float handW = vTisB.y, nailW = vTisB.x * uSkReal, warmW = vTisA.y * uSkReal;
@@ -1207,6 +1207,8 @@ const SK_FRAG = `
  }`;
 const SK_POST_FP = `
  diffuseColor.rgb *= 1.0 + skGrain * max( 1.0 - fpA, 0.75 * fpSmear );
+ { vec2 sck = vec2( ( abs( vFpP.x ) - 3.35 ) / 1.42, ( vFpP.y - 147.81 ) / 0.66 ); skSock = ( 1.0 - smoothstep( 1.0, 1.35, length( sck ) ) ) * ( 1.0 - smoothstep( 7.6, 8.8, vFpP.z ) ) * ( 1.0 - smoothstep( 5.2, 6.4, abs( vFpP.x ) ) ); diffuseColor.rgb *= 1.0 - 0.85 * skSock; } // the lining inside the eye hole, seen past a sunk eyeball: dark, with no backlit glow
+ if ( ! gl_FrontFacing ) { skSock = 1.0; diffuseColor.rgb *= 0.1; } // the inside of the skull: through a gap beside a sunk eyeball it showed the far temple, lit orange, as a strip with straight edges
  skFlat = 0.24 * uFpFlat * uFpAlpha * step( 0.5, uFpOn ) * ( 1.0 - fpA );
  skBase = diffuseColor.rgb;
  diffuseColor.rgb *= 1.0 - skFlat;`;
@@ -1230,7 +1232,7 @@ const SK_LIGHT = `
      float thru = 0.36 + 0.64 * pow( clamp( dot( -sV, L ), 0.0, 1.0 ), 2.0 );
      sss += vec3( 1.0, 0.24, 0.08 ) * Lw[ i ] * back * thru * thin * 0.44;
    }
-   outgoingLight += sss * ( 0.34 + 0.86 * sLum ) * uSkReal * ( 1.0 - 0.48 * fpA );
+   outgoingLight += sss * ( 0.34 + 0.86 * sLum ) * uSkReal * ( 1.0 - 0.48 * fpA ) * ( 1.0 - skSock );
  }
 `;
 const EYE_GLSL = `uniform vec3 uEyKey, uEyRim1, uEyRim2; uniform float uEyReal; float eyWet = 1.0; vec2 eyLoc = vec2( 0.0 );`;
