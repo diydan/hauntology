@@ -68,7 +68,7 @@ export function reelLine(level, max) {
  */
 export const WANDER = {
   scene: 'wander-harbour',
-  reveal: 'Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks.',
+  reveal: 'Here. I have kept this a long time, and shown it to no one. Hold it gently. I have kept you a little while too, and I find I like it.',
   text: 'A tree by a house, a ship at sea, the sails, the water, and a ship coming into the harbour.',
 };
 
