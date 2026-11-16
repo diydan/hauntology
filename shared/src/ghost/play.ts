@@ -12,6 +12,9 @@ import { memoryText, narrate, voiceOfPreset } from "./scripted";
 import { makeSeeds } from "./seeds";
 import { SESSION_TTL_MS, isExpired, type PlaySession } from "./session";
 import { clientView } from "./view";
+import { keepLine, liveLines, type VoiceLine } from "../voice/line";
+import { playerTextOf, toVoiceLine } from "../voice/to-line";
+import { speakerForGhostVoice } from "../voice/voices";
 import type { Anchor, AnchorId, Bounds, Directive, Memory, Seed, Vec3 } from "./types";
 
 /**
@@ -97,7 +100,17 @@ export function resetSession(session: PlaySession, input: { world: WorldFacts; s
   return { ...fresh, voice: session.voice };
 }
 
-export type TurnInput = { input: unknown; pose: unknown; now: number; world: Pick<WorldFacts, "bounds" | "brief"> };
+export type TurnInput = {
+  input: unknown;
+  pose: unknown;
+  now: number;
+  world: Pick<WorldFacts, "bounds" | "brief">;
+  /**
+   * The id for the line this turn's reply is kept under for speech (ghost-voice 3.5): made by the caller, because it must be unguessable and this is pure. Without one
+   * no line is made and the game is kept exactly as before.
+   */
+  voiceLineId?: string | undefined;
+};
 
 /**
  * What the narrator needs to word one turn, kept off the wire to the client: the prompt's inputs (built from what the visitor has been told and the
@@ -113,11 +126,23 @@ export type NarrationJob = {
   /** The memory this turn told, and the scripted farewell that follows it when it was the last. */
   memoryAnchor: AnchorId | null;
   farewell: string | null;
+  /** What the visitor typed this turn, when they typed (never the stock sentence a button gets): kept out of anything spoken. */
+  typed?: string | undefined;
 };
 export type TurnResult =
   | { ok: false; code: "rate_limited"; retryAfterMs: number }
   | { ok: false; code: "session_expired" }
-  | { ok: true; session: PlaySession; reply: { text: string; scripted: true }; view: PlayView; directive: Directive; revealed: boolean; job: NarrationJob | null };
+  | {
+      ok: true;
+      session: PlaySession;
+      reply: { text: string; scripted: true };
+      view: PlayView;
+      directive: Directive;
+      revealed: boolean;
+      job: NarrationJob | null;
+      /** The line this turn's reply was kept as, when the caller asked for one and the reply could be one. */
+      voiceLine: VoiceLine | null;
+    };
 
 const seedOf = (seeds: readonly Seed[], id: string): Seed | undefined => seeds.find((s) => s.anchorId === id);
 
@@ -158,6 +183,7 @@ export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
           turn: state.turn,
           memoryAnchor: toldSeed === undefined ? null : toldSeed.anchorId,
           farewell,
+          ...(action.text !== undefined && action.text !== "" ? { typed: action.text } : {}),
           input: {
             voice: session.voice,
             directive: toldSeed !== undefined ? { kind: "reveal", anchorId: toldSeed.anchorId } : stepped.directive,
@@ -170,8 +196,18 @@ export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
           },
         };
 
-  const next: PlaySession = { ...session, state, pose };
-  return { ok: true, session: next, reply: { text, scripted: true }, view: clientView({ state, anchors: next.anchors, atmosphere: next.atmosphere }), directive: stepped.directive, revealed: stepped.revealed !== null, job };
+  // The line the reply is kept as for speech, if the caller gave an id. Nothing the engine decides depends on it (the words are already made).
+  const voiceLine =
+    turn.voiceLineId === undefined
+      ? null
+      : toVoiceLine({ id: turn.voiceLineId, text, kind: stepped.directive.kind === "ending" || state.ended ? "ending" : "narration", speaker: speakerForGhostVoice(session.voice), playerText: playerTextOf(action.text), now: turn.now });
+  const next: PlaySession = {
+    ...session,
+    state,
+    pose,
+    ...(turn.voiceLineId === undefined ? {} : { voiceLines: voiceLine === null ? liveLines(session.voiceLines, turn.now) : keepLine(session.voiceLines, voiceLine, turn.now) }),
+  };
+  return { ok: true, session: next, reply: { text, scripted: true }, view: clientView({ state, anchors: next.anchors, atmosphere: next.atmosphere }), directive: stepped.directive, revealed: stepped.revealed !== null, job, voiceLine };
 }
 
 /** What the model said for a turn, to be put where the scripted words were. */
@@ -182,6 +218,8 @@ export type Settle = {
   text: string;
   /** The memory the turn told, in the model's words. */
   memory?: { anchorId: AnchorId; text: string };
+  /** What the visitor typed that turn (from the job), so it can be kept out of what is spoken. */
+  typed?: string;
 };
 
 /**
@@ -189,14 +227,23 @@ export type Settle = {
  * It changes the words and the count of model turns and nothing the engine decides (Property 11). `null` when the answer is for another game (a reset made
  * a new one); the memory is still found by its anchor if other turns have come since, and the history line is only replaced while it is still the last turn's.
  */
-export function settleNarration(session: PlaySession, settle: Settle): PlaySession | null {
+export function settleNarration(session: PlaySession, settle: Settle, voice?: { lineId: string; now: number }): PlaySession | null {
   if (settle.stamp !== session.createdAt) return null;
   let state = { ...session.state, llmTurns: session.state.llmTurns + 1 };
   const told = settle.memory;
   if (told !== undefined) state = { ...state, memories: state.memories.map((m) => (m.anchorId === told.anchorId ? { ...m, text: told.text } : m)) };
   const last = state.history[state.history.length - 1];
   if (settle.turn === state.turn && last !== undefined && last.role === "ghost") state = { ...state, history: [...state.history.slice(0, -1), { role: "ghost", text: settle.text }] };
-  return { ...session, state };
+  const next: PlaySession = { ...session, state };
+  // The line for speech: when these are still the last turn's words, the scripted turn's line (the one made at that turn's time, whose id was never given out)
+  // is replaced by one for the words the visitor saw. When a later turn has come, the lines are left as they are.
+  if (voice !== undefined && settle.turn === state.turn) {
+    const turnAt = state.lastTurnAt;
+    const others = (session.voiceLines ?? []).filter((l) => turnAt === null || l.createdAt !== turnAt);
+    const line = toVoiceLine({ id: voice.lineId, text: settle.text, kind: state.ended ? "ending" : "narration", speaker: speakerForGhostVoice(session.voice), playerText: playerTextOf(settle.typed), now: turnAt ?? voice.now });
+    next.voiceLines = line === null ? liveLines(others, voice.now) : keepLine(others, line, voice.now);
+  }
+  return next;
 }
 
 export const viewOf = (session: PlaySession): PlayView => clientView({ state: session.state, anchors: session.anchors, atmosphere: session.atmosphere });
