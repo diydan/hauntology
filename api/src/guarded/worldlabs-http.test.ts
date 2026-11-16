@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import examples from "../../../shared/fixtures/worldlabs/docs-examples.json";
+import recordedDraft from "../../../shared/fixtures/worldlabs/marble-1.0-draft-20261116-212208.json";
+import recordedStandard from "../../../shared/fixtures/worldlabs/marble-1.1-20261116-212757.json";
 import { WorldManifestSchema } from "@hauntology/shared/world/manifest";
 import { FakeR2 } from "../worlds/fake-cloudflare";
 import { WorldIngestor } from "../worlds/ingest";
@@ -10,8 +12,9 @@ import {
 } from "./worldlabs-http";
 
 /**
- * The adapter over examples taken from the World Labs documentation (`shared/fixtures/worldlabs/docs-examples.json`).
- * Nothing here talks to the service: a scripted `fetch` answers. A run (Spike 1.1) has not confirmed the shapes.
+ * The adapter over examples taken from the World Labs documentation (`shared/fixtures/worldlabs/docs-examples.json`)
+ * and over the two worlds recorded by Spike 1.1 (2026-11-16, addresses scrubbed and put back as examples in the
+ * "recorded worlds" tests). Nothing here talks to the service: a scripted `fetch` answers.
  */
 
 const KEY = "wlt_test_KEY_0123456789";
@@ -380,6 +383,38 @@ describe("fetchWorld", () => {
     expect(real.ok && real.world.splats).toEqual([]);
     const stand = await make({ baseUrl: "http://127.0.0.1:8788" }, json(local)).api.fetchWorld(OP);
     expect(stand.ok && stand.world.splats).toHaveLength(1);
+  });
+
+  describe("the recorded worlds (Spike 1.1, 2026-11-16)", () => {
+    // The recordings keep no address (every one is `<url>`), so each asset gets an example address
+    // with the format its summary recorded; the shape, levels and numbers are the service's own.
+    const resurrect = (recording: unknown): unknown =>
+      (mutate(recording, (o) => {
+        const a = o.response.assets;
+        for (const k of Object.keys(a.splats.spz_urls)) a.splats.spz_urls[k] = `${A}/${k}.spz`;
+        a.mesh.collider_mesh_url = `${A}/collider.glb`;
+        if (a.imagery.pano_url !== null) a.imagery.pano_url = `${A}/pano.png`;
+        a.thumbnail_url = `${A}/thumbnail.webp`;
+      }) as { response: unknown }).response;
+
+    it("reads the recorded marble-1.1 world: four splat levels, pano, thumb and the reported pose", () => {
+      const w = readWorld(resurrect(recordedStandard), false);
+      expect(w).not.toBeNull();
+      expect(w!.splats.map((s) => s.lod)).toEqual(["500k", "150k", "100k", "full"]);
+      expect(w!.collider?.format).toBe("glb");
+      expect(w!.pano?.format).toBe("png");
+      expect(w!.thumb?.format).toBe("webp");
+      expect(w!.pose).toEqual({ frame: "marble_raw_opencv", metricScaleFactor: 1.438571, groundPlaneOffset: 1.414676 });
+    });
+
+    it("reads the recorded draft world: no pano, and no scale or ground reported", () => {
+      const w = readWorld(resurrect(recordedDraft), false);
+      expect(w).not.toBeNull();
+      expect(w!.splats.map((s) => s.lod)).toEqual(["500k", "100k", "full"]);
+      expect(w).not.toHaveProperty("pano");
+      expect(w!.thumb?.format).toBe("webp");
+      expect(w!.pose).toEqual({ frame: "marble_raw_opencv", metricScaleFactor: undefined, groundPlaneOffset: undefined });
+    });
   });
 });
 
