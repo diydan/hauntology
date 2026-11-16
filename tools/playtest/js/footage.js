@@ -10,6 +10,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 const looping = [...document.querySelectorAll('video.ft-video[loop]')];
 const once = $('#ft-once');
+const onceSolved = $('#ft-once-solved');
 const playBtn = $('#ft-play');
 const status = $('#ft-status');
 
@@ -70,7 +71,7 @@ function sync() {
     if (run) v.play().catch(() => say('The browser blocked the clip. Tap Play footage.'));
     else v.pause();
   }
-  if (!wanted) once.pause();
+  if (!wanted) { once.pause(); onceSolved.pause(); }
   scenes.sync();
   paint();
 }
@@ -91,17 +92,20 @@ for (const b of document.querySelectorAll('[role="radio"][data-look]')) {
 // Section 1: the real clue card shows for 8 seconds, then the safe. This shows it again (the page is loaded afresh).
 $('#ft-clue-again').addEventListener('click', () => { const f = $('#ft-clue-app'); f.src = f.getAttribute('src'); say('The clue again.'); });
 
-$('#ft-replay').addEventListener('click', () => {
-  if (!wanted) { say('Footage is paused: tap Play footage first.'); return; }
-  once.currentTime = 0;
-  once.play().catch(() => say('The browser blocked the clip. Tap Replay again.'));
-});
+// Sections 3 and 11: a clip that plays once, from the start, on Replay.
+for (const [btnId, video] of [['#ft-replay', once], ['#ft-replay-solved', onceSolved]]) {
+  $(btnId).addEventListener('click', () => {
+    if (!wanted) { say('Footage is paused: tap Play footage first.'); return; }
+    video.currentTime = 0;
+    video.play().catch(() => say('The browser blocked the clip. Tap Replay again.'));
+  });
+}
 
 document.addEventListener('visibilitychange', sync);
 reduce.addEventListener?.('change', (e) => { wanted = !e.matches; sync(); });
 
 // A clip that cannot load leaves its still frame; say so once.
-for (const v of [...looping, once]) {
+for (const v of [...looping, once, onceSolved]) {
   const last = v.querySelector('source:last-of-type');
   last?.addEventListener('error', () => say('A clip did not load: the still frame is shown.'));
 }

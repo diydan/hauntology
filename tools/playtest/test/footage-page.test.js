@@ -192,11 +192,12 @@ const btn = (text) => [...document.querySelectorAll('button')].find((b) => b.tex
 test('18.5 the looping clips play on load, and Pause footage stops them', { skip }, async () => {
   const { log } = open();
   await load(); await tick(5);
-  assert.equal(looping().length, 2);
-  assert.ok(looping().every((v) => v.__playing === true), 'both loops play');
+  assert.equal(looping().length, 4, 'the clue, the puzzle, choosing pieces and the accusation');
+  assert.ok(looping().every((v) => v.__playing === true), 'every loop plays');
+  assert.equal(document.querySelector('#ft-once-solved').__playing, undefined, 'the solved film waits for Replay');
   assert.equal(document.querySelector('#ft-once').__playing, undefined, 'the once-clip waits for Replay');
   click(btn('Pause footage')); await tick(5);
-  assert.ok(looping().every((v) => v.__playing === false), 'both loops stop');
+  assert.ok(looping().every((v) => v.__playing === false), 'every loop stops');
   assert.ok(btn('Play footage'));
   assert.match(document.querySelector('#ft-status').textContent, /still frame/);
   log.length = 0;
@@ -973,4 +974,20 @@ test('18 the clue and puzzle screens loop the study (Frankenstein, 1910), and a 
   assert.deepEqual(film('ft-b'), ['study-desk']);
   assert.deepEqual(film('ft-c'), ['mirror-fade']);
   assert.match(html, /<video class="ft-video" id="ft-once" muted playsinline[^>]*>/, 'the fade plays once: no loop');
+});
+
+test('18 sections 9 to 11: the study for choosing pieces and for the accusation (loops), and the solved puzzle (once, on Replay)', { skip }, async () => {
+  const html = read('footage.html');
+  const film = (id) => { const a = html.indexOf(`id="${id}"`); const sec = html.slice(a, html.indexOf('</section>', a)); return [...sec.matchAll(/<source src="media\/([\w-]+)\.webm"/g)].map((m) => m[1]); };
+  assert.deepEqual(film('ft-i'), ['study-skull']);
+  assert.deepEqual(film('ft-j'), ['study-writing']);
+  assert.deepEqual(film('ft-k'), ['study-eureka']);
+  const { log } = open();
+  await load(); await tick(5);
+  const v = $('#ft-once-solved');
+  assert.equal(v.hasAttribute('loop'), false, 'the solved film plays once');
+  v.currentTime = 4;
+  click($('#ft-replay-solved'));
+  assert.equal(v.currentTime, 0, 'Replay starts it from the top');
+  assert.ok(log.some(([op, id]) => op === 'play' && id === 'ft-once-solved'));
 });

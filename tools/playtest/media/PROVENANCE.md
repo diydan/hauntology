@@ -171,6 +171,39 @@ A clip cut from a source file already described in a **Source record** points to
 | Size | `.mp4` 196 KB, `.webm` 220 KB, `.jpg` 10 KB |
 | Flash check | `node flash-check.mjs media/mirror-fade.mp4 media/mirror-fade.webm` on 2026-11-16: 324 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
 
+## study-skull
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The study: Frankenstein sits at his desk, picks up a skull and turns it over, then rises, 0:41.5 for 5 s. Loops on the TV while players choose their pieces. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 5 s from 41.5 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 1.5 s |
+| Size | `.mp4` 194 KB, `.webm` 318 KB, `.jpg` 19 KB |
+| Flash check | `node flash-check.mjs media/study-skull.mp4 media/study-skull.webm` on 2026-11-16: 120 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## study-writing
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The study: Frankenstein sits at his desk and writes, 0:51 for 10 s. Loops faint behind the phone while a player seals an accusation. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 10 s from 51 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 5 s |
+| Size | `.mp4` 333 KB, `.webm` 545 KB, `.jpg` 19 KB |
+| Flash check | `node flash-check.mjs media/study-writing.mp4 media/study-writing.webm` on 2026-11-16: 240 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## study-eureka
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The study: Frankenstein leans back and laughs, then jumps up from the desk, 1:02.5 for 6 s. The film of a solved puzzle, played once. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 6 s from 62.5 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 2.5 s |
+| Size | `.mp4` 213 KB, `.webm` 363 KB, `.jpg` 18 KB |
+| Flash check | `node flash-check.mjs media/study-eureka.mp4 media/study-eureka.webm` on 2026-11-16: 144 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
 ## AI clips: the eight scenes of `docs/story/ai-scene-prompts.md`
 
 These are **not** cuts from a source film. Each one is a generated clip: MiniMax H3-Max, 768P, 15 s, two takes per scene, submitted 2026-11-15 through the Matrix connector (task ids and drive node ids are in the clip entries below). The scene list, the prompts and the rules they must satisfy are in `docs/story/ai-scene-prompts.md`.
