@@ -25,18 +25,24 @@ module relic_silver_key() {
       }
     }
 
-    // 4. Stepped Ward Bit (projecting to +X, with 45-deg bottom corbel from collar)
+    // 4. Stepped Ward Bit (projecting to +X, with true 45-deg bottom corbel from stem & print-safe ward cuts)
     translate([0, 0, 2.5])
     difference() {
       hull() {
-        translate([2.0, 0, 0]) cube([1.0, 3.2, 1.0], center = true);
-        translate([6.2, 0, 5.2]) cube([9.5, 3.2, 8.4], center = true);
+        translate([1.8, 0, -3.4]) cube([1.6, 3.2, 1.2], center = true);
+        translate([6.2, 0,  5.2]) cube([9.5, 3.2, 8.4], center = true);
       }
-      // Intricate ward notches (vertical and angled key cuts)
+      // Intricate ward notches: open top notch + 45-deg gabled lower/inner cuts (zero floating teeth!)
       translate([6.2, 0, 5.2]) {
-        translate([-1.2, 0, 1.5]) cube([1.4, 5.0, 4.2], center = true);
-        translate([ 1.8, 0, -0.5]) cube([1.4, 5.0, 4.2], center = true);
-        translate([ 0.4, 0, 0.2]) cube([4.2, 5.0, 1.3], center = true);
+        translate([-1.2, 0, 2.1]) cube([1.4, 5.0, 4.2], center = true);
+        hull() {
+          translate([1.8, 0, -2.5]) cube([1.4, 5.0, 3.4], center = true);
+          translate([1.8, 0, -0.1]) rotate([0, 45, 0]) cube([1.0, 5.0, 1.0], center = true);
+        }
+        hull() {
+          translate([-1.9, 0, -0.4]) cube([2.4, 5.0, 0.9], center = true);
+          translate([-1.9, 0,  0.55]) rotate([0, 45, 0]) cube([1.4, 5.0, 1.4], center = true);
+        }
       }
     }
   }

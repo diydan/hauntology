@@ -14,8 +14,8 @@
 //     span is the diameter of the largest circle that fits inside the region (a distance transform on a 0.5 mm grid).
 
 export const OVERHANG_DEG = 50.5; // design target is 45 degrees; 50 is the most a 0.4 mm nozzle with a part fan holds cleanly (plus 0.5 for facet noise)
-export const BED_BAND_MM = 0.7; // first-layer bevels (the "elephant foot" chamfers) are 0.4 to 0.6 mm tall and touch the bed, so they are fine
-export const BRIDGE_MAX_MM = 15; // a flat roof narrower than this bridges on a tuned printer
+export const BED_BAND_MM = 0.7; // sloped first-layer bevels ("elephant foot" chamfers) are 0.4 to 0.6 mm tall and touch the bed, so they are fine
+export const BRIDGE_MAX_MM = 10; // a flat roof narrower than 10 mm bridges cleanly without supports on a 0.4 mm nozzle
 export const MIN_REGION_MM2 = 20; // ignore specks
 
 const WELD = 1000; // weld vertices at 1 micrometre, like the mesh check
@@ -61,7 +61,14 @@ export function findOverhangs(buf, { overhangDeg = OVERHANG_DEG, bridgeMaxMm = B
     return false;
   };
 
-  const flagged = tris.filter((t) => t.c < limit && Math.max(t.p[0][2], t.p[1][2], t.p[2][2]) >= minZ + BED_BAND_MM && !(t.c < -0.99 && seam(t)));
+  const flagged = tris.filter((t) => {
+    if (t.c >= limit) return false;
+    const zTop = Math.max(t.p[0][2], t.p[1][2], t.p[2][2]);
+    // A flat downward ceiling (t.c < -0.98) above z = minZ + 0.08 is a real bridge even at z = 0.4 mm (e.g. an upside-down sticker pocket);
+    // only sloped first-layer chamfers (t.c >= -0.98) get the BED_BAND_MM exemption.
+    if (t.c < -0.98) return zTop >= minZ + 0.08 && !seam(t);
+    return zTop >= minZ + BED_BAND_MM;
+  });
 
   // group by shared (welded) vertices
   const parent = new Map();

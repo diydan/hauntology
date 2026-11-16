@@ -19,9 +19,9 @@ module prop_09_screen_bezel() {
       translate([0, 6.0, 3.5])
         chamfer_box(46.0, 64.0, 8.5, r = 2.0, ch_bot = 0, ch_top = 0.4);
 
-      // 3. Lower ESP32 DevKitC Mounting Cradle (Y = -33, Z = 3.5..12.0)
+      // 3. Lower ESP32 DevKitC Mounting Cradle (Y = -33, Z = 3.5..14.5 — deep enough for soldered header pins!)
       translate([0, -33.0, 3.5])
-        chamfer_box(esp32_w + 5.2, esp32_d + 4.8, 8.5, r = 2.0, ch_bot = 0, ch_top = 0.4);
+        chamfer_box(esp32_w + 5.2, esp32_d + 4.8, 11.0, r = 2.0, ch_bot = 0, ch_top = 0.4);
     }
 
     // 4. Bevelled 1.8" Screen Active Viewport Window (35.0 x 46.0 mm opening)
@@ -36,20 +36,37 @@ module prop_09_screen_bezel() {
       linear_extrude(height = 9.5)
         rrect2d(36.4, 58.4, r = 1.2);
 
-    // 6. Four M2 Mounting Standoff Holes for ST7735 PCB
+    // 6. Four M2 Mounting Standoff Holes for ST7735 PCB + Four Ø3.4 mm Corner Mounting Holes to prop-09-stage-frame cleats!
     for (sx = [-15.0, 15.0], sy = [6.0 - 25.5, 6.0 + 25.5]) {
       translate([sx, sy, 1.6])
         cylinder(h = 11.0, d = 1.8);
     }
+    for (sx = [-46.0, 46.0], sy = [-44.0, 45.0]) {
+      translate([sx, sy, -0.5])
+        cylinder(h = 6.0, d = 3.4);
+    }
 
-    // 7. ESP32 DevKitC Cavity, Ribbon Cable Channel & Right-End USB-C Port Cutout
-    translate([0, -33.0, 5.6])
-      linear_extrude(height = 8.0)
+    // 7. ESP32 DevKitC Cavity (with 4 corner standoffs at Z = 10.6 + deep pin-header relief down to Z = 2.0) & Right-End USB-C Cutout
+    translate([0, -33.0, 10.6])
+      linear_extrude(height = 6.0)
         rrect2d(esp32_w, esp32_d, r = 1.0);
-    translate([0, -14.0, 8.0])
+    difference() {
+      translate([0, -33.0, 2.0])
+        linear_extrude(height = 9.0)
+          rrect2d(esp32_w - 2.0, esp32_d - 1.6, r = 1.0);
+      for (sx = [-1, 1], sy = [-1, 1]) {
+        translate([sx * (esp32_w / 2 - 3.6), -33.0 + sy * (esp32_d / 2 - 2.8), 1.8])
+          chamfer_box(7.6, 6.0, 9.0, r = 1.0, ch_bot = 0, ch_top = 0);
+      }
+    }
+    for (sx = [-1, 1], sy = [-1, 1]) {
+      translate([sx * esp32_hole_w / 2, -33.0 + sy * esp32_hole_d / 2, 2.0])
+        cylinder(h = 10.0, d = sg90_m2_pilot_d);
+    }
+    translate([0, -14.0, 10.0])
       cube([18.0, 20.0, 9.0], center = true);
     // USB-C connector port opening on +X end of ESP32 cradle
-    translate([esp32_w / 2 + 2.0, -33.0, 9.0])
+    translate([esp32_w / 2 + 2.0, -33.0, 12.2])
       cube([8.0, esp32_usb_w + 1.0, 7.5], center = true);
   }
 }

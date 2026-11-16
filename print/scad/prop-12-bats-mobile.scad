@@ -50,11 +50,11 @@ module bat_2d() {
       translate([0, -9.2]) circle(r = 3.0);
     }
 
-    // Deep dramatic crescent scallops cut from trailing wing edge
+    // Deep dramatic crescent scallops cut from trailing wing edge (radii sized so every wing-finger spur stays >= 1.2 mm wide!)
     for (sx = [-1, 1]) {
-      translate([sx * 6.8, -7.8])  circle(r = 3.6);
-      translate([sx * 13.6, -7.4]) circle(r = 3.5);
-      translate([sx * 20.2, -4.6]) circle(r = 3.3);
+      translate([sx * 6.8, -8.1])  circle(r = 3.2);
+      translate([sx * 13.6, -7.7]) circle(r = 3.05);
+      translate([sx * 20.4, -4.9]) circle(r = 2.9);
     }
 
     // Thread tie hole (2.0 mm ID)

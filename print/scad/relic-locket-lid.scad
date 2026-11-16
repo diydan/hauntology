@@ -50,19 +50,25 @@ module relic_locket_lid() {
       }
 
       // 3. Upper Hinge Knuckle (Y_stl = +0.2 .. +8.5 -> assembled Z_world = 26.2 .. 34.5)
-      //    Leaves 0.50 mm axial gap above Body's lower knuckle (25.7), flat contact pad at Z_stl = 0.
+      //    Leaves 0.50 mm axial gap above Body's lower knuckle (25.7), full flat contact pad at Z_stl = 0,
+      //    and >= 0.85 mm wall over teardrop pin apex.
       hull() {
         translate([Hx, 0.2, Hz])
           rotate([-90, 0, 0])
             cylinder(h = 8.3, d = kn_d);
-        translate([Hx - 0.65, 0.2, 0])
-          cube([1.3, 8.3, 0.4]);
+        translate([Hx, 0.2, Hz + 1.5])
+          rotate([-90, 0, 0])
+            cylinder(h = 8.3, d = 2.0);
+        translate([Hx - 0.8, 0.2, 0])
+          cube([1.6, 8.3, 0.5]);
       }
-      // Solid hinge arm bridging knuckle cleanly into Lid's upper-left oval shoulder
+      // Solid hinge arm bridging knuckle cleanly into Lid's upper-left oval shoulder (flush on Z_stl = 0)
       hull() {
         translate([Hx + 0.8, 0.2, Hz])
           rotate([-90, 0, 0])
             cylinder(h = 8.3, d = 2.8);
+        translate([Hx + 0.2, 0.2, 0])
+          cube([3.8, 8.3, 0.5]);
         translate([-11.6, 0.3, 0.0])
           cube([1.4, 8.0, 3.6]);
       }
@@ -86,14 +92,14 @@ module relic_locket_lid() {
       linear_extrude(height = sticker_depth + 0.4)
         locket_lid_oval_2d(8.0, 11.0);
 
-    // B. Vaulted Keepsake Interior Hollow (flat bed opening at Z_stl = 0)
+    // B. Vaulted Keepsake Interior Hollow (<= 45-deg self-supporting dome tapering to 8.4 mm width < 10 mm bridge limit!)
     hull() {
       translate([0, 0, -0.1])
         linear_extrude(height = 0.2)
-          locket_lid_oval_2d(8.8, 11.6);
-      translate([0, 0, 2.4])
+          locket_lid_oval_2d(8.0, 10.8);
+      translate([0, 0, 3.8])
         linear_extrude(height = 0.1)
-          locket_lid_oval_2d(6.4, 9.2);
+          locket_lid_oval_2d(4.2, 7.0);
     }
 
     // C. Coaxial Horizontal Filament Pin Bore (Ø2.15 mm) along Y_stl with teardrop apex

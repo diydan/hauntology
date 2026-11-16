@@ -40,7 +40,7 @@ sg90_flange_w      = 32.5 + 2 * clear_fit; // 32.8 mm
 sg90_flange_h      = 2.5 + clear_fit;      // 2.65 mm
 sg90_flange_z      = 16.0; // Bottom of servo case to underside of mounting ears (4.0 mm below case top)
 sg90_hole_span     = 27.5;
-sg90_m2_pilot_d    = 1.8 - clear_fit;      // 1.65 mm self-tapping M2 pilot bore
+sg90_m2_pilot_d    = 1.80;                 // 1.80 mm self-tapping M2 pilot bore (prints ~1.55 mm on 0.4 mm FDM without splitting bosses)
 sg90_shaft_off_x   = -5.5; // Output spline offset from body centre along length
 sg90_boss_d        = 11.8 + 2 * clear_move; // 12.4 mm clearance bore for top round bearing boss
 sg90_spline_d      = 4.8 + 2 * clear_fit;  // 5.1 mm spline shaft clearance
@@ -150,30 +150,37 @@ module relic_pedestal_base(h = 4.5, top_d = 18.0) {
 }
 
 // Positive ESP32-WROOM-32E DevKitC V4 Mounting Cradle (narrow 28.5 mm USB-C end at +Y,
-// 4x M2 corner screw bosses at 48.26 x 22.86 mm, and RF antenna keep-out window at -Y)
-module esp32_devkitc_cradle(wall = 2.4, h = 7.5) {
+// 4x intact M2 corner screw bosses at 48.26 x 22.86 mm, 9.0 mm standoff height so soldered 8.5 mm
+// male header pins fit pins-down, and RF antenna keep-out window between the -Y corner bosses)
+module esp32_devkitc_cradle(wall = 2.4, h = 12.6, z_pcb = 9.0) {
   cw = esp32_d + 2 * wall;
   cd = esp32_w + 2 * wall;
   difference() {
     chamfer_box(cw, cd, h, r = 2.4, ch_bot = 0, ch_top = 0.6);
-    // Main PCB pocket (z = 3.2..h)
-    translate([0, 0, 3.2])
+    // Main PCB pocket (z = z_pcb..h)
+    translate([0, 0, z_pcb])
       linear_extrude(height = h)
         rrect2d(esp32_d, esp32_w, r = 1.0);
-    // Under-board component & solder-pin clearance well (leaves 4 corner standoffs)
-    translate([0, 2.0, -0.1])
-      linear_extrude(height = 4.0)
-        rrect2d(esp32_d - 6.4, esp32_w - 11.0, r = 1.5);
-    // RF PCB antenna keep-out clearance window at -Y end
+    // Under-board header-pin & component well (clears both 0.9" and 1.0" pin rows while keeping 4 solid corner standoffs)
+    difference() {
+      translate([0, 0, -0.1])
+        linear_extrude(height = z_pcb + 0.2)
+          rrect2d(esp32_d - 1.6, esp32_w - 2.0, r = 1.2);
+      for (sx = [-1, 1], sy = [-1, 1]) {
+        translate([sx * (esp32_d / 2 - 2.8), sy * (esp32_w / 2 - 3.6), -0.2])
+          chamfer_box(6.0, 7.6, z_pcb + 0.4, r = 1.0, ch_bot = 0, ch_top = 0);
+      }
+    }
+    // RF PCB antenna keep-out clearance window at -Y end (16.8 mm wide stays cleanly between the two -Y M2 bosses!)
     translate([0, -(esp32_w / 2 - esp32_ant_len / 2 + 0.5), -0.1])
       linear_extrude(height = h + 1.0)
-        rrect2d(esp32_d - 4.0, esp32_ant_len + 1.0, r = 1.2);
+        rrect2d(16.8, esp32_ant_len + 1.0, r = 1.2);
     // USB-C connector exit channel at +Y end
-    translate([0, cd / 2 - wall / 2, 4.6])
-      cube([esp32_usb_w + 1.0, wall + 3.0, h], center = true);
-    // Four M2 corner screw pilot holes (22.86 x 48.26 mm spacing)
+    translate([0, cd / 2 - wall / 2, z_pcb + 2.4])
+      cube([esp32_usb_w + 1.2, wall + 3.0, h], center = true);
+    // Four M2 corner screw pilot holes (22.86 x 48.26 mm spacing) inside solid corner bosses
     for (sx = [-1, 1], sy = [-1, 1]) {
-      translate([sx * esp32_hole_d / 2, sy * esp32_hole_w / 2, 0.4])
+      translate([sx * esp32_hole_d / 2, sy * esp32_hole_w / 2, 0.8])
         cylinder(h = h + 1.0, d = sg90_m2_pilot_d);
     }
   }
@@ -367,19 +374,23 @@ module burton_standee_plinth_solid(
     hull() {
       translate([sx * 12.6, 0.8, plinth_h - 1.2])
         chamfer_box(3.2, standee_d - 4.4, 1.4, r = 0.9, ch_bot = 0.2, ch_top = 0.2);
-      translate([sx * 11.4, 0.8, bh_top])
-        chamfer_box(2.5, blade_t, 1.2, r = 0.7, ch_bot = 0.2, ch_top = 0.2);
+      translate([sx * 11.4, 1.25, bh_top])
+        chamfer_box(2.5, blade_t - 0.9, 1.2, r = 0.7, ch_bot = 0.2, ch_top = 0.2);
     }
   }
 }
 
 // Shared subtractive cuts for standee plinth: exact 34 x 5.6 mm nameplate pocket + graveyard cracks.
+// Plinth front apron slopes from (Y = -7.5, Z = 3.6) to (Y = -5.4, Z = 9.5) at atan2(5.9, 2.1) = 70.4 deg;
+// centering the pocket at (Y = -6.45, Z = 6.55) at 70.4 deg keeps it 100% open on the sloped face (no 0.15 mm lower skin).
 module burton_standee_plinth_cuts(standee_w = 40.0, standee_d = 15.0, plinth_h = 9.5, skew = 1.2) {
+  apron_ang = atan2(plinth_h - 3.6, 2.1); // 70.4 deg
   // Exact 0.4 mm Name Strip Sticker Pocket on Front of Plinth (34 x 5.6 mm)
-  translate([0, -standee_d / 2 + 1.3, 5.2])
-    rotate([78, 0, 0])
-      linear_extrude(height = sticker_depth + 0.8, center = true)
-        rrect2d(34.0, 5.6, r = 1.0);
+  translate([0, -standee_d / 2 + 1.05, 6.55])
+    rotate([apron_ang, 0, 0])
+      translate([0, 0, -sticker_depth])
+        linear_extrude(height = sticker_depth + 1.2)
+          rrect2d(34.0, 5.6, r = 1.0);
   // Chiseled tombstone cracks on rear plinth wall (45-deg safe V-notches)
   for (cx = [-10.5 * sign(skew), 7.5 * sign(skew)]) {
     translate([cx, standee_d / 2 - 0.2, plinth_h * 0.65])
