@@ -2,7 +2,15 @@ import { playTurn, resetSession, settleNarration, viewOf, type Settle } from "@h
 import { isExpired, parseSession, serializeSession, type PlaySession } from "@hauntology/shared/ghost/session";
 import type { WorldFacts } from "@hauntology/shared/ghost/play";
 import { ANCHOR_IDS } from "@hauntology/shared/ghost/types";
-import type { Peek, PlayRefusal, Settled, TurnDone } from "./ports";
+import { toBase64Url } from "@hauntology/shared/session-cookie";
+import { findLine, type VoiceLine } from "@hauntology/shared/voice/line";
+import type { Peek, PlayRefusal, Settled, TurnDone, VoiceRef } from "./ports";
+
+/** A line's id: 128 random bits, so it cannot be guessed (and a line is found by it only through its own game and owner as well). */
+const randomLineId = (): string => toBase64Url(crypto.getRandomValues(new Uint8Array(16)));
+
+/** The reference a client gets for a line: its id, or nothing when the line has nothing to say aloud. */
+const refOf = (line: VoiceLine | undefined | null): VoiceRef => (line === undefined || line === null || line.spoken === "" ? null : { lineId: line.id });
 
 /** Where one game is kept: a Durable Object's storage, or a variable in a test. A stored value that does not fit is treated as no game. */
 export interface Slot {
@@ -17,7 +25,8 @@ export interface Slot {
  * itself is the pure `shared/src/ghost/play`; this only keeps it and checks the owner. The clock is a parameter.
  */
 export class PlayCore {
-  constructor(private readonly slot: Slot, private readonly now: () => number) {}
+  /** `newId` makes the id of a line for speech; the default is random and tests may give a fixed one. */
+  constructor(private readonly slot: Slot, private readonly now: () => number, private readonly newId: () => string = randomLineId) {}
 
   private async load(ownerSid: string, now: number): Promise<PlaySession | PlayRefusal> {
     const session = parseSession(await this.slot.load());
@@ -42,10 +51,10 @@ export class PlayCore {
     const now = this.now();
     const session = await this.load(ownerSid, now);
     if ("ok" in session) return session;
-    const r = playTurn(session, { input: turn.input, pose: turn.pose, world: turn.world, now });
+    const r = playTurn(session, { input: turn.input, pose: turn.pose, world: turn.world, now, voiceLineId: this.newId() });
     if (!r.ok) return r.code === "session_expired" ? { ok: false, code: "session_expired" } : { ok: false, code: "rate_limited", retryAfterMs: r.retryAfterMs };
     await this.slot.save(serializeSession(r.session));
-    return { ok: true, reply: r.reply, view: r.view, directive: r.directive.kind, revealed: r.revealed, ended: r.session.state.ended, turns: r.session.state.turn, job: r.job };
+    return { ok: true, reply: r.reply, view: r.view, directive: r.directive.kind, revealed: r.revealed, ended: r.session.state.ended, turns: r.session.state.turn, job: r.job, voice: refOf(r.voiceLine) };
   }
 
   /**
@@ -57,10 +66,23 @@ export class PlayCore {
     const session = await this.load(ownerSid, this.now());
     if ("ok" in session) return session;
     if (s === null) return { ok: true, applied: false };
-    const next = settleNarration(session, s);
+    const now = this.now();
+    const lineId = this.newId();
+    const next = settleNarration(session, s, { lineId, now });
     if (next === null) return { ok: true, applied: false };
     await this.slot.save(serializeSession(next));
-    return { ok: true, applied: true, view: viewOf(next) };
+    return { ok: true, applied: true, view: viewOf(next), voice: refOf(next.voiceLines?.find((l) => l.id === lineId)) };
+  }
+
+  /**
+   * A line this game holds for speech, for the speech route: the same owner check and the same expiry as a turn, and a line that is older than ten minutes is gone.
+   * A game that is not there, someone else's game, an expired game and an unknown or expired line are all `null`.
+   */
+  async voiceLine(ownerSid: string, lineId: string): Promise<VoiceLine | null> {
+    const now = this.now();
+    const session = await this.load(ownerSid, now);
+    if ("ok" in session) return null;
+    return findLine(session.voiceLines, lineId, now);
   }
 
   async get(ownerSid: string): Promise<Peek | PlayRefusal> {
@@ -101,7 +123,9 @@ export function readSettle(v: unknown): Settle | null {
   const o = v as Record<string, unknown>;
   const text = (t: unknown): t is string => typeof t === "string" && t.trim() !== "" && t.length <= TEXT_MAX;
   if (!Number.isFinite(o["stamp"]) || !Number.isInteger(o["turn"]) || (o["turn"] as number) < 0 || !text(o["text"])) return null;
-  const base = { stamp: o["stamp"] as number, turn: o["turn"] as number, text: o["text"] };
+  // What the visitor typed that turn, when the route says so: kept out of what is spoken. A value of the wrong kind is no settle at all, like any other bad field.
+  if (o["typed"] !== undefined && !text(o["typed"])) return null;
+  const base = { stamp: o["stamp"] as number, turn: o["turn"] as number, text: o["text"], ...(o["typed"] !== undefined ? { typed: o["typed"] as string } : {}) };
   if (o["memory"] === undefined) return base;
   const m = o["memory"];
   if (typeof m !== "object" || m === null) return null;
