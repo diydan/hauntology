@@ -16,28 +16,62 @@ seat_span = 50.0;
 module prop_05_plinth_2seat() {
   difference() {
     union() {
-      // 1. Main 2-seat stepped Victorian plinth block (base skirt is flush with seg_w = 100.0 mm on X so adjacent segments never overlap!)
+      // 1. Main 2-seat stepped gothic crypt plinth (flush on X = +-50.0 so segments tile cleanly!)
       chamfer_box(seg_w, seg_d, seg_h, r = 3.0, ch_bot = 0.8, ch_top = 0.8);
       chamfer_box(seg_w, seg_d + 2.4, 5.5, r = 3.0, ch_bot = 0.8, ch_top = 1.0);
 
-      // 2. Right-end (+X) Male Dovetail Tenon (locks into next segment's left mortise)
+      // 2. Crypt Pilaster Columns on front (-Y) rising smoothly from base skirt Z=0 to top Z=44.5 (X within +-49)
+      for (px = [-46.2, 0.0, 46.2]) {
+        hull() {
+          translate([px, -seg_d / 2 - 0.5, 0]) chamfer_box(5.6, 2.2, 5.5, r = 0.8, ch_bot = 0.6, ch_top = 0.2);
+          translate([px, -seg_d / 2 - 0.1, 22.0]) chamfer_box(3.8, 1.8, 18.0, r = 0.6, ch_bot = 0.2, ch_top = 0.2);
+          translate([px + (px == 0 ? 0.5 : 0), -seg_d / 2 + 0.2, seg_h - 4.0]) chamfer_box(5.2, 1.8, 3.6, r = 0.6, ch_bot = 0.2, ch_top = 0.6);
+        }
+      }
+
+      // 3. Pointed Gothic Lancet Pier Colonnettes framing the 3 Resolve LEDs per seat (Z = 0..22, 45-deg safe!)
+      for (sx = [-seat_span / 2, seat_span / 2]) {
+        for (cx = [-15.0, -5.0, 5.0, 15.0]) {
+          hull() {
+            translate([sx + cx, -seg_d / 2 - 0.4, 0]) chamfer_box(2.8, 1.8, 15.5, r = 0.5, ch_bot = 0.5, ch_top = 0.2);
+            translate([sx + cx, -seg_d / 2 + 0.5, 19.5]) cube([2.0, 1.2, 0.8], center = true);
+          }
+        }
+        // Gothic lancet pointed arch ribs uniting pier tops cleanly ABOVE each LED window (Z = 15..22)
+        for (lx = [-10.0, 0.0, 10.0]) {
+          for (side = [-1, 1]) {
+            hull() {
+              translate([sx + lx + side * 4.8, -seg_d / 2 + 0.1, 15.0]) cylinder(h = 1.2, d = 1.8);
+              translate([sx + lx, -seg_d / 2 + 0.3, 20.6]) cylinder(h = 0.8, d = 1.6);
+            }
+          }
+        }
+      }
+
+      // 4. Right-end (+X) Male Dovetail Tenon (locks into next segment's left mortise)
       translate([seg_w / 2 - 0.4, 0, 0])
         rotate([0, 0, -90])
           dovetail_tenon(h = seg_h - 4.0, n_w = 8.0, f_w = 11.4, d_len = 5.4, ch = 0.6);
 
-      // 3. Raised circular bezels on front (-Y) for the two Seat Colour Disc stickers
-      //    (sunk 1.0 mm inside the front wall y = -seg_d/2 so they are 100% welded to the plinth!)
+      // 5. Gothic Gargoyle-Winged Circular Medallion Bezels for the two Seat Colour Disc stickers
       for (sx = [-seat_span / 2, seat_span / 2]) {
         translate([sx, -seg_d / 2 + 1.0, 29.5])
           rotate([90, 0, 0])
             cylinder(h = 2.4, d1 = 21.8, d2 = 20.0);
+        // Side gothic cusp ears on left/right flanks of disc bezel (slope 45 deg down to plinth front!)
+        for (ex = [-1, 1]) {
+          hull() {
+            translate([sx + ex * 10.0, -seg_d / 2 + 0.6, 29.5]) rotate([90, 0, 0]) cylinder(h = 1.8, d = 4.6);
+            translate([sx + ex * 14.5, -seg_d / 2 + 0.8, 30.8]) rotate([90, 0, 0]) cylinder(h = 1.2, d = 1.6);
+          }
+        }
       }
     }
 
     // 4. Left-end (-X) Female Dovetail Mortise (with 0.3 mm clearance)
     translate([-seg_w / 2, 0, 0])
       rotate([0, 0, -90])
-        dovetail_mortise(h = seg_h + 1.0, n_w = 8.0, f_w = 11.4, d_len = 5.4, clr = clear_move);
+        dovetail_mortise_fit(h = seg_h + 1.0, n_w = 8.0, f_w = 11.4, d_len = 5.4, ch = 0.6, inset = 0.4, clr = clear_move);
 
     // 5. Two Vertical SG90 Servo Pockets (each turns its seat flap 180 deg)
     for (sx = [-seat_span / 2, seat_span / 2]) {

@@ -16,16 +16,28 @@ panel_d = 30.0;
 module prop_20_wires_panel() {
   difference() {
     union() {
-      // 1. Main fuse-box enclosure body (150 x 120 x 30 mm)
+      // 1. Main fuse-box enclosure body + gothic tapered corner pilasters (150 x 120 x 30 mm)
       chamfer_box(panel_w, panel_h, panel_d, r = 5.0, ch_bot = 0.8, ch_top = 0.8);
+      for (sx = [-1, 1], sy = [-1, 1]) {
+        hull() {
+          translate([sx * (panel_w / 2 - 4.0), sy * (panel_h / 2 - 4.0), 0])
+            chamfer_box(13.0, 13.0, 8.0, r = 2.4, ch_bot = 0.8, ch_top = 0.4);
+          translate([sx * (panel_w / 2 - 5.2), sy * (panel_h / 2 - 5.2), panel_d - 4.0])
+            chamfer_box(10.0, 10.0, 4.0, r = 2.0, ch_bot = 0.2, ch_top = 0.6);
+        }
+      }
 
-      // 2. Raised Victorian perimeter framing moulding on top deck (Z = 29..32)
+      // 2. Raised Gothic Ironwork Perimeter Framing Moulding on Top Deck (Z = 29..32) + 4 Corner Rivets
       difference() {
         translate([0, 0, panel_d - 1.0])
-          chamfer_box(panel_w - 2.0, panel_h - 2.0, 3.0, r = 4.6, ch_bot = 0.2, ch_top = 0.6);
+          chamfer_box(panel_w - 1.6, panel_h - 1.6, 3.0, r = 4.6, ch_bot = 0.2, ch_top = 0.6);
         translate([0, 0, panel_d - 1.5])
           linear_extrude(height = 4.5)
             rrect2d(panel_w - 12.0, panel_h - 12.0, r = 3.0);
+      }
+      for (sx = [-1, 1], sy = [-1, 1]) {
+        translate([sx * (panel_w / 2 - 5.2), sy * (panel_h / 2 - 5.2), panel_d + 1.4])
+          cylinder(h = 1.4, d1 = 3.8, d2 = 1.4, $fn = 4);
       }
     }
 

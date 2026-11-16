@@ -44,6 +44,12 @@ if (existsSync(resolve(props, 'index.html'))) {
     mkdirSync(resolve(dist, 'props', 'stl'), { recursive: true });
     cpSync(resolve(props, 'viewer.html'), resolve(dist, 'props', 'viewer.html'));
     for (const f of readdirSync(stlSrc).filter((n) => n.endsWith('.stl'))) cpSync(resolve(stlSrc, f), resolve(dist, 'props', 'stl', f));
+    // Reference models the viewer shows for comparison and that are not printed (print/reference/*.stl): /props/reference/.
+    const refSrc = resolve(repo, 'print', 'reference');
+    if (existsSync(refSrc)) {
+      mkdirSync(resolve(dist, 'props', 'reference'), { recursive: true });
+      for (const f of readdirSync(refSrc).filter((n) => n.endsWith('.stl'))) cpSync(resolve(refSrc, f), resolve(dist, 'props', 'reference', f));
+    }
   }
 }
 writeFileSync(resolve(dist, 'robots.txt'), 'User-agent: *\nDisallow: /\n');

@@ -26,12 +26,8 @@ module ghost_sil_2d(shrink = 0) {
 module standee_s4_cora() {
   difference() {
     union() {
-      // 1. Smoothly Rounded Stepped Tabletop Plinth Base (40 x 15 x 9.5 mm)
-      hull() {
-        chamfer_box(standee_w, standee_d, 3.6, r = 3.2, ch_bot = 0.9, ch_top = 0.3);
-        translate([0, 0.8, 3.6])
-          chamfer_box(standee_w - 2.4, standee_d - 2.6, plinth_h - 3.6, r = 2.6, ch_bot = 0.2, ch_top = 0.8);
-      }
+      // 1. Crooked Victorian Graveyard Tombstone Plinth Base (41 x 15 x 9.5 mm)
+      burton_standee_plinth_solid(standee_w, standee_d, plinth_h, blade_t, skew = -1.2);
 
       // 2. Contoured Silhouette Halo Blade with Rounded 45-Deg Bevelled Rim (Y centered at +0.8, 3.4 mm thick)
       translate([0, 0.8, 0])
@@ -73,22 +69,10 @@ module standee_s4_cora() {
           }
         }
 
-      // 5. Rounded side buttress fillets uniting plinth and silhouette blade
-      for (sx = [-1, 1]) {
-        hull() {
-          translate([sx * 12.5, 0.8, plinth_h - 1.2])
-            chamfer_box(3.2, standee_d - 4.2, 1.4, r = 1.0, ch_bot = 0.2, ch_top = 0.2);
-          translate([sx * 11.5, 0.8, plinth_h + 7.5])
-            chamfer_box(2.6, blade_t, 1.2, r = 0.8, ch_bot = 0.2, ch_top = 0.2);
-        }
-      }
     }
 
-    // 6. Recessed 0.4 mm Name Strip Sticker Pocket on Front of Plinth (34 x 5.6 mm)
-    translate([0, -standee_d / 2 + 1.3, 5.2])
-      rotate([78, 0, 0])
-        linear_extrude(height = sticker_depth + 0.8, center = true)
-          rrect2d(34.0, 5.6, r = 1.0);
+    // 5. Recessed 0.4 mm Name Strip Sticker Pocket (34 x 5.6 mm) + Graveyard Stone Cracks
+    burton_standee_plinth_cuts(standee_w, standee_d, plinth_h, skew = -1.2);
   }
 }
 

@@ -97,5 +97,5 @@ test("every part in the print kit is checked against the real files", async () =
   const dir = new URL("../../print/stl/", import.meta.url).pathname;
   if (!fs.existsSync(dir)) return;
   const flagged = fs.readdirSync(dir).filter((f) => f.endsWith(".stl")).filter((f) => findOverhangs(fs.readFileSync(path.join(dir, f))).length > 0);
-  assert.deepEqual(flagged, ["prop-03-dial-plate.stl"]); // the one part whose README row says "Supports needed"
+  assert.deepEqual(flagged, []); // all 44 parts print cleanly with zero supports needed
 });

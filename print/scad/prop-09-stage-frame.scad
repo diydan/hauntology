@@ -17,27 +17,61 @@ module prop_09_stage_frame() {
       // 1. Outer proscenium box shell (X = -85..85, Y = -65..65, Z = 0..56)
       chamfer_box(stage_w, stage_h, stage_d, r = 4.0, ch_bot = 0.8, ch_top = 0.8);
 
-      // 2. Stepped theatre stage apron at bottom (Y = -65..-51) & cornice crown at top (Y = 55..65)
-      translate([0, -stage_h / 2 + 7.0, 0])
-        chamfer_box(stage_w + 4.0, 14.0, stage_d + 2.4, r = 3.0, ch_bot = 0.8, ch_top = 0.8);
-      translate([0, stage_h / 2 - 5.0, 0])
-        chamfer_box(stage_w + 4.0, 10.0, stage_d + 2.4, r = 3.0, ch_bot = 0.8, ch_top = 0.8);
-
-      // 3. Fluted side pilasters on front proscenium face (Z = stage_d)
-      for (sx = [-1, 1]) {
-        translate([sx * (stage_w / 2 - 11.0), -2.0, stage_d - 2.0])
-          chamfer_box(18.0, stage_h - 22.0, 4.4, r = 2.0, ch_bot = 0.4, ch_top = 0.8);
+      // 2. Crooked Gothic Stage Pediment Gable & Flanking Spire Turrets along Top Edge (+Y = 63..84)
+      //    Prints flat on Z = 0 with ZERO overhangs and stays <= 178 mm X!
+      linear_extrude(height = stage_d + 1.4, scale = 0.99)
+        polygon(points = [
+          [-stage_w / 2 + 10.0, stage_h / 2 - 3.0],
+          [ stage_w / 2 - 10.0, stage_h / 2 - 3.0],
+          [ stage_w / 2 - 18.0, stage_h / 2 + 7.5],
+          [ 5.0,                stage_h / 2 + 19.0],
+          [-stage_w / 2 + 22.0, stage_h / 2 + 6.5]
+        ]);
+      // Asymmetric theatre cornice spire finials at gable center & upper outer corners
+      for (sp = [[5.0, stage_h / 2 + 17.5, 5.6, 10.0], [-stage_w / 2 + 5.0, stage_h / 2 + 1.0, 6.4, 9.0], [stage_w / 2 - 5.0, stage_h / 2 + 1.0, 7.0, 9.5]]) {
+        hull() {
+          translate([sp[0], sp[1] - 3.0, 0]) cylinder(h = stage_d + 1.8, d = sp[2]);
+          translate([sp[0] + 1.0, sp[1] + sp[3], 0]) cylinder(h = stage_d + 0.8, d = 1.8);
+        }
       }
 
-      // 4. Scalloped Victorian Valance Header across Top Arch (Y = 30..56, Z = stage_d - 2..stage_d + 2.4)
+      // 3. Stepped theatre stage apron at bottom (Y = -65..-51) with miniature crooked gothic footlights
+      translate([0, -stage_h / 2 + 7.0, 0])
+        chamfer_box(stage_w + 5.0, 14.0, stage_d + 2.4, r = 2.6, ch_bot = 0.8, ch_top = 0.8);
+      for (fx = [-44, -22, 0, 22, 44]) {
+        translate([fx, -stage_h / 2 + 4.5, stage_d - 1.0])
+          hull() {
+            cylinder(h = 4.6, d = 7.4);
+            translate([0, 3.0, 0]) cylinder(h = 4.6, d = 5.2);
+          }
+      }
+      translate([0, stage_h / 2 - 5.0, 0])
+        chamfer_box(stage_w + 5.0, 10.0, stage_d + 2.4, r = 2.6, ch_bot = 0.8, ch_top = 0.8);
+
+      // 4. Skewed Tapered Gothic Theatre Column Pilasters on Front Proscenium (Z = stage_d)
+      for (sx = [-1, 1]) {
+        hull() {
+          translate([sx * (stage_w / 2 - 11.0), -48.0, stage_d - 2.0])
+            chamfer_box(20.0, 12.0, 4.6, r = 1.6, ch_bot = 0.4, ch_top = 0.8);
+          translate([sx * (stage_w / 2 - 12.2), 2.0, stage_d - 2.0])
+            chamfer_box(15.0, 18.0, 4.4, r = 2.0, ch_bot = 0.4, ch_top = 0.8);
+          translate([sx * (stage_w / 2 - 10.5), 48.0, stage_d - 2.0])
+            chamfer_box(19.0, 12.0, 4.6, r = 1.6, ch_bot = 0.4, ch_top = 0.8);
+        }
+      }
+
+      // 5. Pointed Bat-Wing Scalloped Gothic Valance Header across Top Arch (Y = 28..56, Z = stage_d - 2..stage_d + 2.4)
       translate([0, 44.0, stage_d - 2.0])
         chamfer_box(stage_w - 12.0, 24.0, 4.4, r = 2.4, ch_bot = 0.4, ch_top = 0.8);
       for (vx = [-60 : 15 : 60]) {
         translate([vx, 32.0, stage_d - 2.0])
-          cylinder(h = 4.4, d1 = 16.0, d2 = 14.4);
+          hull() {
+            cylinder(h = 4.4, d1 = 15.6, d2 = 14.0);
+            translate([0, -4.4, 0]) cylinder(h = 4.0, d = 2.6);
+          }
       }
 
-      // 5. Raised Cartouche Plaque for "THE SOLUTION" Nameplate Sticker on Valance
+      // 6. Raised Gothic Cartouche Plaque for "THE SOLUTION" Nameplate Sticker on Valance
       translate([0, 45.0, stage_d + 1.0])
         chamfer_box(70.0, 15.6, 2.4, r = 2.0, ch_bot = 0, ch_top = 0.4);
     }
@@ -63,49 +97,51 @@ module prop_09_stage_frame() {
       linear_extrude(height = sticker_depth + 0.6)
         rrect2d(66.0, 12.0, r = 1.2);
 
-    // 9. Vertical Flutes in Left & Right Pilasters
-    for (sx = [-1, 1], fx = [-4.5, 0, 4.5]) {
-      translate([sx * (stage_w / 2 - 11.0) + fx, -4.0, stage_d + 2.4])
-        rotate([90, 0, 0])
-          cylinder(h = stage_h - 36.0, d = 2.6, center = true);
+    // 9. Twisted Diagonal Spiral Flutes in Left & Right Proscenium Columns
+    for (sx = [-1, 1], fy = [-32, -16, 0, 16, 32]) {
+      translate([sx * (stage_w / 2 - 11.5), fy, stage_d + 2.4])
+        rotate([0, 0, sx * 32])
+          rotate([45, 0, 0])
+            cube([14.0, 1.4, 1.4], center = true);
     }
   }
 
   // 10. Internal Backstage Mounts (solidly bridged to the top/side frame walls and sitting on Z = 0!)
-  // a) Top-Right SG90 Curtain Servo Cradle (X = 68, Y = 46, Z = 0..26 — aligns capstan drum with Z = 28..32 rail!)
-  translate([68.0, 46.0, 0])
+  // a) Top-Right SG90 Curtain Servo Cradle at (60.5, 51.8, Z = 0..19.0; flanges run along X so entire 32.5 x 12.2 mm servo
+  //    stays below Z = 27.5 proscenium taper, above screen bezel Y <= 45.0, clear of curtain rail Y = 31.5, and inside X <= 80 / Y <= 58!)
+  translate([60.5, 51.8, 0])
   difference() {
     union() {
-      chamfer_box(26.0, 28.0, 26.0, r = 2.0, ch_bot = 0.4, ch_top = 0.6);
-      // Solid structural web into right outer wall (X = +10..+16) & top outer wall (Y = +8..+16)
-      translate([8.0, 6.0, 0])
-        chamfer_box(18.0, 20.0, 26.0, r = 1.5, ch_bot = 0.4, ch_top = 0.6);
+      chamfer_box(36.0, 13.0, 19.0, r = 2.0, ch_bot = 0.4, ch_top = 0.6);
+      // Solid structural webs into right outer wall (X = +17..+23) & top outer wall (Y = +4.5..+11.5)
+      translate([15.0, 4.0, 0])
+        chamfer_box(16.0, 15.0, 19.0, r = 1.5, ch_bot = 0.4, ch_top = 0.6);
     }
-    translate([-2.0, -2.0, 14.0])
-      cube([sg90_body_d, sg90_body_w, 26.0], center = true);
-    for (sy = [-1, 1])
-      translate([-2.0, -2.0 + sy * sg90_hole_span / 2, 15.0])
+    translate([0, -0.1, 10.0])
+      cube([sg90_body_w, sg90_body_d, 20.5], center = true);
+    for (sx = [-1, 1])
+      translate([sx * sg90_hole_span / 2, -0.1, 8.0])
         cylinder(h = 13.0, d = sg90_m2_pilot_d);
   }
 
-  // b) Top-Left Idler Pulley Axle Boss (X = -68, Y = 46, Z = 0..31; shoulder at Z = 21 aligns idler with Z = 25..31!)
-  translate([-68.0, 46.0, 0]) {
+  // b) Top-Left Idler Pulley Axle Boss (X = -68, Y = 50, Z = 0..31; clears X = -57 screen bezel & Y <= 35 curtain track)
+  translate([-68.0, 50.0, 0]) {
     hull() {
       cylinder(h = 21.0, d1 = 14.0, d2 = 10.0);
       translate([-12.0, 0, 0]) cube([6.0, 14.0, 21.0]);
-      translate([-4.0, 10.0, 0]) cube([14.0, 6.0, 21.0]);
+      translate([-4.0, 8.0, 0]) cube([14.0, 6.0, 21.0]);
     }
     // 4.0 mm axle pin for 4.6 mm idler pulley bore (Z = 21..31)
     cylinder(h = 31.0, d = 4.0);
   }
 
-  // c) Left & Right Curtain Rail Cleat Sockets (at Y = 34, Z = 0..38, pocket at Z = 24..38)
+  // c) Left & Right Curtain Rail Cleat Sockets (at X = +/-80, Y = 31.5, Z = 0..34, clears open curtains X <= 74.5!)
   for (sx = [-1, 1]) {
-    translate([sx * (stage_w / 2 - 6.0), 34.0, 0])
+    translate([sx * (stage_w / 2 - 4.5), 31.5, 0])
     difference() {
-      chamfer_box(10.0, 14.0, 38.0, r = 1.4, ch_bot = 0.4, ch_top = 0.4);
-      // Pocket at Z = 24..39 that receives the ends of the 158 x 8 x 6 mm curtain rail bar
-      translate([-sx * 2.0, 0, 31.5])
+      chamfer_box(8.0, 12.0, 34.0, r = 1.4, ch_bot = 0.4, ch_top = 0.4);
+      // Pocket at Z = 20..35 that receives the ends of the 158 x 8 x 6 mm curtain rail bar
+      translate([-sx * 2.0, 0, 27.5])
         cube([7.0, 8.6, 15.0], center = true);
     }
   }

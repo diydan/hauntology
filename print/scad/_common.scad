@@ -246,8 +246,144 @@ module dovetail_mortise(h, n_w = 6.0, f_w = 8.4, d_len = 4.0, clr = clear_move) 
       ]);
 }
 
+// Dovetail mortise cut to fit a given tenon (same n_w, f_w, d_len and ch as the dovetail_tenon it receives). It flares at the
+// tenon's own slope with `clr` of clearance all round. The older dovetail_mortise flares less than the tenon it receives (for the
+// plinth: 0.296 against 0.354 per mm), so the two touched deep in the slot whatever the pitch. `inset` is how far the tenon's base
+// sits inside its own segment (the plinth's tenon starts 0.4 mm inside), so the neighbour's wall meets the tenon at depth `inset`.
+module dovetail_mortise_fit(h, n_w = 6.0, f_w = 8.4, d_len = 4.0, ch = 0.4, inset = 0.0, clr = clear_move) {
+  s  = (f_w - n_w) / 2 / (d_len - ch);
+  y0 = -0.05;                     // start a hair outside the wall so the cut is clean
+  y1 = d_len - inset + clr;       // the tenon's tip is at d_len - inset; leave clr beyond it
+  translate([0, 0, -0.05])
+    linear_extrude(height = h + 0.1)
+      polygon(points = [
+        [-(n_w / 2 + clr + s * (y0 + inset)), y0],
+        [ (n_w / 2 + clr + s * (y0 + inset)), y0],
+        [ (n_w / 2 + clr + s * (y1 + inset)), y1],
+        [-(n_w / 2 + clr + s * (y1 + inset)), y1]
+      ]);
+}
+
 // Decorative plank groove lines on a vertical wall (width w, at z heights)
 module plank_grooves_x(w, groove_d = 0.8, groove_h = 1.0) {
   rotate([45, 0, 0])
     cube([w, groove_d, groove_h], center = true);
+}
+
+// ---------------------------------------------------------------------------
+// Tim Burton / Gothic Expressionist Shared Geometry Helpers (all 45-deg print-safe)
+// ---------------------------------------------------------------------------
+
+// Wrought-iron Archimedean spiral scroll in 2D.
+module burton_spiral_2d(turns = 1.15, r0 = 0.9, r1 = 6.2, w = 1.6, dir = 1, steps = 22) {
+  for (i = [0 : steps - 1]) {
+    t0 = i / steps;
+    t1 = (i + 1) / steps;
+    a0 = dir * t0 * turns * 360;
+    a1 = dir * t1 * turns * 360;
+    rad0 = r0 + (r1 - r0) * t0;
+    rad1 = r0 + (r1 - r0) * t1;
+    hull() {
+      translate([rad0 * cos(a0), rad0 * sin(a0)]) circle(d = w);
+      translate([rad1 * cos(a1), rad1 * sin(a1)]) circle(d = w);
+    }
+  }
+}
+
+// Organic gnarled branch / skeletal rib 2D path from point/radius pairs.
+module burton_gnarled_path_2d(pts, radii) {
+  for (i = [0 : len(pts) - 2]) {
+    hull() {
+      translate(pts[i])     circle(r = radii[i]);
+      translate(pts[i + 1]) circle(r = radii[i + 1]);
+    }
+  }
+}
+
+// 45-deg safe crooked gothic iron spire / fence finial starting at local Z = 0.
+module burton_gothic_spire_3d(h = 7.0, d = 3.2, skew_x = 0.6, skew_y = 0.0) {
+  union() {
+    hull() {
+      cylinder(h = 0.6, d = d);
+      translate([skew_x * 0.45, skew_y * 0.45, h * 0.42]) cylinder(h = 0.5, d = d * 1.15);
+    }
+    hull() {
+      translate([skew_x * 0.45, skew_y * 0.45, h * 0.42]) cylinder(h = 0.5, d = d * 1.15);
+      translate([skew_x, skew_y, h]) cylinder(h = 0.2, d = 0.7);
+    }
+  }
+}
+
+// Stitched / crooked tomb V-groove cut on horizontal top surfaces (Z axis down).
+module burton_stitch_groove_z(len = 8.0, teeth = 4, cut_w = 0.9, cut_d = 0.75) {
+  step = len / max(1, teeth);
+  // Central seam cut
+  translate([0, 0, -cut_d / 2])
+    rotate([45, 0, 0])
+      cube([len, cut_w, cut_w], center = true);
+  // Cross-stitch tick cuts angled asymmetrically
+  for (i = [0 : teeth - 1]) {
+    tx = -len / 2 + (i + 0.5) * step;
+    ang = (i % 2 == 0) ? 14 : -11;
+    translate([tx, 0, -cut_d / 2])
+      rotate([0, 0, ang])
+        rotate([0, 45, 0])
+          cube([cut_w * 0.9, 3.2, cut_w * 0.9], center = true);
+  }
+}
+
+// Shared crooked Victorian graveyard plinth (positive solid) for Standees & Blank Arch.
+// Keeps front nameplate slope (78 deg at Y ~ -6.2) flat & unobstructed while adding skewed
+// tombstone ledges, gnarled buttresses, and flanking gothic iron fence bollards.
+module burton_standee_plinth_solid(
+  standee_w = 40.0,
+  standee_d = 15.0,
+  plinth_h  = 9.5,
+  blade_t   = 3.4,
+  skew      = 1.2
+) {
+  // Base graveyard curb slab (flat Z = 0, skewed upper crown shoulder)
+  hull() {
+    chamfer_box(standee_w + 1.0, standee_d, 3.6, r = 2.6, ch_bot = 0.8, ch_top = 0.3);
+    translate([0, 0.8, 3.6])
+      chamfer_box(standee_w - 2.4, standee_d - 2.6, plinth_h - 3.6, r = 2.0, ch_bot = 0.2, ch_top = 0.7);
+  }
+  // Crooked outer tomb-curb shoulders (clear of X = [-17..+17] nameplate pocket)
+  for (sx = [-1, 1]) {
+    dh = (sx * skew > 0) ? 1.6 : -0.4;
+    hull() {
+      translate([sx * (standee_w / 2 - 1.2), 1.4, 0])
+        cylinder(h = 3.2, d = 5.4);
+      translate([sx * (standee_w / 2 - 0.3), 1.8, plinth_h + dh])
+        cylinder(h = 0.8, d = 4.2);
+    }
+    // Flanking miniature gothic iron graveyard fence posts rising gently along blade flanks
+    translate([sx * (standee_w / 2 - 1.2), 1.8, plinth_h + dh - 0.5])
+      burton_gothic_spire_3d(h = 5.2 + (sx > 0 ? 1.0 : -0.4), d = 3.0, skew_x = sx * 0.55, skew_y = 0.2);
+  }
+  // Asymmetric crooked gothic buttresses uniting tombstone plinth and standee blade
+  for (sx = [-1, 1]) {
+    bh_top = plinth_h + (sx * skew > 0 ? 9.0 : 6.4);
+    hull() {
+      translate([sx * 12.6, 0.8, plinth_h - 1.2])
+        chamfer_box(3.2, standee_d - 4.4, 1.4, r = 0.9, ch_bot = 0.2, ch_top = 0.2);
+      translate([sx * 11.4, 0.8, bh_top])
+        chamfer_box(2.5, blade_t, 1.2, r = 0.7, ch_bot = 0.2, ch_top = 0.2);
+    }
+  }
+}
+
+// Shared subtractive cuts for standee plinth: exact 34 x 5.6 mm nameplate pocket + graveyard cracks.
+module burton_standee_plinth_cuts(standee_w = 40.0, standee_d = 15.0, plinth_h = 9.5, skew = 1.2) {
+  // Exact 0.4 mm Name Strip Sticker Pocket on Front of Plinth (34 x 5.6 mm)
+  translate([0, -standee_d / 2 + 1.3, 5.2])
+    rotate([78, 0, 0])
+      linear_extrude(height = sticker_depth + 0.8, center = true)
+        rrect2d(34.0, 5.6, r = 1.0);
+  // Chiseled tombstone cracks on rear plinth wall (45-deg safe V-notches)
+  for (cx = [-10.5 * sign(skew), 7.5 * sign(skew)]) {
+    translate([cx, standee_d / 2 - 0.2, plinth_h * 0.65])
+      rotate([0, cx > 0 ? 18 : -16, 45])
+        cube([1.1, 1.1, 4.8], center = true);
+  }
 }

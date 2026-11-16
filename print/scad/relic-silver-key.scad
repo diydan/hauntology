@@ -52,9 +52,18 @@ module relic_silver_key() {
           translate([sx * 5.2, 0, 0]) rotate([90, 0, 0]) cylinder(h = 4.2, d = 7.6, center = true);
         translate([0, 0,  5.2]) rotate([90, 0, 0]) cylinder(h = 4.2, d = 7.2, center = true);
       }
-      // Top finial pip
-      translate([0, 0, 6.2])
-        cylinder(h = 2.0, d1 = 5.2, d2 = 2.2);
+      // Flanking gothic iron shoulder thorns on bow flanks (<= 45 deg upward!)
+      for (sx = [-1, 1]) {
+        hull() {
+          translate([sx * 6.8, 0, 0.2]) cylinder(h = 3.2, d = 3.4, center = true);
+          translate([sx * 8.6, 0, 2.8 + (sx > 0 ? 0.8 : -0.4)]) cylinder(h = 2.6, d = 1.4, center = true);
+        }
+      }
+      // Tall skewed gothic crown spire finial
+      hull() {
+        translate([0, 0, 6.2]) cylinder(h = 1.0, d = 5.4);
+        translate([0.7, 0, 10.6]) cylinder(h = 0.6, d = 1.6);
+      }
     }
     // Print-safe teardrop cutouts forming the gothic trefoil/quatrefoil tracery
     for (pt = [[0, 2.6, 2.4], [-3.4, -0.6, 2.0], [3.4, -0.6, 2.0], [0, -3.4, 1.8]]) {

@@ -9,12 +9,12 @@ include <_common.scad>
 module single_plug_barrel() {
   difference() {
     union() {
-      // 1. Knurled ergonomic grip flange at Z = 0..7.0 (18 mm OD)
-      cylinder(h = 7.0, d1 = 17.6, d2 = 18.0);
-      for (ang = [0 : 30 : 330]) {
+      // 1. Octagonal gothic coffin-knurled grip flange at Z = 0..7.0 (18 mm OD)
+      cylinder(h = 7.0, d1 = 18.2, d2 = 17.6, $fn = 8);
+      for (ang = [0 : 45 : 315]) {
         rotate([0, 0, ang])
-          translate([8.8, 0, 3.5])
-            cylinder(h = 6.2, d = 1.8, center = true);
+          translate([8.8, 0, 0])
+            cylinder(h = 6.8, d1 = 2.4, d2 = 1.8);
       }
       // 2. Tapered shoulder (Z = 7.0..12.0, 16.0 -> 10.6 mm OD so wall around resistor cavity is >= 2.8 mm thick!)
       translate([0, 0, 7.0])

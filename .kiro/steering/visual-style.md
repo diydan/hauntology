@@ -12,7 +12,7 @@ The values below are written once in `design/tokens.json` and the pieces are bui
 - Text on any surface must be ≥ 4.5:1 (`pnpm check-tokens` checks every pair). `--dust` is 3.85:1 on `--ink`, so it is for shapes only; quiet text is `--ash`.
 - Yellow: the one main button, edges, lamps, focus, the Keeper. Green is rare: the Whisper (light, glow, nameplate edge) and the tick box. The stage is lit by whoever speaks: Whisper green, Keeper yellow, Suspect cream. A portrait is always round.
 - Type: monospace (IBM Plex Mono, self-hosted) for UI chrome and the chat prompt `>`; readable serif (Newsreader, self-hosted) for ghost speech. No third-party font requests. Self-host fonts. Sizes are in rem.
-- Voice of UI copy: terse, text-adventure. "> look", "You are in a place." Never cute, never gory.
+- Voice of UI copy: terse, text-adventure. "> look", "You are in a place." Never cute, never gory. Narration, the log, the recap and song lyrics follow the narrator of `house-style.md` (2026-11-16); the shapes, patterns and motion there apply to every new screen.
 
 ## Motion
 - Slow, small. Fade 300–600 ms (the tokens `--fade-quick` 300, `--fade` 400, `--fade-slow` 600; all 0 under reduced motion). No screen shake. Flicker obeys the viewer spec (≤ 3 flashes/s) and is disabled under `prefers-reduced-motion`.

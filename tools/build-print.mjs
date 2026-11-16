@@ -391,10 +391,7 @@ function findOpenscad() {
 // Parts that cannot print without supports, and why. Every other part must pass the support-free check in lib/stl-overhang.mjs
 // (no flat roof wider than BRIDGE_MAX_MM and nothing facing down steeper than OVERHANG_DEG), and the README may only say
 // "Supports needed" for the parts listed here. An entry that stops being true fails the build, so this list cannot go stale.
-const SUPPORTS_NEEDED = {
-  "prop-03-dial-plate.stl":
-    "ESP32 bay roof, 28.5 mm wide and 55.6 mm long. The plate is 20 mm thick; a 45 degree roof over a 28 mm board needs about 14 mm more height",
-};
+const SUPPORTS_NEEDED = {};
 
 function checkBinaryStl(filePath, bedMm = 180) {
   const buf = fs.readFileSync(filePath);
@@ -558,7 +555,7 @@ function checkBinaryStl(filePath, bedMm = 180) {
 fs.mkdirSync(stlDir, { recursive: true });
 fs.mkdirSync(distDir, { recursive: true });
 
-// 1. Compile print/scad/*.scad when OpenSCAD is present (covers all 42 STLs including the 6 Ghost Standees)
+// 1. Compile print/scad/*.scad when OpenSCAD is present (covers all 44 STLs including the 6 Ghost Standees)
 const openscad = findOpenscad();
 if (openscad && fs.existsSync(scadDir)) {
   const scadFiles = fs.readdirSync(scadDir).filter((f) => f.endsWith(".scad") && !f.startsWith("_")).sort();
