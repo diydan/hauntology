@@ -1189,19 +1189,20 @@ const SK_FRAG = `
      float sd2 = texture2D( uSkDet, vSkP.yz * ( uSkInv * 2.35 ) + vec2( 0.37, 0.19 ) ).r * sw.x + texture2D( uSkDet, vSkP.zx * ( uSkInv * 2.35 ) + vec2( 0.13, 0.71 ) ).r * sw.y + texture2D( uSkDet, vSkP.yx * ( uSkInv * 2.35 ) + vec2( 0.53, 0.29 ) ).r * sw.z;
      float sd = mix( sd1, mix( 0.35 * sd1 + 0.65 * sd2, 0.52 * sd1 + 0.48 * sd2, handW ), max( handW, bodyBelowNeck ) );
      float limbCalm = mix( 1.0, mix( 0.50, 0.90, handW ), bodyBelowNeck );
-     skGrain = ( sd - 0.5 ) * 2.0 * uSkStr * limbCalm * ( 1.0 + 0.36 * handW ) * ( 1.0 - 0.72 * nailW );
+     skGrain = ( sd - 0.5 ) * 2.0 * uSkStr * limbCalm * ( 1.0 + 0.36 * handW + 1.1 * handW * vTisA.y ) * ( 1.0 - 0.85 * nailW ); // knuckles and fingertips get deeper creases, the nail plate stays smooth
    }
    // microvascular blood warmth under knuckles, fingertips, earlobes, nose wings
    diffuseColor.rgb *= mix( vec3( 1.0 ), vec3( 1.06, 0.85, 0.80 ), warmW * 0.62 );
    // keratin fingernail plate: subtle paler rosy-ivory bed
    if ( nailW > 0.01 ) {
      float sLum = max( dot( diffuseColor.rgb, vec3( 0.299, 0.587, 0.114 ) ), 0.04 );
-     vec3 nailCol = mix( diffuseColor.rgb * vec3( 1.08, 0.99, 0.98 ), vec3( min( 0.88, sLum * 1.24 + 0.032 ) ) * vec3( 1.05, 0.94, 0.92 ), 0.44 );
+     vec3 nailCol = mix( diffuseColor.rgb * vec3( 1.10, 0.96, 0.95 ), vec3( min( 0.92, sLum * 1.32 + 0.05 ) ) * vec3( 1.06, 0.90, 0.88 ), 0.72 );
      diffuseColor.rgb = mix( diffuseColor.rgb, nailCol, nailW );
+     diffuseColor.rgb *= 1.0 - 0.30 * 4.0 * nailW * ( 1.0 - nailW ); // the nail fold: a thin darker line where the plate meets the skin
    }
    // preserve sculpted inner-ear concha & antihelix depth even when photo skin flattens shadow ratio
    float earConcha = smoothstep( 5.9, 6.9, abs( vSkP.x ) ) * smoothstep( 139.8, 142.2, vSkP.y ) * ( 1.0 - smoothstep( 150.2, 152.2, vSkP.y ) ) * ( 1.0 - smoothstep( 1.4, 3.5, vSkP.z ) );
-   diffuseColor.rgb *= mix( 1.0, mix( 0.62, 1.03, smoothstep( 0.16, 0.75, mk.r ) ), earConcha * uSkReal * 0.72 );
+   diffuseColor.rgb *= mix( 1.0, mix( 0.62, 1.03, smoothstep( 0.16, 0.75, mk.r ) ), earConcha * uSkReal * 1.0 ); // deeper bowl
  }`;
 const SK_POST_FP = `
  diffuseColor.rgb *= 1.0 + skGrain * max( 1.0 - fpA, 0.75 * fpSmear );
@@ -1243,9 +1244,22 @@ const EYE_PRE = `
      float lidAO = 1.0 - 0.22 * smoothstep( 0.55, 2.1, eyLoc.y );
      float corner = 1.0 - 0.14 * smoothstep( 0.65, 1.45, abs( eyLoc.x ) );
      diffuseColor.rgb *= mix( 1.0, lidAO * corner, scl );
-     diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * vec3( 0.98, 0.97, 1.0 ), scl * 0.4 );
+     diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * vec3( 1.0, 0.955, 0.9 ), scl * 0.5 ); // ivory, not blue-white
+     float inner = smoothstep( -0.55, -1.15, eyLoc.x ) * ( 1.0 - smoothstep( 0.0, 1.3, abs( eyLoc.y + 0.2 ) ) );
+     diffuseColor.rgb *= mix( vec3( 1.0 ), vec3( 1.0, 0.80, 0.76 ), scl * inner * 0.8 ); // the pink corner by the nose
      float ir = smoothstep( 0.08, 0.55, mk.g ) * ( 1.0 - smoothstep( 0.2, 0.6, mk.b ) );
      diffuseColor.rgb *= mix( 1.0, 0.78 + 0.36 * rmp( mk.g ), ir );
+     {
+       vec2 ec = vMapUv - 0.5; float er = clamp( length( ec ) / 0.2, 0.0, 1.2 ), ea = atan( ec.y, ec.x );
+       float irisD = smoothstep( 0.05, 0.3, mk.g );
+       float fib = 0.5 + 0.5 * sin( ea * 46.0 + 2.4 * sin( ea * 9.0 + er * 5.0 ) ) ;
+       float fib2 = 0.5 + 0.5 * sin( ea * 113.0 + 3.1 * sin( ea * 21.0 ) );
+       float fibres = 0.74 + 0.30 * fib + 0.18 * fib2;
+       float collar = 1.0 + 0.20 * exp( -pow( ( er - 0.42 ) / 0.10, 2.0 ) ); // the lighter ring round the pupil
+       float limbal = 1.0 - 0.62 * smoothstep( 0.72, 0.98, er ); // the dark ring at the iris edge
+       float pupilEdge = 1.0 - 0.35 * exp( -pow( ( er - 0.26 ) / 0.07, 2.0 ) );
+       diffuseColor.rgb *= mix( 1.0, fibres * collar * limbal * pupilEdge, irisD * ( 1.0 - 0.8 * smoothstep( 0.55, 0.9, mk.b ) ) );
+     }
    }
  }`;
 const EYE_LIGHT = `
@@ -1472,7 +1486,7 @@ async function makeMat(keyName, side) {
         .replace(anchor + (isSkin ? '\n' + SK_FRAG : ''), anchor + (isSkin ? '\n' + SK_FRAG : '') + '\n' + FP_FRAG + (isSkin ? '\n' + SK_POST_FP : '') + (isEye ? '\n' + EYE_PRE : '')) // the print goes on top of the skin detail, followed by grain/tone alignment and wet-cornea masking
         .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += fpC * uFpFlat * fpA;' + (isSkin ? '\n totalEmissiveRadiance += skBase * skFlat;' : ''))
         .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>' + (isSkin ? '\n { vec3 dLum = vec3( dot( reflectedLight.directDiffuse, vec3( 0.2126, 0.7152, 0.0722 ) ) ) * vec3( 1.02, 0.99, 0.97 ); reflectedLight.directDiffuse = mix( reflectedLight.directDiffuse, dLum, 0.44 * uSkReal * ( 1.0 - fpA ) ); }' : '') + (isEye ? '\n reflectedLight.directSpecular *= vec3( 1.0, 0.96, 0.92 ) * eyWet * 0.42;' : ''))
-        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n ' + (isEye ? 'roughnessFactor = uFpOn > 0.5 ? mix( 0.58, 0.032, eyWet ) : mix( roughnessFactor, 0.032, 0.35 + 0.65 * uEyReal );' : (isSkin ? '{ float skRgh = clamp( mix( 0.52, 0.24, vTisB.x ) - skGrain * 0.14, 0.18, 0.85 ); roughnessFactor = mix( roughnessFactor, skRgh, uSkReal ); roughnessFactor = mix( roughnessFactor, 0.66, fpA ); }' : 'roughnessFactor = mix( roughnessFactor, 0.95, fpA );')))
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n ' + (isEye ? 'roughnessFactor = uFpOn > 0.5 ? mix( 0.58, 0.032, eyWet ) : mix( roughnessFactor, 0.032, 0.35 + 0.65 * uEyReal );' : (isSkin ? '{ float skRgh = clamp( mix( 0.52, 0.12, vTisB.x ) - skGrain * 0.14, 0.18, 0.85 ); roughnessFactor = mix( roughnessFactor, skRgh, uSkReal ); roughnessFactor = mix( roughnessFactor, 0.66, fpA ); }' : 'roughnessFactor = mix( roughnessFactor, 0.95, fpA );')))
         .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = mix( metalnessFactor, 0.0, ' + (isEye ? '1.0' : 'fpA') + ' );')
         .replace('outgoingLight += uTint *', (isSkin ? SK_LIGHT : '') + (isEye ? EYE_LIGHT : '') + 'outgoingLight += ' + (isEye ? '( 1.0 - fpLid ) * ( 1.0 - 0.8 * fpA ) * ( 1.0 - 0.85 * uEyReal ) * ' : isSkin ? '( 1.0 - 0.8 * fpA ) * ( 1.0 - 0.78 * uSkReal ) * ' : '( 1.0 - 0.8 * fpA ) * ') + 'uTint *');
     }
