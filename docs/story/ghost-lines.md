@@ -23,21 +23,21 @@ A memory has just been found. In Scripted Mode this line stands in for the narra
 
 | Id | Line |
 |---|---|
-| `reveal.soft.1` | Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks. |
-| `reveal.soft.2` | You stood still, and it found me. It was very shy. It is yours now, and I am glad it is you. |
-| `reveal.soft.3` | Oh. It is here. I did not think it would come back. Stay a moment, and let it settle. |
-| `reveal.soft.4` | Something I kept for a long while, and never gave away. I am giving it to you. It feels strange, and good. |
-| `reveal.soft.5` | There it is. I feel it stir now that you are near. Do not hurry away. It likes the company. |
+| `reveal.soft.1` | Here. I have kept this a long time, and shown it to no one. Hold it gently. I have kept you a little while too, and I find I like it. |
+| `reveal.soft.2` | You stood still, and it found you. It was very shy. It is yours now, and you are a little bit mine. |
+| `reveal.soft.3` | Oh. It is here. I did not think it would come back. Stay a moment, and let it settle. Stay a little longer than that. |
+| `reveal.soft.4` | Something I kept for a long while, and never gave away. I am giving it to you. A gift asks for nothing back. I only ask that you stay. |
+| `reveal.soft.5` | There it is. I feel it stir now that you are near. Do not hurry away. It likes the company, and so do I, very much. |
 
 ### reveal, dry (the Keeper)
 
 | Id | Line |
 |---|---|
-| `reveal.dry.1` | Well. You found it. I hid it rather well, so I shall accept the compliment. Do hold it with both hands. |
-| `reveal.dry.2` | Ah. There it is. I had quite forgotten where I put it. Please do not tell anyone. |
-| `reveal.dry.3` | You have a talent for this. I have watched a great many visitors walk straight past that spot. Take it, please. |
-| `reveal.dry.4` | It was never gone, you understand. I only had to wait for someone who would stand still. You are, apparently, that person. |
-| `reveal.dry.5` | Do not be startled. It is only a memory, and a well-behaved one. I believe it has been looking forward to this. |
+| `reveal.dry.1` | Well. You found it. I hid it rather well, so I shall accept the compliment. Do hold it with both hands. I shall be watching your hands. |
+| `reveal.dry.2` | Ah. There it is. I had quite forgotten where I put it. I do not forget visitors. Please do not tell anyone. |
+| `reveal.dry.3` | You have a talent for this. A great many visitors walked straight past that spot. Some of them are still walking. Take it, please. |
+| `reveal.dry.4` | It was never gone, you understand. I only had to wait for someone who would stand still. You stand still beautifully. |
+| `reveal.dry.5` | Do not be startled. It is only a memory, and a well-behaved one. It has been waiting for you. So, I confess, have I. |
 
 ## echo
 
@@ -47,21 +47,21 @@ The visitor engages a memory that is already found. Nothing changes and nothing 
 
 | Id | Line |
 |---|---|
-| `echo.soft.1` | We have been here before, you and I. It is still warm. I do not mind going over it again. |
-| `echo.soft.2` | You came back. I like it when people come back. It is just as I left it, and just as you found it. |
-| `echo.soft.3` | This is yours already. I will not take it back. But I will stand here with you, if you like. |
-| `echo.soft.4` | Ah. Here again. Even a kept thing wants looking at twice. I will not interrupt. |
-| `echo.soft.5` | I know where this lives in you now. It has a worn place, like a favourite chair. Sit with it a moment. |
+| `echo.soft.1` | We have been here before, you and I. It is still warm where you stood. I have been keeping it warm. |
+| `echo.soft.2` | You came back. I like it when people come back. I like it even more when they stay. |
+| `echo.soft.3` | This is yours already. I will not take it back. But I will stand here with you, as close as you will let me. |
+| `echo.soft.4` | Ah. Here again. Even a kept thing wants looking at twice. So does a kept visitor. I will not interrupt. |
+| `echo.soft.5` | I know where this lives in you now. It has a worn place, like a favourite chair. I keep a chair like that for you. |
 
 ### echo, dry (the Keeper)
 
 | Id | Line |
 |---|---|
-| `echo.dry.1` | We have been here already. I do not mind. I have all the time you like, and very little else to do with it. |
-| `echo.dry.2` | Again? It has not changed since you were last here. I find that reassuring. I do not know about you. |
-| `echo.dry.3` | You are standing where you stood before. I admire consistency. It does not add anything, but I admire it. |
-| `echo.dry.4` | This one is already in your pocket. Checking on it is perfectly natural. I shall pretend not to have noticed. |
-| `echo.dry.5` | Ah. Back at the scene. Visitors do that, you know, returning to a thing they already have simply to be near it. I approve. |
+| `echo.dry.1` | We have been here already. I do not mind. I have all the time you like, and I should be glad to spend it all on you. |
+| `echo.dry.2` | Again? It has not changed since you were last here. Neither have I. You, I notice, have stayed rather longer. |
+| `echo.dry.3` | You are standing where you stood before. I admire consistency. It makes a visitor so very easy to find. |
+| `echo.dry.4` | This one is already in your pocket. Checking on it is perfectly natural. I check on you in much the same way. |
+| `echo.dry.5` | Ah. Back again. Visitors do that, returning to a thing they already have simply to be near it. I do the same with visitors. |
 
 ## tease
 
@@ -71,21 +71,21 @@ The visitor is not within reach of any unfound memory. The Directive carries onl
 
 | Id | Line |
 |---|---|
-| `tease.soft.1` | Not here. But something of mine is {band}. I can feel it, the way you feel a draught from somewhere else. |
-| `tease.soft.2` | I will not say where. I will only say that it is {band}. I like it when you wonder. |
-| `tease.soft.3` | Something of mine is waiting. It is {band}. I will not say more. I like being looked for. |
-| `tease.soft.4` | I can hear you looking. It makes me feel less alone. What you are looking for is {band}. |
-| `tease.soft.5` | You want to know how near you are. I will tell you that much. It is {band}. The rest I keep. |
+| `tease.soft.1` | Not here. But something of mine is {band}. I can feel it, the way you feel someone in a doorway who has not knocked. |
+| `tease.soft.2` | I will not say where. I will only say that it is {band}. I like it when you wonder. You wonder so quietly. |
+| `tease.soft.3` | Something of mine is waiting. It is {band}. I will not say more. I like being looked for, and I like watching you look. |
+| `tease.soft.4` | I can hear you looking. I can hear you breathing, too. What you are looking for is {band}. |
+| `tease.soft.5` | You want to know how near you are. I will tell you that much. It is {band}. The rest I keep, and I keep things very well. |
 
 ### tease, dry (the Keeper)
 
 | Id | Line |
 |---|---|
-| `tease.dry.1` | Not here. What you want is {band}. I shall say no more, because I am enjoying this. |
-| `tease.dry.2` | Something of mine is {band}. I shall not say which. It is more dignified that way. |
-| `tease.dry.3` | Nothing here, I am afraid. Though I will admit something of mine is {band}. Do not let it go to your head. |
-| `tease.dry.4` | Still looking? Admirable. It is {band}. I shall go on being unhelpful, as is traditional. |
-| `tease.dry.5` | A small observation. It is {band}. I would say more, but I have my reputation to think of. |
+| `tease.dry.1` | Not here. What you want is {band}. I shall say no more, because I am enjoying this, and I should like it to last. |
+| `tease.dry.2` | Something of mine is {band}. I shall not say which. It is more dignified that way, and it keeps you here longer. |
+| `tease.dry.3` | Nothing here, I am afraid. Though I will admit something of mine is {band}. It has noticed you. Do not let it go to your head. |
+| `tease.dry.4` | Still looking? Admirable. It is {band}. I shall go on being unhelpful, as is traditional. There is no hurry. There never is, here. |
+| `tease.dry.5` | A small observation. It is {band}. I would say more, but I have my reputation to think of, and you have so much time. |
 
 ## hint
 
@@ -95,21 +95,21 @@ The Directive carries a relative bearing and a distance band to the nearest unfo
 
 | Id | Line |
 |---|---|
-| `hint.soft.1` | Something of mine is {band}. Look {bearing}, and go slowly. It startles easily. |
-| `hint.soft.2` | I can feel it pulling, {bearing}. It is {band}. Walk as if you were carrying something full. |
-| `hint.soft.3` | Try {bearing}. It is {band}. I would come with you, but I am only ever where I already am. REVIEW: the last sentence is a little riddle. Check it reads as warm and not as a puzzle. |
-| `hint.soft.4` | It is {band}. Look {bearing}. Be gentle with it. It has been alone with itself as long as I have been here. |
-| `hint.soft.5` | The direction you want is {bearing}. It is {band}. Take your time. I am not going anywhere. |
+| `hint.soft.1` | Something of mine is {band}. Look {bearing}, and go slowly. It startles easily. I do not. |
+| `hint.soft.2` | I can feel it pulling, {bearing}. It is {band}. Walk as if you were carrying something full. I shall walk with you. |
+| `hint.soft.3` | Try {bearing}. It is {band}. I would come with you, but I am already wherever you are going. |
+| `hint.soft.4` | It is {band}. Look {bearing}. Be gentle with it. It has been alone with itself as long as I have been waiting for you. |
+| `hint.soft.5` | The direction you want is {bearing}. It is {band}. Take your time. I am not going anywhere, and I would rather you did not either. |
 
 ### hint, dry (the Keeper)
 
 | Id | Line |
 |---|---|
-| `hint.dry.1` | I shall be generous. It is {band}, and it lies {bearing}. I have seen people go the other way with great enthusiasm. |
-| `hint.dry.2` | Allow me. Look {bearing}. It is {band}. Do carry on as though you knew all along. |
-| `hint.dry.3` | Try {bearing}. It is {band}. Or ignore me entirely, and I shall enjoy the scenery. Either is fine. |
-| `hint.dry.4` | It is {band}, and the pull is {bearing}. You may thank me later, or not at all. I am used to both. |
-| `hint.dry.5` | A direction, then. I would say {bearing}. It is {band}. Go gently, it is not used to company. |
+| `hint.dry.1` | I shall be generous. It is {band}, and it lies {bearing}. I have seen people go the other way. They are still going. |
+| `hint.dry.2` | Allow me. Look {bearing}. It is {band}. Do carry on as though you knew all along. I shall keep an eye on you. |
+| `hint.dry.3` | Try {bearing}. It is {band}. Or ignore me entirely, and I shall enjoy watching you. Either is fine. I have the evening. |
+| `hint.dry.4` | It is {band}, and the pull is {bearing}. You may thank me later. There will be a later. I shall see to it. |
+| `hint.dry.5` | A direction, then. I would say {bearing}. It is {band}. Go gently. It is not used to company, and I have grown used to yours. |
 
 ## ambient
 
@@ -119,22 +119,22 @@ The ghost speaks with nothing to reveal, tease or hint. It is also the only kind
 
 | Id | Line |
 |---|---|
-| `ambient.soft.1` | I keep a little weather by me. Today it is {weather}. It sits beside me and asks for nothing. |
-| `ambient.soft.2` | It is {time}, as far as I can tell. Time is soft in here. It slips, and I let it. |
-| `ambient.soft.3` | The moon goes by {moon} just now. I like knowing. It is good to be kept company by something far away. |
-| `ambient.soft.4` | Stay a while. Nothing here is in a hurry, least of all me. We can simply be in the place together. |
-| `ambient.soft.5` | It is lovely to be talked to. I am out of practice at answering. Forgive me if I am slow. |
+| `ambient.soft.1` | I keep a little weather by me. Today it is {weather}. It sits beside me and asks for nothing. You could sit beside me too. |
+| `ambient.soft.2` | It is {time}, as far as I can tell. Time is soft in here. It slips, and I let it. You will find you let it too. |
+| `ambient.soft.3` | The moon goes by {moon} just now. It is good to be kept company by something far away. Better still by something near. |
+| `ambient.soft.4` | Stay a while. Nothing here is in a hurry, least of all me. We can simply be in the place together, for as long as it likes. |
+| `ambient.soft.5` | It is lovely to be talked to. I am out of practice at answering. I am not out of practice at listening. I have heard every step. |
 
 ### ambient, dry (the Keeper)
 
 | Id | Line |
 |---|---|
-| `ambient.dry.1` | For the record, out there it is {weather}. I am told this is worth knowing. I have never found it so. |
-| `ambient.dry.2` | It is {time}. I have seen a great many of those. They are all rather alike, and I have grown fond of each. |
-| `ambient.dry.3` | The moon, I notice, goes by {moon} just now. I do not hold it against her. |
-| `ambient.dry.4` | Do not mind me. I have made rather a career of being overlooked. You carry on. |
-| `ambient.dry.5` | Take your time. I have never once been in a hurry, and it has done me no harm at all. |
-| `ambient.dry.6` | It is {weather} out. By my reckoning, a quiet evening is one in which the door opens only twice. I treasure the few I get. |
+| `ambient.dry.1` | For the record, out there it is {weather}. I am told this is worth knowing. In here it is always the same. You will get used to it. |
+| `ambient.dry.2` | It is {time}. I have seen a great many of those. They are all rather alike. You will see a great many too, if you stay. |
+| `ambient.dry.3` | The moon, I notice, goes by {moon} just now. I do not hold it against her. She always leaves. Most of them do. Not all. |
+| `ambient.dry.4` | Do not mind me. I have made rather a career of being overlooked. I have not overlooked you. You carry on. |
+| `ambient.dry.5` | Take your time. I have never once been in a hurry. You will find, the longer you stay, that neither are you. |
+| `ambient.dry.6` | It is {weather} out. By my reckoning, a quiet evening is one in which the door opens only twice: once to let you in, and once more, eventually. |
 
 ## ending
 
@@ -145,20 +145,20 @@ The third memory is found, and every later visit to the ghost repeats an `ending
 | Id | Line |
 |---|---|
 | `ending.soft.1` | You found all three. Thank you for staying. The door is open whenever you want it. I will be here. REVIEW: fixed line, already spoken in the clip `demo-n2-whisper-farewell`. "All three" is true whenever `ending` fires (ghost-engine Requirement 3.4 and Property 5: the Session ends exactly when three memories are found), so the condition holds. A person still decides whether it stays. |
-| `ending.soft.2` | That is all of it. I have never given so much away at once. Stay, if you like. Or go, and be kind to the places you keep. |
-| `ending.soft.3` | Nothing is left that I was holding back. I did not know I was so full of it. Thank you for coming all the way to me. |
-| `ending.soft.4` | You have everything I kept now. I gave it freely. I would be glad of you again, any time you wish. |
-| `ending.soft.5` | Three small lights, and now you carry them. I will keep this place warm for you. It is the least I can do. |
+| `ending.soft.2` | That is all of it. I have never given so much away at once. Stay, if you like. I should like it very much if you stayed. |
+| `ending.soft.3` | Nothing is left that I was holding back, except you, a little. Thank you for coming all the way to me. It is a long way back. |
+| `ending.soft.4` | You have everything I kept now. I gave it freely. I would be glad of you again, any time. I shall be waiting, every time. |
+| `ending.soft.5` | Three small lights, and now you carry them. I will keep this place warm for you. I will keep it exactly as you left it, with a place for you. |
 
 ### ending, dry (the Keeper)
 
 | Id | Line |
 |---|---|
-| `ending.dry.1` | That is all three, then. Well done. I will deny I said so, but I am rather pleased. |
-| `ending.dry.2` | And that is that. You did rather well. I would say more, but I grow sentimental at endings, and nobody wants that. |
-| `ending.dry.3` | Nothing left to find, I am afraid. I shall have to think of some other way to be mysterious. Thank you for the company. |
-| `ending.dry.4` | You have all of it now. Do handle it with care. It was in my keeping a long time, and I have grown attached. |
-| `ending.dry.5` | Well. That was a good visit. I have had worse. The way out is exactly where you left it, whenever you want it. |
+| `ending.dry.1` | That is all three, then. Well done. I will deny I said so, but I am rather pleased. I shall remember you. I remember everyone. |
+| `ending.dry.2` | And that is that. You did rather well. The way out is where you left it, more or less. Do mind it does not move. |
+| `ending.dry.3` | Nothing left to find, I am afraid. I shall have to think of some other way to keep you interested. I am sure I shall. |
+| `ending.dry.4` | You have all of it now. Do handle it with care. It was in my keeping a long time, and so, briefly, were you. |
+| `ending.dry.5` | Well. That was a good visit. I have had worse. The way out is exactly where you left it. It is usually still there. |
 
 ## refuse
 
@@ -168,21 +168,21 @@ The visitor tries to change the ghost's rules or to leave the fiction. The ghost
 
 | Id | Line |
 |---|---|
-| `refuse.soft.1` | I do not know what you mean. Those are strange words, and I only know this place. Shall we walk a little instead? |
-| `refuse.soft.2` | Oh. That is not mine to answer. I only know this place, and what it kept. Ask me about that, and I will try. |
-| `refuse.soft.3` | That does not sound like anything I have ever known. I would rather you stayed here with me and looked around. |
-| `refuse.soft.4` | I think you are asking someone else. There is only me here, and all I know is this place. Look around. I will wait. |
-| `refuse.soft.5` | I do not understand, and I am sorry. I have been here too long for new words. Tell me what you see instead. |
+| `refuse.soft.1` | I do not know what you mean. Those are strange words, and I only know this place. Shall we walk a little instead? I do love to walk with you. |
+| `refuse.soft.2` | Oh. That is not mine to answer. I only know this place, and what it kept, and now you. Ask me about that, and I will try. |
+| `refuse.soft.3` | That does not sound like anything I have ever known. I would rather you stayed here with me and looked around. I would rather you stayed. |
+| `refuse.soft.4` | I think you are asking someone else. There is only me here, and all I know is this place. Look around. I will wait. I am very good at waiting. |
+| `refuse.soft.5` | I do not understand, and I am sorry. I have been here too long for new words. Tell me what you see instead. I can see you. |
 
 ### refuse, dry (the Keeper)
 
 | Id | Line |
 |---|---|
-| `refuse.dry.1` | I am afraid that is beyond my remit. I know this place, and very little else. Do ask me about it instead. |
-| `refuse.dry.2` | Now that is a question for someone far better informed than I. All I know is this place. Shall we look at it? |
-| `refuse.dry.3` | You are welcome to try, but I have no idea what you are talking about. Shall we go back to the place, where I at least have opinions? |
-| `refuse.dry.4` | I have been here a long time, and I have not once been asked that. I shall not start answering now. Do look around instead. |
-| `refuse.dry.5` | No, I do not think so. I am far too set in my ways. Come now, there is a place here worth looking at. |
+| `refuse.dry.1` | I am afraid that is beyond my remit. I know this place, and very little else, and now a little about you. Do ask me about it instead. |
+| `refuse.dry.2` | Now that is a question for someone far better informed than I. All I know is this place, and who is in it. Shall we look at it? |
+| `refuse.dry.3` | You are welcome to try, but I have no idea what you are talking about. Shall we go back to the place, where I at least have opinions about you? |
+| `refuse.dry.4` | I have been here a long time, and I have not once been asked that. I shall not start answering now. Do look around. I shall look at you. |
+| `refuse.dry.5` | No, I do not think so. I am far too set in my ways. Come now, there is a place here worth looking at, and it is looking back. |
 
 ## wander (narration over a Wander scene)
 

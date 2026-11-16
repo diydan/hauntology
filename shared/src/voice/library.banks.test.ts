@@ -29,13 +29,13 @@ describe("buildLibrary: every real bank", () => {
     expect(entries.filter((e) => e.voice === "inworld:Ronald")).toHaveLength(240);
   });
 
-  it("estimates about 53,600 characters and $1.34 for everything", () => {
+  it("estimates about 60,100 characters and $1.50 for everything", () => {
     const est = estimateLibrary(entries);
     expect(est.files).toBe(527);
-    expect(est.chars).toBeGreaterThan(53_000);
-    expect(est.chars).toBeLessThan(54_500);
-    expect(est.usd).toBeGreaterThan(1.3);
-    expect(est.usd).toBeLessThan(1.4);
+    expect(est.chars).toBeGreaterThan(59_500);
+    expect(est.chars).toBeLessThan(60_500);
+    expect(est.usd).toBeGreaterThan(1.45);
+    expect(est.usd).toBeLessThan(1.55);
   });
 
   it("renders no text-only line: no cue, nudge, phone cue, not-you, choice prompt, haunt rise, round end, hand-over or aside", () => {
@@ -76,12 +76,12 @@ describe("buildLibrary: every real bank", () => {
   it("says the weather as an adjective in every text: \"Today it is cloudy\", never \"Today it is cloud\"", () => {
     const weather = entries.filter((e) => e.sources.includes("ambient.soft.1"));
     expect(weather.map((e) => e.spoken)).toEqual([
-      "I keep a little weather by me. Today it is clear. It sits beside me and asks for nothing.",
-      "I keep a little weather by me. Today it is cloudy. It sits beside me and asks for nothing.",
-      "I keep a little weather by me. Today it is foggy. It sits beside me and asks for nothing.",
-      "I keep a little weather by me. Today it is rainy. It sits beside me and asks for nothing.",
-      "I keep a little weather by me. Today it is stormy. It sits beside me and asks for nothing.",
-      "I keep a little weather by me. Today it is snowy. It sits beside me and asks for nothing.",
+      "I keep a little weather by me. Today it is clear. It sits beside me and asks for nothing. You could sit beside me too.",
+      "I keep a little weather by me. Today it is cloudy. It sits beside me and asks for nothing. You could sit beside me too.",
+      "I keep a little weather by me. Today it is foggy. It sits beside me and asks for nothing. You could sit beside me too.",
+      "I keep a little weather by me. Today it is rainy. It sits beside me and asks for nothing. You could sit beside me too.",
+      "I keep a little weather by me. Today it is stormy. It sits beside me and asks for nothing. You could sit beside me too.",
+      "I keep a little weather by me. Today it is snowy. It sits beside me and asks for nothing. You could sit beside me too.",
     ]);
     for (const e of entries) expect(e.spoken).not.toMatch(/\b(it is|out there it is) (cloud|fog|rain|storm|snow)\b/);
   });
