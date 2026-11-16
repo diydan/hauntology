@@ -58,6 +58,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 2.14 `gate.ts`: `withTicket` with injected ports
     - Reserve, one call, commit on success, release on failure, no call after a denial or on the kill switch.
     - _Requirements: 4.1, 4.2, 4.3_
+    - Progress (2026-11-16): done in `shared/src/voice/gate.ts` (`withTicket`, `GatePorts`, `GateResult`), with 11 tests including a randomized run of Property 7 (200 runs of up to 30 requests with random kill switches, denials, caps, throwing calls and lost commits: no call without a granted Ticket, one call per Ticket, every granted Ticket settled exactly once, the cap never exceeded). It takes an optional `charged(value)` so a call that gave nothing and cost nothing releases its Ticket instead of committing it; a `charged` that throws counts as charged. A Ticket for another meter is released and the call is not made.
   - [ ]* 2.15 Write property test for budgets
     - **Property 7: Budgets are never exceeded and no call follows a denial**
     - **Validates: Requirements 4.1, 4.2**
@@ -78,6 +79,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 3.1 Error codes
     - Add `voice_unavailable`, `clip_too_long`, `clip_not_heard`, `stitch_not_on`, `stitch_no_consent`, `stitch_check_limit` and `live_unavailable` to `shared/src/errors.ts`. Unit test: every value equals its key. None maps to an error screen in `errors-copy`.
     - _Requirements: 4.2_
+    - Observed (2026-11-16, not checked further): all seven codes are already in `shared/src/errors.ts`. Not checked: the "every value equals its key" test and the `errors-copy` rule.
   - [ ] 3.2 Meters, caps and variables
     - Add `tts`, `stt` and `live` to `SpendGuard`'s `Meter` type and cap table (session and room scopes, global day), with the `VOICE_*` variables and kill-switch wiring; `GET /api/quota` returns the three remaining counts and the flags `voice`, `stitch` and `live`. The `live` Meter counts 10-second slices (30 a session, 180 a day by default). Coordinate with `world-pipeline` 4.1.
     - _Requirements: 4.1, 4.2, 6.2_
@@ -95,6 +97,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 3.6 `POST /api/voice/speak`
     - Accepts `{playId or roomCode, lineId}` only (a body with any text is refused); origin and cookie for Single player, host token for a room; finds the line, checks the cache, then `withTicket('tts')`, `speak`, cache put; answers audio, or `503 voice_unavailable` that the client treats as a quiet fallback; counters only in logs.
     - _Requirements: 1.1, 1.3, 1.5, 4.1, 4.2_
+    - Progress (2026-11-16): the route and its service are done for Single player: `api/src/routes/voice.ts`, `api/src/voice/speak.ts` (`speakLine`), the strict body `SpeakRequestSchema` (`shared/src/voice/requests.ts`), the `VoiceLine` type and `speechVoices` (`shared/src/voice/line.ts`, so a line can never choose its own voice), the `VoiceLines` port (`api/src/voice/lines.ts`), the `voice.speak` log event (counters only; `log.test.ts` pins it), and `createApp({ voice })` serves it at `/api/voice/speak`. 69 new tests (37 in `api`: service 23 and route 14; 32 in `shared`: gate 11, line 16, requests 4 and 1 for the log event); the whole `shared` and `api` suites and the `shared`, `api` and `web` typechecks pass. What it does: a body with any text or any other field is `400`; another visitor's line, an unknown line, another game's line and a request with no Session are the same `404` (and no Session cookie is made); a spoken-part-less line, speech off (`VOICE_ENABLED`), a spent cap and a failed or slow voice are `503 voice_unavailable` with one body; audio is `200 audio/mpeg`, `no-store`. The cache is read before any Ticket is asked for, so a line already heard plays with every cap spent; a voice that gave nothing releases its Ticket, one that answered unusably is committed; the cache write is handed to `waitUntil` so the audio does not wait for R2. **Not done: (1) nothing in the Worker passes `voice` yet, so the route is not served in production: it needs 3.5, the lines a `PlaySession` keeps, and the Worker wiring (`WorkersAiSpeaker` over `env.AI`, `R2SpeechCache` over `env.BUCKET`, the `SpendGuardClient`). (2) A room (`roomCode`, the Host's token) is refused by the schema until 3.9.**
   - [ ] 3.7 `POST /api/voice/listen`
     - Origin and cookie checks, a content-type allow-list, `clipVerdict` and the byte ceiling from Spike 1.1, one clip per 1.5 seconds per Session, `withTicket('stt')`, `withTransientClip(transcribe)`, answers `{transcript}`; no audio, transcript or text in logs or storage; release on failure.
     - _Requirements: 3.1, 3.2, 3.3, 4.1, 4.2_

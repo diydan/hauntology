@@ -22,6 +22,8 @@ import { galleryRoutes } from "./routes/gallery";
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
 import { partyRoutes, type PartyDeps } from "./routes/party";
 import { ipHashOf } from "./routes/world-create";
+import { voiceRoutes } from "./routes/voice";
+import type { SpeakDeps } from "./voice/speak";
 
 export type AppOptions = SessionOptions & {
   /**
@@ -54,6 +56,11 @@ export type AppOptions = SessionOptions & {
   };
   /** The party Rooms (`PartyRoom`) and their directory (`PartyDirectory`). When given, `/api/party` is served; it answers `party_disabled` when `PARTY_ENABLED` is off (the same switch as the Home flag). */
   party?: Pick<PartyDeps, "rooms" | "directory">;
+  /**
+   * The ghost's voice (ghost-voice 3.6). When given, `POST /api/voice/speak` is served: audio for a line the visitor's own game holds, or a quiet
+   * `503 voice_unavailable`. It answers that whenever `VOICE_ENABLED` is off. Nothing in the Worker passes this yet: it needs the lines a game keeps (3.5).
+   */
+  voice?: { speak: SpeakDeps };
 };
 
 /**
@@ -143,6 +150,9 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
         enabled: (c) => flagsFrom((c as Context<AppEnv>).env).partyEnabled,
       }),
     );
+  }
+  if (options.voice !== undefined) {
+    app.route("/api/voice", voiceRoutes({ speak: { log, ...options.voice.speak }, enabled: (c) => flagsFrom((c as Context<AppEnv>).env).voiceEnabled }));
   }
   // Last, so every route above wins and `/api` and `/admin` paths that nothing took stay 404s (`servePage`).
   if (options.assets !== undefined) app.notFound(servePage(options.assets));
