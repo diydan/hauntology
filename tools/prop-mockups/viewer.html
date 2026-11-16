@@ -26,6 +26,7 @@
   .tag.M { background: #d4604a; color: #fff; }
   .tag.E { background: #6bb6ff; color: #08121c; }
   .tag.S { background: #3a3350; color: #cfc7e0; }
+  .tag.R { background: #e8dec8; color: #14111a; }
   .qty { font-size: 12px; color: #9b92ae; flex: none; }
   #legend { padding: 10px 12px; border-top: 1px solid #2c2638; font-size: 12px; color: #9b92ae; }
   #legend b { color: #e8dec8; font-weight: 600; }
@@ -79,6 +80,8 @@
 const $ = (s, r = document) => r.querySelector(s);
 // In the repo the page lives in tools/prop-mockups/ and the STLs in print/stl/; on the lab both sit under /props/.
 const STL_BASE = new URLSearchParams(location.search).get('stl') || (location.pathname.includes('/tools/') ? '../../print/stl/' : 'stl/');
+// Reference models (not printed) live next to the STL folder: print/reference/ in the repo, reference/ on the lab.
+const REF_BASE = location.pathname.includes('/tools/') ? '../../print/reference/' : 'reference/';
 
 // Core 6 spools + Silver & 6 Seat/Suspect accent colours from 3D_BRIEF.md section 2.
 const SPOOLS = {
@@ -96,15 +99,17 @@ const SPOOLS = {
   seatViolet: { name: 'Seat Violet',      hex: '#c49bff' },
   seatOrange: { name: 'Seat Orange',      hex: '#ffb27a' },
 };
-const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics', S: 'Static: no moving or electronic parts' };
+const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics', S: 'Static: no moving or electronic parts', R: 'Reference model: shown for comparison, not printed' };
 
 // file, label, group, spool, kind, how many to print, alternate?
 const G0 = 'Core game pieces', G1 = '#1 Ghost in the box', G3 = '#3 Haunt needle', G5 = '#5 Haunting flipper',
-      G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board';
+      G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board', GR = 'Reference (not printed)';
 const PARTS = [
-  ['relic-music-box',   'Relic r1 music box',      G0, 'brass',      'S', 1],
+  ['relic-music-box',   'Relic r1 music box',      G0, 'wood',       'S', 1],
+  ['relic-music-box-lid','Relic r1 music box lid', G0, 'brass',      'S', 1],
   ['relic-wax-hand',    'Relic r2 wax hand',       G0, 'bone',       'S', 1],
   ['relic-locket',      'Relic r3 locket',         G0, 'brass',      'S', 1],
+  ['relic-locket-lid',  'Relic r3 locket lid',     G0, 'brass',      'S', 1],
   ['relic-planchette',  'Relic r4 planchette',     G0, 'wood',       'S', 1],
   ['relic-silver-key',  'Relic r5 silver key',     G0, 'silver',     'S', 1],
   ['relic-bell',        'Relic r6 bell',           G0, 'brass',      'S', 1],
@@ -119,7 +124,7 @@ const PARTS = [
   ['standee-s6-dunmore','Standee 6 Dunmore',       G0, 'seatOrange', 'S', 1],
   ['prop-01-chest-body','Chest body',              G1, 'wood',    'E', 1],
   ['prop-01-chest-lid', 'Chest lid',               G1, 'wood',    'M', 1],
-  ['prop-01-ghost-figure','Ghost figure',          G1, 'mint',    'M', 1],
+  ['prop-01-ghost-figure','Ghost figure',          G1, 'bone',    'M', 1],
   ['prop-01-lever-arm', 'Lever arm',               G1, 'iron',    'M', 1],
   ['prop-03-dial-plate','Dial plate',              G3, 'iron',    'E', 1],
   ['prop-03-bezel-ring','Bezel ring',              G3, 'brass',   'S', 1],
@@ -144,7 +149,8 @@ const PARTS = [
   ['prop-20-wires-panel','Wires panel',            G20, 'iron',   'E', 1],
   ['prop-20-terminal-blocks','Terminal blocks',    G20, 'brass',  'E', 1],
   ['prop-20-plug-heads','Plug heads (10 shells)',  G20, 'crimson','E', 1],
-].map(([file, label, group, spool, kind, qty, alt]) => ({ file, label, group, spool, kind, qty, alt: !!alt }));
+  ['ghost-original',    'Original ghost (Ghost.fbx)', GR, 'bone',  'R', 0, false, true],
+].map(([file, label, group, spool, kind, qty, alt, ref]) => ({ file, label, group, spool, kind, qty, alt: !!alt, ref: !!ref }));
 const BY = Object.fromEntries(PARTS.map((p) => [p.file, p]));
 
 // ---------- small matrix kit (column-major) ----------
@@ -188,7 +194,7 @@ function parseStl(buf) {
 }
 const cache = new Map();
 function load(name) {
-  if (!cache.has(name)) cache.set(name, fetch(STL_BASE + name + '.stl', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(name + ': HTTP ' + r.status); return r.arrayBuffer(); }).then(parseStl));
+  if (!cache.has(name)) cache.set(name, fetch((BY[name] && BY[name].ref ? REF_BASE : STL_BASE) + name + '.stl', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(name + ': HTTP ' + r.status); return r.arrayBuffer(); }).then(parseStl));
   return cache.get(name);
 }
 
@@ -203,7 +209,18 @@ const ASSEMBLIES = [
   { id: 'relics', title: 'Relics on Relic Tokens', note: 'Each Relic has a 6 mm socket under a flat foot and drops onto the 6 mm peg of its token (no Relic base plate). Punch a 6 mm hole in the middle of the QR sticker for the peg.',
     build(S) {
       const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell'], out = [];
-      rel.forEach((r, i) => { const s = S(r); out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [i * 48 + (40 - s[0]) / 2, (40 - s[1]) / 2, 6], { ex: [0, 0, 25] })); });
+      rel.forEach((r, i) => {
+        const s = S(r);
+        out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [i * 48 + (40 - s[0]) / 2, (40 - s[1]) / 2, 6], { ex: [0, 0, 25] }));
+        if (r === 'relic-music-box') {
+          const l = S('relic-music-box-lid', FLIP);
+          out.push(P('relic-music-box-lid', [i * 48 + (40 - s[0]) / 2 + 0.1, (40 - s[1]) / 2 + 0.6, 6 + s[2] - 2.4], { rot: FLIP, ex: [0, 0, 40] }));
+        }
+        if (r === 'relic-locket') {
+          const l = S('relic-locket-lid', STAND);
+          out.push(P('relic-locket-lid', [i * 48 + (40 - s[0]) / 2, 20 - l[1], 6 + 10], { rot: STAND, ex: [-12, -28, 0] }));
+        }
+      });
       return out;
     } },
   { id: 'p01', title: '#1 Ghost in the box', note: 'Lid on the body. Slide Explode to lift the lid and see the ghost and lever inside.',
@@ -429,9 +446,9 @@ function renderSide() {
     }
   }
   const keep = listEl.scrollTop; listEl.innerHTML = h; listEl.scrollTop = keep;
-  const cnt = {}; for (const p of PARTS) cnt[p.spool] = (cnt[p.spool] || 0) + 1;
+  const cnt = {}; for (const p of PARTS) if (!p.ref) cnt[p.spool] = (cnt[p.spool] || 0) + 1;
   $('#legend').innerHTML = '<b>Spools</b> (parts per spool)<br>' + Object.entries(SPOOLS).map(([k, s]) => `<span class="k"><span class="dot" style="background:${s.hex}"></span>${s.name} ${cnt[k] || 0}</span>`).join('') +
-    '<br><b>Tags</b> <span class="tag M">M</span> moves <span class="tag E">E</span> holds electronics <span class="tag S">S</span> static';
+    '<br><b>Tags</b> <span class="tag M">M</span> moves <span class="tag E">E</span> holds electronics <span class="tag S">S</span> static <span class="tag R">R</span> reference only';
 }
 listEl.addEventListener('click', (e) => {
   const cb = e.target.closest('[data-vis]'); if (cb) { st.vis[cb.dataset.vis] = cb.checked; st.dirty = true; return; }
@@ -440,7 +457,7 @@ listEl.addEventListener('click', (e) => {
 function renderHud() {
   if (st.mode === 'parts') {
     const p = BY[st.id], m = st.items[0].mesh, s = SPOOLS[p.spool];
-    $('#hud').innerHTML = `<h1>${esc(p.label)}</h1><div class="sub">${p.file}.stl · ${m.size.map((v) => v.toFixed(1)).join(' × ')} mm · ${m.tris.toLocaleString()} triangles · print ×${p.qty}</div>
+    $('#hud').innerHTML = `<h1>${esc(p.label)}</h1><div class="sub">${p.file}.stl · ${m.size.map((v) => v.toFixed(1)).join(' × ')} mm · ${m.tris.toLocaleString()} triangles · ${p.ref ? 'reference only, not printed' : 'print ×' + p.qty}</div>
       <div class="chips"><span class="chip"><span class="dot" style="background:${s.hex}"></span>${s.name} ${s.hex}</span><span class="chip"><span class="tag ${p.kind}">${p.kind}</span>${KIND[p.kind]}</span><span class="chip">${p.group}</span></div>`;
     $('#lEx').style.display = 'none';
   } else {

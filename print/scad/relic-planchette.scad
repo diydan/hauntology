@@ -40,6 +40,13 @@ module relic_planchette() {
           translate([0, 0, -1.2]) linear_extrude(height = 2.4) planchette_shape_2d(0.0);
           translate([0, 0,  1.8]) linear_extrude(height = 0.4) planchette_shape_2d(0.8);
         }
+        // Crooked gothic horn curls rising from upper shoulder lobes (clear of sticker pocket, <= 34 deg!)
+        for (sx = [-1, 1]) {
+          hull() {
+            translate([sx * 9.8, 12.2, 0]) cylinder(h = 2.6, d = 4.0, center = true);
+            translate([sx * 12.6, 17.6, 0]) cylinder(h = 2.0, d = 1.6, center = true);
+          }
+        }
         // Raised central brass-style viewing oculus bezel on front face (+Z in rotated frame)
         translate([0, 2.5, 1.6])
           cylinder(h = 1.4, d1 = 14.4, d2 = 13.2);
