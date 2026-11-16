@@ -178,12 +178,30 @@ export type ReplyOptions = {
 /**
  * The most words a reply of each kind may have (owner, 2026-11-16: the play-throughs gave teases of 45 words and a farewell of 89, about 30 seconds aloud).
  * First set at 25, 20, 45 and 30; the model ignored them (47 of 60 replies refused), so the owner loosened them the same night.
- * The prompt asks for it and the check refuses a reply over it, so a scripted line takes its place. Kinds not listed keep only the four-sentence limit.
+ * The prompt asks for it. A reply over it is cut back to its first whole sentences that fit (`trimToWords`), and only a first sentence over the cap
+ * is refused, so a scripted line takes its place. Kinds not listed keep only the four-sentence limit.
  */
 export const WORD_CAP = { tease: 40, hint: 30, reveal: 60, ending: 45 } as const;
 
 /** How many words a reply has: runs of letters, digits and apostrophes. */
 export const wordCount = (text: string): number => (text.match(/[\p{L}\p{N}'’]+/gu) ?? []).length;
+
+/**
+ * A reply cut back to its first whole sentences that fit in `maxWords` (owner, 2026-11-16: the model writes past the cap, and a refused reply wastes a call
+ * and gives a scripted line). Never cuts inside a sentence. Null when even the first sentence is over the cap, so the reply is refused.
+ */
+export function trimToWords(text: string, maxWords: number): string | null {
+  if (wordCount(text) <= maxWords) return text;
+  const kept: string[] = [];
+  let words = 0;
+  for (const s of text.split(/(?<=[.!?…])\s+/u).filter((x) => x.trim() !== "")) {
+    const n = wordCount(s);
+    if (words + n > maxWords) break;
+    kept.push(s);
+    words += n;
+  }
+  return kept.length === 0 ? null : kept.join(" ");
+}
 
 const BANDS_ALL: readonly Band[] = ["very close", "nearer", "far"];
 const DIRECTION_WORDS = /\b(?:ahead|behind|left|right|forwards?|backwards?|north|south|east|west)\b/u;
@@ -222,8 +240,13 @@ export function wayIsRight(text: string, way: WayCheck): boolean {
  */
 export function validateGhostReply(raw: unknown, options: ReplyOptions = {}): ReplyCheck {
   if (typeof raw !== "string") return { ok: false, reason: "empty" };
-  const text = raw.replace(/[\n\r\t]+/gu, " ").replace(/ {2,}/gu, " ").trim();
+  let text = raw.replace(/[\n\r\t]+/gu, " ").replace(/ {2,}/gu, " ").trim();
   if (text === "") return { ok: false, reason: "empty" };
+  if (options.maxWords !== undefined) {
+    const kept = trimToWords(text, options.maxWords);
+    if (kept === null) return { ok: false, reason: "too_many_words" };
+    text = kept; // every check below is on the words the visitor will be shown
+  }
   if (text.length > REPLY_MAX_CHARS) return { ok: false, reason: "too_long" };
   if (CONTROL.test(text)) return { ok: false, reason: "control" };
   if (LINK.test(text)) return { ok: false, reason: "link" };
@@ -234,7 +257,6 @@ export function validateGhostReply(raw: unknown, options: ReplyOptions = {}): Re
   if (options.forbidDigits === true && /\d/u.test(text)) return { ok: false, reason: "digits" };
   const sentences = sentenceCount(text);
   if (sentences > 4) return { ok: false, reason: "too_many_sentences" };
-  if (options.maxWords !== undefined && wordCount(text) > options.maxWords) return { ok: false, reason: "too_many_words" };
   if (options.minSentences !== undefined && sentences < options.minSentences) return { ok: false, reason: "too_few_sentences" };
   if (options.way !== undefined && !wayIsRight(text, options.way)) return { ok: false, reason: "wrong_way" };
   if (options.noWay === true && DIRECTION_WORDS.test(canonical(text))) return { ok: false, reason: "wrong_way" };
