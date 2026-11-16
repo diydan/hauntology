@@ -83,12 +83,13 @@ const STL_BASE = new URLSearchParams(location.search).get('stl') || (location.pa
 // Reference models (not printed) live next to the STL folder: print/reference/ in the repo, reference/ on the lab.
 const REF_BASE = location.pathname.includes('/tools/') ? '../../print/reference/' : 'reference/';
 
-// The 5 print spools.
+// The 6 print spools.
 const SPOOLS = {
   iron:       { name: 'Dark Iron',        hex: '#262229' },
   brass:      { name: 'Antique Brass',    hex: '#d4a84b' },
   mint:       { name: 'Ectoplasm Mint',   hex: '#5ce6b8' },
   bone:       { name: 'Bone / Ivory',     hex: '#e8dec8' },
+  silver:     { name: 'Tarnished Silver', hex: '#c9c9d4' },
   wood:       { name: 'Warm Wood',        hex: '#422818' },
 };
 const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics', S: 'Static: no moving or electronic parts', R: 'Reference model: shown for comparison, not printed' };
@@ -98,13 +99,13 @@ const G0 = 'Core game pieces', G1 = '#1 Ghost in the box', G3 = '#3 Haunt needle
       G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board', GR = 'Reference (not printed)',
       GX = 'Stand-alone figures';
 const PARTS = [
-  ['relic-music-box',   'Relic r1 music box',      G0, 'iron',       'S', 1],
-  ['relic-music-box-lid','Relic r1 music box lid', G0, 'brass',      'S', 1],
+  ['relic-music-box',   'Relic r1 music box',      G0, 'silver',      'S', 1],
+  ['relic-music-box-lid','Relic r1 music box lid', G0, 'silver',      'S', 1],
   ['relic-wax-hand',    'Relic r2 wax hand',       G0, 'bone',       'S', 1],
   ['relic-locket',      'Relic r3 locket',         G0, 'brass',      'S', 1],
   ['relic-locket-lid',  'Relic r3 locket lid',     G0, 'brass',      'S', 1],
   ['relic-planchette',  'Relic r4 planchette',     G0, 'wood',       'S', 1],
-  ['relic-silver-key',  'Relic r5 silver key',     G0, 'brass',     'S', 1],
+  ['relic-silver-key',  'Relic r5 silver key',     G0, 'silver',    'S', 1],
   ['relic-bell',        'Relic r6 bell',           G0, 'brass',      'S', 1],
   ['relic-token-pocket','Relic Token base',        G0, 'iron',       'S', 6],
   ['pyramid-holder',    'Pyramid holder',          G0, 'iron',       'S', 1],

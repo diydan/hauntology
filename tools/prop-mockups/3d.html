@@ -201,7 +201,7 @@
   <div class="summary-bar">
     <div class="stat"><strong>44 STLs</strong><span>All verified watertight, 2-manifold, support-free</span></div>
     <div class="stat"><strong>&le; 180 &times; 180 mm</strong><span>Fits Bambu A1 Mini, Prusa MINI+, Ender 3</span></div>
-    <div class="stat"><strong>5 Spool Colours</strong><span>Iron, Brass, Mint, Bone, Wood</span></div>
+    <div class="stat"><strong>6 Spool Colours</strong><span>Iron, Brass, Mint, Bone, Wood, Silver</span></div>
     <div class="stat"><strong>0.4 mm Pockets</strong><span>Recessed 1:1 SVG stickers never peel at edges</span></div>
     <div class="stat"><strong>SG90 + ESP32</strong><span>Built-in servo cradles, keyed horn recesses &amp; DevKitC V4 mounts</span></div>
   </div>
@@ -261,17 +261,18 @@ const SPOOLS = {
   brass:      { name: "Antique Brass",    bg: "#d4a84b", fg: "#181209" },
   mint:       { name: "Ectoplasm Mint",   bg: "#5ce6b8", fg: "#092118" },
   bone:       { name: "Bone / Ivory",     bg: "#e8dec8", fg: "#1b181f" },
+  silver:     { name: "Tarnished Silver", bg: "#c9c9d4", fg: "#181820" },
   wood:       { name: "Warm Wood",        bg: "#422818", fg: "#f5eadc" },
 };
 
 const RELICS = [
-  ["relic-music-box",    "iron",   "44.9 × 27.4 × 27.9 mm", "Relic r1 (body): From-scratch Dark Iron gothic coffin casket with 41° faceted pedestal flare, 6 corner buttresses, continuous front arch keyhole shield, 38° open-diamond bat-wing crank key, 5-chime comb on flush bed, octagonal drum, bevel gear & Ø14.6 mm foot / 6 mm socket."],
-  ["relic-music-box-lid","brass",  "42.1 × 28.5 × 9.0 mm",  "Relic r1 (lid): Contrasting Antique Brass mansard coffin lid printed upside-down with V-carved crown inlay, overhanging drip skirt + 6 gargoyle corner eaves, 4-rib slip-fit collar, finger-lift coves & underside 18.2×9.2 mm score pocket."],
+  ["relic-music-box",    "silver",   "44.9 × 27.4 × 27.9 mm", "Relic r1 (body): From-scratch Tarnished Silver gothic coffin casket with 41° faceted pedestal flare, 6 corner buttresses, continuous front arch keyhole shield, 38° open-diamond bat-wing crank key, 5-chime comb on flush bed, octagonal drum, bevel gear & Ø14.6 mm foot / 6 mm socket."],
+  ["relic-music-box-lid","silver",  "42.1 × 28.5 × 9.0 mm",  "Relic r1 (lid): Tarnished Silver mansard coffin lid printed upside-down with V-carved crown inlay, overhanging drip skirt + 6 gargoyle corner eaves, 4-rib slip-fit collar, finger-lift coves & underside 18.2×9.2 mm score pocket."],
   ["relic-wax-hand",     "bone",   "24.6 × 17.6 × 51.4 mm", "Relic r2: Sculpted anatomical palmistry hand with blended tendons, MCP knuckles, segmented fingers, fingernails, palm pocket & centre socket."],
   ["relic-locket",       "brass",  "31.5 × 18.0 × 50.0 mm", "Relic r3 (back bowl): Hinged oval locket stand with vaulted keepsake hollow, lower Ø2.15 mm filament hinge knuckle, clasp catch & centre socket."],
   ["relic-locket-lid",   "brass",  "33.7 × 35.4 × 5.3 mm",  "Relic r3 (front door): Separate hinged cameo lid with crooked gothic crown crest, coaxial Ø2.15 mm filament hinge bore, beaded pearls, snap-clasp & 16×22 mm cameo pocket."],
   ["relic-planchette",   "wood",   "28.8 × 18.4 × 43.5 mm", "Relic r4: Heart-shaped spirit-board pointer with twin crooked gothic upper horn curls pointing down on a short post, with magnifier oculus & 6 mm centre socket."],
-  ["relic-silver-key",   "brass" , "20.2 × 18.0 × 46.7 mm", "Relic r5: Gothic skeleton key with diamond pierced bow, shoulder thorns, skewed crown spire, collared stem, notched ward bit & centre connector."],
+  ["relic-silver-key",   "silver", "20.2 × 18.0 × 46.7 mm", "Relic r5: Gothic skeleton key with diamond pierced bow, shoulder thorns, skewed crown spire, collared stem, notched ward bit & centre connector."],
   ["relic-bell",         "brass",  "28.0 × 28.0 × 47.6 mm", "Relic r6: Flared Victorian service bell with solid flared body, turned handle & centre connector."],
   ["relic-token-pocket", "iron",   "43.6 × 43.6 × 9.0 mm",  "Universal 40×40 mm rounded token base with 4 splayed corner iron lug ears, rim V-notches, 0.4 mm top QR sticker pocket & Ø5.6 mm centre peg for the Relics' sockets (punch a 6 mm hole in the QR sticker)."],
 ];
