@@ -18,6 +18,8 @@ export const LOG_SCHEMA = {
   "job.step": { worldId: "id", status: "word", code: "word" },
   /** The cleanup run: how many objects and how many whole worlds it removed. */
   "cleanup.done": { deleted: "int", worlds: "int" },
+  /** The operator opened or closed the voice window (`POST /admin/voice`): whether it is open now, for how many minutes and with how many lines. Never the token. */
+  "admin.voice": { on: "bool", minutes: "int", cap: "int" },
   /** The operator closed or opened new world creation. */
   "admin.kill": { on: "bool" },
   /** A game began (ghost-engine 5): which world, and how the visitor reaches it (`owner`, `shared` or `public`). Never a word the visitor said. */

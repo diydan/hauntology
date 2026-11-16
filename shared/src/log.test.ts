@@ -80,6 +80,7 @@ describe("formatLog", () => {
       "request.error": { route: "route", errorName: "name", status: "int" },
       "job.step": { worldId: "id", status: "word", code: "word" },
       "cleanup.done": { deleted: "int", worlds: "int" },
+      "admin.voice": { on: "bool", minutes: "int", cap: "int" },
       "admin.kill": { on: "bool" },
       "play.start": { worldId: "id", access: "word" },
       "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },

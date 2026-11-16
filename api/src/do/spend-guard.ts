@@ -1,5 +1,6 @@
 import { METERS, type Meter } from "@hauntology/shared/world/spend";
 import { SpendLedger, capsFromEnv, type Kv } from "@hauntology/shared/world/spend-ledger";
+import { VoiceWindowStore, readWindowRequest } from "@hauntology/shared/voice/window";
 
 const json = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -18,10 +19,17 @@ type Env = Record<string, string | undefined>;
  *   /remaining {sessionId, ipHash}      -> {world, image, llm, tts, stt, live}
  *   GET /status                         -> {dayCapReached, totalCapReached, killed}
  *   /kill {on}                          -> 204
+ * The voice window (ghost-voice, `shared/src/voice/window.ts`) lives here too, in the same storage, so every instance of the Worker sees the one window:
+ *   GET /voice-window                   -> {open, until, remainingMs, cap, used, remainingLines}
+ *   /voice-window/open {minutes?, cap?} -> the same, after opening (a body `readWindowRequest` refuses is a 400)
+ *   /voice-window/close                 -> the same, after closing
+ *   /voice-window/take                  -> {ok:true, id} | {ok:false, reason: "closed" | "cap"}: a line of the window, asked before every paid speech call
+ *   /voice-window/give {id}             -> 204: the line back, when the call cost nothing
  * A body that does not fit is a 400; nothing changes.
  */
 export class SpendGuard {
   private readonly ledger: SpendLedger;
+  private readonly window: VoiceWindowStore;
 
   constructor(
     private readonly state: DurableObjectState,
@@ -30,6 +38,7 @@ export class SpendGuard {
     randomBytes?: () => Uint8Array,
   ) {
     this.ledger = new SpendLedger(state.storage as unknown as Kv, capsFromEnv(env), randomBytes);
+    this.window = new VoiceWindowStore(state.storage as unknown as Kv);
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -37,6 +46,7 @@ export class SpendGuard {
     const now = this.clock();
     try {
       if (pathname === "/status" && request.method === "GET") return json(await this.ledger.status(now));
+      if (pathname === "/voice-window" && request.method === "GET") return json(await this.window.status(now));
       if (request.method !== "POST") return new Response(null, { status: request.method === "GET" ? 404 : 405 });
       const body = (await readJson(request)) as Record<string, unknown> | null;
       if (body === null || typeof body !== "object" || Array.isArray(body)) return json({ ok: false, code: "bad_request" }, 400);
@@ -63,6 +73,20 @@ export class SpendGuard {
         case "/kill": {
           if (typeof body.on !== "boolean") return json({ ok: false, code: "bad_request" }, 400);
           await this.ledger.setKill(body.on);
+          return new Response(null, { status: 204 });
+        }
+        case "/voice-window/open": {
+          const req = readWindowRequest(body);
+          if (req.kind !== "open") return json({ ok: false, code: "bad_request" }, 400);
+          return json(await this.window.open(req, now));
+        }
+        case "/voice-window/close":
+          return json(await this.window.close(now));
+        case "/voice-window/take":
+          return json(await this.window.take(now));
+        case "/voice-window/give": {
+          if (!Number.isSafeInteger(body.id)) return json({ ok: false, code: "bad_request" }, 400);
+          await this.window.give(body.id as number, now);
           return new Response(null, { status: 204 });
         }
         default:

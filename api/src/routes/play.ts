@@ -22,8 +22,11 @@ export type PlayDeps = {
   narration?: Narration;
   /** The real world, read once when a game starts and kept with it (conditions 3.3; ghost-engine 3.1). Without it every game has the normal look and the narrator is told no sky. */
   conditions?: ConditionsService;
-  /** Whether `POST /api/voice/speak` is served by this app. Only then does a reply name a line (`reply.voice.lineId`), and only while `VOICE_ENABLED` is on. Default off. */
-  voice?: boolean;
+  /**
+   * Whether `POST /api/voice/speak` is served by this app. Only then does a reply name a line (`reply.voice.lineId`), and only while `VOICE_ENABLED` is on. Default off.
+   * A function says it for each reply: the voice window (`POST /admin/voice`) is open or it is not. It is asked only once `VOICE_ENABLED` is on.
+   */
+  voice?: boolean | (() => boolean | Promise<boolean>);
   log?: Logger;
   now?: () => number;
 };
@@ -159,7 +162,7 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
     if (r.revealed && r.ended) log.info("play.end", { turns: r.turns });
     c.header("Cache-Control", "no-store");
     // The reply names its line only when the speech route is served here and speech is on, so a client is never handed an id it cannot use (`VOICE_ENABLED`).
-    const speak = deps.voice === true && flagsFrom(c.env).voiceEnabled;
+    const speak = flagsFrom(c.env).voiceEnabled && (typeof deps.voice === "function" ? await deps.voice() : deps.voice === true);
     return c.json({ reply: { text, scripted, ...(speak && voice !== null ? { voice } : {}) }, view });
   });
 
