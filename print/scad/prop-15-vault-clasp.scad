@@ -77,11 +77,13 @@ module prop_15_vault_clasp() {
         cylinder(h = 4.2, d = 10.0);
         translate([0, 14.0, 0]) cylinder(h = 4.2, d = 7.6);
       }
-      // Subtle gothic dragon-spine thorn along back (+X) edge of hook arm (away from -X catch!)
+      // Subtle gothic dragon-spine thorn along back (+X) edge of hook arm (away from -X catch!). It stays within 6.7 mm of the
+      // pivot along the arm: latched, the arm crosses the lid's hasp 7.6 to 12.2 mm from the pivot, and a thorn out there (it used
+      // to sit at 4.5 to 13.5 mm) hit the hasp's solid beside the catch window (32 mm3) because the window is only 9.6 mm wide.
       hull() {
-        translate([3.2, 6.0, 0]) cylinder(h = 3.8, d = 3.0);
-        translate([7.0, 9.5, 0]) cylinder(h = 3.4, d = 1.4);
-        translate([2.8, 12.0, 0]) cylinder(h = 3.8, d = 3.0);
+        translate([3.2, 1.8, 0]) cylinder(h = 3.8, d = 3.0);
+        translate([7.0, 3.6, 0]) cylinder(h = 3.4, d = 1.4);
+        translate([2.8, 5.2, 0]) cylinder(h = 3.8, d = 3.0);
       }
       // Bevelled locking hook nose
       hull() {
