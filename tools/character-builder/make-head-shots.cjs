@@ -22,7 +22,7 @@ fs.mkdirSync(OUT, { recursive: true });
   const sheet = async (name, cols, tileW, tileH, jobs) => {
     const b64 = await page.evaluate(async ({ cols, tileW, tileH, jobs }) => {
       const c = window.__cb, rows = Math.ceil(jobs.length / cols), sh = document.createElement('canvas');
-      sh.width = cols * tileW; sh.height = rows * tileH; const g = sh.getContext('2d'); g.fillStyle = '#120b30'; g.fillRect(0, 0, sh.width, sh.height);
+      sh.width = cols * tileW; sh.height = rows * tileH; const g = sh.getContext('2d'); g.fillStyle = '#0b0d10'; g.fillRect(0, 0, sh.width, sh.height);
       const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       c.camera.clearViewOffset(); c.controls.enabled = false;
       for (let i = 0; i < jobs.length; i++) {
