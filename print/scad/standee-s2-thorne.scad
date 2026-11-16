@@ -76,4 +76,4 @@ module standee_s2_thorne() {
   }
 }
 
-color(col_seat_blue) standee_s2_thorne();
+color(col_bone) standee_s2_thorne();
