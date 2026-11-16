@@ -5,6 +5,7 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
 - [ ] 1. Spike: render a real splat in three + Spark
   - Load a fixture World Bundle in a bare page. Record in `docs/spikes/2.1.md`: Spark version and API for opacity/recolor/LOD, orientation and scale of a real world, spawn defaults, frame rate on an integrated-GPU laptop and a mid-range phone at each LOD, whether the Collider GLB needs Draco/Meshopt decoders.
   - _Requirements: 1.4, 5.1_
+  - Progress (2026-11-16): done except hardware frame rates, in `docs/spikes/2.1.md` with the recorded `marble-1.1` kitchen (bare page `tools/viewer-spike/`). Settled: Spark 2.4.0 + three 0.187.0; `opacity` and `recolor` hooks exist and work; `poseFromService` is confirmed by eye (upright, facing as the photo, floor under the spawn; without the fix the room is inverted); the Collider GLB needs no decoder. Not done: frame rate at each LOD on an integrated-GPU laptop and a mid-range phone (headless software WebGL numbers say nothing about either).
 
 - [x] 2. Pure viewer logic (`shared/src/viewer/`)
   - [x] 2.1 `orientationTransform`

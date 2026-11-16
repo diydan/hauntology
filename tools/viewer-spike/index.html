@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Viewer spike: a real Marble splat in three + Spark</title>
+<style>
+  body { margin: 0; background: #111; color: #eee; font: 14px/1.4 ui-monospace, monospace; }
+  #status { position: fixed; left: 8px; top: 8px; background: rgba(0,0,0,.7); padding: 6px 10px; z-index: 2; white-space: pre-line; }
+  canvas { display: block; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "/node_modules/three/build/three.module.js",
+    "three/addons/": "/node_modules/three/examples/jsm/",
+    "@sparkjsdev/spark": "/node_modules/@sparkjsdev/spark/dist/spark.module.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="status">loading…</div>
+<script type="module">
+import * as THREE from "three";
+import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
+
+// World-viewer Spike 1 (task 1): the recorded marble-1.1 kitchen world (Spike 1.1) in a bare page.
+// Pose numbers are poseFromService's output for that world: upFix [1,0,0,0], scale = metric_scale_factor,
+// floorY = -ground_plane_offset, spawn at the origin 1.6 m above the floor looking the way the photo looks.
+// Views: ?view=spawn (default) | back (pulled back and up) | nofix (no orientation fix, for comparison)
+// LOD:   ?lod=100k (default) | 500k. Recolor probe: ?tint=1 sets mesh.recolor/opacity.
+const q = new URLSearchParams(location.search);
+const view = q.get("view") ?? "spawn";
+const lod = q.get("lod") === "500k" ? "500k" : "100k";
+const status = document.getElementById("status");
+const say = (lines) => { status.textContent = lines.join("\n"); };
+
+const SCALE = 1.438571, FLOOR_Y = -1.414676;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.01, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+scene.add(new SparkRenderer({ renderer }));
+
+const t0 = performance.now();
+const mesh = new SplatMesh({ url: `/assets/splat-${lod}.spz` });
+if (view !== "nofix") {
+  mesh.quaternion.set(1, 0, 0, 0); // orientation.upFix, three's (x,y,z,w) order
+  mesh.scale.setScalar(SCALE);     // orientation.scale
+}
+if (q.get("tint") === "1") { mesh.recolor.setRGB(0.7, 0.8, 1.0); mesh.opacity = 0.85; }
+scene.add(mesh);
+
+// A floor line at floorY so the screenshots show where the pose thinks the floor is.
+const grid = new THREE.GridHelper(10, 10, 0xffcc33, 0x555555);
+grid.position.y = FLOOR_Y;
+scene.add(grid);
+
+if (view === "back") { camera.position.set(0, FLOOR_Y + 3.2, 5.5); camera.lookAt(0, FLOOR_Y + 1.2, 0); }
+else { camera.position.set(0, FLOOR_Y + 1.6, 0); camera.lookAt(0, FLOOR_Y + 1.6, -1); }
+
+let frames = 0, fps = "…", load = "loading";
+const paint = () => say([`view=${view} lod=${lod}`, load, `fps=${fps}`]);
+mesh.initialized.then(() => {
+  let info = "bounds n/a";
+  try {
+    const box = mesh.getBoundingBox(true);
+    const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+    info = `object bounds c=${c.toArray().map((n) => n.toFixed(2))} size=${s.toArray().map((n) => n.toFixed(2))}`;
+    if (view === "fit") {
+      const wc = c.clone().applyMatrix4(new THREE.Matrix4().compose(mesh.position, mesh.quaternion, mesh.scale));
+      const r = Math.max(s.x, s.y, s.z) * SCALE;
+      camera.position.set(wc.x, wc.y + r * 0.4, wc.z + r * 1.2);
+      camera.lookAt(wc);
+    }
+  } catch (e) { info = `bounds failed: ${e?.message ?? e}`; }
+  load = `LOADED in ${Math.round(performance.now() - t0)} ms\n${info}`;
+  paint();
+}).catch((e) => { load = `LOAD FAILED: ${e?.message ?? e}`; paint(); });
+
+let last = performance.now();
+renderer.setAnimationLoop(() => {
+  renderer.render(scene, camera);
+  frames += 1;
+  const now = performance.now();
+  if (now - last >= 1000) { fps = String(frames); frames = 0; last = now; paint(); }
+});
+addEventListener("error", (e) => { load = `ERROR: ${e.message}`; paint(); });
+addEventListener("unhandledrejection", (e) => { load = `REJECTED: ${e.reason?.message ?? e.reason}`; paint(); });
+</script>
+</body>
+</html>
