@@ -37,16 +37,19 @@ describe("buildNarrationPrompt (ghost-engine 2.15)", () => {
 
   it("words each Directive for the model: the band, the way, the memory's kind", () => {
     const hint = buildNarrationPrompt({ ...base, directive: { kind: "hint", bearing: "behind-left", band: "far" } })!;
-    expect(hint.system).toContain("which way to go: behind you and to the left.");
-    expect(hint.system).toContain("is far");
+    expect(hint.system).toContain('Say the way in exactly these words: "behind you and to the left".');
+    expect(hint.system).toContain('Say the distance in exactly this word: "far".');
     expect(buildNarrationPrompt({ ...base, directive: { kind: "tease", band: "very close" } })!.system).toContain("is very close to it");
     expect(buildNarrationPrompt({ ...base, directive: { kind: "reveal", anchorId: "a2" }, seed: { anchorId: "a2", archetype: "promise", hook: "a promise to leave the lamp lit" } })!.system).toMatch(/memory of a promise.*a promise to leave the lamp lit/s);
   });
 
   it("tells the model to keep a hint to the exact words of the way, from the visitor's point of view, with no landmarks of its own", () => {
     const text = buildNarrationPrompt({ ...base, directive: { kind: "hint", bearing: "left", band: "nearer" } })!.system;
-    expect(text).toContain("which way to go: to your left.");
-    expect(text).toContain("in exactly these words and add nothing else about where things are");
+    expect(text).toContain('Say the way in exactly these words: "to your left".');
+    expect(text).toContain('Say the distance in exactly this word: "nearer".');
+    expect(text).toContain('Give no other distance: never "a few steps"');
+    expect(text).toContain("add nothing else about where things are");
+    expect(buildNarrationPrompt({ ...base, directive: { kind: "hint", bearing: "left", band: "very close" } })!.system).toContain('Say the distance in exactly these words: "very close".');
     expect(text).toContain("no objects of the room as landmarks");
     expect(text).toContain('no "behind me"');
     expect(text).toContain('say "you" and "your", never "me" or "my"');
@@ -310,11 +313,23 @@ describe("the hint check: the engine's way and distance, in its own words", () =
     expect(wayIsRight("Ahead and to the right, my dear, not far at all. What you are looking for is nearer than you think.", ahead)).toBe(true);
     expect(wayIsRight("Go ahead and to your right, not far. What you are looking for is nearer than you think.", ahead)).toBe(true);
     const behind = way("behind-left", "very close");
-    expect(wayIsRight("The way is behind you and to the left, and what you seek is very close. Turn your steps that way and it will be within reach.", behind)).toBe(true);
+    expect(wayIsRight("The way is behind you and to the left, and what you seek is very close. Turn your steps that way.", behind)).toBe(true);
+    // a distance of the model's own beside the band (the second play-through, 2026-11-16)
+    expect(wayIsRight("The way is behind you and to the left, and what you seek is very close. Turn your steps that way and it will be within reach.", behind)).toBe(false);
     // scrambled: the words of the way are split and turned round
     expect(wayIsRight("Oh, dear, of course I will help you. Turn to your left, then go behind you, and what you are looking for is just a step away.", behind)).toBe(false);
     // "behind me" is not "behind you"
     expect(wayIsRight("Of course I will help you. Go behind me and to the left, and look very close.", behind)).toBe(false);
+  });
+
+  it("refuses a distance of the model's own beside the band, from the second play-through's real rejected hints, and lets flavour through", () => {
+    const close = way("ahead", "very close");
+    for (const extra of ["only a few steps away", "a single step past where your feet are", "closer than you think", "a short way off", "just there", "near the window", "close by the window", "straight on"]) {
+      expect(wayIsRight(`Go ahead of you. It is very close, ${extra}.`, close), extra).toBe(false);
+    }
+    for (const flavour of ["close your eyes", "your footsteps are careful", "the door is closed", "not far"]) {
+      expect(wayIsRight(`Go ahead of you. It is very close, and ${flavour}.`, close), flavour).toBe(true);
+    }
   });
 
   it("takes the engine's phrase for each of the eight ways and each distance, and nothing else", () => {

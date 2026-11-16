@@ -33,6 +33,7 @@ worldlabs-credentials*
 /.ghost-spike/
 # The narrator play-through's replies, ledger and Durable Object state (tools/ghost-playthrough.mjs, docs/spikes/4.2.md). Local only.
 /.ghost-playthrough/
+/.ghost-playthrough-*/
 
 # Dev MCP ledger and recorded raw responses with keys
 tools/worldlabs-mcp/.ledger.json

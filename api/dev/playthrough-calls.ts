@@ -87,7 +87,9 @@ export function createCallLog(options: { now?: () => number; max?: number; textM
   const now = options.now ?? Date.now;
   const max = options.max ?? CALLS_MAX;
   const textMax = options.textMax ?? REPLY_TEXT_MAX;
-  const epoch = options.epoch ?? crypto.randomUUID();
+  // Made on first use, not here: a Worker may not make random values in its global scope, where the log is created.
+  let epochValue = options.epoch;
+  const epochOf = (): string => (epochValue ??= crypto.randomUUID());
   const calls: RecordedCall[] = [];
   let total = 0;
 
@@ -102,7 +104,7 @@ export function createCallLog(options: { now?: () => number; max?: number; textM
     const kept = calls.filter((c) => c.n > after);
     const oldest = calls[0]?.n ?? total + 1;
     const lost = Math.max(0, oldest - 1 - after);
-    return { epoch, next: total, lost, calls: kept.map((c) => ({ ...c })) };
+    return { epoch: epochOf(), next: total, lost, calls: kept.map((c) => ({ ...c })) };
   };
 
   const wrap = <T extends AiLike>(ai: T): T =>
@@ -140,7 +142,7 @@ export function createCallLog(options: { now?: () => number; max?: number; textM
       },
     });
 
-  return { epoch, record, since, wrap };
+  return { get epoch() { return epochOf(); }, record, since, wrap };
 }
 
 /**

@@ -602,7 +602,7 @@ test('Wander: Find plays the film from the start with the Whisper line and a Sto
   assert.equal(v.__playing, true);
   assert.equal(v.currentTime, 0, 'it starts from the beginning');
   assert.equal($('#ft-wander-whisper').hidden, false);
-  assert.equal($('#ft-wander-whisper').textContent, 'Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks.');
+  assert.equal($('#ft-wander-whisper').textContent, 'Here. I have kept this a long time, and shown it to no one. Hold it gently. I have kept you a little while too, and I find I like it.');
   assert.equal($('#ft-wander-stop').hidden, false, 'a Stop shows while a scene over 5 seconds plays');
   assert.equal($('#ft-wander-card').hidden, true, 'the card waits for the film');
   v.dispatchEvent(new window.Event('ended')); await tick(5);
@@ -708,7 +708,7 @@ test('20.8 a picture the browser blocked has no moment either: the line shows at
   });
 });
 
-test('21 the endings have their lines at their moments: the house at 1.2 s, the dawn at 2.9 s, and Skip drops one that is waiting', { skip }, async () => {
+test('21 the endings have their lines at their moments: the house at 1.2 s, the dawn at 5.5 s, and Skip drops one that is waiting', { skip }, async () => {
   open();
   await load(); await tick(5);
   const endLine = () => $('#ft-end-line');
@@ -722,10 +722,10 @@ test('21 the endings have their lines at their moments: the house at 1.2 s, the 
     assert.equal(endLine().dataset.speaker, 'whisper');
     click(btn('Detectives win')); await flush();
     assert.equal(endLine().hidden, true, 'a new ending clears the old line');
-    await go(2899);
-    assert.equal(endLine().hidden, true, 'the dawn line is not yet there at 2.899 s');
+    await go(5499);
+    assert.equal(endLine().hidden, true, 'the dawn line is not yet there at 5.499 s');
     await go(1);
-    assert.match(endLine().textContent, /^The house is quiet, and I note/);
+    assert.match(endLine().textContent, /^Morning has arrived/);
     assert.equal(endLine().dataset.speaker, 'keeper');
     click(btn('The house wins')); await flush(); await go(500);
     click(btn('Skip')); await flush(); await go(SETTLE);

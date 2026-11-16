@@ -138,6 +138,7 @@ describe("the scripted lines are in the horror manner (2026-11-16)", () => {
         const text = narrate({ directive, voice, brief: BRIEF, seeds: [], r: [(i + 0.5) / 5, (i + 0.5) / 5] });
         const r = validateGhostReply(text, replyChecksFor(directive));
         expect(r.ok, `${voice} ${kind} ${i}: ${text} (${r.ok ? "" : r.reason})`).toBe(true);
+        expect(text, "a line starts with a capital, not with a filled-in word").toMatch(/^[A-Z]/u);
         if (kind !== "hint" && kind !== "tease") break;
       }
     }

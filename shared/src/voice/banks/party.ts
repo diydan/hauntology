@@ -47,8 +47,8 @@ export const PARTY_WHISPER_BANK: readonly BankLine[] = [
   { id: "end.haunting.soft.3", kind: "end.haunting", text: "I am still here, and so are you. That seems a fine place to leave it. The door is just there, if you want it.", spoken: true },
   { id: "end.haunting.soft.4", kind: "end.haunting", text: "The quiet is mine this time. I would much sooner be found. Next time, perhaps. I do like a next time.", spoken: true },
   { id: "end.haunting.soft.5", kind: "end.haunting", text: "Nobody found me, and I find I am not sorry. I had hoped to be found, and I had also hoped not to be. There is no tea, but there is me, and I am told that counts.", spoken: true },
-  { id: "scene.hand-door.soft.1", kind: "scene.hand-door", text: "That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it.", spoken: true },
-  { id: "scene.bed.soft.1", kind: "scene.bed", text: "I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit.", spoken: true },
+  { id: "scene.hand-door.soft.1", kind: "scene.hand-door", text: "That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait.", spoken: true },
+  { id: "scene.bed.soft.1", kind: "scene.bed", text: "I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway.", spoken: true },
   { id: "scene.lights-out.soft.1", kind: "scene.lights-out", text: "One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely.", spoken: true },
   { id: "midnight.soft.1", kind: "midnight", text: "The day lets go of the house, as it always does at this hour. It is my favourite. Thank you for keeping it with me.", spoken: true },
   { id: "midnight.soft.2", kind: "midnight", text: "Midnight. The house is very sure of itself now. So am I, a little. Stay, and let it have its say.", spoken: true },
@@ -161,5 +161,5 @@ export const PARTY_KEEPER_BANK: readonly BankLine[] = [
   { id: "hand-over.dry.2", kind: "hand-over", text: "A new custodian of the house is named. I am not offended, being only the caretaker. Do look after the keys, {nick}.", spoken: false },
   { id: "hand-over.dry.3", kind: "hand-over", text: "The house has a new custodian. I find the keys heavy and the doors many, myself. Good luck to {nick}.", spoken: false },
   { id: "hand-over.dry.4", kind: "hand-over", text: "The keys pass along, and I note that nothing in the house is different except the owner of the ring. That is {nick}.", spoken: false },
-  { id: "scene.dawn-door.dry.1", kind: "scene.dawn-door", text: "The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out.", spoken: true },
+  { id: "scene.dawn-door.dry.1", kind: "scene.dawn-door", text: "Morning has arrived, a little late and quite sure of itself. I shall open the door now. Mind the step.", spoken: true },
 ];

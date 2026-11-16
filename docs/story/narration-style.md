@@ -48,13 +48,13 @@ The seven were rendered in Inworld (Pippa with `[whisper]`, speaking rate 0.9, t
 
 | Id | Voice | Scene | Line |
 |---|---|---|---|
-| `scene.hand-door.soft.1` | Whisper | Hand at the door | That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it. |
-| `scene.bed.soft.1` | Whisper | The empty bed | I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit. |
+| `scene.hand-door.soft.1` | Whisper | Hand at the door | That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait. |
+| `scene.bed.soft.1` | Whisper | The empty bed | I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway. |
 | `scene.lights-out.soft.1` | Whisper | The lights go out (the house wins) | One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely. |
-| `scene.dawn-door.dry.1` | Keeper | Dawn at the door (detectives win) | The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out. |
+| `scene.dawn-door.dry.1` | Keeper | Dawn at the door (detectives win) | Morning has arrived, a little late and quite sure of itself. I shall open the door now. Mind the step. |
 | `wander.chimes.soft.1` | Whisper | Wander, a sound memory | Do you hear that? A row of small bells, and not one in tune. I would not change a single one. |
-| `wander.chair.soft.1` | Whisper | Wander, a person memory | The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I keep the kettle patient, in case of a quick return. |
-| `wander.letter.soft.1` | Whisper | Wander, a promise memory (clip held back) | A letter, folded in three. A pair of gloves, set down just so. The breeze lifts one corner and puts it back, very politely. It is not for me to read. |
+| `wander.chair.soft.1` | Whisper | Wander, a person memory | The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I shall wait. |
+| `wander.letter.soft.1` | Whisper | Wander, a promise memory (clip held back) | A letter, folded in three. A pair of gloves, set down just so. It is not for me to read. |
 
 The Wander lines set a mood and never say what the player's memory is. The card after the scene does that.
 

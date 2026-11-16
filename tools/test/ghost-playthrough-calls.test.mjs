@@ -134,6 +134,16 @@ test('since() takes only calls after the number given, treats anything else as 0
   assert.equal(log.since(0).calls[0].text, 'hello', 'a view is a copy');
   assert.notEqual(calls.createCallLog().epoch, calls.createCallLog().epoch);
   assert.match(calls.createCallLog().epoch, /^[0-9a-f-]{36}$/);
+  // A Worker may not make random values in its global scope, where the Worker makes its log: creating one must not call randomUUID.
+  const real = globalThis.crypto.randomUUID;
+  let made = 0;
+  globalThis.crypto.randomUUID = () => { made += 1; return real.call(globalThis.crypto); };
+  try {
+    const lazy = calls.createCallLog();
+    assert.equal(made, 0, 'no random value at creation');
+    assert.equal(lazy.epoch, lazy.since(0).epoch, 'one epoch for the life of the log');
+    assert.equal(made, 1);
+  } finally { globalThis.crypto.randomUUID = real; }
 });
 
 test('recordEnv: no AI binding (the rehearsal) means the same environment and nothing recorded; with one, a derived environment with the recorded binding, built once, the original untouched', async () => {
