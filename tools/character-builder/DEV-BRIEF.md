@@ -128,7 +128,7 @@ Props live in a separate group so a taller or shorter character does not lift th
 ## 9. Licence and what must not be redistributed
 
 - **ModularAnimeCharacter pack.** The supplier says commercial use is allowed. Keep the licence on file. The raw pack and the built `mesh/`, `tex/` and `thumb/` files are the pack's art; do not publish them in an open repo or a public download. Credit as the licence requires.
-- **Mixamo clips.** Not redistributable as files. They are not in this package, not in the repo, and are git-ignored. To get the clips, download from Mixamo (FBX binary, without skin, 30 fps): `Singing`, `Rapping`, `Guitar Playing`, `Guitar Playing (1)`, `Piano Playing (seated)`, `Playing Drums (seated)`, then run `retarget_cc.mjs`. Whoever owns the Mixamo account can also hand over the built `clips_M.glb` and `clips_F.glb` for internal use.
+- **Mixamo clips.** Not redistributable as files. They are not in this package, not in the repo, and are git-ignored. To get the clips, download from Mixamo (FBX binary, without skin, 30 fps): `Idle`, `Breathing Idle`, `Happy Idle`, `Weight Shift`, `Bored`, `Thinking`, `Nervously Look Around`, `Looking Behind`, `Scared`, `Terrified`, `Waving`, `Pointing Gesture`, `Pick Up Item` (kept in `tools/animations/`, git-ignored), then run `retarget_cc.mjs`. Whoever owns the Mixamo account can also hand over the built `clips_M.glb` and `clips_F.glb` for internal use.
 - three.js (MIT). Fonts Bungee and Barlow Semi Condensed (SIL Open Font Licence) are loaded from Google Fonts.
 
 ## 10. Suggested order of work

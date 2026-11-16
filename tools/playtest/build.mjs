@@ -1,7 +1,7 @@
 // Copies the public files into dist/ for deployment. Server code (src/), tests and docs stay out.
 // Usage: node build.mjs        (PLAYTEST_DIST=/some/folder node build.mjs builds there instead, which the tests use so they do not rebuild dist/ under each other)
 import { cpSync, rmSync, mkdirSync, readdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SHOT_LINE, WANDER, WANDER_SCENES } from './js/scenes.js';
 import { LIPSYNC } from './js/lipsync-data.js';
@@ -17,6 +17,11 @@ cpSync(resolve(root, 'css'), resolve(dist, 'css'), { recursive: true });
 cpSync(resolve(root, 'js'), resolve(dist, 'js'), { recursive: true });
 cpSync(resolve(root, 'art'), resolve(dist, 'art'), { recursive: true });
 cpSync(resolve(root, 'models'), resolve(dist, 'models'), { recursive: true });
+// The print-kit viewer (tools/prop-mockups/viewer.html) at /print/: it finds the STL files in stl/ and reference/ next to it.
+mkdirSync(resolve(dist, 'print'), { recursive: true });
+cpSync(resolve(root, '..', 'prop-mockups', 'viewer.html'), resolve(dist, 'print', 'index.html'));
+cpSync(resolve(root, '..', '..', 'print', 'stl'), resolve(dist, 'print', 'stl'), { recursive: true });
+cpSync(resolve(root, '..', '..', 'print', 'reference'), resolve(dist, 'print', 'reference'), { recursive: true });
 // Public-domain footage (see media/PROVENANCE.md): only the clip files go out, not the provenance note.
 mkdirSync(resolve(dist, 'media'), { recursive: true });
 for (const f of readdirSync(resolve(root, 'media')).filter((n) => /\.(mp4|webm|jpg)$/.test(n))) cpSync(resolve(root, 'media', f), resolve(dist, 'media', f));
@@ -68,6 +73,32 @@ if (existsSync(resolve(props, 'index.html'))) {
       mkdirSync(resolve(dist, 'props', 'reference'), { recursive: true });
       for (const f of readdirSync(refSrc).filter((n) => n.endsWith('.stl'))) cpSync(resolve(refSrc, f), resolve(dist, 'props', 'reference', f));
     }
+  }
+}
+// Character Creator (tools/character-builder/character-builder/): /character-builder/.
+// Copy the static viewer, audio, and local git-ignored pack assets when present, never Mixamo animation GLBs (cannot be redistributed)
+// or personal selfie-test photos under assets/faces/ (while keeping assets/mediapipe/selfie_multiclass_256x256.tflite).
+const cbSrc = resolve(repo, 'tools', 'character-builder', 'character-builder');
+if (existsSync(resolve(cbSrc, 'index.html'))) {
+  const cbDest = resolve(dist, 'character-builder');
+  mkdirSync(cbDest, { recursive: true });
+  cpSync(resolve(cbSrc, 'index.html'), resolve(cbDest, 'index.html'));
+  if (existsSync(resolve(cbSrc, 'media'))) cpSync(resolve(cbSrc, 'media'), resolve(cbDest, 'media'), { recursive: true });
+  const cbAssetsEnv = process.env.CHARACTER_BUILDER_ASSETS;
+  const cbAssets = cbAssetsEnv === 'none' ? '' : cbAssetsEnv ? resolve(cbAssetsEnv) : resolve(cbSrc, 'assets');
+  if (cbAssets && existsSync(cbAssets)) {
+    cpSync(cbAssets, resolve(cbDest, 'assets'), {
+      recursive: true,
+      filter: (src) => {
+        const rel = relative(cbAssets, src).replaceAll('\\', '/');
+        if (!rel) return true;
+        const name = basename(rel);
+        if (name === '.DS_Store' || name === '.local') return false;
+        if (/^clips_.*\.glb$/i.test(name)) return false;
+        if (/^faces\/selfie/i.test(rel)) return false;
+        return true;
+      },
+    });
   }
 }
 writeFileSync(resolve(dist, 'robots.txt'), 'User-agent: *\nDisallow: /\n');

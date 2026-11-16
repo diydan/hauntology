@@ -9,9 +9,9 @@
   var n=0,busy=false,timer=0;
   var MAX=6;
   var words=[
-    ['A creak','The floorboards creak, somewhere below.'],
-    ['Wind','A wind passes through the house.'],
-    ['A rumble','The whole house rumbles.']
+    ['A creak','The floorboards creak, somewhere below. Nobody mentions it.'],
+    ['Wind','A wind passes through the house, though every window is shut.'],
+    ['A rumble','The whole house rumbles. Then it is very quiet.']
   ];
   function level(k){return k<=2?1:k<=4?2:3;}
   var BASE='#171c20',MID='#3a4248',PALE='#aeb4b8',DARK='#0a0c0e';

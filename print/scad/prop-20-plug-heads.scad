@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Prop #20: Cut Wires Board (5 Resistor-Cavity Plug Heads & Caps)
-// Colour: Antique Brass (#d4a84b); the wire colours go on with the colour-disc stickers
+// Colour: Tarnished Silver (#c9c9d4)
 // Size: 116 W x 44 D x 22 H mm (5 plug barrels + 5 snap-in resistor caps)
 // Mechanism: Each plug head has a 5.0 x 14.5 mm internal cavity for a 1/4W axial resistor (1k, 2.2k, 4.7k, 10k, 22k)
 // Print orientation: Flat on grip flange (Z = 0), zero supports.
@@ -71,4 +71,4 @@ module prop_20_plug_heads() {
   }
 }
 
-color(col_lantern) prop_20_plug_heads();
+color(col_silver) prop_20_plug_heads();
