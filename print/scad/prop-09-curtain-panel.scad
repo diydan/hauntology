@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Prop #9: Curtain Reveal (Pleated Curtain Panel)
-// Colour: Alarm (#d4604a, brick red; print 2x for left and right panels)
+// Colour: Dark Iron (#262229); print 2x for left and right panels
 // Size: 52 W x 74 H x 3.6 D mm + top rail slider tabs (total 81.3 mm H — fits stage viewport Y = -47..+35 cleanly)
 // Mechanism: Top slider tabs include a 1.8 mm guide fin that rides inside the 2.2 mm twin-track rail of
 //            prop-09-rail-and-pulley.stl + horizontal X cord eye holes for the counter-wound pulley loop
@@ -69,4 +69,4 @@ module prop_09_curtain_panel() {
   }
 }
 
-color(col_alarm) prop_09_curtain_panel();
+color(col_ink) prop_09_curtain_panel();
