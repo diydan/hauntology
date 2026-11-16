@@ -1,0 +1,66 @@
+{
+  "operation_id": "<operation_id>",
+  "created_at": "2026-11-16T21:22:13Z",
+  "updated_at": "2026-11-16T21:22:38Z",
+  "expires_at": "2026-11-17T00:22:13Z",
+  "done": true,
+  "error": null,
+  "metadata": {
+    "progress": {
+      "status": "SUCCEEDED",
+      "description": "World generation completed successfully"
+    },
+    "world_id": "<world_id>",
+    "operation_type": "world_generation",
+    "public_model_name": "marble-1.0-draft"
+  },
+  "response": {
+    "world_id": "<world_id>",
+    "display_name": "",
+    "tags": null,
+    "assets": {
+      "mesh": {
+        "collider_mesh_url": "<url>",
+        "hq_mesh_url": null,
+        "full_res_mesh_url": null
+      },
+      "imagery": {
+        "pano_url": null
+      },
+      "splats": {
+        "spz_urls": {
+          "500k": "<url>",
+          "100k": "<url>",
+          "full_res": "<url>"
+        },
+        "semantics_metadata": null
+      },
+      "thumbnail_url": "<url>",
+      "caption": "The scene is a cozy and inviting kitchen, depicted in a realistic style with a warm, rustic tone that evokes a sense of home and comfort. The entire space exudes a well-curated aesthetic, blending modern appliances with traditional wooden elements. To the left, a large window allows natural light to flood the kitchen, highlighting the smooth, light-colored wooden floor that extends throughout the room, creating an airy feel. Opposite the main cooking area, a small breakfast nook with a compact table and chairs offers a casual dining spot, perhaps adorned with a simple vase of fresh flowers. Further into the room, past the visible refrigerator, a pantry area with custom shelving holds an array of preserved goods and kitchen essentials, organized neatly. A back door leads to a small patio or garden, offering a glimpse of greenery and fresh air, extending the natural feel of the interior. The walls are painted in a soft, neutral shade, complementing the wood tones and creating a cohesive and tranquil environment. Overhead, additional recessed lighting in the ceiling provides ample illumination for evening cooking and dining. The wooden floor continues into adjacent rooms, suggesting an open-plan layout or consistent flooring throughout the living space. The 360 scene is faultless."
+    },
+    "created_at": null,
+    "updated_at": null,
+    "permission": {
+      "public": false,
+      "allowed_readers": [],
+      "allowed_writers": [],
+      "allow_id_access": false
+    },
+    "world_prompt": null,
+    "world_marble_url": "<world_marble_url>",
+    "model": null
+  },
+  "cost": {
+    "total_credits": 230,
+    "line_items": [
+      {
+        "name": "Pano generation (image, non-pano)",
+        "credits": 80
+      },
+      {
+        "name": "Draft world generation",
+        "credits": 150
+      }
+    ]
+  }
+}

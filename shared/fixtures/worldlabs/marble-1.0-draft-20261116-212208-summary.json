@@ -1,0 +1,141 @@
+{
+  "model": "marble-1.0-draft",
+  "wallClockSeconds": 39,
+  "timeline": [
+    {
+      "seconds": 18,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 29,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 39,
+      "status": "SUCCEEDED",
+      "description": "World generation completed successfully",
+      "done": true
+    }
+  ],
+  "cost": {
+    "total_credits": 230,
+    "line_items": [
+      {
+        "name": "Pano generation (image, non-pano)",
+        "credits": 80
+      },
+      {
+        "name": "Draft world generation",
+        "credits": 150
+      }
+    ]
+  },
+  "error": null,
+  "operationExpiresInMinutes": 180,
+  "pictureBytes": 23215,
+  "pictureExtension": "jpeg",
+  "assets": {
+    "spz_500k": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "spz",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "application/octet-stream",
+        "contentLength": "5422418",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "spz_100k": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "spz",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "application/octet-stream",
+        "contentLength": "1173636",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "spz_full_res": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "spz",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "application/octet-stream",
+        "contentLength": "24894137",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "collider_mesh": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "glb",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "model/gltf-binary",
+        "contentLength": "3733420",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "thumbnail": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "webp",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "image/webp",
+        "contentLength": "33532",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    }
+  },
+  "world": {
+    "idField": "world_id",
+    "assetKeys": {
+      "top": [
+        "mesh",
+        "imagery",
+        "splats",
+        "thumbnail_url",
+        "caption"
+      ],
+      "splats": [
+        "spz_urls",
+        "semantics_metadata"
+      ],
+      "mesh": [
+        "collider_mesh_url",
+        "hq_mesh_url",
+        "full_res_mesh_url"
+      ],
+      "imagery": [
+        "pano_url"
+      ]
+    },
+    "semantics": null,
+    "captionCharacters": 1298,
+    "model": null
+  },
+  "delete": {
+    "status": 200,
+    "assetStatusAfter": 200
+  },
+  "balanceBefore": 4600,
+  "balanceAfter": 4370
+}
