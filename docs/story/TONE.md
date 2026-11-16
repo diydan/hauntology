@@ -1,6 +1,6 @@
 # Tone: a second set of samples (DRAFT, 2026-11-16)
 
-Sits beside `narration-style.md` (the traits and seven rules) and `.kiro/steering/house-style.md` (the decision). Like them it names no maker and no work. It adds samples and a voice card. The ids are drafts (`tone.*`). Eight of the party lines are now in the bank and rendered; see "In the bank" below. The rest are in no bank.
+Sits beside `narration-style.md` (the traits and seven rules) and `.kiro/steering/house-style.md` (the decision). Like them it names no maker and no work. It adds samples and a voice card. The ids are drafts (`tone.*`). Ten of the party lines are now in the bank and rendered; see "In the bank" below. The rest are in no bank.
 
 ## Who gets which flavour
 
@@ -50,7 +50,7 @@ Style targets for the model's `reveal`, not fixed lines. Each says that a thing 
 
 ### A darker edge
 
-Darker means more shadow and more patience, never more fear. No gore, no death word, no jump. The first two name a house, so they are party lines only.
+Darker means more shadow and more patience, never more fear. No gore, no death word, no jump. The first two name a house, so they are party lines only. Both are now in the bank (see "In the bank"); the clock memory stays a model target.
 
 | Id | Speaker | Line |
 |---|---|---|
@@ -66,7 +66,7 @@ The prompt already carries the manner in `shared/src/ghost/style.ts` (`styleFor`
 
 ## In the bank (2026-11-16)
 
-Eight samples went into `party-lines.md` as new variants and are rendered in the Library (Whisper: Pippa, Keeper: Ronald; 8 clips, about $0.03). Where the bank wording differs from the sample above, the bank wording is the one in use. It was changed so no line repeats a joke already in its kind.
+Ten samples went into `party-lines.md` as new variants and are rendered in the Library (Whisper: Pippa, Keeper: Ronald; 10 clips, about $0.04). Where the bank wording differs from the sample above, the bank wording is the one in use. It was changed so no line repeats a joke already in its kind.
 
 | Sample | Bank id | Wording |
 |---|---|---|
@@ -78,8 +78,10 @@ Eight samples went into `party-lines.md` as new variants and are rendered in the
 | `tone.haunt-cold-spot.soft` | `haunt.cold-spot.soft.6` | as the sample |
 | `tone.poltergeist.soft` | `poltergeist.soft.6` | changed: ends "Do sit anywhere, {nick}." |
 | `tone.end-haunting.soft` | `end.haunting.soft.5` | changed: "I had hoped to be found, and I had also hoped not to be." |
+| `tone.dark.wall.soft` | `haunt.restless.soft.6` | as the sample. It fits a restless house: the walls listen and a corner moves |
+| `tone.dark.stairs.dry` | `turn-start.dry.8` | changed: opens "A warning, before your hour begins", counts nine and thirteen (not eleven) and ends "Do carry on, {nick}.", because `turn-start.dry.6` already has a staircase of eleven steps |
 
-Not put in the bank: the single-player samples (meet, ambient, hint: a hint line is rendered 24 times, one per way and distance), the memory targets (the model writes those) and the two darker house lines.
+Not put in the bank: the single-player samples (meet, ambient, hint: a hint line is rendered 24 times, one per way and distance), and the memory targets (the model writes those).
 
 ## Not done, and why
 

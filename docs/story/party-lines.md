@@ -39,6 +39,7 @@ How the lines are built:
 | `turn-start.dry.4` | The lamp passes along, as lamps do. I keep the keys and my opinions to myself. Carry on, {nick}. |
 | `turn-start.dry.5` | A fresh hour for a fresh mind, and the same old house. I wish you luck. I am not certain the house listens. |
 | `turn-start.dry.7` | Your hour begins. I have laid out the corridor, a lamp and a great many floorboards, in that order. Only the lamp is of any use. Off you go, {nick}. |
+| `turn-start.dry.8` | A warning, before your hour begins: the stairs are fond of counting. They reached nine yesterday and thirteen the day before, and nobody has had the heart to ask them why. Do carry on, {nick}. |
 
 ## Keeper: time-warning (spoken)
 
@@ -287,6 +288,7 @@ A Zone goes cold. A line never says which Zone unless it ends on `{zone}`, and n
 | `haunt.restless.soft.3` | I keep wandering from room to room, and I seem unable to stop. I may be somewhere new when you look. |
 | `haunt.restless.soft.4` | The house is restless, and so am I. A floorboard here, a door there. Forgive me. I mean nothing by it. |
 | `haunt.restless.soft.5` | I move, and the dust moves with me. I only want to rest, and I do not know how. Forgive me. |
+| `haunt.restless.soft.6` | The walls here lean in to listen, and nobody has ever told them to stop. I do not mind. Do watch the corner, though. It has been looking at your shoes. |
 
 ## Whisper: haunt.lull (spoken)
 
