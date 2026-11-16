@@ -17,18 +17,15 @@ ln -sf ../../../scratch/wl-1.1/spz_full_res.spz assets/splat-full.spz
 python3 -m http.server 8790 --directory .
 ```
 
-## Laptop
+## Laptop and phone
 
-Open each of these, wait for the AVG FPS line, note the number:
-
-- http://127.0.0.1:8790/index.html?view=spawn&lod=100k
-- http://127.0.0.1:8790/index.html?view=spawn&lod=150k
-- http://127.0.0.1:8790/index.html?view=spawn&lod=500k
-
-## Phone
-
-Same Wi-Fi: open `http://<this machine's LAN address>:8790/index.html?view=spawn&lod=100k`
-(and 150k, 500k). The Python server binds all interfaces by default.
+Open http://127.0.0.1:8790/index.html?view=spawn&lod=100k on the laptop, or
+`http://<this machine's LAN address>:8790/index.html?view=spawn&lod=100k` on a phone
+on the same Wi-Fi. Use the page's **LOD measurement menu** to switch levels without
+editing the address: it groups the remaining phone measurements (100k, Full) and the
+laptop measurements (100k, 150k, 500k, Full), preserves `world=sharp` or `world=orig`,
+and highlights the current level. Wait for the AVG FPS line on each page and note the
+number. The Python server binds all interfaces by default.
 
 ## Then
 

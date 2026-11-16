@@ -6,6 +6,17 @@
 <style>
   body { margin: 0; background: #111; color: #eee; font: 14px/1.4 ui-monospace, monospace; }
   #status { position: fixed; left: 8px; top: 8px; background: rgba(0,0,0,.7); padding: 6px 10px; z-index: 2; white-space: pre-line; }
+  #menu { position: fixed; right: 8px; top: 8px; z-index: 3; width: min(92vw, 350px); background: rgba(0,0,0,.82); border: 1px solid #555; padding: 6px 10px 10px; }
+  #menu summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 700; }
+  .menu-group { margin-top: 8px; }
+  .menu-group span { display: block; margin-bottom: 6px; color: #bbb; }
+  .menu-links { display: flex; flex-wrap: wrap; gap: 6px; }
+  .menu-links a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border: 1px solid #777; color: #eee; text-decoration: none; }
+  .menu-links a[aria-current="page"] { background: #eee; color: #111; }
+  @media (max-width: 700px) {
+    #status { max-width: calc(100vw - 16px); box-sizing: border-box; }
+    #menu { top: auto; bottom: 8px; left: 8px; right: 8px; width: auto; }
+  }
   canvas { display: block; }
 </style>
 <script type="importmap">
@@ -20,6 +31,25 @@
 </head>
 <body>
 <div id="status">loading…</div>
+<details id="menu" open>
+  <summary>LOD measurement menu</summary>
+  <div class="menu-group">
+    <span>Phone still to measure</span>
+    <div class="menu-links">
+      <a data-lod-link="100k" href="?view=spawn&amp;lod=100k">100k</a>
+      <a data-lod-link="full" href="?view=spawn&amp;lod=full">Full</a>
+    </div>
+  </div>
+  <div class="menu-group">
+    <span>Laptop to measure</span>
+    <div class="menu-links">
+      <a data-lod-link="100k" href="?view=spawn&amp;lod=100k">100k</a>
+      <a data-lod-link="150k" href="?view=spawn&amp;lod=150k">150k</a>
+      <a data-lod-link="500k" href="?view=spawn&amp;lod=500k">500k</a>
+      <a data-lod-link="full" href="?view=spawn&amp;lod=full">Full</a>
+    </div>
+  </div>
+</details>
 <script type="module">
 import * as THREE from "three";
 import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
@@ -28,7 +58,7 @@ import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
 // Pose numbers are poseFromService's output for that world: upFix [1,0,0,0], scale = metric_scale_factor,
 // floorY = -ground_plane_offset, spawn at the origin 1.6 m above the floor looking the way the photo looks.
 // Views: ?view=spawn (default) | back (pulled back and up) | nofix (no orientation fix, for comparison)
-// LOD:   ?lod=100k (default) | 500k. Recolor probe: ?tint=1 sets mesh.recolor/opacity.
+// LOD:   ?lod=100k (default) | 150k | 500k | full. Recolor probe: ?tint=1 sets mesh.recolor/opacity.
 const q = new URLSearchParams(location.search);
 const view = q.get("view") ?? "spawn";
 const lod = ["150k", "500k", "full"].includes(q.get("lod")) ? q.get("lod") : "100k";
@@ -39,6 +69,16 @@ const say = (lines) => { status.textContent = lines.join("\n"); };
 const POSES = { orig: { scale: 1.438571, ground: 1.414676 }, sharp: { scale: 1.091861, ground: 1.3802699 } };
 const worldName = q.get("world") === "sharp" ? "sharp" : "orig";
 const SCALE = POSES[worldName].scale, FLOOR_Y = -POSES[worldName].ground;
+
+// Keep the selected world and probes while a measurement link changes only the LOD.
+for (const link of document.querySelectorAll("[data-lod-link]")) {
+  const params = new URLSearchParams(location.search);
+  params.set("view", "spawn");
+  params.set("lod", link.dataset.lodLink);
+  link.href = `${location.pathname}?${params}`;
+  if (link.dataset.lodLink === lod) link.setAttribute("aria-current", "page");
+}
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
 const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.01, 1000);
