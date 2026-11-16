@@ -25,16 +25,23 @@ module prop_03_max_tab() {
         }
       }
 
-      // 2. Detent Key Tongue (r = 78.8..83.8, Z_plate = 15.4..26.0, width 3.8 mm fits 4.4 mm slot with 0.3 mm clr)
-      translate([6.3, 0, 14.2])
+      // 2. Detent Key Tongue (r = 78.8..83.8, Z_plate = 15.4..26.0, width 3.8 mm + twin 0.28 mm crush ribs for snug retention in 4.4 mm slot!)
+      translate([6.3, 0, 14.2]) {
         chamfer_box(10.6, 3.8, 5.0, r = 0.6, ch_bot = 0, ch_top = 0.4);
+        for (sy = [-1, 1]) {
+          hull() {
+            translate([0, sy * 1.9, 1.8]) cylinder(h = 2.2, d = 0.56);
+            translate([0, sy * 1.6, 4.6]) cylinder(h = 0.2, d = 0.4);
+          }
+        }
+      }
 
-      // 3. Raised Front Gothic Dagger Pointer Bridge (r = 73.2..83.8, Z_plate = 31.0..35.2 -> 0.4 mm clear above bezel top 30.6!)
+      // 3. Raised Front Gothic Dagger Pointer Bridge (r = 73.2..83.8, Z_plate = 31.0..35.2 -> 0.4 mm clear above bezel top 30.6, >= 0.9 mm sturdy tip!)
       translate([18.7, 0, 14.2])
       hull() {
         chamfer_box(4.2, 14.0, 1.0, r = 1.0, ch_bot = 0, ch_top = 0);
-        translate([0, 0.8, 10.6])
-          chamfer_box(4.2, 2.0, 0.4, r = 0.4, ch_bot = 0, ch_top = 0);
+        translate([0, 0.8, 10.2])
+          chamfer_box(4.2, 2.2, 0.9, r = 0.4, ch_bot = 0, ch_top = 0);
       }
     }
 

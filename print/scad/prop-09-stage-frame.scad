@@ -50,9 +50,9 @@ module prop_09_stage_frame() {
         }
       }
 
-      // 3. Stepped theatre stage apron at bottom (Y = -65..-51) with miniature crooked gothic footlights
+      // 3. Stepped theatre stage apron at bottom (Y = -65..-51) with miniature crooked gothic footlights (<= 173 mm width)
       translate([0, -stage_h / 2 + 7.0, 0])
-        chamfer_box(stage_w + 5.0, 14.0, stage_d + 2.4, r = 2.6, ch_bot = 0.8, ch_top = 0.8);
+        chamfer_box(stage_w + 3.0, 14.0, stage_d + 2.4, r = 3.2, ch_bot = 0.8, ch_top = 0.8);
       for (fx = [-44, -22, 0, 22, 44]) {
         translate([fx, -stage_h / 2 + 4.5, stage_d - 1.0])
           hull() {
@@ -61,7 +61,7 @@ module prop_09_stage_frame() {
           }
       }
       translate([0, stage_h / 2 - 5.0, 0])
-        chamfer_box(stage_w + 5.0, 10.0, stage_d + 2.4, r = 2.6, ch_bot = 0.8, ch_top = 0.8);
+        chamfer_box(stage_w + 3.0, 10.0, stage_d + 2.4, r = 3.2, ch_bot = 0.8, ch_top = 0.8);
 
       // 4. Skewed Tapered Gothic Theatre Column Pilasters on Front Proscenium (Z = stage_d)
       for (sx = [-1, 1]) {
@@ -135,12 +135,12 @@ module prop_09_stage_frame() {
   }
 
   // a2) Left thread post. The left panel's thread (Y = 26.8, through its carriages' eyes) turns round this post and runs up to the idler.
-  //     A 12 x 10 mm pad (Z = 0..plate_t) fused into the left wall and left rail socket carries a 3.2 mm post up to Z = 22.0, 0.5 mm
-  //     under the rail bar. Centre (-73.45, 28.8): the thread passes its bottom at Y = 26.8 and its west side 1 mm from the socket.
+  //     A 12 x 10 mm pad (Z = 0..plate_t) fused into the left wall and left rail socket carries a reinforced tapered post (Ø8.0 -> Ø3.2 up to
+  //     Z = 17.8 so sideways bending across XY layers is >10x stiffer, while keeping exact Ø3.2 mm across Z = 17.8..22.0 at thread_z = 20.2!).
   left_post = [-73.45, 28.8];
   translate([-82.0, 23.5, 0]) cube([12.0, 10.0, plate_t]);
   translate([left_post[0], left_post[1], plate_t - 0.01]) {
-    cylinder(h = 2.8, d1 = 6.0, d2 = 3.2);
+    cylinder(h = 15.6, d1 = 7.8, d2 = 3.2);
     cylinder(h = thread_z + 1.8 - plate_t + 0.01, d = 3.2);
   }
 
@@ -167,10 +167,21 @@ module prop_09_stage_frame() {
     }
   }
 
-  // d) Four Backstage Corner Rest Cleats for prop-09-screen-bezel.stl (114 x 102 mm) at Z = 0..8
+  // d) Four Backstage Corner Rest & Screw Cleats for prop-09-screen-bezel.stl (114 x 102 mm) at Z = 0..6
+  //    Upper cleats sit at X = +-46 (X = +-35..57, strictly clear of X >= 58 SG90 back plate!) and fuse into Y = +58 top wall!
   for (sx = [-1, 1]) {
-    translate([sx * 58.5, -52.0, 0])
-      chamfer_box(50.0, 14.0, 6.0, r = 1.5, ch_bot = 0.4, ch_top = 0.4);
+    difference() {
+      union() {
+        translate([sx * 58.5, -52.0, 0])
+          chamfer_box(50.0, 14.0, 6.0, r = 1.5, ch_bot = 0.4, ch_top = 0.4);
+        translate([sx * 46.0, 48.0, 0])
+          chamfer_box(22.0, 24.0, 6.0, r = 1.5, ch_bot = 0.4, ch_top = 0.4);
+      }
+      translate([sx * 46.0, -50.0, 0.6])
+        cylinder(h = 6.0, d = 2.7);
+      translate([sx * 46.0, 39.0, 0.6])
+        cylinder(h = 6.0, d = 2.7);
+    }
   }
 }
 

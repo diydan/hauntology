@@ -73,13 +73,22 @@ module pyramid_holder() {
         }
       }
 
-      // 3. Top Gothic Crown Locking Collar with Four Mini Corner Spires
+      // 3. Top Gothic Crown Locking Collar with 45-deg corbelled underside (zero mid-air hole!) & 4 Corner Spires
       translate([0, 0, base_h + pyr_h - 2.4]) {
         difference() {
-          chamfer_box(outer_t + 3.4, outer_t + 3.4, 2.8, r = 1.8, ch_bot = 0.6, ch_top = 0.5);
-          translate([0, 0, -0.1])
-            linear_extrude(height = 3.2)
-              rrect2d(top_mm - 1.2, top_mm - 1.2, r = 0.8);
+          hull() {
+            translate([0, 0, -2.0])
+              chamfer_box(outer_t + 0.6, outer_t + 0.6, 0.4, r = 1.6, ch_bot = 0, ch_top = 0);
+            chamfer_box(outer_t + 3.4, outer_t + 3.4, 2.8, r = 1.8, ch_bot = 0.4, ch_top = 0.5);
+          }
+          hull() {
+            translate([0, 0, -2.2])
+              linear_extrude(height = 0.2)
+                rrect2d(top_mm + 3.0, top_mm + 3.0, r = 1.0);
+            translate([0, 0, -0.1])
+              linear_extrude(height = 3.2)
+                rrect2d(top_mm - 1.2, top_mm - 1.2, r = 0.8);
+          }
         }
         for (sx = [-1, 1], sy = [-1, 1]) {
           translate([sx * (outer_t / 2 + 0.5), sy * (outer_t / 2 + 0.5), 2.3])
@@ -88,16 +97,16 @@ module pyramid_holder() {
       }
     }
 
-    // 4. Four 45-degree trapezoid pane retention grooves (exact geometry preserved 1:1!)
+    // 4. Four 45-degree trapezoid pane retention grooves (sized +0.2 mm over 60 -> 10 mm README panes, open at top collar, inside strut cores!)
     for (rot_z = [0, 90, 180, 270]) {
       rotate([0, 0, rot_z])
         hull() {
-          translate([0, -(base_mm / 2), base_h - 1.2])
+          translate([0, -(base_mm / 2), base_h - 1.0])
             rotate([45, 0, 0])
-              cube([base_mm - 1.6, pane_t, 1.4], center = true);
-          translate([0, -(top_mm / 2), base_h + pyr_h - 1.0])
+              cube([base_mm + 0.2, pane_t, 1.3], center = true);
+          translate([0, -(top_mm / 2) + 1.8, base_h + pyr_h + 0.8])
             rotate([45, 0, 0])
-              cube([top_mm - 1.6, pane_t, 1.4], center = true);
+              cube([top_mm + 0.2, pane_t, 1.6], center = true);
         }
     }
   }

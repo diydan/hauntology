@@ -9,8 +9,12 @@ include <_common.scad>
 module prop_05_resolve_insert() {
   difference() {
     union() {
-      // 1. Thin 0.8 mm translucent diffuser face plate (36.4 x 14.0 x 0.8 mm)
+      // 1. Thin 0.8 mm translucent diffuser face plate (36.4 x 14.0 x 0.8 mm) + gentle side friction pips so it stays in the slot!
       chamfer_box(36.4, 14.0, 0.8, r = 1.6, ch_bot = 0.2, ch_top = 0.1);
+      for (sx = [-1, 1]) {
+        translate([sx * 18.0, 0, 0])
+          cylinder(h = 2.2, d1 = 1.5, d2 = 1.1);
+      }
 
       // 2. Three optical isolation light-baffle rings around each 5 mm LED window
       for (lx = [-10.0, 0.0, 10.0]) {

@@ -51,12 +51,15 @@ module prop_15_vault_lid() {
     translate([0, vlid_d / 2 - 1.8, vlid_h - 6.5])
       cube([24.6, 4.2, 15.0], center = true);
 
-    // 5. Crooked Coffin Timber V-grooves on skirts + diagonal seam grooves on lid top (Z = 0)
-    for (sy = [-1, 1])
-      translate([0, sy * (vlid_d / 2 + 0.1), vlid_h * 0.55])
-        rotate([0, sy * 2.2, 0])
-          rotate([45, 0, 0])
-            cube([vlid_w - 16, 1.4, 1.4], center = true);
+    // 5. Crooked Coffin Timber V-grooves on skirts (kept strictly clear of rear X = +-38.5 hinge gussets & front X = +-42 straps!) + top seams
+    translate([0, vlid_d / 2 + 0.1, vlid_h * 0.55])
+      rotate([0, 2.0, 0])
+        rotate([45, 0, 0])
+          cube([72.0, 1.4, 1.4], center = true);
+    translate([0, -(vlid_d / 2 + 0.1), vlid_h * 0.55])
+      rotate([0, -2.0, 0])
+        rotate([45, 0, 0])
+          cube([54.0, 1.4, 1.4], center = true);
     for (ty = [-28, 0, 28]) {
       translate([0, ty, 0])
         rotate([0, 0, ty == 0 ? 1.8 : -2.2])
@@ -64,12 +67,19 @@ module prop_15_vault_lid() {
             cube([vlid_w - 22, 1.1, 1.1], center = true);
     }
 
-    // 6. Hinge Pin Bores (3.4 mm ID at Y = -63.6, Z_lid = vlid_h + 1.3 = 23.3 mm, coaxial with vault chest)
+    // 6. Hinge Pin Bores (3.5 mm teardropped ID at Y = -63.6, Z_lid = vlid_h + 1.3 = 23.3 mm, coaxial with vault chest) + spring leg notch
     for (hx = [-38.5, 38.5]) {
-      translate([hx, -(vlid_d / 2 + 4.6), vlid_h + 1.3])
-        rotate([0, 90, 0])
-          cylinder(h = 20.0, d = 3.4, center = true);
+      hull() {
+        translate([hx, -(vlid_d / 2 + 4.6), vlid_h + 1.3])
+          rotate([0, 90, 0])
+            cylinder(h = 20.0, d = 3.5, center = true);
+        translate([hx, -(vlid_d / 2 + 4.6), vlid_h + 2.4])
+          rotate([0, 90, 0])
+            cylinder(h = 20.0, d = 0.8, center = true);
+      }
     }
+    translate([0, -(vlid_d / 2 + 0.2), vlid_h - 3.5])
+      cube([5.0, 1.6, 8.0], center = true);
   }
 }
 

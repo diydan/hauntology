@@ -71,9 +71,15 @@ test("two touching solids are not a roof: a face resting on another body is a se
   assert.equal(findOverhangs(stl([...box(0, 0, 0, 10, 40, 40), ...box(0, 0, 11, 21, 40, 40)])).length, 1);
 });
 
-test("the first-layer bevels at the bed are ignored", () => {
+test("the first-layer bevels at the bed are ignored, while a wide flat roof at z = 0.4 mm is caught", () => {
   // a 60 x 60 block whose bottom 0.5 mm flares out at 75 degrees: it touches the bed, so it is fine
   assert.deepEqual(findOverhangs(stl([...frustum(0, 0, 0, 0.5, 58, 58, 60, 60), ...box(0, 0, 0.5, 20, 60, 60)])), []);
+  // a wide flat ceiling only 0.4 mm above the bed (like an upside-down sticker pocket) is a real unsupported bridge
+  const lowTable = [
+    ...box(0, 0, 0.4, 4, 30, 20),
+    ...[[-1, -1], [1, -1], [1, 1], [-1, 1]].flatMap(([sx, sy]) => box(sx * 13.5, sy * 8.5, 0, 0.4, 3, 3)),
+  ];
+  assert.equal(findOverhangs(stl(lowTable)).length, 1);
 });
 
 test("a narrow strip set at 45 degrees is judged by its width, not by its bounding box", () => {

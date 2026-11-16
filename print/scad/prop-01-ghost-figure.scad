@@ -108,9 +108,11 @@ module prop_01_ghost_figure() {
       bevel_layer_2d(h = 1.0, bev = 0.0, z0 = 4.4, steps = 0)
         hero_ghost_crown_folds_2d();
 
-      // 2. Forward Cam Follower Pin at (X = 0, Y_stl = +7.5) projecting along +Z_stl to Z = 16.6
-      translate([0, 7.5, 3.6])
+      // 2. Forward Cam Follower Pin at (X = 0, Y_stl = +7.5) projecting along +Z_stl to Z = 16.6 (with 45-deg root fillet clear of fork!)
+      translate([0, 7.5, 3.6]) {
         cylinder(h = 13.0, d = 3.8);
+        translate([0, 0, 0.35]) cylinder(h = 1.4, d1 = 6.6, d2 = 3.8);
+      }
 
       // 3. Lower rubber-band return tie tab (Y_stl = -5.5..+6.5): bridged continuously into body arch
       translate([0, 0.5, 0])

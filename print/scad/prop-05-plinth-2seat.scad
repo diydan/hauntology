@@ -48,7 +48,7 @@ module prop_05_plinth_2seat() {
         }
       }
 
-      // 4. Right-end (+X) Male Dovetail Tenon (locks into next segment's left mortise)
+      // 4. Right-end (+X) Male Dovetail Tenon (starts cleanly at Z = 0 with no overhang slivers!)
       translate([seg_w / 2 - 0.4, 0, 0])
         rotate([0, 0, -90])
           dovetail_tenon(h = seg_h - 4.0, n_w = 8.0, f_w = 11.4, d_len = 5.4, ch = 0.6);
@@ -73,22 +73,24 @@ module prop_05_plinth_2seat() {
       rotate([0, 0, -90])
         dovetail_mortise_fit(h = seg_h + 1.0, n_w = 8.0, f_w = 11.4, d_len = 5.4, ch = 0.6, inset = 0.4, clr = clear_move);
 
-    // 5. Two Vertical SG90 Servo Pockets (each turns its seat flap 180 deg)
+    // 5. Two Vertical SG90 Servo Pockets (shifted by -sg90_shaft_off_x = +5.5 mm so output shafts sit dead-center on X = +-25.0 mm,
+    //    and ear shelf sunk to Z = 38.2 mm so the SG90 body sits flush below Z = 45.0 with wire-grommet relief!)
     for (sx = [-seat_span / 2, seat_span / 2]) {
-      // Lower cable & body chamber (open from top Z = seg_h down to Z = 10)
-      translate([sx, 3.0, seg_h - 14.0])
-        cube([sg90_body_w, sg90_body_d, 30.0], center = true);
-      // Mounting flange ear recess near top of plinth
-      translate([sx, 3.0, seg_h - 1.5])
-        cube([sg90_flange_w, sg90_body_d, 3.6], center = true);
+      px = sx - sg90_shaft_off_x; // -19.5 and +30.5 (fits cleanly inside X = +-50!)
+      // Lower body chamber (Z = 21.8..46, above the Z = 20.0 ESP32 vault peak)
+      translate([px, 3.0, seg_h - 11.6])
+        cube([sg90_body_w, sg90_body_d, 23.6], center = true);
+      // Mounting flange ear recess sunk so case top sits flush at Z = 44.7 <= 45.0
+      translate([px, 3.0, seg_h - 3.4])
+        cube([sg90_flange_w, sg90_body_d, 6.85], center = true);
       // M2 pilot holes for SG90 mounting screws
       for (ex = [-1, 1]) {
-        translate([sx + ex * sg90_hole_span / 2, 3.0, seg_h - 12.0])
-          cylinder(h = 11.0, d = sg90_m2_pilot_d);
+        translate([px + ex * sg90_hole_span / 2, 3.0, seg_h - 15.8])
+          cylinder(h = 10.0, d = sg90_m2_pilot_d);
       }
-      // Vertical cable drop chute into the bottom bus channel
-      translate([sx + 8.0, 3.0, 12.0])
-        cube([6.5, sg90_cable_w, 20.0], center = true);
+      // Side wire-grommet & drop chute straight down into the underside ESP32 & bus bay (stays clear of px - 13.75 M2 screw boss!)
+      translate([px - 9.2, 3.0, 21.0])
+        cube([5.2, sg90_cable_w + 1.0, 24.0], center = true);
     }
 
     // 6. Front 0.4 mm Recessed Sticker Pockets for Seat Colour Discs (18.2 mm dia)
@@ -115,14 +117,28 @@ module prop_05_plinth_2seat() {
         cube([37.0, 2.8, 19.6], center = true);
     }
 
-    // 8. Continuous Underside Wire & WS2812B LED Bus Trench: 19 mm wide (Y = -13..+6, the front edge stays next to the Resolve
-    //    slots so the LEDs still light them), 4 mm tall walls, then a true 45 deg roof (44.7 deg from vertical) up to a 2 mm ridge
-    //    at Z = 12.6. The old roof rose only 2.4 mm over 7 mm each side (71 deg), which is a flat 22 mm bridge: supports needed.
-    translate([0, -3.5, 0])
+    // 8. Continuous Underside ESP32 DevKitC & WS2812B LED Bus Vault: 29.6 mm wide (Y = -12.4..+17.2, keeping a sturdy 1.20 mm
+    //    wall behind the Y = -16.4..-13.6 Resolve diffuser slots AND wide enough for an ESP32-DevKitC V4!), 7.2 mm vertical walls,
+    //    then a true 45-deg vaulted roof up to a 4.0 mm ridge at Z = 20.0 (1.8 mm solid below the Z = 21.8 SG90 floors!) + rear USB-C port.
+    translate([0, 2.4, 0])
       hull() {
-        translate([0, 0, 1.95]) cube([seg_w + 20.0, 19.0, 4.1], center = true);
-        translate([0, 0, 12.85]) cube([seg_w + 20.0, 2.0, 0.5], center = true);
+        translate([0, 0, 3.55]) cube([seg_w - 16.0, 29.6, 7.3], center = true);
+        translate([0, 0, 19.8]) cube([seg_w - 20.0, 4.0, 0.4], center = true);
       }
+    // Continuous inter-segment wire & LED bus pass-through trench through left & right dovetail ends (<= 45 deg roof)
+    translate([0, 2.4, 0])
+      hull() {
+        translate([0, 0, 2.5]) cube([seg_w + 20.0, 14.0, 5.2], center = true);
+        translate([0, 0, 10.1]) cube([seg_w + 20.0, 2.0, 0.4], center = true);
+      }
+    // Rear (+Y) 45-deg gabled USB-C power & programming port into the underside ESP32 bay
+    translate([0, seg_d / 2, 3.8])
+      rotate([90, 0, 0])
+        hull() {
+          cube([esp32_usb_w + 0.8, esp32_usb_h + 0.4, 12.0], center = true);
+          translate([0, (esp32_usb_h + 0.4) / 2 + 5.6, 0])
+            cylinder(h = 12.0, d = 1.6, center = true);
+        }
   }
 }
 

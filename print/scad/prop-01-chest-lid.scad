@@ -65,11 +65,16 @@ module prop_01_chest_lid() {
             cube([lid_w - 22, 1.1, 1.1], center = true);
     }
 
-    // 5. Hinge pin bores (3.2 mm ID, coaxial with chest body at Y = -51.2, Z_lid = lid_h + 1.3)
+    // 5. Hinge pin bores (3.4 mm teardropped ID, coaxial with chest body at Y = -51.2, Z_lid = lid_h + 1.3)
     for (hx = [-35.5, 35.5]) {
-      translate([hx, -(lid_d / 2 + 5.2), lid_h + 1.3])
-        rotate([0, 90, 0])
-          cylinder(h = 18.0, d = 3.2, center = true);
+      hull() {
+        translate([hx, -(lid_d / 2 + 5.2), lid_h + 1.3])
+          rotate([0, 90, 0])
+            cylinder(h = 18.0, d = 3.4, center = true);
+        translate([hx, -(lid_d / 2 + 5.2), lid_h + 2.4])
+          rotate([0, 90, 0])
+            cylinder(h = 18.0, d = 0.8, center = true);
+      }
     }
   }
 
