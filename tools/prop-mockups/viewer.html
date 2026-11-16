@@ -149,8 +149,10 @@ const PARTS = [
   ['prop-20-wires-panel','Wires panel',            G20, 'iron',   'E', 1],
   ['prop-20-terminal-blocks','Terminal blocks',    G20, 'brass',  'E', 1],
   ['prop-20-plug-heads','Plug heads (10 shells)',  G20, 'crimson','E', 1],
-  ['ghost-original',    'Original ghost (Ghost.fbx)', GR, 'bone',  'R', 0, false, true],
-].map(([file, label, group, spool, kind, qty, alt, ref]) => ({ file, label, group, spool, kind, qty, alt: !!alt, ref: !!ref }));
+  // From Ghost.fbx via tools/prop-mockups/convert-ghost.mjs. The last two flags: a reference model (loads from REF_BASE), and a smooth one.
+  ['ghost-original',    'Original ghost (Ghost.fbx)', GR, 'bone',  'R', 0, false, true, true],
+  ['ghost-web',         'Original ghost web',      GR, 'mint',    'R', 0, false, true, true],
+].map(([file, label, group, spool, kind, qty, alt, ref, smooth]) => ({ file, label, group, spool, kind, qty, alt: !!alt, ref: !!ref, smooth: !!smooth }));
 const BY = Object.fromEntries(PARTS.map((p) => [p.file, p]));
 
 // ---------- small matrix kit (column-major) ----------
@@ -175,7 +177,7 @@ function lookAt(e, c, u) {
 const rotOf = (rot) => (rot || []).reduce((m, [ax, d]) => mul(R4(ax, d), m), I4());
 
 // ---------- STL ----------
-function parseStl(buf) {
+function parseStl(buf, smooth) {
   const dv = new DataView(buf), n = dv.getUint32(80, true);
   if (buf.byteLength !== 84 + 50 * n) throw new Error('not a binary STL');
   const a = new Float32Array(n * 18), mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9], v = new Array(9);
@@ -190,11 +192,21 @@ function parseStl(buf) {
       a[q + 3] = nx; a[q + 4] = ny; a[q + 5] = nz;
     }
   }
+  if (smooth) { // a smooth model (the ghost): give every shared corner the area-weighted average of its faces' normals
+    const acc = new Map(), key = (q) => Math.round(a[q] * 1000) + ',' + Math.round(a[q + 1] * 1000) + ',' + Math.round(a[q + 2] * 1000);
+    for (let i = 0; i < n; i++) {
+      const q0 = i * 18, q1 = q0 + 6, q2 = q0 + 12;
+      const ux = a[q1]-a[q0], uy = a[q1+1]-a[q0+1], uz = a[q1+2]-a[q0+2], wx = a[q2]-a[q0], wy = a[q2+1]-a[q0+1], wz = a[q2+2]-a[q0+2];
+      const cx = uy*wz-uz*wy, cy = uz*wx-ux*wz, cz = ux*wy-uy*wx; // as long as twice the face area, so big faces count more
+      for (const q of [q0, q1, q2]) { const k = key(q), t = acc.get(k) || [0, 0, 0]; t[0] += cx; t[1] += cy; t[2] += cz; acc.set(k, t); }
+    }
+    for (let q = 0; q < n * 18; q += 6) { const t = acc.get(key(q)), l = Math.hypot(t[0], t[1], t[2]) || 1; a[q + 3] = t[0] / l; a[q + 4] = t[1] / l; a[q + 5] = t[2] / l; }
+  }
   return { tris: n, data: a, min: mn, size: [mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2]] };
 }
 const cache = new Map();
 function load(name) {
-  if (!cache.has(name)) cache.set(name, fetch((BY[name] && BY[name].ref ? REF_BASE : STL_BASE) + name + '.stl', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(name + ': HTTP ' + r.status); return r.arrayBuffer(); }).then(parseStl));
+  if (!cache.has(name)) cache.set(name, fetch((BY[name] && BY[name].ref ? REF_BASE : STL_BASE) + name + '.stl', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(name + ': HTTP ' + r.status); return r.arrayBuffer(); }).then((buf) => parseStl(buf, !!(BY[name] && BY[name].smooth))));
   return cache.get(name);
 }
 
@@ -283,6 +295,8 @@ const ASSEMBLIES = [
         P('prop-20-terminal-blocks', [(p[0] - tb[0]) / 2, 60, p[2]], { ex: [0, 0, 35] }),
         P('prop-20-plug-heads', [(p[0] - ph[0]) / 2, -ph[1] - 15, 0])];
     } },
+  { id: 'ghost', title: 'Original ghost', note: 'The ghost from the landing page (Ghost.fbx) with its web, about 73 mm tall. A reference model for comparison, not a printed part. Slide Explode to lift the web off.',
+    build() { return [P('ghost-original', [0, 0, 0]), P('ghost-web', [-0.613, -0.034, 20.815], { ex: [0, -30, 0] })]; } }, // the web's corner is that far from the ghost's, in mm
 ];
 
 // ---------- GL ----------
