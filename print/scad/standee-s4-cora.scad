@@ -76,4 +76,4 @@ module standee_s4_cora() {
   }
 }
 
-color(col_seat_green) standee_s4_cora();
+color(col_bone) standee_s4_cora();

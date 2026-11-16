@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Relic r1: Haunted Coffin-Casket Lid (From-Scratch FDM Design)
-// Colour: Dark Iron (#262229) — rich contrast against the Ectoplasm Mint `relic-music-box` casket body
+// Colour: Antique Brass (#d4a84b) — contrasts the Dark Iron `relic-music-box` casket body
 // Size: ~41.2 W x 28.4 D x 10.6 H mm (outer eaves overlap rim to Z_world = 26.8 mm; peak at Z_world = 34.6 mm)
 // Mates closed onto `relic-music-box.stl` at `translate([0, 0, 34.6]) rotate([180, 0, 0])` (0.2 mm higher than the first design, for clearance):
 //   - Y-mirrored hexagonal gothic coffin mansard roof so all asymmetric prow/shoulder/apse angles match 1:1
@@ -141,4 +141,4 @@ module relic_music_box_lid() {
   }
 }
 
-color(col_ink) relic_music_box_lid();
+color(col_lantern) relic_music_box_lid();

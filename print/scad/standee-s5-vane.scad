@@ -76,4 +76,4 @@ module standee_s5_vane() {
   }
 }
 
-color(col_seat_violet) standee_s5_vane();
+color(col_bone) standee_s5_vane();
