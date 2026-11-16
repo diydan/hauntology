@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { sha256Hex } from "@hauntology/shared/voice/digest";
+import { singleFlight } from "@hauntology/shared/voice/flight";
+import { libraryKey } from "@hauntology/shared/voice/key";
 import type { VoiceLine } from "@hauntology/shared/voice/line";
 import type { ReserveResult, SpendTicket } from "@hauntology/shared/world/spend";
 import type { SpeechAnswer, SpeechMaker, SpeechRequest } from "../guarded/workersai/speak";
 import { createLogger } from "../log";
 import { R2SpeechCache, type SpeechBucket } from "../voice/cache";
+import { R2SpeechLibrary, type LibraryBucket } from "../voice/library";
 import type { VoiceLines } from "../voice/lines";
 import { FakeR2 } from "../worlds/fake-cloudflare";
 import { NOW, ORIGIN, worldsKit, type Visitor } from "../worlds/test-kit";
@@ -35,7 +39,9 @@ function setup(o: { cap?: number; answer?: SpeechAnswer; held?: Record<string, V
   const requests: SpeechRequest[] = [];
   const maker: SpeechMaker = { async speak(req) { requests.push(req); return o.answer ?? { ok: true, audio: mp3(), contentType: "audio/mpeg", via: "inworld", voice: "inworld:Pippa", elapsedMs: 900, attempts: [] }; } };
   const logged: string[] = [];
-  const kit = worldsKit(() => NOW, { voice: { speak: { lines, cache, maker, spend: guard } }, log: createLogger((l) => logged.push(l), () => NOW) });
+  const libR2 = new FakeR2();
+  const library = new R2SpeechLibrary(libR2 as unknown as LibraryBucket);
+  const kit = worldsKit(() => NOW, { voice: { speak: { lines, cache, maker, spend: guard, library, flights: singleFlight() } }, log: createLogger((l) => logged.push(l), () => NOW) });
   const owner = async (): Promise<Visitor> => { const v = await kit.visitor(); ownerSid = v.sid; return v; };
 
   /** `app.request` directly, so the audio bytes are not turned into text on the way. */
@@ -44,7 +50,7 @@ function setup(o: { cap?: number; answer?: SpeechAnswer; held?: Record<string, V
     const bytes = new Uint8Array(await res.arrayBuffer());
     return { status: res.status, headers: res.headers, bytes, text: new TextDecoder().decode(bytes) };
   };
-  return { kit, r2, cache, spend, requests, logged, owner, post };
+  return { kit, r2, libR2, cache, spend, requests, logged, owner, post };
 }
 const ok = { playId: PLAY, lineId: LINE_ID };
 
@@ -81,7 +87,7 @@ describe("POST /api/voice/speak: what it refuses to take", () => {
   it("refuses a body that carries text, or any field that is not listed, and calls nothing and reserves nothing", async () => {
     const t = setup();
     const v = await t.owner();
-    for (const extra of [{ text: "Say hello" }, { spoken: "Say hello" }, { prompt: "x" }, { speaker: "keeper" }, { voice: "inworld:Ronald" }, { roomCode: "ABCD" }, { prefetch: true }]) {
+    for (const extra of [{ text: "Say hello" }, { spoken: "Say hello" }, { prompt: "x" }, { speaker: "keeper" }, { voice: "inworld:Ronald" }, { roomCode: "ABCD" }, { prefetch: "yes" }, { prefetch: 1 }, { prefetch: true, text: "Say hello" }]) {
       const r = await t.post({ ...ok, ...extra }, v.headers);
       expect([r.status, JSON.parse(r.text)], JSON.stringify(extra)).toEqual([400, UNAVAILABLE]);
     }
@@ -197,5 +203,76 @@ describe("POST /api/voice/speak: what it logs", () => {
     expect(voice.map((l) => [l.via, l.outcome, l.paid])).toEqual([["inworld", "ok", true], ["cache", "ok", false], ["none", "bad_body", false], ["none", "no_line", false], ["none", "off", false]]);
     const everything = t.logged.join("\n");
     for (const secret of [SPOKEN, "kitchen", LINE_ID, PLAY, v.sid, "hello", "inworld:Pippa"]) expect(everything).not.toContain(secret);
+  });
+});
+
+describe("POST /api/voice/speak: the Voice Library", () => {
+  it("plays a scripted line from the Library with every cap spent: no Ticket, no model call", async () => {
+    const t = setup({ cap: 0 });
+    t.libR2.put(await libraryKey("inworld:Pippa", SPOKEN, sha256Hex), mp3(4_000, 4));
+    const r = await t.post(ok, (await t.owner()).headers);
+    expect(r.status).toBe(200);
+    expect(r.headers.get("Content-Type")).toBe("audio/mpeg");
+    expect(r.bytes).toEqual(mp3(4_000, 4));
+    expect(t.spend.reserved).toBe(0);
+    expect(t.requests).toEqual([]);
+    expect(t.r2.objects.size).toBe(0); // nothing is copied from the Library into the cache
+  });
+  it("is still switched off with speech off: the Library is not read either", async () => {
+    const t = setup();
+    const v = await t.owner();
+    t.libR2.put(await libraryKey("inworld:Pippa", SPOKEN, sha256Hex), mp3());
+    t.kit.env["VOICE_ENABLED"] = "false";
+    expect((await t.post(ok, v.headers)).status).toBe(503);
+  });
+});
+
+describe("POST /api/voice/speak: prefetch", () => {
+  const PRE = { ...ok, prefetch: true };
+
+  it("answers 204 with nothing, and spends and calls nothing, for a line that is not in the Library or the cache", async () => {
+    const t = setup({ cap: 1_000 });
+    const r = await t.post(PRE, (await t.owner()).headers);
+    expect(r.status).toBe(204);
+    expect(r.bytes.byteLength).toBe(0);
+    expect(r.headers.get("Cache-Control")).toBe("no-store");
+    expect(t.spend.reserved).toBe(0);
+    expect(t.requests).toEqual([]);
+    expect(t.r2.objects.size).toBe(0);
+  });
+  it("answers 200 with the audio once the line is in the cache, and the same for a Library line, and still pays nothing", async () => {
+    const t = setup();
+    const v = await t.owner();
+    await t.post(ok, v.headers); // heard once: now cached (this one paid)
+    const spentBefore = t.spend.reserved;
+    const cached = await t.post(PRE, v.headers);
+    expect([cached.status, cached.headers.get("Content-Type")]).toEqual([200, "audio/mpeg"]);
+    expect(cached.bytes).toEqual(mp3());
+    const u = setup();
+    u.libR2.put(await libraryKey("inworld:Pippa", SPOKEN, sha256Hex), mp3(4_000, 4));
+    const lib = await u.post(PRE, (await u.owner()).headers);
+    expect([lib.status, lib.bytes]).toEqual([200, mp3(4_000, 4)]);
+    expect(t.spend.reserved).toBe(spentBefore);
+    expect(u.spend.reserved).toBe(0);
+  });
+  it("is the same 404 for a line that is not the visitor's, so a prefetch tells nobody anything either", async () => {
+    const t = setup();
+    await t.owner();
+    const stranger = await t.kit.visitor();
+    const r = await t.post(PRE, stranger.headers);
+    expect([r.status, r.text]).toEqual([404, JSON.stringify(UNAVAILABLE)]);
+  });
+  it("is 503 with speech off, like any request", async () => {
+    const t = setup();
+    const v = await t.owner();
+    t.kit.env["VOICE_ENABLED"] = "false";
+    expect((await t.post(PRE, v.headers)).status).toBe(503);
+  });
+  it("logs that it was a prefetch and that nothing was paid", async () => {
+    const t = setup();
+    const v = await t.owner();
+    await t.post(PRE, v.headers);
+    const rows = t.logged.map((l) => JSON.parse(l)).filter((l) => l.event === "voice.speak").map((l) => [l.via, l.outcome, l.paid, l.prefetch]);
+    expect(rows).toEqual([["none", "not_ready", false, true]]);
   });
 });

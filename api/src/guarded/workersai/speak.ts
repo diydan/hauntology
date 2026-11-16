@@ -98,6 +98,9 @@ function playable(bytes: Uint8Array | null): Uint8Array | null {
   return id3 || sync ? bytes : null;
 }
 
+/** The same test for any clip that is about to be played, wherever it came from: the bytes themselves, or `null`. */
+export { playable as playableAudio };
+
 /** Aura-2 answers with a stream; a buffer, a typed array or `{ audio: base64 }` is read too. Anything else is not audio. */
 async function aura(raw: unknown): Promise<Uint8Array | null> {
   if (raw instanceof ReadableStream) return playable(new Uint8Array(await new Response(raw).arrayBuffer()));

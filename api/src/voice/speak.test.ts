@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { sha256Hex } from "@hauntology/shared/voice/digest";
+import { singleFlight } from "@hauntology/shared/voice/flight";
+import { LIBRARY_PREFIX, canonicalSpeechKey, libraryKey } from "@hauntology/shared/voice/key";
 import type { VoiceLine } from "@hauntology/shared/voice/line";
 import type { ReserveResult, SpendTicket } from "@hauntology/shared/world/spend";
 import type { AiBinding } from "../guarded/workersai/call";
@@ -6,8 +9,9 @@ import { DEFAULT_TTS_FALLBACK_MODEL, DEFAULT_TTS_MODEL, WorkersAiSpeaker, type S
 import { createLogger } from "../log";
 import { FakeR2 } from "../worlds/fake-cloudflare";
 import { R2SpeechCache, type SpeechBucket } from "./cache";
+import { R2SpeechLibrary, type LibraryBucket } from "./library";
 import type { VoiceLines } from "./lines";
-import { speakLine, type SpeakDeps } from "./speak";
+import { speakFoundLine, speakLine, type SpeakDeps } from "./speak";
 
 const T0 = 1_700_000_000_000;
 const SESSION = "sid-owner";
@@ -53,10 +57,35 @@ function setup(o: { held?: Record<string, VoiceLine>; cap?: number; maker?: Spee
   const spend = fakeSpend(o.cap);
   const maker = o.maker ?? fakeMaker(good());
   const logged: string[] = [];
-  const deps: SpeakDeps = { lines, cache, maker, spend, log: createLogger((l) => logged.push(l), () => T0), now: () => T0, ...(o.kill ? { kill: o.kill } : {}) };
-  return { deps, r2, cache, lines, spend, maker, logged };
+  const libR2 = new FakeR2();
+  const library = new R2SpeechLibrary(libR2 as unknown as LibraryBucket);
+  const flights = countingFlights();
+  const deps: SpeakDeps = { lines, cache, maker, spend, library, flights, log: createLogger((l) => logged.push(l), () => T0), now: () => T0, ...(o.kill ? { kill: o.kill } : {}) };
+  return { deps, r2, libR2, flights, cache, lines, spend, maker, logged };
 }
-const ask = (deps: SpeakDeps, req = { playId: "p-1", lineId: "L1" }, who = WHO, defer?: (p: Promise<unknown>) => void) => speakLine(deps, who, req, defer);
+const ask = (deps: SpeakDeps, req: { playId: string; lineId: string; prefetch?: boolean } = { playId: "p-1", lineId: "L1" }, who = WHO, defer?: (p: Promise<unknown>) => void) => speakLine(deps, who, req, defer);
+
+/** A maker that holds every call open until the test lets it go, to make requests overlap. */
+function gatedMaker(answer: SpeechAnswer = good()) {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const m = { requests: [] as SpeechRequest[], release, async speak(req: SpeechRequest) { m.requests.push(req); await gate; return answer; } };
+  return m;
+}
+/** A real single flight that counts the requests that have reached it, so a test can wait until every request is in before it lets the call finish. */
+function countingFlights() {
+  const inner = singleFlight();
+  const f = { runs: 0, run: <T>(key: string, make: () => Promise<T>): Promise<T> => { f.runs += 1; return inner.run(key, make); }, has: (key: string) => inner.has(key), get size() { return inner.size; } };
+  return f;
+}
+/** Waits for a condition (a request needs several real `crypto.subtle` digests before it gets anywhere, so a fixed pause is not enough). */
+async function until(cond: () => boolean, ms = 2_000): Promise<void> {
+  const end = Date.now() + ms;
+  while (!cond()) {
+    if (Date.now() > end) throw new Error("timed out waiting for the requests to arrive");
+    await new Promise((r) => setTimeout(r, 1));
+  }
+}
 
 describe("speakLine: finding the line", () => {
   it("is no_line, and nothing is looked up, reserved or called, for an unknown line, another game's line and another Session's line", async () => {
@@ -242,7 +271,7 @@ describe("speakLine: what it logs", () => {
       ["voice.speak", "cache", "ok", false],
       ["voice.speak", "none", "no_line", false],
     ]);
-    for (const l of lines) expect(Object.keys(l).sort()).toEqual(["event", "level", "ms", "outcome", "paid", "t", "via"]);
+    for (const l of lines) expect(Object.keys(l).sort()).toEqual(["event", "level", "ms", "outcome", "paid", "prefetch", "t", "via"]);
   });
   it("never writes the line's words, a line id, a game id, a Session id, the address hash or the audio", async () => {
     const t = setup();
@@ -251,5 +280,260 @@ describe("speakLine: what it logs", () => {
     await ask(t.deps, { playId: "p-1", lineId: "zz" });
     const everything = t.logged.join("\n");
     for (const secret of [SPOKEN, "kitchen", "subtitle", "L1", "zz", "p-1", SESSION, "iphash", "AAAA", "inworld:Pippa", "[whisper]"]) expect(everything).not.toContain(secret);
+  });
+});
+
+const putLibrary = async (t: ReturnType<typeof setup>, voice: "inworld:Pippa" | "inworld:Chloe" | "inworld:Mark", spoken: string, bytes: Uint8Array) => { t.libR2.put(await libraryKey(voice, spoken, sha256Hex), bytes); };
+const PREFETCH = { playId: "p-1", lineId: "L1", prefetch: true };
+
+describe("speakLine: the Library tier", () => {
+  it("plays a scripted line from the Library with no Ticket, no call and no cache read, even with every cap spent and the kill switch on", async () => {
+    const t = setup({ cap: 0, kill: () => true });
+    await putLibrary(t, "inworld:Pippa", SPOKEN, mp3(4_000, 4));
+    const r = await ask(t.deps);
+    expect(r).toMatchObject({ ok: true, via: "library", paid: false });
+    expect(r.ok && r.audio).toEqual(mp3(4_000, 4));
+    expect(t.spend.reserved).toEqual([]);
+    expect(t.maker.requests).toEqual([]);
+    expect(t.r2.objects.size).toBe(0);
+  });
+  it("prefers the Library to the cache", async () => {
+    const t = setup();
+    await putLibrary(t, "inworld:Pippa", SPOKEN, mp3(4_000, 1));
+    await t.cache.put("inworld:Pippa", SPOKEN, mp3(4_000, 2));
+    const r = await ask(t.deps);
+    expect(r).toMatchObject({ ok: true, via: "library" });
+    expect(r.ok && r.audio).toEqual(mp3(4_000, 1));
+  });
+  it("goes on to the cache when the Library has nothing, and to a paid call when neither has", async () => {
+    const t = setup();
+    await t.cache.put("inworld:Pippa", SPOKEN, mp3());
+    expect(await ask(t.deps)).toMatchObject({ ok: true, via: "cache" });
+    const u = setup();
+    expect(await ask(u.deps)).toMatchObject({ ok: true, via: "inworld", paid: true });
+  });
+  it("finds a Lodger line in its own voice's Library file and not in another Lodger voice's", async () => {
+    const chloe = setup({ held: { L1: line({ speaker: "lodger", voice: "inworld:Chloe" }) } });
+    await putLibrary(chloe, "inworld:Chloe", SPOKEN, mp3());
+    expect(await ask(chloe.deps)).toMatchObject({ ok: true, via: "library" });
+    const other = setup({ held: { L1: line({ speaker: "lodger", voice: "inworld:Chloe" }) } });
+    await putLibrary(other, "inworld:Mark", SPOKEN, mp3());
+    expect(await ask(other.deps)).toMatchObject({ ok: true, via: "inworld", paid: true });
+  });
+  it("goes on when the Library cannot be read", async () => {
+    const t = setup();
+    t.deps.library = new R2SpeechLibrary({ get: () => { throw new Error("R2 is down"); } } as unknown as LibraryBucket);
+    expect(await ask(t.deps)).toMatchObject({ ok: true, via: "inworld", paid: true });
+  });
+  it("works with no Library given: only the cache is read", async () => {
+    const t = setup();
+    delete t.deps.library;
+    expect(await ask(t.deps)).toMatchObject({ ok: true, via: "inworld" });
+  });
+  it("never writes to the Library: a paid clip is kept under speech/v1/ and nothing is added under speech/lib/", async () => {
+    const t = setup();
+    await ask(t.deps);
+    expect(t.libR2.objects.size).toBe(0);
+    expect([...t.r2.objects.keys()].every((k) => k.startsWith("speech/v1/") && !k.startsWith(LIBRARY_PREFIX))).toBe(true);
+  });
+});
+
+describe("speakLine: single flight", () => {
+  it("makes one call for two overlapping requests for one line: the first pays, the second joins it and pays nothing", async () => {
+    const maker = gatedMaker();
+    const t = setup({ maker });
+    const a = ask(t.deps);
+    const b = ask(t.deps);
+    await until(() => t.flights.runs === 2 && maker.requests.length === 1);
+    expect(t.flights.has(canonicalSpeechKey("inworld:Pippa", SPOKEN))).toBe(true); // the call is running, and the second request is waiting on it
+    maker.release();
+    const results = await Promise.all([a, b]);
+    expect(maker.requests).toHaveLength(1);
+    // which of two overlapping requests gets there first is up to the timing: exactly one leads and pays, the other joins and does not
+    const leader = results.find((r) => r.ok && r.via === "inworld");
+    const joiner = results.find((r) => r.ok && r.via === "flight");
+    expect(leader).toMatchObject({ ok: true, paid: true });
+    expect(joiner).toMatchObject({ ok: true, paid: false });
+    expect(leader!.ok && joiner!.ok && leader!.audio).toEqual(joiner!.ok && joiner!.audio);
+    expect([t.spend.reserved.length, t.spend.commits.length, t.spend.releases.length]).toEqual([1, 1, 0]);
+    expect(t.flights.size).toBe(0);
+  });
+  it("makes one call for ten overlapping requests", async () => {
+    const maker = gatedMaker();
+    const t = setup({ maker });
+    const all = Array.from({ length: 10 }, () => ask(t.deps));
+    await until(() => t.flights.runs === 10);
+    maker.release();
+    const results = await Promise.all(all);
+    expect(maker.requests).toHaveLength(1);
+    expect(results.filter((r) => r.ok && r.via === "inworld")).toHaveLength(1);
+    expect(results.filter((r) => r.ok && r.via === "flight")).toHaveLength(9);
+    expect(t.spend.reserved).toHaveLength(1);
+  });
+  it("keeps different lines apart: two lines, two calls and two Tickets", async () => {
+    const maker = gatedMaker();
+    const t = setup({ held: { L1: line(), L2: line({ id: "L2", spoken: `${SPOKEN} And another.` }) }, maker });
+    const a = ask(t.deps, { playId: "p-1", lineId: "L1" });
+    const b = ask(t.deps, { playId: "p-1", lineId: "L2" });
+    await until(() => t.flights.runs === 2);
+    maker.release();
+    await Promise.all([a, b]);
+    expect(maker.requests).toHaveLength(2);
+    expect(t.spend.reserved).toHaveLength(2);
+  });
+  it("keeps the same words in different voices apart", async () => {
+    const maker = gatedMaker();
+    const t = setup({ held: { L1: line(), L2: line({ id: "L2", speaker: "keeper", voice: "inworld:Ronald" }) }, maker });
+    const a = ask(t.deps, { playId: "p-1", lineId: "L1" });
+    const b = ask(t.deps, { playId: "p-1", lineId: "L2" });
+    await until(() => t.flights.runs === 2);
+    maker.release();
+    await Promise.all([a, b]);
+    expect(maker.requests.map((r) => r.speaker).sort()).toEqual(["keeper", "whisper"]);
+  });
+  it("shares a call between two Sessions that ask for the same words: one call, one Ticket, the second pays nothing", async () => {
+    const maker = gatedMaker();
+    const t = setup({ maker });
+    t.deps.lines = { find: async () => line() }; // both visitors own a line with the same words and voice
+    const a = ask(t.deps, undefined, { sessionId: "sid-a", ipHash: "ha" });
+    const b = ask(t.deps, undefined, { sessionId: "sid-b", ipHash: "hb" });
+    await until(() => t.flights.runs === 2);
+    maker.release();
+    const [ra, rb] = await Promise.all([a, b]);
+    expect([ra.ok && ra.via, rb.ok && rb.via].sort()).toEqual(["flight", "inworld"]); // either may lead
+    const leaderIsA = ra.ok && ra.via === "inworld";
+    expect(t.spend.reserved).toEqual([{ meter: "tts", sessionId: leaderIsA ? "sid-a" : "sid-b", ipHash: leaderIsA ? "ha" : "hb" }]);
+    expect([ra, rb].map((r) => r.paid).sort()).toEqual([false, true]);
+  });
+  it("gives everyone who joined a call that failed the same refusal, releases its Ticket once, and lets the next request try again", async () => {
+    const maker = gatedMaker(bad("failed"));
+    const t = setup({ maker });
+    const a = ask(t.deps);
+    const b = ask(t.deps);
+    await until(() => t.flights.runs === 2);
+    maker.release();
+    expect(await Promise.all([a, b])).toEqual([{ ok: false, reason: "failed", paid: false }, { ok: false, reason: "failed", paid: false }]);
+    expect([t.spend.commits.length, t.spend.releases.length]).toEqual([0, 1]);
+    expect(t.flights.size).toBe(0);
+    await ask(t.deps); // the gate is open now: a new call is made
+    expect(maker.requests).toHaveLength(2);
+  });
+  it("lets go of the key when the call throws", async () => {
+    const t = setup({ maker: fakeMaker(() => { throw new Error("boom"); }) });
+    expect(await ask(t.deps)).toMatchObject({ ok: false, reason: "failed" });
+    expect(t.flights.size).toBe(0);
+  });
+  it("is a cache hit, not a flight, once the call has finished", async () => {
+    const t = setup();
+    await ask(t.deps);
+    expect(await ask(t.deps)).toMatchObject({ ok: true, via: "cache" });
+  });
+  it("makes one call for each request when no flights are shared", async () => {
+    const maker = gatedMaker();
+    const t = setup({ maker });
+    delete t.deps.flights;
+    const a = ask(t.deps);
+    const b = ask(t.deps);
+    await until(() => maker.requests.length === 2); // each request makes its own call: both are in the maker, waiting at the gate
+    maker.release();
+    await Promise.all([a, b]);
+    expect(maker.requests).toHaveLength(2);
+  });
+});
+
+describe("speakLine: prefetch", () => {
+  it("returns Library audio, and cached audio, with no Ticket and not paid", async () => {
+    const t = setup();
+    await putLibrary(t, "inworld:Pippa", SPOKEN, mp3(4_000, 1));
+    expect(await ask(t.deps, PREFETCH)).toMatchObject({ ok: true, via: "library", paid: false });
+    const u = setup();
+    await u.cache.put("inworld:Pippa", SPOKEN, mp3());
+    expect(await ask(u.deps, PREFETCH)).toMatchObject({ ok: true, via: "cache", paid: false });
+    expect(t.spend.reserved.length + u.spend.reserved.length).toBe(0);
+  });
+  it("returns nothing, spends nothing and writes nothing for a line that is in neither, however much budget there is", async () => {
+    const t = setup({ cap: 1_000 });
+    expect(await ask(t.deps, PREFETCH)).toEqual({ ok: false, reason: "not_ready", paid: false });
+    expect(t.spend.reserved).toEqual([]);
+    expect(t.maker.requests).toEqual([]);
+    expect(t.r2.objects.size).toBe(0);
+  });
+  it("never joins or starts a call, and does not disturb one that is running", async () => {
+    const maker = gatedMaker();
+    const t = setup({ maker });
+    const running = ask(t.deps);
+    await until(() => t.flights.runs === 1);
+    expect(await ask(t.deps, PREFETCH)).toMatchObject({ ok: false, reason: "not_ready" });
+    maker.release();
+    expect(await running).toMatchObject({ ok: true, via: "inworld", paid: true });
+    expect(maker.requests).toHaveLength(1);
+  });
+  it("is no_line for a line that is not the visitor's, like any request", async () => {
+    const t = setup();
+    expect(await ask(t.deps, PREFETCH, { ...WHO, sessionId: "sid-stranger" })).toEqual({ ok: false, reason: "no_line", paid: false });
+  });
+  it("logs that it was a prefetch, and a line that was not ready is not paid", async () => {
+    const t = setup();
+    await ask(t.deps, PREFETCH);
+    await t.cache.put("inworld:Pippa", SPOKEN, mp3());
+    await ask(t.deps, PREFETCH);
+    expect(t.logged.map((l) => JSON.parse(l)).map((l) => [l.via, l.outcome, l.paid, l.prefetch])).toEqual([["none", "not_ready", false, true], ["cache", "ok", false, true]]);
+  });
+});
+
+describe("speakFoundLine: starting synthesis early", () => {
+  it("starts the call when the line is validated, and a request that comes while it runs joins it", async () => {
+    const maker = gatedMaker();
+    const t = setup({ maker });
+    const early = speakFoundLine(t.deps, WHO, line());
+    await until(() => t.flights.runs === 1);
+    const later = ask(t.deps);
+    await until(() => t.flights.runs === 2);
+    expect(maker.requests).toHaveLength(1);
+    maker.release();
+    expect(await early).toMatchObject({ ok: true, via: "inworld", paid: true });
+    expect(await later).toMatchObject({ ok: true, via: "flight", paid: false });
+    expect(t.spend.reserved).toHaveLength(1);
+  });
+  it("leaves the clip in the cache for a request that comes after it finished", async () => {
+    const t = setup();
+    await speakFoundLine(t.deps, WHO, line());
+    expect(await ask(t.deps)).toMatchObject({ ok: true, via: "cache", paid: false });
+    expect(t.maker.requests).toHaveLength(1);
+  });
+  it("spends one unit for a line the visitor never asks for, and the caps still bound how many", async () => {
+    const t = setup({ cap: 3 });
+    const results = [];
+    for (let i = 0; i < 10; i++) results.push(await speakFoundLine(t.deps, WHO, line({ id: `E${i}`, spoken: `${SPOKEN} Number ${i}.` })));
+    expect(results.filter((r) => r.ok)).toHaveLength(3);
+    expect(t.spend.granted).toBe(3);
+    expect(t.maker.requests).toHaveLength(3);
+  });
+  it("starts nothing for a line with no spoken part, and nothing for a Library line", async () => {
+    const t = setup();
+    expect(await speakFoundLine(t.deps, WHO, line({ spoken: "" }))).toEqual({ ok: false, reason: "silent", paid: false });
+    await putLibrary(t, "inworld:Pippa", SPOKEN, mp3());
+    expect(await speakFoundLine(t.deps, WHO, line())).toMatchObject({ ok: true, via: "library" });
+    expect(t.spend.reserved).toEqual([]);
+    expect(t.maker.requests).toEqual([]);
+  });
+});
+
+describe("speakLine: the log after the Library, flights and prefetch", () => {
+  it("names where each answer came from, never what was said", async () => {
+    const maker = gatedMaker();
+    const t = setup({ maker });
+    await putLibrary(t, "inworld:Pippa", `${SPOKEN} In the Library.`, mp3());
+    t.deps.lines = { find: async (_s, id) => (id === "LIB" ? line({ id: "LIB", spoken: `${SPOKEN} In the Library.` }) : line()) };
+    await ask(t.deps, { playId: "p-1", lineId: "LIB" });           // library
+    const a = ask(t.deps);
+    const b = ask(t.deps);
+    await until(() => t.flights.runs === 2);
+    maker.release();
+    await Promise.all([a, b]);                                      // inworld, flight
+    await ask(t.deps);                                              // cache
+    const rows = t.logged.map((l) => JSON.parse(l)).map((l) => [l.via, l.outcome, l.paid, l.prefetch]);
+    expect(rows).toEqual([["library", "ok", false, false], ["inworld", "ok", true, false], ["flight", "ok", false, false], ["cache", "ok", false, false]]);
+    for (const secret of [SPOKEN, "kitchen", "Library.", "LIB", "p-1", SESSION, "iphash"]) expect(t.logged.join("\n")).not.toContain(secret);
   });
 });

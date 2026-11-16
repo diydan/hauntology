@@ -5,8 +5,13 @@ const ok = { playId: "p-abc_DEF-123", lineId: "Zm9vYmFyYmF6cXV4" };
 
 describe("SpeakRequestSchema", () => {
   it("accepts a game id and a line id", () => expect(SpeakRequestSchema.safeParse(ok).success).toBe(true));
+  it("accepts prefetch as a true or false and nothing else", () => {
+    expect(SpeakRequestSchema.safeParse({ ...ok, prefetch: true }).success).toBe(true);
+    expect(SpeakRequestSchema.safeParse({ ...ok, prefetch: false }).success).toBe(true);
+    for (const bad of ["true", 1, 0, null, "yes", {}, []]) expect(SpeakRequestSchema.safeParse({ ...ok, prefetch: bad }).success, JSON.stringify(bad)).toBe(false);
+  });
   it("refuses a body that carries text of any kind, or any field that is not listed", () => {
-    for (const extra of [{ text: "say this" }, { spoken: "say this" }, { prompt: "x" }, { speaker: "whisper" }, { voice: "inworld:Pippa" }, { prefetch: true }, { roomCode: "ABCD" }, { x: 1 }]) {
+    for (const extra of [{ text: "say this" }, { spoken: "say this" }, { prompt: "x" }, { speaker: "whisper" }, { voice: "inworld:Pippa" }, { roomCode: "ABCD" }, { x: 1 }, { prefetch: true, text: "x" }]) {
       expect(SpeakRequestSchema.safeParse({ ...ok, ...extra }).success, JSON.stringify(extra)).toBe(false);
     }
   });

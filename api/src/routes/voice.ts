@@ -24,7 +24,9 @@ const UNAVAILABLE = { ok: false, code: "voice_unavailable" } as const;
  *   of its own can own no line: it is that `404` at once and no Session cookie is made for it.
  * - Audio is `200 audio/mpeg`, never cached by anyone. Everything else a visitor can meet (speech off, a spent cap, a failed or slow model, a line with
  *   nothing to say) is `503` with the same body, which the client answers by showing the Subtitle alone.
- * - The service reads the cache before it reserves anything, so a line already heard plays again with every cap spent.
+ * - The service reads the Library and then the cache before it reserves anything, so a scripted line and a line already heard play with every cap spent.
+ * - `prefetch: true` asks for Library or cached audio only and never pays: it is the same `200` when there is audio and `204 No Content` (nothing, and not
+ *   an error) when there is not.
  * - Logs: one `voice.speak` counter line. Never a word, an id, the audio or an address.
  * Room speaking (`roomCode`, the Host's token) comes with ghost-voice 3.9.
  */
@@ -58,7 +60,10 @@ export function voiceRoutes(deps: VoiceRouteDeps): Hono<AppEnv> {
 
     const who = { sessionId: c.get("session").sid, ipHash: await ipHashOf(c, c.env.HMAC_SECRET as string) };
     const r = await speakLine(deps.speak, who, body, defer);
-    if (!r.ok) return c.json(UNAVAILABLE, r.reason === "no_line" ? 404 : 503);
+    if (!r.ok) {
+      if (r.reason === "not_ready") return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+      return c.json(UNAVAILABLE, r.reason === "no_line" ? 404 : 503);
+    }
     return new Response(r.audio as unknown as BodyInit, { status: 200, headers: { "Content-Type": "audio/mpeg", "Content-Length": String(r.audio.byteLength), "Cache-Control": "no-store" } });
   });
 
