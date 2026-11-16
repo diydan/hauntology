@@ -31,7 +31,7 @@ import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
 // LOD:   ?lod=100k (default) | 500k. Recolor probe: ?tint=1 sets mesh.recolor/opacity.
 const q = new URLSearchParams(location.search);
 const view = q.get("view") ?? "spawn";
-const lod = q.get("lod") === "500k" ? "500k" : "100k";
+const lod = ["150k", "500k", "full"].includes(q.get("lod")) ? q.get("lod") : "100k";
 const status = document.getElementById("status");
 const say = (lines) => { status.textContent = lines.join("\n"); };
 
@@ -61,8 +61,8 @@ scene.add(grid);
 if (view === "back") { camera.position.set(0, FLOOR_Y + 3.2, 5.5); camera.lookAt(0, FLOOR_Y + 1.2, 0); }
 else { camera.position.set(0, FLOOR_Y + 1.6, 0); camera.lookAt(0, FLOOR_Y + 1.6, -1); }
 
-let frames = 0, fps = "…", load = "loading";
-const paint = () => say([`view=${view} lod=${lod}`, load, `fps=${fps}`]);
+let frames = 0, fps = "…", load = "loading", measure = "measuring fps over 5 s after load…";
+const paint = () => say([`view=${view} lod=${lod}`, load, `fps=${fps}`, measure]);
 mesh.initialized.then(() => {
   let info = "bounds n/a";
   try {
@@ -78,6 +78,15 @@ mesh.initialized.then(() => {
   } catch (e) { info = `bounds failed: ${e?.message ?? e}`; }
   load = `LOADED in ${Math.round(performance.now() - t0)} ms\n${info}`;
   paint();
+  // The hardware checklist number: frames over 5 real seconds, still camera at the spawn.
+  let counted = 0;
+  const t1 = performance.now();
+  const counter = () => {
+    counted += 1;
+    if (performance.now() - t1 < 5000) requestAnimationFrame(counter);
+    else { measure = `AVG FPS (5 s, lod=${lod}): ${(counted / 5).toFixed(1)}`; paint(); }
+  };
+  requestAnimationFrame(counter);
 }).catch((e) => { load = `LOAD FAILED: ${e?.message ?? e}`; paint(); });
 
 let last = performance.now();
