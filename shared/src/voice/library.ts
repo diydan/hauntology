@@ -7,7 +7,8 @@
  * once per Lodger Voice. A line is listed by its spoken part: the leading whole sentences, up to 240 characters,
  * stopping before the first sentence that holds player text.
  */
-import { normalise } from "./key";
+import { THRESHOLDS, HAUNT_OPTIONS } from "../party/haunt";
+import { canonicalSpeechKey, normalise } from "./key";
 import { MAX_SPOKEN_CHARS, FINITE_PLACEHOLDER_NAMES, spokenPart } from "./speakable";
 import { LODGER_VOICE_ORDER, SPEAKER_ORDER, steeringTag, voiceFor } from "./voices";
 import type { Speaker, VoiceId } from "./voices";
@@ -100,4 +101,59 @@ export function requestChars(entry: LibraryEntry): number {
 export function estimateLibrary(entries: readonly LibraryEntry[]): { files: number; chars: number; usd: number } {
   const chars = entries.reduce((sum, e) => sum + requestChars(e), 0);
   return { files: entries.length, chars, usd: Math.round((chars / 1_000_000) * PRICE_USD_PER_MILLION_CHARS * 10_000) / 10_000 };
+}
+
+/**
+ * The public facts `prefetchPlan` may read: the phase and Haunt of the party
+ * engine's `PublicSnapshot`, and how long until the host's midnight (party-mode
+ * Requirement 15.2). Nothing else exists on this type, so no Solution, Hand or
+ * Accusation verdict can be read by mistake.
+ */
+export type PrefetchView = Readonly<{
+  phase: string;
+  haunt: Readonly<{ level: number; max: number }>;
+  /** Minutes until the host's midnight, or null when the strike is off or unknown. */
+  minutesToMidnight: number | null;
+}>;
+
+/** Warm the midnight lines from this long before the hour. */
+export const PREFETCH_MIDNIGHT_WITHIN_MINUTES = 60;
+
+/** The line kind a source id names: `haunt.cold-spot.dry.1` is the cold-spot Haunt Event line. */
+function sourceKind(id: string): string {
+  const [head, next] = id.split(".");
+  return head === "haunt" && next !== undefined ? `haunt.${next}` : (head ?? "");
+}
+
+/**
+ * The canonical speech keys worth warming because they play whatever happens
+ * (ghost-voice design, "Prefetch without secrets"; Requirement 1.9): during play,
+ * every `turn-start` line; when the Haunt sits one level below a threshold that can
+ * still fire, every Haunt Event line of all four options (all of them, so the seeded
+ * choice stays hidden); and within an hour of the host's midnight, every midnight
+ * line. Fixed order (turn-start, Haunt, midnight), no duplicates; the caller hashes
+ * a key with `libraryKey` when it needs the R2 address. Nothing here is a confession,
+ * a reveal or an ending: those depend on secrets and are never warmed.
+ */
+export function prefetchPlan(view: PrefetchView, entries: readonly LibraryEntry[]): string[] {
+  if (view.phase !== "playing") return [];
+  const groups: string[][] = [["turn-start"]];
+  const oneBelow = THRESHOLDS.some((t) => view.haunt.level === t - 1 && t < view.haunt.max);
+  if (oneBelow) groups.push(HAUNT_OPTIONS.map((option) => `haunt.${option}`));
+  const toMidnight = view.minutesToMidnight;
+  if (toMidnight !== null && Number.isFinite(toMidnight) && toMidnight >= 0 && toMidnight <= PREFETCH_MIDNIGHT_WITHIN_MINUTES) groups.push(["midnight"]);
+
+  const keys: string[] = [];
+  const seen = new Set<string>();
+  for (const kinds of groups) {
+    for (const entry of entries) {
+      if (!entry.sources.some((id) => kinds.includes(sourceKind(id)))) continue;
+      const key = canonicalSpeechKey(entry.voice, entry.spoken);
+      if (!seen.has(key)) {
+        seen.add(key);
+        keys.push(key);
+      }
+    }
+  }
+  return keys;
 }
