@@ -314,3 +314,16 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 8. THE choice of the World Clue or Decoy a Place shows SHALL be a function of the seed, the shot and the Public View only, SHALL be the same for the same inputs, SHALL be made without reading the Solution, and a Decoy SHALL look the same as a clue in every way (the same Place, ink, timing and size) except its Sign and its answer.
 9. A Bot SHALL ignore Scene clues, a phone SHALL show none on its footage (a Spirit clue is private and a Scene clue is for the table), and the Display under the pyramid SHALL show none in this version.
 10. A clip made by a model SHALL have a Place only after a person has looked at every frame of the Place's window and `place-check.mjs` has passed it, and its `PROVENANCE.md` entry SHALL name the model, the date, the prompt and the take.
+### Requirement 23
+
+**User Story:** As a visitor in Wander, I want the memory I find to come with a short scene that suits it, so that the walk has a picture as well as words. (Wander scenes, added 2026-11-16)
+
+#### Acceptance Criteria
+
+1. WHEN a memory is found THEN Wander MAY play one scene for its kind (`WANDER_SCENES` in `tools/playtest/js/scenes.js`): for a sound memory the AI scene `wander-chimes-take1` (wind chimes on a porch), for a person memory the AI scene `wander-chair-take1` (an empty chair, a coat and a cup of tea), and for a promise memory the film scene `wander-harbour` (a ship coming into the harbour); each SHALL be a clip under Requirement 18 (the AI scenes under 18.9), muted, decoration, with its scene in words in the live region, and the walk SHALL work with every scene missing.
+2. THE promise memory SHALL keep the film scene until a clean AI scene exists: both takes of `wander-letter` show faint writing on the letter, so they SHALL NOT be used (a clip never holds a text or a clue).
+3. EACH AI scene SHALL have one line written for its picture, the Whisper's (`wander.chimes.soft.1` and `wander.chair.soft.1`, rows of `docs/story/ghost-lines.md` that the Voice Library speaks), and the film SHALL have none; the line SHALL start at the moment of the picture it belongs to (`lineAt`: the chimes 5.0 and the chair 1.5 seconds into the scene) and end before the scene does, once, spoken WHERE narration is on and in words WHATEVER the visitor chose, and a line still waiting SHALL be dropped by Stop, by another kind or by a new Find.
+4. A Wander line SHALL set a mood and SHALL NOT say what the memory is (the card after the scene does, `wanderCard`), SHALL follow the bank rules of the single-player lines (no digit, no Sign, no clue, no place named, no card) and SHALL NOT be a line the engine can draw for another moment.
+5. WHERE the Whisper's reveal line is spoken THEN the scene SHALL start when the reveal has ended, so that two voices never speak at once, and WHERE narration or footage is off THEN the reveal SHALL be words, the scene SHALL start at once or not at all, and the line and the card SHALL show at once and read the same.
+6. WHILE a scene over 5 seconds plays THEN a Stop control SHALL be on screen, Stop SHALL show the card at once, and a scene SHALL be shown in its own shape (the AI scenes are 3:4 and SHALL NOT be cropped to a landscape frame).
+

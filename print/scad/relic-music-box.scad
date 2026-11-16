@@ -1,6 +1,6 @@
 // Hauntology Tabletop Print Kit — Relic r1: Haunted Coffin-Casket Music Box (From-Scratch FDM Design)
-// Colour: Crimson (#d43838) body — pairs cleanly with contrasting Antique Brass `relic-music-box-lid`
-// Size: ~44.0 W (incl. +X skeleton key) x 26.8 D x 27.9 H mm (34.4 H mm when closed with lid)
+// Colour: Ectoplasm Mint (#5ce6b8) body — pairs with the contrasting Dark Iron `relic-music-box-lid`
+// Size: ~44.0 W (incl. +X skeleton key) x 26.8 D x 27.9 H mm (34.6 H mm when closed with lid, which sits 0.3 mm clear above the rim)
 // Sticker details: Front keyhole escutcheon pocket (16.0 x 7.0 x 0.4 mm) on -Y face (for 15.6 x 6.6 mm decal)
 // From-Scratch FDM & Tim Burton Design Choices:
 //   - Tapered hexagonal Victorian coffin planform (22.4 mm prow -> 36.8 mm shoulders -> 26.0 mm apse)
@@ -51,7 +51,7 @@ module relic_music_box() {
   }
 
   // 3. Haunted Coffin Casket Body (Z = 15.2 .. 27.9) with 6 Gothic Buttresses & Pointed Arch Keyhole Shield
-  //    Top rim at Z = 27.90 leaves a 0.10 mm clean vertical shadow seat inside lid outer eaves (Z = 27.0..28.0)
+  //    Top rim at Z = 27.90 leaves a 0.30 mm vertical gap under the lid shelf (Z = 28.2) inside the lid outer eaves (Z = 27.2..28.2)
   difference() {
     union() {
       // Main thick hexagonal coffin body (Z = 15.2 .. 27.9)
@@ -275,4 +275,4 @@ module relic_music_box() {
   }
 }
 
-color(col_alarm) relic_music_box();
+color(col_ghost) relic_music_box();

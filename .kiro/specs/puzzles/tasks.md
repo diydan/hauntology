@@ -351,6 +351,12 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 20.9_
   - [ ] 14.12 Spike puzzles 1.8 (lines over pictures): on a phone and a TV, with the real Voice Library audio, does each line fall on its picture (hand, bed, house, dawn), and does the narration with the clip's own quiet sound read well? (`narration-preview-4.mp4` is the first check, by ear; the dawn line was re-rendered for take 3)
     - _Requirements: 20.8_
+  - [x] 14.13 Wander scenes by kind (added 2026-11-16; Requirement 23): `WANDER_KINDS`, `WANDER_SCENES` and `wanderScene(kind)` in `tools/playtest/js/scenes.js`, the AI scenes `wander-chimes-take1` and `wander-chair-take1` for a sound and a person memory with their Whisper lines (`wander.chimes.soft.1`, `wander.chair.soft.1`) at 5.0 s and 1.5 s, the film for a promise, section 7 of `footage.html` with a kind switch, a portrait frame, the line as words at its moment (dropped by Stop, another kind or a new Find; at once with footage off or a blocked clip); tests over every kind, a check that each shape matches its clip and each line ends before its scene does; 12 mutations, all caught
+    - Built 2026-11-16, not deployed. The Wander letter scene is held back (writing on the letter). The reveal-then-scene order of 23.5 is not built in the real Wander flow.
+    - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5, 23.6_
+  - [ ]* 14.14 Write property test for the Wander scenes over the real Wander flow once it exists
+    - **Property 33: A Wander scene is its kind's, and its line is its own**
+    - **Validates: Requirements 23.1, 23.2, 23.3, 23.4, 23.5, 23.6**
 - [ ] 15. Scene clues: a clue written on the scene (added 2026-11-15; satisfies Requirement 22)
   - [ ] 15.1 `tools/playtest/js/places.js` (the Place data and a check of its shape: four corners forming a convex shape of the least size, a known surface and ink, `from` before `to`, `to` not past the clip) and `js/scene-clues.js` with the pure rules `placeFor`, `sceneClue`, `inkFor` and `contrastOk`, with tests over every seed in a grid, every shot with a Place and every answer form (a code, a time, a word)
     - _Requirements: 22.1, 22.2, 22.6, 22.8_

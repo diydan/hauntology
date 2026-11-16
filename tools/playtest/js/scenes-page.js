@@ -1,19 +1,24 @@
 // The scene demos of the footage test page: the clock shadow, the Reel, the two endings (Requirements 19 to 21) and Wander's home movie.
 // Everything here is driven by public state only (a clock, a Haunt level, a list of nicknames). The video is decoration:
 // its meaning is always also said in words (the text twin of each shot) and the page works with the footage off.
-import { LINE_AT, SHOTS, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelLine, reelShot, reelSound, shadowPosition, shotLine, stepPosition, wanderCard } from './scenes.js';
+import { LINE_AT, SHOTS, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelLine, reelShot, reelSound, shadowPosition, shotLine, stepPosition, wanderCard, wanderScene } from './scenes.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const clock = (ms) => { const s = Math.ceil(Math.max(0, ms) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 
-/** Points a video at a shot: both formats, the poster, and a reload. The markup already has the two `source` elements. */
-export function setShot(video, name) {
-  const file = SHOTS[name];
-  if (!file) throw new RangeError(`unknown shot ${name}`);
+/** Points a video at a clip by its file name: both formats, the poster, and a reload. The markup already has the two `source` elements. */
+export function setClip(video, file) {
   video.setAttribute('poster', `media/${file}.jpg`);
   video.querySelector('source[type="video/webm"]').setAttribute('src', `media/${file}.webm`);
   video.querySelector('source[type="video/mp4"]').setAttribute('src', `media/${file}.mp4`);
   video.load();
+}
+
+/** Points a video at a shot by the name the Reel uses. */
+export function setShot(video, name) {
+  const file = SHOTS[name];
+  if (!file) throw new RangeError(`unknown shot ${name}`);
+  setClip(video, file);
 }
 
 /**
@@ -175,12 +180,20 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
   $('#ft-end-house').addEventListener('click', () => playEnding('house'));
   $('#ft-end-skip').addEventListener('click', () => { end.pause(); dropEndLine(); showCard(); });
 
-  // ---- 7. Wander: a memory is found, the Whisper's line, a long silent film, then our own card
+  // ---- 7. Wander: a memory is found, the Whisper's line, a scene for its kind (with a line of its own for the AI scenes), then our own card
   const wander = $('#ft-wander');
+  const wanderFilm = wander.closest('.ft-film');
   const whisper = $('#ft-wander-whisper');
+  const wline = $('#ft-wander-line');
   const wcard = $('#ft-wander-card');
   const stop = $('#ft-wander-stop');
+  const kindButtons = [...document.querySelectorAll('[role="radio"][data-kind]')];
   const STAND_IN_MEMORY = 'I stood by the water and watched for the sails. They came in slowly, as they always did.'; // the engine's narrated memory, in the real game
+  let kind = 'promise';
+  let wturn = 0; // each Find, each Stop and each change of kind is a new turn: a line still waiting for its moment in the scene is dropped
+  let wtimer = 0;
+  function dropWanderLine() { wturn += 1; clearTimeout(wtimer); wline.hidden = true; wline.textContent = ''; }
+  function applyKind() { const sc = wanderScene(kind); setClip(wander, sc.clip); wanderFilm.dataset.shape = sc.shape; }
   function showWanderCard() {
     const c = wanderCard(STAND_IN_MEMORY);
     $('#ft-wander-card-title').textContent = c.title;
@@ -189,18 +202,35 @@ export function initScenes({ isOn, say, playSound = () => {} }) {
     stop.hidden = true;
     say(`${c.title} ${c.lines.join(' ')}`);
   }
+  for (const b of kindButtons) {
+    b.addEventListener('click', () => {
+      kind = b.dataset.kind;
+      for (const o of kindButtons) o.setAttribute('aria-checked', String(o === b));
+      wander.pause();
+      dropWanderLine();
+      wcard.hidden = true;
+      whisper.hidden = true;
+      stop.hidden = true;
+      applyKind();
+      say(`A memory of ${b.textContent.toLowerCase()}.`);
+    });
+  }
   $('#ft-wander-find').addEventListener('click', () => {
+    dropWanderLine();
+    const mine = wturn;
+    const sc = wanderScene(kind);
+    const show = () => { if (mine === wturn && sc.line) showLine(wline, sc.line); };
     wcard.hidden = true;
     whisper.textContent = WANDER.reveal;
     whisper.hidden = false;
-    if (!isOn()) { showWanderCard(); return; } // footage off: the card at once, the same words
-    say(WANDER.text);
+    if (!isOn()) { show(); showWanderCard(); return; } // footage off: the card and the line at once, the same words
+    say(sc.text);
     wander.currentTime = 0;
     stop.hidden = false;
-    wander.play().catch(() => showWanderCard());
+    wander.play().then(() => { if (mine === wturn && sc.line) wtimer = setTimeout(show, sc.lineAt * 1000); }, () => { show(); showWanderCard(); });
   });
   wander.addEventListener('ended', showWanderCard);
-  stop.addEventListener('click', () => { wander.pause(); showWanderCard(); });
+  stop.addEventListener('click', () => { wander.pause(); dropWanderLine(); showWanderCard(); });
 
   return {
     sync() {

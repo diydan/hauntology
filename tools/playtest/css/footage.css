@@ -5,6 +5,8 @@
 /* The TV demos: the picture on top in the film's own 4 by 3, the controls and words in a solid panel under it. */
 .ft-tv { display: grid; gap: var(--space-2); }
 .ft-tv .ft-film { position: relative; z-index: 0; overflow: hidden; aspect-ratio: 4 / 3; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-xl); }
+/* A portrait scene (the AI scenes of Wander are 3 by 4) keeps its own shape and is not cropped to the landscape frame. */
+.ft-tv .ft-film[data-shape='portrait'] { aspect-ratio: 3 / 4; max-inline-size: 18rem; margin-inline: auto; }
 .ft-phone { position: relative; isolation: isolate; overflow: hidden; display: grid; align-content: end; aspect-ratio: 390 / 640; padding: var(--space-3); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-xl); background: var(--surface-sunk); }
 .ft-film { position: absolute; inset: 0; z-index: -1; background: var(--surface-sunk); }
 .ft-video { display: block; width: 100%; height: 100%; object-fit: cover; }

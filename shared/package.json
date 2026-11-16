@@ -19,6 +19,7 @@
     "./puzzles/*": "./src/puzzles/*.ts",
     "./table/*": "./src/table/*.ts",
     "./party/*": "./src/party/*.ts",
+    "./songs/*": "./src/songs/*.ts",
     "./print/*": "./src/print/*.ts",
     "./voice/*": "./src/voice/*.ts"
   },
