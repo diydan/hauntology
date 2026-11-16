@@ -361,7 +361,7 @@ test('20 the Reel: each Haunt rise swaps the shot, says an Event in words, and t
   assert.deepEqual(segs.map((x, i) => x.classList.contains('ui-seg--event') && i + 1), [false, false, 3, false, false, 6, false, false, 9, false]);
   assert.ok(segs[9].classList.contains('ui-seg--max'));
   for (let i = 0; i < 3; i++) click(btn('Haunt +1'));
-  assert.equal(src(), 'media/stair-shadow.webm');
+  assert.equal(src(), 'media/reel-mirror.webm', 'the Haunt 6 Event is the mirror (Frankenstein, 1910), not the stair shadow');
   for (let i = 0; i < 4; i++) click(btn('Haunt +1'));
   assert.equal($('#ft-haunt-text').textContent, 'Haunt 10 of 10');
   assert.equal(src(), 'media/ai-lights-out-take1.webm');
@@ -646,6 +646,10 @@ const reelLineEl = () => $('#ft-reel-line');
 const HAND = 'That is me, at the door.';
 const BED = 'I sit on the edge of the bed';
 const HOUSE = 'One window, then the next';
+const SHIP = 'A ship comes in, and I know that ship.';
+const CRATE = 'Something below is waking. It is not me.';
+const STREET = 'The street is empty. I emptied it myself.';
+const MIRROR = 'Look in the glass. There is someone in it.';
 
 test('20.8 the line of the hand shot is hidden until its moment (0.8 s into the shot), then shows in its own live region', { skip }, async () => {
   open();
@@ -663,13 +667,13 @@ test('20.8 the line of the hand shot is hidden until its moment (0.8 s into the 
   });
 });
 
-test('20.7 the line is the shot\'s own: the hand at 7 and 8, the bed at 9, the house at the maximum, and none over the old film', { skip }, async () => {
+test('20.7 the line is the shot\'s own, on every rise: the film shots too', { skip }, async () => {
   open();
   await load(); await tick(5);
   await onClock(async (go) => {
     const seen = [];
     for (let i = 1; i <= 10; i++) { rise(1); await go(SETTLE); seen.push(reelLineEl().hidden ? null : reelLineEl().textContent.slice(0, 24)); }
-    assert.deepEqual(seen, [null, null, null, null, null, null, HAND, HAND, BED.slice(0, 24), HOUSE.slice(0, 24)].map((x) => x && x.slice(0, 24)), 'Haunt 1 to 10');
+    assert.deepEqual(seen, [SHIP, SHIP, CRATE, STREET, STREET, MIRROR, HAND, HAND, BED, HOUSE].map((x) => x.slice(0, 24)), 'Haunt 1 to 10');
     assert.equal(reelLineEl().dataset.speaker, 'whisper');
   });
 });
@@ -764,15 +768,20 @@ const CHIMES = 'Do you hear that? A row of small bells';
 const CHAIR = 'The tea is still warm';
 const says = (el, start) => assert.ok(el.textContent.startsWith(start), `${el.id} says "${el.textContent.slice(0, 40)}", expected it to start with "${start}"`);
 
-test('23.1 Wander begins on the promise memory with the harbour film in its 4 by 3 frame, and no line', { skip }, async () => {
+test('23.1 Wander begins on the promise memory with the farewell (Frankenstein, 1910) in its 4 by 3 frame, and its line', { skip }, async () => {
   open();
   await load(); await tick(5);
   assert.deepEqual([...document.querySelectorAll('[role="radio"][data-kind]')].map((b) => [b.dataset.kind, b.getAttribute('aria-checked')]), [['sound', 'false'], ['person', 'false'], ['promise', 'true']]);
-  assert.equal(wsrc(), 'media/wander-harbour.webm');
+  assert.equal(wsrc(), 'media/wander-departure.webm');
   assert.equal($('#ft-wander').closest('.ft-film').dataset.shape, 'landscape');
   assert.equal($('#ft-wander-line').getAttribute('role'), 'status');
-  click(btn('Find the memory')); await tick(5);
-  assert.equal($('#ft-wander-line').hidden, true, 'the film has no line of its own');
+  await onClock(async (go) => {
+    click(btn('Find the memory')); await flush();
+    await go(2299);
+    assert.equal($('#ft-wander-line').hidden, true, 'not before its moment');
+    await go(1);
+    assert.match($('#ft-wander-line').textContent, /^Somebody waves from this window/);
+  });
 });
 
 test('23.1 choosing a kind swaps the scene and its frame, stops what played, and clears the old words', { skip }, async () => {
@@ -796,7 +805,7 @@ test('23.1 choosing a kind swaps the scene and its frame, stops what played, and
   click(kindBtn('person')); await tick(5);
   assert.equal(wsrc(), 'media/wander-chair-take1.webm');
   click(kindBtn('promise')); await tick(5);
-  assert.equal(wsrc(), 'media/wander-harbour.webm');
+  assert.equal(wsrc(), 'media/wander-departure.webm');
   assert.equal(v.closest('.ft-film').dataset.shape, 'landscape');
 });
 
@@ -933,3 +942,26 @@ test('22 Wander: Stop and the Narration switch cut the reveal, and a queued line
     assert.deepEqual(voices, ['media/voice-reveal.soft.1.mp3'], 'the queued scene line never sounds');
   });
 });
+
+test('19 the turn timer plays its 30 second clip while the clock runs (smooth, not a seek every tenth of a second), and holds it still when paused', { skip }, () => withClock(async (clock) => {
+  const { log } = open();
+  await load(); await tick(5);
+  const scrub = $('#ft-scrub');
+  assert.equal(scrub.querySelector('source[type="video/webm"]').getAttribute('src'), 'media/clock-shadow.webm');
+  Object.defineProperty(scrub, 'paused', { get() { return !this.__playing; }, configurable: true });
+  click(btn('Start turn'));
+  clock.t += 3000; await tick(130);
+  assert.ok(log.some(([op, id]) => op === 'play' && id === 'ft-scrub'), 'the clip plays');
+  const plays = log.filter(([op, id]) => op === 'play' && id === 'ft-scrub').length;
+  let seeks = 0;
+  const desc = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(scrub), 'currentTime') ?? Object.getOwnPropertyDescriptor(window.HTMLMediaElement.prototype, 'currentTime');
+  Object.defineProperty(scrub, 'currentTime', { get() { return desc.get.call(this); }, set(v) { seeks += 1; desc.set.call(this, v); }, configurable: true });
+  scrub.__t = (3 / 30) * (4.2 - 0.06); // the film is where the clock is
+  clock.t += 100; await tick(130);
+  scrub.__t = (3.1 / 30) * (4.2 - 0.06);
+  clock.t += 100; await tick(130);
+  assert.equal(seeks, 0, 'no seek while the film keeps time with the clock');
+  assert.equal(log.filter(([op, id]) => op === 'play' && id === 'ft-scrub').length, plays, 'and no new play');
+  click(btn('Pause clock')); await tick(130);
+  assert.equal(scrub.__playing, false, 'paused clock, still film');
+}));

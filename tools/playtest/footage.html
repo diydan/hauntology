@@ -30,32 +30,29 @@
   </div>
 
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-a">
-    <h2 id="ft-a" class="ui-eyebrow">1 · A Sight (full screen behind the clue)</h2>
-    <div class="ft-phone">
+    <h2 id="ft-a" class="ui-eyebrow">1 · Clue screen (a real clue, the film behind it)</h2>
+    <div class="ft-phone ft-phone--app">
       <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
-      <section class="ui-panel ui-stack ui-stack--tight" aria-label="The clue">
-        <p class="ui-eyebrow">A Sight · gone in 5 seconds</p>
-        <p class="ui-prompt">The code starts with 7.</p>
-        <p class="ui-hint">Look at the stairs. They will not stay.</p>
-      </section>
+      <iframe id="ft-clue-app" class="ft-app" title="A real clue: the safe's code, shown for 8 seconds, then the safe" src="puzzles/?kind=safe&amp;level=easy&amp;seed=3&amp;bare=1" loading="lazy"></iframe>
+    </div>
+    <p class="ui-hint">The real clue card of the safe. It shows for 8 seconds, then the safe opens. <button id="ft-clue-again" class="ui-button" type="button">Show the clue again</button></p>
+  </section>
     </div>
   </section>
 
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-b">
-    <h2 id="ft-b" class="ui-eyebrow">2 · A Lock (faint, behind the controls)</h2>
-    <div class="ft-phone ft-dim">
+    <h2 id="ft-b" class="ui-eyebrow">2 · Puzzle screen (a real puzzle, the film faint behind it)</h2>
+    <div class="ft-phone ft-phone--app ft-dim">
       <div class="ft-film" aria-hidden="true"><video class="ft-video" muted loop playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
-      <section class="ui-panel ui-stack" aria-label="The safe">
-        <p class="ui-eyebrow">Safe · 3 attempts</p>
-        <div class="ui-chips ft-code" role="list" aria-label="Code so far"><span class="ui-chip is-active" role="listitem">7</span><span class="ui-chip" role="listitem">?</span><span class="ui-chip" role="listitem">?</span><span class="ui-chip" role="listitem">?</span></div>
-        <button class="ui-button ui-button--primary" type="button">Open</button>
-        <button class="ui-button" type="button">Let the ghost open it</button>
-      </section>
+      <iframe class="ft-app" title="A real puzzle: the wires" src="puzzles/?kind=wires&amp;level=easy&amp;seed=2&amp;faded=0&amp;bare=1" loading="lazy"></iframe>
+    </div>
+    <p class="ui-hint">The real wires puzzle. It works: try it.</p>
+  </section>
     </div>
   </section>
 
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-c">
-    <h2 id="ft-c" class="ui-eyebrow">3 · Nothing came loose (plays once, on Replay)</h2>
+    <h2 id="ft-c" class="ui-eyebrow">3 · Puzzle failed (the film plays once, on Replay)</h2>
     <div class="ft-phone">
       <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-once" muted playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
       <section class="ui-panel ui-panel--danger ui-stack" aria-label="The result">
@@ -67,12 +64,13 @@
   </section>
 
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-d">
-    <h2 id="ft-d" class="ui-eyebrow">4 · The clock shadow (the Turn Clock, seen by the whole table)</h2>
+    <h2 id="ft-d" class="ui-eyebrow">4 · Turn timer (on the TV: the shadow climbs as the time runs out)</h2>
     <div class="ft-tv">
-      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-scrub" muted playsinline preload="auto" poster="media/stair-shadow.jpg"><source src="media/stair-shadow.webm" type="video/webm"><source src="media/stair-shadow.mp4" type="video/mp4"></video></div>
+      <div class="ft-film" aria-hidden="true"><video class="ft-video" id="ft-scrub" muted playsinline preload="auto" poster="media/clock-shadow.jpg"><source src="media/clock-shadow.webm" type="video/webm"><source src="media/clock-shadow.mp4" type="video/mp4"></video></div>
       <section class="ui-panel ui-stack ui-stack--tight" aria-label="The Turn Clock">
+        <p class="ui-eyebrow">Mara's turn</p>
         <p id="ft-clock-text" class="ui-prompt">Turn Clock 0:30</p>
-        <p class="ui-hint">The shadow stands where the clock is. Help steps it back, Spook steps it forward.</p>
+        <p class="ui-hint">The shadow reaches the top of the stairs when the time is up. Help gives Mara 10 seconds and the shadow slides back; Spook takes 10.</p>
         <div class="ui-row">
           <button id="ft-clock-start" class="ui-button ui-button--primary" type="button">Start turn</button>
           <button id="ft-clock-help" class="ui-button" type="button">Help +10 s</button>
@@ -131,14 +129,14 @@
   <section class="ui-stack ui-stack--tight" aria-labelledby="ft-g">
     <h2 id="ft-g" class="ui-eyebrow">7 · Wander: a memory is found (a scene for its kind, then our card)</h2>
     <div class="ft-tv">
-      <div class="ft-film" data-shape="landscape" aria-hidden="true"><video class="ft-video" id="ft-wander" muted playsinline preload="metadata" poster="media/wander-harbour.jpg"><source src="media/wander-harbour.webm" type="video/webm"><source src="media/wander-harbour.mp4" type="video/mp4"></video></div>
+      <div class="ft-film" data-shape="landscape" aria-hidden="true"><video class="ft-video" id="ft-wander" muted playsinline preload="metadata" poster="media/wander-departure.jpg"><source src="media/wander-departure.webm" type="video/webm"><source src="media/wander-departure.mp4" type="video/mp4"></video></div>
       <section class="ui-panel ui-stack ui-stack--tight" aria-label="A memory">
         <div class="ui-segments" role="radiogroup" aria-label="Kind of memory">
           <button class="ui-button" type="button" role="radio" aria-checked="false" data-kind="sound">A sound</button>
           <button class="ui-button" type="button" role="radio" aria-checked="false" data-kind="person">A person</button>
           <button class="ui-button" type="button" role="radio" aria-checked="true" data-kind="promise">A promise</button>
         </div>
-        <p id="ft-wander-kind-hint" class="ui-hint">A sound and a person have a short AI scene and a line written for it. A promise keeps the old harbour film (the AI letter scene shows faint writing, so it is held back).</p>
+        <p id="ft-wander-kind-hint" class="ui-hint">Each kind has its own scene and a line written for it. A sound and a person are AI scenes; a promise is a farewell at a window, from Frankenstein (1910).</p>
         <p id="ft-wander-whisper" class="ui-lead" role="status" hidden></p>
         <p id="ft-wander-line" class="ui-lead" role="status" hidden></p>
         <div id="ft-wander-card" class="ui-stack ui-stack--tight" hidden>

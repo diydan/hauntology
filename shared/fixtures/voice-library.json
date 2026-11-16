@@ -50,7 +50,7 @@
       "very close"
     ]
   },
-  "count": 527,
+  "count": 532,
   "entries": [
     {
       "key": "speech/lib/v1/d8ce0fe2cd4d4dea406a515ee239522af8b19543f8139702cee27be7cbe8c10f",
@@ -1477,6 +1477,14 @@
       ]
     },
     {
+      "key": "speech/lib/v1/b9ecd1b658b9c83a364757e923f85ee74aead69631151cb13fb70d772e3d73e3",
+      "voice": "inworld:Pippa",
+      "spoken": "Somebody waves from this window until the road is empty. I wave too, now and then. Nobody has told me to stop.",
+      "sources": [
+        "wander.departure.soft.1"
+      ]
+    },
+    {
       "key": "speech/lib/v1/6d2a06a767de35ceaa73fe4761d6c4a23b8da91d82b19a64297e1442002a807b",
       "voice": "inworld:Pippa",
       "spoken": "Hello. I was waiting. I did not mind. I am very good at waiting.",
@@ -1781,11 +1789,43 @@
       ]
     },
     {
-      "key": "speech/lib/v1/c15ee033f7c025aa4c6015f509be92286f33c82552f407cf8a54f0d4bef0c6e3",
+      "key": "speech/lib/v1/60c1e129d9c4395e2ce2d31298506f2c979513cb016951a2dd0ae697d7c31d49",
       "voice": "inworld:Pippa",
-      "spoken": "One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely.",
+      "spoken": "One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. I will keep you company.",
       "sources": [
         "scene.lights-out.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2c3a8320f4032ff390222655cba70c3849cce7483ff2e6d39439b9c6fa33bac4",
+      "voice": "inworld:Pippa",
+      "spoken": "A ship comes in, and I know that ship.",
+      "sources": [
+        "scene.ship.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1a6d9f6fc0ec2b7d36c091a4ad322de16c81120cdfaee9ff7170a88ca18d24ee",
+      "voice": "inworld:Pippa",
+      "spoken": "Something below is waking. It is not me.",
+      "sources": [
+        "scene.crate.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/06c558392e97d028d38d9977ce7e7331524fff1452b9b531e304e7a94c77ee43",
+      "voice": "inworld:Pippa",
+      "spoken": "The street is empty. I emptied it myself.",
+      "sources": [
+        "scene.street.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/07f2082679ae212a09a323c2c2181f2a5c5fa4b7c03eba49995e27fdde48940e",
+      "voice": "inworld:Pippa",
+      "spoken": "Look in the glass. There is someone in it who is not in the room. Do not be cross. It is only me.",
+      "sources": [
+        "scene.mirror.soft.1"
       ]
     },
     {

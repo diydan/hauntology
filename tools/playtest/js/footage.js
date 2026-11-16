@@ -88,6 +88,9 @@ for (const b of document.querySelectorAll('[role="radio"][data-look]')) {
   });
 }
 
+// Section 1: the real clue card shows for 8 seconds, then the safe. This shows it again (the page is loaded afresh).
+$('#ft-clue-again').addEventListener('click', () => { const f = $('#ft-clue-app'); f.src = f.getAttribute('src'); say('The clue again.'); });
+
 $('#ft-replay').addEventListener('click', () => {
   if (!wanted) { say('Footage is paused: tap Play footage first.'); return; }
   once.currentTime = 0;

@@ -16,12 +16,24 @@ A clip cut from a source file already described in a **Source record** points to
 | Open point | The restoration. The picture is old; the tints and the rebuilt intertitles are the restorers' work. Every clip uses the picture only (no intertitle, no sound) and is re-graded by the page, but a lawyer should look at it before the game is sold. |
 | Checked | Credits and death years read on Wikipedia and Commons on 2026-11-15. No rights search, and no legal advice. |
 
+## Source record: Frankenstein (1910)
+
+| | |
+|---|---|
+| Film | *Frankenstein* (1910), Edison Manufacturing Company, director J. Searle Dawley, about 12 minutes |
+| Source | Wikimedia Commons, `File:Frankenstein - Edison Mfg. Co., 1910.webm`, the 480p transcode, fetched 2026-11-16 |
+| What that file is | The Library of Congress print (Commons credits the LOC, item 2017600664), with its tints. Commons marks it public domain. |
+| Credited makers | J. Searle Dawley (director and screenplay, died 1949), Thomas A. Edison (producer, died 1931). Silent: no music was made for it. |
+| Why it is free | USA: published 1910, before 1931. EU and Luxembourg: 70 years from the death of the last of director and screenplay author: 1949 + 70, so free since 2020. |
+| Open point | The film's own tints (brown, red, blue) are the print's; every clip here is turned to black and white and uses the picture only. A lawyer should look at it before the game is sold. |
+| Checked | Credits and death years read on Commons and Wikipedia on 2026-11-16. No rights search, and no legal advice. |
+
 ## stair-shadow
 
 | | |
 |---|---|
 | Record | Source record: Nosferatu (1922) |
-| Shot | Count Orlok's shadow climbing the stairs, 1:26:56 to 1:27:00. The Reel's Haunt 6 shot, and the clock shadow. |
+| Shot | Count Orlok's shadow climbing the stairs, 1:26:56 to 1:27:00. The film behind the clue, the puzzle and the failed puzzle. The clock shadow is cut from it (`clock-shadow`). |
 | Picture only | No audio track (`-an`). No title card or intertitle. No music. |
 | Cut by | `ffmpeg`, 4.2 s from 5215.9 s, scaled to 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 2.2 s |
 | Size | `.mp4` 77 KB, `.webm` 99 KB, `.jpg` 9 KB |
@@ -104,16 +116,38 @@ A clip cut from a source file already described in a **Source record** points to
 | Size | `.mp4` 192 KB, `.webm` 221 KB, `.jpg` 10 KB |
 | Flash check | `node flash-check.mjs` on 2026-11-15: 160 frames, at most 0 flashes in any second (limit 3). |
 
-## wander-harbour
+## clock-shadow
 
 | | |
 |---|---|
 | Record | Source record: Nosferatu (1922) |
-| Shot | One unbroken run of the film, 1:01:48 to 1:03:27 (99.4 s), with no title card in it: a tree by a house, the ship at sea, the sea, the sails, a woman at a window sill (small and dim, no close-up), and the ship coming into the harbour. Wander's home movie, played when a memory is found. It is the longest run in the film without a title card or a close-up of a face; the next shot after it is a face at a window. |
+| Shot | The same shadow climbing the stairs as `stair-shadow`, slowed to 30 seconds (the length of a turn) with blended frames, so the shadow climbs smoothly as the Turn Clock runs. |
 | Picture only | No audio track (`-an`). No title card or intertitle. No music. |
-| Cut by | `ffmpeg`, 99.4 s from 3708.1 s, 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 75 s (the harbour) |
-| Size | `.mp4` 2.7 MB, `.webm` 3.9 MB, `.jpg` 11 KB |
-| Flash check | `node flash-check.mjs` on 2026-11-15: 1787 frames, at most 1 flash in any second (limit 3). A screen of whole-frame brightness; there is no lightning or strobe in the scene. |
+| Cut by | `ffmpeg` from `stair-shadow.mp4`: `setpts=7.2*PTS,framerate=fps=24` (frame blending), 480 x 360, H.264 (main, crf 30, a key frame every 12) and VP9 (crf 38); poster copied from `stair-shadow` |
+| Size | `.mp4` 405 KB, `.webm` 450 KB, `.jpg` 9 KB |
+| Flash check | `node flash-check.mjs media/clock-shadow.mp4 media/clock-shadow.webm` on 2026-11-16: 721 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## reel-mirror
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The parlour: Frankenstein rests in his chair and a figure appears in the tall mirror behind him, 7:37.5 for 10 s. The clip ends before the figure steps into the room. The Reel's shot for the Haunt 6 Event. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 10 s from 457.5 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 7 s |
+| Size | `.mp4` 296 KB, `.webm` 394 KB, `.jpg` 16 KB |
+| Flash check | `node flash-check.mjs media/reel-mirror.mp4 media/reel-mirror.webm` on 2026-11-16: 240 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
+
+## wander-departure
+
+| | |
+|---|---|
+| Record | Source record: Frankenstein (1910) |
+| Shot | The farewell: the young man says goodbye in the parlour and leaves, and the woman goes to the window and waves after him, 0:13 for 12.5 s (between the two title cards). Wander's scene for a promise memory. |
+| Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
+| Cut by | `ffmpeg`, 12.5 s from 13 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 6 s |
+| Size | `.mp4` 528 KB, `.webm` 692 KB, `.jpg` 13 KB |
+| Flash check | `node flash-check.mjs media/wander-departure.mp4 media/wander-departure.webm` on 2026-11-16: 300 frames, at most 0 flashes in any second (limit 3). A screen of whole-frame brightness, not a certificate. |
 
 ## AI clips: the eight scenes of `docs/story/ai-scene-prompts.md`
 
