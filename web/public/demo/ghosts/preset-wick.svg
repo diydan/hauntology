@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 180" role="img" aria-label="A translucent ghost">
+<rect width="120" height="180" fill="#101018"/>
+<path d="M60 20c-22 0-34 16-34 38v76c0 6 6 8 10 4l8-8 8 8c3 3 8 3 10 0l8-8 8 8c4 4 10 2 10-4V58c0-22-12-38-34-38z" fill="#ffd9a8" fill-opacity="0.55"/>
+<circle cx="48" cy="62" r="5" fill="#101018"/><circle cx="72" cy="62" r="5" fill="#101018"/>
+<ellipse cx="60" cy="82" rx="6" ry="8" fill="#101018" fill-opacity="0.7"/>
+</svg>

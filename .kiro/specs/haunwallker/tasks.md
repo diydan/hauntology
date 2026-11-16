@@ -1,0 +1,282 @@
+# Implementation Plan
+
+Depends on `world-pipeline` task 2 (scaffold: `web/` and `api/` are empty today), 3.1 (schemas and error codes) and 3.5 (`inkCoverage`). The real API routes (`world-pipeline` 5 to 9, `ghost-engine` 5, `ghost-creator` 3) are not needed to start: every Screen runs against `FakeApi` and recorded fixtures until its route exists, so no task here calls a paid upstream.
+
+Order: pure logic with property tests first, then the fakes, then the **Zero-Quota Path** as a walking skeleton (Home, Gallery, Haunt with a Gallery world, Play, Ending), then Create and Confirm, then hardening and tests. The skeleton comes before Create because the Nov 27 exit is "pick a Gallery world, walk, find three memories, see the card", and the demo cannot be recorded without it.
+
+This spec owns `world-pipeline` tasks 10.1 to 10.4. Tasks 7.1, 7.2, 8.1 and 9.1 below satisfy them; tick those four lines at the checkpoint.
+
+Tasks marked `*` are optional test tasks that should still be done before submission.
+
+- [x] 1. Shared pure logic (`shared/src/app/`)
+  - [x] 1.1 Reconcile `shared/src/errors.ts`
+    - Add every code in the `world-pipeline` design code list that `errors.ts` does not already have (`blank_sketch`, `unsafe_image`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `quota_session`, `quota_day`, `quota_total`, `upstream_rate_limited`, `upstream_rejected`, `upstream_no_credits`, `ingest_failed`, `timeout` and any other missing one). Where both lists name one condition, keep the name already in `errors.ts` (`upload_bad_type`, `upload_too_large`, `world_gen_disabled`) and change that one list line in `world-pipeline/design.md` to say `errors.ts` is the source. Add the shell codes `shell_crash` and `session_expired`; `world_not_found` stays.
+    - Unit test: every value equals its key, and `shell_crash`, `session_expired` and `world_not_found` exist.
+    - _Requirements: 7.3_
+  - [x] 1.2 Test generators `*.arb.ts`
+    - `shared/src/app/types.ts` holds the shell's data types. The generators are `routes.arb.ts` (paths, routes, flow states), `capabilities.arb.ts` (quota snapshots, flags), `confirm.arb.ts` and `play.arb.ts` (events and sequences), `session.arb.ts` (session records, job states, polling timelines), `errors-copy.arb.ts` (error codes, non-codes, server messages, retry delays) and `sketch-size.arb.ts` (sizes, bitmaps with a known ink count, including exactly at the 0.5% floor). `prop-config.ts` gives `propParams(seed?, numRuns?)`: every property test passes it, so each runs seeded and at least 100 times. `arb.test.ts` checks that the generators reach the cases the properties need.
+    - _Requirements: 11.1_
+  - [x] 1.3 `events.ts`: the Shell-to-Viewer contract
+    - `ViewerToShell` (`pose`, `prompt`, `degraded`) and `ShellToViewer` (`set_input_mode`, `set_atmosphere`, `apply_view`) as zod schemas with inferred types, and a `Vec3` type. Reuse `Anchor` and `AnchorId` from `shared/src/ghost/` (ghost-engine 2.5); if that task has not landed, declare the minimal types here and move them when it does. `world-viewer` task 6.3 (`ViewerBridge`) imports this file, not the reverse.
+    - _Requirements: 6.3_
+  - [x] 1.4 `routes.ts`
+    - `resolveRoute`, `pathFor`, `guardRoute` and `isWorldId` with the redirect rules in the design (a redirect never lands on a route that redirects again). The types `ScreenId`, `Route` and `FlowState` live in `types.ts` (task 1.2). Unit tests cover the table, the bad paths, and every small flow state against every route.
+    - _Requirements: 1.5, 3.7, 5.2, 6.5, 7.6_
+  - [x]* 1.5 Write property test for the route table
+    - **Property 1: Routes are total and round-trip**
+    - **Validates: Requirements 1.5, 7.6, 13.2**
+  - [x]* 1.6 Write property test for guards
+    - **Property 2: Guards never expose a screen without its prerequisites**
+    - **Validates: Requirements 3.7, 5.2, 6.5, 13.2**
+  - [x] 1.7 `confirm.ts`: `confirmReduce`
+    - States, events and effects exactly as in the design, including `challenge` for Turnstile and `retry` only from `rejected`.
+    - _Requirements: 3.2, 3.3, 3.4, 3.5, 3.6_
+  - [x]* 1.8 Write model-based property test for the confirm machine
+    - **Property 3: World creation fires at most once and only after consent**
+    - **Validates: Requirements 3.2, 3.3, 3.4, 3.6**
+  - [x] 1.9 `errors-copy.ts`: `errorCopy` and `retryGate`
+    - `errorCopy` is a `Record<ErrorCode, …>` (a missing code is a compile error) plus one generic entry for unknown strings; server `message` is never read. `retryGate` clamps to [1 s, 120 s].
+    - _Requirements: 2.7, 3.4, 4.4, 7.3, 7.5_
+  - [x]* 1.10 Write property test for error copy
+    - **Property 4: Every error code has fixed copy and no raw server text is shown**
+    - **Validates: Requirements 2.7, 3.4, 4.4, 7.3**
+  - [x]* 1.11 Write property test for the retry gate
+    - **Property 9: Retry gate honours the advised delay**
+    - **Validates: Requirements 7.5**
+  - [x] 1.12 `capabilities.ts`
+    - `capabilities(quota, flags)` with the fixed `reason` priority.
+    - _Requirements: 1.3, 5.3_
+  - [x]* 1.13 Write property test for capabilities
+    - **Property 5: Gallery is always available and creation follows quota**
+    - **Validates: Requirements 1.3, 5.3**
+  - [x] 1.14 `stage.ts`: `stageOf` and `pollPlan`
+    - Poll no sooner than 3 s after the last poll and no later than 5 s; honour `rateLimitedUntil`; `null` when hidden or terminal; `overdue` after 15 minutes.
+    - _Requirements: 4.1, 4.3, 4.4, 4.7, 10.3_
+  - [x]* 1.15 Write property test for stages and polling
+    - **Property 6: Stage mapping and polling plan are safe**
+    - **Validates: Requirements 4.1, 4.3, 4.4, 4.7, 10.3**
+  - [x] 1.16 `play.ts`: `playReduce`
+    - Mode, found count, notice gate, degraded rung, `exit` ordering and the single navigation to the Ending.
+    - _Requirements: 6.1, 6.2, 6.4, 6.5, 6.6, 6.7_
+  - [x]* 1.17 Write model-based property test for the Play reducer
+    - **Property 7: Play reducer keeps input mode and Exit consistent**
+    - **Validates: Requirements 6.1, 6.2, 6.4, 6.5, 6.6**
+  - [x] 1.18 `resume.ts`: `resumeTarget`
+    - _Requirements: 4.5, 6.8, 7.7_
+  - [x]* 1.19 Write property test for resume
+    - **Property 10: Resume picks a reachable, correct target**
+    - **Validates: Requirements 4.5, 6.8, 7.7**
+  - [x] 1.20 `sketch-size.ts`: `downscaleSize` and `inkGate`
+    - `inkGate(bitmap)` returns `{enabled, coverage}` using `inkCoverage` and `INK_FLOOR` (0.005) from `shared/src/sketch.ts`. That file did not exist, so this task created it with those two and the `Bitmap` type; `buildSketchPrompt` and its tests stay with world-pipeline 3.5. The pad and the API route share it.
+    - _Requirements: 2.3, 2.4_
+  - [x]* 1.21 Write property test for downscale
+    - **Property 8: Sketch downscale preserves shape and never enlarges**
+    - **Validates: Requirements 2.3**
+  - [x]* 1.22 Write property test for the ink gate
+    - **Property 11: The ink floor gate matches the server**
+    - **Validates: Requirements 2.4**
+
+- [x] 2. Fakes and fixtures
+  - [x] 2.1 `shared/src/app/fake-api.ts`
+    - A fixture timeline: a Quota Snapshot (six meters), a quote, a create call, job states `queued → generating → ingesting → ready` on a short timer, a six-world Gallery list, a city search, a conditions choice that becomes an atmosphere at play start, `speak` and `listen` with their meters and refusals, and a three-memory play run with scripted ghost lines. Pure and clock-injected; makes no network call.
+    - _Requirements: 11.2, 11.3_
+  - [x] 2.2 `web/src/app/FakeApi.ts` and `?demo=1`
+    - Wires the timeline behind the same `ShellApi` interface (`shared/src/app/api.ts`, defined here because `ApiClient`, task 4.1, implements it too) with a short delay per call. This task also adds the minimal `web/` package (`package.json`, `tsconfig.json`, vitest config) that the tests need; `world-pipeline` task 2 adds Vite and React to it. `demo.ts` reads `?demo=1` and the switches `fast`, `zero`, `turnstile` and `fail`. The import sits behind an `import.meta.env.PROD` guard so it is tree-shaken from production builds.
+    - _Requirements: 11.2, 11.3_
+
+- [ ] 3. Session routes (`api/src/routes/session.ts`)
+  - [x] 3.1 `GET /api/session` and `POST /api/session/ack-notice`
+    - The Session record is a signed cookie (`shared/src/session-cookie.ts`) holding the session id, `lastWorldId`, `lastPlayId` and `ackNotice`. `GET` returns `{lastWorldId?, lastPlayId?, ackNotice, flags}`; `POST` sets the notice flag and answers 204. Origin check (`shared/src/origin.ts`, code `bad_origin`) runs before the Session middleware, so a refused request sets no cookie. A missing, forged, re-signed or expired cookie gets a new Session with no ids. `requireSession` answers `session_expired` for routes that need earlier state. `setLastWorld`, `setLastPlay` and `forgetWorld` are the helpers `POST /api/worlds`, `POST /api/play/start` and `DELETE /api/worlds/:id` call when they are built. This task also adds the minimal `api/` package (Hono, vitest, a `createApp` that mounts the routes); `world-pipeline` task 2 adds the Worker entry and bindings.
+    - _Requirements: 4.5, 6.1, 6.8, 7.7_
+  - [x] 3.2 Contract suite for world access
+    - `api/src/contract/world-access.ts` checks that a foreign world id, a request with no cookie and a missing id all answer `404 world_not_found` identically on `GET` and `DELETE /api/worlds/:id`, `POST /api/play/start` and an asset path; that the owner can read, play and delete; and that Gallery worlds are readable and playable by anyone and deletable by no visitor. It is checked against a compliant reference app and against nine deliberately leaky ones, so it can fail.
+    - _Requirements: 3.8, 7.6_
+  - [x] 3.3 Run the contract suite against the real routes
+    - Blocked until `world-pipeline` 7.4 and 8.1 and `ghost-engine` 5 exist. Call `worldAccessContract(label, makeHarness)` with a harness for the real app. If a route fails, record it in `docs/IMPLEMENTATION.md` under "Security gaps" instead of editing that route here.
+    - **Run on 2026-11-15, in part:** `api/src/contract/world-access.real.test.ts` runs the suite against the real world routes (`api/src/routes/worlds.ts`, `world-pipeline` 7.4 and 8.1) over an in-memory store, and it passes for `GET`, the assets and `DELETE`. `api/src/contract/world-access.cloudflare.test.ts` runs the same suite over `CloudflareWorldStore` with fakes of R2 and the `WorldJob` Durable Object, and it passes too. **Also run on `wrangler dev` (4.162.0) with real local R2 and a real `WorldJob` Durable Object** (`api/src/contract/world-access.live.test.ts` against `api/dev/check-worker.ts`, `LIVE_URL=<address> pnpm test`): it passes. **Finished 2026-11-15 with `ghost-engine` 5:** the play route is plugged into all three runs (the in-memory store, the R2, `WorldJob` and `PlaySession` fakes, and `wrangler dev` with the real objects), `skip: ["play"]` is gone, and a foreign, anonymous or missing world answers `POST /api/play/start` exactly as it answers a missing one; the share-link contract also checks that a reader may play only while the link is on, with three leaky variants that prove it can disagree.
+    - _Requirements: 3.8, 7.6_
+
+- [x] 4. Shell infrastructure (`web/src/app/`)
+  - [x] 4.1 `ApiClient.ts`
+    - Typed same-origin `fetch` with `credentials: 'same-origin'`; every failure becomes a `Result` with an `ErrorCode` (unknown strings become the generic code); reads `Retry-After` on 429 and passes it to `retryGate`; `GET` retries on the `online` event; `POST` is never retried automatically; never reads or returns a server `message` or an upstream host.
+    - _Requirements: 7.3, 7.4, 7.5, 9.3_
+  - [x] 4.2 `QuotaStore.ts`
+    - One boot request for `GET /api/quota` and `GET /api/session`, shared through context so no Screen makes a second one.
+    - _Requirements: 1.4_
+  - [x] 4.3 Router and `App.tsx`
+    - History-API routes built on `resolveRoute`, `pathFor` and `guardRoute`; the Worker's static asset config serves `index.html` for every non-`/api` path; `resumeTarget` runs only on `/` or a stale route and never overrides a deep link that passes its guard (`boot.ts`); Play, Creator and Sketch Pad load by dynamic `import()` (`screens/index.tsx`; their files are stand-ins until 6.1 and 7.1); on every route change focus moves to the Screen's `h1` (`tabIndex={-1}`) and the title goes to the live region.
+    - The Worker's static-asset setting that serves `index.html` for every non-`/api` path (`not_found_handling = "single-page-application"`, with `run_worker_first` so the page gets its Content-Security-Policy) is part of the Worker config in `world-pipeline` task 2, which has no Worker config yet. `web/vite.config.ts` and `web/index.html` are in place and `pnpm --filter @hauntology/web build` works.
+    - _Requirements: 1.5, 3.7, 4.5, 5.2, 6.5, 8.1, 10.1_
+  - [x] 4.4 `ErrorBoundary.tsx`
+    - A Screen boundary whose fallback shows `errorCopy('shell_crash')`, the code and a Home link, and logs only `(code, screenId)`; a Viewer boundary whose fallback shows the thumbnail and keeps the Chat and Exit.
+    - _Requirements: 7.1, 7.2_
+  - [x] 4.5 `LiveRegion.tsx`, design tokens and layout
+    - One polite live region for Stage changes, errors and ghost speech; palette and the 4.5:1 contrast rule from `steering/visual-style.md`; visible focus ring in `--lantern`; one `fade` token (300 to 600 ms, 0 to 150 ms under `prefers-reduced-motion`); CSS grid with a container query for the Chat (bottom sheet below 900 px, side panel from 900 px); no horizontal scroll at 320 px.
+    - The tokens, contrast, fade, focus ring, 44 px targets and the Chat container query are checked from the CSS text (`styles.test.ts`). Whether the page really has no horizontal scroll at 320 px is checked by hand in task 10.3.
+    - _Requirements: 8.1, 8.2, 8.4, 8.5, 8.6_
+  - [x] 4.6 Privacy and security guards
+    - A production logger that accepts only `(code, screenId)`; ESLint rules that ban `dangerouslySetInnerHTML` and `console.*` outside the logger in `web/`; strict CSP headers (no inline script, same-origin only, with `https://challenges.cloudflare.com` in `script-src` and `frame-src` only when Turnstile is configured); no analytics, trackers or third-party fonts.
+    - _Requirements: 9.1, 9.2, 9.4, 9.5_
+  - [x] 4.7 NotFound and Expired screens, offline banner
+    - `not_found` and `expired` each link to Home and Gallery; the banner says the network is offline and clears when it returns; local state is kept.
+    - _Requirements: 7.4, 7.6, 7.7_
+  - [x] 4.8 `DebugOverlay.tsx`
+    - With `?debug=1`, show the Quota Snapshot, the current Stage and the Viewer frame rate.
+    - _Requirements: 11.4_
+
+- [x] 5. Home and Gallery
+  - [x] 5.1 Home screen
+    - The one-line premise, "Draw a place", "Upload a photo" and "Visit a gallery place"; plain copy that worlds are static, the ghost is a billboard sprite and personal photos are deleted after 24 hours; the first two actions follow `capabilities` and show a one-line reason when off; after the screen is idle (`requestIdleCallback`, or a 1 s timeout) it prefetches the Gallery list and nothing else. The fixed words are in `shared/src/app/home-copy.ts`. "Draw a place" and "Upload a photo" both lead to `/create`, so Create (7.1, 7.2) shows the Sketch Pad and the photo picker side by side; an action that is off stays on the page as a focusable control with `aria-disabled` and the reason line.
+    - _Requirements: 1.1, 1.2, 1.3, 10.4_
+  - [x] 5.2 Gallery screen
+    - Thumbnail, title and short description from `GET /api/gallery` (static, no paid call); on failure an error message with a Retry action, never an empty grid; choosing a world sets `worldId` and goes to `/haunt/:worldId`, where the ghost choice happens (task 9.2). No world asset is fetched before that choice. The list is held in `GalleryStore`, so the Home prefetch and the Gallery screen make one request. The `?demo=1` thumbnails are `web/public/demo/gallery/*.svg`, dropped from the production build.
+    - _Requirements: 5.1, 5.5, 10.4_
+
+- [ ] 6. Play and Ending
+  - [x] 6.1 Play screen
+    - Composes the Viewer, the Chat (ghost-engine 6.1) and the HUD (world-viewer 6.1) in the layout from task 4.5. Shows the content notice and calls `POST /api/session/ack-notice`; the Viewer loads by `import()` only after `playReduce` emits `start_viewer`. Runs the effects `playReduce` returns, bridges `ViewerToShell` and `ShellToViewer` messages (validated with the schemas from task 1.3), sends the last pose with each `POST /api/play/:id/turn`, and shows the found count out of three, a journal action and an always-visible Exit.
+    - Built as `play/controller.ts` (no DOM: starts or restores the game, runs the `playReduce` effects in order, validates Viewer messages, asks for each turn), `screens/Play.tsx`, `play/Chat.tsx` (quick buttons, text box, transcript), `play/Hud.tsx`, `play/Journal.tsx` and `Dialog.tsx`. The Viewer is behind `viewer/types.ts` (`mountViewer`, `send`, `dispose`); `viewer/standin.tsx` is a stand-in until `world-viewer` exists, and it walks the same `pose` and `prompt` messages through the real contract. This covers the shell's side of `ghost-engine` 6.1 and `world-viewer` 6.1; prompt detection, pointer lock and the real renderer stay in those specs. What the visitor chose on Haunt (ghost, sky) reaches Play through `play/memory.ts`, in memory only: task 9.2 and 9.6 set `ghostPreset`, `conditions` and `startFresh: true` there, and `router.setFlow({ ghostReady: true })`.
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 8.6, 10.1_
+  - [x] 6.6 Atmosphere and voice in Play
+    - Pass the play view's `atmosphere` to the Viewer as `set_atmosphere` (the contract in `events.ts`). The Chat gets a speak switch (on by default in Wander, hidden when `flags.voiceEnabled` is false), shows each ghost line as a subtitle in the polite live region whether or not it is spoken, asks `ShellApi.speak` for the line named in `reply.voice` after a user gesture has unlocked audio, and in Single player a hold-to-talk button (up to 8 seconds, a visible microphone indicator) that sends the clip through `ShellApi.listen` and treats the transcript exactly like typed text; nothing is stored in the browser. A cap, a refused permission or a failure falls back to subtitles and typing, with no error screen.
+    - _Requirements: 12.3_
+  - [ ] 6.7 Live mode controls (stretch, last)
+    - Not started on purpose: it needs the live transport from `ghost-voice` (Spike 1.3 and its group 6) and a route the shell does not have yet; live mode is first in the cut order, and `flags.liveEnabled` is off by default, so nothing in Play changes until then. A clear microphone indicator and a stop button whenever the page listens; stops after 10 seconds of silence or when the page is hidden; falls back to hold-to-talk on any problem.
+    - _Requirements: 12.4_
+  - [x] 6.2 Scripted and degraded notices
+    - A small, quiet "scripted ghost" indicator when the turn response says scripted lines are used; a one-line notice when the Viewer falls back to a panorama or thumbnail, with the Chat still usable.
+    - _Requirements: 5.4, 6.7_
+  - [x] 6.3 Exit and release
+    - `exit` closes the Chat, calls `dispose_viewer`, waits for its promise and only then mounts Home or Gallery, without a page reload; a Viewer crash leaves the Chat and Exit working (boundary from task 4.4).
+    - _Requirements: 6.6, 7.2, 10.2_
+  - [x] 6.4 Reload restore
+    - On load of `/play/:worldId`, read `GET /api/play/:id` and restore the world, ghost and found memories; show the content notice again only if `ackNotice` is false. A game that has ended is not restored: a reload of Play or the Ending starts a new game, so the visitor never lands on a finished one.
+    - _Requirements: 6.8_
+  - [x] 6.5 Ending screen
+    - The ending card, "Save memory card" (`layoutMemoryCard` from world-viewer 9, hand-off per ghost-engine 6.2; until that exists the shell saves `shared/src/app/memory-card.ts`, a self-contained SVG of only the found memories) and "Haunt again". Opened only by the single navigation from `playReduce`, or by a URL that passes its guard.
+    - _Requirements: 6.5_
+
+- [x] 7. Create: photo picker, Sketch Pad, candidates (satisfies `world-pipeline` 10.1 and 10.2)
+  - [x] 7.1 `PhotoPicker`
+    - Accepts JPEG, PNG and WebP up to the limit in `validateUpload`; shows the retention notice (metadata stripped, kept 24 hours at most) before the file is chosen; shows a preview; reads only the capture date and time (the `conditions` spec's `readCaptureDate`) from the file in the browser and offers it as a suggested Memory Day, then re-encodes through a canvas to drop EXIF, GPS and XMP; uploads nothing the visitor did not choose; per-reason error copy from `errorCopy`.
+    - Built as `PhotoPicker` with the browser parts behind `PhotoKit` (`head`, `inspect`, `reencode`, `previewUrl`), so tests and the demo swap them. `validateUpload` and `readCaptureDate` did not exist yet, so the shell has its own `photoFileError` and `photoSizeError` (`shared/src/app/photo.ts`, the limits of `world-pipeline` 1.1) and `readCaptureDate` landed in `shared/src/conditions/exif.ts`, which finishes `conditions` tasks 2.12 and 2.13. The photo is shown as a preview and nothing is sent until "Use this photo"; the re-encode is a JPEG made from pixels alone, at the best of three qualities that fits 10 MB.
+    - _Requirements: 2.6, 8.3, 9.6, 12.2_
+  - [x] 7.2 `SketchPad`
+    - A `<canvas>` with pointer events and `touch-action: none`; the tool rules from `world-pipeline` Requirement 2.1 are not redefined here; targets of at least 44 px; strokes, undo and redo (at least 30 steps) in memory only, never in storage, cookies or analytics; optional caption; "Make it real" disabled with a one-line reason while `inkGate` says no; the pad is labelled as a pointer tool and sits next to the photo picker and Gallery, both reachable by Tab.
+    - Built as `SketchPad` over a pure stroke history (`shared/src/app/sketch-pad.ts`: brush and eraser, three sizes, 50 undo steps, clear as a step) and a `SketchSurface` seam that paints on a canvas. Upload and the Gallery come before the pad in the page, so Tab reaches them first.
+    - _Requirements: 2.1, 2.2, 2.4, 2.8, 8.3_
+  - [x] 7.3 Make it real and candidates
+    - Downscale with `downscaleSize`, call `POST /api/sketch/render` once, show the candidates with alt text from the caption and the remaining image quota, and allow pick (`POST /api/sketch/select`), redraw, or back to the sketch. On failure or no quota keep the sketch, show the typed message and offer the Gallery.
+    - Built in `CreateController` and `Candidates`. The sketch is sent once per press at no more than 512 px; a rate limit holds the controls for the advised time.
+    - _Requirements: 2.3, 2.5, 2.7_
+  - [x] 7.4 Hand-off to Confirm
+    - After an upload or a candidate pick, call `POST /api/places/brief`; `unsafe_image` and `moderation_unavailable` show their copy and keep the visitor on Create. On success set `pickedImageId` in memory and go to `/confirm`.
+    - A brief that says the image is not safe counts as `unsafe_image`. The picked image goes into the flow state in memory only, never into a URL.
+    - _Requirements: 2.7, 3.1_
+
+- [x] 8. Confirm Gate (satisfies `world-pipeline` 10.3)
+  - [x] 8.1 Confirm screen
+    - Driven by `confirmReduce`: call `POST /api/worlds/quote` on mount, show the exact image from the quote at a readable size with alt text, the remaining quota and "Enter this place?"; "Enter this place" calls `POST /api/worlds` once with the Confirm Token (held in reducer state only, never in a URL, storage or log) and is disabled while the request runs; "Back" and "Pick another" return without consuming quota; a URL without `pickedImageId` redirects to Create. No other Screen calls `POST /api/worlds`.
+    - Built as `ConfirmController` (`web/src/app/confirm/`), which runs `confirmReduce` and holds no DOM, and the Confirm screen. "Back" goes to Create and "Pick another place" to the Gallery, both off while a place is being made. A source-scan test checks that only the Gate's controller calls `createWorld`. After a place is made the quota is asked for again, so Home shows the new count; the picked image stays, so a failed place can try again from here. "Enter this place" is also off, with a line and the Gallery, when the quote itself says no place is left.
+    - _Requirements: 3.1, 3.2, 3.3, 3.6, 3.7_
+  - [x] 8.2 Turnstile
+    - Load the script from Cloudflare's own URL only when the quote says it is required (never proxied, cached or self-hosted), render the widget inside the Gate with a visible loading state, and send its result with the creation call.
+    - Built behind a seam (`PlatformKit.loadTurnstile`; the real loader injects Cloudflare's script on demand, with a 15 second limit, and forgets a failure so "Try again" loads afresh) and a stand-in for `?demo=1&turnstile=1`. The widget's site key comes from the quote (`QuoteResult.turnstileSiteKey`), so the key and the server's secret cannot disagree.
+    - _Requirements: 3.5, 9.1_
+  - [x] 8.3 Rejection and retry
+    - Quota, moderation, bot-check, kill-switch and `confirm_expired` codes show their own copy, release the disabled state and offer the Gallery; `retry` from `rejected` makes a new quote; a 429 keeps the control disabled until `retryGate` allows it.
+    - Each code shows its own copy; "Try again" is offered only where `errorCopy` says trying again helps, and a 429 holds it for the advised time (`RetryButton`).
+    - _Requirements: 3.4, 7.5_
+
+- [x] 9. Haunt screen (satisfies `world-pipeline` 10.4)
+  - [x] 9.1 Stage display
+    - Poll `GET /api/worlds/:id` on the schedule from `pollPlan`; show the labelled Stage with calm progress (not a spinner alone); announce changes through the live region; pause while the tab is hidden; past 15 minutes say honestly that it is taking long and offer the Gallery without cancelling the job.
+    - Built as `HauntController` (`web/src/app/haunt/`), which holds no DOM and takes the clock, the timers and the tab's visibility as inputs, and `StagePanel` (steps list plus `<progress>`). The first poll is at once; a rate limit moves the next poll; any other failure keeps the last Stage and says it could not check; a gone world leaves for the Expired Screen. The 15 minutes count from when Haunt opens, because the API does not say when the job started.
+    - _Requirements: 4.1, 4.6, 4.7, 8.2, 10.3_
+  - [x] 9.2 Ghost choice and "Play a case" / "Wander"
+    - While waiting, host the Ghost Creator (ghost-creator 4) and a "Use a preset ghost" action. A Gallery world arrives already `ready` and shows the same choice. When the Stage is ready and a ghost is chosen, say so and offer "Play a case" and "Wander" (task 12.2); never start the Viewer or a Room automatically.
+    - Built as `GhostChoice`: the Creator through a seam (`PlatformKit.loadCreator`, `mountCreator`, a `chosen` message, a stand-in until the `ghost-creator` UI exists) and a preset list from `ShellApi.ghostPresets` (`GET /api/ghosts/presets`). Haunt hosts `PlayChoice` (task 12.2) once the Stage is ready.
+    - _Requirements: 4.2, 4.3, 5.2_
+  - [x] 9.3 Failed state
+    - Show the typed reason, say whether quota was returned, offer the Gallery, and offer retry only if the API says a retry is allowed.
+    - _Requirements: 4.4_
+  - [x] 9.4 Resume after reload
+    - On boot, `resumeTarget` returns the Haunt screen for the world id in the Session when the job is still running.
+    - `resumeTarget` and the boot plan were built in group 4; Haunt's test reloads at `/` with a job still running and lands on Haunt for the same world.
+    - _Requirements: 4.5_
+  - [x] 9.5 "Delete my place"
+    - On Haunt, Play and Ending for an own world: an accessible dialog (no `confirm()`), `DELETE /api/worlds/:id`, clear all in-memory state for that place, return to Home. A `world_not_found` or `session_expired` answer shows the Expired screen.
+    - Built as `DeletePlace` on Haunt, Play and the Ending. It leaves for Home first (Play releases the Viewer), then forgets the place (`PlayMemory.clear`, `router.clearPlace`). It is shown only for the visitor's own place, told apart by the public Gallery list.
+    - _Requirements: 3.8, 7.6_
+  - [x] 9.6 "Set the sky" card
+    - An optional card beside the ghost choice: city search with up to five matches, "Use my location" asked from an explicit tap, a Memory Day (1940 to yesterday, plus a time of day) prefilled from the photo suggestion when there is one, the chosen place shown as a label only. Nothing is stored in the browser, defaults apply when the visitor does nothing, and "Walk in" never waits for it. The choice (a `ConditionsChoice`) stays in memory and goes with `POST /api/play/start`, where the snapshot is frozen once (the `conditions` spec). This line satisfies `conditions` task group 7.
+    - Built as `SkyCard` with the pure rules in `shared/src/app/sky.ts`. The photo's suggested date arrives through `PlayMemory.suggestedDay`, which task 7.1 sets.
+    - _Requirements: 12.1_
+
+- [x] 12. Play a case on one screen (added after the checkpoint was numbered; satisfies Requirement 13 and `party-mode` 9.5 and 9.6)
+  - [x] 12.1 Route and flag
+    - Add `case` to `ScreenId`, `/case/:worldId` to `resolveRoute` and `pathFor` and a guard like Haunt's to `guardRoute`; add `partyEnabled` to `ShellFlags` (`PARTY_ENABLED` in `api/src/http/flags.ts`, `GET /api/session`, `FakeApi`); update the generators and the tests, so Properties 1 to 3 cover the new route.
+    - _Requirements: 13.2, 13.4_
+  - [x] 12.2 Haunt: "Play a case" and "Wander"
+    - Replace "Walk in" with the two actions and their one-line descriptions; Wander goes to Play as before; "Play a case" opens the setup. Hide or disable "Play a case" with a one-line reason when `flags.partyEnabled` is false or the world is `world_too_small`. Wander is off, with its reason, until a ghost is chosen (the Play route needs one); a case needs none. Built as `PlayChoice`, which Haunt (group 9) hosts once the Stage is ready.
+    - _Requirements: 13.1, 13.4_
+  - [x] 12.3 Case setup card
+    - A preset (Classic, Relaxed or Quick) and two to five Bots (default two), kept in `PlayMemory.caseSetup`, memory only; "Start" goes to `/case/:worldId`.
+    - _Requirements: 13.2_
+  - [x] 12.4 Case Screen
+    - Mounts the party Host page in solo mode (party task 8.15); an always-visible Exit that ends the Room and releases the Viewer first; the party ending with "Play again", Home and Gallery; the scripted indicator; a reload returns to the setup. Built against a Host seam (`mountHost`, `HostToShell` messages, `PlatformKit.loadHost`) and a stand-in Host, as the Viewer is, so the real Host page of party task 8.15 plugs in without a change to the shell. Until group 9 builds Haunt, its stand-in hosts the choice once the world is ready.
+    - _Requirements: 13.2, 13.3_
+  - [x] 12.5 Names and copy
+    - The Play screen is titled and headed "Wander"; the Home premise and facts say that a place can be solved as a case (`shared/src/app/home-copy.ts`); `SCREEN_TITLES` gains the Case Screen.
+    - _Requirements: 1.1_
+  - [x] 12.6 Tests
+    - Component tests for the Haunt choice, the setup card and the Case Screen against a fake Host, including the Zero-Quota Path through a case and the hidden or disabled action; one main-path and one failure-path test each.
+    - _Requirements: 13.1, 13.2, 13.3, 13.4_
+
+- [ ] 10. Tests and manual checks
+  - [x] 10.1 Component tests (jsdom, Testing Library, `FakeApi`)
+    - For each of Home, Gallery, Create, Confirm, Haunt, Play, Ending, NotFound and Expired: one main-path test and one failure-path test; assert focus lands on the `h1` and the live region announces the title or the error.
+    - The matrix is `web/src/app/screens/screens.test.tsx` (nine Screens, main and failure path); each Screen's longer flows stay in its own file. It found two gaps, now fixed: Play and the Ending showed a failure without saying it aloud.
+    - _Requirements: 8.1, 8.2, 11.5_
+  - [x] 10.2 Bundle test
+    - Fails the build if Home's initial JavaScript exceeds 150 KB gzipped, if `FakeApi` or `console.log` appear in the production build, if an origin outside the allow-list appears in built output, or if `dangerouslySetInnerHTML` appears in `web/`.
+    - Built as `web/checks/bundle.test.mjs`, which runs in `pnpm test`: it builds with `NODE_ENV=production` into a temporary folder and reads the result (Home's first JavaScript, the lazy Screens, the demo, `console.log`, origins, inline script and style, `eval`, and `dangerouslySetInnerHTML` in the source). It found a real bug, fixed: the plugin that drops the demo assets hard-coded `dist/demo`, so any other output folder shipped them.
+    - _Requirements: 9.1, 9.2, 9.4, 9.5, 10.1, 11.3_
+  - [ ] 10.3 Playwright smoke on the Zero-Quota Path
+    - Local, fixtures only, never a paid upstream: Home → Gallery → preset ghost → Wander → three memories → Ending, and Home → Gallery → Play a case with two Bots → a case to its ending, once with `?demo=1` and once against `wrangler dev` with fakes, with the world kill switch on and every quota at zero.
+    - Written and not run: `web/playwright.config.ts` and `web/e2e/zero-quota.spec.ts` (a desktop and a 320 px project, no request to `/api/`, focus and sideways-scroll checks). Running it needs `@playwright/test` as a dependency of `web`, which needs the owner's say; the `wrangler dev` half waits for shell task 3.3. See `docs/spikes/shell.md`.
+    - _Requirements: 5.3, 11.2_
+  - [ ] 10.4 Manual checks, recorded in `docs/spikes/shell.md`
+    - Keyboard-only run of the whole flow, 320 px width, iOS Safari scroll and zoom inside the pad, a screen-reader pass on Haunt and Play, and a contrast check of the HUD and Screen text tokens.
+    - The contrast check is done and recorded in `docs/spikes/shell.md`. The keyboard-only run, the 320 px check, the iOS Safari pad check and the screen-reader pass are written out there as steps and need a person with a browser and a phone.
+    - _Requirements: 2.2, 8.1, 8.5, 8.6_
+
+- [ ] 11. Checkpoint
+  - Run `pnpm -r test`, `pnpm -r typecheck` and `node tools/check-traceability.mjs`; walk the Zero-Quota Path in a real browser with the kill switch on; confirm the world-access test (task 3.2) passes or its failures are listed in `docs/IMPLEMENTATION.md`; tick `world-pipeline` tasks 10.1 to 10.4; ask the user if questions arise.
+  - **Run on 2026-11-15 (not ticked, two items open):** `pnpm test` passes in all three packages (shared 308, api 36, web 530, which includes the bundle test). `pnpm typecheck` passes in `api` and `web`; in `shared` it fails in `src/puzzles/place.prop.test.ts` (line 18), which belongs to the puzzles work in progress, not the shell. `node tools/check-traceability.mjs` prints OK. The world-access suite (3.2) passes against its reference app and fails all nine leaky ones; running it against the real routes (3.3) is still blocked, and the gap stays listed under "Security gaps" in `docs/IMPLEMENTATION.md`. `world-pipeline` tasks 10.1 to 10.4 are ticked (the shell built them in groups 7, 8 and 9). **Open:** the walk of the Zero-Quota Path in a real browser (it needs the Playwright dependency from 10.3, or a person; see `docs/spikes/shell.md`), and a green `pnpm -r typecheck` once the puzzles test is fixed.
+
+- [ ] 13. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 14 and the `design-system` spec)
+  - [ ] 13.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 14.1, 14.3_
+  - [ ] 13.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 14.2_
+  - [ ] 13.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 14.4_
+  - [ ] 13.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 14.1_
+
+- [x] 14. Share a place (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 15 and `world-pipeline` 9.2)
+  - [x] 14.1 Pure: the `shared` route and its guard, `FlowState.sharedWorldId`, `ShellApi.shareWorld`, `WorldStatus.shared`, `shareUrl` and the card's words (`shared/src/app/`)
+    - Built: `/shared/:worldId` (`resolveRoute`, `pathFor`, a guard that lets everyone in; the route properties and the oracle include it), `sharedWorldId` in the flow, `shareWorld(worldId, on)` and `shared` in the status, on or off, for the owner only (and their schemas), `share-copy.ts` (`shareUrl(origin, worldId)`: the origin and the id and nothing else, `null` for an origin or id that cannot make one; the words).
+    - _Requirements: 15.1, 15.2, 15.4, 15.5_
+  - [x] 14.2 The fake backend and the real client implement `shareWorld`; `PlatformKit` gains `origin()` and `copyText()`
+    - Built: the fake follows the server's rules (only an own, ready place; a Gallery place, a place being made and a missing one are all `world_not_found`; `shared` in the status of the visitor's own place, true or false); `ApiClient.shareWorld` (`POST` on, `DELETE` off, `/api/worlds/:id/share`); `browserCopyText` and `origin` in the browser kit, stand-ins in `testPlatform`.
+    - _Requirements: 15.1_
+  - [x] 14.3 The Share card on Haunt, and `DeletePlace` hidden for a place opened by a link
+    - Built: `web/src/app/haunt/SharePlace.tsx`: off, on (the link in a read-only field, Copy link, Stop sharing), busy and failed; it waits for the public list and for the server's own word on whether the link is on, so it never offers what is already on; focus goes to the field only after the visitor turns the link on; a browser that will not copy gets the link selected and a line to copy by hand; `world_not_found` is the Expired Screen. Not shown for a Gallery place, a place not ready, or a place opened by a link, and neither is Delete my place for the last.
+    - _Requirements: 15.1, 15.2, 15.3, 15.6_
+  - [x] 14.4 The Shared screen: look, Walk in, the Expired answer, the owner's own link
+    - Built: `web/src/app/screens/Shared.tsx`: asks once, shows the title, the thumbnail and "Walk in" (records the place as opened by a link, then Haunt), the Expired Screen for `world_not_found`, an ended Session and any place that is not ready, Try again for other failures, a stale answer ignored after the visitor has left; the owner's own link records the place as theirs and the screen says it is their place and whether the link is on (found on a look in a browser: the visitor's line, "Someone shared this place with you", was wrong for the owner, and an owner opening their own link while it was off was taken for a visitor because the status said `shared` only when on; the server and the fake now say `shared` to the owner always). The Expired text now also says "it may not be shared any more".
+    - **Verified:** shared 842, web 843 and api 603 tests pass (new: the share rules of the fake and the route properties; the card 17, the screen 14, the screen matrix 2, the client 4, the clipboard 3), and the real server's answers are checked against the shell's schemas in an api test. Mutation-checked (about 70 changes, all caught but three that cannot matter: the card's guard against a late answer after it is gone, which React no longer warns about; the router's own guard sending `play` to Haunt anyway; and a clipboard check the `catch` covers too).
+    - **Decisions for you to review:** (1) the card is on Haunt only, not on Play or the Ending; (2) a place opened by a link is remembered in memory only, as every place is: after a reload `/haunt/<id>` is turned away to the Gallery for a visitor who is not its owner, and the link itself is the way back; (3) the link is `/shared/<worldId>` on this origin; (4) the words of the card and of the Shared screen are mine; (5) looked at in a headless Chromium at 390 and 1280 px in `?demo=1` on 2026-11-15: no sideways scroll, focus, copy and tab order right, nothing sent to `/api/` (not tried: Safari, a phone, the real Worker; the design-system check, task 13.3, is still for a person); (6) the real link opens now that the Worker serves the web app (world-pipeline task 2, built 2026-11-15; checked with a link opened cold on `wrangler dev`), and a reader can play it now: `POST /api/play/start` (ghost-engine 5, built 2026-11-15) lets a shared place in through `accessOf`, and the share-link contract checks it.
+    - _Requirements: 15.4, 15.5, 15.6_

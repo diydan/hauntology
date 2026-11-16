@@ -1,0 +1,8 @@
+/* The development page around the puzzle: page-level layout only. The look is the design system (the body is `ui-page`). */
+.pzd-nav, .pzd-tools, .pzd-more { --pz-target: max(48px, var(--target)); }
+.pzd-nav { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; padding: var(--space-2); }
+.pzd-tools { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; padding: 0 var(--space-2) var(--space-2); }
+.pzd-nav .ui-button, .pzd-tools .ui-button, .pzd-more summary.ui-button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--pz-target); text-decoration: none; }
+.pzd-nav .ui-button[aria-current="page"] { border-color: var(--accent); color: var(--accent); }
+.pzd-more { max-width: 30rem; margin: 0 auto; padding: 0 var(--space-3) var(--space-4); }
+.pzd-more summary { cursor: pointer; list-style: none; }

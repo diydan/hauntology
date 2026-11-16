@@ -1,0 +1,9 @@
+/* Cut wires board: its size, and what the finger touches. The drawing is in ../art/wires.css. */
+.pz-wires-board { width: min(100%, 26rem, calc(var(--pz-h) * 1.07)); margin: 0 auto; }
+
+/* what the finger touches: the tag (a 64 unit target) and the terminal (the same) */
+.pz-wire-handle, .pz-terminal { cursor: pointer; touch-action: none; outline: none; }
+.pz-wire-disc, .pz-terminal-ring { fill: transparent; stroke: none; }
+.pz-wire-handle:focus-visible .pz-wire-disc, .pz-terminal:focus-visible .pz-terminal-ring { stroke: var(--focus); stroke-width: 4; }
+.pz-wire-picked .pz-wire-disc { stroke: var(--accent); stroke-width: 4; }
+.pz-wire-picked .pz-tag-sleeve { stroke: var(--accent); stroke-width: 3; }

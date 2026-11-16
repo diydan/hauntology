@@ -1,0 +1,83 @@
+{
+  "_about": "Shapes copied from the World Labs World API documentation, NOT recorded from a run (Spike 1.1 has not been run). Sources: the quickstart https://docs.worldlabs.ai/api/index.md (operation and world responses; the documentation shows <500k_spz_url> and similar placeholders, replaced here by invented addresses on cdn.example.test), the OpenAPI file https://docs.worldlabs.ai/api/reference/openapi.yaml (the 402 body, the request shape, the OperationError and OperationCost schemas), and https://docs.worldlabs.ai/api/rendering-spz.md (the scale metadata and the frame). Entries marked 'from the schema' have no documented example and are built from the OpenAPI schema alone. Replace by recorded files when Spike 1.1 runs.",
+  "generate": {
+    "operation_id": "20bffbb1-4ba7-453f-a116-93eaw1a6843e",
+    "created_at": "2025-01-15T10:30:00Z",
+    "updated_at": "2025-01-15T10:30:00Z",
+    "expires_at": "2025-01-15T11:30:00Z",
+    "done": false,
+    "error": null,
+    "metadata": null,
+    "response": null
+  },
+  "operationInProgress": {
+    "operation_id": "20bffbb1-4ba7-453f-a116-93eaw1a6843e",
+    "created_at": "2025-01-15T10:30:00Z",
+    "updated_at": "2025-01-15T10:30:00Z",
+    "expires_at": "2025-01-15T11:30:00Z",
+    "done": false,
+    "error": null,
+    "metadata": {
+      "progress": { "status": "IN_PROGRESS", "description": "World generation in progress" },
+      "world_id": "dc2c65e4-68d3-4210-a01e-7a54cc9ded2a"
+    },
+    "response": null
+  },
+  "operationDone": {
+    "operation_id": "20bffbb1-4ba7-453f-a116-93eab1a6843e",
+    "created_at": "2025-01-15T10:30:00Z",
+    "updated_at": "2025-01-15T10:35:00Z",
+    "expires_at": "2025-01-15T11:30:00Z",
+    "done": true,
+    "error": null,
+    "metadata": {
+      "progress": { "status": "SUCCEEDED", "description": "World generation completed successfully" },
+      "world_id": "dc2c65e4-68d3-4210-a01e-7a54cc9ded2a"
+    },
+    "response": {
+      "id": "dc2c65e4-68d3-4210-a01e-7a54cc9ded2a",
+      "display_name": "",
+      "tags": null,
+      "world_marble_url": "https://marble.worldlabs.ai/world/dc2c65e4-68d3-4210-a01e-7a54cc9ded2a",
+      "assets": {
+        "caption": "The scene is a fantastical forest...",
+        "thumbnail_url": "https://cdn.example.test/w/dc2c65e4/thumb.jpg?sig=EXAMPLE",
+        "splats": {
+          "spz_urls": {
+            "500k": "https://cdn.example.test/w/dc2c65e4/500k.spz?sig=EXAMPLE",
+            "100k": "https://cdn.example.test/w/dc2c65e4/100k.spz?sig=EXAMPLE",
+            "full_res": "https://cdn.example.test/w/dc2c65e4/full_res.spz?sig=EXAMPLE"
+          },
+          "semantics_metadata": { "metric_scale_factor": 1.23, "ground_plane_offset": 0.42 }
+        },
+        "mesh": { "collider_mesh_url": "https://cdn.example.test/w/dc2c65e4/collider.glb?sig=EXAMPLE" },
+        "imagery": { "pano_url": "https://cdn.example.test/w/dc2c65e4/pano.png?sig=EXAMPLE" }
+      },
+      "created_at": null,
+      "updated_at": null,
+      "permission": null,
+      "world_prompt": null,
+      "model": null
+    },
+    "cost": {
+      "total_credits": 1580,
+      "line_items": []
+    }
+  },
+  "operationFailed": {
+    "operation_id": "20bffbb1-4ba7-453f-a116-93eaw1a6843e",
+    "created_at": "2025-01-15T10:30:00Z",
+    "updated_at": "2025-01-15T10:32:00Z",
+    "expires_at": "2025-01-15T11:30:00Z",
+    "done": true,
+    "error": { "code": 500, "message": "generation failed" },
+    "metadata": { "progress": { "status": "FAILED", "description": "from the schema: an OperationError has a code and a message" }, "world_id": null },
+    "response": null
+  },
+  "error402": {
+    "detail": "Insufficient API credits to start this request. Add credits or enable auto-refill at https://platform.worldlabs.ai/billing."
+  },
+  "error422": {
+    "detail": [{ "loc": ["body", "world_prompt"], "msg": "field required", "type": "value_error.missing" }]
+  }
+}

@@ -1,0 +1,90 @@
+# Implementation Plan
+
+- [x] 1. Tokens (`design/tokens.json`, `tools/lib/design-tokens.mjs`, `tools/build-tokens.mjs`)
+  - [x] 1.1 The token file: palette, roles, type, space, corners, strokes, glows, shadow, motion, touch, breakpoints, layers, the contrast rules
+    - Built 2026-11-15 from the play-through mockup. The six steering colours and the app's `--fade`, `--target`, `--font-ui`, `--font-ghost` are unchanged.
+    - _Requirements: 1.1, 1.3, 2.1, 3.1_
+  - [x] 1.2 The checker and the writer: `pnpm build-tokens`, `pnpm check-tokens`; writes `web/src/styles/tokens.css` and `shared/src/design/tokens.ts`
+    - _Requirements: 1.1, 1.2_
+  - [x] 1.3 **Property 1: Tokens are written once**
+    - **Validates: Requirements 1.1, 1.2, 1.3**
+  - [x] 1.4 **Property 2: Text is readable on every surface it may sit on**
+    - **Validates: Requirements 3.1**
+  - [x] 1.5 The memory card draws with `shared/src/design/tokens.ts` instead of its own hex
+    - _Requirements: 1.4_
+
+- [x] 2. Elements, fonts and the catalogue
+  - [x] 2.1 `design/elements.css`: the page, text, surfaces, buttons, fields, the stage, the HUD, the transport, the progress dots, the sheet and the journal
+    - _Requirements: 2.2, 2.3, 2.4, 3.2, 3.3, 4.1, 4.5, 4.6_
+  - [x] 2.2 **Property 3: Elements are made of tokens only**
+    - **Validates: Requirements 2.2, 3.3, 4.1**
+  - [x] 2.3 Fonts self-hosted in `design/fonts/` with `design/fonts.css` and the two licences
+    - _Requirements: 3.4_
+  - [x] 2.4 `design/catalogue.html` and `design/catalogue.mjs`, served at `/design/` by `pnpm voice-demo`
+    - _Requirements: 4.2, 5.1_
+  - [x] 2.5 **Property 4: The catalogue shows every element**
+    - **Validates: Requirements 4.2, 4.5**
+
+- [x] 3. Pages
+  - [x] 3.1 The play-through mockup rebuilt from the elements (its own style is layout only)
+    - Checked in a headless browser: the same behaviour as before, 44 px targets, no sideways scroll on a 390 px phone, no console errors; the catalogue page renders every element.
+    - _Requirements: 4.3, 4.4, 5.1_
+  - [x] 3.2 **Property 5: A page uses only elements that exist**
+    - **Validates: Requirements 4.3, 5.1**
+  - [x] 3.3 The web app loads `design/fonts.css` and `design/elements.css` after `tokens.css` (`web/src/main.tsx`); the production build bundles the four fonts from the app's own origin
+    - _Requirements: 5.2_
+
+- [x] 4. Move the screens built before this spec
+  - [x] 4.1 `web/src/puzzles/puzzles.css`: the raw hex colours (`#14171c`, `#1c2027`) and `rgb(233 228 216 / 22%)` are surface and text roles; the puzzle styles hold no hex, no `rgb()` and no palette name
+    - Done 2026-11-15. The wire colours and the 12 shelf-item hues in `web/src/puzzles/art/` stay as hex on purpose: they are game content that must tell things apart, not interface colour (see 4.5).
+    - _Requirements: 5.3_
+  - [x] 4.2 `web/src/styles/app.css` is layout only (689 lines became about 80): `.button`, `.banner`, `.notice`, `.card`, `.dialog` and the rest are the shared elements, and `<body class="ui-page">`
+    - Done 2026-11-15. The app's body text is now the mockup's 13 px mono (it was 16 px). Ghost lines in the Chat are cream serif with a green edge, not green text.
+    - _Requirements: 5.3_
+  - [x] 4.3 `web/src/app/screens/*`, `web/src/app/play/*`, `web/src/app/create/*`, `web/src/app/haunt/*`, `web/src/app/case/*`: the same, screen by screen, one `ui-button--primary` to a screen
+    - Done 2026-11-15. Checked in a headless browser at 390 and 1280 px: no console errors, no sideways scroll, no control under 44 px. `create/surface.ts` still paints black ink on white paper: that is the ink check's pixel contract, not look.
+    - One leftover found later by `world-pipeline` 13 and moved: the demo Turnstile stand-in (`web/src/app/confirm/turnstile-standin.ts`) still made `button` elements. The old-class test now reads `.ts` files too. The Create, Confirm and progress screens were re-checked at 390 and 1280 px in 17 states each (targets, one yellow button, contrast, focus ring, reduced motion): all pass.
+    - _Requirements: 5.2, 5.3_
+  - [x] 4.4 The 11 puzzle phone screens: buttons, panels, hints, status, gauges and rows are `ui-` elements; the game pieces keep `pz-` classes made of roles and tokens; 48 px targets stay (`--pz-target` on the host); `--pz-space-*` is gone, they use `--space-1` to `--space-4`
+    - Done 2026-11-15. Checked in a headless browser at 390 px: every kind, no console errors, no sideways scroll, every control at least 48 px.
+    - _Requirements: 5.3_
+  - [x] 4.5 The leftovers of the move: 14 `art-*` colour tokens for the wire and shelf-item hues (the puzzle code now holds no hex at all); `ui-switch`, `ui-switch-name`, `ui-switch-state` and `ui-segments` (with `aria-checked` looking pressed) for the puzzle settings; `ui-lines`, a plain serif list, for the journal and the End screen; `ui-panel--danger` for the Create and Confirm error blocks
+    - Done 2026-11-15. The puzzle settings were checked in a headless browser at 390 px; the new pieces are on the catalogue.
+    - _Requirements: 4.4, 5.3_
+
+- [x] 7. Phone fixes (added 2026-11-15, after an audit of the live puzzles in an emulated phone at 320, 360, 375, 390 and 430 px wide and sideways)
+  - [x] 7.1 Hover only where a pointer can hover; text boxes and menus at 16 px (`--text-input`); `dvh` heights with a `vh` fallback; `theme-color` on every whole-screen page
+    - Checked by `design-system.test.mjs`; four deliberate breaks of each rule are caught.
+    - _Requirements: 3.5_
+  - [x] 7.2 The puzzles fit the screen: the host knows its kind (`data-kind`), each picture is marked `pz-visual` and capped by `--pz-h` (the screen height minus what else is on that puzzle, never below `--pz-min`); a short portrait screen packs closer; a phone held sideways gets two columns and a narrow right-hand column
+    - Done 2026-11-15. At 375x667, 390x664, 360x740, 390x844, 430x932 and sideways every puzzle fits without scrolling the page, except the spirit board (it has the most controls: it scrolls by about 90 px on a short screen and 4 px sideways). No control under 48 px, no sideways scroll, no console errors. `web/src/puzzles/fit.test.ts` keeps the pieces in place.
+    - _Requirements: 3.2, 3.5_
+  - [x] 7.3 The spirit board: the Hear the word button moves into the Clear row
+    - _Requirements: 3.5_
+  - [x] 7.4 The spirit board and the hidden words fit a short phone (done 2026-11-15)
+    - The board's Clear, Hear, Tilt and Level share one row; under 56 rem of height its clue is one line (12.5 px), its explaining line is out of sight (still read aloud) and its letters are lower; its short band has its own `--pz-rest` (38.5, 31 and 29 rem) and a 13 rem floor. The hidden words' letters row and readout are lower under 47 rem. With a motion sensor on, every puzzle fits at 375x667, 390x664, 360x740, 360x690, 390x844, 430x932 and sideways; 320x568 still scrolls for most. `fit.test.ts` keeps the pieces in place.
+    - _Requirements: 3.5_
+  - [x] 7.5 No text under 12 px (done 2026-11-15): `--text-micro` 12 px (was 10.5), `--text-small` 12.5 px (was 11.5), `--text-body` 14 px (was 13); the buttons stay at 12.5 px. A test keeps every size at or above 12 px. The phone audit finds no text under 12 px; the spirit board and the hidden words were re-fitted (7.4).
+    - _Requirements: 3.5_
+  - [x] 7.6 Buttons that cannot be pressed (done 2026-11-15): an ordinary one is dimmed to 0.75 (the words were 3.3 to 1 at 0.4) with a dashed edge; the main one is the raised surface tinted 25 per cent yellow with a yellow edge and quiet words (they were dark words on faded yellow, 2.3 to 1; now 4.6 to 1). The catalogue shows both. One test reads the colours and the opacity; five deliberate breaks are caught.
+    - _Requirements: 3.5_
+  - [x] 7.7 The clock's hands no longer cover its numerals (phone audit item 10, done 2026-11-15): the numerals sit on an outer ring beyond the minute track, the hour hand reaches 72 and the slim minute lance 100 (it ends in the track), so no hand ever reaches a numeral. The clue's stopped clock is the same drawing. `art/safe-clock.test.tsx` checks the ring, the reach of each hand and that every numeral's nearest edge is further out than the longest hand.
+    - _Requirements: 3.5_
+  - [x] 7.8 The smallest phone held upright, 320x568 (done 2026-11-15): a band under 36 rem of height puts the how-to lines out of sight (still read aloud; the `?` button also gives them; the Spirit board's clue and the status lines stay), shares the tilt buttons of the Lock pick, Hidden words and Marble maze in one row, puts Give up on the row of the status line instead of a row of its own (56 px given back; its confirmation and a row of more than one button keep a whole row), hides the Pick readouts (the Pick button says the same), shortens the board's Hear button to "Hear (2)" and its clue to one line (the letters boxes say how many), and lets the board go down to 12 rem. With a motion sensor on, all eleven puzzles fit 320x568 without scrolling (the board with 9 px to spare, the others with 46 to 116); the candle buttons are 8 px apart (were 4). In Safari with its bars up the visible height is about 100 px less, so a real SE still scrolls. `fit.test.ts` keeps the pieces in place; deliberate breaks caught.
+    - _Requirements: 3.5_
+  - [x] 7.9 Neighbouring buttons 8 px apart, and no label wider than its button, on a 320 px phone (done 2026-11-15): the music box's five keys never go under 48 px and the box gives them 272 px (the host takes 8 px at each side under 22 rem, the box 4 px more), the torn photo's pieces and spots are 14 units apart (8 px or more where the board is drawn smallest), and the Twist button of the safe and the clock reads "Twist" there (the lit button says "on"; its name for a screen reader stays "Twist: on"). The audit finds no pair of buttons closer than 8 px and no label wider than its button at 320, 360, 375, 390 and 430 px and sideways. `fit.test.ts` keeps the pieces in place.
+    - _Requirements: 3.5_
+
+- [x] 5. Specs and steering
+  - [x] 5.1 `.kiro/steering/design-system.md`, `visual-style.md` and `structure.md` updated
+    - _Requirements: 6.2_
+  - [x] 5.2 A "Shared look" requirement, a design section and a task in each spec that has a screen
+    - _Requirements: 6.1_
+  - [x] 5.3 Every spec folder is a screen spec or says why it has no screen; the test fails for a new folder that is neither; the five specs that had a screen part and no Shared look (`world-pipeline`, `conditions`, `ghost-engine`, `errands`, `world-clues`) now carry it
+    - _Requirements: 6.1, 6.3, 6.4_
+
+- [x] 6. Checkpoint
+  - Run `pnpm check-tokens`, `node tools/check-traceability.mjs`, `node --test tools/test/design-tokens.test.mjs tools/test/design-system.test.mjs tools/test/voice-demo.test.mjs`, `pnpm --filter web test` and `pnpm typecheck`; open `/design/` and the play-through on a real phone (`mtest.hauntology.app/design/` after `cd tools/playtest && node build.mjs && wrangler deploy`). Nothing is open.
+  - **Run on 2026-11-15, all pass:** `pnpm check-tokens` ok; `node tools/check-traceability.mjs` OK; all the tools tests (249, which include `design-tokens`, `design-system` and `voice-demo`); `pnpm --filter web test` (923); `pnpm -r test` (`shared` 891, `api` 641); `pnpm typecheck` clean in all three packages. **The real phone is still the owner's step, and the page is now up for it:** the catalogue was deployed to https://mtest.hauntology.app/design/ (2026-11-15, version `dc72785a`; the version before it, `ed9b2617`, is the rollback with `wrangler rollback`). It was an overlay deploy: every file live at that moment (pages, `/puzzles/`, `/props/`) was copied as it was and only `/design/` was replaced, so the playtest session's unreleased footage page and clips did not go out and `/puzzles/` stayed (wrangler reported 1 new file, 117 already live: only `elements.css` changed; the Worker is the committed code). The play-through is not on that site (it needs the voice Library audio, which is never committed), so it can only be opened on the machine that runs `pnpm voice-demo`. Until a phone has opened `/design/`, the emulated check stands in; it was run again on the live page at 320, 360 and 390 px: no sideways scroll, no console errors, no low-contrast text, the transport one row from 360 px and two rows at 320 px. In its place `/design/` and the play-through were checked in an emulated phone (touch, `isMobile`) at 320x568, 360x740, 375x667, 390x844, 430x932 and sideways at 844x390, and under reduced motion: no sideways scroll, no console errors, no animation or transition over 10 ms under reduced motion, no control under 44 px wide or tall except the catalogue's bare check box and an inline link (demo pieces: a check box in use sits in a 44 px row), and one solid yellow button on the play-through (the second yellow thing is the skip link, off screen until it takes focus). Opening both on a real device once is still the owner's step; this box is ticked on the emulated check at the owner's request.
+  - **Two faults the emulated check found, fixed:** (1) the six transport tools were 40 px wide at 320 px. `.ui-transport` is now a wrapping flex row and `.ui-tool` is `flex: 1 1 auto` with `min-width: var(--target)`: a tool starts from the width of its own label and the tools share what is left. One row from about 355 px up (at 360 the tools are 44 to 65 px, at 390 46 to 73 px), and below that the last tool wraps onto a row of its own and takes its width (at 320 px five tools at 48 to 55 px and the Director full width); from 900 px it is still the grid of five with the keys line. (2) Red text inside `ui-dialogue` was 4.23 to 1: the dialogue is the raised surface tinted 5 per cent by whoever speaks, which the token rules for red text do not cover. A warning there is now `--text` with a 3 px red edge (`.ui-dialogue .ui-note.is-warn`). New tests in `tools/test/design-system.test.mjs`: the tool minimum and the wrap, the wide grid, text and quiet text at 4.5 on the dialogue lit by each of the four lights, and the warning's rule; 11 deliberate breakages, all caught. Both were checked again in the emulated phone and by eye.
+  - **Decisions for you to review:** (1) the transport wraps to two rows below about 355 px wide (the Director as a full-width bar) rather than shrinking the tools, and the Director tool is a little wider than the others at every width (its word needs 60 px); (2) in a dialogue a warning is bone text with a red edge, not red text. The Director's label used to spill about 9 px past its button at 360 to 390 px (the word is 54 px wide and needs a 60 px tool; the tools were 46 to 51 px): fixed in the same rule (a tool starts from its label's width) and by trimming the bar's side padding from 8 to 4 px (the bar's height is unchanged), which keeps one row at 360 px. Checked at 320, 340, 345, 350, 360, 375, 390, 430, 640, 700, 899 and 1280 px: no label past its button, no tool under 44 px, no sideways scroll; 13 deliberate breakages of the transport and dialogue rules, all caught.

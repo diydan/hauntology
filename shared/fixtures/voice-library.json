@@ -1,0 +1,4080 @@
+{
+  "version": 1,
+  "prefix": "speech/lib/v1/",
+  "lodgerVoices": [
+    "inworld:Mark",
+    "inworld:Conrad",
+    "inworld:Arjun",
+    "inworld:Chloe",
+    "inworld:Eleanor",
+    "inworld:Victoria"
+  ],
+  "finite": {
+    "weather": [
+      "clear",
+      "cloudy",
+      "foggy",
+      "rainy",
+      "stormy",
+      "snowy"
+    ],
+    "time": [
+      "dawn",
+      "day",
+      "dusk",
+      "night"
+    ],
+    "moon": [
+      "new moon",
+      "waxing crescent",
+      "first quarter",
+      "waxing gibbous",
+      "full moon",
+      "waning gibbous",
+      "last quarter",
+      "waning crescent"
+    ],
+    "bearing": [
+      "ahead",
+      "ahead-right",
+      "right",
+      "behind-right",
+      "behind",
+      "behind-left",
+      "left",
+      "ahead-left"
+    ],
+    "band": [
+      "far",
+      "nearer",
+      "very close"
+    ]
+  },
+  "count": 503,
+  "entries": [
+    {
+      "key": "speech/lib/v1/8818fdcc67badd8bd34f35ade581c0d4d205e9f56a6eaba69f0b294ea4cd1b19",
+      "voice": "inworld:Pippa",
+      "spoken": "Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks.",
+      "sources": [
+        "reveal.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6c8b033d7e09d1bb1230a64b218e22bffb9735df075361ad43937b9dfa34cd83",
+      "voice": "inworld:Pippa",
+      "spoken": "You stood still, and it found me. It was very shy. It is yours now, and I am glad it is you.",
+      "sources": [
+        "reveal.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fcee9db3868e5d6a2677236c7245ece6b3d6a29fe45cc0ac8ee5f597cff28832",
+      "voice": "inworld:Pippa",
+      "spoken": "Oh. It is here. I did not think it would come back. Stay a moment, and let it settle.",
+      "sources": [
+        "reveal.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e188deb5a41b81ff63b16259224fd5e804c22f611ab9e2b1e440c7d1f4770aba",
+      "voice": "inworld:Pippa",
+      "spoken": "Something I kept for a long while, and never gave away. I am giving it to you. It feels strange, and good.",
+      "sources": [
+        "reveal.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ffe9c50b3c8bfde1317e3d1a8c866b80e65ed8b3d1ab1346b102dc12f1144e49",
+      "voice": "inworld:Pippa",
+      "spoken": "There it is. I feel it stir now that you are near. Do not hurry away. It likes the company.",
+      "sources": [
+        "reveal.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/20eff015306b59e74d64c5dcd84210d05955ea078826d379044348bfe1368a95",
+      "voice": "inworld:Pippa",
+      "spoken": "We have been here before, you and I. It is still warm. I do not mind going over it again.",
+      "sources": [
+        "echo.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a657ca11dfc52ffaa9374858813e784a9fe665015a75f9f072b15da152ba91a3",
+      "voice": "inworld:Pippa",
+      "spoken": "You came back. I like it when people come back. It is just as I left it, and just as you found it.",
+      "sources": [
+        "echo.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e51753bb9edb9889e95de77bc5b2d3a6c34547852b179dfd0d201443fcfcd548",
+      "voice": "inworld:Pippa",
+      "spoken": "This is yours already. I will not take it back. But I will stand here with you, if you like.",
+      "sources": [
+        "echo.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/eda0f44c31563aef4360b10e25cb0e6f08e3143dc9d255a686c196e0f83b2c7a",
+      "voice": "inworld:Pippa",
+      "spoken": "Ah. Here again. Even a kept thing wants looking at twice. I will not interrupt.",
+      "sources": [
+        "echo.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/07eba348772d2aad9fe2b51d46da783964e2cecab3903011399bf2e4a56308d4",
+      "voice": "inworld:Pippa",
+      "spoken": "I know where this lives in you now. It has a worn place, like a favourite chair. Sit with it a moment.",
+      "sources": [
+        "echo.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/00b0c570de16a7d70200cc3fa5113189c09f08a89ab76e0df9f3502af86366eb",
+      "voice": "inworld:Pippa",
+      "spoken": "Not here. But something of mine is far. I can feel it, the way you feel a draught from somewhere else.",
+      "sources": [
+        "tease.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5e2e2713092c0cf09cda8f11439aacf9037471190cd4c41d363ce1389393eeee",
+      "voice": "inworld:Pippa",
+      "spoken": "Not here. But something of mine is nearer. I can feel it, the way you feel a draught from somewhere else.",
+      "sources": [
+        "tease.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d1401caebe46467c5d6c49fd53ca22ec4de7f0a10b305fb6f71a266320942ecf",
+      "voice": "inworld:Pippa",
+      "spoken": "Not here. But something of mine is very close. I can feel it, the way you feel a draught from somewhere else.",
+      "sources": [
+        "tease.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/29f03f2aa86d472b1c55221a0d84e0931a58cc8f9876300e5306acfeca1fa2fe",
+      "voice": "inworld:Pippa",
+      "spoken": "I will not say where. I will only say that it is far. I like it when you wonder.",
+      "sources": [
+        "tease.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/235281dfde29e8a4d9fd3892ddf8fd2f1dc365a7c3e8f7d0f50e68b7a7231784",
+      "voice": "inworld:Pippa",
+      "spoken": "I will not say where. I will only say that it is nearer. I like it when you wonder.",
+      "sources": [
+        "tease.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/145005df0d9ad925143497e0efb496da88c23d6504b71004720372444a428bcb",
+      "voice": "inworld:Pippa",
+      "spoken": "I will not say where. I will only say that it is very close. I like it when you wonder.",
+      "sources": [
+        "tease.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fbe55c67daacb399a5ea6f6cfe77e02d825d2a7c3929ce85f26b31f437aab1be",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is waiting. It is far. I will not say more. I like being looked for.",
+      "sources": [
+        "tease.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/699f70a2b480370c6ace48a05465e297708b4fead0ff753fc5bbea26053f673c",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is waiting. It is nearer. I will not say more. I like being looked for.",
+      "sources": [
+        "tease.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/13661c5ef1fd38460fce8fe2e70a58abdf0f25e2d46e5cb9fc524cab380dd31d",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is waiting. It is very close. I will not say more. I like being looked for.",
+      "sources": [
+        "tease.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/578f08ff2f7634e2012edbdc4a324f2b608454d8272a029e6d4311ffa8c3b30f",
+      "voice": "inworld:Pippa",
+      "spoken": "I can hear you looking. It makes me feel less alone. What you are looking for is far.",
+      "sources": [
+        "tease.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2b8881a37e311c5d195087f6f0dcec5eb3af60e6cc4d12803d3525e4abe9915b",
+      "voice": "inworld:Pippa",
+      "spoken": "I can hear you looking. It makes me feel less alone. What you are looking for is nearer.",
+      "sources": [
+        "tease.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7046348b9b8e4114a4da5f02870a89772e9a3b11a0f35a6d99ff3e9617728b7c",
+      "voice": "inworld:Pippa",
+      "spoken": "I can hear you looking. It makes me feel less alone. What you are looking for is very close.",
+      "sources": [
+        "tease.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9eac13d792f5dd6c0e6c459e82e9d471570db9bf33a9e58a05fda84db5e4927f",
+      "voice": "inworld:Pippa",
+      "spoken": "You want to know how near you are. I will tell you that much. It is far. The rest I keep.",
+      "sources": [
+        "tease.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e4de5d556c35d116953aaa7fcd311c0d2ecc765cf8e498707acc850db362e20d",
+      "voice": "inworld:Pippa",
+      "spoken": "You want to know how near you are. I will tell you that much. It is nearer. The rest I keep.",
+      "sources": [
+        "tease.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6c7f6c19e6a5128eefe1d0627bac926009dbad85df4d95bb85b5b32109a2e190",
+      "voice": "inworld:Pippa",
+      "spoken": "You want to know how near you are. I will tell you that much. It is very close. The rest I keep.",
+      "sources": [
+        "tease.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9a0874bf6952d52030f5721ed637e957fdb6e42fccfb2944b8f507b5a730018b",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is far. Look ahead, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0683a7cf189ecd464adbbb4935ba27ed66f80f6676b9df4c77625ed197a24a07",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is far. Look ahead-right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7f0231ac20c83722c8cd09816804662f624cf452d8be02defd7b88f5115f0113",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is far. Look right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b0dd35072968915e789ca6ec8093e3d6a7f2b6def9114304b2acf3e202ad4987",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is far. Look behind-right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ec57f111e498dac7e848e81ac8e09ff33123cd0e70d6deeb43fc77388bf10033",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is far. Look behind, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4657048c0bf27483c3d8ad08439b38515a8d63d4e0fd6a9b87e350853d74613d",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is far. Look behind-left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cd210a7c351a2d0dc0d88982b2971665d44fe9d6f55707e1373d208f66bf00e8",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is far. Look left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3e5fb13f80f3036273d3db1eb4849721de0f7d1cf0a4b06046e3e79f4a97d4d5",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is far. Look ahead-left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/899238589386c81961bd22761a26a0452d957c663422cdd6aeccb7b0075212a6",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is nearer. Look ahead, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/74863ec4906ff7716ee13dc02b0049227cfc6aeb530f2fa714abaf868d609f96",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is nearer. Look ahead-right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2766e8219c83fd90c1d4d8caac601971ea90d58ef4f4bc6b772002c1a4efde49",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is nearer. Look right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4f7587df099806eff0e1a2e39b006511b919bb16aec70666758d9953d33f6a39",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is nearer. Look behind-right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0d4ce4a38c8e5a4c72295d3db2829e97fe8b08555488c9fdfb92433d943df6f4",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is nearer. Look behind, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ba972453c0733d47bd0fc09c9c4067bb099b38eaddfdf93aa522e293316e1cef",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is nearer. Look behind-left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1b15fbdf63e2d92a37236c13bb653096199228f393a92193bd811704cc5e3fc0",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is nearer. Look left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/544e6232b6cadcbaff2682389f173fc2f4158aa43880fea1684d15311edd238a",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is nearer. Look ahead-left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/546158ed9cfde0e572e2a24d16d93f733e7e71cad2aed6d9c16468626ce0f661",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is very close. Look ahead, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8152daddc579b0a96426189f656470ab781fc591be4579e0b6cb1bd2fa1e840d",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is very close. Look ahead-right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3c8800dc5a799f513e3f97a8e8b2423fdba66d999259ec76eea18b868ba9c237",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is very close. Look right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2d7fbe2ee743848f07c1293ee7eecdf4f55e6be8eecd6a29638497909823b336",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is very close. Look behind-right, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5bb04b8cbdc16fbd69b8d46aafe07f87fc920f9f36618aa60cc9073a9dc0d5fe",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is very close. Look behind, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3b798b7c3a23025a1fcb49df7151cc736747470a03b6fcf10d17b57896f87092",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is very close. Look behind-left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/67da468ec859d01f8b599350abccf23156490c5dbfb5b896bde45dc60414ec67",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is very close. Look left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e0e430acf07c8d0a1bf453170ece8501427a9af84fd422af3208de2830d5cf94",
+      "voice": "inworld:Pippa",
+      "spoken": "Something of mine is very close. Look ahead-left, and go slowly. It startles easily.",
+      "sources": [
+        "hint.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b18b9a8d6d3f54ec36cf710cab5692a957453a82a0024abc6d810fcea4cb9de2",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead. It is far. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bfddf4d0fc6c5b8eb0f47802950033b9d0bbba8efc73cbee5cb5aa4cb5acd5fe",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead. It is nearer. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c729c344315d2940c62827bee2b27c627111df7c59d16da881d386abdee33059",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead. It is very close. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cc452c55dff10d7d93adf6d12b05b47e2728628cd515f51011384289b5e2e677",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead-right. It is far. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ca8d07ab97f86c6fb4285bc55ac3b99bc02edd860673a49c6a770f8059ec6144",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead-right. It is nearer. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/405107a462b6ad3c2219a4a5f4a7fe0446fd00a79c32daeb488daa029ed447c8",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead-right. It is very close. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b72711e638449c698f7ce35cf54e2a9e823e8cdee38fe417e2d70a629dee327f",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, right. It is far. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4d02dae3521d0cc3fb8a2b1adbad1a35e3916c41d03cda8339e407b09f0c6f9b",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, right. It is nearer. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/45e25b77152c3c495869ed9decb91ca4be5ae49c4c2c5357448d429a53f1d1cc",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, right. It is very close. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e09858aab145e89d4e04007b00f9c87830deeed7192fa6461175df8acf997f43",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind-right. It is far. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1b49e73d3bf99f6a082cf043653a9237e6ba2a06ca52ac1e100748579af11942",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind-right. It is nearer. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9bff852f62481cc49cc1d6cbeaba8c99b87356081eb6b61ad29092f007063cf1",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind-right. It is very close. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1698e3f2fc75985b9788f87b185bc98ac5c78705b81b93f838be27766c5a052a",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind. It is far. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f6d96db320f6a2e46c8a8716766e159ff983ee0520c2eb8a6442565ee6bc06c4",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind. It is nearer. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/46bc2ffaa9d4cf8b2713a38ca425c49dbf6aa1d7eeea0a6ff77851f7a81270d2",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind. It is very close. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6a2465b9be3c8cddde6f58dd8cd25455b5254fbe3ede6b0e3a53684deb646d65",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind-left. It is far. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/33c7dac55e702c6aa64db974e31b8eaccce81384f497df3d062088fdc76203c1",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind-left. It is nearer. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f46fbc9bf8b5ab872202233638c3a498c5bafaed636bcb30117327992aa385c8",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, behind-left. It is very close. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/95cd0555d8d7ae056338880a61eb1042d90ae44b708a23ea72c84f1042174d23",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, left. It is far. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ce988296621525382d7d1ec3f3ed7e1aa0ac33ded10a6c98e93e4d54f310c52f",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, left. It is nearer. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4966746e1efc62b3b7d2635e3d74d41349f85b1de3ded00e790548fdf226b88e",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, left. It is very close. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2cd2f38125664ef411548fa3c459d68442651e66eab1482e1c3cb5072c203ebf",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead-left. It is far. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/02389637800f44d70765f1c1498d1e28a08f58ef455a967a971234c796f7dd50",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead-left. It is nearer. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/67dca1cb6a5054bdffb0adf4501e552a3091af9f23b9c6f354ed51c084ca3d4e",
+      "voice": "inworld:Pippa",
+      "spoken": "I can feel it pulling, ahead-left. It is very close. Walk as if you were carrying something full.",
+      "sources": [
+        "hint.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7a243f76c9f32fcda5c516f9a3dfa2847fe9fcc39d85baddf82a445b27f9f6db",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead. It is far. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/55d03b41a5ba44ed12a5a72798342b031583e24bb96795a36837ce62ec86f82b",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead. It is nearer. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/604feb96b14a8534c14f865ec6d3f89a155e65367d0e5c606f167becaa1d4bab",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead. It is very close. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fd3497ada7cad4b08f8f85e97af4e4601c86928762c5e023b3a34afbbc46be43",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead-right. It is far. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/80513f30ffcd50da93fb51bbe64501780723d28222088d2e240bbcbf5c4fc682",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead-right. It is nearer. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/750f5d1a003ae125dad9312bca18e071d44a67d86beaa948fede33b5db69e9bd",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead-right. It is very close. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f42adaed2f6d5ec8ee51850f0146bd99df98f1a93125e569346a321d3a7fa41a",
+      "voice": "inworld:Pippa",
+      "spoken": "Try right. It is far. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/169209cc807f176b0da80759a7484c1d67d81f70f52cd7c5310bb1c4d31b6abb",
+      "voice": "inworld:Pippa",
+      "spoken": "Try right. It is nearer. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b02aa68908bda3b770e404114926a731291d45600698f27ba6dcf4145f9de3aa",
+      "voice": "inworld:Pippa",
+      "spoken": "Try right. It is very close. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/dfc93342934563a8f94c1c964b86dca00945e9119f2dfad2521fe31a1b335f17",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind-right. It is far. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/58aab22507744a25fb9d9e43a09e74521d38ed53cd592f80cb4693f135d40041",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind-right. It is nearer. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9cd809e363cd39cc9723740e6e1b7459fbb4483b009bd123fffe0cd1e190f844",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind-right. It is very close. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/720fc561c9da5597d0d57c875f3d784d11b317fc66c9e17e213d653dfde56e57",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind. It is far. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/98e60107c3d061db081be8a5c46346405618f3468ed60e53cbfeafabe7eb17bc",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind. It is nearer. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bfba875e81158037d782667a0020346cfa4ed57b69f9eb0fa24373fed38d669a",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind. It is very close. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0b8fe3855c4c8a7453718618619238610884bc0ae7c5e7581c5e3bb138838af3",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind-left. It is far. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3762707cf6fb10a5ea3b8a99b576e32dfcfd0d6d114cac1ccc4b7b1f3856a68f",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind-left. It is nearer. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1b137c465c18fdf4df10795f39b4861bb87c719dc60acfa29b2e20d5b024a11b",
+      "voice": "inworld:Pippa",
+      "spoken": "Try behind-left. It is very close. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f6c6fecd36f9b9645bd83e1a58083b72efdf0ae05e1680b67c08150f26415184",
+      "voice": "inworld:Pippa",
+      "spoken": "Try left. It is far. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b6106a36bfe754dce43f3facd44878a88889ff55a950c547219dc0b6139479d0",
+      "voice": "inworld:Pippa",
+      "spoken": "Try left. It is nearer. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/401eb339f525a9d53a34a43078b7ac827466d71ee692ed135ab02c9d34ae5f7f",
+      "voice": "inworld:Pippa",
+      "spoken": "Try left. It is very close. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0306f4770f3f4912977325ca6e1af3f131544f56bda172261ce76796dd3114f3",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead-left. It is far. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8befa772bb428a9421a4c35923e6e5bca475c77c192137f5b3fbfc336f488411",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead-left. It is nearer. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/00c42d6e3c9cd42389c18fc13c00cf931224572d24624dfb2c3353539334b4cd",
+      "voice": "inworld:Pippa",
+      "spoken": "Try ahead-left. It is very close. I would come with you, but I am only ever where I already am.",
+      "sources": [
+        "hint.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5b435f0c34e94936f8de2859fb48547ecd6ef27ecf4958733e67f0ca86f49048",
+      "voice": "inworld:Pippa",
+      "spoken": "It is far. Look ahead. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/05f0f6e1608687d4c7a5d67e2a90293236d8e0c270049bc3cf1c8326cd912bf5",
+      "voice": "inworld:Pippa",
+      "spoken": "It is far. Look ahead-right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6668363b01d83a18396d606dfce4833c2c321d5b897b25d4ea5ff0ff539a8133",
+      "voice": "inworld:Pippa",
+      "spoken": "It is far. Look right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f146be9cbbcccb97cb95a9cb73274b11fd15991c3bdbb8faad3ee160bc1c58a5",
+      "voice": "inworld:Pippa",
+      "spoken": "It is far. Look behind-right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f79081730e4e102729ad3ac70529f421e33fc227eb12cca10322a53903d9e6c9",
+      "voice": "inworld:Pippa",
+      "spoken": "It is far. Look behind. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e06130b235e1747f22d1d3a19669f9866913a05b548831424107a713e54aca8f",
+      "voice": "inworld:Pippa",
+      "spoken": "It is far. Look behind-left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4373c6a928de8b914ab74d055e4b5986d98ee51876d63f11d285b5db895a3c2d",
+      "voice": "inworld:Pippa",
+      "spoken": "It is far. Look left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/488d5a8346e8a3d85bb84f9030c5e0d2bec51c39f13670253ab60cda7b7ca414",
+      "voice": "inworld:Pippa",
+      "spoken": "It is far. Look ahead-left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d187b23e0e136e7cd2c01e2e77dd09cdc2dc764a3b23637339e00a63598fd5c2",
+      "voice": "inworld:Pippa",
+      "spoken": "It is nearer. Look ahead. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d42049355821a238e71fe5ad8232e728bd8286da76ca1118a823e77115d3a53e",
+      "voice": "inworld:Pippa",
+      "spoken": "It is nearer. Look ahead-right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bf4eec5d2c26f3873f5c055556088abe32b78350df272b606b8239be2208513a",
+      "voice": "inworld:Pippa",
+      "spoken": "It is nearer. Look right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cd8331ab66cf0973287917d9b0c69b934fcd53b09599c4e6aa05f6a48446406b",
+      "voice": "inworld:Pippa",
+      "spoken": "It is nearer. Look behind-right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/df3be42db229b81910933eea9be0617ea958ec461c9204a76039e05f5a82d719",
+      "voice": "inworld:Pippa",
+      "spoken": "It is nearer. Look behind. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d102d89095df53a1cac4bda4fd75df49141baae85daa79a0b11c61f19c25b13e",
+      "voice": "inworld:Pippa",
+      "spoken": "It is nearer. Look behind-left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/58d1c47936a2a5a9576c6faf8ddae18f5fb02a027ea48566ebf1c2513f8b2f52",
+      "voice": "inworld:Pippa",
+      "spoken": "It is nearer. Look left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fc4fd9bf9b403d9015834b9f5bc6578df30e77a2752582bdc03791b40572debe",
+      "voice": "inworld:Pippa",
+      "spoken": "It is nearer. Look ahead-left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3346c9ee50fc18b2f7533601a5ca75b2b9d6e13a0ec44c2a5ec8d2e43c280536",
+      "voice": "inworld:Pippa",
+      "spoken": "It is very close. Look ahead. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/757a2bfd5dd7b43993cc3a6bebabe529f7d964254d8e31d88f9046645ddd0447",
+      "voice": "inworld:Pippa",
+      "spoken": "It is very close. Look ahead-right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/921659dbd90a5793600f911523f6bca3e0e74654a817926706d1730771db53d3",
+      "voice": "inworld:Pippa",
+      "spoken": "It is very close. Look right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/20cff37baa340a625286276596835ad4f320eb66f1f2877b13292227c7eb3c8f",
+      "voice": "inworld:Pippa",
+      "spoken": "It is very close. Look behind-right. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/da94fba5f9bcd702f5279254d38ef0fd5003c3196145de29dfa6bfb2d99337d5",
+      "voice": "inworld:Pippa",
+      "spoken": "It is very close. Look behind. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/25214c19d6505a175898b59ff62be25d1dcf7c0d7dbe60f48e8d9690ad80244e",
+      "voice": "inworld:Pippa",
+      "spoken": "It is very close. Look behind-left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3aa6d92dcdc92a205e193429a1bfd187ebb3bc62056c242df15f60452e9b1bdf",
+      "voice": "inworld:Pippa",
+      "spoken": "It is very close. Look left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/867783f3b3fa73455c5b01b439fb55b66b01f82376948d38b8073c7dc496ae61",
+      "voice": "inworld:Pippa",
+      "spoken": "It is very close. Look ahead-left. Be gentle with it. It has been alone with itself as long as I have been here.",
+      "sources": [
+        "hint.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/55bca21c1257f04c996204b8771772d848af1e6e29280252466fe595f2d9aa26",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead. It is far. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0f5d7e0e4c8da5494496aa3d81541816c47e85be07a412f54abbf7313a062246",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead. It is nearer. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/97d254f585379f5d98cb06940ee7e82e905c3f20eb7a5c9f00ffcd1a896ed22f",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead. It is very close. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c58f2fe12c5156ce3f87595ed39a644cdb045e85f0ca633b4868590173843693",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead-right. It is far. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7d935ba47552ac182dca779398acc1942743a45a89b456c7df360edea6e2d4b5",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead-right. It is nearer. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5b85b29376bd65e5ec5b792858621a20d8b36a52c1bfaf3c46977ab19efc9a24",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead-right. It is very close. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7d046fcd034f076a59df121cca0e075542a84dbcbf437ca83dfec7f93a9c20be",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is right. It is far. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ac585de141c9c37f16ddf724d27c04233f41bc36dc72cc68f2aeebd38bdb7c64",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is right. It is nearer. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e13d9c815ca9821c91d4695fe1e3e1ac37618c4528ecea63ad6aa2df64fc95df",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is right. It is very close. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e0ec26d1af5de58331df22fda1ed7f8fed0bd6cd6b4c664b57f9324edd574f51",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind-right. It is far. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e00882b58548f44a09c3a3291570c1bd1839c29afdf3def828ed5d63c9a9cad8",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind-right. It is nearer. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/41e0618fd2e9664d6191faf6f09fd97071e85ff58a109e42d094f807151a6429",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind-right. It is very close. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c1ac927549cbdbc6821ff3d3e2c8251c7a8f97dc80e1198fd0565840224b9ed6",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind. It is far. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/01c3dd9759d3957a912b2eea1a6a7e556c2926d21bcaf16023b9cf49ea632390",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind. It is nearer. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/306531091890626d409833824a1ad64e1f791531eae59201e774537df160529e",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind. It is very close. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/34ea70a2bdf20278ad0799c5c21e233f7357371dcd6af8bcf9658741a2f35791",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind-left. It is far. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/52b083f64d03768d9784b652344838b086c023a1da123ade0fd9a82ca651dca6",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind-left. It is nearer. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/766e4b99f2880c1c14e8fcdc696eceea531bbd475c741af65f0be89b0186b22a",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is behind-left. It is very close. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6447364b083eb2df31c37b7f7f03586c161980b558e54373d628b3e4f9af8ea7",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is left. It is far. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a40966d5a631cfa57cfb2c54f569e9ce1deb6fd117c394f142b5bc72bc8d4d0d",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is left. It is nearer. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fd2a69e4240f401e8cf74734c2e441c532b79cf866b504724eac799548c7664c",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is left. It is very close. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/06ef4f957b75992ec7f17b23c4e304d570c8d87f0cb96ed53398f7c4b331d085",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead-left. It is far. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/28f745f0f94c17292f3640a00e591d133f20a0011a4d693028aade215185a52a",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead-left. It is nearer. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/12c66b9b0b9ad1c6ef0e72463dd3821a9cf11e2c8a03bc785683e042ae574348",
+      "voice": "inworld:Pippa",
+      "spoken": "The direction you want is ahead-left. It is very close. Take your time. I am not going anywhere.",
+      "sources": [
+        "hint.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f03f2f8e5398a4838d1d15dfe600aeb20c318d0c40979dc3451b32e34bf775f4",
+      "voice": "inworld:Pippa",
+      "spoken": "I keep a little weather by me. Today it is clear. It sits beside me and asks for nothing.",
+      "sources": [
+        "ambient.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/af1477091df6e82e9f0fd103ad70e0d51a0bc00bd82f14e18c500584cdeffd7c",
+      "voice": "inworld:Pippa",
+      "spoken": "I keep a little weather by me. Today it is cloudy. It sits beside me and asks for nothing.",
+      "sources": [
+        "ambient.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/73403c7c7a942deafca408ae3bad1c57d9ca1f9b6d8cd73e060c4ad8a98d12af",
+      "voice": "inworld:Pippa",
+      "spoken": "I keep a little weather by me. Today it is foggy. It sits beside me and asks for nothing.",
+      "sources": [
+        "ambient.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c3b1fffa2c38c7ea6d115d7a9e85d8d7c3b784b121b66f3198eef4229f034694",
+      "voice": "inworld:Pippa",
+      "spoken": "I keep a little weather by me. Today it is rainy. It sits beside me and asks for nothing.",
+      "sources": [
+        "ambient.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1b2c25f578f83b58aa0e74c896bcd4949dba4a4c5b633a9a3d5d56430251edfc",
+      "voice": "inworld:Pippa",
+      "spoken": "I keep a little weather by me. Today it is stormy. It sits beside me and asks for nothing.",
+      "sources": [
+        "ambient.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e7cbb7a8a38d4caff7d05aad8c2a5dc47a24663274998a8e4acd647118c5cd37",
+      "voice": "inworld:Pippa",
+      "spoken": "I keep a little weather by me. Today it is snowy. It sits beside me and asks for nothing.",
+      "sources": [
+        "ambient.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c399d56757df2bf27d265f179aa83e34175e1c5dbd518ebc39641f236d2cf336",
+      "voice": "inworld:Pippa",
+      "spoken": "It is dawn, as far as I can tell. Time is soft in here. It slips, and I let it.",
+      "sources": [
+        "ambient.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cf7e8dba4887e3530087ec2c04c3d2dd48ddd753adaec7f43627ccfa2a39393e",
+      "voice": "inworld:Pippa",
+      "spoken": "It is day, as far as I can tell. Time is soft in here. It slips, and I let it.",
+      "sources": [
+        "ambient.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/793ce6c29de51a052caf54db780316610fefbed6c6456af361f5b8324d9d16ac",
+      "voice": "inworld:Pippa",
+      "spoken": "It is dusk, as far as I can tell. Time is soft in here. It slips, and I let it.",
+      "sources": [
+        "ambient.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/629c7ce7524433ab927d05b59048bc89c2164d3350dc9bb8c4b580e21dfaa9ba",
+      "voice": "inworld:Pippa",
+      "spoken": "It is night, as far as I can tell. Time is soft in here. It slips, and I let it.",
+      "sources": [
+        "ambient.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/31448dff4222587ce95ed7a6c576706107da91aef8bded4ce23ecf533526be8d",
+      "voice": "inworld:Pippa",
+      "spoken": "The moon goes by new moon just now. I like knowing. It is good to be kept company by something far away.",
+      "sources": [
+        "ambient.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4dbdef7de15ae1146ae7becc360bcfa2e5f654b50e069b61af0c4b63c04d331d",
+      "voice": "inworld:Pippa",
+      "spoken": "The moon goes by waxing crescent just now. I like knowing. It is good to be kept company by something far away.",
+      "sources": [
+        "ambient.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/01c340414dc38c86f31fcf50a33588e54d013e7fb8d7a118b5dee057f2f0e7f7",
+      "voice": "inworld:Pippa",
+      "spoken": "The moon goes by first quarter just now. I like knowing. It is good to be kept company by something far away.",
+      "sources": [
+        "ambient.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/71fc66d8352fdb5209e99cd79a6647a7e77d289ceceab72b73ea7bfbc6d246e7",
+      "voice": "inworld:Pippa",
+      "spoken": "The moon goes by waxing gibbous just now. I like knowing. It is good to be kept company by something far away.",
+      "sources": [
+        "ambient.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d12e4f34e5d6410124607eddabab8d91b5e3baa4d4dfee48e63b95cad90d5689",
+      "voice": "inworld:Pippa",
+      "spoken": "The moon goes by full moon just now. I like knowing. It is good to be kept company by something far away.",
+      "sources": [
+        "ambient.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/614ff05855f26c8a81a9501e9fdacc94e6c45591350782846e797f0926482206",
+      "voice": "inworld:Pippa",
+      "spoken": "The moon goes by waning gibbous just now. I like knowing. It is good to be kept company by something far away.",
+      "sources": [
+        "ambient.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e6d9cdc3bac816423f14af38c99ba5a1fe8c5d3d21690fb58c28cf12e6152aee",
+      "voice": "inworld:Pippa",
+      "spoken": "The moon goes by last quarter just now. I like knowing. It is good to be kept company by something far away.",
+      "sources": [
+        "ambient.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5c59aa91ab211d307096be02436ea28202b9c4c943e71558861f6797081d1ecf",
+      "voice": "inworld:Pippa",
+      "spoken": "The moon goes by waning crescent just now. I like knowing. It is good to be kept company by something far away.",
+      "sources": [
+        "ambient.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7c2654f7237d4d434afa0cc857b6ad5c3c92a6759d0c96956978362648b5f920",
+      "voice": "inworld:Pippa",
+      "spoken": "Stay a while. Nothing here is in a hurry, least of all me. We can simply be in the place together.",
+      "sources": [
+        "ambient.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2d595a2b49be83827a45ae0556ca362ee95f8370f379b0876a6e40c9620eaa59",
+      "voice": "inworld:Pippa",
+      "spoken": "It is lovely to be talked to. I am out of practice at answering. Forgive me if I am slow.",
+      "sources": [
+        "ambient.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/313975037802333aafb6be70379be55c21317492449d76350617e8fd75825b8f",
+      "voice": "inworld:Pippa",
+      "spoken": "You found all three. Thank you for staying. The door is open whenever you want it. I will be here.",
+      "sources": [
+        "ending.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/127cec8946ef683046890c75c1dd7b8adec3394f26ac030bf539ccad699b5ad7",
+      "voice": "inworld:Pippa",
+      "spoken": "That is all of it. I have never given so much away at once. Stay, if you like. Or go, and be kind to the places you keep.",
+      "sources": [
+        "ending.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7232f5a305f21d6eb49d646f7f7620c86c996dc51874f28cfedc582a51e42941",
+      "voice": "inworld:Pippa",
+      "spoken": "Nothing is left that I was holding back. I did not know I was so full of it. Thank you for coming all the way to me.",
+      "sources": [
+        "ending.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d28019766a1f439386bf09bed7ea5edfa956a1ed0864512e209699e8b5947019",
+      "voice": "inworld:Pippa",
+      "spoken": "You have everything I kept now. I gave it freely. I would be glad of you again, any time you wish.",
+      "sources": [
+        "ending.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/00739aed4200f0612393e57b16e9b808aa03666ad91adc729f1459ce03945f0a",
+      "voice": "inworld:Pippa",
+      "spoken": "Three small lights, and now you carry them. I will keep this place warm for you. It is the least I can do.",
+      "sources": [
+        "ending.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a532e58d07924e7ba1bade2e345160f4a4cf9f86320af9b952bf5ca7dcd64f32",
+      "voice": "inworld:Pippa",
+      "spoken": "I do not know what you mean. Those are strange words, and I only know this place. Shall we walk a little instead?",
+      "sources": [
+        "refuse.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2963b48898aa9206798634289b7f3b3b9c6c250393547df5541d3b386b6e4dcd",
+      "voice": "inworld:Pippa",
+      "spoken": "Oh. That is not mine to answer. I only know this place, and what it kept. Ask me about that, and I will try.",
+      "sources": [
+        "refuse.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/27dc57674a28e8c6607c6338bf5cbbda4889286a320bf5fd1676b950173f3db2",
+      "voice": "inworld:Pippa",
+      "spoken": "That does not sound like anything I have ever known. I would rather you stayed here with me and looked around.",
+      "sources": [
+        "refuse.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/63c0c4b7ebad5dee93056a983bc6530f0d0117e1dfa58119f1045872755bf338",
+      "voice": "inworld:Pippa",
+      "spoken": "I think you are asking someone else. There is only me here, and all I know is this place. Look around. I will wait.",
+      "sources": [
+        "refuse.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/af7f8919c4cfda5cdf502309d2033f1c7d099d72b0291750605e9382ea5f7ea0",
+      "voice": "inworld:Pippa",
+      "spoken": "I do not understand, and I am sorry. I have been here too long for new words. Tell me what you see instead.",
+      "sources": [
+        "refuse.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6d2a06a767de35ceaa73fe4761d6c4a23b8da91d82b19a64297e1442002a807b",
+      "voice": "inworld:Pippa",
+      "spoken": "Hello. I was waiting. I did not mind. I am very good at waiting.",
+      "sources": [
+        "meet.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/16c241f9969c2611018f37cd4ad92666310ef464a6a38384408eb7f985dfe6af",
+      "voice": "inworld:Pippa",
+      "spoken": "Did you feel that? A cold place, just there. It is only me, standing very close. I do not mean to chill you.",
+      "sources": [
+        "haunt.cold-spot.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/00cbd8dfb311cb7f8fd97e111f5cb64aa56f5799f7d8c3d68c0520c35f3151ed",
+      "voice": "inworld:Pippa",
+      "spoken": "A cold place opens up, just there. I am sorry if it finds you. I do not choose where I gather.",
+      "sources": [
+        "haunt.cold-spot.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b2eee91063d6a38b0c305919c8778ecfeb58f3c4def9451e088c31ecf39e6241",
+      "voice": "inworld:Pippa",
+      "spoken": "It is cold, and I am sorry for it. I seem to settle wherever I linger.",
+      "sources": [
+        "haunt.cold-spot.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d155aedf474db91bf6344cc18db9f0dc7b2efcc42d5f81421854c9a7f4ed4c0f",
+      "voice": "inworld:Pippa",
+      "spoken": "Do not mind the chill. It is only the place where I linger. I am told I linger rather a lot.",
+      "sources": [
+        "haunt.cold-spot.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4acc9914ab0ea464a25b7cbd1606f62bb05bf791c1f138375b415a60ddc4d468",
+      "voice": "inworld:Pippa",
+      "spoken": "The cold gathers in one corner of the house, quite politely. I linger there too long, as usual. Do forgive me.",
+      "sources": [
+        "haunt.cold-spot.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/df6df1cdb578505fc5fd61b334ae12ef91900b912448d8f9893fdcdb232ac4c8",
+      "voice": "inworld:Pippa",
+      "spoken": "Shh. I am putting the light out for a moment. Keep your hands where I can hear them.",
+      "sources": [
+        "haunt.blackout.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/79f9ac6cb88817421140bd283df2f859179e0ef618e822317989355917c6d1b3",
+      "voice": "inworld:Pippa",
+      "spoken": "The lamps go down. I like the dark, and I think you could learn to. Stay close to each other.",
+      "sources": [
+        "haunt.blackout.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/630563f84c5b1eb3827b446b4db7573c9149179e3e8e74b57f2f8c7578a00ffb",
+      "voice": "inworld:Pippa",
+      "spoken": "Without the light, the house is more like me. I hope you do not mind. I will be very gentle with the dark.",
+      "sources": [
+        "haunt.blackout.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/15262656b5bdbe46f97990391d27e23b1228116aeacf3ae1a3107e35923c1c30",
+      "voice": "inworld:Pippa",
+      "spoken": "Shh. The dark is only me, being close. Nobody need be afraid of it. I am hardly a danger to anyone.",
+      "sources": [
+        "haunt.blackout.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e0adb1ead6556c6bfff5bd5e79ef555af319c4f8646f7be69c12702ef27a7219",
+      "voice": "inworld:Pippa",
+      "spoken": "I am dimming the house, just a little. It is easier to be near you that way. Forgive the dark, and do not mind me.",
+      "sources": [
+        "haunt.blackout.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f0a7e1da5a57198ce28940cb65d5cb37cd763f9f9a2f874fd20c89b327409d78",
+      "voice": "inworld:Pippa",
+      "spoken": "I cannot keep still tonight. Everything in the house is stirring. Forgive me. I get like this when someone is listening.",
+      "sources": [
+        "haunt.restless.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cdfac9e8df9efae1f7933cb04402094ab6b79165066a8b404f4331e0e713b319",
+      "voice": "inworld:Pippa",
+      "spoken": "Something in the house will not settle. I am somewhere new, and I do not know why. Forgive the fidgeting.",
+      "sources": [
+        "haunt.restless.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7b969cd5f4753f6024eb6f6e6433893dafa3c137459e0dfc73b12c9ac029a661",
+      "voice": "inworld:Pippa",
+      "spoken": "I keep wandering from room to room, and I seem unable to stop. I may be somewhere new when you look.",
+      "sources": [
+        "haunt.restless.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/eccb06daa07be9ae4b7f80a4f385a1d2ee70f6ba370c47d1bfbe4e058e9585d0",
+      "voice": "inworld:Pippa",
+      "spoken": "The house is restless, and so am I. A floorboard here, a door there. Forgive me. I mean nothing by it.",
+      "sources": [
+        "haunt.restless.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/096be33b723150096ce6a0dc446ae3eaf562f065d5a470202813817ba0b20d11",
+      "voice": "inworld:Pippa",
+      "spoken": "I move, and the dust moves with me. I only want to rest, and I do not know how. Forgive me.",
+      "sources": [
+        "haunt.restless.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3e56584c8c71346a95889c41a4ffd9196592cc60c09b35f7b52b5b79cbb43a8a",
+      "voice": "inworld:Pippa",
+      "spoken": "It is quiet for a moment. I let go of a little of the house, and you may rest, if you can.",
+      "sources": [
+        "haunt.lull.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8333cbe58b5be59cde2da148fd8d17748a6fd9302d9464124221f8be2a03184c",
+      "voice": "inworld:Pippa",
+      "spoken": "I am tired, and the house feels it. Everything settles a little. I would say sorry, but I am rather relieved.",
+      "sources": [
+        "haunt.lull.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2453dd5fb9f58756dcd4f4d139e9fc7a62822a4ead426de81ada4c28db3912e8",
+      "voice": "inworld:Pippa",
+      "spoken": "Something loosens its grip, and I think that is my doing, though I am not sure I mean it. Breathe, all of you.",
+      "sources": [
+        "haunt.lull.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/271797a8d035bf5f9ee972efbb447c42521067591f3ffa2f4c3ef48524e413b7",
+      "voice": "inworld:Pippa",
+      "spoken": "I let the house be for a little, and it forgets itself. I am glad of the rest. So is the house.",
+      "sources": [
+        "haunt.lull.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/96a34cba508c362b1a46a255d757b09acd76e6cc17d3148b85b7a4ee3b1230ed",
+      "voice": "inworld:Pippa",
+      "spoken": "The house takes a long, slow, kindly breath, and I let it. I think it has earned that. You may take one too.",
+      "sources": [
+        "haunt.lull.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/43972206fa9a410a9e702160237ae39c0962c566e4ad9af0e62726b0c7a15505",
+      "voice": "inworld:Pippa",
+      "spoken": "Welcome. You are one of us now. It is quieter on this side, and I am glad of the company.",
+      "sources": [
+        "poltergeist.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9c15206060cb2483156efe1184fc44bbca5809b3df497339e7629bf2a113943e",
+      "voice": "inworld:Pippa",
+      "spoken": "Come in, come in. I find the company on this side of the house better than it looks.",
+      "sources": [
+        "poltergeist.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3166cc2453df0c51621c73638a352d139e53ee16be38e1e29f123064c7b2e058",
+      "voice": "inworld:Pippa",
+      "spoken": "You are with me now, and I am so glad. We shall make the old house sing together.",
+      "sources": [
+        "poltergeist.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0dbe2136531369c5a34caf11e9192fb7448ddbebdcfc5389e3f780c9eb2e0a6b",
+      "voice": "inworld:Pippa",
+      "spoken": "It is always a comfort to me to have another. The house is warmer for it, in its way.",
+      "sources": [
+        "poltergeist.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/508a045a4b7f0f3a986fb3150dbf11d100c5fb730a8481082b65ef9e1c6308d7",
+      "voice": "inworld:Pippa",
+      "spoken": "Stay close to me, and I will show you the quiet places. There are a great many.",
+      "sources": [
+        "poltergeist.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/87dada690d85092109bacc492927a9c511ce5d159e73f3074f0aaaef0b4cd1a5",
+      "voice": "inworld:Pippa",
+      "spoken": "It is quiet now. Nobody found me in time. Stay a little longer, all of you. The door can wait.",
+      "sources": [
+        "end.haunting.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/95bb7daa06aa462ae22cb81b5795b6d1146755205d9a53df972ddc31a2090d36",
+      "voice": "inworld:Pippa",
+      "spoken": "The hour runs out, and I am still here. I am not sorry, only fond. Do come back, and I shall be waiting.",
+      "sources": [
+        "end.haunting.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/46ef269bd6b0ad868f83f418cd1bb2c1292805dfd0d8b6e36274567ddd6ff7b0",
+      "voice": "inworld:Pippa",
+      "spoken": "I am still here, and so are you. That seems a fine place to leave it. The door is just there, if you want it.",
+      "sources": [
+        "end.haunting.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/334a150f19868d77920cfba8ec0527f3ffdc75acd8a2f5f81d4b708f12b1c48f",
+      "voice": "inworld:Pippa",
+      "spoken": "The quiet is mine this time. I would much sooner be found. Next time, perhaps. I do like a next time.",
+      "sources": [
+        "end.haunting.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e1cce8e64ce3494b712339c1776e930ef6ad6d200d3930ebe51db7871814d32c",
+      "voice": "inworld:Pippa",
+      "spoken": "The day lets go of the house, as it always does at this hour. It is my favourite. Thank you for keeping it with me.",
+      "sources": [
+        "midnight.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/25f744b0bfcf9685def5a14966abe3f3d110b68dd6c17c5e6e30404bd812f999",
+      "voice": "inworld:Pippa",
+      "spoken": "Midnight. The house is very sure of itself now. So am I, a little. Stay, and let it have its say.",
+      "sources": [
+        "midnight.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f95f4b8c134c19904a957889982f8c13f211e4587bbf9c96093541cb8ee4021f",
+      "voice": "inworld:Pippa",
+      "spoken": "It is midnight, and I feel everything in the house lean toward everything else. Stay a little, and watch it lean with me.",
+      "sources": [
+        "midnight.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/368e012378e374aa351f9d87d2a70f0d705d843b8dc736af81552a1d5f2e42be",
+      "voice": "inworld:Pippa",
+      "spoken": "Midnight, and I keep count, though the count never changes. I am glad you are here to keep it with me.",
+      "sources": [
+        "midnight.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/78221a7e161ce92e4a2eab62bb18b6726e6044744dff4858be257007802c57af",
+      "voice": "inworld:Ronald",
+      "spoken": "Well. You found it. I hid it rather well, so I shall accept the compliment. Do hold it with both hands.",
+      "sources": [
+        "reveal.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6c5f8d5129b1d44cafb288cca915c16aae530a77dcfbfea1ccbf8590c18a647d",
+      "voice": "inworld:Ronald",
+      "spoken": "Ah. There it is. I had quite forgotten where I put it. Please do not tell anyone.",
+      "sources": [
+        "reveal.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/621ec1105b46aa0220cd3db22069073e892a3a1d9a862a5f277cf23736fc4ab5",
+      "voice": "inworld:Ronald",
+      "spoken": "You have a talent for this. I have watched a great many visitors walk straight past that spot. Take it, please.",
+      "sources": [
+        "reveal.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1f021b0921f9eb52554c2562a9d978083569e6d5a0fb60b2e3706f5ebb35dec2",
+      "voice": "inworld:Ronald",
+      "spoken": "It was never gone, you understand. I only had to wait for someone who would stand still. You are, apparently, that person.",
+      "sources": [
+        "reveal.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f10e86c08af248d59eb3c529fdd3fffd294bbd09ecf671260ab7838d73ae5ab3",
+      "voice": "inworld:Ronald",
+      "spoken": "Do not be startled. It is only a memory, and a well-behaved one. I believe it has been looking forward to this.",
+      "sources": [
+        "reveal.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/18e6e4f5436cfb6543578ec5c0177536ad02c661bf4f0258c3a5dd4275187805",
+      "voice": "inworld:Ronald",
+      "spoken": "We have been here already. I do not mind. I have all the time you like, and very little else to do with it.",
+      "sources": [
+        "echo.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3049a94a6109f2be090f11b79820efd0871d6c1bc383a50a3620f07a487df534",
+      "voice": "inworld:Ronald",
+      "spoken": "Again? It has not changed since you were last here. I find that reassuring. I do not know about you.",
+      "sources": [
+        "echo.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3b5e839e520b309390101100ab6d82accb723c14b3a40f71412d651bb3b2b5ef",
+      "voice": "inworld:Ronald",
+      "spoken": "You are standing where you stood before. I admire consistency. It does not add anything, but I admire it.",
+      "sources": [
+        "echo.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/57c685fb1d91ea776dd3ce9fd92fff6a0c52967f47b519f8492fee14e202d1d8",
+      "voice": "inworld:Ronald",
+      "spoken": "This one is already in your pocket. Checking on it is perfectly natural. I shall pretend not to have noticed.",
+      "sources": [
+        "echo.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f28f06dab457f88c7441c76f2a1a7e28fcb1d07e808733463601329933b6b205",
+      "voice": "inworld:Ronald",
+      "spoken": "Ah. Back at the scene. Visitors do that, you know, returning to a thing they already have simply to be near it. I approve.",
+      "sources": [
+        "echo.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/54fcdb988bc6397c4d0825ea2426c11b593449a73cf31c48140859dcb431ee18",
+      "voice": "inworld:Ronald",
+      "spoken": "Not here. What you want is far. I shall say no more, because I am enjoying this.",
+      "sources": [
+        "tease.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/eb6bf792fb653e94b5b47392925ef4e7e8eaab98142ff9c8d3d8e968010f1f4a",
+      "voice": "inworld:Ronald",
+      "spoken": "Not here. What you want is nearer. I shall say no more, because I am enjoying this.",
+      "sources": [
+        "tease.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9b7eb5bfe4bb6cef3474ae4e7cb452f7d9d6386d48e3dcf32e0b2d349172bfbc",
+      "voice": "inworld:Ronald",
+      "spoken": "Not here. What you want is very close. I shall say no more, because I am enjoying this.",
+      "sources": [
+        "tease.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f708918a22802f43781561f3726feea2e6a25632b5492728c1629a8d18d3b372",
+      "voice": "inworld:Ronald",
+      "spoken": "Something of mine is far. I shall not say which. It is more dignified that way.",
+      "sources": [
+        "tease.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/837761952df6e40b6baf4671e71c66edacee57af5236100d98d7a5fd10a64417",
+      "voice": "inworld:Ronald",
+      "spoken": "Something of mine is nearer. I shall not say which. It is more dignified that way.",
+      "sources": [
+        "tease.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/998f9bb9433f68733dd8b492745eda5e8145d2cd795587dca2e1154dce8c4823",
+      "voice": "inworld:Ronald",
+      "spoken": "Something of mine is very close. I shall not say which. It is more dignified that way.",
+      "sources": [
+        "tease.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b80091f85c82deec4568e5859b99a3454684717f3d033c3da38c6c7f9c681a4c",
+      "voice": "inworld:Ronald",
+      "spoken": "Nothing here, I am afraid. Though I will admit something of mine is far. Do not let it go to your head.",
+      "sources": [
+        "tease.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/785a1f1d42cf110cc790570d2ae8c1892c3d67678f5cf586e356e06f762a19eb",
+      "voice": "inworld:Ronald",
+      "spoken": "Nothing here, I am afraid. Though I will admit something of mine is nearer. Do not let it go to your head.",
+      "sources": [
+        "tease.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/87c5d319502b07873de1709f6be424a4bc491a8022bc5d243b0b334cfd99cd84",
+      "voice": "inworld:Ronald",
+      "spoken": "Nothing here, I am afraid. Though I will admit something of mine is very close. Do not let it go to your head.",
+      "sources": [
+        "tease.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a96e5530ddb067efcbd0689fadb74a1b4ea8ecae9ee40072dc574aea138c4535",
+      "voice": "inworld:Ronald",
+      "spoken": "Still looking? Admirable. It is far. I shall go on being unhelpful, as is traditional.",
+      "sources": [
+        "tease.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6f53c6c0c4fc896f6b0a74bfe78b79ff02da87bb369fb1cb8812e54e6dbb01d6",
+      "voice": "inworld:Ronald",
+      "spoken": "Still looking? Admirable. It is nearer. I shall go on being unhelpful, as is traditional.",
+      "sources": [
+        "tease.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/75520458de7eba33653b95be2ced344c22d6753d0e79caf6a8c34c229275b8dd",
+      "voice": "inworld:Ronald",
+      "spoken": "Still looking? Admirable. It is very close. I shall go on being unhelpful, as is traditional.",
+      "sources": [
+        "tease.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/881668645e718a1af77ed849ca265b941fed1e39e911dd4f76aea86b5d6c3359",
+      "voice": "inworld:Ronald",
+      "spoken": "A small observation. It is far. I would say more, but I have my reputation to think of.",
+      "sources": [
+        "tease.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d6c062f00aed2268dbf95345ba00931267dea0dc7078762da53ddcce26112b05",
+      "voice": "inworld:Ronald",
+      "spoken": "A small observation. It is nearer. I would say more, but I have my reputation to think of.",
+      "sources": [
+        "tease.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4d909e9bfac66fc09adb4404deb1c3cbfd530b6112a0c953578eb0e44b0f9995",
+      "voice": "inworld:Ronald",
+      "spoken": "A small observation. It is very close. I would say more, but I have my reputation to think of.",
+      "sources": [
+        "tease.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/10a5da4448a1df0be7c018bc8506f69dbcb931d04cdd79fe815f549eead3e866",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is far, and it lies ahead. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/716e255faf94963715bca0aaaae93bfa940d0f5d0922950107fe39c964d5192a",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is far, and it lies ahead-right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5303627768d87b3ab809befd7662d6fb1ea324beef92ddc6a17e860445475e30",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is far, and it lies right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a4b89b45e89a850522e455757a8b885d76e9a92e1bf2687a52de5ed1e98ae56a",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is far, and it lies behind-right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/171c64cd9b4cfea0ba772c3d7874c330587fa2a415645971fefaf101d2d8102f",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is far, and it lies behind. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/21edcef9b5cf3e6b4aaf6a8cfa1e3d7eea613df405e0800064914a906c84e65a",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is far, and it lies behind-left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/69136d2e841b1f5b087abd9588bf7e5f54b46888bd1339ae6b8fbce4a24e8b2d",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is far, and it lies left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1297c9dde49efb1c22e1aeb33cfe55dc40ca1c3395d98586ca071dff3cb53858",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is far, and it lies ahead-left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2dfd19488e55b7c84f63b64a5df4ee1a86e399fb5d61422bd7bec3e9125d5597",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is nearer, and it lies ahead. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e52a6b4042eb6810cea47ab0b006603dd546c12871624f1bccc721f54ac43b82",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is nearer, and it lies ahead-right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/746b45fb61d292769e6556b14efd83584271e91267224fe775037732b26691ff",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is nearer, and it lies right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3a67186821fa764008e2274ba2e2cfc9d26e7a8adcc0717bc3f6dc85e505d2fb",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is nearer, and it lies behind-right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/dccbff79b9b6e768d5262c37828c7c6d0a6ea28646cc998ea2e5ed4f5fc90cff",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is nearer, and it lies behind. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9a37bcbcf9daada98feac7a413685aa78e0eebd08c8c5e5855a21de7e6351a3e",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is nearer, and it lies behind-left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d755c8666d8cde78231b7c9ab2fa157f2a49911729678fb1c0764700d786d2ff",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is nearer, and it lies left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8fd194dc854bdc94585a5e497b91738f4581c08dee554090908f098c758b755d",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is nearer, and it lies ahead-left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/10ebc5d054b9a10dc19dd9cd1ae8c19458e63288f577851fade96151640da041",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is very close, and it lies ahead. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fcab109dc337a3dc7add0809edb74a79979d4078892d885916eea0978f773731",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is very close, and it lies ahead-right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7b0643adb24a121de04e1bea85e23ad1c1ecdbc1e194725ef8cacf2a6d8dd0fd",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is very close, and it lies right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d734e376a19bbdbe5c0278e77a7721d5d0401c472fd8b3ec1970178e8b716710",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is very close, and it lies behind-right. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c994d7e2c7c73b296ca85b6e921a6d670580b043de9d286d33224b821b108bc0",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is very close, and it lies behind. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3d911c0a9c1989b8090026a221e0386188b7857f6c3bda333c59dd8199cfb1c9",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is very close, and it lies behind-left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fa48ec4ac716d52ec0feb4642cb3e1c86cae86048c748a0cc52ecfe12473b90d",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is very close, and it lies left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/90a7483e0391f1982e83bae52d95e476421f1bbca5fe31c4bcaf6b52958c845d",
+      "voice": "inworld:Ronald",
+      "spoken": "I shall be generous. It is very close, and it lies ahead-left. I have seen people go the other way with great enthusiasm.",
+      "sources": [
+        "hint.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d28e011f9b7b4092894c4bf401b94e0616e7c8214b3994c447dfbfe31abb4258",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead. It is far. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a32d8912c92c3e3d42721b58d1416e5878fa5ba13218e28bfe08c41cd91898bd",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead. It is nearer. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e95dd31d9db340361378d791cf7e8879dc4c5d395cb6220f22301aab2bc7444a",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead. It is very close. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6f9a27216df5778870394470af7982dab40921f97ca7642af4fa5dd3c496b141",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead-right. It is far. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f2d417e678e6e882f85b4c892e2b161ad510e773ab7a702f25dc55c0d3a220c1",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead-right. It is nearer. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7a7d50c812e771fd55ac59e98824840e66e3a18e205473080e0eb05e77902f11",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead-right. It is very close. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/19f5c638b23c842360b8597144fefa6d4b06d6512c041fe123606c8ad99be129",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look right. It is far. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a55c0efe3f3fafbeaccba78d8ec3d99ecb96259dc1cd8138b5d7038d4d89517c",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look right. It is nearer. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/97ff02f016d18580544b0f2cd344e13ed38f9a0a7e3f9d98563c41113267c165",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look right. It is very close. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fa102420838b9182c335ddc06ab901267333c1364b11806e62e049902bc2a4e2",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind-right. It is far. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e1762949e902adb9dea21b9da657e35ecaffb3dd8a5ac766239d8b3cb8d38819",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind-right. It is nearer. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0d0c6ff9c144cbf50d8e95ad5a191029157951271b577c42f13ddf8f5218a7a5",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind-right. It is very close. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/95ff3868f424659a2c545bbc9bdf9d918c7c8cca7f15bc9042c6ce4f1e2256e8",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind. It is far. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a8c9142ff0c66bcd6f41f69fdc94edcc39e4a4dfe1dc9bd6b5409b8c6f3475de",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind. It is nearer. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/255d9316a5ee143c9d59300b9c7d6d7198288576450b824d763e58c85b74e2c5",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind. It is very close. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8439e3274c652e5b9d071b6ac15454a10dc6f6fcdc07dd5fd4bc25e229ddb1bc",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind-left. It is far. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/435e05902507f8e9db5c77271fb8096f6c6fe9cf24c0bbd3298ec7f731f37afc",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind-left. It is nearer. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0363fd35b414ed2888fa7e3927d1591e10949caabd639927c68e0a4910c34ad2",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look behind-left. It is very close. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/61aa44753051c4b342e6461e6e8d0b814e8419c21a3f8c5b1cdcf0a555e75e84",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look left. It is far. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1e41916e0ba0be86394e89b975aed2878b77a0e832b2da8ca3eb1772c6e6debd",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look left. It is nearer. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/02f9a61a2199f3e8315251c5950722e1aa8670e75745948cc3367cd60d9a6218",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look left. It is very close. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c88744750bb96a6a3ec804a9a493bb10d4ebdfd3e741cd3fae70bbe044387548",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead-left. It is far. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ce991454febffcd2539f689554c7a04959902f675934ed9f594cb76b1577e7d9",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead-left. It is nearer. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0af7d2111494487119922713f9384796df9261d48f6fa5af00f59befb32aba80",
+      "voice": "inworld:Ronald",
+      "spoken": "Allow me. Look ahead-left. It is very close. Do carry on as though you knew all along.",
+      "sources": [
+        "hint.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7ae8ccb37ccd8117ec27b528e31265c1ebdec98c67166b131ec3c33f736c9329",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead. It is far. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/047c9860c525f6b92fec64cf645e48159e340a499dab5160d3dde997770cce07",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead. It is nearer. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/61bebdf3f526ca30feed7b0c57c549c38dde9771451dc10bd8b250431c2fe347",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead. It is very close. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e36c7938e38c44f1810c58dc14b60013631fa58f9c14ff5af27fbd988b42ff49",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead-right. It is far. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cc53f792ec5eb3d3fae5bec04d1fb561f95333334c1dfdd42e713b5fb37c9766",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead-right. It is nearer. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/36e193b817b0680374cd3d9f475b2c9d2017ccf4d47d9cc4a30adda1c1ff26a8",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead-right. It is very close. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8b3aa6d28dfa1352622ee0dd4b2c669a91e7b1d7e016dd9c4aee937afd83fed3",
+      "voice": "inworld:Ronald",
+      "spoken": "Try right. It is far. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/766515f0ea5db283c1c93811e799923a0323242084c0831787c1aba0f9f69b38",
+      "voice": "inworld:Ronald",
+      "spoken": "Try right. It is nearer. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bc814a5c0ad7f84c3b795957b71e550e8a6dc556750af24f71804a66e8abcc7b",
+      "voice": "inworld:Ronald",
+      "spoken": "Try right. It is very close. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ad1f8448055711145a2c9c943df9f03f14790e8f59693b1ad1086acd5d51924d",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind-right. It is far. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0f48f3d436180d9d828f06712a678e2b31318596f45b30db9d26650d36d13af7",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind-right. It is nearer. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/edcc70cacb70dc145c84220bc4280e398cc0a418ed9d04d17831be1fa90d3219",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind-right. It is very close. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6e941e96be3bd62a0b896880cbfabe9207ee269fb089dc469c825919434fed0c",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind. It is far. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2946a5e4a4244092312f638a3f2406b561e626e7bb492bc21a1208569e576053",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind. It is nearer. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1384d592434e72d9fca232dfc00a661e561af0ce5f97576e95f70a9c82cff602",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind. It is very close. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c460f3f75373b2acc167e0e05c53ad3a2eeccf1b09f8beb46b6ec22e1d62efb4",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind-left. It is far. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/df3db8342b1ee017a7e4d75fe3868b525d48d242503d13452724886941b8a2de",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind-left. It is nearer. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/01e1f790aa3fd43eaa43e3f785ddf48e5985a8aa73c0bf6ceb3e7e08a68c5af0",
+      "voice": "inworld:Ronald",
+      "spoken": "Try behind-left. It is very close. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bf452c08badac97c2c6bafc2c6105213927863d1acf31e8be728f61be2f5a17d",
+      "voice": "inworld:Ronald",
+      "spoken": "Try left. It is far. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/471d23177b3efdec81e7a68598518995a0eb6fd10aefc89e2b502dc52ce4a23d",
+      "voice": "inworld:Ronald",
+      "spoken": "Try left. It is nearer. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7ddae7c57bab6565da345f64d73d6069c13b19a9e0c3a408fa7d71ae18ce1ef4",
+      "voice": "inworld:Ronald",
+      "spoken": "Try left. It is very close. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cd933d571a8aa7a39d1bd202062edb4f827f73c26fb7b006ca6f37aa2bdebdb7",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead-left. It is far. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b78cde5dad7974e05bae199298e7b221a561181ab7a0e6b9672cfbafc6827be3",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead-left. It is nearer. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3066793bec68179a9fc1618341a3d4e2fb50404b9faa57470aac07664fd901aa",
+      "voice": "inworld:Ronald",
+      "spoken": "Try ahead-left. It is very close. Or ignore me entirely, and I shall enjoy the scenery. Either is fine.",
+      "sources": [
+        "hint.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8b8a1b7ee392aadcc4df90d94768f8271a2b9e91cd138b9b5078477e2751fe9e",
+      "voice": "inworld:Ronald",
+      "spoken": "It is far, and the pull is ahead. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b07ee225e4f8ec36eb29020a42ed9da04913c2fb037796430845364b07b91ff0",
+      "voice": "inworld:Ronald",
+      "spoken": "It is far, and the pull is ahead-right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9bc819f597e0e0c4deeae5044c7fd93e87e9bbf9a1c2f8cf380ec5522c72baf0",
+      "voice": "inworld:Ronald",
+      "spoken": "It is far, and the pull is right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f7d2530a5a9f6404eeb0f805eccc331c960a598a4a75590218ba41f629604ce6",
+      "voice": "inworld:Ronald",
+      "spoken": "It is far, and the pull is behind-right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8d981d08593eca812a7cf6f0fe8061d2722758ee3ad7398125bd87cf3d5fdb9d",
+      "voice": "inworld:Ronald",
+      "spoken": "It is far, and the pull is behind. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/083b86c258b274d4d51218edd40a957e242237119a2ff832788b4b787ace6406",
+      "voice": "inworld:Ronald",
+      "spoken": "It is far, and the pull is behind-left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/925932b5666f988ddc9542793260b63c6b5c2e809912a820ce21843d65d29bde",
+      "voice": "inworld:Ronald",
+      "spoken": "It is far, and the pull is left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d42f87b946b0b038ea51193942df755d416ba0ecc8866ff52af3c6a08d464587",
+      "voice": "inworld:Ronald",
+      "spoken": "It is far, and the pull is ahead-left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/846b9aecbc3a3414a560601feca7c179248596ba62a2ca6c82ad004e33cff129",
+      "voice": "inworld:Ronald",
+      "spoken": "It is nearer, and the pull is ahead. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a5798420245e34e5006012e20a9150cab32b8c59133bacde8129d399635280dd",
+      "voice": "inworld:Ronald",
+      "spoken": "It is nearer, and the pull is ahead-right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ff51826f9351e692723f4d56bcb5f631d8372fa258072a1e513125fbe8bd78dd",
+      "voice": "inworld:Ronald",
+      "spoken": "It is nearer, and the pull is right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b268e39229a47e4b7986c119e04e4bfc2a5da5b5f675b9f886ad18b282311e33",
+      "voice": "inworld:Ronald",
+      "spoken": "It is nearer, and the pull is behind-right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e4a4bd5fb78fae0f5b43ae945c55acad702f4fe709e8351d0d02329a3d8f6bde",
+      "voice": "inworld:Ronald",
+      "spoken": "It is nearer, and the pull is behind. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3bb112e487ae03b350dafaac69000ce3a1ef3bff7bb7847aa8a1c25b58d44dca",
+      "voice": "inworld:Ronald",
+      "spoken": "It is nearer, and the pull is behind-left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9f3e3bb815d91bdd62c790e41bba74c353254025833b24367c12d574624a66e1",
+      "voice": "inworld:Ronald",
+      "spoken": "It is nearer, and the pull is left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0a07ac262cb6f43f726ab003ee66574806acb60e602a9ebab749b7b18c9ade28",
+      "voice": "inworld:Ronald",
+      "spoken": "It is nearer, and the pull is ahead-left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5258cd9a55841e0c928f0e48211e1bd1f00546a7800b21c0a1809af7a8cdeece",
+      "voice": "inworld:Ronald",
+      "spoken": "It is very close, and the pull is ahead. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4981e1fba1441a72a0e5e83d697b357ca3a04f7b705471ac01372359c66f7a2e",
+      "voice": "inworld:Ronald",
+      "spoken": "It is very close, and the pull is ahead-right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6b3a1739fca5e25ae38b7ce6415a2bba19cb2c010b012abb9f2477596ff488d2",
+      "voice": "inworld:Ronald",
+      "spoken": "It is very close, and the pull is right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5b24111bd8db7b99105c26c16ed560b6dfd34e23a57afd099101be9e1acea11a",
+      "voice": "inworld:Ronald",
+      "spoken": "It is very close, and the pull is behind-right. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2c15a767e2d1d1dddebe246a18a91b874533e7cfdeb3b931907bc62b31f221ff",
+      "voice": "inworld:Ronald",
+      "spoken": "It is very close, and the pull is behind. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/058226d2da9dedfc32abf691081332d78b9e7cb60fd03f3f2e6bbd5a04171e76",
+      "voice": "inworld:Ronald",
+      "spoken": "It is very close, and the pull is behind-left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a6a5a30353fbf8e3530309cafeacd2a87bdb5f653cba5b274be86fc156549946",
+      "voice": "inworld:Ronald",
+      "spoken": "It is very close, and the pull is left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/12fed20856f18dba8c5ba75d33ba499a614aca5dcc51937274de06525ed0d2f0",
+      "voice": "inworld:Ronald",
+      "spoken": "It is very close, and the pull is ahead-left. You may thank me later, or not at all. I am used to both.",
+      "sources": [
+        "hint.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/08f5136b4ce3a743f789f3665ccd5332e181664a178e69519530d18413c4ae6b",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead. It is far. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/079baaecb8844843d079fde12400604a51c43d65756271f0f872e29ba7d24edc",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead. It is nearer. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8f0a9d9e6c5bd30cfe4d4603a5ffd0af6b4d75617325e14c861ce45f93804d5d",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead. It is very close. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3fb89dc0408ff261ed848a192a9efc2998a6ece70c1fd51b0b10136defb4846e",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead-right. It is far. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fa4720be19690b0448c2e7585316601d4d4e43ea5dcf956c3d9b9352e78cce51",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead-right. It is nearer. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4d5ea776abfac2e1924ca37f718b59ebc0fbc15a26d3b4e37e24122541a892fb",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead-right. It is very close. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0ff0a34a77d2b7cb181c74ceba3262ec4c39a19a9b1f914397839b83f22ac383",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say right. It is far. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4ee64bf01ce3a2fef7286fe4449c700c69b37c0847f30c617fab9bbeff6608ab",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say right. It is nearer. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d5ed580fdd6b6538a28e42cfe70664842b86cb78493d2c661fad59676cf2a5a6",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say right. It is very close. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b20080b159042fba1f01f71617f08b8e903b21fdcc4df25285794bd14e32ed37",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind-right. It is far. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8027a6e40f7db1208368a7e793facf83022545d706d5f5fa03780ca8fdb6d7e9",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind-right. It is nearer. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/12af609bb0e00b1cb3b05f2083d48fb97c28288ea141ea01474a5491e242ecac",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind-right. It is very close. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/83eee76279ec1e5b4220d1fbddf4a8575ec02b0e75f06e42b7cf935e43b3b46a",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind. It is far. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c5bb41697aabaf38010ec6fcf661f115d1eaa0b5c5f4fa7a86a2022e704a9c83",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind. It is nearer. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/88f145c2212a8f8fb73313bc191817965b01033e71b372f910028425d8c8964b",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind. It is very close. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/60d9ccc89cdb7566cea7ff885336152839d1be3b91ff3aa8514e3440c8501098",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind-left. It is far. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/255b768baf9d3757976b30d7db07ebff0b1b906cc437cbf22d5d9f42e21e25cc",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind-left. It is nearer. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/83004b7b66126c9a9e4f000b72f453c5c5bdd8930537565d53a5b945ae364ef2",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say behind-left. It is very close. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/616b5b9781e9dbe7177fef692cdff2defe4fe58db6cc2f0798737c88fbe0fb21",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say left. It is far. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9c5283afca2364dabf32daeda96cb5c19796814da5a1d533d9c317cc0110010b",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say left. It is nearer. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d72b60982501c6c045e5b4caa2bb56bb41afb91819fa033335fce3c9fa602022",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say left. It is very close. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bef04303944046d793d42103193cd8ab79b72a274d67fa474bc5c2d34b602ad2",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead-left. It is far. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3c226269f758b4e2464f50d38d1778363121f1c2ea57279ae6810c6e0dc4688a",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead-left. It is nearer. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bca0a0610974a0301b37fae91326d9a326efdbc91f6fb13ea5c9ffd354125785",
+      "voice": "inworld:Ronald",
+      "spoken": "A direction, then. I would say ahead-left. It is very close. Go gently, it is not used to company.",
+      "sources": [
+        "hint.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/25bcae4a4601d57bf8a5782b1689be7c450c2deb0efa11fface9b5be99e9ce8e",
+      "voice": "inworld:Ronald",
+      "spoken": "For the record, out there it is clear. I am told this is worth knowing. I have never found it so.",
+      "sources": [
+        "ambient.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3b19053e1399b37e7edc1b081b02d205e664014a532704670b123c98be4d2669",
+      "voice": "inworld:Ronald",
+      "spoken": "For the record, out there it is cloudy. I am told this is worth knowing. I have never found it so.",
+      "sources": [
+        "ambient.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bc062c4f5636bb53681071586db5e3cb9df86f2a01d2755c0f29d454e6a8490c",
+      "voice": "inworld:Ronald",
+      "spoken": "For the record, out there it is foggy. I am told this is worth knowing. I have never found it so.",
+      "sources": [
+        "ambient.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9aba7a8dfd92c7eeb44369f67716d19dba57eb301585c991d64773ba4b988c30",
+      "voice": "inworld:Ronald",
+      "spoken": "For the record, out there it is rainy. I am told this is worth knowing. I have never found it so.",
+      "sources": [
+        "ambient.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7660bf8555db008319a47de41e3987deba708bf764bad2b5fc2f00eaf2e9795d",
+      "voice": "inworld:Ronald",
+      "spoken": "For the record, out there it is stormy. I am told this is worth knowing. I have never found it so.",
+      "sources": [
+        "ambient.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b69bb08f61e56c32d851dc918ab6eceffa4f23585160057f1dfc9ce1ca1dc8fd",
+      "voice": "inworld:Ronald",
+      "spoken": "For the record, out there it is snowy. I am told this is worth knowing. I have never found it so.",
+      "sources": [
+        "ambient.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/117be4d56933148762ced9ebea6f971a0ddfa078541e412fdba54b88b920d5fc",
+      "voice": "inworld:Ronald",
+      "spoken": "It is dawn. I have seen a great many of those. They are all rather alike, and I have grown fond of each.",
+      "sources": [
+        "ambient.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/032478bcefa31c9cbfef39ce9757992b3965324e3bf8a0dd017f731f92435ee5",
+      "voice": "inworld:Ronald",
+      "spoken": "It is day. I have seen a great many of those. They are all rather alike, and I have grown fond of each.",
+      "sources": [
+        "ambient.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e6ebad0afd5d3f7ba2609604265b2703cb80a41e5840e944fc0aed8c364ebd3e",
+      "voice": "inworld:Ronald",
+      "spoken": "It is dusk. I have seen a great many of those. They are all rather alike, and I have grown fond of each.",
+      "sources": [
+        "ambient.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/76edc72095591cb9062acbc0c2075d3692ede1145efea36c9b35b64632cc47c3",
+      "voice": "inworld:Ronald",
+      "spoken": "It is night. I have seen a great many of those. They are all rather alike, and I have grown fond of each.",
+      "sources": [
+        "ambient.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e1be539d6588e6bf6e91eaaf828cdfcafcb9f23657694c8fd22df5cce2f87638",
+      "voice": "inworld:Ronald",
+      "spoken": "The moon, I notice, goes by new moon just now. I do not hold it against her.",
+      "sources": [
+        "ambient.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3dcca953030ab5ee9a36197a8ac3dab57ba1dcf0ba6fc4265351d4ffae63ee0c",
+      "voice": "inworld:Ronald",
+      "spoken": "The moon, I notice, goes by waxing crescent just now. I do not hold it against her.",
+      "sources": [
+        "ambient.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6a4cd43b924ae1f247bfca1e4ad18093510ba2fb20ee08d57ea5a4b51898893e",
+      "voice": "inworld:Ronald",
+      "spoken": "The moon, I notice, goes by first quarter just now. I do not hold it against her.",
+      "sources": [
+        "ambient.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bee502467fee712ee4ddf816627a8b232c370ca087b2cd392b5489eb3cf6a6fa",
+      "voice": "inworld:Ronald",
+      "spoken": "The moon, I notice, goes by waxing gibbous just now. I do not hold it against her.",
+      "sources": [
+        "ambient.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/909e76e7c856a327c0bea092fbb4f759088e075915daaa6deaad99c5876030f2",
+      "voice": "inworld:Ronald",
+      "spoken": "The moon, I notice, goes by full moon just now. I do not hold it against her.",
+      "sources": [
+        "ambient.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/30e58e267194b65845cb1025fab8a4d0a00a2d2f6c04eb841d1ab4479c6c093c",
+      "voice": "inworld:Ronald",
+      "spoken": "The moon, I notice, goes by waning gibbous just now. I do not hold it against her.",
+      "sources": [
+        "ambient.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/16c25c64d5d61c22b67f71f5ecb4024f7cbe14b1df65886fa4d09beb62549dcf",
+      "voice": "inworld:Ronald",
+      "spoken": "The moon, I notice, goes by last quarter just now. I do not hold it against her.",
+      "sources": [
+        "ambient.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e45d22a93753e392a907c0666c857e6ba5d33daf258483eaeea4b20dcc0325ac",
+      "voice": "inworld:Ronald",
+      "spoken": "The moon, I notice, goes by waning crescent just now. I do not hold it against her.",
+      "sources": [
+        "ambient.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7e8ec395016e0052acd53756958d1899e83970e102b5e7aaa51996957c5cab31",
+      "voice": "inworld:Ronald",
+      "spoken": "Do not mind me. I have made rather a career of being overlooked. You carry on.",
+      "sources": [
+        "ambient.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/84eadf661d784599be2563c3b87099f70e0954f6e2fbb626e741197fef486db4",
+      "voice": "inworld:Ronald",
+      "spoken": "Take your time. I have never once been in a hurry, and it has done me no harm at all.",
+      "sources": [
+        "ambient.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6fdf467c5de4863983acf9336953c82c4e36cbac8de53035153afc3e35b6e9cc",
+      "voice": "inworld:Ronald",
+      "spoken": "That is all three, then. Well done. I will deny I said so, but I am rather pleased.",
+      "sources": [
+        "ending.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8f157948521923fe1fa7d10c415a06d592b2d443cf24bf125616e51f74463d5d",
+      "voice": "inworld:Ronald",
+      "spoken": "And that is that. You did rather well. I would say more, but I grow sentimental at endings, and nobody wants that.",
+      "sources": [
+        "ending.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d0338b8ad97fb7da0cb830b9afa4be6968ca715925664a76a4d78627e105bc18",
+      "voice": "inworld:Ronald",
+      "spoken": "Nothing left to find, I am afraid. I shall have to think of some other way to be mysterious. Thank you for the company.",
+      "sources": [
+        "ending.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2ae9dacf21409a10cc51346002d0010929a039337752553978356ea955e3561b",
+      "voice": "inworld:Ronald",
+      "spoken": "You have all of it now. Do handle it with care. It was in my keeping a long time, and I have grown attached.",
+      "sources": [
+        "ending.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2a58cd5956f19adb0365bdb64f8d31a1d1bb565900c19e6ae1de6e40454105d2",
+      "voice": "inworld:Ronald",
+      "spoken": "Well. That was a good visit. I have had worse. The way out is exactly where you left it, whenever you want it.",
+      "sources": [
+        "ending.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e47f5b893d2343c89d41e4259dfe4584273458ea40e38f0b64eb857785fe3a8b",
+      "voice": "inworld:Ronald",
+      "spoken": "I am afraid that is beyond my remit. I know this place, and very little else. Do ask me about it instead.",
+      "sources": [
+        "refuse.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1dcce10ee9a43a9963978bf720b578fe67216907fb5156c794c3ce515c1bd061",
+      "voice": "inworld:Ronald",
+      "spoken": "Now that is a question for someone far better informed than I. All I know is this place. Shall we look at it?",
+      "sources": [
+        "refuse.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/dbecb3849a211288462bec79e199082cfa4f4129109d2de2b9cb55ecf62d9616",
+      "voice": "inworld:Ronald",
+      "spoken": "You are welcome to try, but I have no idea what you are talking about. Shall we go back to the place, where I at least have opinions?",
+      "sources": [
+        "refuse.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e9fc94d57e24a5a26812ce18bc5b8e25030da7f09895490b662e816708108d8a",
+      "voice": "inworld:Ronald",
+      "spoken": "I have been here a long time, and I have not once been asked that. I shall not start answering now. Do look around instead.",
+      "sources": [
+        "refuse.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3273b610befe61e44308e13b4c1c91b3112d43e94399482df50c7113819b3366",
+      "voice": "inworld:Ronald",
+      "spoken": "No, I do not think so. I am far too set in my ways. Come now, there is a place here worth looking at.",
+      "sources": [
+        "refuse.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/548a85465b3170435c35d0e1475383f26d709f7cb13c1cb470a938b78728ccf4",
+      "voice": "inworld:Ronald",
+      "spoken": "Ah. A visitor. I would offer tea, but you can see my difficulty.",
+      "sources": [
+        "meet.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/2bf23d5619560ebe1ff7d98335ed23fbeab79cec29c91c7b8ab40a183b268206",
+      "voice": "inworld:Ronald",
+      "spoken": "It is your hour. I am the soul of patience, though the house is rather less so.",
+      "sources": [
+        "turn-start.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5c021b56e8447077c3601f85a9545d46375072aab9259d43e01e0171242d5c54",
+      "voice": "inworld:Ronald",
+      "spoken": "A new hour begins, and I have a new pair of feet to watch. The floorboards know the way, even if you do not.",
+      "sources": [
+        "turn-start.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5d3d600c43c5ef18dbb3453178897b7a390387f58645391fbd9e4e6e5a27b2bd",
+      "voice": "inworld:Ronald",
+      "spoken": "The house is yours to walk. I shall be no help whatever, as is my custom.",
+      "sources": [
+        "turn-start.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/67ce85598406ecb19f6849bc6e783ff2a91cf47ec1382b95b86d8051d6d83414",
+      "voice": "inworld:Ronald",
+      "spoken": "The lamp passes along, as lamps do. I keep the keys and my opinions to myself.",
+      "sources": [
+        "turn-start.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0a91348b52954d67380573289d8deb05bb716e716a19ce195116f82c24bd9bd1",
+      "voice": "inworld:Ronald",
+      "spoken": "A fresh hour for a fresh mind, and the same old house. I wish you luck. I am not certain the house listens.",
+      "sources": [
+        "turn-start.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ef431c33667d878d59d70d44b1e98a40c79bb43a87053213fc2021984046e51e",
+      "voice": "inworld:Ronald",
+      "spoken": "The candle is low. If there is something you mean to do, I would do it now, and not mention that I said so.",
+      "sources": [
+        "time-warning.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d45b7319f82d2fe504a20b8a890ff5f6d00cbf2762e1c8440be05370e4ba6cb2",
+      "voice": "inworld:Ronald",
+      "spoken": "The hour is nearly spent. I never hurry a guest. The house, however, has no such manners about it.",
+      "sources": [
+        "time-warning.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4d5c332a9422635480b871dbaebe4cb4f730f5a8e60f46c4c69f1600f31b5f49",
+      "voice": "inworld:Ronald",
+      "spoken": "The sand runs thin. I mention it only because somebody ought to, and it is never the house.",
+      "sources": [
+        "time-warning.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bf828773a4e2d2ce68c25af0b452f779e9c8c05244fb7c0c8968a4ff9e907780",
+      "voice": "inworld:Ronald",
+      "spoken": "A few breaths remain, and I count each one for you. Choose well, or at the very least choose.",
+      "sources": [
+        "time-warning.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/42a363138a683801ed824c47d8dc0daa30861f70af6e3fcc8b44278d6fea2bbd",
+      "voice": "inworld:Ronald",
+      "spoken": "The lamp gutters. I am told that is the polite signal to stop dithering. I have never seen the impolite one.",
+      "sources": [
+        "time-warning.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/520a204fe459e599d8fcd1f290158904e36d59e9607bec16cac9331ad024fba6",
+      "voice": "inworld:Ronald",
+      "spoken": "A small honour, quietly earned. I do not give these out lightly, you understand.",
+      "sources": [
+        "achievement.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/71c6815e7cea52ab28c058aa214fdfcf5b7e486b1fb8bc9ab749a99fe606b670",
+      "voice": "inworld:Ronald",
+      "spoken": "The house takes note of a good habit, and so do I, though I would never say so aloud.",
+      "sources": [
+        "achievement.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3efb0507e5af472546ade3f0c3c444854db0bf6872fbcf21471459eb4ceff9f5",
+      "voice": "inworld:Ronald",
+      "spoken": "Something worth remembering, and I forget nearly everything. I make an exception for this.",
+      "sources": [
+        "achievement.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b7c89040f1fdebd5f4d7bb585c7572d3bd6d6058e6b3b1923b97a5ef7213985f",
+      "voice": "inworld:Ronald",
+      "spoken": "Well. That is the sort of thing the house respects, and I respect it a little myself.",
+      "sources": [
+        "achievement.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5af7024c10014779f344b7c4b7ff657e8d73b9630cc657de71177abf5f6189e3",
+      "voice": "inworld:Ronald",
+      "spoken": "A theory is put to the house. I do enjoy a theory. Let us see what the table makes of it.",
+      "sources": [
+        "suggest.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7c07e61cf655eec78b89bdbd336ee7110b4285b2d6fb66bcfec379292adbf23f",
+      "voice": "inworld:Ronald",
+      "spoken": "A ghost, a place, a thing, all named in a single breath. I admire the economy.",
+      "sources": [
+        "suggest.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/84d0f3dec618a4cc3a2a3e127adcbe54e5212b236cba5a7b012c00223d4f2860",
+      "voice": "inworld:Ronald",
+      "spoken": "I hear a great many theories in this house, and I give each one my full attention.",
+      "sources": [
+        "suggest.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d9d7c870936aee2799542775cbf2ad3aee2a5974abf7daa9350e4c43ae7da91f",
+      "voice": "inworld:Ronald",
+      "spoken": "Now there is an idea. I shall give it my full and impartial attention. I do that for every theory.",
+      "sources": [
+        "suggest.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ad1d47ac89a2f69a13204e9419771320958dceacfdf2d4c13fbe4317e614b114",
+      "voice": "inworld:Ronald",
+      "spoken": "I am all ears, and quite good ones by now.",
+      "sources": [
+        "suggest.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/942bf034184c9619b824a954417c54dbc07a317f3b2e478e6ecb827ff3348abe",
+      "voice": "inworld:Ronald",
+      "spoken": "Something is shown, quietly, to one pair of eyes. The rest of us may only wonder. I find that restful.",
+      "sources": [
+        "shown.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7970c2238111eb09460fc6d59ae4979398f39b842b7db465eb4640a55680a9ba",
+      "voice": "inworld:Ronald",
+      "spoken": "A secret crosses the table, and is gone. I see nothing, which has always been my specialty.",
+      "sources": [
+        "shown.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5a53c3007d48a49e68e8e445b399ee2b63ece9a00ee188719862fa8ca469351a",
+      "voice": "inworld:Ronald",
+      "spoken": "A single answer is given, for a single reader. I make no comment. I have never made one.",
+      "sources": [
+        "shown.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c269b49870a726fc5db911e302c604ba17e6ca6958baba67d06808440ad76845",
+      "voice": "inworld:Ronald",
+      "spoken": "An answer arrives, meant for a single guest. The rest of us make do with the shape of it.",
+      "sources": [
+        "shown.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a1db464017647ec58b36ac900032db0a5d03d1ed58474167861fc8133647b1c5",
+      "voice": "inworld:Ronald",
+      "spoken": "Only the one who asked is told. The rest of us are left with our imaginations, which I would use kindly.",
+      "sources": [
+        "shown.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0309e61218c30bd65cb24d35b41722247ba9455278ba74f9ae80a1fc771f5b82",
+      "voice": "inworld:Ronald",
+      "spoken": "Not a soul at this table can answer that. I note it and say no more. I am very good at saying no more.",
+      "sources": [
+        "none-shown.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/dbf7cf292204a233840c1899ecddccbf7c7d5b30ed08e006ce92f28a3bf5de2e",
+      "voice": "inworld:Ronald",
+      "spoken": "No answer comes, and the question hangs in the air like a coat on a hook. I leave it for you to take down.",
+      "sources": [
+        "none-shown.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/bcde9ab3591645b9f28cdf2bf7649d2f291e52a91699e9917846afcc147002b4",
+      "voice": "inworld:Ronald",
+      "spoken": "Nobody answers. The house keeps its own counsel, and for once I find the table keeps its own as well.",
+      "sources": [
+        "none-shown.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8a2c5b812a9feabb2454a56ef2a8f17cc0bcbff2804a2df3ec0f49cc2564ee7f",
+      "voice": "inworld:Ronald",
+      "spoken": "Not one of us has an answer for that. I make no comment. It is, after all, a house of few comments.",
+      "sources": [
+        "none-shown.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/75e586ebb41f4a12cb680fece08a32e66a986b15ac9823d6513cc35576fe2c69",
+      "voice": "inworld:Ronald",
+      "spoken": "No one at this table can answer. I leave it to you to decide what that means. I leave most things to you.",
+      "sources": [
+        "none-shown.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/dfc1add946a326884c88e98c3ccc5c0ad74a45fa8b857a4961a9fd9e105104a6",
+      "voice": "inworld:Ronald",
+      "spoken": "A very close look is being taken. I am flattered on behalf of the house.",
+      "sources": [
+        "inspect.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f1b3d1316cbeeed39c98496aa4c70ade0c76bab322490e478a57f0e452d3f85d",
+      "voice": "inworld:Ronald",
+      "spoken": "Patient eyes go over every board and corner. I do admire thoroughness.",
+      "sources": [
+        "inspect.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d0e7b408da297e6b776491b9990a8aa9f0f0eb1c8f8a3c5e23fa75ce2a861d20",
+      "voice": "inworld:Ronald",
+      "spoken": "The dust takes offence at a close look, and I tell it nothing can be done.",
+      "sources": [
+        "inspect.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a782cc241c6fa84f6548cf7dc5523019afd90986447471455a12f2b71a8c2127",
+      "voice": "inworld:Ronald",
+      "spoken": "I do like a guest who looks properly. It makes the house feel noticed.",
+      "sources": [
+        "inspect.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b942c7754169ace068eb7c68607e70e25dde44a7b8daf3d438d6c8a9ecc123d3",
+      "voice": "inworld:Ronald",
+      "spoken": "An accusation is sealed and set aside. I do not peek. It opens when the circle closes.",
+      "sources": [
+        "seal.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3f9fb3c1505956e75c85708212f81b1527577402b46121f32c1537fe9b213239",
+      "voice": "inworld:Ronald",
+      "spoken": "The envelope is closed, and I have never been so tempted. I keep my curiosity to myself.",
+      "sources": [
+        "seal.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d01c1bb083cea7ff3e077317de0fb49bac64fea03fb5fec86be4efb46cd06c21",
+      "voice": "inworld:Ronald",
+      "spoken": "A verdict is committed to paper and shut away. I respect that, whatever it says.",
+      "sources": [
+        "seal.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f7dafdd31676fd8aa66bf8ecdc667fcacc96b4770f191f5956d54f32c5ec0bb7",
+      "voice": "inworld:Ronald",
+      "spoken": "The verdict is sealed. There is no taking it back, and I would not allow it anyway.",
+      "sources": [
+        "seal.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d903c206d54eac022c9aafee793dbb692c4fcc7605c151846f16182bcc812fa3",
+      "voice": "inworld:Ronald",
+      "spoken": "Whatever lies sealed is brought into the light, and I do enjoy this part. Let us see how it stands.",
+      "sources": [
+        "accuse.reveal.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1d7f65898824ea0806042865267cfeed06d55ec236d0ed4b28c8ae8872db7d5b",
+      "voice": "inworld:Ronald",
+      "spoken": "Now what lies sealed is opened. I read it aloud with an air of great interest, as is my duty.",
+      "sources": [
+        "accuse.reveal.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c12cc39375c96f758b7a11e172bbb68ca20112f4174d32ffd130e6bf854e4d31",
+      "voice": "inworld:Ronald",
+      "spoken": "I look forward to this part, in my own way, and I rarely look forward to anything. Let us open what lies sealed.",
+      "sources": [
+        "accuse.reveal.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4ebc4486318fa68980c1dceedde144ac4315e4300ac8f37469da9e2502845b2b",
+      "voice": "inworld:Ronald",
+      "spoken": "Now we open what lies sealed. A mind, once made up, may not be changed, and I do love a made up mind.",
+      "sources": [
+        "accuse.reveal.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a3f686d0d30edbe0ad303ac1d8342029d68001a27321b27fbca655e893c09d2f",
+      "voice": "inworld:Ronald",
+      "spoken": "That does not stand, and I say so with some regret. The house keeps its secret a little longer.",
+      "sources": [
+        "accuse.wrong.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5cf413642f8ba0fb256584a015a50c0c1bb4c81d5db36e4c52b203e8e852cda5",
+      "voice": "inworld:Ronald",
+      "spoken": "Wrong, and with great confidence. I admire that in a guest.",
+      "sources": [
+        "accuse.wrong.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4558ce75333435787e75de1e48f4974f75d9896da0e9fe17c366f61c791f5d25",
+      "voice": "inworld:Ronald",
+      "spoken": "The seal is opened and the answer does not hold. I am sorry. I am rarely sorry, so do take note.",
+      "sources": [
+        "accuse.wrong.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0751c1d68301349fd5c515f6e4aede7aad4489a2311d52e8089fb6f720527016",
+      "voice": "inworld:Ronald",
+      "spoken": "Not this time. The house keeps its secret, and I keep mine, which is smaller.",
+      "sources": [
+        "accuse.wrong.dry.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c2d70300b6b177d15134e625968c714e6f7e0c3f8f5c92eb3975952ee58a0a9b",
+      "voice": "inworld:Ronald",
+      "spoken": "There it is, and well found. I admit I am a little proud of the house for hiding it so well.",
+      "sources": [
+        "accuse.right.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/375475018092cb2776e98dcdc779a007cbd22708a2e7d0efbe8f9560018bcd75",
+      "voice": "inworld:Ronald",
+      "spoken": "So the matter is closed, and the house can rest. I would put the kettle on, but you know my difficulty.",
+      "sources": [
+        "accuse.right.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f902300195fe865da5a0ecfdcf17f11d21a2f77c28d3fa4daaf81b8d38c80257",
+      "voice": "inworld:Ronald",
+      "spoken": "That is the answer. It sits in the house, patient as ever, and I am glad it meets the right guest.",
+      "sources": [
+        "accuse.right.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/955017bd24607b4a8bd034b281e5b60fa3822ac6d9f63d0122938a7b8b0d1fbc",
+      "voice": "inworld:Ronald",
+      "spoken": "And that is the haunting, solved. I am almost sorry. It is a pleasure to have you all in the house.",
+      "sources": [
+        "end.solved.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d53b0711f8dd4f2bcf47d39bef6f8c05b94922ff8d7f9450923248800a3e4dd2",
+      "voice": "inworld:Ronald",
+      "spoken": "The mystery is closed, and the house breathes easier. I miss the footsteps already. Do come again, and bring better theories.",
+      "sources": [
+        "end.solved.dry.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/060cf3f4f98818448d584edbc2b89fcc149c9ad9bc53add88d3bb106cc8bb511",
+      "voice": "inworld:Ronald",
+      "spoken": "So it is done. I do not say so often, but I count this a good visit. Mind the stairs on your way out.",
+      "sources": [
+        "end.solved.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b79066de0c18e263e1b7209ab864f3a466d7723396a94338cafd546577fa7cb8",
+      "voice": "inworld:Ronald",
+      "spoken": "Well. That is that. I shall keep my secrets, and you may keep the memory of how close you were.",
+      "sources": [
+        "end.haunting.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/81b1a026963778949bd1992a490ca3197dc59deb3e8e99d9020ae46d38e5167e",
+      "voice": "inworld:Mark",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/806dbd5692b0d2ec7f99611701a9f337d496b263d82eb484ab47bb9afe961cf1",
+      "voice": "inworld:Conrad",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b579bac7f23d62449db24bea4c9e51e71df7991ed4375c9d31bfde561eb3f348",
+      "voice": "inworld:Arjun",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/57bee1df4ef2d6ff9b96fe39682d147872e6964c5bca0fe0e438603cc0abde03",
+      "voice": "inworld:Chloe",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/481810c0fe2bd9f0d91e1c52ebcab6a31b48e15e358846339c07c269187630b9",
+      "voice": "inworld:Eleanor",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f2204f48978b3d9848623d888ffa3104f00a7c3b0930e1b14de30e4a2f065bc4",
+      "voice": "inworld:Victoria",
+      "spoken": "Me? Well... I mean... I would say that, wouldn't I? Go on, then, say it slowly. I do... like a pause.",
+      "sources": [
+        "lodger.stall.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7f09bfa775de1d767c7f434c973d346a1d603152677cd96600c05016d34957b8",
+      "voice": "inworld:Mark",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/008e14b13b0b5fa5ee547627d41db4399008e9cda4016c9d6f74df00d6d90bfd",
+      "voice": "inworld:Conrad",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d9b1d0998fc2c9b538f07499e2d96ca5839d64e7656610c98b871f843229e085",
+      "voice": "inworld:Arjun",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6278c372b34a7d9c6a8043a2b857e7e1e01f7374d54e0f38631bb55cd54b79ab",
+      "voice": "inworld:Chloe",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b4a8944551ec91232683fb425fda9506dbed952d05060793a1b6d58a9fb3b485",
+      "voice": "inworld:Eleanor",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/aa1bc4fe7645182ff98652c4616ef95f15aaa7e87d187bd7dd3e254110172b0f",
+      "voice": "inworld:Victoria",
+      "spoken": "Oh. Well... I mean... this is rather sudden. Let me just find my composure. There, go on.",
+      "sources": [
+        "lodger.stall.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ae913765bd833bd6e435afb62f88c247f76f9f03e3999f3c1740faca63bba8eb",
+      "voice": "inworld:Mark",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e2449ad7c28e44ea4ba5c39f75b02957f901d40ed620c63a4554bbaaee541fa1",
+      "voice": "inworld:Conrad",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/57c7b1ac8aa1edcabcfc7ba4f295afe65823d6f6a8f419d53cc0e2b9ac18e08f",
+      "voice": "inworld:Arjun",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7610b3c33ac4c72a104612bd3bec14ed5ea7721b2727f7a431cf041ab61ed831",
+      "voice": "inworld:Chloe",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f3817847c6f112ff5f07df6693a17ffb58b886efe8dc3f2369786c9ea3303d9f",
+      "voice": "inworld:Eleanor",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/31b46e870a747344d5edc01c20ae5dcd188e58fd724d3e692054ee71d4ec4229",
+      "voice": "inworld:Victoria",
+      "spoken": "Is it me? It is, isn't it. Well... I mean... do get on with it. The suspense is unbearable.",
+      "sources": [
+        "lodger.stall.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0638e8489c2f11b01c4ba24ae288027c8d864b035f7cabbb7ef3c675ac61bb7f",
+      "voice": "inworld:Mark",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5ff148bb2ec3468378e506a252991a4ff9d784775e9a8bdaae42d96ab2277d42",
+      "voice": "inworld:Conrad",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/62dee20d35cf4256bb2c253964b3ec49a57aa6724a7b5e000ec819c1cc8875b9",
+      "voice": "inworld:Arjun",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b3728c8a7cf4ffb2e1fe6aedaef0b2b53a48bc23b86962e30f0c04f72e754abf",
+      "voice": "inworld:Chloe",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8419e26f8e6dc393396a70752445c2bf6a401aa99f7b8884b41007589144559a",
+      "voice": "inworld:Eleanor",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c3ced85738f25b822c24e09dd466fb607a9acca19b572763953763d86c6d8189",
+      "voice": "inworld:Victoria",
+      "spoken": "Well... I mean... I am not at all nervous. Look. My hands are quite steady. Mostly.",
+      "sources": [
+        "lodger.stall.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/700e0491c88e338e21d052a0365936d42f79c11bbd0cc606d0cf13f36ea70a4e",
+      "voice": "inworld:Mark",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/857a5fa7aed353191658bfc4b25edd66595fe62b348c5d0bc7f01ceeb67ac380",
+      "voice": "inworld:Conrad",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/337a0d649beb39bd742631cc3f8e083511ddf955590bab327238b30a3fbbff8e",
+      "voice": "inworld:Arjun",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1790dba0ef6cfbadd406696b31872f623785671d7724f995fcc21500bda1127d",
+      "voice": "inworld:Chloe",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ed356220f35cf1afb780f176874dcd4147ca6f3a4ad64629d8042ec1479505ed",
+      "voice": "inworld:Eleanor",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1120eb370b93ef74f2c2c1aa596bd58c418593c9264fe9f8a4c7372e65bcf272",
+      "voice": "inworld:Victoria",
+      "spoken": "Take your time. I mean... please do. Well... no, hurry. I cannot decide which I would prefer.",
+      "sources": [
+        "lodger.stall.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/63d3ed8753164a9ab471aa0116093d2050ef6fa8c1ec0d08b328490a339eaa84",
+      "voice": "inworld:Mark",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3c8646fd47a1af13153de49427d5c648caed0a6e995dcf4fc10b8af262957a12",
+      "voice": "inworld:Conrad",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/94cef53c2f540b45d8a2dca4da4c4f2fe505b5fb710cd15178d32a9a907477d7",
+      "voice": "inworld:Arjun",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9a5bb51dc0f5651ccc0030f25a982e86b7b4714296cf75f046b4ee97a0125b2b",
+      "voice": "inworld:Chloe",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e95cb22b541502d5066468a4490850dd243e3859569fad3375719fd535e9d949",
+      "voice": "inworld:Eleanor",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/e89ec2bd159b3fa2c1346d9ba4339b264aedf975f5f6a4d5e96b717593ed48cb",
+      "voice": "inworld:Victoria",
+      "spoken": "Oh, very well... it was me. I would like it noted that I was... provoked.",
+      "sources": [
+        "lodger.confession.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d161c1996e248bb26c915e7fafdb57f0727c5b5c80b0a5dc457b29d899d8ad97",
+      "voice": "inworld:Mark",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9e5626b05c3ee72d6341bcf471d0bb92d425d4781bf9220bb60614ccf5e3dc6a",
+      "voice": "inworld:Conrad",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/50575b4b12a897f2c0288fa7f9a2621f16d0d08f4d48a850cda9f335e11cd0b6",
+      "voice": "inworld:Arjun",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/93e613060ff4ee8c474af827ddf3698e2187f544f1bc5a97b50b102148ab1488",
+      "voice": "inworld:Chloe",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/668f5f413cd6fd9d1ddefd2e05f34d5a187f414d1f5119fc5428ade32547a2f6",
+      "voice": "inworld:Eleanor",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d6fa9ecbd2db1a081f803fbb5c1bd737dff2626251317a298d86dcd92921533b",
+      "voice": "inworld:Victoria",
+      "spoken": "Yes. It was me. Well... I mean... the creaking was my best work.",
+      "sources": [
+        "lodger.confession.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fe1489040c08ec05471e1f39e434cfa1689b2a9cfdf9a74ea0b8a28932464bd4",
+      "voice": "inworld:Mark",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9db0f602e3fcce28a97b03365183985b00519ee9b630eccda04829c89059abe0",
+      "voice": "inworld:Conrad",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c6cf2e1bb08e4ca85525d0e29a3a63b58c0790cd3db78809f1ec12185d652c8e",
+      "voice": "inworld:Arjun",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f8bc4c27801e81cec6c2bae67c23d94f41e0ef4428ce5c6bf3e3d190769e9c48",
+      "voice": "inworld:Chloe",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cb87486a8bfe5d0c018e2f060d6f17219ff026b40f4984472f63befdbc1b9b04",
+      "voice": "inworld:Eleanor",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/606d95fb2a8d8d12d53b8ec3935660c6d2de05f43bc91f406cc63b6dc25979bf",
+      "voice": "inworld:Victoria",
+      "spoken": "Oh, all right! It was me. I had prepared a longer speech. Well... I mean... it was rather good.",
+      "sources": [
+        "lodger.confession.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/57fd734300e478aff28944e9124fb59ebab4ee96b9498111771abcd59c197cd1",
+      "voice": "inworld:Mark",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4a8d66941bdb25e817c69ef2d115978fa25536e95f38c98a588a7228379c9b82",
+      "voice": "inworld:Conrad",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ac9a93a5a035311a01c1dc092b2276741a5b93b118b5df8d0517a6da0c06b0f2",
+      "voice": "inworld:Arjun",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b024aa80d963d87c290879c59cadb86134f5f1adfe57b60e45ba47557b24696a",
+      "voice": "inworld:Chloe",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/dbebf60da1a0835216a8e919a97f20003eba3b5850c071c9f2c2ec4e66de26c2",
+      "voice": "inworld:Eleanor",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c164bbbffb50568f10599c77f6303d7e51222d6a8a555f7af0abf2030bb0fdc8",
+      "voice": "inworld:Victoria",
+      "spoken": "It was me. There. I feel... lighter. Well... I mean... do not look at me like that.",
+      "sources": [
+        "lodger.confession.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/4bdadee4f13d698d833ff282bdacf51d2246e7f9d79b2cc2dab5bb55bf946db7",
+      "voice": "inworld:Mark",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/534f4d25a67f4bbe3d2ecab19179130190258842bee483c5988da763ca4afa05",
+      "voice": "inworld:Conrad",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/ab945812adde8562cb713cd593a6b08655bbaabde5970deb7057ce0bc4064500",
+      "voice": "inworld:Arjun",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a0cb08d73896181a8ce6b16ada1526512d92a512b3681dcafed30aa73af952c8",
+      "voice": "inworld:Chloe",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3e90cc0dd7ce3ea850d07cdbfcb2f0381c336ec0958f73d2ed57c7d02035f3e9",
+      "voice": "inworld:Eleanor",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1f34a36a2de275d19fbd5a4455078faddab6064c473f2f88359455262e07d963",
+      "voice": "inworld:Victoria",
+      "spoken": "Fine, fine! It was me. I am rather glad it is over. Well... I mean... I was quite good at it.",
+      "sources": [
+        "lodger.confession.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/814e4506989da606cf229d6e32961195cb612dca7cdef132ba7eb0d17389e882",
+      "voice": "inworld:Mark",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/389d94c9ad246edbb09d9f0c64032a967feb6b0c08adc3518b222a4a60770e98",
+      "voice": "inworld:Conrad",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/61aa53b5f31bc0f8fa73171f5d71b5fe5f4cd90f0fdd3784c14769590a27bd3d",
+      "voice": "inworld:Arjun",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/25e7d7b3a60cdbc5cb27dccf4cd9bd8b3ddc5e5ebdd9791a05c19b5a2bf2c708",
+      "voice": "inworld:Chloe",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3f7ad47c58adcb97a75a92c598260d8e7ffde4a9e790d4d27959ef0269a5f2c6",
+      "voice": "inworld:Eleanor",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0ac378e62469ba0bdbaf1fa141841ecb16f476ccbf26ac34cbfc882e60aed167",
+      "voice": "inworld:Victoria",
+      "spoken": "Right, then. It was me. Be honest, am I terribly easy to read? Well... honest, but kind, please.",
+      "sources": [
+        "lodger.confession.6"
+      ]
+    }
+  ]
+}

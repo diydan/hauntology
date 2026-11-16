@@ -1,0 +1,10 @@
+/* The workings of the music box (art/musicbox.tsx): brass and steel on a felt bed. Colours are the art-* tokens (art/patina.css). */
+.pz-mech { display: block; overflow: visible; }
+.pz-mech-felt { fill: color-mix(in srgb, var(--art-leather) 18%, var(--void)); stroke: color-mix(in srgb, var(--void) 70%, transparent); stroke-width: 1; }
+.pz-mech-cylinder { stroke: color-mix(in srgb, var(--art-brass) 40%, var(--void)); stroke-width: 0.9; }
+.pz-mech-pin { fill: color-mix(in srgb, var(--art-steel) 75%, var(--text)); stroke: color-mix(in srgb, var(--void) 60%, transparent); stroke-width: 0.5; }
+.pz-mech-shaft { fill: none; stroke: color-mix(in srgb, var(--art-steel) 80%, var(--void)); stroke-width: 3; stroke-linecap: round; }
+.pz-mech-arm { fill: none; stroke: color-mix(in srgb, var(--art-brass) 75%, var(--void)); stroke-width: 4; stroke-linecap: round; }
+.pz-mech-screw { fill: color-mix(in srgb, var(--art-steel) 40%, var(--void)); }
+.pz-mech-tooth { transition: fill var(--fade); }
+.pz-tooth-lit { fill: color-mix(in srgb, var(--art-flame) 80%, var(--art-brass)); }

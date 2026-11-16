@@ -2,13 +2,13 @@
 
 ## Introduction
 
-The world pipeline turns a place the user chooses into a stored, walkable 3D world. It supports two starting paths (upload a photo, or draw a sketch that FLUX.2 on Workers AI turns into a photo), a mandatory confirm gate before any paid world generation, a spend guard that makes cost bounded and predictable, and ingestion of the finished World Labs world into our own storage. A pre-generated Gallery guarantees the full experience with zero quota.
+The world pipeline turns a place the user chooses into a stored, walkable 3D world. It supports two starting paths (upload a photo, or draw a sketch that FLUX.2 klein 9B on Workers AI turns into a photo), a mandatory confirm gate before any paid world generation, a spend guard that makes cost bounded and predictable, and ingestion of the finished World Labs world into our own storage. A pre-generated Gallery guarantees the full experience with zero quota.
 
 ## Glossary
 
 - **Pipeline**: the API-side services and Durable Objects that implement this spec.
 - **Place Image**: the single image that is sent to World Labs (an uploaded photo, or a chosen sketch candidate).
-- **Candidate**: one of the images FLUX.2 returns for a sketch.
+- **Candidate**: one of the images the image model (FLUX.2 klein 9B) returns for a sketch.
 - **Place Brief**: a short description (setting, salient objects, mood) of the Place Image plus a safety verdict.
 - **Quote**: the pre-spend summary shown at the confirm gate.
 - **Confirm Token**: a short-lived HMAC token proving the user confirmed a specific Place Image in a specific session.
@@ -39,11 +39,11 @@ The world pipeline turns a place the user chooses into a stored, walkable 3D wor
 #### Acceptance Criteria
 
 1. WHEN the user opens the sketch pad THEN the Web app SHALL provide brush, eraser, three brush sizes, undo and redo of at least 30 steps, and clear, working with mouse, touch and pen input.
-2. IF the submitted sketch has ink coverage below 0.5% of its pixels THEN the Pipeline SHALL reject it without calling FLUX.2.
+2. IF the submitted sketch has ink coverage below 0.5% of its pixels THEN the Pipeline SHALL reject it without calling the image model.
 3. WHEN composing the image prompt THEN the Pipeline SHALL embed the user caption (3 to 200 characters) only inside a delimited data clause, strip control characters, cap total prompt length, and always attach a fixed negative prompt excluding people, text and watermarks.
-4. WHEN a valid sketch and caption are submitted THEN the Pipeline SHALL call FLUX.2 with the sketch as a reference image and return two Candidates.
+4. WHEN a valid sketch and caption are submitted THEN the Pipeline SHALL call the image model (FLUX.2 klein 9B on Workers AI, set by `IMAGE_MODEL_ID`) with the sketch as a reference image together with the caption prompt, and return two Candidates.
 5. WHEN the user selects a Candidate THEN the Pipeline SHALL store it as the Place Image using the same storage rules as Requirement 1.
-6. IF the image-generation quota is exhausted THEN the Pipeline SHALL make no Workers AI call and SHALL return the remaining quota and a pointer to the Gallery.
+6. IF the image-generation quota is exhausted THEN the Pipeline SHALL make no image call and SHALL return the remaining quota and a pointer to the Gallery.
 
 ### Requirement 3
 
@@ -78,7 +78,7 @@ The world pipeline turns a place the user chooses into a stored, walkable 3D wor
 2. WHEN a reserved operation fails, times out or is cancelled THEN the Pipeline SHALL release the Ticket so the unit is returned.
 3. WHEN a reserved operation succeeds THEN the Pipeline SHALL commit the Ticket so the unit stays consumed.
 4. IF world generation is disabled by configuration or the upstream returns insufficient-credits THEN the Pipeline SHALL deny all new world creation until re-enabled while keeping the Gallery available.
-5. WHEN FLUX.2 image calls and ghost LLM calls are made THEN the Pipeline SHALL meter them in SpendGuard with their own caps, separate from the world meter.
+5. WHEN image-model calls, text, vision or moderation calls, and speech, listening or live-voice calls are made THEN the Pipeline SHALL meter them in SpendGuard with their own caps, separate from the world meter.
 6. WHEN reserve, commit and release requests arrive concurrently THEN SpendGuard SHALL never allow committed plus reserved units to exceed any cap.
 7. WHEN the client asks for quota THEN the Pipeline SHALL return remaining counts per meter and nothing else about other sessions.
 
@@ -146,3 +146,14 @@ The world pipeline turns a place the user chooses into a stored, walkable 3D wor
 1. WHERE the enhance feature is enabled and the user supplied a single photo THEN the Pipeline SHALL create extra views of the same scene by outpainting and submit them with the original as a multi-image prompt with distinct azimuths.
 2. THE enhance feature SHALL default to disabled unless the recorded A/B spike shows it improves worlds over the single-image path.
 3. IF any enhance step fails or exceeds its image quota THEN the Pipeline SHALL fall back to the single-image path using the original photo.
+
+### Requirement 12
+
+**User Story:** As a visitor, I want the start, sketch, confirm and progress screens to look and behave like the rest of the game, so that it feels like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (Create, the Confirm Gate and the progress screen, built by the shell: `haunwallker` groups 7 to 9) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE Create screen SHALL use `ui-heading`, `ui-input`, `ui-button`, `ui-note` (`is-warn`) and `ui-panel--danger` for the photo picker, the sketch controls and their error copy, and a `ui-figure` picture with a `ui-button` for each Candidate; THE Confirm Gate SHALL show the exact Place Image in a `ui-figure`, with the remaining quota in `ui-hint`, ONE solid yellow `ui-button--primary` ("Enter this place", under the heading "Enter this place?") and `ui-button--quiet` Back and Pick another place; THE progress screen SHALL show the stages with a `ui-gauge` and `ui-steps` in a `ui-panel`, and its failure copy and the "worlds are closed" message with `ui-panel` and `ui-note`, in the neutral words of Requirement 3.2.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.

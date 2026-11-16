@@ -2,7 +2,7 @@
 
 ## Overview
 
-The creator is a small form, a prompt builder, two guarded FLUX.2 calls, and a persona builder. Everything deterministic is pure code in `shared/src/creator/`. The only paid calls are portrait generation, background removal (both `image` meter) and one tiny text moderation call (`llm` meter). Preset Ghosts (≥ 6, shipped as static sprites) make every failure path end in a playable game.
+The creator is a small form, a prompt builder, two guarded image-model calls (FLUX.2), and a persona builder. Everything deterministic is pure code in `shared/src/creator/`. The only paid calls are portrait generation, background removal with Cloudflare Images `segment=foreground` (both `image` meter) and one tiny text moderation call to Llama Guard 3 (`llm` meter). Preset Ghosts (≥ 6, shipped as static sprites) make every failure path end in a playable game.
 
 ## Architecture
 
@@ -15,7 +15,7 @@ sequenceDiagram
   participant R as R2
   W->>A: POST /api/ghosts/portraits {traits, worldId}
   A->>A: validateTraits, sanitise, build prompt
-  A->>B: AIClient text call (moderation of free text, if any)
+  A->>B: WorkersAiClient guard call, Llama Guard 3 (moderation of free text, if any)
   A->>G: reserve(image)
   A->>B: FLUX.2 text-to-image x2
   A-->>W: candidates + quota
@@ -33,7 +33,7 @@ sequenceDiagram
 |---|---|---|
 | `GET /api/ghosts/presets` | list Preset Ghosts | 3.3, 4.2 |
 | `POST /api/ghosts/portraits` | validate, moderate, generate 2 candidates | 1.5, 2.x, 3.x |
-| `POST /api/ghosts/sprite` | cut-out, validate, store, build profile | 4.x, 5.x |
+| `POST /api/ghosts/sprite` | cut-out (Cloudflare Images `segment=foreground`), validate, store, build profile | 4.x, 5.x |
 | `GET /api/worlds/:id/ghost` | load Ghost Profile for a world | 6.2 |
 
 ### `shared/src/creator/`
@@ -47,12 +47,14 @@ type Traits = {
   palette: 'moonlight' | 'ember' | 'moss' | 'rose' | 'slate' | 'dusk';
   translucency: 30 | 40 | 50 | 60 | 70 | 80;
   accessories: Array<'lantern' | 'hat' | 'scarf' | 'spectacles' | 'key' | 'bouquet' | 'ribbon' | 'pocketwatch'>; // 0..2, unique
-  voice: 'soft' | 'dry' | 'formal' | 'childlike';
+  voice: 'soft' | 'dry';     // soft is spoken by the Whisper, dry by the Keeper (ghost-voice `speakerForPersona`)
   detail?: string; // sanitised, ≤ 140
 };
 type Persona = { name: string; voice: Traits['voice']; styleRules: string[]; wants: string; avoids: string;
                  archetypes: ['sound', 'person', 'promise'] };
-type GhostProfile = { id: string; traits: Traits; spriteUrl: string; persona: Persona; preset?: boolean };
+type GhostProfile = { id: string; traits: Traits; spriteUrl: string; persona: Persona; preset?: boolean;
+                      monoUrl?: string /* a Preset Ghost's pre-made black and white picture, used when its Player joins the haunting (party-mode 19.8) */;
+                      lodgerVoice?: 'mark' | 'conrad' | 'arjun' | 'chloe' | 'eleanor' | 'victoria' /* the Lodger Voice this Suspect speaks with (ghost-voice 1.11); a Preset's is fixed, a made-up Suspect's is its Player's pick, else mark */ };
 type AlphaMask = { width: number; height: number; alpha: Uint8Array };
 ```
 
@@ -101,3 +103,15 @@ Property tests for validation, sanitisation, prompt building, sprite validation,
 ### Property 8: Ghost Profiles round-trip
 *For any* valid Ghost Profile, serialising and parsing yields an equal profile, and parsing any corrupted serialisation returns an error rather than a partial profile.
 **Validates: Requirements 6.2, 4.3**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| The form | `ui-card ui-field ui-field-label ui-select ui-range ui-check` |
+| The ghost | `ui-portrait` |
+| Done | `ui-button--primary`, `ui-status` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.

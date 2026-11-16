@@ -1,0 +1,40 @@
+/* Candle order. Five candles still fit from 320 px wide, each at least 48 px across; they differ by number and height, not colour. The wax, the flame and the holder are drawn in ../art/candles.tsx. */
+.pz-candle-row { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-2); margin: 0; }
+.pz-candle {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+  flex: 1 1 0; min-width: var(--pz-target, 48px); height: 10rem; padding: 0;
+  border: var(--stroke-ring) solid transparent; border-radius: var(--radius-md); background: transparent; color: inherit;
+  font: inherit; cursor: pointer; touch-action: manipulation;
+}
+.pz-candle[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--art-flame) 8%, transparent); }
+.pz-candle[disabled] { cursor: default; }
+
+/* the flame sits on the wick; the lean of a breath is set on this box from the code, so the states below act on the drawing inside it */
+.pz-flame { position: relative; z-index: 1; width: 1.6rem; height: 2rem; flex: none; transform-origin: 50% 100%; pointer-events: none; }
+.pz-flame svg { transform-origin: 50% 100%; transition: opacity var(--fade), transform var(--fade); }
+.pz-candle[data-flame="gutter"] .pz-flame svg { opacity: 0.55; transform: scale(0.62, 0.5); }
+.pz-candle[data-flame="out"] .pz-flame svg { opacity: 0; transform: scale(0.3); }
+.pz-smoke { position: absolute; left: 50%; bottom: 40%; width: 1.4rem; height: 2.4rem; opacity: 0; transform: translate(-50%, 0.6rem); transition: opacity var(--fade), transform var(--fade); pointer-events: none; }
+.pz-candle[data-flame="out"] .pz-smoke { opacity: 0.5; transform: translate(-50%, -0.4rem); }
+.pz-wick { width: 0.15rem; height: 0.5rem; flex: none; border-radius: var(--radius-xs); background: color-mix(in srgb, var(--void) 85%, var(--art-leather)); }
+
+/* the wax: a cylinder lit from the left, a pool at the top and a drip down the side */
+.pz-wax {
+  position: relative; display: grid; place-items: end center; width: 58%; padding-bottom: var(--space-1); box-sizing: border-box; flex: none;
+  border-radius: var(--radius-xs) var(--radius-xs) var(--radius-sm) var(--radius-sm);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--art-ivory) 58%, var(--void)) 0%, color-mix(in srgb, var(--art-ivory) 88%, var(--text)) 24%, var(--art-ivory) 46%, color-mix(in srgb, var(--art-ivory) 62%, var(--void)) 100%);
+  color: color-mix(in srgb, var(--art-leather) 40%, var(--void)); text-shadow: 0 1px 0 color-mix(in srgb, var(--art-ivory) 70%, var(--text));
+  font-size: var(--text-lead); font-weight: 800;
+  transition: opacity var(--fade);
+}
+.pz-wax::before { content: ""; position: absolute; top: -0.28rem; left: 0; right: 0; height: 0.56rem; border-radius: 50%; background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--art-flame) 28%, var(--art-ivory)) 0%, color-mix(in srgb, var(--art-ivory) 75%, var(--text)) 70%); box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--void) 35%, transparent); }
+.pz-wax::after { content: ""; position: absolute; top: 0.2rem; left: 14%; width: 0.38rem; height: 1.5rem; border-radius: 0 0 0.38rem 0.38rem; background: linear-gradient(90deg, color-mix(in srgb, var(--art-ivory) 92%, var(--text)), var(--art-ivory)); box-shadow: 1px 0 0 color-mix(in srgb, var(--void) 30%, transparent); }
+.pz-candle:nth-child(even) .pz-wax::after { left: auto; right: 12%; height: 1rem; }
+.pz-candle[data-flame="out"] .pz-wax { opacity: 0.78; }
+.pz-holder { width: 100%; height: 1.2rem; flex: none; }
+
+/* the microphone panel: a brass-framed strip with a loudness gauge */
+.pz-mic { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2); padding: var(--space-2); border: var(--stroke-thin) solid color-mix(in srgb, var(--art-brass) 60%, var(--void)); border-radius: var(--radius-md); background: linear-gradient(180deg, color-mix(in srgb, var(--art-brass) 14%, var(--surface-sunk)), var(--surface-sunk)); }
+.pz-meter { position: relative; flex: 1 1 6rem; min-width: 5rem; height: 0.7rem; border-radius: var(--radius-xs); background: var(--surface-sunk); border: var(--stroke-thin) solid color-mix(in srgb, var(--art-brass) 50%, var(--void)); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--void) 80%, transparent); overflow: hidden; }
+.pz-meter > i { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(180deg, var(--art-flame), color-mix(in srgb, var(--art-flame) 60%, var(--void))); }
+.pz-meter > u { position: absolute; top: 0; bottom: 0; left: 0; width: 2px; background: var(--art-brass); text-decoration: none; }

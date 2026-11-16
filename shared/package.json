@@ -6,7 +6,21 @@
   "main": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./errors": "./src/errors.ts"
+    "./errors": "./src/errors.ts",
+    "./app/*": "./src/app/*.ts",
+    "./design/*": "./src/design/*.ts",
+    "./sketch": "./src/sketch.ts",
+    "./log": "./src/log.ts",
+    "./session-cookie": "./src/session-cookie.ts",
+    "./origin": "./src/origin.ts",
+    "./conditions/*": "./src/conditions/*.ts",
+    "./ghost/*": "./src/ghost/*.ts",
+    "./world/*": "./src/world/*.ts",
+    "./puzzles/*": "./src/puzzles/*.ts",
+    "./table/*": "./src/table/*.ts",
+    "./party/*": "./src/party/*.ts",
+    "./print/*": "./src/print/*.ts",
+    "./voice/*": "./src/voice/*.ts"
   },
   "scripts": {
     "test":     "vitest run",

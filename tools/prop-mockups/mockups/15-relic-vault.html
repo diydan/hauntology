@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Relic vault · prop mockup</title><style>:root{--bg:#0d0b12;--panel:#16121e;--panel2:#1e1929;--line:#2d2641;--text:#ebe6f5;--mute:#9b92ae;--ghost:#b9a7ff;--gold:#e8c36a;--ok:#6fdc9a;--bad:#ff7a7a;--warn:#ffb86b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:14px 16px 48px}
+.back{color:var(--ghost);text-decoration:none;font-size:14px}
+.back:hover{text-decoration:underline}
+h1{margin:6px 0 4px;font-size:26px;font-weight:650;letter-spacing:-.01em}
+.num{color:var(--gold);font-weight:700}
+.sum{margin:0 0 8px;color:var(--mute);max-width:72ch}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 14px}
+.chip{padding:3px 10px;border-radius:99px;background:var(--panel2);border:1px solid var(--line);font-size:12.5px;color:var(--mute)}
+.chip b{color:var(--text);font-weight:600}
+.chip.ok{border-color:#2f6b4a;color:#9fe8be}
+.chip.low{border-color:#7a6a2e;color:#f0d98a}
+.chip.high{border-color:#8a3a3a;color:#ffb0b0}
+main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(290px,1fr);gap:14px;align-items:start}
+@media(max-width:880px){main{grid-template-columns:1fr}}
+.stagebox{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#100d17}
+.stagebox svg{display:block;width:100%;height:auto;user-select:none}
+.stagenote{margin:6px 4px 0;color:var(--mute);font-size:12.5px}
+#dim{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .7s}
+.cap{position:absolute;left:10px;top:10px;max-width:70%;padding:4px 10px;border-radius:10px;background:rgba(0,0,0,.6);font-size:13px;pointer-events:none}
+.cap:empty{display:none}
+.phone{position:absolute;right:10px;bottom:10px;width:178px;border:2px solid #3d3557;border-radius:16px;background:#0a0810;padding:8px 10px 9px;font-size:12.5px;box-shadow:0 6px 20px #0009}
+.phone.hide{display:none}
+.phone h4{margin:0 0 3px;font-size:10px;color:var(--mute);letter-spacing:.07em;text-transform:uppercase;font-weight:650}
+.phone p{margin:0;line-height:1.35}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px}
+.panel h2{margin:14px 0 6px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mute);font-weight:650}
+.panel h2:first-child{margin-top:0}
+.grp{margin:10px 0 4px;font-size:12px;color:var(--gold)}
+button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:8px 12px;min-height:44px;cursor:pointer;text-align:left}
+button:hover{border-color:var(--ghost)}
+button:active{transform:translateY(1px)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--ghost);outline-offset:2px}
+.evs{display:grid;gap:6px}
+.evs.c2{grid-template-columns:1fr 1fr}
+.evs button{display:flex;flex-direction:column;justify-content:center;gap:1px}
+.evs button small{color:var(--mute);font-size:12px;line-height:1.3}
+.row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:8px 0}
+.row label{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--text)}
+.row input[type=checkbox]{width:18px;height:18px;accent-color:#8c78f0}
+select{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-height:36px}
+.servo{display:grid;grid-template-columns:44px 1fr auto;gap:2px 10px;align-items:center;padding:5px 0;border-top:1px solid var(--line)}
+.servo:first-of-type{border-top:0}
+.servo svg{width:44px;height:27px}
+.servo .sl{font-size:13px}
+.servo .sv{font-variant-numeric:tabular-nums;font-weight:650;text-align:right}
+.servo .sp{grid-column:2/4;color:var(--mute);font-size:12px;display:flex;justify-content:space-between}
+.servo .bar{grid-column:1/4;height:4px;border-radius:2px;background:#2a2340;overflow:hidden}
+.servo .bar i{display:block;height:100%;width:0;background:var(--gold)}
+.noservo{margin:2px 0;color:var(--mute);font-size:13px}
+ol.log{list-style:none;margin:0;padding:0;max-height:210px;overflow:auto;font-size:12.5px}
+ol.log li{padding:4px 0 4px 8px;border-left:3px solid var(--line);margin:0 0 3px;line-height:1.35}
+ol.log li time{color:var(--mute);font-variant-numeric:tabular-nums;margin-right:6px}
+ol.log li b{font-size:10px;letter-spacing:.06em;margin-right:6px;font-weight:700}
+ol.log li.pub{border-color:#5aa0ff}ol.log li.pub b{color:#8fc0ff}
+ol.log li.prop{border-color:var(--gold)}ol.log li.prop b{color:var(--gold)}
+ol.log li.priv{border-color:#a057d9}ol.log li.priv b{color:#d0a0ff}
+ol.log li.note{border-color:#4a4560}ol.log li.note b{color:var(--mute)}
+ol.log li.warn{border-color:var(--bad)}ol.log li.warn b{color:var(--bad)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.card.wide{grid-column:1/-1}
+.card h3{margin:0 0 6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:650}
+.card p{margin:0}
+.card ul,.card ol{margin:0;padding-left:18px}
+.card li{margin:2px 0}
+.card li.ok::marker{color:var(--ok)}
+.card li.no::marker{color:var(--bad)}
+.card li.dot::marker{color:var(--mute)}
+svg text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.left{position:sticky;top:8px;align-self:start;z-index:4}
+.card.about{display:none}
+.sliders{display:grid;gap:6px;margin:6px 0 4px}
+.sl{display:grid;grid-template-columns:1fr minmax(110px,1.3fr) 54px;gap:8px;align-items:center;font-size:13.5px}
+.sl input{width:100%;accent-color:#8c78f0;min-height:30px}
+.sl output{text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
+@media(max-width:880px){
+  .left{top:0;background:var(--bg);margin:0 -16px;padding:6px 16px 8px;border-bottom:1px solid var(--line)}
+  .stagenote{display:none}
+  .card.about{display:block}
+  .phone{width:142px;font-size:11px;padding:6px 8px}
+  h1{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){#dim{transition:none}}
+</style></head><body><div id="app"></div><script>window.__RANKED__=5;</script><script>/* Prop mockup harness. Inlined into every mockup by build.mjs. No network, no dependencies.
+ *
+ * A scene calls Mock({...}). Fields:
+ *   num, title, group, summary, rank, leak ('None'|'Low'|'High'), effort ('Easy'|'Medium'|'Hard')
+ *   servos: { id: { label, rest, hand } }       hand:true = moved by a person, not a servo
+ *   svg: markup for a 640x420 stage        state: () => ({...})
+ *   render(ang, state, X)  frame(dt, ang, state, X)  init(state, X)  reset(state, X)  resync(X)
+ *   events: [{ id, group, label, sub, run: async X => {}, queue }]
+ *   toggles: [{ id, label, on, change(v, state, X) }]
+ *   listens, never, parts, spec, ask (arrays of strings), shot: { event, wait }
+ */
+(function () {
+  'use strict';
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const EASE = {
+    linear: t => t,
+    in: t => t * t,
+    out: t => 1 - (1 - t) * (1 - t),
+    inOut: t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2),
+    back: t => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); }
+  };
+  class Cancel extends Error {}
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const BADGE = { pub: 'PUBLIC', prop: 'PROP', priv: 'PRIVATE', note: 'NOTE', warn: 'REFUSED' };
+
+  const DEFS = '<defs>' +
+    '<linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d182b"/><stop offset="1" stop-color="#110e19"/></linearGradient>' +
+    '<linearGradient id="gWood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d583b"/><stop offset="1" stop-color="#4b3022"/></linearGradient>' +
+    '<linearGradient id="gWoodD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b3b2b"/><stop offset="1" stop-color="#32201a"/></linearGradient>' +
+    '<linearGradient id="gMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bcc2d4"/><stop offset="1" stop-color="#5d6479"/></linearGradient>' +
+    '<linearGradient id="gBrass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1d58a"/><stop offset="1" stop-color="#9a7a2e"/></linearGradient>' +
+    '<linearGradient id="gGhost" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fcfaff"/><stop offset="1" stop-color="#b9a7ff"/></linearGradient>' +
+    '<linearGradient id="gPaper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2e9d1"/><stop offset="1" stop-color="#d4c59d"/></linearGradient>' +
+    '<linearGradient id="gVelvet" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a1220"/><stop offset=".3" stop-color="#8a2236"/><stop offset=".5" stop-color="#5a1220"/><stop offset=".75" stop-color="#8a2236"/><stop offset="1" stop-color="#4a0f1b"/></linearGradient>' +
+    '<radialGradient id="gGlow"><stop offset="0" stop-color="#fff3c4" stop-opacity=".95"/><stop offset="1" stop-color="#fff3c4" stop-opacity="0"/></radialGradient>' +
+    '<radialGradient id="gGlowP"><stop offset="0" stop-color="#b9a7ff" stop-opacity=".85"/><stop offset="1" stop-color="#b9a7ff" stop-opacity="0"/></radialGradient>' +
+    '<radialGradient id="gVig" cx=".5" cy=".5" r=".78"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".55"/></radialGradient>' +
+    '<filter id="blur6" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6"/></filter>' +
+    '<filter id="blur2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>' +
+    '</defs>';
+
+  function boot(def) {
+    const servoDefs = def.servos || {};
+    const sids = Object.keys(servoDefs);
+    const realServos = sids.filter(i => !servoDefs[i].hand).length;
+    document.title = '#' + def.num + ' ' + def.title + ' · prop mockup';
+
+    const chip = (cls, html) => '<span class="chip ' + (cls || '') + '">' + html + '</span>';
+    const chips = [chip('', '<b>#' + def.num + '</b> ' + esc(def.group || ''))];
+    if (def.rank) chips.push(chip('', 'My rank <b>' + def.rank + '</b> of ' + (window.__RANKED__ || def.rank)));
+    chips.push(chip('', '<b>' + realServos + '</b> servo' + (realServos === 1 ? '' : 's')));
+    if (def.effort) chips.push(chip('', 'Build <b>' + esc(def.effort) + '</b>'));
+    if (def.leak) chips.push(chip({ None: 'ok', Low: 'low', High: 'high' }[def.leak] || '', 'Leak risk <b>' + esc(def.leak) + '</b>'));
+    if (def.trigger) chips.push(chip('', 'Trigger <b>' + esc(def.trigger) + '</b>'));
+
+    // events html
+    let evHtml = '', lastGroup = null;
+    (def.events || []).forEach(ev => {
+      if (lastGroup === null || (ev.group !== undefined && ev.group !== lastGroup)) {
+        if (lastGroup !== null) evHtml += '</div>';
+        evHtml += (ev.group ? '<div class="grp">' + esc(ev.group) + '</div>' : '') + '<div class="evs' + (ev.cols === 2 ? ' c2' : '') + '">';
+        lastGroup = ev.group === undefined ? '' : ev.group;
+      }
+      evHtml += '<button type="button" data-ev="' + esc(ev.id) + '"><span>' + esc(ev.label) + '</span>' + (ev.sub ? '<small>' + esc(ev.sub) + '</small>' : '') + '</button>';
+    });
+    if ((def.events || []).length) evHtml += '</div>';
+
+    const toggleHtml = (def.toggles || []).map(t =>
+      '<label><input type="checkbox" data-tg="' + esc(t.id) + '"' + (t.on ? ' checked' : '') + '> ' + esc(t.label) + '</label>').join('');
+
+    const selectHtml = (def.selects || []).map(s =>
+      '<label>' + esc(s.label) + ' <select data-se="' + esc(s.id) + '">' +
+      s.options.map(o => '<option value="' + esc(o[0]) + '"' + (o[0] === s.value ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + '</select></label>').join('');
+    const sliderHtml = (def.sliders || []).map(s =>
+      '<label class="sl"><span>' + esc(s.label) + '</span><input type="range" data-sl="' + esc(s.id) + '" min="' + s.min + '" max="' + s.max + '" step="' + (s.step || 1) + '" value="' + s.value + '"><output>' + s.value + (s.unit || '') + '</output></label>').join('');
+
+    const servoHtml = sids.length ? sids.map(id =>
+      '<div class="servo" data-sv="' + id + '">' +
+      '<svg viewBox="0 0 40 24" aria-hidden="true"><path d="M4 22 A16 16 0 0 1 36 22" fill="none" stroke="#3d3557" stroke-width="3"/><line x1="20" y1="22" x2="20" y2="8" stroke="#e8c36a" stroke-width="2.6" stroke-linecap="round" transform="rotate(-90 20 22)"/></svg>' +
+      '<span class="sl">' + esc(servoDefs[id].label || id) + '</span><span class="sv">0°</span>' +
+      '<span class="sp"><span>0 µs</span><span></span></span><div class="bar"><i></i></div></div>').join('')
+      : '<p class="noservo">' + esc(def.noServoNote || 'No servo in this one.') + '</p>';
+
+    const li = (arr, cls) => (arr || []).map(t => '<li class="' + cls + '">' + esc(t) + '</li>').join('');
+    const app = document.getElementById('app');
+    app.innerHTML =
+      '<div class="wrap">' +
+      '<a class="back" href="../index.html">← all mockups</a>' +
+      '<h1><span class="num">#' + def.num + '</span> ' + esc(def.title) + '</h1>' +
+      '<p class="sum">' + esc(def.summary) + '</p>' +
+      '<div class="chips">' + chips.join('') + '</div>' +
+      '<main><section class="left">' +
+      '<div class="stagebox"><svg id="stage" viewBox="0 0 640 420" role="img" aria-label="' + esc(def.title) + ' mockup">' + DEFS +
+      '<rect width="640" height="420" fill="url(#gWall)"/>' + def.svg +
+      '<rect width="640" height="420" fill="url(#gVig)" pointer-events="none"/></svg>' +
+      '<div id="dim"></div><div class="cap" id="cap"></div>' +
+      '<div class="phone hide" id="phone"><h4 id="phoneT">Player’s phone · private</h4><p id="phoneP"></p></div></div>' +
+      '<div class="stagenote">' + esc(def.stageNote || 'Drawn mockup, not to scale. Buttons on the right play what the ESP32 would do.') + '</div>' +
+      '</section><aside class="panel">' +
+      '<h2>Trigger it</h2>' + evHtml +
+      '<h2>Settings</h2>' +
+      '<div class="row"><label><input type="checkbox" id="tProps" checked> Props on <small style="color:var(--mute)">(Master’s switch)</small></label>' +
+      '<label><input type="checkbox" id="tSound"> Sound</label>' +
+      '<label>Speed <select id="sSpeed"><option value="1">1×</option><option value="2">2×</option><option value="4">4×</option><option value="8">8×</option></select></label>' +
+      toggleHtml + selectHtml + '</div>' +
+      (sliderHtml ? '<div class="sliders">' + sliderHtml + '</div>' : '') +
+      '<div class="row"><button type="button" id="bReset">Reset</button>' + (def.resync ? '<button type="button" id="bResync">Wi-Fi drop, then reconnect</button>' : '') + '<span id="qn" style="color:var(--mute);font-size:12.5px"></span></div>' +
+      '<h2>Servos</h2>' + servoHtml +
+      '<h2>What the ESP32 hears and does</h2><ol class="log" id="log"></ol>' +
+      '</aside></main>' +
+      '<section class="notes">' +
+      '<div class="card about wide"><h3>About this drawing</h3><p>' + esc(def.stageNote || '') + '</p></div>' +
+      '<div class="card"><h3>The prop may see</h3><ul>' + li(def.listens, 'ok') + '</ul></div>' +
+      '<div class="card"><h3>It must never see</h3><ul>' + li(def.never, 'no') + '</ul></div>' +
+      '<div class="card"><h3>Parts and build</h3><p>' + esc(def.parts || '') + '</p></div>' +
+      '<div class="card"><h3>Spec links</h3><ul>' + li(def.spec, 'dot') + '</ul></div>' +
+      '<div class="card wide"><h3>Questions for you</h3><ol>' + (def.ask || []).map(q => '<li>' + esc(q) + '</li>').join('') + '</ol></div>' +
+      '</section></div>';
+
+    // ---- runtime ----
+    const state = {};
+    const resetState = () => { Object.keys(state).forEach(k => delete state[k]); Object.assign(state, def.state ? def.state() : {}); };
+    resetState();
+    const applyControls = () => {
+      app.querySelectorAll('[data-tg]').forEach(c => { state['tg_' + c.getAttribute('data-tg')] = c.checked; });
+      app.querySelectorAll('[data-sl]').forEach(c => { state['sl_' + c.getAttribute('data-sl')] = +c.value; });
+      app.querySelectorAll('[data-se]').forEach(c => { state['se_' + c.getAttribute('data-se')] = c.value; });
+    };
+    applyControls();
+    const ang = {};
+    sids.forEach(id => { ang[id] = servoDefs[id].rest || 0; });
+    let speed = def.speed || 1, props = true, sound = false;
+    const $ = id => document.getElementById(id);
+    const logEl = $('log'), capEl = $('cap'), phoneEl = $('phone');
+    const rows = {};
+    sids.forEach(id => {
+      const r = app.querySelector('[data-sv="' + id + '"]');
+      rows[id] = { last: null, v: r.querySelector('.sv'), p: r.querySelector('.sp span'), n: r.querySelector('line'), b: r.querySelector('.bar i') };
+    });
+    $('sSpeed').value = String(speed);
+
+    const pending = new Set(), tweens = new Map();
+    let gen = 0, chain = Promise.resolve(), queued = 0;
+    const t0 = performance.now();
+
+    const wait = ms => new Promise((res, rej) => {
+      const h = {};
+      const t = setTimeout(() => { pending.delete(h); res(); }, ms / speed);
+      h.cancel = () => { clearTimeout(t); pending.delete(h); rej(new Cancel()); };
+      pending.add(h);
+    });
+    const anim = (id, fn, ms) => new Promise((res, rej) => {
+      const prev = tweens.get(id);
+      if (prev) { tweens.delete(id); pending.delete(prev.h); prev.res(); }
+      const h = { cancel: () => { if (tweens.get(id) === tw) tweens.delete(id); pending.delete(h); rej(new Cancel()); } };
+      const tw = { fn, t0: performance.now(), dur: Math.max(1, ms / speed), res: () => { pending.delete(h); res(); }, h };
+      tweens.set(id, tw); pending.add(h);
+    });
+    const move = (id, to, ms, ease) => { const from = ang[id]; const e = EASE[ease || 'inOut'] || EASE.inOut; return anim(id, p => lerp(from, to, e(p)), ms); };
+    const shake = (id, amp, hz, ms, decay) => { const base = ang[id]; return anim(id, p => base + amp * Math.sin(p * ms / 1000 * hz * 2 * Math.PI) * (decay === false ? 1 : 1 - p), ms); };
+
+    function log(text, tag) {
+      const s = (performance.now() - t0) / 1000;
+      const li = document.createElement('li');
+      li.className = tag || 'note';
+      li.innerHTML = '<time>' + Math.floor(s / 60) + ':' + (s % 60).toFixed(1).padStart(4, '0') + '</time><b>' + BADGE[tag || 'note'] + '</b>' + esc(text);
+      logEl.insertBefore(li, logEl.firstChild);
+      while (logEl.children.length > 70) logEl.lastChild.remove();
+    }
+
+    // sound (off by default; the checkbox click is the user gesture)
+    let ac = null;
+    const audio = () => {
+      if (!sound) return null;
+      if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+      if (ac.state === 'suspended') ac.resume();
+      return ac;
+    };
+    const tone = (f0, f1, ms, type, vol) => {
+      const c = audio(); if (!c) return;
+      const o = c.createOscillator(), g = c.createGain(), t = c.currentTime;
+      o.type = type || 'sine'; o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + ms / 1000);
+      g.gain.setValueAtTime(vol == null ? 0.12 : vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + ms / 1000 + 0.02);
+    };
+    const noise = (ms, vol, freq) => {
+      const c = audio(); if (!c) return;
+      const n = Math.floor(c.sampleRate * ms / 1000), buf = c.createBuffer(1, n, c.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+      s.buffer = buf; f.type = 'bandpass'; f.frequency.value = freq || 800; g.gain.value = vol == null ? 0.2 : vol;
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start();
+    };
+
+    const cache = {};
+    const el = id => cache[id] || (cache[id] = document.getElementById(id));
+    const X = {
+      el, state, ang, wait, anim, move, shake, tone, noise,
+      speed: () => speed,
+      jump: (id, a) => { const tw = tweens.get(id); if (tw) { tweens.delete(id); pending.delete(tw.h); tw.res(); } ang[id] = a; },
+      moveAll: (map, ms, ease) => Promise.all(Object.keys(map).map(id => move(id, map[id], ms, ease))),
+      xf: (id, t) => el(id).setAttribute('transform', t),
+      rot: (id, d, cx, cy) => el(id).setAttribute('transform', 'rotate(' + d + ' ' + (cx || 0) + ' ' + (cy || 0) + ')'),
+      tr: (id, x, y) => el(id).setAttribute('transform', 'translate(' + x + ' ' + (y || 0) + ')'),
+      set: (id, o) => { const e = el(id); for (const k in o) e.setAttribute(k, o[k]); },
+      txt: (id, t) => { const e = el(id); if (e.textContent !== String(t)) e.textContent = t; },
+      html: (id, h) => { el(id).innerHTML = h; },
+      show: (id, on) => { el(id).style.display = on ? '' : 'none'; },
+      op: (id, v) => el(id).setAttribute('opacity', v),
+      fill: (id, c) => el(id).setAttribute('fill', c),
+      caption: t => { capEl.textContent = t || ''; },
+      dim: v => { $('dim').style.opacity = v; },
+      phone: (text, title) => { phoneEl.classList.remove('hide'); $('phoneP').textContent = text; $('phoneT').textContent = title || 'Player’s phone · private'; },
+      phoneHide: () => phoneEl.classList.add('hide'),
+      log, pub: t => log(t, 'pub'), prop: t => log(t, 'prop'), priv: t => log(t, 'priv'), note: t => log(t, 'note'), warn: t => log(t, 'warn'),
+      fire: id => fire(id),
+      run: (fn, opts) => enqueue(fn, !(opts && opts.queue === false)),
+      clamp, lerp, EASE,
+      pt: e => { const svg = $('stage'), p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const q = p.matrixTransform(svg.getScreenCTM().inverse()); return { x: q.x, y: q.y }; }
+    };
+
+    function qn() { $('qn').textContent = queued > 1 ? (queued - 1) + ' waiting (one prop moves at a time)' : ''; }
+    function enqueue(fn, queue) {
+      const myGen = gen;
+      const job = async () => {
+        if (myGen !== gen) return;
+        try { await fn(X); } catch (e) { if (!(e instanceof Cancel)) { console.error(e); log('Error: ' + e.message, 'warn'); } }
+      };
+      if (queue === false) { job(); return; }
+      queued++; qn();
+      chain = chain.then(job).then(() => { queued--; qn(); });
+    }
+    function fire(id) {
+      const ev = (def.events || []).find(e => e.id === id);
+      if (!ev) return;
+      if (!props) { log('Props switch is off. Nothing moves. The text log still says: ' + ev.label, 'note'); return; }
+      enqueue(ev.run, ev.queue !== false);
+    }
+    function reset() {
+      gen++; pending.forEach(h => h.cancel()); pending.clear(); tweens.clear();
+      chain = Promise.resolve(); queued = 0; qn();
+      resetState();
+      applyControls();
+      sids.forEach(id => { ang[id] = servoDefs[id].rest || 0; });
+      X.dim(0); X.caption(''); X.phoneHide();
+      if (def.reset) def.reset(state, X);
+      log('Reset.', 'note');
+    }
+
+    app.querySelectorAll('[data-ev]').forEach(b => b.addEventListener('click', () => fire(b.getAttribute('data-ev'))));
+    app.querySelectorAll('[data-tg]').forEach(c => c.addEventListener('change', () => {
+      const t = (def.toggles || []).find(x => x.id === c.getAttribute('data-tg'));
+      state['tg_' + t.id] = c.checked;
+      if (t.change) t.change(c.checked, state, X);
+    }));
+    app.querySelectorAll('[data-sl]').forEach(c => c.addEventListener('input', () => {
+      const t = def.sliders.find(x => x.id === c.getAttribute('data-sl'));
+      state['sl_' + t.id] = +c.value; c.parentNode.querySelector('output').textContent = c.value + (t.unit || '');
+      if (t.change) t.change(+c.value, state, X);
+    }));
+    app.querySelectorAll('[data-se]').forEach(c => c.addEventListener('change', () => {
+      const t = def.selects.find(x => x.id === c.getAttribute('data-se'));
+      state['se_' + t.id] = c.value;
+      if (t.change) t.change(c.value, state, X);
+    }));
+    $('bReset').addEventListener('click', reset);
+    $('sSpeed').addEventListener('change', e => { speed = +e.target.value; });
+    $('tSound').addEventListener('change', e => { sound = e.target.checked; if (sound) { audio(); tone(440, 440, 80, 'sine', 0.05); } });
+    $('tProps').addEventListener('change', e => {
+      props = e.target.checked;
+      if (props) { log('Props switched on again.', 'note'); if (def.resync) { def.resync(X); } }
+      else { log('Props switched off by the Master. Every prop stops. The text log keeps saying everything.', 'note'); }
+    });
+    if (def.resync) {
+      $('bResync').addEventListener('click', () => enqueue(async x => { x.note('Wi-Fi dropped. The ESP32 reconnects and asks for the current public view.'); await x.wait(700); def.resync(x); }));
+    }
+
+    let last = performance.now(), errOnce = false;
+    function frame(now) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      tweens.forEach((tw, id) => {
+        const p = clamp((now - tw.t0) / tw.dur, 0, 1);
+        ang[id] = servoDefs[id] && servoDefs[id].hand ? tw.fn(p) : clamp(tw.fn(p), 0, 180);
+        if (p >= 1) { tweens.delete(id); tw.res(); }
+      });
+      try {
+        if (def.frame) def.frame(dt, ang, state, X);
+        if (def.render) def.render(ang, state, X);
+      } catch (e) { if (!errOnce) { errOnce = true; console.error(e); } }
+      sids.forEach(id => {
+        const a = ang[id], r = Math.round(a), row = rows[id];
+        if (row.last === r) return;
+        row.last = r;
+        row.v.textContent = r + '°';
+        row.p.textContent = servoDefs[id].hand ? 'moved by a hand' : Math.round(500 + clamp(a, 0, 180) / 180 * 2000) + ' µs';
+        row.n.setAttribute('transform', 'rotate(' + (clamp(a, 0, 180) - 90) + ' 20 22)');
+        row.b.style.width = clamp(a / (servoDefs[id].max || 180) * 100, 0, 100) + '%';
+      });
+      requestAnimationFrame(frame);
+    }
+
+    if (def.init) def.init(state, X);
+    requestAnimationFrame(frame);
+    window.__mock = { shot: def.shot || null, fire, title: def.title, num: def.num };
+    const q = new URLSearchParams(location.search);
+    if (q.get('speed')) { speed = +q.get('speed') || 1; $('sSpeed').value = String(speed); }
+    if (q.get('auto')) setTimeout(() => fire(q.get('auto')), 300);
+  }
+
+  window.Mock = function (def) {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => boot(def));
+    else boot(def);
+  };
+})();
+</script><script>const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', ''];
+const kx = (i) => 530 + (i % 3) * 34, ky = (i) => 186 + Math.floor(i / 3) * 34;
+const lerp = (a, b, t) => a + (b - a) * t;
+const poly = (t) => '250,252 450,252 ' + lerp(470, 445, t).toFixed(1) + ',' + lerp(272, 176, t).toFixed(1) + ' ' + lerp(230, 255, t).toFixed(1) + ',' + lerp(272, 176, t).toFixed(1);
+const PHONES = [['Mina', 18], ['Joe', 106], ['Ravi', 194]];
+async function press(x, d) {
+  const s = x.state;
+  if (s.open || s.busy) return;
+  if (d === 'C') { s.entry = ''; return; }
+  s.entry += d; x.tone(640, 640, 50, 'sine', 0.06);
+  if (s.entry.length < 4) return;
+  s.busy = true;
+  if (s.entry === s.code) {
+    x.prop('Correct PIN. The servo pulls the latch and a spring lifts the lid.');
+    await x.move('latch', 90, 600, 'inOut'); s.open = true; x.tone(300, 600, 200, 'triangle', 0.1);
+  } else {
+    s.wrong++; x.warn('Wrong PIN (' + s.wrong + '). The keypad buzzes and clears.'); s.err = 1; x.tone(140, 110, 300, 'square', 0.08); await x.wait(900); s.err = 0;
+  }
+  s.entry = ''; s.busy = false;
+}
+const typeCode = async (x, code) => { for (const d of code) { await press(x, d); await x.wait(380); } };
+
+Mock({
+  num: 15, title: 'Relic vault', group: 'Lock boxes', leak: 'None', effort: 'Medium',
+  trigger: 'Players type the PIN from a phone',
+  summary: 'A keypad box holding the six 3D-printed Relics. Every seated phone can show the same 4-digit PIN. Someone types it on the box and the servo latch lets the spring lid open.',
+  stageNote: 'Lock box idea B with the PIN on every phone. The PIN opens a box of toys, not the game, so it is not a game secret. Every seated player can read it, and a phone with no seat cannot. Tap a phone to show or hide its PIN, then click the keypad to type.',
+  servos: { latch: { label: 'Latch servo', rest: 0, max: 90 } },
+  svg: `
+    <rect x="0" y="352" width="640" height="68" fill="#15111d"/>
+    ${PHONES.map((p, i) => `<g id="v15p${i}" style="cursor:pointer"><rect x="${p[1]}" y="26" width="80" height="124" rx="14" fill="#0a070f" stroke="#3d3557" stroke-width="3"/>
+      <text x="${p[1] + 40}" y="46" text-anchor="middle" font-size="10" fill="#9b92ae" pointer-events="none">${p[0]}</text>
+      <text x="${p[1] + 40}" y="68" text-anchor="middle" font-size="12" fill="#cfc7e0" pointer-events="none">Box PIN</text>
+      <text id="v15code${i}" x="${p[1] + 40}" y="100" text-anchor="middle" font-size="16" fill="#e8c36a" font-weight="700" pointer-events="none">• • • •</text>
+      <text id="v15tap${i}" x="${p[1] + 40}" y="132" text-anchor="middle" font-size="10" fill="#9b92ae" pointer-events="none">tap to show</text></g>`).join('')}
+    <ellipse cx="350" cy="356" rx="160" ry="12" fill="#000" opacity=".5" filter="url(#blur6)"/>
+    <polygon id="v15lidB" fill="url(#gWoodD)" stroke="#2a1a12" stroke-width="2" style="display:none"/>
+    <polygon points="250,252 450,252 470,272 230,272" fill="#0a070f"/>
+    <g id="v15relics" opacity="0">
+      <rect x="258" y="238" width="7" height="32" fill="#e8c36a"/><ellipse cx="261.5" cy="236" rx="6" ry="7" fill="#ffd36a"/>
+      <circle cx="298" cy="252" r="10" fill="none" stroke="#c0c6d8" stroke-width="3.5"/><rect x="296.5" y="240" width="3" height="-8" fill="#c0c6d8"/>
+      <path d="M332 270 L336 228 L340 270 Z" fill="#c0c6d8"/><rect x="328" y="268" width="16" height="4" fill="#8a6b45"/>
+      <ellipse cx="372" cy="252" rx="9" ry="12" fill="#c0708a" stroke="#6a2a44"/><rect x="371" y="236" width="2" height="8" fill="#c0708a"/>
+      <circle cx="406" cy="252" r="12" fill="#1d182b" stroke="#6a8fc0" stroke-width="3"/><line x1="406" y1="252" x2="406" y2="244" stroke="#6a8fc0" stroke-width="2"/>
+      <path d="M432 270 V248 q0 -8 6 -8 q6 0 6 8 V270 Z" fill="#6aa58a" stroke="#2d5a44"/>
+    </g>
+    <rect x="230" y="272" width="240" height="82" rx="6" fill="url(#gWood)" stroke="#2a1a12" stroke-width="2"/>
+    <g stroke="#2e1d15" stroke-width="2" opacity=".7"><line x1="232" y1="298" x2="468" y2="298"/><line x1="232" y1="326" x2="468" y2="326"/></g>
+    <rect x="316" y="276" width="36" height="24" rx="4" fill="url(#gBrass)" stroke="#6a5220"/>
+    <g id="v15bolt"><rect x="322" y="284" width="26" height="8" rx="2" fill="#6a5220"/></g>
+    <polygon id="v15lidF" fill="url(#gWoodD)" stroke="#2a1a12" stroke-width="2"/>
+    <rect id="v15clasp" x="338" y="262" width="24" height="10" rx="2" fill="url(#gBrass)" stroke="#6a5220"/>
+    <rect x="498" y="100" width="120" height="216" rx="12" fill="#241d36" stroke="#4a3f6a" stroke-width="2"/>
+    <rect x="510" y="112" width="96" height="40" rx="6" fill="#07050b"/>
+    <text id="v15disp" x="558" y="140" text-anchor="middle" font-size="22" fill="#9fe8be" letter-spacing="4" font-family="ui-monospace,Menlo,monospace">____</text>
+    ${KEYS.map((k, i) => k === '' ? '' : `<g id="v15k_${k}" style="cursor:pointer"><circle cx="${kx(i)}" cy="${ky(i) + 8}" r="14" fill="#3a3158" stroke="#6a5f86" stroke-width="2"/><text x="${kx(i)}" y="${ky(i) + 14}" text-anchor="middle" font-size="14" fill="#ebe6f5" pointer-events="none">${k}</text></g>`).join('')}
+    <text x="558" y="334" text-anchor="middle" font-size="10" fill="#9b92ae">PIN checked on the ESP32</text>
+    <text id="v15wrong" x="558" y="348" text-anchor="middle" font-size="10" fill="#9b92ae"></text>`,
+  state: () => ({ code: '4719', shown: [false, false, false], entry: '', open: false, busy: false, err: 0, wrong: 0 }),
+  init(s, X) {
+    KEYS.forEach((k) => { if (k) X.el('v15k_' + k).addEventListener('click', () => X.run((x) => press(x, k), { queue: false })); });
+    PHONES.forEach((p, i) => X.el('v15p' + i).addEventListener('click', () => X.run(async (x) => { x.state.shown[i] = !x.state.shown[i]; }, { queue: false })));
+  },
+  render(a, s, X) {
+    const t = X.clamp((a.latch - 45) / 45, 0, 1), pts = poly(t);
+    X.set('v15lidB', { points: pts }); X.set('v15lidF', { points: pts });
+    X.show('v15lidB', t > 0.55); X.show('v15lidF', t <= 0.55);
+    X.op('v15clasp', (1 - t * 2 > 0 ? 1 - t * 2 : 0).toFixed(2)); X.op('v15relics', t.toFixed(2));
+    X.tr('v15bolt', -(a.latch / 90) * 20, 0);
+    PHONES.forEach((p, i) => {
+      X.txt('v15code' + i, s.shown[i] ? s.code.split('').join(' ') : '• • • •');
+      X.txt('v15tap' + i, s.shown[i] ? 'tap to hide' : 'tap to show');
+    });
+    X.txt('v15disp', s.err ? 'WRONG' : s.entry.padEnd(4, '_').split('').join(' '));
+    X.fill('v15disp', s.err ? '#ff7a7a' : '#9fe8be');
+    X.txt('v15wrong', s.wrong ? 'wrong PINs so far: ' + s.wrong : '');
+  },
+  events: [
+    { id: 'show', group: 'On the players’ phones', label: 'Players open “Box PIN” on their phones', sub: 'Every seated phone shows the same PIN. It is not on the Host screen.', run: async (x) => { x.state.shown = [true, true, true]; x.note('The Room made this PIN when the room opened and sent it to the box and to every seated phone.'); } },
+    { id: 'type', group: 'At the box', label: 'Type the PIN from a phone', sub: 'Or click the keypad yourself', run: async (x) => { x.state.shown = [true, true, true]; await typeCode(x, x.state.code); } },
+    { id: 'wrong', label: 'Type a wrong PIN', run: (x) => typeCode(x, '0000') },
+    { id: 'late', label: 'Someone with no seat asks for the PIN', sub: 'A phone with no token cannot take a seat once the game has started', run: async (x) => { x.note('No seat means no PIN card. The PIN reaches seated phones only.'); } },
+    { id: 'start', label: 'The Master starts the game without opening it', sub: 'Nothing changes', run: async (x) => { x.pub('The Master started the game.'); x.note('The box is garnish. The game never waits for it and works with no printer.'); } },
+    { id: 'new', group: 'Between games', label: 'New room: a new PIN reaches every phone and the box', run: async (x) => { const s = x.state; s.code = String(Math.floor(1000 + Math.random() * 9000)); s.wrong = 0; s.shown = [false, false, false]; x.note('New PIN sent to the box and to every seated phone.'); if (s.open) { s.open = false; await x.move('latch', 0, 900); } } },
+    { id: 'again', label: 'Play again: relock the box', sub: 'Someone presses the lid down', run: async (x) => { x.pub('New game.'); x.state.open = false; await x.move('latch', 0, 900); } }
+  ],
+  listens: ['A PIN the Room creates for the room and sends to the box and to every seated phone', 'Play again (relock)'],
+  never: ['Any game secret: the PIN opens a box of toys, not the game', 'Anything about the Solution, a Hand or a Residue position'],
+  parts: '1 servo as a latch, a spring-loaded lid hinged at the back, a 3x4 keypad on 7 GPIO pins, a 4-digit display (optional). The 6 printed Relics sit inside. The Room makes the PIN when the room opens and sends it to the box over Wi-Fi and to every seated phone (a "Box PIN" card in the menu). The box checks the typed digits itself, so it keeps working if the Wi-Fi drops afterwards. It never gates the game.',
+  spec: ['party-mode: a phone without a token cannot take a seat after the game has started (1.4)', 'party-mode intro: relics can be 3D printed, the mode needs no printer'],
+  ask: ['Should the "Box PIN" card be in the lobby only, or also in the menu during play?', 'Or should a phone send the PIN straight to the box, so the box needs no keypad?', 'Lock the keypad for 10 s after 3 wrong PINs, or never?'],
+  shot: { before: ['show'], event: 'type', wait: 3300 }
+});
+</script></body></html>

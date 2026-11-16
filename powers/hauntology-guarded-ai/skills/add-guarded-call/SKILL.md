@@ -1,15 +1,15 @@
 ---
 name: add-guarded-call
-description: Add a new paid upstream call (Workers AI model, TTS, or World Labs) to Hauntology behind SpendGuard. Use when adding any call that costs money or quota.
+description: Add a new paid upstream call (Workers AI model, Cloudflare Images, TTS, or World Labs) to Hauntology behind SpendGuard. Use when adding any call that costs money or quota.
 ---
 
 # Add a guarded call
 
-Every paid call in Hauntology lives in `api/src/guarded/` and requires a `SpendTicket`. No other folder may call `env.AI` or the World Labs API.
+Every paid call in Hauntology lives in `api/src/guarded/` and requires a `SpendTicket`. No other folder may call `env.AI`, Cloudflare Images or the World Labs API. Workers AI and Images calls go through the one `WorkersAiClient` in `api/src/guarded/workersai/`.
 
 ## Step 1: Pick the meter
 
-Choose the meter the call spends from: `world`, `image`, `llm` or `tts`. If a Party Room pays for it, it also spends from the Room's cap. If none fits, stop and ask. Do not add a meter silently.
+Choose the meter the call spends from: `world`, `image`, `llm`, `tts`, `stt` or `live`. If a Party Room pays for it, it also spends from the Room's cap. If none fits, stop and ask. Do not add a meter silently.
 
 ## Step 2: Write the guarded function
 

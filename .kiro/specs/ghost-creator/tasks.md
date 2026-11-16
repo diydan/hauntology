@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) and 5.2 (AIClient).
+Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) and 5.2 (WorkersAiClient).
 
 - [ ] 1. Shared logic (`shared/src/creator/`)
   - [ ] 1.1 `TraitsSchema`, `defaultTraits`, `randomTraits`
@@ -38,15 +38,15 @@ Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) a
     - **Validates: Requirements 6.2, 4.3**
 
 - [ ] 2. Presets
-  - Produce six Preset Ghosts (sprites generated once with the Creator, cut out, committed under `web/public/ghosts/` with licence note) and `GET /api/ghosts/presets`.
+  - Produce six Preset Ghosts and `GET /api/ghosts/presets`. The art is already made, one set of three crops per Suspect in `docs/story/art/` (colour by default, plus a black and white version and a transparent cut-out of each); ship the colour cut-out as `spriteUrl` and the black and white one as `monoUrl`, compressed (WebP) under `web/public/ghosts/` with a licence note. Give each Preset its `lodgerVoice`: Percy `mark`, Captain Thorne `conrad`, Dr. Pike `arjun`, Cora Bell `chloe`, Lady Vane `eleanor`, Mrs. Dunmore `victoria`.
   - _Requirements: 3.3, 4.2_
 
 - [ ] 3. API
   - [ ] 3.1 `POST /api/ghosts/portraits`
-    - Validate traits, sanitise, moderate non-empty detail via guarded AIClient text call (fail closed), reserve `image`, request two candidates, return quota.
+    - Validate traits, sanitise, moderate non-empty detail through the guarded WorkersAiClient, Llama Guard 3 (fail closed), reserve `image`, request two candidates, return quota.
     - _Requirements: 1.5, 2.2, 3.1, 3.2_
   - [ ] 3.2 `POST /api/ghosts/sprite`
-    - Background removal, downscale to ≤ 768 px, validate, retry once with new seed, store RGBA PNG ≤ 1 MB, build Ghost Profile.
+    - Background removal with Cloudflare Images `segment=foreground`, downscale to ≤ 768 px, validate, retry once with new seed, store RGBA PNG ≤ 1 MB, build Ghost Profile.
     - _Requirements: 4.1, 4.2, 4.3_
   - [ ] 3.3 `GET /api/worlds/:id/ghost` and profile persistence
     - _Requirements: 6.2_
@@ -67,3 +67,13 @@ Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) a
 
 - [ ] 5. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; review three generated ghosts for tone; ask the user if questions arise.
+
+- [ ] 6. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
+  - [ ] 6.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - _Requirements: 7.1, 7.3_
+  - [ ] 6.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 7.2_
+  - [ ] 6.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 7.4_
+  - [ ] 6.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - _Requirements: 7.1_

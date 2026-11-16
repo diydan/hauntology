@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="260mm" viewBox="0 0 210 260">
+  <defs>
+    <style>
+      .sheet-bg { fill: #f8f5ec; }
+      .title { font-family: 'Georgia', serif; font-size: 5px; fill: #262229; font-weight: bold; }
+      .sub { font-family: 'Courier New', monospace; font-size: 3px; fill: #5a5045; }
+      .cut { fill: none; stroke: #d43838; stroke-width: 0.25; stroke-dasharray: 1.5,1; }
+      .name-txt { font-family: 'Georgia', serif; font-size: 3.1px; fill: #e8dec8; text-anchor: middle; font-weight: bold; letter-spacing: 0.3px; }
+      .role-txt { font-family: 'Courier New', monospace; font-size: 2.1px; fill: #d4a84b; text-anchor: middle; }
+      .relic-txt { font-family: 'Georgia', serif; font-size: 2.4px; fill: #d4a84b; text-anchor: middle; font-weight: bold; }
+    </style>
+  </defs>
+
+  <rect class="sheet-bg" x="0" y="0" width="210" height="260"/>
+  <text class="title" x="10" y="10">RELIC MINIATURES &amp; SUSPECT STANDEES (1:1 STICKER SHEET — PRINT AT 100% SCALE)</text>
+  <text class="sub" x="10" y="14.5">Red dashed line = cut outline (fits 0.4 mm recessed pockets on relic-*.stl, standee-blank.stl, relic-token-pocket.stl)</text>
+
+  <!-- SECTION 1: 6 RELIC MINIATURE DETAIL STICKERS -->
+  <g transform="translate(10, 22)">
+    <text class="sub" x="0" y="-2">1. Six Relic Miniature Detail Stickers — fits recessed pockets on relic-*.stl</text>
+
+    <!-- r1 Music Box: Front keyhole (15.6 x 6.6 mm) + Inner lid mirror/score (17.6 x 8.6 mm) -->
+    <g transform="translate(0, 2)">
+      <rect x="0" y="0" width="15.6" height="6.6" rx="0.8" fill="#2c1d14" stroke="#d4a84b" stroke-width="0.4"/>
+      <circle cx="7.8" cy="2.6" r="1.2" fill="#0d0907" stroke="#d4a84b" stroke-width="0.35"/>
+      <polygon points="7.1,3.2 8.5,3.2 8.8,5.6 6.8,5.6" fill="#0d0907"/>
+      <rect class="cut" x="0" y="0" width="15.6" height="6.6" rx="0.8"/>
+      <text class="sub" x="0" y="10">r1 Keyhole (15.6x6.6)</text>
+    </g>
+    <g transform="translate(24, 2)">
+      <rect x="0" y="0" width="17.6" height="8.6" rx="0.8" fill="#e8dec8" stroke="#d4a84b" stroke-width="0.4"/>
+      <line x1="2" y1="3" x2="15.6" y2="3" stroke="#5a5045" stroke-width="0.2"/>
+      <line x1="2" y1="4.3" x2="15.6" y2="4.3" stroke="#5a5045" stroke-width="0.2"/>
+      <line x1="2" y1="5.6" x2="15.6" y2="5.6" stroke="#5a5045" stroke-width="0.2"/>
+      <circle cx="5" cy="4.3" r="0.7" fill="#262229"/>
+      <circle cx="9" cy="3.0" r="0.7" fill="#262229"/>
+      <circle cx="13" cy="5.6" r="0.7" fill="#262229"/>
+      <rect class="cut" x="0" y="0" width="17.6" height="8.6" rx="0.8"/>
+      <text class="sub" x="0" y="12">r1 Lid Score (17.6x8.6)</text>
+    </g>
+
+    <!-- r2 Wax Hand: Palm Spiral Eye Medallion (10.6 mm dia) -->
+    <g transform="translate(52, 2)">
+      <circle cx="5.3" cy="5.3" r="5.3" fill="#2c1d14" stroke="#d4a84b" stroke-width="0.45"/>
+      <ellipse cx="5.3" cy="5.3" rx="3.6" ry="2.2" fill="none" stroke="#e8dec8" stroke-width="0.4"/>
+      <circle cx="5.3" cy="5.3" r="1.3" fill="#d4a84b"/>
+      <circle cx="5.3" cy="5.3" r="0.6" fill="#120c09"/>
+      <circle class="cut" cx="5.3" cy="5.3" r="5.3"/>
+      <text class="sub" x="-2" y="14">r2 Palm (10.6 dia)</text>
+    </g>
+
+    <!-- r3 Locket: Oval Cameo Portrait (15.6 x 21.6 mm) -->
+    <g transform="translate(76, 0)">
+      <ellipse cx="7.8" cy="10.8" rx="7.8" ry="10.8" fill="#1b181f" stroke="#d4a84b" stroke-width="0.5"/>
+      <ellipse cx="7.8" cy="10.8" rx="6.4" ry="9.2" fill="none" stroke="#8a6c28" stroke-width="0.3"/>
+      <!-- Silhouette cameo -->
+      <circle cx="7.8" cy="8.2" r="2.6" fill="#e8dec8"/>
+      <path d="M 4.2,16.5 Q 4.5,11.8 7.8,11.8 Q 11.1,11.8 11.4,16.5 Z" fill="#e8dec8"/>
+      <ellipse class="cut" cx="7.8" cy="10.8" rx="7.8" ry="10.8"/>
+      <text class="sub" x="-2" y="25">r3 Cameo (15.6x21.6)</text>
+    </g>
+
+    <!-- r4 Planchette: Mystical Sun/Moon Scroll Triangle (22.0 x 26.0 mm) -->
+    <g transform="translate(104, 0)">
+      <path d="M 11.0,1.0 L 21.0,23.0 Q 11.0,25.5 1.0,23.0 Z" fill="#2c1d14" stroke="#d4a84b" stroke-width="0.45"/>
+      <circle cx="11.0" cy="15.0" r="5.2" fill="#f8f5ec" stroke="#d4a84b" stroke-width="0.4"/>
+      <text class="relic-txt" x="11.0" y="8.2">YES   NO</text>
+      <path class="cut" d="M 11.0,1.0 L 21.0,23.0 Q 11.0,25.5 1.0,23.0 Z"/>
+      <text class="sub" x="0" y="28">r4 Planchette Face</text>
+    </g>
+
+    <!-- r5 Silver Key: Bow Crest (13.6 x 7.6 mm) -->
+    <g transform="translate(136, 2)">
+      <ellipse cx="6.8" cy="3.8" rx="6.8" ry="3.8" fill="#1b181f" stroke="#d4a84b" stroke-width="0.45"/>
+      <text class="relic-txt" x="6.8" y="4.7">B M</text>
+      <ellipse class="cut" cx="6.8" cy="3.8" rx="6.8" ry="3.8"/>
+      <text class="sub" x="0" y="12">r5 Key Crest (13.6x7.6)</text>
+    </g>
+
+    <!-- r6 Bell: Inscription Band (13.6 x 5.6 mm) -->
+    <g transform="translate(166, 2)">
+      <rect x="0" y="0" width="13.6" height="5.6" rx="0.8" fill="#2c1d14" stroke="#d4a84b" stroke-width="0.4"/>
+      <text class="relic-txt" x="6.8" y="3.7" font-size="2.0">AWAKE</text>
+      <rect class="cut" x="0" y="0" width="13.6" height="5.6" rx="0.8"/>
+      <text class="sub" x="0" y="10">r6 Bell Band (13.6x5.6)</text>
+    </g>
+  </g>
+
+  <!-- SECTION 2: 6 SUSPECT STANDEE ARCH PORTRAITS (29.6 x 45.6 mm) & NAME STRIPS (33.6 x 5.4 mm) -->
+  <g transform="translate(10, 62)">
+    <text class="sub" x="0" y="-3">2. Six Suspect Standee Gothic-Arch Portraits (29.6 x 45.6 mm) &amp; Base Name Strips (33.6 x 5.4 mm) — fits standee-blank.stl</text>
+
+    <!-- Suspect 1: Lord Percy Blackwood (Crimson) -->
+    <g transform="translate(0, 0)">
+      <path d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z" fill="#241215" stroke="#c93030" stroke-width="0.6"/>
+      <circle cx="16.8" cy="18.0" r="5.5" fill="#e8dec8"/>
+      <rect x="12.0" y="9.0" width="9.6" height="5.2" fill="#120c09"/>
+      <rect x="10.0" y="13.6" width="13.6" height="1.2" fill="#120c09"/>
+      <path d="M 7.8,42.0 Q 9.5,25.5 16.8,25.5 Q 24.1,25.5 25.8,42.0 Z" fill="#7a1c1c"/>
+      <text class="role-txt" x="16.8" y="44.0">THE HEIR</text>
+      <path class="cut" d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z"/>
+      <!-- Name strip -->
+      <rect x="0" y="49" width="33.6" height="5.4" rx="0.8" fill="#241215" stroke="#c93030" stroke-width="0.4"/>
+      <text class="name-txt" x="16.8" y="52.8">LORD PERCY</text>
+      <rect class="cut" x="0" y="49" width="33.6" height="5.4" rx="0.8"/>
+    </g>
+
+    <!-- Suspect 2: Dr. Lydia Thorne (Teal) -->
+    <g transform="translate(38, 0)">
+      <path d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z" fill="#102224" stroke="#289c8e" stroke-width="0.6"/>
+      <circle cx="16.8" cy="18.0" r="5.2" fill="#e8dec8"/>
+      <circle cx="16.8" cy="12.0" r="3.2" fill="#2c1d14"/>
+      <path d="M 8.2,42.0 Q 10.0,25.5 16.8,25.5 Q 23.6,25.5 25.4,42.0 Z" fill="#1d6b62"/>
+      <text class="role-txt" x="16.8" y="44.0">THE PHYSICIAN</text>
+      <path class="cut" d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z"/>
+      <rect x="0" y="49" width="33.6" height="5.4" rx="0.8" fill="#102224" stroke="#289c8e" stroke-width="0.4"/>
+      <text class="name-txt" x="16.8" y="52.8">DR. THORNE</text>
+      <rect class="cut" x="0" y="49" width="33.6" height="5.4" rx="0.8"/>
+    </g>
+
+    <!-- Suspect 3: Major Gideon Pike (Amber) -->
+    <g transform="translate(76, 0)">
+      <path d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z" fill="#261e10" stroke="#d49b28" stroke-width="0.6"/>
+      <circle cx="16.8" cy="18.0" r="5.5" fill="#e8dec8"/>
+      <path d="M 6.8,42.0 Q 8.5,25.5 16.8,25.5 Q 25.1,25.5 26.8,42.0 Z" fill="#8a6214"/>
+      <text class="role-txt" x="16.8" y="44.0">THE VETERAN</text>
+      <path class="cut" d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z"/>
+      <rect x="0" y="49" width="33.6" height="5.4" rx="0.8" fill="#261e10" stroke="#d49b28" stroke-width="0.4"/>
+      <text class="name-txt" x="16.8" y="52.8">MAJOR PIKE</text>
+      <rect class="cut" x="0" y="49" width="33.6" height="5.4" rx="0.8"/>
+    </g>
+
+    <!-- Suspect 4: Madame Cora Solis (Violet) -->
+    <g transform="translate(114, 0)">
+      <path d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z" fill="#1e1226" stroke="#8c42b8" stroke-width="0.6"/>
+      <circle cx="16.8" cy="18.0" r="6.2" fill="#5e2882"/>
+      <circle cx="16.8" cy="18.5" r="4.8" fill="#e8dec8"/>
+      <path d="M 6.5,42.0 Q 8.8,25.5 16.8,25.5 Q 24.8,25.5 27.1,42.0 Z" fill="#5e2882"/>
+      <text class="role-txt" x="16.8" y="44.0">THE MEDIUM</text>
+      <path class="cut" d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z"/>
+      <rect x="0" y="49" width="33.6" height="5.4" rx="0.8" fill="#1e1226" stroke="#8c42b8" stroke-width="0.4"/>
+      <text class="name-txt" x="16.8" y="52.8">MME. CORA</text>
+      <rect class="cut" x="0" y="49" width="33.6" height="5.4" rx="0.8"/>
+    </g>
+
+    <!-- Suspect 5: Arthur Vane (Slate Blue) -->
+    <g transform="translate(152, 0)">
+      <path d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z" fill="#121824" stroke="#3b68b8" stroke-width="0.6"/>
+      <circle cx="16.8" cy="18.0" r="5.2" fill="#e8dec8"/>
+      <path d="M 8.2,42.0 Q 10.0,25.5 16.8,25.5 Q 23.6,25.5 25.4,42.0 Z" fill="#24427a"/>
+      <text class="role-txt" x="16.8" y="44.0">THE STEWARD</text>
+      <path class="cut" d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z"/>
+      <rect x="0" y="49" width="33.6" height="5.4" rx="0.8" fill="#121824" stroke="#3b68b8" stroke-width="0.4"/>
+      <text class="name-txt" x="16.8" y="52.8">ARTHUR VANE</text>
+      <rect class="cut" x="0" y="49" width="33.6" height="5.4" rx="0.8"/>
+    </g>
+  </g>
+
+  <!-- Suspect 6 -->
+  <g transform="translate(10, 128)">
+    <!-- Suspect 6: Lady Evelyn Dunmore (Emerald) -->
+    <g transform="translate(0, 0)">
+      <path d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z" fill="#122418" stroke="#349652" stroke-width="0.6"/>
+      <circle cx="16.8" cy="18.0" r="5.2" fill="#e8dec8"/>
+      <path d="M 7.2,42.0 Q 9.5,25.5 16.8,25.5 Q 24.1,25.5 26.4,42.0 Z" fill="#1e6334"/>
+      <text class="role-txt" x="16.8" y="44.0">THE DOWAGER</text>
+      <path class="cut" d="M 2,45.6 L 2,14.8 A 14.8,14.8 0 0,1 31.6,14.8 L 31.6,45.6 Z"/>
+      <rect x="0" y="49" width="33.6" height="5.4" rx="0.8" fill="#122418" stroke="#349652" stroke-width="0.4"/>
+      <text class="name-txt" x="16.8" y="52.8">LADY DUNMORE</text>
+      <rect class="cut" x="0" y="49" width="33.6" height="5.4" rx="0.8"/>
+    </g>
+
+    <text class="sub" x="44" y="-2">Relic Token QR stickers: print tools/prop-mockups/qr/qr-sticker-sheet-A4.pdf (a separate sheet, 36 x 36 mm each)</text>
+  </g>
+
+  <!-- Scale Bar -->
+  <g transform="translate(10, 245)">
+    <line x1="0" y1="0" x2="20" y2="0" stroke="#262229" stroke-width="0.6"/>
+    <line x1="0" y1="-2" x2="0" y2="2" stroke="#262229" stroke-width="0.6"/>
+    <line x1="20" y1="-2" x2="20" y2="2" stroke="#262229" stroke-width="0.6"/>
+    <text class="sub" x="23" y="1">20.0 mm scale verification bar</text>
+  </g>
+</svg>

@@ -27,7 +27,7 @@ sequenceDiagram
   S->>S: step(state, action, ctx) -> directive
   S->>G: reserve(llm)
   alt granted and under cap
-    S->>B: AIClient text call(persona, rules, revealed memories, directive)
+    S->>B: WorkersAiClient text call, Llama 4 Scout (persona, rules, revealed memories, directive)
     B-->>S: text
     S->>S: validate (retry once) else scripted
   else denied or capped
@@ -42,13 +42,16 @@ sequenceDiagram
 ### Routes
 | Route | Purpose | Req |
 |---|---|---|
-| `POST /api/play/start` `{worldId, anchors?}` | create Session; validate or replace anchors | 1.1–1.5 |
+| `POST /api/play/start` `{worldId, ghostPreset?, anchors?, conditions?}` | create Session; validate or replace anchors; the owner, anyone at a Gallery World, and a reader of a shared place (the `accessOf` rule) may play; any other world is `404 world_not_found` | 1.1–1.5 |
 | `POST /api/play/:id/turn` `{button?|text?, pose}` | one turn → `{reply, view}` | 2.x–6.x |
 | `GET /api/play/:id` | restore view after reload | 1.4, 8.1 |
-| `POST /api/play/:id/reset` | "Haunt again" | 8.3 |
+| `POST /api/play/:id/reset` | "Haunt again": the same id, a fresh seed, new anchors, an empty journal; returns `{playId, view}` | 8.3 |
+
+### Who may play, and whose game it is (built 2026-11-15)
+A game is played in a world the visitor may read: the same `accessOf` rule as the world routes (`api/src/worlds/access.ts`), so the owner, anyone at a Gallery World and a reader of a shared place may play, and nobody else; every refusal for a world is `404 world_not_found`. The rule is checked again on each call, so a world that is unshared or deleted ends a reader's game at once. A game belongs to the Session that started it (`ownerSid`): another Session, even one that may read the world, gets `session_not_found`, the same as for a game that is not there. A game is a `PlaySession` Durable Object named by its id (128 random bits), and a `PlayIndex` lists the games of each world so that deleting a place deletes them (`PlaySessionPurger`). The game itself is the pure `shared/src/ghost/play.ts`; the object and the in-process twin both run it through `PlayCore`.
 
 ### `shared/src/ghost/`
-`parse.ts` (`parseAction`), `rate.ts` (`acceptTurn`), `anchors.ts` (`placeAnchors`, `validateAnchors`, `ringAnchors`), `engine.ts` (`step`), `pose.ts` (`sanitizePose`), `hints.ts` (`relativeBearing`, `distanceBand`, `autoHintDue`), `prompt.ts` (`buildNarrationPrompt`, `clientView`), `validate.ts` (`validateGhostReply`, banned phrases), `scripted.ts` (`pickLine`), `budget.ts` (`narrationMode`), `session.ts` (serialise/parse, expiry), `telemetry.ts` (`event` whitelist).
+`parse.ts` (`parseAction`), `rate.ts` (`acceptTurn`), `anchors.ts` (`placeAnchors`, `validateAnchors`, `ringAnchors`), `engine.ts` (`step`), `pose.ts` (`sanitizePose`), `hints.ts` (`relativeBearing`, `distanceBand`, `autoHintDue`), `prompt.ts` (`buildNarrationPrompt` with an optional `sky?: PromptFields` (weather class, time bucket and moon name) from the `conditions` spec, `clientView` carrying `atmosphere`), `validate.ts` (`validateGhostReply`, banned phrases), `scripted.ts` (`pickLine`), `budget.ts` (`narrationMode`), `session.ts` (serialise/parse, expiry), `telemetry.ts` (`event` whitelist).
 
 ```ts
 type Vec3 = [number, number, number];
@@ -76,7 +79,7 @@ type GameState = Progress & { memories: Memory[]; history: { role: 'visitor' | '
 `relativeBearing(player, yaw, target)`: forward = (−sin yaw, 0, −cos yaw); signed angle to the target in the XZ plane, eight 45° sectors centred on ahead, ahead-right, right, behind-right, behind, behind-left, left, ahead-left. `distanceBand(d)`: ≤ 6 m "very close", ≤ 15 m "nearer", else "far". `autoHintDue(state, now)`: `idleTurns ≥ 8` or `now − lastProgressAt ≥ 90 s`.
 
 ### Narration
-`buildNarrationPrompt(persona, brief, revealed, directive, visitorText, history)` returns system and messages. The system text = persona + fixed rules from `steering/ghost-safety.md` + revealed memories + directive. Visitor text goes in `<player>…</player>`. Params: temperature 0.8, max tokens 220, timeout 6 s, one retry. `validateGhostReply` rejects empty, > 600 chars, URLs, markup/control characters, banned phrases. `pickLine(kind, persona, rng)` picks from ≥ 5 variants per kind and voice.
+`buildNarrationPrompt(persona, brief, revealed, directive, visitorText, history, sky?)` returns system and messages; `sky` is the `conditions` spec's `PromptFields` (weather class, time bucket, moon name) and is absent for a default snapshot, so a game with conditions off prompts exactly as before. `engine.ts` never imports `shared/src/conditions/`: the real world changes words, never a state. The system text = persona + fixed rules from `steering/ghost-safety.md` + revealed memories + directive. Visitor text goes in `<player>…</player>`. Params: temperature 0.8, max tokens 220, timeout 6 s, one retry. `validateGhostReply` rejects empty, > 600 chars, URLs, markup/control characters, banned phrases. `pickLine(kind, persona, rng)` picks from ≥ 5 variants per kind and voice.
 
 ### Budget
 `narrationMode({ llmTurns, sessionCap, ticketGranted, kill }) → 'model' | 'scripted'`. A model call happens only when mode is `model`.
@@ -147,3 +150,16 @@ Codes: `rate_limited`, `session_expired`, `bad_anchors` (handled by ring fallbac
 ### Property 14: Telemetry carries no content
 *For any* play-through with random visitor strings, every emitted telemetry event uses only whitelisted counter names and error codes and contains none of the visitor's input, prompt or reply text.
 **Validates: Requirements 9.1**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Chat panel | `ui-sheet ui-sheet-head ui-sheet-title ui-log ui-log-row ui-log-who ui-field ui-note` |
+| Quick buttons | `ui-choices ui-button--quiet` |
+| The ghost's reply | `ui-stage ui-dialogue ui-speech ui-nameplate ui-portrait` |
+| Journal | `ui-panel ui-log` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The chat and the journal were built from the elements the first time (2026-11-15, tasks 6.1 and 6.2): the sheet is `ui-sheet`, the ghost stands on a `ui-stage` (tinted by its Speaker, green only for the Whisper), and the one line that says typed words may go to a model is a `ui-note` under the text box (Requirement 2.4).

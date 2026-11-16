@@ -1,0 +1,10 @@
+{
+  "name": "hauntology-playtest",
+  "private": true,
+  "type": "module",
+  "description": "Hauntology phone playtest and device lab: puzzles, sound, light and buzz, local and pushed (.kiro/specs/puzzles, party-mode cues).",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node serve.mjs"
+  }
+}

@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hauntology print parts viewer</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: #14111a; color: #e8dec8; font: 14px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #app { display: flex; height: 100%; }
+  #side { width: 310px; flex: none; display: flex; flex-direction: column; border-right: 1px solid #2c2638; background: #1b1724; min-height: 0; }
+  #tabs { display: flex; gap: 6px; padding: 10px; border-bottom: 1px solid #2c2638; }
+  #tabs button { flex: 1; padding: 9px 0; border: 1px solid #3a3350; background: #241f31; color: #e8dec8; border-radius: 8px; font: inherit; cursor: pointer; }
+  #tabs button.on { background: #d4a84b; color: #181209; border-color: #d4a84b; font-weight: 600; }
+  #list { overflow: auto; flex: 1; padding: 6px 0 12px; min-height: 0; }
+  .grp { padding: 12px 12px 4px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: #9b92ae; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; border-left: 3px solid transparent; }
+  .row:hover { background: #241f31; }
+  .row.on { background: #2d2640; border-left-color: #d4a84b; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid #ffffff55; flex: none; }
+  .lbl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .alt { color: #9b92ae; font-style: italic; }
+  .tag { font-size: 11px; font-weight: 700; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 5px; flex: none; }
+  .tag.M { background: #d4604a; color: #fff; }
+  .tag.E { background: #6bb6ff; color: #08121c; }
+  .tag.S { background: #3a3350; color: #cfc7e0; }
+  .tag.R { background: #e8dec8; color: #14111a; }
+  .qty { font-size: 12px; color: #9b92ae; flex: none; }
+  #legend { padding: 10px 12px; border-top: 1px solid #2c2638; font-size: 12px; color: #9b92ae; }
+  #legend b { color: #e8dec8; font-weight: 600; }
+  #legend .tag { display: inline-block; width: 18px; height: 18px; line-height: 18px; font-size: 10px; margin: 0 2px 0 6px; }
+  #legend .k { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; white-space: nowrap; }
+  #stage { flex: 1; position: relative; min-width: 0; background: radial-gradient(ellipse at 50% 40%, #a7a9b2 0%, #7c7e88 60%, #62646e 100%); }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  #hud { position: absolute; left: 14px; top: 12px; right: 14px; pointer-events: none; color: #14111a; text-shadow: 0 1px 0 #ffffff55; }
+  #hud h1 { margin: 0 0 4px; font-size: 18px; }
+  #hud .sub { font-size: 13px; }
+  #hud .chips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; background: #14111acc; color: #e8dec8; padding: 3px 9px; border-radius: 999px; font-size: 12px; text-shadow: none; }
+  #ctl { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 14px; background: #14111acc; }
+  #ctl label { display: inline-flex; align-items: center; gap: 6px; }
+  #ctl button { padding: 6px 12px; border: 1px solid #3a3350; background: #241f31; color: #e8dec8; border-radius: 8px; font: inherit; cursor: pointer; }
+  #ctl input[type=range] { width: 140px; }
+  #msg { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; text-align: center; padding: 24px; background: #14111aee; z-index: 5; }
+  #msg code { background: #2d2640; padding: 2px 6px; border-radius: 4px; }
+  @media (max-width: 760px) {
+    #app { flex-direction: column-reverse; }
+    #side { width: 100%; height: 38%; border-right: 0; border-top: 1px solid #2c2638; }
+    #stage { flex: 1; }
+    #ctl > span { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div id="tabs"><button data-mode="parts" class="on">Parts</button><button data-mode="built">As built</button></div>
+    <div id="list"></div>
+    <div id="legend"></div>
+  </aside>
+  <main id="stage">
+    <canvas id="gl"></canvas>
+    <div id="hud"></div>
+    <div id="ctl">
+      <label><input type="checkbox" id="cColour" checked> Print colours</label>
+      <label><input type="checkbox" id="cBed" checked> 180 mm bed</label>
+      <label id="lEx" style="display:none">Explode <input type="range" id="cEx" min="0" max="1" step="0.01" value="0"></label>
+      <button id="cReset">Reset view</button>
+      <span style="color:#9b92ae">Drag to turn · wheel or pinch to zoom · shift-drag to move · arrow keys for the next part</span>
+    </div>
+    <div id="msg"></div>
+  </main>
+</div>
+
+<script>
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+// In the repo the page lives in tools/prop-mockups/ and the STLs in print/stl/; on the lab both sit under /props/.
+const STL_BASE = new URLSearchParams(location.search).get('stl') || (location.pathname.includes('/tools/') ? '../../print/stl/' : 'stl/');
+// Reference models (not printed) live next to the STL folder: print/reference/ in the repo, reference/ on the lab.
+const REF_BASE = location.pathname.includes('/tools/') ? '../../print/reference/' : 'reference/';
+
+// Core 6 spools + Silver & 6 Seat/Suspect accent colours from 3D_BRIEF.md section 2.
+const SPOOLS = {
+  iron:       { name: 'Dark Iron',        hex: '#262229' },
+  brass:      { name: 'Antique Brass',    hex: '#d4a84b' },
+  mint:       { name: 'Ectoplasm Mint',   hex: '#5ce6b8' },
+  bone:       { name: 'Bone / Ivory',     hex: '#e8dec8' },
+  crimson:    { name: 'Crimson',          hex: '#d43838' },
+  wood:       { name: 'Warm Wood',        hex: '#422818' },
+  silver:     { name: 'Tarnished Silver', hex: '#c9c9d4' },
+  seatRed:    { name: 'Seat Red',         hex: '#ff6b6b' },
+  seatBlue:   { name: 'Seat Blue',        hex: '#6bb6ff' },
+  seatYellow: { name: 'Seat Yellow',      hex: '#ffd86b' },
+  seatGreen:  { name: 'Seat Green',       hex: '#6be39a' },
+  seatViolet: { name: 'Seat Violet',      hex: '#c49bff' },
+  seatOrange: { name: 'Seat Orange',      hex: '#ffb27a' },
+};
+const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics', S: 'Static: no moving or electronic parts', R: 'Reference model: shown for comparison, not printed' };
+
+// file, label, group, spool, kind, how many to print, alternate?
+const G0 = 'Core game pieces', G1 = '#1 Ghost in the box', G3 = '#3 Haunt needle', G5 = '#5 Haunting flipper',
+      G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board', GR = 'Reference (not printed)';
+const PARTS = [
+  ['relic-music-box',   'Relic r1 music box',      G0, 'wood',       'S', 1],
+  ['relic-music-box-lid','Relic r1 music box lid', G0, 'brass',      'S', 1],
+  ['relic-wax-hand',    'Relic r2 wax hand',       G0, 'bone',       'S', 1],
+  ['relic-locket',      'Relic r3 locket',         G0, 'brass',      'S', 1],
+  ['relic-locket-lid',  'Relic r3 locket lid',     G0, 'brass',      'S', 1],
+  ['relic-planchette',  'Relic r4 planchette',     G0, 'wood',       'S', 1],
+  ['relic-silver-key',  'Relic r5 silver key',     G0, 'silver',     'S', 1],
+  ['relic-bell',        'Relic r6 bell',           G0, 'brass',      'S', 1],
+  ['relic-token-pocket','Relic Token base',        G0, 'iron',       'S', 6],
+  ['pyramid-holder',    'Pyramid holder',          G0, 'iron',       'S', 1],
+  ['standee-blank',     'Blank Suspect standee',   G0, 'bone',       'S', 1],
+  ['standee-s1-percy',  'Standee 1 Percy',         G0, 'seatRed',    'S', 1],
+  ['standee-s2-thorne', 'Standee 2 Thorne',        G0, 'seatBlue',   'S', 1],
+  ['standee-s3-pike',   'Standee 3 Pike',          G0, 'seatYellow', 'S', 1],
+  ['standee-s4-cora',   'Standee 4 Cora',          G0, 'seatGreen',  'S', 1],
+  ['standee-s5-vane',   'Standee 5 Vane',          G0, 'seatViolet', 'S', 1],
+  ['standee-s6-dunmore','Standee 6 Dunmore',       G0, 'seatOrange', 'S', 1],
+  ['prop-01-chest-body','Chest body',              G1, 'wood',    'E', 1],
+  ['prop-01-chest-lid', 'Chest lid',               G1, 'wood',    'M', 1],
+  ['prop-01-ghost-figure','Ghost figure',          G1, 'bone',    'M', 1],
+  ['prop-01-lever-arm', 'Lever arm',               G1, 'iron',    'M', 1],
+  ['prop-03-dial-plate','Dial plate',              G3, 'iron',    'E', 1],
+  ['prop-03-bezel-ring','Bezel ring',              G3, 'brass',   'S', 1],
+  ['prop-03-needle',    'Needle',                  G3, 'brass',   'M', 1],
+  ['prop-03-max-tab',   'MAX tab (clips on by hand)', G3, 'crimson', 'S', 1],
+  ['prop-05-plinth-2seat','Plinth, 2 seats',       G5, 'iron',    'E', 3],
+  ['prop-05-flap-pawn', 'Flap',                    G5, 'bone',    'M', 6],
+  ['prop-05-resolve-insert','Resolve window insert', G5, 'mint',  'S', 6],
+  ['prop-09-stage-frame','Stage frame',            G9, 'wood',    'S', 1],
+  ['prop-09-curtain-panel','Curtain panel',        G9, 'crimson', 'M', 2],
+  ['prop-09-rail-and-pulley','Rail and pulley',    G9, 'iron',    'M', 1],
+  ['prop-09-screen-bezel','Screen bezel',          G9, 'brass',   'E', 1],
+  ['prop-12-beam-bracket','Beam bracket',          G12, 'wood',   'E', 1],
+  ['prop-12-bats-mobile','Bats mobile (chosen)',   G12, 'iron',   'M', 1],
+  ['prop-12-chandelier','Chandelier (alternate)',  G12, 'brass',  'M', 1, true],
+  ['prop-12-doll',      'Doll (alternate)',        G12, 'bone',   'M', 1, true],
+  ['prop-15-vault-chest','Vault chest',            G15, 'wood',   'E', 1],
+  ['prop-15-vault-lid', 'Vault lid',               G15, 'wood',   'M', 1],
+  ['prop-15-vault-clasp','Vault clasp',            G15, 'brass',  'S', 1],
+  ['prop-15-relic-tray','Relic tray',              G15, 'iron',   'S', 1],
+  ['prop-15-keypad-pod','Keypad pod',              G15, 'iron',   'E', 1],
+  ['prop-20-wires-panel','Wires panel',            G20, 'iron',   'E', 1],
+  ['prop-20-terminal-blocks','Terminal blocks',    G20, 'brass',  'E', 1],
+  ['prop-20-plug-heads','Plug heads (10 shells)',  G20, 'crimson','E', 1],
+  ['ghost-original',    'Original ghost (Ghost.fbx)', GR, 'bone',  'R', 0, false, true],
+].map(([file, label, group, spool, kind, qty, alt, ref]) => ({ file, label, group, spool, kind, qty, alt: !!alt, ref: !!ref }));
+const BY = Object.fromEntries(PARTS.map((p) => [p.file, p]));
+
+// ---------- small matrix kit (column-major) ----------
+const I4 = () => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]);
+function mul(a, b) { const o = new Float32Array(16); for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) { let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + r] * b[c * 4 + k]; o[c * 4 + r] = s; } return o; }
+const T4 = (x, y, z) => { const m = I4(); m[12] = x; m[13] = y; m[14] = z; return m; };
+function R4(ax, deg) {
+  const a = deg * Math.PI / 180, c = Math.round(Math.cos(a) * 1e6) / 1e6, s = Math.round(Math.sin(a) * 1e6) / 1e6, m = I4();
+  if (ax === 'x') { m[5] = c; m[6] = s; m[9] = -s; m[10] = c; }
+  else if (ax === 'y') { m[0] = c; m[2] = -s; m[8] = s; m[10] = c; }
+  else { m[0] = c; m[1] = s; m[4] = -s; m[5] = c; }
+  return m;
+}
+const xf = (m, p) => [m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12], m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13], m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14]];
+function persp(fovy, asp, n, f) { const t = 1 / Math.tan(fovy / 2), m = new Float32Array(16); m[0] = t / asp; m[5] = t; m[10] = (f + n) / (n - f); m[11] = -1; m[14] = 2 * f * n / (n - f); return m; }
+function lookAt(e, c, u) {
+  let zx = e[0]-c[0], zy = e[1]-c[1], zz = e[2]-c[2]; const zl = Math.hypot(zx, zy, zz); zx /= zl; zy /= zl; zz /= zl;
+  let xx = u[1]*zz-u[2]*zy, xy = u[2]*zx-u[0]*zz, xz = u[0]*zy-u[1]*zx; const xl = Math.hypot(xx, xy, xz); xx /= xl; xy /= xl; xz /= xl;
+  const yx = zy*xz-zz*xy, yy = zz*xx-zx*xz, yz = zx*xy-zy*xx;
+  return new Float32Array([xx,yx,zx,0, xy,yy,zy,0, xz,yz,zz,0, -(xx*e[0]+xy*e[1]+xz*e[2]), -(yx*e[0]+yy*e[1]+yz*e[2]), -(zx*e[0]+zy*e[1]+zz*e[2]), 1]);
+}
+const rotOf = (rot) => (rot || []).reduce((m, [ax, d]) => mul(R4(ax, d), m), I4());
+
+// ---------- STL ----------
+function parseStl(buf) {
+  const dv = new DataView(buf), n = dv.getUint32(80, true);
+  if (buf.byteLength !== 84 + 50 * n) throw new Error('not a binary STL');
+  const a = new Float32Array(n * 18), mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9], v = new Array(9);
+  for (let i = 0; i < n; i++) {
+    const o = 84 + i * 50;
+    for (let k = 0; k < 9; k++) v[k] = dv.getFloat32(o + 12 + k * 4, true);
+    const ux = v[3]-v[0], uy = v[4]-v[1], uz = v[5]-v[2], wx = v[6]-v[0], wy = v[7]-v[1], wz = v[8]-v[2];
+    let nx = uy*wz-uz*wy, ny = uz*wx-ux*wz, nz = ux*wy-uy*wx; const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
+    for (let k = 0; k < 3; k++) {
+      const q = i * 18 + k * 6;
+      for (let j = 0; j < 3; j++) { const c = v[k * 3 + j]; a[q + j] = c; if (c < mn[j]) mn[j] = c; if (c > mx[j]) mx[j] = c; }
+      a[q + 3] = nx; a[q + 4] = ny; a[q + 5] = nz;
+    }
+  }
+  return { tris: n, data: a, min: mn, size: [mx[0]-mn[0], mx[1]-mn[1], mx[2]-mn[2]] };
+}
+const cache = new Map();
+function load(name) {
+  if (!cache.has(name)) cache.set(name, fetch((BY[name] && BY[name].ref ? REF_BASE : STL_BASE) + name + '.stl', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(name + ': HTTP ' + r.status); return r.arrayBuffer(); }).then(parseStl));
+  return cache.get(name);
+}
+
+// ---------- As-built layouts ----------
+// Rough stacking from the part sizes, NOT the designer's real assembly. Every STL is first moved so its
+// lowest corner is the origin; "at" is where that corner goes. "rot" turns a part first (degrees, in order).
+// "ex" is how far the part moves when the Explode slider is at 1.
+const STAND = [['x', 90]];   // lie-flat part stood up so its flat back faces away from the viewer
+const FLIP = [['x', 180]];   // part printed upside down, turned right way up
+const P = (p, at, o = {}) => ({ p, at, rot: o.rot || [], ex: o.ex || [0, 0, 0] });
+const ASSEMBLIES = [
+  { id: 'relics', title: 'Relics on Relic Tokens', note: 'Each Relic has a 6 mm socket under a flat foot and drops onto the 6 mm peg of its token (no Relic base plate). Punch a 6 mm hole in the middle of the QR sticker for the peg.',
+    build(S) {
+      const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell'], out = [];
+      rel.forEach((r, i) => {
+        const s = S(r);
+        out.push(P('relic-token-pocket', [i * 48, 0, 0]), P(r, [i * 48 + (40 - s[0]) / 2, (40 - s[1]) / 2, 6], { ex: [0, 0, 25] }));
+        if (r === 'relic-music-box') {
+          const l = S('relic-music-box-lid', FLIP);
+          out.push(P('relic-music-box-lid', [i * 48 + (40 - s[0]) / 2 + 0.1, (40 - s[1]) / 2 + 0.6, 6 + s[2] - 2.4], { rot: FLIP, ex: [0, 0, 40] }));
+        }
+        if (r === 'relic-locket') {
+          const l = S('relic-locket-lid', STAND);
+          out.push(P('relic-locket-lid', [i * 48 + (40 - s[0]) / 2, 20 - l[1], 6 + 10], { rot: STAND, ex: [-12, -28, 0] }));
+        }
+      });
+      return out;
+    } },
+  { id: 'p01', title: '#1 Ghost in the box', note: 'Lid on the body. Slide Explode to lift the lid and see the ghost and lever inside.',
+    build(S) {
+      const b = S('prop-01-chest-body'), l = S('prop-01-chest-lid', FLIP), g = S('prop-01-ghost-figure', STAND);
+      return [P('prop-01-chest-body', [0, 0, 0]),
+        P('prop-01-chest-lid', [(b[0] - l[0]) / 2, (b[1] - l[1]) / 2, b[2] - 4], { rot: FLIP, ex: [0, 0, 60] }),
+        P('prop-01-ghost-figure', [(b[0] - g[0]) / 2, (b[1] - g[1]) / 2, 14], { rot: STAND, ex: [0, 0, 80] }),
+        P('prop-01-lever-arm', [b[0] / 2 - 36, b[1] - 40, 14], { ex: [0, 0, 20] })];
+    } },
+  { id: 'p03', title: '#3 Haunt needle', note: 'Dial plate, bezel in front, needle on the hub. The MAX tab clips onto the rim by hand.',
+    build(S) {
+      const p = S('prop-03-dial-plate', STAND), bz = S('prop-03-bezel-ring', STAND), nd = S('prop-03-needle', STAND), mt = S('prop-03-max-tab', STAND);
+      return [P('prop-03-dial-plate', [0, 0, 0], { rot: STAND }),
+        P('prop-03-bezel-ring', [(p[0] - bz[0]) / 2, -bz[1], 0], { rot: STAND, ex: [0, -40, 0] }),
+        P('prop-03-needle', [(p[0] - nd[0]) / 2, -bz[1] - nd[1], 12], { rot: STAND, ex: [0, -80, 0] }),
+        P('prop-03-max-tab', [p[0] * 0.8, -bz[1] - mt[1], p[2] * 0.62], { rot: STAND, ex: [0, -60, 20] })];
+    } },
+  { id: 'p05', title: '#5 Haunting flipper', note: 'Three 2-seat plinths side by side, six flaps on top, six Resolve inserts on the front.',
+    build(S) {
+      const pl = S('prop-05-plinth-2seat'), fl = S('prop-05-flap-pawn', STAND), ins = S('prop-05-resolve-insert', STAND), out = [];
+      for (let i = 0; i < 3; i++) out.push(P('prop-05-plinth-2seat', [i * pl[0], 0, 0]));
+      for (let j = 0; j < 6; j++) {
+        const x = Math.floor(j / 2) * pl[0] + (j % 2 ? pl[0] - fl[0] - 10 : 10);
+        out.push(P('prop-05-flap-pawn', [x, (pl[1] - fl[1]) / 2, pl[2]], { rot: STAND, ex: [0, 0, 45] }),
+                 P('prop-05-resolve-insert', [x - 0.2, -ins[1], 6], { rot: STAND, ex: [0, -35, 0] }));
+      }
+      return out;
+    } },
+  { id: 'p09', title: '#9 Curtain reveal', note: 'Frame, two curtain panels in the opening, rail on top, screen behind. Explode opens the curtains.',
+    build(S) {
+      const f = S('prop-09-stage-frame', STAND), c = S('prop-09-curtain-panel', STAND), r = S('prop-09-rail-and-pulley'), s = S('prop-09-screen-bezel', STAND);
+      return [P('prop-09-stage-frame', [0, 0, 0], { rot: STAND }),
+        P('prop-09-curtain-panel', [37, 34, 18], { rot: STAND, ex: [-34, 0, 0] }),
+        P('prop-09-curtain-panel', [77, 40, 18], { rot: STAND, ex: [34, 0, 0] }),
+        P('prop-09-rail-and-pulley', [(f[0] - r[0]) / 2, 8, f[2]], { ex: [0, 0, 40] }),
+        P('prop-09-screen-bezel', [(f[0] - s[0]) / 2, f[1] + 4, 14], { rot: STAND, ex: [0, 45, 0] })];
+    } },
+  { id: 'p12', title: '#12 Rattle bats', note: 'Beam bracket with the bats mobile hanging from it. The chandelier and doll are alternates, off by default.',
+    build(S) {
+      const b = S('prop-12-beam-bracket', FLIP), m = S('prop-12-bats-mobile', STAND);
+      return [P('prop-12-beam-bracket', [0, 0, 110], { rot: FLIP }),
+        P('prop-12-bats-mobile', [(b[0] - m[0]) / 2, (b[1] - m[1]) / 2, 110 - 56 - m[2]], { rot: STAND, ex: [0, 0, -25] }),
+        P('prop-12-chandelier', [b[0] + 30, 0, 0]),
+        P('prop-12-doll', [b[0] + 120, 10, 0])];
+    } },
+  { id: 'p15', title: '#15 Relic vault', note: 'Chest with lid, clasp on the front, tray inside and the keypad pod beside it.',
+    build(S) {
+      const c = S('prop-15-vault-chest'), l = S('prop-15-vault-lid', FLIP), k = S('prop-15-vault-clasp', STAND), t = S('prop-15-relic-tray');
+      return [P('prop-15-vault-chest', [0, 0, 0]),
+        P('prop-15-vault-lid', [(c[0] - l[0]) / 2, (c[1] - l[1]) / 2, c[2] - 4], { rot: FLIP, ex: [0, 0, 60] }),
+        P('prop-15-vault-clasp', [(c[0] - k[0]) / 2, -k[1], 50], { rot: STAND, ex: [0, -30, 0] }),
+        P('prop-15-relic-tray', [(c[0] - t[0]) / 2, (c[1] - t[1]) / 2, 34], { ex: [0, 0, 35] }),
+        P('prop-15-keypad-pod', [c[0] + 20, 5, 0])];
+    } },
+  { id: 'p20', title: '#20 Cut wires board', note: 'Panel with terminal blocks on top and the plug heads in front.',
+    build(S) {
+      const p = S('prop-20-wires-panel'), tb = S('prop-20-terminal-blocks'), ph = S('prop-20-plug-heads');
+      return [P('prop-20-wires-panel', [0, 0, 0]),
+        P('prop-20-terminal-blocks', [(p[0] - tb[0]) / 2, 60, p[2]], { ex: [0, 0, 35] }),
+        P('prop-20-plug-heads', [(p[0] - ph[0]) / 2, -ph[1] - 15, 0])];
+    } },
+];
+
+// ---------- GL ----------
+const canvas = $('#gl');
+const gl = canvas.getContext('webgl', { antialias: true, alpha: true, premultipliedAlpha: false });
+function prog(vs, fs) {
+  const p = gl.createProgram();
+  for (const [t, src] of [[gl.VERTEX_SHADER, vs], [gl.FRAGMENT_SHADER, fs]]) {
+    const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    gl.attachShader(p, s);
+  }
+  gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  return p;
+}
+const solid = prog(`
+attribute vec3 aPos; attribute vec3 aNor; uniform mat4 uMV, uP; uniform mat3 uNM; varying vec3 vN, vV;
+void main(){ vec4 v = uMV * vec4(aPos, 1.0); vV = v.xyz; vN = uNM * aNor; gl_Position = uP * v; }`, `
+precision mediump float; varying vec3 vN, vV; uniform vec3 uCol;
+void main(){
+  vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
+  vec3 v = normalize(-vV);
+  vec3 l1 = normalize(vec3(-0.45, 0.6, 0.65)), l2 = normalize(vec3(0.6, -0.2, 0.3));
+  float d = max(dot(n, l1), 0.0) * 0.72 + max(dot(n, l2), 0.0) * 0.22;
+  float amb = 0.34 + 0.12 * (0.5 + 0.5 * n.y);
+  float rim = pow(1.0 - max(dot(n, v), 0.0), 3.0) * 0.16;
+  float spec = pow(max(dot(reflect(-l1, n), v), 0.0), 24.0) * 0.10;
+  gl_FragColor = vec4(uCol * (amb + d) + vec3(rim + spec), 1.0);
+}`);
+const line = prog(`attribute vec3 aPos; uniform mat4 uMV, uP; void main(){ gl_Position = uP * uMV * vec4(aPos, 1.0); }`,
+  `precision mediump float; uniform vec4 uC; void main(){ gl_FragColor = uC; }`);
+const loc = {
+  s: { aPos: gl.getAttribLocation(solid, 'aPos'), aNor: gl.getAttribLocation(solid, 'aNor'), uMV: gl.getUniformLocation(solid, 'uMV'), uP: gl.getUniformLocation(solid, 'uP'), uNM: gl.getUniformLocation(solid, 'uNM'), uCol: gl.getUniformLocation(solid, 'uCol') },
+  l: { aPos: gl.getAttribLocation(line, 'aPos'), uMV: gl.getUniformLocation(line, 'uMV'), uP: gl.getUniformLocation(line, 'uP'), uC: gl.getUniformLocation(line, 'uC') },
+};
+const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+gl.enable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+// ---------- state ----------
+const st = { mode: 'parts', id: PARTS[0].file, items: [], bounds: null, lines: null, vis: {}, explode: 0, colour: true, bed: true,
+  theta: -2.0, phi: 0.5, dist: 200, target: [0, 0, 0], dirty: true, token: 0 };
+
+async function buildScene() {
+  const token = ++st.token;
+  if (st.mode === 'parts') {
+    const p = BY[st.id], m = await load(p.file); if (token !== st.token) return;
+    st.items = [{ part: p, mesh: m, base: T4(-m.min[0], -m.min[1], -m.min[2]), ex: [0, 0, 0] }];
+    st.bounds = { min: [0, 0, 0], max: m.size };
+    const cx = m.size[0] / 2, cy = m.size[1] / 2, h = 90, ls = [];
+    for (let i = -h; i <= h; i += 20) { ls.push(cx + i, cy - h, 0, cx + i, cy + h, 0, cx - h, cy + i, 0, cx + h, cy + i, 0); }
+    st.gridFaint = new Float32Array(ls);
+    st.bedOutline = new Float32Array([cx-h,cy-h,0, cx+h,cy-h,0, cx+h,cy-h,0, cx+h,cy+h,0, cx+h,cy+h,0, cx-h,cy+h,0, cx-h,cy+h,0, cx-h,cy-h,0]);
+    st.vis = {};
+  } else {
+    const a = ASSEMBLIES.find((x) => x.id === st.id);
+    const needed = new Set(); const probe = a.build(() => [1, 1, 1]); probe.forEach((it) => needed.add(it.p));
+    const meshes = {}; await Promise.all([...needed].map(async (n) => { meshes[n] = await load(n); })); if (token !== st.token) return;
+    const S = (n, rot) => { const m = meshes[n] || null; if (!m) return [1, 1, 1]; return rotatedBox(m, rot).size; };
+    const list = a.build(S);
+    const min = [1e9, 1e9, 1e9], max = [-1e9, -1e9, -1e9];
+    st.items = list.map((it) => {
+      const m = meshes[it.p], rb = rotatedBox(m, it.rot);
+      const base = mul(T4(it.at[0] - rb.min[0], it.at[1] - rb.min[1], it.at[2] - rb.min[2]), mul(rotOf(it.rot), T4(-m.min[0], -m.min[1], -m.min[2])));
+      for (let j = 0; j < 3; j++) { min[j] = Math.min(min[j], it.at[j]); max[j] = Math.max(max[j], it.at[j] + rb.size[j]); }
+      return { part: BY[it.p], mesh: m, base, ex: it.ex };
+    });
+    st.bounds = { min, max };
+    const cx = (min[0] + max[0]) / 2, cy = (min[1] + max[1]) / 2, h = Math.ceil(Math.max(max[0] - min[0], max[1] - min[1]) / 2 / 20) * 20 + 40, ls = [];
+    for (let i = -h; i <= h; i += 20) { ls.push(cx + i, cy - h, min[2], cx + i, cy + h, min[2], cx - h, cy + i, min[2], cx + h, cy + i, min[2]); }
+    st.gridFaint = new Float32Array(ls); st.bedOutline = new Float32Array(0);
+    st.vis = {}; list.forEach((it) => { if (!(it.p in st.vis)) st.vis[it.p] = !BY[it.p].alt; });
+  }
+  fit(); st.dirty = true; renderSide(); renderHud();
+}
+function rotatedBox(m, rot) {
+  const R = rotOf(rot), mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+  for (let i = 0; i < 8; i++) { const p = xf(R, [(i & 1) * m.size[0], ((i >> 1) & 1) * m.size[1], ((i >> 2) & 1) * m.size[2]]); for (let j = 0; j < 3; j++) { mn[j] = Math.min(mn[j], p[j]); mx[j] = Math.max(mx[j], p[j]); } }
+  return { min: mn, size: [mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]] };
+}
+function fit() {
+  const b = st.bounds; st.target = [0, 1, 2].map((j) => (b.min[j] + b.max[j]) / 2);
+  const r = Math.hypot(b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]) / 2;
+  // Fit the bounding sphere across the narrower side: a portrait phone is tighter across than up.
+  const asp = canvas.clientWidth / Math.max(canvas.clientHeight, 1), dv = r / Math.sin(0.4), dh = r / Math.sin(Math.atan(Math.tan(0.4) * asp));
+  st.dist = Math.max(Math.max(dv, dh) * 1.08, 60); st.theta = -2.0; st.phi = 0.5;
+}
+
+// ---------- draw ----------
+const FOV = 0.8;
+function size() { const d = window.devicePixelRatio || 1, w = Math.round(canvas.clientWidth * d), h = Math.round(canvas.clientHeight * d); if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; st.dirty = true; } }
+function draw() {
+  size(); gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  if (!st.items.length || !canvas.width) return;
+  const c = Math.cos(st.phi), eye = [st.target[0] + st.dist * c * Math.cos(st.theta), st.target[1] + st.dist * c * Math.sin(st.theta), st.target[2] + st.dist * Math.sin(st.phi)];
+  const V = lookAt(eye, st.target, [0, 0, 1]), P = persp(FOV, canvas.width / canvas.height, st.dist / 20, st.dist * 12);
+  if (st.bed && st.gridFaint) {
+    gl.useProgram(line); gl.uniformMatrix4fv(loc.l.uP, false, P); gl.uniformMatrix4fv(loc.l.uMV, false, V);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.enableVertexAttribArray(loc.l.aPos);
+    gl.uniform4f(loc.l.uC, 0.08, 0.07, 0.1, 0.16); gl.bufferData(gl.ARRAY_BUFFER, st.gridFaint, gl.STREAM_DRAW); gl.vertexAttribPointer(loc.l.aPos, 3, gl.FLOAT, false, 12, 0); gl.drawArrays(gl.LINES, 0, st.gridFaint.length / 3);
+    if (st.bedOutline.length) { gl.uniform4f(loc.l.uC, 0.08, 0.07, 0.1, 0.75); gl.bufferData(gl.ARRAY_BUFFER, st.bedOutline, gl.STREAM_DRAW); gl.drawArrays(gl.LINES, 0, st.bedOutline.length / 3); }
+    gl.deleteBuffer(b);
+  }
+  gl.useProgram(solid); gl.uniformMatrix4fv(loc.s.uP, false, P);
+  for (const it of st.items) {
+    if (st.mode === 'built' && st.vis[it.part.file] === false) continue;
+    if (!it.mesh.buf) { it.mesh.buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, it.mesh.buf); gl.bufferData(gl.ARRAY_BUFFER, it.mesh.data, gl.STATIC_DRAW); }
+    const M = mul(T4(it.ex[0] * st.explode, it.ex[1] * st.explode, it.ex[2] * st.explode), it.base), MV = mul(V, M);
+    gl.uniformMatrix4fv(loc.s.uMV, false, MV);
+    gl.uniformMatrix3fv(loc.s.uNM, false, new Float32Array([MV[0], MV[1], MV[2], MV[4], MV[5], MV[6], MV[8], MV[9], MV[10]]));
+    gl.uniform3fv(loc.s.uCol, st.colour ? hex(SPOOLS[it.part.spool].hex) : [0.72, 0.72, 0.74]);
+    gl.bindBuffer(gl.ARRAY_BUFFER, it.mesh.buf);
+    gl.enableVertexAttribArray(loc.s.aPos); gl.vertexAttribPointer(loc.s.aPos, 3, gl.FLOAT, false, 24, 0);
+    gl.enableVertexAttribArray(loc.s.aNor); gl.vertexAttribPointer(loc.s.aNor, 3, gl.FLOAT, false, 24, 12);
+    gl.drawArrays(gl.TRIANGLES, 0, it.mesh.tris * 3);
+  }
+}
+(function tick() { if (st.dirty) { st.dirty = false; try { draw(); } catch (e) { showMsg('Could not draw: ' + e.message); } } requestAnimationFrame(tick); })();
+new ResizeObserver(() => { st.dirty = true; }).observe(canvas);
+
+// ---------- input ----------
+const ptrs = new Map(); let lastPinch = 0;
+canvas.addEventListener('pointerdown', (e) => { canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); lastPinch = pinch(); });
+canvas.addEventListener('pointerup', (e) => { ptrs.delete(e.pointerId); });
+canvas.addEventListener('pointercancel', (e) => { ptrs.delete(e.pointerId); });
+function pinch() { const a = [...ptrs.values()]; return a.length === 2 ? Math.hypot(a[0][0] - a[1][0], a[0][1] - a[1][1]) : 0; }
+function pan(dx, dy) {
+  const k = st.dist * Math.tan(FOV / 2) * 2 / canvas.clientHeight, ct = Math.cos(st.theta), sT = Math.sin(st.theta);
+  const rx = -sT, ry = ct;                                   // screen right in the floor plane
+  const ux = -Math.sin(st.phi) * ct, uy = -Math.sin(st.phi) * sT, uz = Math.cos(st.phi); // screen up
+  st.target[0] += (-dx * rx + dy * ux) * k; st.target[1] += (-dx * ry + dy * uy) * k; st.target[2] += dy * uz * k; st.dirty = true;
+}
+canvas.addEventListener('pointermove', (e) => {
+  const p = ptrs.get(e.pointerId); if (!p) return; const dx = e.clientX - p[0], dy = e.clientY - p[1]; p[0] = e.clientX; p[1] = e.clientY;
+  if (ptrs.size === 2) { const d = pinch(); if (lastPinch) st.dist = Math.min(Math.max(st.dist * lastPinch / d, 30), 3000); lastPinch = d; pan(dx / 2, dy / 2); st.dirty = true; return; }
+  if (e.shiftKey || e.buttons & 2) { pan(dx, dy); return; }
+  st.theta -= dx * 0.008; st.phi = Math.min(Math.max(st.phi + dy * 0.008, -1.5), 1.5); st.dirty = true;
+});
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); st.dist = Math.min(Math.max(st.dist * Math.exp(e.deltaY * 0.0012), 30), 3000); st.dirty = true; }, { passive: false });
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// ---------- side panel ----------
+const listEl = $('#list');
+function esc(s) { return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function renderSide() {
+  let h = '';
+  if (st.mode === 'parts') {
+    let g = '';
+    for (const p of PARTS) {
+      if (p.group !== g) { g = p.group; h += `<div class="grp">${esc(g)}</div>`; }
+      h += `<div class="row${p.file === st.id ? ' on' : ''}" data-id="${p.file}"><span class="dot" style="background:${SPOOLS[p.spool].hex}"></span><span class="lbl${p.alt ? ' alt' : ''}">${esc(p.label)}</span>${p.qty > 1 ? `<span class="qty">×${p.qty}</span>` : ''}<span class="tag ${p.kind}" title="${KIND[p.kind]}">${p.kind}</span></div>`;
+    }
+  } else {
+    h += '<div class="grp">Builds</div>';
+    for (const a of ASSEMBLIES) h += `<div class="row${a.id === st.id ? ' on' : ''}" data-id="${a.id}"><span class="lbl">${esc(a.title)}</span></div>`;
+    h += '<div class="grp">Parts in this build (tick to show)</div>';
+    const seen = new Set();
+    for (const it of st.items) {
+      const p = it.part; if (seen.has(p.file)) continue; seen.add(p.file);
+      const n = st.items.filter((x) => x.part.file === p.file).length;
+      h += `<label class="row"><input type="checkbox" data-vis="${p.file}"${st.vis[p.file] !== false ? ' checked' : ''}><span class="dot" style="background:${SPOOLS[p.spool].hex}"></span><span class="lbl${p.alt ? ' alt' : ''}">${esc(p.label)}</span>${n > 1 ? `<span class="qty">×${n}</span>` : ''}<span class="tag ${p.kind}" title="${KIND[p.kind]}">${p.kind}</span></label>`;
+    }
+  }
+  const keep = listEl.scrollTop; listEl.innerHTML = h; listEl.scrollTop = keep;
+  const cnt = {}; for (const p of PARTS) if (!p.ref) cnt[p.spool] = (cnt[p.spool] || 0) + 1;
+  $('#legend').innerHTML = '<b>Spools</b> (parts per spool)<br>' + Object.entries(SPOOLS).map(([k, s]) => `<span class="k"><span class="dot" style="background:${s.hex}"></span>${s.name} ${cnt[k] || 0}</span>`).join('') +
+    '<br><b>Tags</b> <span class="tag M">M</span> moves <span class="tag E">E</span> holds electronics <span class="tag S">S</span> static <span class="tag R">R</span> reference only';
+}
+listEl.addEventListener('click', (e) => {
+  const cb = e.target.closest('[data-vis]'); if (cb) { st.vis[cb.dataset.vis] = cb.checked; st.dirty = true; return; }
+  const r = e.target.closest('.row[data-id]'); if (r) select(st.mode, r.dataset.id);
+});
+function renderHud() {
+  if (st.mode === 'parts') {
+    const p = BY[st.id], m = st.items[0].mesh, s = SPOOLS[p.spool];
+    $('#hud').innerHTML = `<h1>${esc(p.label)}</h1><div class="sub">${p.file}.stl · ${m.size.map((v) => v.toFixed(1)).join(' × ')} mm · ${m.tris.toLocaleString()} triangles · ${p.ref ? 'reference only, not printed' : 'print ×' + p.qty}</div>
+      <div class="chips"><span class="chip"><span class="dot" style="background:${s.hex}"></span>${s.name} ${s.hex}</span><span class="chip"><span class="tag ${p.kind}">${p.kind}</span>${KIND[p.kind]}</span><span class="chip">${p.group}</span></div>`;
+    $('#lEx').style.display = 'none';
+  } else {
+    const a = ASSEMBLIES.find((x) => x.id === st.id), b = st.bounds;
+    $('#hud').innerHTML = `<h1>${esc(a.title)}</h1><div class="sub">${esc(a.note)}</div>
+      <div class="chips"><span class="chip">about ${[0, 1, 2].map((j) => (b.max[j] - b.min[j]).toFixed(0)).join(' × ')} mm</span><span class="chip">Rough layout from part sizes, not the designer's real assembly</span></div>`;
+    $('#lEx').style.display = '';
+  }
+}
+function showMsg(t) { const m = $('#msg'); m.innerHTML = '<div>' + t + '</div>'; m.style.display = 'flex'; }
+async function select(mode, id) {
+  st.mode = mode; st.id = id; st.explode = 0; $('#cEx').value = 0;
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  history.replaceState(null, '', '#' + mode + '/' + id);
+  try { await buildScene(); $('#msg').style.display = 'none'; } catch (e) {
+    showMsg(location.protocol === 'file:' ? 'The browser will not load STL files from a file:// page.<br>From the repo root run <code>python3 -m http.server 8780 --bind 127.0.0.1</code> and open <code>http://127.0.0.1:8780/tools/prop-mockups/viewer.html</code>.' : 'Could not load the model: ' + esc(e.message));
+  }
+}
+document.querySelectorAll('#tabs button').forEach((b) => b.addEventListener('click', () => select(b.dataset.mode, b.dataset.mode === 'parts' ? PARTS[0].file : ASSEMBLIES[0].id)));
+$('#cColour').addEventListener('change', (e) => { st.colour = e.target.checked; st.dirty = true; });
+$('#cBed').addEventListener('change', (e) => { st.bed = e.target.checked; st.dirty = true; });
+$('#cEx').addEventListener('input', (e) => { st.explode = +e.target.value; st.dirty = true; });
+$('#cReset').addEventListener('click', () => { if (st.bounds) { fit(); st.dirty = true; } });
+addEventListener('keydown', (e) => {
+  if (st.mode !== 'parts' || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
+  const i = PARTS.findIndex((p) => p.file === st.id), n = PARTS[(i + (e.key === 'ArrowRight' ? 1 : PARTS.length - 1)) % PARTS.length];
+  select('parts', n.file);
+});
+
+// ---------- start ----------
+window.__V = { st, PARTS, ASSEMBLIES, select, load, loadAll: () => Promise.all(PARTS.map((p) => load(p.file).then((m) => ({ file: p.file, size: m.size, tris: m.tris })))) };
+function start() {
+  const [m, id] = location.hash.slice(1).split('/');
+  if (m === 'built' && ASSEMBLIES.some((a) => a.id === id)) select('built', id);
+  else select('parts', BY[id] ? id : PARTS[0].file);
+}
+addEventListener('hashchange', start);
+start();
+</script>
+</body>
+</html>

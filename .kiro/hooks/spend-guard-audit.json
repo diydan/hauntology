@@ -8,7 +8,7 @@
       "matcher": "^api/src/.*\\.ts$",
       "action": {
         "type": "agent",
-        "prompt": "A file under api/src was saved. Review it against .kiro/steering/security-and-cost.md. Report (do NOT edit files) if: (1) it calls World Labs or Workers AI (env.AI) outside api/src/guarded/, (2) a guarded function can be called without a SpendTicket, (3) a reserve() has a code path that neither commits nor releases, or (4) an upstream URL, API key or prompt/caption text could reach a log line or a response body. If everything is fine, reply with one line: 'spend-guard: ok'."
+        "prompt": "A file under api/src was saved. Review it against .kiro/steering/security-and-cost.md. Report (do NOT edit files) if: (1) it calls World Labs, Workers AI (env.AI) or Cloudflare Images (an Images binding or a cf.image fetch) outside api/src/guarded/, (2) a guarded function can be called without a SpendTicket, (3) a reserve() has a code path that neither commits nor releases, or (4) an upstream URL, API key or prompt/caption text could reach a log line or a response body. If everything is fine, reply with one line: 'spend-guard: ok'."
       },
       "enabled": true
     }

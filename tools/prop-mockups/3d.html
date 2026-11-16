@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hauntology — 3D Print Kit &amp; Tabletop Prop Assets (44 STLs + 7 Sticker Sheets)</title>
+<link rel="stylesheet" href="../../design/tokens.css">
+<style>
+  :root {
+    --bg: #110f14;
+    --panel: #1b1821;
+    --border: #332d3b;
+    --text: #ece5d5;
+    --muted: #a69c8e;
+    --brass: #d4a84b;
+    --mint: #5ce6b8;
+    --crimson: #d43838;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.5;
+  }
+  header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #1a1620 0%, #110f14 100%);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 24px;
+    letter-spacing: 0.04em;
+    color: var(--brass);
+  }
+  header p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .nav-links a {
+    color: var(--mint);
+    text-decoration: none;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--panel);
+  }
+  main {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 24px 32px 64px;
+  }
+  .summary-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  .stat strong {
+    display: block;
+    font-size: 20px;
+    color: var(--brass);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .stat span {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  h2 {
+    margin: 36px 0 12px;
+    font-size: 19px;
+    color: var(--brass);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .card img {
+    width: 100%;
+    height: 190px;
+    object-fit: contain;
+    background: #1d1f21;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+  .card-title {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .spool-pill {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.2);
+    white-space: nowrap;
+  }
+  .card-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0;
+  }
+  .card-meta {
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .card-meta a {
+    color: var(--mint);
+    text-decoration: none;
+  }
+  .sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 18px;
+  }
+  .sticker-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  .sticker-card img {
+    width: 100%;
+    height: 260px;
+    object-fit: contain;
+    background: #f8f5ec;
+    border-radius: 4px;
+    margin-bottom: 10px;
+  }
+  .sticker-card h3 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .sticker-card p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Hauntology — 3D Print Kit &amp; Tabletop Props Showcase</h1>
+    <p>44 watertight 2-manifold binary STLs (&le; 180&times;180 mm bed, support-free) + 7 printable 1:1 SVG sticker sheets</p>
+  </div>
+  <div class="nav-links">
+    <a href="./index.html">&larr; Interactive 2D/3D Prop Mockups</a>
+    <a href="./viewer.html">Interactive 3D STL Viewer</a>
+    <a href="../../print/README.md">Print Guide &amp; BOM (README.md)</a>
+  </div>
+</header>
+
+<main>
+  <div class="summary-bar">
+    <div class="stat"><strong>44 STLs</strong><span>All verified watertight, 2-manifold, support-free</span></div>
+    <div class="stat"><strong>&le; 180 &times; 180 mm</strong><span>Fits Bambu A1 Mini, Prusa MINI+, Ender 3</span></div>
+    <div class="stat"><strong>6 Core + Seat Colours</strong><span>Iron, Brass, Mint, Bone, Silver, Crimson, Wood + 6 Suspects</span></div>
+    <div class="stat"><strong>0.4 mm Pockets</strong><span>Recessed 1:1 SVG stickers never peel at edges</span></div>
+    <div class="stat"><strong>SG90 + ESP32</strong><span>Built-in servo cradles, keyed horn recesses &amp; DevKitC V4 mounts</span></div>
+  </div>
+
+  <h2>1. Six Sculpted Relic Miniatures &amp; the Relic Token Base (9 STLs; Keyed Centre Connector)</h2>
+  <div class="grid" id="grid-relics"></div>
+
+  <h2>2. Pepper's-Ghost Pyramid Holder &amp; Suspect Standees (8 STLs)</h2>
+  <div class="grid" id="grid-standees"></div>
+
+  <h2>3. Seven Tabletop Electronic Props — 27 Printable Mechanism &amp; Enclosure Pieces</h2>
+  <div class="grid" id="grid-props"></div>
+
+  <h2>4. Printable 1:1 Scale SVG Sticker Sheets (Print at 100% / Actual Size)</h2>
+  <div class="sticker-grid">
+    <div class="sticker-card">
+      <img src="../../print/stickers/stickers-relics-and-standees.svg" alt="Relics and Standees Stickers">
+      <h3><a href="../../print/stickers/stickers-relics-and-standees.svg" style="color:var(--mint)">stickers-relics-and-standees.svg</a></h3>
+      <p>6 Relic miniature detail stickers + 6 gothic-arch Suspect portraits &amp; name strips.</p>
+    </div>
+    <div class="sticker-card">
+      <img src="../../print/stickers/stickers-prop-01-ghost-in-box.svg" alt="Prop 01 Stickers">
+      <h3><a href="../../print/stickers/stickers-prop-01-ghost-in-box.svg" style="color:var(--mint)">stickers-prop-01-ghost-in-box.svg</a></h3>
+      <p>Prop #1 Ghost in the Box: Hero ghost eyes (4.5&times;7.2 mm) &amp; howling mouth (4.1&times;7.2 mm) + iron-bound wood plank strips.</p>
+    </div>
+    <div class="sticker-card">
+      <img src="../../print/stickers/stickers-prop-03-haunt-needle.svg" alt="Prop 03 Stickers">
+      <h3><a href="../../print/stickers/stickers-prop-03-haunt-needle.svg" style="color:var(--mint)">stickers-prop-03-haunt-needle.svg</a></h3>
+      <p>Prop #3 Haunt Needle: semi-circular 0–12 dial face (R=72 mm), Roman numerals, skull danger zone (9–12) &amp; MAX tab.</p>
+    </div>
+    <div class="sticker-card">
+      <img src="../../print/stickers/stickers-prop-05-haunting-flipper.svg" alt="Prop 05 Stickers">
+      <h3><a href="../../print/stickers/stickers-prop-05-haunting-flipper.svg" style="color:var(--mint)">stickers-prop-05-haunting-flipper.svg</a></h3>
+      <p>Prop #5 Haunting Flipper: 6 Living Detective front portraits + 6 monochrome Ghost back portraits + 6 seat badges.</p>
+    </div>
+    <div class="sticker-card">
+      <img src="../../print/stickers/stickers-prop-09-curtain-and-12-rattle.svg" alt="Prop 09 and 12 Stickers">
+      <h3><a href="../../print/stickers/stickers-prop-09-curtain-and-12-rattle.svg" style="color:var(--mint)">stickers-prop-09-curtain-and-12-rattle.svg</a></h3>
+      <p>Prop #9 Curtain Reveal ("THE SOLUTION" header, pilasters, gold tassel fringes) &amp; Prop #12 Rattle (bat eyes, doll face).</p>
+    </div>
+    <div class="sticker-card">
+      <img src="../../print/stickers/stickers-prop-15-relic-vault.svg" alt="Prop 15 Stickers">
+      <h3><a href="../../print/stickers/stickers-prop-15-relic-vault.svg" style="color:var(--mint)">stickers-prop-15-relic-vault.svg</a></h3>
+      <p>Prop #15 Relic Vault: brass lock escutcheon, "ENTER PIN" header, 6 Relic bay floor icons (r1–r6) &amp; chest straps.</p>
+    </div>
+    <div class="sticker-card">
+      <img src="../../print/stickers/stickers-prop-20-cut-wires.svg" alt="Prop 20 Stickers">
+      <h3><a href="../../print/stickers/stickers-prop-20-cut-wires.svg" style="color:var(--mint)">stickers-prop-20-cut-wires.svg</a></h3>
+      <p>Prop #20 Cut Wires Board: terminal numbers 1–5 (left &amp; right), "SET" &amp; "PAIRED" labels, 10 resistor plug cap discs.</p>
+    </div>
+  </div>
+</main>
+
+<script>
+const SPOOLS = {
+  iron:       { name: "Dark Iron",        bg: "#262229", fg: "#ece5d5" },
+  brass:      { name: "Antique Brass",    bg: "#d4a84b", fg: "#181209" },
+  mint:       { name: "Ectoplasm Mint",   bg: "#5ce6b8", fg: "#092118" },
+  bone:       { name: "Bone / Ivory",     bg: "#e8dec8", fg: "#1b181f" },
+  silver:     { name: "Tarnished Silver", bg: "#c9c9d4", fg: "#181820" },
+  crimson:    { name: "Crimson",          bg: "#d43838", fg: "#fff5f5" },
+  wood:       { name: "Warm Wood",        bg: "#422818", fg: "#f5eadc" },
+  seatRed:    { name: "Seat 1 Crimson",   bg: "#ff6b6b", fg: "#1f0909" },
+  seatBlue:   { name: "Seat 2 Azure",     bg: "#6bb6ff", fg: "#08192b" },
+  seatYellow: { name: "Seat 3 Amber",     bg: "#ffd86b", fg: "#241b05" },
+  seatGreen:  { name: "Seat 4 Emerald",   bg: "#6be39a", fg: "#072112" },
+  seatViolet: { name: "Seat 5 Amethyst",  bg: "#c49bff", fg: "#190d2b" },
+  seatOrange: { name: "Seat 6 Copper",    bg: "#ffb27a", fg: "#261205" },
+};
+
+const RELICS = [
+  ["relic-music-box",    "wood",   "35.9 × 25.1 × 29.0 mm", "Relic r1 (body): Warm Wood FDM Victorian cabinet with 5-tooth stepped comb on shadow bed, top-pinned V-cradled drum, XY winding gear, <=40° wing key & Ø14.6 mm foot / 6 mm socket."],
+  ["relic-music-box-lid","brass",  "33.4 × 25.4 × 8.2 mm",  "Relic r1 (lid): Contrasting Antique Brass coffered lid printed upside-down with 4 outer gothic cornice corner lugs, 4-rib compliant snap collar, finger-lift coves & underside 18×9 mm score pocket."],
+  ["relic-wax-hand",     "bone",   "24.6 × 17.6 × 51.4 mm", "Relic r2: Sculpted anatomical palmistry hand with blended tendons, MCP knuckles, segmented fingers, fingernails, palm pocket & centre socket."],
+  ["relic-locket",       "brass",  "31.5 × 18.0 × 50.0 mm", "Relic r3 (back bowl): Hinged oval locket stand with vaulted keepsake hollow, lower Ø2.15 mm filament hinge knuckle, clasp catch & centre socket."],
+  ["relic-locket-lid",   "brass",  "33.7 × 35.4 × 5.3 mm",  "Relic r3 (front door): Separate hinged cameo lid with crooked gothic crown crest, coaxial Ø2.15 mm filament hinge bore, beaded pearls, snap-clasp & 16×22 mm cameo pocket."],
+  ["relic-planchette",   "wood",   "28.8 × 18.4 × 43.5 mm", "Relic r4: Heart-shaped spirit-board pointer with twin crooked gothic upper horn curls pointing down on a short post, with magnifier oculus & 6 mm centre socket."],
+  ["relic-silver-key",   "silver", "20.2 × 18.0 × 46.7 mm", "Relic r5: Gothic skeleton key with diamond pierced bow, shoulder thorns, skewed crown spire, collared stem, notched ward bit & centre connector."],
+  ["relic-bell",         "brass",  "28.0 × 28.0 × 47.6 mm", "Relic r6: Flared Victorian service bell with solid flared body, turned handle & centre connector."],
+  ["relic-token-pocket", "iron",   "43.6 × 43.6 × 9.0 mm",  "Universal 40×40 mm rounded token base with 4 splayed corner iron lug ears, rim V-notches, 0.4 mm top QR sticker pocket & Ø5.6 mm centre peg for the Relics' sockets (punch a 6 mm hole in the QR sticker)."],
+];
+
+const STANDEES = [
+  ["pyramid-holder",     "iron",       "82.6 × 82.6 × 33.3 mm", "Parametric 45° Pepper's-ghost collar frame (60 mm base, 10 mm top) with splayed wrought-iron scroll feet, knuckled 45° ribs & 4 crown spire finials for 4 clear acetate trapezoids."],
+  ["standee-blank",      "bone",       "44.6 × 15.0 × 71.6 mm", "Crooked gothic-arch Suspect standee on an uneven cemetery tombstone plinth (iron bollards & buttresses) with a skewed crown and 0.4 mm recessed portrait & name strip pockets on both sides."],
+  ["standee-s1-percy",   "seatRed",    "43.6 × 15.0 × 68.9 mm", "Suspect s1 (Percy) contoured silhouette standee on a crooked graveyard tombstone plinth with dual-layer cameo relief & uneven iron bollards."],
+  ["standee-s2-thorne",  "seatBlue",   "43.6 × 15.0 × 69.0 mm", "Suspect s2 (Captain Thorne) contoured silhouette standee on a crooked graveyard tombstone plinth with dual-layer cameo relief & uneven iron bollards."],
+  ["standee-s3-pike",    "seatYellow", "43.6 × 15.0 × 69.0 mm", "Suspect s3 (Dr. Pike) contoured silhouette standee on a crooked graveyard tombstone plinth with dual-layer cameo relief & uneven iron bollards."],
+  ["standee-s4-cora",    "seatGreen",  "43.6 × 15.0 × 68.9 mm", "Suspect s4 (Cora Bell) contoured silhouette standee on a crooked graveyard tombstone plinth with dual-layer cameo relief & uneven iron bollards."],
+  ["standee-s5-vane",    "seatViolet", "43.6 × 15.0 × 68.9 mm", "Suspect s5 (Lady Vane) contoured silhouette standee on a crooked graveyard tombstone plinth with dual-layer cameo relief & uneven iron bollards."],
+  ["standee-s6-dunmore", "seatOrange", "43.6 × 15.0 × 69.0 mm", "Suspect s6 (Mrs. Dunmore) contoured silhouette standee on a crooked graveyard tombstone plinth with dual-layer cameo relief & uneven iron bollards."],
+];
+
+const PROPS = [
+  ["prop-01-chest-body",      "wood",    "169.0 × 104.6 × 72.9 mm", "Prop #1: Chest body with tapered gothic corner buttresses, keyhole crest, crooked plank grooves, horizontal-shaft SG90 pedestal, ESP32 DevKitC V4 cradle, USB-C port & latch pocket."],
+  ["prop-01-chest-lid",       "wood",    "164.6 × 102.2 × 25.2 mm", "Prop #1: Hinged chest lid with front iron corner bolsters, diagonal plank grooves, coaxial Z=69 mm hinge knuckles (when flipped) & arched side skirts."],
+  ["prop-01-ghost-figure",    "mint",    "68.0 × 73.5 × 16.6 mm",  "Prop #1: 2D layered landing-page Hero ghost silhouette with shrouded head, cloaked U-track wings, cloth pleats, -Y follower pin & face pockets."],
+  ["prop-01-lever-arm",       "iron",    "83.0 × 54.4 × 11.5 mm",  "Prop #1: 64 mm XZ vertical-sweep slotted fork push-arm (4.4 mm fork gap) with stepped 11.5 mm clear_fit SG90 horn boss & lid-kicker cam nose."],
+  ["prop-03-dial-plate",      "iron",    "177.8 × 116.5 × 26.4 mm","Prop #3: Semi-circular gothic Haunt gauge plate with steeple crest, upper-left cusps, splayed plinth buttresses, Ø12.4 mm SG90 boss bore, ESP32 cradle & max-tab notches (8/10/12)."],
+  ["prop-03-bezel-ring",      "brass",   "177.8 × 109.2 × 4.8 mm", "Prop #3: Snap-fit gothic arched bezel ring with steeple crest, upper-left cusps, 12 rivet bosses & threshold sight notches."],
+  ["prop-03-needle",          "brass",   "73.8 × 18.6 × 6.6 mm",   "Prop #3: 72 mm gnarled pointer needle with wrought-iron spiral spur & pierced spearhead, keyed single-arm SG90 horn recess & M2 screw bores."],
+  ["prop-03-max-tab",         "crimson", "23.5 × 21.0 × 25.2 mm",  "Prop #3: Gothic-crowned clip-on MAX threshold marker tab for 8 (Quick), 10 (Classic), or 12 (Gentle)."],
+  ["prop-05-plinth-2seat",    "iron",    "105.0 × 44.8 × 45.0 mm", "Prop #5: Modular 2-seat dovetail plinth (100.0 mm exact pitch, gothic lancet pier arches, crypt pilasters, winged seat bezels, open diffuser slot, 2 SG90 bays; print 3×)."],
+  ["prop-05-flap-pawn",       "bone",    "41.8 × 77.2 × 10.0 mm",  "Prop #5: Crooked coffin-headstone portrait flap with shoulder ears, open bottom SG90 shaft bore & keyed anti-rotation horn slot on a 10 mm stem (print 6×)."],
+  ["prop-05-resolve-insert",  "mint",    "36.4 × 14.0 × 2.4 mm",   "Prop #5: Translucent 3-pip Resolve window lens diffuser insert (print 6×)."],
+  ["prop-09-stage-frame",     "wood",    "175.0 × 158.4 × 59.6 mm","Prop #9: Gothic proscenium stage arch with crooked pediment gable, 3 roof spire finials, twisted column flutes, bat-wing valance, footlights, 'THE SOLUTION' header pocket, 45° corbelled interior step & floor-mounted SG90 cradle."],
+  ["prop-09-curtain-panel",   "crimson", "52.0 × 81.5 × 7.2 mm",   "Prop #9: Rigid pleated theatre curtain wing with pointed bottom fringe scallops, V tie-back cord & top T-slider glides (print 2×)."],
+  ["prop-09-rail-and-pulley", "iron",    "158.0 × 36.2 × 13.0 mm", "Prop #9: Overhead slider track bar + dual-sheave SG90 pulley drum (with 4 mm extended shaft boss) & idler wheel."],
+  ["prop-09-screen-bezel",    "brass",   "114.0 × 102.0 × 12.0 mm","Prop #9: Rear drop-in phone/Waveshare screen cradle with USB-C cable slot."],
+  ["prop-12-beam-bracket",    "wood",    "128.6 × 45.5 × 32.0 mm", "Prop #12: Overhead adze-split tapered attic beam bracket with riveted iron clamp straps, central SG90 pocket, gothic corbel thread-guide eyelet fin & M3 mounting holes."],
+  ["prop-12-bats-mobile",     "iron",    "143.4 × 49.6 × 3.7 mm",  "Prop #12 (Primary): Gnarled dead-tree branch spreader with forked twigs, bark V-grooves & 3 articulated needle-eared gothic bats with recessed crimson eye pockets."],
+  ["prop-12-chandelier",      "brass",   "72.1 × 72.4 × 39.0 mm",  "Prop #12 (Alt A): 4-arm gothic chandelier ring with wrought-iron S-scroll arms, gothic cusps, crooked spire mast, gently tilted melted tapers, scalloped drip saucers & flame tips."],
+  ["prop-12-doll",            "bone",    "40.4 × 65.1 × 5.8 mm",   "Prop #12 (Alt B): Articulated porcelain ragdoll pendant with tilted stitched head, spiky hair tufts, crooked arms, tattered skirt, hip patch, chest button, curling boots & cracked-face sticker pocket."],
+  ["prop-15-vault-chest",     "wood",    "170.6 × 130.3 × 83.1 mm","Prop #15: Relic Vault chest with tapered corner buttresses, vertical iron straps, crooked plank grooves, upper SG90 latch mount (Z=48..67 mm), tray ledges & strap pockets."],
+  ["prop-15-vault-lid",       "wood",    "170.6 × 127.8 × 27.4 mm","Prop #15: Hinged vaulted lid with tapered corner straps, coaxial Z=79 mm hinge knuckles, internal locking catch loop & strap pockets."],
+  ["prop-15-vault-clasp",     "brass",   "99.8 × 31.7 × 5.2 mm",   "Prop #15: Front ornate wrought-iron scroll escutcheon with corner curls, keyhole slot, spear-tip hasp, spined latch arm, 2× M2 mounting bosses & 30×18 mm sticker pocket."],
+  ["prop-15-relic-tray",      "iron",    "152.0 × 100.0 × 15.0 mm","Prop #15: Removable 6-bay Relic Token organizer tray with finger scoops & bay icon pockets."],
+  ["prop-15-keypad-pod",      "wood",    "94.9 × 124.0 × 39.1 mm", "Prop #15: Angled gothic keypad console with side buttresses, scroll ears, 71×78 mm pocket for a standard 70×77 mm 3×4 keypad & 45° internal ceiling."],
+  ["prop-20-wires-panel",     "iron",    "155.0 × 125.0 × 32.8 mm","Prop #20: Patchbay with gothic tapered corner pilasters, corner deck rivets, 5 left wire-anchor wells, 5 right terminal socket wells (14.3 mm), SET button, PAIRED LED & 45° ESP32 roof."],
+  ["prop-20-terminal-blocks", "brass",   "129.0 × 47.0 × 14.0 mm", "Prop #20: 5 terminal sockets + 5 wire anchors + 1 SET button bezel (11 parts)."],
+  ["prop-20-plug-heads",      "crimson", "116.0 × 40.8 × 22.0 mm", "Prop #20: 5 octagonal coffin-knurled resistor plug barrels (1.9 mm nose wall, axial resistor grip cavity) + 5 snap-in back caps (10 parts)."],
+];
+
+function renderCards(targetId, items) {
+  const el = document.getElementById(targetId);
+  el.innerHTML = items.map(([id, spoolKey, dims, desc]) => {
+    const sp = SPOOLS[spoolKey];
+    return `
+      <article class="card">
+        <img src="../../print/renders/${id}.png" alt="${id}" loading="lazy">
+        <div class="card-body">
+          <div class="card-title">
+            <span>${id}</span>
+            <span class="spool-pill" style="background:${sp.bg};color:${sp.fg}">${sp.name}</span>
+          </div>
+          <p class="card-desc">${desc}</p>
+          <div class="card-meta">
+            <span>${dims}</span>
+            <a href="../../print/stl/${id}.stl" download>Download .STL</a>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+renderCards("grid-relics", RELICS);
+renderCards("grid-standees", STANDEES);
+renderCards("grid-props", PROPS);
+</script>
+</body>
+</html>

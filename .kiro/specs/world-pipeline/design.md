@@ -24,10 +24,10 @@ sequenceDiagram
 
   W->>A: POST /api/uploads (photo) or /api/sketch/render
   A->>G: reserve(image)  (sketch only)
-  A->>B: FLUX.2 (sketch as reference)
+  A->>B: FLUX.2 klein 9B (sketch as reference, caption prompt)
   A->>R: store Place Image (metadata stripped)
   W->>A: POST /api/places/brief
-  A->>B: Vision model (image) -> brief + safe
+  A->>B: Llama 4 Scout (image) -> brief + safe
   W->>A: POST /api/worlds/quote
   A-->>W: quote + confirmToken
   W->>A: POST /api/worlds (confirmToken)
@@ -54,23 +54,24 @@ sequenceDiagram
 | `POST /api/places/brief` `{imageId}` | → `{brief, safe}` | 3.x |
 | `POST /api/worlds/quote` `{imageId}` | → `{imageUrl, quota, confirmToken}` | 4.1–4.2 |
 | `POST /api/worlds` `{imageId, confirmToken, turnstile?}` | → `{worldId, status}` | 4.3–4.5, 5.x, 6.x |
-| `GET /api/worlds/:id` | status + manifest when ready | 7.3, 8.2 |
+| `GET /api/worlds/:id` | status (the state and its progress label) + manifest when ready, as `JobStatusSchema`; the owner's also says whether the share link is on | 7.3, 8.2 |
 | `GET /api/worlds/:id/assets/:name` | range-capable asset stream | 8.4 |
 | `DELETE /api/worlds/:id` | delete my place | 10.2 |
-| `GET /api/gallery` | list Gallery Worlds | 9.2 |
-| `GET /api/quota` | remaining per meter | 5.7 |
+| `POST` / `DELETE /api/worlds/:id/share` | the owner turns the share link of a ready world on or off → `{ok, shared}`; while on, anyone with the id may read it | 9.4 |
+| `GET /api/gallery` | list Gallery Worlds as `[{id, title, description, thumbUrl, attribution}]`, public, no key or quota needed | 9.2, 9.3 |
+| `GET /api/quota` | remaining per meter (`world`, `image`, `llm`, `tts`, `stt`, `live`) and the flags `voice`, `stitch` and `live` | 5.7 |
 
 ### `shared/` pure modules
 `upload.ts` (validate + `stripJpegMetadata`), `sketch.ts` (`inkCoverage`, `buildSketchPrompt`), `token.ts` (`signConfirm`, `verifyConfirm`), `dedup.ts` (`worldKey`), `job.ts` (`jobReducer`), `manifest.ts` (`buildManifest`), `retention.ts` (`expiredKeys`), `enhance.ts` (`planEnhance`), `errors.ts`.
 
 ### Durable Objects
-- `SpendGuard`: `reserve({meter, sessionId, ipHash, now}) → {ok:true, ticket} | {ok:false, reason}`, `commit(ticket)`, `release(ticket)`, `remaining(sessionId, ipHash)`, `setKill(on)`. Meters: `world`, `image`, `llm`. Caps: session, ip-day, global-day, global-total (world only). Unreleased reservations expire after 30 min and are treated as released.
+- `SpendGuard`: `reserve({meter, sessionId, ipHash, now}) → {ok:true, ticket} | {ok:false, reason}`, `commit(ticket)`, `release(ticket)`, `remaining(sessionId, ipHash)`, `setKill(on)`. Meters: `world`, `image`, `llm`, `tts`, `stt`, `live` (the last three from the `ghost-voice` spec, with its own session, room and day caps). Caps: session, ip-day, global-day, global-total (world only). Unreleased reservations expire after 30 min and are treated as released.
 - `WorldJob`: `start(args)`, `status()`, `alarm()`; uses `jobReducer` for every transition; persists after each event.
 
 ## Data models
 
 ```ts
-type Meter = 'world' | 'image' | 'llm';
+type Meter = 'world' | 'image' | 'llm' | 'tts' | 'stt' | 'live';   // tts, stt and live are the ghost-voice meters (live counts 10-second slices)
 type SpendTicket = { id: string; meter: Meter; sessionId: string; issuedAt: number };
 
 type JobState = 'queued' | 'generating' | 'ingesting' | 'ready' | 'failed';
@@ -92,13 +93,13 @@ type WorldManifest = {
 };
 type AssetRef = { path: string; bytes: number; lod?: '100k' | '500k' | 'full' };
 ```
-Orientation, scale, spawn, floorY and bounds are computed at ingest with defaults and hand-tunable for Gallery Worlds (Spike 1.1 fixes the defaults).
+Orientation, scale, spawn, floorY and bounds are computed at ingest: for a world from the service from its documented frame and `semantics_metadata` (`poseFromService`; a run of Spike 1.1 and one look in the viewer confirm it), otherwise defaults; hand-tunable for Gallery Worlds.
 
 ## Job state machine
 `queued → generating → ingesting → ready`; `failed` reachable from any non-terminal state. `ready` and `failed` are absorbing. Rate-limit events only extend the next poll delay. `timeout` fires at 20 min from start. Every transition into `failed` or on timeout is accompanied by `SpendGuard.release`; `ready` by `commit`.
 
 ## Error handling
-Stable codes in `shared/src/errors.ts`: `bad_type`, `too_large`, `too_small`, `bad_magic`, `blank_sketch`, `quota_session`, `quota_day`, `quota_total`, `gen_disabled`, `unsafe_image`, `moderation_unavailable`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `upstream_rate_limited`, `upstream_rejected`, `upstream_no_credits`, `ingest_failed`, `timeout`. Routes map codes to user-safe copy; upstream bodies are never forwarded.
+Stable codes live in `shared/src/errors.ts`, which is the source of truth; this list only names the ones this pipeline uses: `upload_bad_type`, `upload_too_large`, `upload_too_small`, `upload_bad_magic`, `blank_sketch`, `quota_session`, `quota_day`, `quota_total`, `world_gen_disabled`, `unsafe_image`, `moderation_unavailable`, `bad_confirm`, `confirm_expired`, `turnstile_failed`, `upstream_rate_limited`, `upstream_rejected`, `upstream_no_credits`, `ingest_failed`, `timeout`. (`world_too_small` is a different code: a party world whose walk radius is below 7 m.) Routes map codes to user-safe copy; upstream bodies are never forwarded.
 
 ## Testing strategy
 - Property tests (fast-check) for every pure module and a model-based test for SpendGuard (random command sequences vs. a simple counter model).
@@ -163,3 +164,17 @@ Stable codes in `shared/src/errors.ts`: `bad_type`, `too_large`, `too_small`, `b
 ### Property 14: Enhance plans overlap and fall back
 *For any* image dimensions, `planEnhance` returns a set of views with pairwise-distinct azimuths and each extension overlapping the original by at least 40%; and for any failure injected at any step the final prompt is the single-image prompt with the original photo.
 **Validates: Requirements 11.1, 11.3**
+
+## Shared look (design system, 2026-11-15)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`). The play-through in `tools/voice-demo` is the reference screen. Rules: `.kiro/steering/design-system.md`.
+
+| Part of this spec | Elements |
+|---|---|
+| Photo picker, caption, error copy | `ui-stack ui-heading ui-input ui-button ui-note` (`is-warn`) `ui-panel--danger` |
+| Sketch Pad (canvas and its controls) | `ui-figure` (the frame), `ui-button` in a `ui-row`, `ui-input` (the caption); the pad's own style is its size and `touch-action: none` |
+| Candidates | `ui-figure` and a `ui-button` for each; `ui-stack` |
+| Confirm Gate | `ui-figure ui-hint ui-button--primary ui-button--quiet ui-panel ui-panel--danger` |
+| Progress and failure | `ui-panel ui-heading ui-gauge ui-steps ui-step ui-note` |
+
+A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. The screens built by the shell (`web/src/app/create/*`, `web/src/app/screens/*`, `web/src/app/haunt/*`, `web/src/app/confirm/*`) were moved onto the elements by `design-system` task 4 (2026-11-15); `app.css` is layout only. The element names in this table were checked against the markup and the catalogue on 2026-11-15 (task 13): `ui-story` is a choice that starts something and `ui-progress` and `ui-dots` are the pips of the play-through, so a Candidate is a picture with a button and the stages are a gauge with labelled steps.

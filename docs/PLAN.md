@@ -35,6 +35,8 @@ Party Mode is large. Build in this order and stop when time runs out; each layer
 2. **Contributions**: Suspect, photo and Zone name from phones (tasks 5, 9.8).
 3. **Display**: pyramid page (task 10).
 4. **Print kit**: relics, QR plates, holder (tasks 3, 11). The standee (3.6) is a stretch.
+5. **Waiting play**: Cues, Nudges, phone sound and Frames (tasks 2.59 to 2.71, 4.14 to 4.16, 8.11, 9.14 to 9.16, spikes 1.5 and 1.6). Only if the core is done; cut Frames and phone sound first.
+6. **Phone extras and the real world**, cheapest first: the sky dome (`conditions`), the Spirit lens, the light bar, tilt to look, then Rattle and the Becoming, then Stitch (tasks 2.72 to 2.105, 4.17 to 4.21, 8.12, 8.13, 9.17 to 9.21, 13; spikes 1.7 to 1.9). Only after the Nov 27 gate. Cut order: live mode, Stitch, the Rattle extras, the lens and light bar.
 Property tests for a layer land with that layer.
 
 ## Spend estimate (unverified; measure in Spike 1.1)
@@ -43,7 +45,7 @@ World Labs: about $1.2–1.3 per world, $5 minimum top-up. Plan: ~14 dev and Gal
 ## Kiro write-up (fill in as you go)
 Each section needs one concrete example with evidence.
 1. **Specs**: how requirements → design → tasks drove the build. One design property that caught a real bug; screenshot the failing test.
-2. **Property-based testing**: 77 properties across five specs. One shrunk counter-example fast-check found, with before and after code. For party mode, the token-planting leakage test (Property 8) is the best story.
+2. **Property-based testing**: 130 properties across seven specs. One shrunk counter-example fast-check found, with before and after code. For party mode, the token-planting leakage test (Property 8) is the best story.
 3. **Steering**: a specific example from `security-and-cost.md` (every guarded call takes a SpendTicket) or `party-mode.md` (narrator takes a Public View only).
 4. **Hooks**: what each of the five catches. Screenshot the traceability hook firing when a spec changed without a matching task.
 5. **MCP**: the spend-capped World Labs server; a fixture it produced.

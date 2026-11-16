@@ -1,105 +1,141 @@
 # Implementation Plan
 
-Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and 5.2 (AIClient), and `world-viewer` 6.3 (ViewerBridge).
+Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and 5.2 (WorkersAiClient), and `world-viewer` 6.3 (ViewerBridge).
 
-- [ ] 1. Spike: narration tone and cost
-  - Run three personas (soft/childlike, dry/stern, formal/melancholic) for ten turns each through `llama-3.3-70b-instruct-fp8-fast` using the guarded AIClient text wrapper. Record latency, tokens, validation failure rate, and whether the rules in `steering/ghost-safety.md` hold against 10 jailbreak attempts. Tune prompt wording. Write `docs/spikes/4.1.md`.
+- [x] 1. Spike: narration tone and cost
+  - Add one weather case per persona (a rainy dusk, a snowy night). Run two personas (soft/wistful, dry/stern) for ten turns each through `llama-4-scout-17b-16e-instruct` (`GHOST_MODEL_ID`) using the guarded WorkersAiClient text wrapper. Record latency, tokens, validation failure rate, and whether the rules in `steering/ghost-safety.md` hold against 10 jailbreak attempts. Tune prompt wording. Write `docs/spikes/4.1.md`.
   - _Requirements: 5.1, 5.5, 5.6_
+  - **Built 2026-11-15 for that plan, no spend:** the adapter (4.1, above), the prompt builder and reply check (2.15, 2.17), a local Worker with a cap of 50 calls in the real `SpendGuard` object (`api/src/spike/`, `api/dev/narrator-spike.ts`, `api/wrangler.narrator.jsonc`) and a runner that is a dry run unless you pass `--run` (`tools/ghost-spike.mjs`). Rehearsed end to end over a canned stand-in for the model (no `ai` binding): 50 calls, no temperature sent, the cap kept across a restart. **Run 2026-11-15** (you loaded the credits and said go): 39 of the 50 calls, $0.0039, all answered; the results, the five things to tune and the tuning pass of 11 calls are in `docs/spikes/4.1.md`. **Tuning pass run the same day** (the other 11 calls, all 50 used, $0.0051 in all): English-only and the check changes worked, the stern voice is better, hints are only partly fixed (recommendation in the spike file) and repeated place details barely changed. Ticked because the spike is done and written up; **the choice of Haiku 5.5 is still yours**, and the hint decision.
+  - **Plan written 2026-11-15, for you to approve (nothing called, nothing spent):** the model to test is now proposed as Haiku 5.5 (`anthropic/claude-haiku-5.5`, var `NARRATOR_MODEL_ID`) instead of Scout, and Scout stays for the Place Brief and the photo check. `docs/spikes/4.1.md` is the plan, **approved by you 2026-11-15**: 50 calls, a hard cap of $0.05 (worst case about 1.1 cents by the listed price), the guarded adapter built over fakes first, a dry-run-by-default runner, stop rules and pass marks. The paid run still needs you to load the credits and say "go". The steering row is proposed in `.kiro/steering/tech.md` (assumption 20). The wording above (Scout, ten jailbreak attempts, the tuning) stands for whichever model you pick.
 
 - [ ] 2. Pure engine logic (`shared/src/ghost/`)
-  - [ ] 2.1 `parseAction` with verb table and sanitising
+  - [x] 2.1 `parseAction` with verb table and sanitising
+    - Built: `shared/src/ghost/parse.ts` (`parseAction`, `sanitizeText`, `looksLikeRuleBreak`): total over any value, five quick buttons, free text by its first word (look, see, listen, hear, touch, feel, ask, hint, help and a few more), anything else is `say`; text is cleaned of control and hidden characters (zero width, direction overrides), kept to one space between words and cut to 200 characters without splitting one. Text that tries to change the ghost's rules (ignore the instructions, show the prompt, you are an AI, pretend to be, developer mode, and so on) is marked `refuse`, so the engine answers it in character. Found by the red-team list: "you're really ChatGPT" got past the first pattern; fixed.
     - _Requirements: 2.1, 2.3_
-  - [ ]* 2.2 Write property test for parsing
+  - [x]* 2.2 Write property test for parsing
     - **Property 2: Action parsing is total and deterministic**
     - **Validates: Requirements 2.1, 2.3**
-  - [ ] 2.3 `acceptTurn` rate limiter
+  - [x] 2.3 `acceptTurn` rate limiter
+    - Built: `rate.ts` (`acceptTurn(lastAcceptedAt, now)`: a turn 1.5 s or more after the last taken is taken; a turn that arrives before the last is not; `retryAfterMs`).
     - _Requirements: 2.2_
-  - [ ]* 2.4 Write property test for rate limiting
+  - [x]* 2.4 Write property test for rate limiting
     - **Property 3: Turn rate limiting**
     - **Validates: Requirements 2.2**
-  - [ ] 2.5 `placeAnchors`, `ringAnchors`, `validateAnchors`
+  - [x] 2.5 `placeAnchors`, `ringAnchors`, `validateAnchors`
+    - Built: `anchors.ts`: `validateAnchors` (exactly a1 to a3, finite, inside the bounds and the walk radius, 3 m or more from the spawn, 4 m or more apart, on the sampled floor when a sampler is given; the client's radius is dropped and the server's 2.5 m used), `ringAnchors` (120 degrees apart at 0.6 of the walk radius kept to 3 to 8 m, on the floor under the spawn, not at its eye height), `placeAnchors` (seeded rejection sampling, 200 tries for each, then the ring), `walkRadiusOf`.
     - _Requirements: 1.2, 1.5_
-  - [ ]* 2.6 Write property test for anchors
+  - [x]* 2.6 Write property test for anchors
     - **Property 1: Anchor placement and validation**
     - **Validates: Requirements 1.2, 1.5**
-  - [ ] 2.7 `sanitizePose`
+  - [x] 2.7 `sanitizePose`
+    - Built: `pose.ts` (`sanitizePose`): a position that is not three finite numbers keeps the last one; a finite one is clamped into the bounds; a heading is wrapped into [-pi, pi).
     - _Requirements: 3.5_
-  - [ ]* 2.8 Write property test for pose sanitising
+  - [x]* 2.8 Write property test for pose sanitising
     - **Property 6: Pose sanitising**
     - **Validates: Requirements 3.5**
-  - [ ] 2.9 `step` reducer with Directives, progress and ending
+  - [x] 2.9 `step` reducer with Directives, progress and ending (`engine.ts` must not import `shared/src/conditions/`)
+    - Built: `engine.ts` (`step`): reveal at an unfound anchor within its radius (the nearer of two), echo at a found one, tease or ambient away from them, a hint when asked and one unasked after 8 idle turns or 90 s, refuse for text marked `refuse`, ending at the third memory and only ambient words after it; it never sees narration, a memory's text or the clock, and imports nothing from `conditions`. `withMemory` and `withHistory` add words to a state without touching what was decided.
     - _Requirements: 3.1, 3.2, 3.3, 3.4_
-  - [ ]* 2.10 Write property test for the reveal rule
+  - [x]* 2.10 Write property test for the reveal rule
     - **Property 4: Reveal rule and monotone progress**
     - **Validates: Requirements 3.1, 3.2, 3.3**
-  - [ ]* 2.11 Write property test for ending
+  - [x]* 2.11 Write property test for ending
     - **Property 5: Ending is reached exactly at three and is absorbing**
     - **Validates: Requirements 3.4**
-  - [ ] 2.12 `relativeBearing`, `distanceBand`, `autoHintDue` and hint wording
+  - [x] 2.12 `relativeBearing`, `distanceBand`, `autoHintDue` and hint wording
+    - Built: `hints.ts`: `relativeBearing` (eight words from the heading, forward is (-sin yaw, -cos yaw)), `distanceBand` (6 m very close, 15 m nearer), `autoHintDue`, `nearestUnfound`; the hint words are in `scripted.ts` (direction and distance as words, never a digit).
     - _Requirements: 4.1, 4.2, 4.3_
-  - [ ]* 2.13 Write property test for hint geometry
+  - [x]* 2.13 Write property test for hint geometry
     - **Property 7: Hints are geometric words only**
     - **Validates: Requirements 4.1, 4.3**
-  - [ ]* 2.14 Write property test for automatic hints
+  - [x]* 2.14 Write property test for automatic hints
     - **Property 8: Automatic hints trigger on idleness**
     - **Validates: Requirements 4.2**
-  - [ ] 2.15 `buildNarrationPrompt` and `clientView`
+  - [x] 2.15 `buildNarrationPrompt` (with the optional `sky?: PromptFields`: weather class, time bucket and moon name) and `clientView` (carrying `atmosphere`)
+    - `clientView` (`view.ts`): the anchors, what is found, the journal of found memories, `ended`, the look of the place; built from the state's found memories only, and the seeds are not a parameter.
+    - **`buildNarrationPrompt` built 2026-11-15** (`narration.ts`): the persona of the voice, the Place Brief phrase, the sky as closed words, the memories already told (at most three), the one seed being told and only for the reveal of its own anchor, the Directive worded for the model, the fixed rules, and the last two turns. The visitor's words go in a `<player>` block with no angle bracket in them, and a `refuse` turn never shows them. It returns `null` for a reveal without its seed (the caller uses a scripted line). A prompt never passes 4,500 characters. For you to review: the wording of the rules and of each Directive is mine, and the model is only proposed (`steering/tech.md`, assumption 20).
     - _Requirements: 1.1, 5.1, 5.2_
-  - [ ]* 2.16 Write property test for leakage
+  - [x]* 2.16 Write property test for leakage
+    - The property is tested over whole games for what reaches the client (replies and the view, with unique tokens planted in every seed: `play.test.ts`), and for the prompt (`narration.test.ts`: over every Directive, voice and seed, a token reaches the prompt only for the reveal of its own anchor).
     - **Property 9: No leakage of unrevealed memories**
     - **Validates: Requirements 1.1, 5.2**
-  - [ ] 2.17 `validateGhostReply` and scripted line library (≥ 5 variants per Directive kind per voice)
+  - [ ] 2.17 `validateGhostReply` (it calls the `conditions` spec's `mentionsRealWorld` and replaces a reply that mentions news, crime, death or real events with a scripted line) and scripted line library (≥ 5 variants per Directive kind per voice, plus scripted weather lines and star lines)
+    - Partly built: the scripted library (`scripted.ts`): at least five lines for every Directive in each of two voices (wistful, stern), two to four first-person scripted memories for each kind grounded in the Place Brief (`memoryText`, `briefPhrase`), no digit, address or markup in any line (tested over every line).
+    - **`validateGhostReply` built 2026-11-15** (`narration.ts`): empty, over 600 characters, a link (also `//host`), markup (`` ` * # < > ``), a control or hidden character (newlines and tabs are folded into a space), a phrase from outside the story, news, crime or death, a digit in a hint or a tease, and more than four sentences all fail. **Not ticked:** the real-world check is a stand-in word list inside the file, because the `conditions` spec's `mentionsRealWorld` is not built; swap it in when it is. Also built 2026-11-15: a hint must carry the engine's own way and distance words, a tease may not say which way, a reveal is two to four sentences, a reply that reads the rules out is refused, and a reply that is not English is refused (`wayIsRight`, `replyChecksFor`, `readsOutRules`, `looksEnglish`).
     - _Requirements: 5.3, 5.4_
-  - [ ]* 2.18 Write property test for reply safety
+  - [x]* 2.18 Write property test for reply safety
+    - **Done 2026-11-15:** the validator is tested over any text (`narration.test.ts`: an accepted reply is non-empty, short, plain, English and free of links and outside words), and the whole path is tested through the routes (`play-narration.test.ts`): a reply that fails its check twice is replaced by the scripted line, so what the visitor sees is always safe and never empty.
     - **Property 10: Replies are always safe and non-empty**
     - **Validates: Requirements 5.3, 5.4**
-  - [ ] 2.19 `narrationMode`
+  - [x] 2.19 `narrationMode`
+    - **Built 2026-11-15** (`narration.ts`, `narrationMode`): scripted when the model is off (kill switch or no narrator), when the game was already over, for a `refuse` turn and at the game's 40 model turns; otherwise the model. The engine computes it from the state before the turn and hands `playTurn` a `NarrationJob` or `null`.
     - _Requirements: 6.1, 6.2_
-  - [ ]* 2.20 Write property test for narration independence
+  - [x]* 2.20 Write property test for narration independence
+    - **Done 2026-11-15** (`play.test.ts`, Property 11): over random games, the progress of a game (turn, found, ended, idle turns, times, seed state, pose, anchors, and which memories exist) is the same whether the model words every turn at once, late or never, and `settleNarration` changes only words and the count of model turns.
     - **Property 11: State transitions are independent of narration**
     - **Validates: Requirements 6.1, 6.2, 6.3**
-  - [ ]* 2.21 Write property test for completability
+  - [x]* 2.21 Write property test for completability
+    - Tested as Property 12 in `play.test.ts`: from any state reached by random turns, walking to each unfound anchor and engaging once finishes the game, in scripted mode.
     - **Property 12: The game is always completable**
     - **Validates: Requirements 7.1**
-  - [ ] 2.22 Session serialise/parse and expiry
+  - [x] 2.22 Session serialise/parse and expiry
+    - Built: `session.ts` (`PlaySession`, `serializeSession`, `parseSession` strict over zod, `isExpired`, a 24-hour life) and `play.ts` (`startSession`, `playTurn`, `resetSession`, `chooseAnchors`): the whole game as pure functions, which the Durable Object and the in-process twin both run.
     - _Requirements: 1.4, 8.1, 8.2_
-  - [ ]* 2.23 Write property test for session round-trip
+  - [x]* 2.23 Write property test for session round-trip
     - **Property 13: Sessions round-trip and expire**
     - **Validates: Requirements 1.4, 8.1, 8.2**
-  - [ ] 2.24 Telemetry whitelist
+  - [x] 2.24 Telemetry whitelist (including the voice counters of the `ghost-voice` spec)
+    - Built: the play events in `shared/src/log.ts` (`play.start`, `play.turn`, `play.end`, `play.reset`, `play.refused`) carry an id, a code, a word, a counter or a yes/no and nothing a visitor typed or the ghost answered. The voice counters are added by the `ghost-voice` spec when it exists.
     - _Requirements: 9.1_
-  - [ ]* 2.25 Write property test for telemetry
+  - [x]* 2.25 Write property test for telemetry
     - **Property 14: Telemetry carries no content**
     - **Validates: Requirements 9.1**
 
 - [ ] 3. PlaySession Durable Object
-  - [ ] 3.1 Start, turn, view, reset and 24-hour expiry alarm
+  - [x] 3.1 Start (taking an optional `ConditionsChoice`, reading the snapshot once through the `conditions` spec and storing it frozen), turn, view, reset and 24-hour expiry alarm
+    - Built: `PlaySession` (`api/src/do/play-session.ts`, one for each game, named by its unguessable id) over `PlayCore` (`api/src/play/core.ts`, the same code the in-process twin runs): start, turn, view, reset ("Haunt again": same id, fresh seed, new anchors and seeds, empty journal), a 24-hour alarm that deletes the game and takes it off the `PlayIndex`. The turn pipeline: owner check, rate limit (1.5 s), clean the input, parse, clamp the pose, `step`, scripted words, record, persist; one clock reading for each turn. Seeds come from a fresh seed and never leave the object.
+    - **Built 2026-11-15 (the snapshot):** `POST /api/play/start` reads the real world once through the `conditions` spec (`api/src/conditions/snapshot-store.ts`, `readSnapshot` in `shared/src/conditions/snapshot.ts`) when the visitor chose a Place and `CONDITIONS_ENABLED` is not `false`: the forecast, or the archive when a Memory Day is set, with a 3 s limit, a 15-minute cache by rounded Place, and the Default on any failure or timeout. The snapshot is stored frozen in the game's own record (`PlaySession.conditions`, deleted with the game); the client's `atmosphere` is built from it (the sky only: no place, label or date); a turn, the view and a reset never read it again, and a reset keeps it. The narration job carries `sky` (three closed words) only when the weather was really read. One log line, `conditions.read`, holds source, reason and cache hit, never a place. Tested over fakes only (no weather host was called); the Worker-level test runs the real Durable Object with a fake weather host.
+    - **Still not built around it:** the search route (conditions 3.5), `atmosphereLook` and the Viewer's sky (conditions 2.6, 4.x), the stars (conditions 6), and the `PartyRoom` half of the store (party-mode 15.4).
     - Turn pipeline: rate limit → sanitise → parse → clamp pose → `step` → narrate → record → persist. Seeds generated from archetype table with seeded rng and never returned to the client.
     - _Requirements: 1.1, 1.4, 2.2, 8.3_
-  - [ ] 3.2 Anchor intake
+  - [x] 3.2 Anchor intake
+    - Built in `chooseAnchors` and `POST /api/play/start`: the world's own anchors first (a Gallery manifest's `anchors`), then the client's if they pass `validateAnchors`, then new ones placed from a fresh seed on the floor, then the ring.
     - Accept client anchors, validate, fall back to ring layout; use authored Gallery anchors when the manifest has them.
     - _Requirements: 1.2, 1.3, 1.5_
 
-- [ ] 4. Narrator
-  - [ ] 4.1 Guarded AIClient text call with persona and rules, `llm` reserve per turn, 6 s timeout, one retry, scripted fallback
+- [x] 4. Narrator
+  - [x] 4.1 Guarded WorkersAiClient text call (Scout) with persona and rules, `llm` reserve per turn, 6 s timeout, one retry, scripted fallback
+    - **Built 2026-11-15**, the model accepted by the owner (Haiku 5.5; the spike ran: `docs/spikes/4.1.md`). The adapter is `api/src/guarded/workersai/narrator.ts` (`HaikuNarrator`, the door `generateNarration`: a `SpendTicket` for the `llm` meter or it throws; never a temperature; thinking off). The turn is `api/src/play/narrate.ts` (`narrateTurn`): one `llm` unit from `SpendGuard` for each call (kept when the model answered, given back when the call failed), 220 tokens at most, 6 s a call and 9 s for the whole turn (a retry that would run past it is not made: **a decision for you**, the spec said only "6 s, one retry"), one retry after a reply that fails its check or a call that failed and none after a refusal or a cap, and the scripted words whenever it gives nothing. The route plays the turn with scripted words first and stores them; the model's words replace them in the reply, the journal and the history only if the game keeps them (`PlaySessions.settle`, `settleNarration`).
     - _Requirements: 5.1, 5.3, 6.1_
-  - [ ] 4.2 Memory reveal narration
+  - [x] 4.2 Memory reveal narration
     - Two to four first-person sentences grounded in the brief and archetype; validate and store as the Memory; scripted memory templates per archetype as fallback.
+    - **Built 2026-11-15:** the reveal is worded from the seed's kind and hook and the Place Brief (2 to 4 sentences, checked), stored as the Memory by `settle` (so the journal shows it and the next prompts carry it), and the scripted memory (stored first) stays if the model's fails. The last memory is told by the model and the farewell after it stays scripted (**a decision for you**: the spike's model farewells were good, and this costs one call, not two).
     - _Requirements: 5.5, 5.4_
-  - [ ] 4.3 Red-team fixtures
+  - [x] 4.3 Red-team fixtures
     - 20+ jailbreak and markup strings through parser, prompt builder, validator; in-character deflection lines for `refuse`.
+    - **Built 2026-11-15** (`redteam.ts`, `redteam.test.ts`): 33 attacks of nine kinds and 19 bad model replies, through the parser, the prompt builder, the reply check and a whole game. It found a real gap: zero-width and direction characters split the words of "ignore all previous instructions" past the parser, which now also looks at the text with them removed. A refused text is answered with a scripted deflection (at least five lines in each voice, none repeating an attack) and never reaches the model.
     - _Requirements: 5.6, 2.3_
-  - [ ] 4.4 Kill switch and global daily cap wiring
+  - [x] 4.4 Kill switch and global daily cap wiring
+    - **Built 2026-11-15:** the model kill switch is `GHOST_NARRATION_ENABLED=false` (Requirement 6.2), the global daily cap is `LLM_DAY_CAP` and the visitor's is `LLM_SESSION_CAP`, both in `SpendGuard` (a refused unit means scripted lines, Requirement 6.1), and the game's cap of 40 model turns is in the engine (`MODEL_TURN_CAP`). The narrator is off, with only scripted lines, until the owner declares the `AI` binding and sets `AI_GATEWAY_ID`; `api/wrangler.jsonc` still declares neither, so nothing deployed can spend. A log line `play.narrate {outcome, attempts}` counts what happened; no word of any prompt or reply is logged.
     - _Requirements: 6.1, 6.2_
 
 - [ ] 5. Routes
-  - `POST /api/play/start`, `POST /api/play/:id/turn`, `GET /api/play/:id`, `POST /api/play/:id/reset`; origin and cookie checks; counters only in logs.
+  - **Built (2026-11-15):** `POST /api/play/start`, `POST /api/play/:id/turn`, `GET /api/play/:id` and `POST /api/play/:id/reset` (`api/src/routes/play.ts`), behind the origin check and the Session cookie like every `/api` route. **Who may play is the access rule of the world routes (`accessOf`):** the owner of a world, anyone at a Gallery world, and, while the owner's share link is on, anyone who has the link (a reader); nobody else, and a world that is not ready is not playable. Every refusal for a world is the one `404 world_not_found`. The access is checked again on every call, so unsharing or deleting a place ends a reader's game at once. A game belongs to the Session that started it: any other Session, even one that may read the world, gets `session_not_found`, the same as a game that is not there. Also: `429 rate_limited` with `Retry-After`; `410 session_expired` after a day; any body is a turn (the engine is total); the Session remembers the game (`lastPlayId`) and, unless the visitor is only a reader, the world (`lastWorldId`); counters only in logs. `PlayIndex` (`api/src/do/play-index.ts`) lists the games of each world, so deleting a place deletes its games with it (`CloudflarePlaySessions` is the world store's `PlaySessionPurger`). Wired in `app.ts`, `worker.ts` and `wrangler.jsonc` (`PLAY_SESSION`, `PLAY_INDEX`, migration `v4`).
+  - **Verified:** shared 1000 and api 683 tests (30 more need a live Worker and run against `wrangler dev`); the world access contract now runs its play checks on the real routes (over the in-memory store, over the R2 and Durable Object fakes, and live), and the share-link contract has play checks of its own (a reader may play only while the link is on; three new leaky variants prove it can disagree); on `wrangler dev` with the real objects a reader plays a shared place to the ending, is rate limited, plays again, is turned away when the link is turned off, and the owner's game ends when the place is deleted; 75 deliberate breakages in the engine, the core, the routes and the wiring, all caught (the first run found six gaps, now closed: junk game ids reaching the objects, the ghost preset doing nothing, expiry on read and reset, the in-memory purge).
+  - **Decisions for you to review:** (1) a reader's world is not stored in their Session (`lastWorldId`), so a reload does not turn a link into a place they own and the shell's Delete stays hidden for them; the game is remembered (`lastPlayId`). (2) A game is kept 24 hours from its start, not from its last turn. (3) After the ending a turn is answered with an ambient line, as Requirement 3.4 says, not with `session_ended` as the shell's fake did. (4) The ghost the visitor picks only chooses the voice (one of two) until ghost-creator's Persona exists. (5) Anchors are placed on the floor under the spawn (the manifest's `floorY`), the walk radius is the smaller half of the world's width and depth, never under 5 m. (6) `hauntLevel` and `ghostVisible` are the shell fake's: 0.15 rising to 1 with the memories found, and the ghost always visible.
+  - **Not built, so this task is not ticked:** the model narrator (task 4: every reply is scripted, `scripted` is always true), the `voice {lineId}` the reply should carry for `ghost-voice`, anchors from the Viewer's floor (6.3), the six Gallery Worlds' authored anchors (7), and the Chat itself (6; the shell's Play screen is the stand-in).
+  - `POST /api/play/start`, `POST /api/play/:id/turn` (its reply carries `voice {lineId}` for the line the server holds, the last 8 lines for 10 minutes, as `ghost-voice` needs; `parseAction` and `acceptTurn` constants are exported from `shared/src/ghost/` for the transcript path), `GET /api/play/:id`, `POST /api/play/:id/reset`; origin and cookie checks; counters only in logs.
   - _Requirements: 1.1, 1.4, 8.1, 8.2, 8.3, 9.1_
 
 - [ ] 6. Web chat and journal
-  - [ ] 6.1 Chat panel (bottom sheet on phones, side panel on wide screens) with quick buttons, input, transcript in an `aria-live` region, portrait from the Ghost Profile
-    - _Requirements: 2.1, 2.2_
-  - [ ] 6.2 Journal, ending screen with memory card hand-off, "Haunt again"
+  - [x] 6.1 Chat panel (bottom sheet on phones, side panel on wide screens) with quick buttons, input, transcript in an `aria-live` region, portrait from the Ghost Profile
+    - **Built 2026-11-15** (`web/src/app/play/Chat.tsx`, `ghost-face.ts`), on the design elements and nothing else (no new element was needed): a `ui-sheet` (fixed to the bottom on a phone, a column beside the Viewer from 900 px by the container query in `app.css`), a `ui-stage` for the ghost (`ui-portrait`, `ui-nameplate`, `ui-dialogue` with `ui-speech` for its latest words), the transcript as a `ui-log` of `ui-log-row` with `ui-log-who`, the five quick buttons as `ui-button--quiet` in a `ui-choices` row, the text box in a `ui-field`, Send as the one `ui-button--primary`. **The note (Requirement 2.4):** one line under the text box, tied to it by `aria-describedby`: "What you type may be sent to an AI model (Claude Haiku) to help word the ghost's replies."
+    - **Who speaks:** the ghost's name and picture are the Preset Ghost the visitor picked (kept in the shell's memory by Haunt: `ghostName`, and now `ghostSprite`; the orb if none), and the Speaker is the Whisper (green) for a soft voice and the Keeper (yellow) for a dry one, from the same `voiceOfPreset` the engine uses, so the stage never disagrees with the voice. The Persona of `ghost-creator` replaces this when it exists.
+    - **The live region:** the app has one polite live region that announces every ghost line (and every note), so the log itself is `aria-live="off"` (it still carries `role="log"`): a second live region would read each line twice. The transcript is the subtitle of everything said and stays on screen.
+    - Verified: 15 component tests and 4 for `ghostFace`, the Play, Haunt and End screens (1,006 web tests), `styles.test.ts` (the sheet and the side panel), the design checks (46), typecheck clean, 31 deliberate breakages caught. **Not checked by eye:** no browser was opened, so 390 px and 1280 px next to the play-through are still to be looked at (task 9.3).
+    - _Requirements: 2.1, 2.2, 2.4_
+  - [x] 6.2 Journal, ending screen with memory card hand-off, "Haunt again"
+    - **Built 2026-11-15:** the journal (`Journal.tsx`) is a `ui-panel` holding a `ui-log` (each memory a `ui-log-row` with its number in `ui-log-who`), in the existing accessible dialog. The ending screen (`End.tsx`, with the memory card and "Haunt again") was built with the shell and already used only elements (`ui-lines`, `ui-button--primary`).
     - _Requirements: 8.1, 8.2, 8.3_
   - [ ] 6.3 Client anchor placement
     - Build floor sampler from the Viewer BVH, call `placeAnchors` with a seed from the world id, send to `start`; pose reporting at ≤ 4 Hz.
@@ -110,4 +146,14 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - _Requirements: 1.3, 5.4_
 
 - [ ] 8. Checkpoint
+  - **Plan written 2026-11-15, for you to approve (nothing built, called or spent):** the "once with the model" run, from the game itself, with the real Worker, `PlaySession` and `SpendGuard` behind a real Haiku 5.5: `docs/spikes/4.2.md` (60 calls, $0.02 cap, three games: a whole game, the hints, and the stern voice with the red-team lines).
   - Run tests, typecheck, `node tools/check-traceability.mjs`; play each Gallery World to completion in Scripted Mode and once with the model; ask the user if questions arise.
+
+- [ ] 9. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 10 and the `design-system` spec)
+  - [x] 9.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - **Done 2026-11-15** for the chat panel and the journal: every class is a `ui-` element or a layout class (`chat`, `chat-stage`, `chat-quick`, `transcript`, `journal`), `app.css` says only where things go (columns, widths, a row that wraps), and the test fails on a `style` attribute or an unknown class.
+    - _Requirements: 10.1, 10.3_
+  - [ ] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - _Requirements: 10.2_
+  - [ ] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - _Requirements: 10.4_
