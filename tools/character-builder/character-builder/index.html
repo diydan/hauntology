@@ -3761,4 +3761,16 @@ const bootSeed = /seed=(\d+)/.exec(location.hash);
 if (bootSeed) randomLook(+bootSeed[1], true, false);
 const ready = buildAll().catch(e => { console.error(e); status('failed: ' + e.message); });
 window.__cb = { groundFeet, poseHands, updateArmTwist, applyHairCards, fixMic, micNode: () => micNode, syncSkinUniforms, SK_DEFAULT, fpHairWave, HC, EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, randomLook, setAppMode, hireCandidate, previewCandidate, filteredCandidates, evalChemistry, get activeProfile() { return activeProfile; }, get bandLineup() { return bandLineup; }, get recruitPool() { return recruitPool; }, recruitFilters, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
+/* BACKGROUND MUSIC: the title theme on loop. Browsers only allow sound after a click or key, so it starts on the first one. The note button turns it off and on (remembered). Off in thumbnail mode. */
+if (!THUMBS) {
+  const bgm = new Audio('media/dark-title.mp3'); bgm.loop = true; bgm.volume = 0.35; let musicOn = localStorage.getItem('cbMusic') !== 'off';
+  const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'musicBtn';
+  btn.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:50;width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.25);background:rgba(20,10,30,.7);color:#fff;font-size:20px;cursor:pointer';
+  const paint = () => { btn.textContent = musicOn ? '♪' : '✕'; btn.setAttribute('aria-label', musicOn ? 'Music on, turn off' : 'Music off, turn on'); btn.setAttribute('aria-pressed', String(musicOn)); };
+  btn.addEventListener('click', e => { e.stopPropagation(); musicOn = !musicOn; localStorage.setItem('cbMusic', musicOn ? 'on' : 'off'); paint(); if (musicOn) bgm.play().catch(() => {}); else bgm.pause(); });
+  document.body.appendChild(btn); paint();
+  const start = () => { if (musicOn && bgm.paused) bgm.play().catch(() => {}); };
+  for (const ev of ['pointerdown', 'keydown']) window.addEventListener(ev, start, { once: true });
+  start(); // works when the browser already allows sound
+}
 </script></body></html>
