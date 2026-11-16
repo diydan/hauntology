@@ -1,5 +1,6 @@
 import type { PlaySession } from "@hauntology/shared/ghost/session";
 import type { Settle, WorldFacts } from "@hauntology/shared/ghost/play";
+import { VoiceLineSchema, type VoiceLine } from "@hauntology/shared/voice/line";
 import type { Peek, PlayRefusal, PlaySessions, Settled, TurnDone } from "./ports";
 
 type Stub = { fetch(input: string, init?: RequestInit): Promise<Response> };
@@ -40,6 +41,16 @@ export class CloudflarePlaySessions implements PlaySessions {
   }
   async reset(id: string, ownerSid: string, args: { world: WorldFacts; seed: number }): Promise<Peek | PlayRefusal> {
     return (await (await post(this.game(id), "play-session", "/reset", { ownerSid, ...args })).json()) as Peek | PlayRefusal;
+  }
+  /** The object's answer is checked against the line schema: anything else, and any failure to reach the game, is `null`. */
+  async voiceLine(id: string, ownerSid: string, lineId: string): Promise<VoiceLine | null> {
+    try {
+      const res = await post(this.game(id), "play-session", "/voice-line", { ownerSid, lineId });
+      const parsed = VoiceLineSchema.safeParse(((await res.json()) as { line?: unknown }).line);
+      return parsed.success ? (parsed.data as VoiceLine) : null;
+    } catch {
+      return null;
+    }
   }
 
   /** Every game of a world is gone. Safe for a world with none. */

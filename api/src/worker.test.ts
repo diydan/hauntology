@@ -154,7 +154,8 @@ describe("worker", () => {
 
     it("words a turn with Haiku 5.5 through the gateway when the binding and a gateway are set, and takes one unit from the real SpendGuard", async () => {
       const r = await playOne({ AI_GATEWAY_ID: "default" }, true);
-      expect(r.turn.reply).toEqual({ text: REPLY, scripted: false });
+      // With the `AI` binding the voice is served too (ghost-voice 3.6), so the reply also names the line it can be heard as: an id and nothing else.
+      expect(r.turn.reply).toEqual({ text: REPLY, scripted: false, voice: { lineId: expect.stringMatching(/^[A-Za-z0-9_-]{22}$/) } });
       expect(r.turn.view.journal[0]!.text).toBe(REPLY);
       expect(r.seen).toHaveLength(1);
       expect(r.seen[0]!.model).toBe("anthropic/claude-haiku-5.5");

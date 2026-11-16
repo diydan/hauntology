@@ -18,6 +18,20 @@ import { failureKind, withTimeout, type AiBinding, type CallFailure } from "./ca
 
 export const DEFAULT_TTS_MODEL = "inworld/tts-2";
 export const DEFAULT_TTS_FALLBACK_MODEL = "@cf/deepgram/aura-2-en";
+/**
+ * `VOICE_TTS_MODEL_ID` and `VOICE_TTS_FALLBACK_MODEL_ID`: blank is the default, the one id each accepts is itself, and anything else is `null` and the voice is off. A model is
+ * also a price, so a name that is not one of these two is never called (the narrator does the same, `narratorModelFromEnv`).
+ */
+export function voiceModelsFromEnv(env: { VOICE_TTS_MODEL_ID?: string | undefined; VOICE_TTS_FALLBACK_MODEL_ID?: string | undefined }): { model: string; fallbackModel: string } | null {
+  const pick = (value: string | undefined, accepted: string): string | null => {
+    const id = typeof value === "string" ? value.trim() : "";
+    return id === "" || id === accepted ? accepted : null;
+  };
+  const model = pick(env.VOICE_TTS_MODEL_ID, DEFAULT_TTS_MODEL);
+  const fallbackModel = pick(env.VOICE_TTS_FALLBACK_MODEL_ID, DEFAULT_TTS_FALLBACK_MODEL);
+  return model === null || fallbackModel === null ? null : { model, fallbackModel };
+}
+
 /** From the request to the last byte of audio. A step that would start after this is skipped; late audio is dropped. */
 export const SPEAK_DEADLINE_MS = 5_000;
 /** A real clip of one sentence is far above this; the Voice Library tool uses the same floor (`MIN_MP3_BYTES`). */

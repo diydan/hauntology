@@ -111,7 +111,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     app.route("/api/worlds", worldRoutes(options.worlds));
     // The Gallery needs the store and nothing else: no key, no quota, no open switch (world-pipeline 9.2, Requirement 9.3).
     app.route("/api/gallery", galleryRoutes({ store: options.worlds.store }));
-    if (options.play !== undefined) app.route("/api/play", playRoutes({ store: options.worlds.store, sessions: options.play.sessions, ...(options.play.narration !== undefined ? { narration: options.play.narration } : {}), ...(options.play.conditions !== undefined ? { conditions: options.play.conditions } : {}), log, now: options.now ?? Date.now }));
+    if (options.play !== undefined) app.route("/api/play", playRoutes({ store: options.worlds.store, sessions: options.play.sessions, voice: options.voice !== undefined, ...(options.play.narration !== undefined ? { narration: options.play.narration } : {}), ...(options.play.conditions !== undefined ? { conditions: options.play.conditions } : {}), log, now: options.now ?? Date.now }));
     const creation = options.worlds.creation;
     if (creation !== undefined) {
       app.route("/api/worlds", worldCreateRoutes({ store: options.worlds.store, ...creation, now: options.now ?? Date.now, worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled }));
