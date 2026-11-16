@@ -1961,7 +1961,8 @@ function setGameProp(id) {
   const d = GAME_PROPS[id]; if (d && d.make && handR) { const g = new THREE.Group(); d.make(g); g.userData.hang = !!(d.hang || d.upright); g.userData.up = d.upright ? 1 : 0; g.position.copy(_micPosR); g.quaternion.copy(_micQR); handR.add(g); gameProp = g; }
   [...document.querySelectorAll('#propSeg button')].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === id)));
 }
-function updateGameProp() { // a hanging prop keeps its +y pointing at the sky, whatever the wrist does
+function updateGameProp() { if (gameProp) gameProp.visible = S.clip !== 'Thinking_1_'; /* hand to chin: a held prop would go through the face */
+ /* a hanging prop keeps its +y pointing at the sky, whatever the wrist does */
   if (!gameProp || !gameProp.userData.hang || !gameProp.parent) return; gameProp.parent.getWorldQuaternion(_gpQp); _gpQ.copy(_gpQp).invert(); gameProp.quaternion.copy(_gpQ); gameProp.updateMatrixWorld(true);
 }
 function buildPropUI() { const seg = $('propSeg'); if (!seg) return; seg.innerHTML = ''; for (const [id, d] of Object.entries(GAME_PROPS)) { const b = document.createElement('button'); b.type = 'button'; b.textContent = d.label; b.dataset.n = id; b.addEventListener('click', () => setGameProp(id)); seg.appendChild(b); } }
