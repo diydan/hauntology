@@ -72,9 +72,9 @@ The Wander lines set a mood and never say what the player's memory is. The card 
 
 Most of `party-lines.md` and `ghost-lines.md` is already close: dry, polite, patient. The lean-in is small: add the warning ("I must warn you"), add exact small things, add one house-gloss now and then. No line needs a rewrite. New lines are added beside the old ones, so the Voice Library keeps its five-per-kind floor.
 
-## Not done yet
+## State (2026-11-16)
 
-- The audio of the new lines is not in the Voice Library: the manifest lists them, but nothing is rendered or uploaded to R2 for them (`tools/prerender-voice.mjs`). `ambient.dry.6` expands to six texts (one per weather word).
-- The seven picture lines were rendered only for the preview, in session scratch, not as library files.
+- All twelve lines are in the banks and the Voice Library list, and **rendered** into the local library (`.voice-library/`, git-ignored; Inworld, 17 files, $0.055). They are not uploaded to R2.
+- The seven picture lines are on `/footage.html` as words at their moment: the hand, bed, house and dawn lines in the Reel and the endings, the chimes and chair lines in Wander.
 - The dawn line is `scene.dawn-door.dry.1`, written for `ai-dawn-door-take3` (the Room's own `end.solved` lines follow the shot, and none of them is used over it).
-- The puzzles spec 20.7 to 20.9 still describes the rejected pairing (generic Event lines over mood shots). It should say each shot has its own written line.
+- The Wander letter line (`wander.letter.soft.1`) is rendered but unused: its clip is held back (writing on the letter).

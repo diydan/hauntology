@@ -72,6 +72,38 @@ export const WANDER = {
 };
 
 /**
+ * The three kinds of memory of Wander (a sound, a person, a promise) and the scene that plays when one is found (puzzles Requirement 23).
+ * `clip` is `media/<clip>.webm`, `.mp4` and `.jpg`; `shape` is the frame the picture is shown in (the AI scenes are 3:4, the film is 4:3);
+ * `text` is the scene in words for the live region; `line` is the Whisper's line written for the picture and `lineAt` its moment in seconds from the
+ * start of the scene (a row of `docs/story/ghost-lines.md`, word for word; a test compares them), or null for the film, which has none.
+ * A line sets a mood and never says what the memory is: the card after the scene does that. The promise scene stays the film until a clean AI scene
+ * exists: both takes of `wander-letter` show faint writing on the letter (a clip never holds a text), so they are not used.
+ */
+export const WANDER_KINDS = ['sound', 'person', 'promise'];
+export const WANDER_SCENES = {
+  sound: {
+    clip: 'wander-chimes-take1',
+    shape: 'portrait',
+    text: 'A porch in the summer sun. The wind chimes hang still, then a breeze comes and they ring softly.',
+    line: { id: 'wander.chimes.soft.1', speaker: 'whisper', text: 'Do you hear that? A row of small bells, and not one in tune. I would not change a single one.' },
+    lineAt: 5.0,
+  },
+  person: {
+    clip: 'wander-chair-take1',
+    shape: 'portrait',
+    text: 'A kitchen in the morning. A coat on a pulled-out chair, and a cup of tea still steaming.',
+    line: { id: 'wander.chair.soft.1', speaker: 'whisper', text: 'The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I keep the kettle patient, in case of a quick return.' },
+    lineAt: 1.5,
+  },
+  promise: { clip: WANDER.scene, shape: 'landscape', text: WANDER.text, line: null, lineAt: null },
+};
+
+/** The scene for a kind of memory. Total: an unknown kind gets the promise scene (the film), never a throw and never an inherited property. */
+export function wanderScene(kind) {
+  return Object.hasOwn(WANDER_SCENES, kind) ? WANDER_SCENES[kind] : WANDER_SCENES.promise;
+}
+
+/**
  * The title card after the film: our own words. In Wander the words are the memory the engine narrated (two to four sentences from the
  * ghost); the test page passes a stand-in. The scene never says what the memory is: the card does.
  * @param {string} memory

@@ -607,3 +607,21 @@ Not added: a line that names an Event kind, a Sign or a clue; a Lodger line over
 ### Property 32: A line is written for its picture and is said over it only
 For every shot, Haunt level and maximum of 8, 10 and 12: exactly the shots made for the game have a line, each line is a `scene.*` row of the story banks word for word and follows the bank rules and names no Sign, clue, card or Event kind, a level gives the line of its own shot or none, a line starts inside its shot at its moment and ends before the shot does, it is said once and only on a rise, a line still waiting is dropped when the Reel moves or the ending is skipped, a still or blocked picture has its line at once, and the Event line of the Room, a Blackout dim and a Lull hold are unchanged; with narration or footage off the words are the same in the log.
 **Validates: Requirements 20.7, 20.8, 20.9**
+
+## Scenes of Wander (2026-11-16)
+
+Wander's one scene was a 99 second run of *Nosferatu* (`wander-harbour`). A memory has a kind (a sound, a person, a promise: the three archetypes of the ghost engine), so each kind now has a scene that suits it, and the two that exist as AI scenes have a line of their own.
+
+| Kind | Scene | Frame | Line | Starts at |
+|---|---|---|---|---|
+| Sound | `wander-chimes-take1`: wind chimes on a porch | 3:4 portrait | `wander.chimes.soft.1` | 5.0 s (the chimes begin to ring at 6 s) |
+| Person | `wander-chair-take1`: an empty chair, a coat, a cup of tea | 3:4 portrait | `wander.chair.soft.1` | 1.5 s (the coat sways from 6 s) |
+| Promise | `wander-harbour`: the ship comes into the harbour (film) | 4:3 | none | |
+
+The promise memory keeps the film because the AI letter scene (`wander-letter`) came back twice with faint writing on the letter: a clip never holds text. When a clean take exists the promise memory moves to it. A Wander line sets a mood and never says what the memory is: the card after the scene says that, from the engine's narrated memory. The lines follow the single-player bank rules (the single-player bank never says "house", names no place and no card).
+
+The order, with narration on: the Whisper's reveal line first (a memory was found, never what it is), then the scene with its line, then the card. Two voices never speak at once, so the scene starts when the reveal has ended. With narration off the reveal is words and the scene starts at once. On `/footage.html` section 7 there is no audio: the reveal is words, a switch picks the kind, the scene plays in its own frame, and the line is shown as words at its moment.
+
+### Property 33: A Wander scene is its kind's, and its line is its own
+For every kind of memory: the scene is the one of that kind (the film for a promise, never the letter), its frame has the shape of its clip, the AI scenes have a `wander.*` line that is a row of the story bank word for word, follows the bank rules and ends before the scene does, the film has none, a line is said once at its moment and dropped by Stop, another kind or a new Find, and with footage off or a blocked clip the line and the card show at once.
+**Validates: Requirements 23.1, 23.2, 23.3, 23.4, 23.5, 23.6**
