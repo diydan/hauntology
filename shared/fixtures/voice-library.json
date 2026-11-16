@@ -50,7 +50,7 @@
       "very close"
     ]
   },
-  "count": 510,
+  "count": 527,
   "entries": [
     {
       "key": "speech/lib/v1/8818fdcc67badd8bd34f35ade581c0d4d205e9f56a6eaba69f0b294ea4cd1b19",
@@ -1453,6 +1453,30 @@
       ]
     },
     {
+      "key": "speech/lib/v1/e24a443b6fe3df1bfaa112bfd93f5d18e026c6b92b9bcf83527462cfc7a8094e",
+      "voice": "inworld:Pippa",
+      "spoken": "Do you hear that? A row of small bells, and not one in tune. I would not change a single one.",
+      "sources": [
+        "wander.chimes.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/cb1c29810618ea3f0ac0fa590e01dabc02ce6227a89cb0cb9b8c1a959f07add0",
+      "voice": "inworld:Pippa",
+      "spoken": "The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I keep the kettle patient, in case of a quick return.",
+      "sources": [
+        "wander.chair.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/f82673a0a3ac9cbb0ceff51adec0b79684b91cc7c959a3b6251288d7d55d65eb",
+      "voice": "inworld:Pippa",
+      "spoken": "A letter, folded in three. A pair of gloves, set down just so. The breeze lifts one corner and puts it back, very politely. It is not for me to read.",
+      "sources": [
+        "wander.letter.soft.1"
+      ]
+    },
+    {
       "key": "speech/lib/v1/6d2a06a767de35ceaa73fe4761d6c4a23b8da91d82b19a64297e1442002a807b",
       "voice": "inworld:Pippa",
       "spoken": "Hello. I was waiting. I did not mind. I am very good at waiting.",
@@ -1546,6 +1570,14 @@
       "spoken": "I am dimming the house, just a little. It is easier to be near you that way. Forgive the dark, and do not mind me.",
       "sources": [
         "haunt.blackout.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/04d1db44cd7c9d10802b42238fcb2b6c735d1e7593aa3b1293766ea55d206d42",
+      "voice": "inworld:Pippa",
+      "spoken": "I am dimming the house, one lamp at a time. The dark is rather lonely, and it will be shy of you. Be kind to it.",
+      "sources": [
+        "haunt.blackout.soft.6"
       ]
     },
     {
@@ -1730,6 +1762,30 @@
       "spoken": "Nobody found me, and I find I am not sorry. I had hoped to be found, and I had also hoped not to be. There is no tea, but there is me, and I am told that counts.",
       "sources": [
         "end.haunting.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d8e31fb8af2a559e2eadd7aad2874ceb1ef674439a53ec3877cef091a7fcfa27",
+      "voice": "inworld:Pippa",
+      "spoken": "That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it.",
+      "sources": [
+        "scene.hand-door.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a865913860938708c57086f2baf7932badafde3eb97c27a7268dd131ecebeb82",
+      "voice": "inworld:Pippa",
+      "spoken": "I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit.",
+      "sources": [
+        "scene.bed.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c15ee033f7c025aa4c6015f509be92286f33c82552f407cf8a54f0d4bef0c6e3",
+      "voice": "inworld:Pippa",
+      "spoken": "One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely.",
+      "sources": [
+        "scene.lights-out.soft.1"
       ]
     },
     {
@@ -3085,6 +3141,54 @@
       ]
     },
     {
+      "key": "speech/lib/v1/6405b883bb9429beff600c26fdfa52893dbcd2177b813461c77edc336c85f759",
+      "voice": "inworld:Ronald",
+      "spoken": "It is clear out. By my reckoning, a quiet evening is one in which the door opens only twice. I treasure the few I get.",
+      "sources": [
+        "ambient.dry.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/853846dd7d9e31f5e5cd64cfefa1b61d49dbaebec2c3adc3ebf3cf8fd26a2238",
+      "voice": "inworld:Ronald",
+      "spoken": "It is cloudy out. By my reckoning, a quiet evening is one in which the door opens only twice. I treasure the few I get.",
+      "sources": [
+        "ambient.dry.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/32462264db57c601c05c62802fb07a9cc8f8da07b1deabe8af63cc430ceebc85",
+      "voice": "inworld:Ronald",
+      "spoken": "It is foggy out. By my reckoning, a quiet evening is one in which the door opens only twice. I treasure the few I get.",
+      "sources": [
+        "ambient.dry.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/9ab3145f4b021b7c719738388b3878e15b8074e4e74c02cbb3a1f96442e47ea1",
+      "voice": "inworld:Ronald",
+      "spoken": "It is rainy out. By my reckoning, a quiet evening is one in which the door opens only twice. I treasure the few I get.",
+      "sources": [
+        "ambient.dry.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/86dd63c6d93bf5b6be5b9cd0d417ea66b8ae8861e35a0f58633ee4e7086bb05c",
+      "voice": "inworld:Ronald",
+      "spoken": "It is stormy out. By my reckoning, a quiet evening is one in which the door opens only twice. I treasure the few I get.",
+      "sources": [
+        "ambient.dry.6"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6e14ea4316cc7f58812d3034ed2ef2da2ddfc8015cbabd49c3aeb08604ed5ece",
+      "voice": "inworld:Ronald",
+      "spoken": "It is snowy out. By my reckoning, a quiet evening is one in which the door opens only twice. I treasure the few I get.",
+      "sources": [
+        "ambient.dry.6"
+      ]
+    },
+    {
       "key": "speech/lib/v1/6fdf467c5de4863983acf9336953c82c4e36cbac8de53035153afc3e35b6e9cc",
       "voice": "inworld:Ronald",
       "spoken": "That is all three, then. Well done. I will deny I said so, but I am rather pleased.",
@@ -3213,6 +3317,14 @@
       ]
     },
     {
+      "key": "speech/lib/v1/ad6d9fddf93a0997c8691f32a771583f68c00375cc91b1189d5629e35918725d",
+      "voice": "inworld:Ronald",
+      "spoken": "It is your hour. I must warn you that the staircase has eleven steps, and the house has twelve opinions on the matter.",
+      "sources": [
+        "turn-start.dry.6"
+      ]
+    },
+    {
       "key": "speech/lib/v1/ef431c33667d878d59d70d44b1e98a40c79bb43a87053213fc2021984046e51e",
       "voice": "inworld:Ronald",
       "spoken": "The candle is low. If there is something you mean to do, I would do it now, and not mention that I said so.",
@@ -3250,6 +3362,14 @@
       "spoken": "The lamp gutters. I am told that is the polite signal to stop dithering. I have never seen the impolite one.",
       "sources": [
         "time-warning.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/6a0d92b5c07825d44d2c48ed1ab5c99d4269de8b52322c6929f134a51ceec241",
+      "voice": "inworld:Ronald",
+      "spoken": "The candle has about a finger of wax left. I mention it as a kindness. The house, I regret to say, mentions nothing.",
+      "sources": [
+        "time-warning.dry.6"
       ]
     },
     {
@@ -3533,6 +3653,14 @@
       ]
     },
     {
+      "key": "speech/lib/v1/7312ec4bcd82b28a0445966829e2a2a4dc44d5bdd50c9ae0ddba9fb28532a737",
+      "voice": "inworld:Ronald",
+      "spoken": "That does not stand, and it came with great confidence, which I consider the finest way to be wrong. You have joined the haunting.",
+      "sources": [
+        "accuse.wrong.dry.5"
+      ]
+    },
+    {
       "key": "speech/lib/v1/e6290026935f72091b9cb175d652a5f7b7afaa62614f390f10cc96163311f5a1",
       "voice": "inworld:Ronald",
       "spoken": "The accusation does not stand. I regret to report that this is the more usual outcome. You have joined the haunting, which has no uniform and is mostly very pleasant.",
@@ -3602,6 +3730,14 @@
       "spoken": "Well. That is that. I shall keep my secrets, and you may keep the memory of how close you were.",
       "sources": [
         "end.haunting.dry.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/22668ded78ffa6b19ff8ae4cd96f04b7cf6cfb07a5c1e6edfa111ec18f23515c",
+      "voice": "inworld:Ronald",
+      "spoken": "The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out.",
+      "sources": [
+        "scene.dawn-door.dry.1"
       ]
     },
     {

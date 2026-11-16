@@ -103,7 +103,8 @@ const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics',
 
 // file, label, group, spool, kind, how many to print, alternate?
 const G0 = 'Core game pieces', G1 = '#1 Ghost in the box', G3 = '#3 Haunt needle', G5 = '#5 Haunting flipper',
-      G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board', GR = 'Reference (not printed)';
+      G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board', GR = 'Reference (not printed)',
+      GX = 'Stand-alone figures';
 const PARTS = [
   ['relic-music-box',   'Relic r1 music box',      G0, 'crimson',    'S', 1],
   ['relic-music-box-lid','Relic r1 music box lid', G0, 'brass',      'S', 1],
@@ -152,6 +153,8 @@ const PARTS = [
   // From Ghost.fbx via tools/prop-mockups/convert-ghost.mjs. The last two flags: a reference model (loads from REF_BASE), and a smooth one.
   ['ghost-original',    'Original ghost (Ghost.fbx)', GR, 'bone',  'R', 0, false, true, true],
   ['ghost-web',         'Original ghost web',      GR, 'mint',    'R', 0, false, true, true],
+  // tools/ghost-print/make-ghost-print.py: a solid, smooth, flat-bottomed copy of the original ghost with two eye dimples. It does not go in the chest.
+  ['ghost-original-printable', 'Ghost, optimised from the original', GX, 'bone', 'S', 1, true, false, true],
 ].map(([file, label, group, spool, kind, qty, alt, ref, smooth]) => ({ file, label, group, spool, kind, qty, alt: !!alt, ref: !!ref, smooth: !!smooth }));
 const BY = Object.fromEntries(PARTS.map((p) => [p.file, p]));
 

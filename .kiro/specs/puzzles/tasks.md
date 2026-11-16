@@ -327,7 +327,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 19.1, 19.2, 19.3, 19.4, 19.5_
   - [ ] 14.3 The Reel in the Host: on each Haunt rise play the shot of the new level once, say it in the log and the live region (the Event too), keep the meter on screen, never during the Suggestion window or an answer choice, skippable, not on the Display; with the `scrape` at Haunt 3 and the `knock` at Haunt 7 and 8 when the Master has sound on (the files are in `web/public/sounds/`, sourced and credited 2026-11-15)
     - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6_
-  - [ ] 14.4 The endings in the Host: `end-dawn` or `end-house`, then a title card from the `party-lines` strings (the house card with who joined the haunting), a Skip of 48 pixels, the recap after it
+  - [ ] 14.4 The endings in the Host: `ai-dawn-door-take3` or `ai-lights-out-take1` with its line (20.7, 20.8), then a title card from the `party-lines` strings (the house card with who joined the haunting), a Skip of 48 pixels, the recap after it
     - _Requirements: 21.1, 21.2, 21.3, 21.4, 21.5, 21.6_
   - [ ]* 14.5 Write property test for the clock shadow over the real Host once it exists (the pure rule is already tested over a grid in `test/scenes.test.js`)
     - **Property 24: The clock shadow follows the clock and nothing else**
@@ -341,11 +341,16 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ] 14.8 Spike puzzles 1.7 (scenes): on a real phone and a TV, does scrubbing a clip ten times a second keep up (iPhone Safari most of all)? If not, switch the clock shadow to a strip of stills. Is the Reel readable at a glance across a room? Is each Haunt Event seen?
     - _Requirements: 19.5, 20.2_
 
-  - [ ] 14.9 The Event pairing rules in `tools/playtest/js/scenes.js`: `eventPairing(kind)` (the line key, the dim, whether the Haunt falls) and `reelOnFall(level, max)` (the held shot of the lower level), a test that no word of any shot names an Event kind, and a demo on the Reel section of `footage.html` (Cold Spot, Blackout, Restless and Lull buttons that show the line as a caption, the dim and the held step-back); tested over every kind, level and maximum
-    - _Requirements: 20.7, 20.8, 20.9_
-  - [ ]* 14.10 Write property test for the Event pairing
-    - **Property 32: An Event line sits under its shot and changes nothing**
+  - [x] 14.9 Lines written for the pictures in `tools/playtest/js/scenes.js`: `SHOT_LINE`, `LINE_AT`, `shotLine(shot)` and `reelLine(level, max)`, the four AI scenes as the hand, bed, house and dawn shots (`ai-hand-door-take2`, `ai-empty-bed-take1`, `ai-lights-out-take1`, `ai-dawn-door-take3`), the knock re-timed to 9.0 s, a test that each line is its row of `party-lines.md` word for word, follows the bank rules, ends before its shot does and that only the AI shots have one, and the demo on the Reel and endings sections of `footage.html` (the line as words at its moment, dropped on a new rise or Skip, at once when footage is off)
+    - Built 2026-11-16, not deployed. 238 playtest tests; mutation-tested (12 mutations, all caught). Checked in jsdom with a stubbed media element, not on a phone or a TV.
+    - _Requirements: 18.9, 20.5, 20.6, 20.7, 20.8, 21.1_
+  - [ ]* 14.10 Write property test for the shot lines over the real Host once it exists (the pure rules are already tested over every level and maximum in `test/scenes.test.js`)
+    - **Property 32: A line is written for its picture and is said over it only**
     - **Validates: Requirements 20.7, 20.8, 20.9**
+  - [ ] 14.11 The Room's Event lines with the Reel in the Host: two voices never at once (a shot line becomes words only while an Event or ending line of the Room is speaking or due), a Blackout dims the shot with the Host scene, a Lull holds the lower shot on its last frame and says no line; spoken only where narration is on (`party-mode` 7.6)
+    - _Requirements: 20.9_
+  - [ ] 14.12 Spike puzzles 1.8 (lines over pictures): on a phone and a TV, with the real Voice Library audio, does each line fall on its picture (hand, bed, house, dawn), and does the narration with the clip's own quiet sound read well? (`narration-preview-4.mp4` is the first check, by ear; the dawn line was re-rendered for take 3)
+    - _Requirements: 20.8_
 - [ ] 15. Scene clues: a clue written on the scene (added 2026-11-15; satisfies Requirement 22)
   - [ ] 15.1 `tools/playtest/js/places.js` (the Place data and a check of its shape: four corners forming a convex shape of the least size, a known surface and ink, `from` before `to`, `to` not past the clip) and `js/scene-clues.js` with the pure rules `placeFor`, `sceneClue`, `inkFor` and `contrastOk`, with tests over every seed in a grid, every shot with a Place and every answer form (a code, a time, a word)
     - _Requirements: 22.1, 22.2, 22.6, 22.8_
