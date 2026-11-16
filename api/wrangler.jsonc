@@ -42,5 +42,7 @@
   ],
   // Hourly: delete uploads past 24 hours and user worlds past 7 days.
   "triggers": { "crons": ["17 * * * *"] },
-  "vars": { "WORLD_GEN_ENABLED": "true", "UPLOAD_TTL_HOURS": "24", "WORLD_TTL_DAYS": "7" }
+  // World making is live (WLT_API_KEY is set on the Worker) at the default model and the default day (10) and total (30) caps. Per visitor: 5 worlds for one Session (WORLD_SESSION_CAP,
+  // default 2) and 5 a day for one hashed address (WORLD_IP_DAY_CAP, off unless set), so one person cannot use the day up, whatever cookies they clear. `POST /admin/kill {"on": true}` closes it at once.
+  "vars": { "WORLD_GEN_ENABLED": "true", "UPLOAD_TTL_HOURS": "24", "WORLD_TTL_DAYS": "7", "WORLD_SESSION_CAP": "5", "WORLD_IP_DAY_CAP": "5" }
 }
