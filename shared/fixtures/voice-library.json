@@ -50,7 +50,7 @@
       "very close"
     ]
   },
-  "count": 503,
+  "count": 511,
   "entries": [
     {
       "key": "speech/lib/v1/8818fdcc67badd8bd34f35ade581c0d4d205e9f56a6eaba69f0b294ea4cd1b19",
@@ -1501,6 +1501,14 @@
       ]
     },
     {
+      "key": "speech/lib/v1/099fed162a7ef729366ebf553ab79c843ee5cb0560ae19073789136c77c79f91",
+      "voice": "inworld:Pippa",
+      "spoken": "A cold place has arrived, small and neat, about the size of a hat. Please leave it be. It is new, and it is practising.",
+      "sources": [
+        "haunt.cold-spot.soft.6"
+      ]
+    },
+    {
       "key": "speech/lib/v1/df6df1cdb578505fc5fd61b334ae12ef91900b912448d8f9893fdcdb232ac4c8",
       "voice": "inworld:Pippa",
       "spoken": "Shh. I am putting the light out for a moment. Keep your hands where I can hear them.",
@@ -1538,6 +1546,14 @@
       "spoken": "I am dimming the house, just a little. It is easier to be near you that way. Forgive the dark, and do not mind me.",
       "sources": [
         "haunt.blackout.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c79e0e04f6be75ae011f12fdc0a1ee15cabb577680130097be1d2d4b3d2cb1e5",
+      "voice": "inworld:Pippa",
+      "spoken": "The light goes out for a moment. Please do not take it personally. Everyone looks better unseen, and I include myself.",
+      "sources": [
+        "haunt.blackout.soft.7"
       ]
     },
     {
@@ -1661,6 +1677,14 @@
       ]
     },
     {
+      "key": "speech/lib/v1/8725f1932bb2fb23cb0c003f583f6f83088a231b1d7f499b8ae4fffa0f2ac9bf",
+      "voice": "inworld:Pippa",
+      "spoken": "The haunting has a new member, and not a moment too soon. We keep no minutes and no biscuits, but we do keep company.",
+      "sources": [
+        "poltergeist.soft.6"
+      ]
+    },
+    {
       "key": "speech/lib/v1/87dada690d85092109bacc492927a9c511ce5d159e73f3074f0aaaef0b4cd1a5",
       "voice": "inworld:Pippa",
       "spoken": "It is quiet now. Nobody found me in time. Stay a little longer, all of you. The door can wait.",
@@ -1690,6 +1714,14 @@
       "spoken": "The quiet is mine this time. I would much sooner be found. Next time, perhaps. I do like a next time.",
       "sources": [
         "end.haunting.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7212fd347ec5c516102420a9fc8ae3a091d55143117a7f5aac247708239fcdb8",
+      "voice": "inworld:Pippa",
+      "spoken": "Nobody found me, and I find I am not sorry. I had hoped to be found, and I had also hoped not to be. There is no tea, but there is me, and I am told that counts.",
+      "sources": [
+        "end.haunting.soft.5"
       ]
     },
     {
@@ -3173,6 +3205,14 @@
       ]
     },
     {
+      "key": "speech/lib/v1/9ef92d5438a7e7a05c0a8e1590f47f5c56588ad86cfbd667abcf2ec8d9d0b42b",
+      "voice": "inworld:Ronald",
+      "spoken": "Your hour begins. I have laid out the corridor, a lamp and a great many floorboards, in that order. Only the lamp is of any use.",
+      "sources": [
+        "turn-start.dry.7"
+      ]
+    },
+    {
       "key": "speech/lib/v1/ef431c33667d878d59d70d44b1e98a40c79bb43a87053213fc2021984046e51e",
       "voice": "inworld:Ronald",
       "spoken": "The candle is low. If there is something you mean to do, I would do it now, and not mention that I said so.",
@@ -3210,6 +3250,14 @@
       "spoken": "The lamp gutters. I am told that is the polite signal to stop dithering. I have never seen the impolite one.",
       "sources": [
         "time-warning.dry.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b57d276176a6ea6e92567ab2fd7ef4ed49f43b00914bb26c1b4e89b25bd2a6ba",
+      "voice": "inworld:Ronald",
+      "spoken": "I have watched four hundred guests dither in this very corridor, and not one improved by it. I say that kindly, and I say it once. The hour is thin.",
+      "sources": [
+        "time-warning.dry.7"
       ]
     },
     {
@@ -3493,6 +3541,14 @@
       ]
     },
     {
+      "key": "speech/lib/v1/e6290026935f72091b9cb175d652a5f7b7afaa62614f390f10cc96163311f5a1",
+      "voice": "inworld:Ronald",
+      "spoken": "The accusation does not stand. I regret to report that this is the more usual outcome. You have joined the haunting, which has no uniform and is mostly very pleasant.",
+      "sources": [
+        "accuse.wrong.dry.6"
+      ]
+    },
+    {
       "key": "speech/lib/v1/c2d70300b6b177d15134e625968c714e6f7e0c3f8f5c92eb3975952ee58a0a9b",
       "voice": "inworld:Ronald",
       "spoken": "There it is, and well found. I admit I am a little proud of the house for hiding it so well.",
@@ -3538,6 +3594,14 @@
       "spoken": "So it is done. I do not say so often, but I count this a good visit. Mind the stairs on your way out.",
       "sources": [
         "end.solved.dry.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/3a4e8b6823ead2b5ad0271b28335fb8956fd56368954bd69ff94293704b8ad0e",
+      "voice": "inworld:Ronald",
+      "spoken": "It is solved. I waited a long while to say so, and now I find I have no speech. I had one prepared, and it was very short. Thank you for coming.",
+      "sources": [
+        "end.solved.dry.5"
       ]
     },
     {
