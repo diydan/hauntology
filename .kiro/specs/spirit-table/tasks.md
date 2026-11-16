@@ -13,32 +13,45 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
   - [ ] 1.2 Spike spirit-table 1.1: on a real Android phone and a real iPhone (Safari and the installed web app), with and without the camera: drift over 30 seconds, whether Place is enough, the comfortable size and distance, thumb targets, battery and warmth over 20 minutes at 30 frames a second, and the camera prompt in the installed app
     - _Requirements: 4.1, 4.2, 4.4, 5.1, 6.1_
 
-- [ ] 2. Pure logic (`shared/src/table/`)
-  - [ ] 2.1 `data.ts`: `tableData(publicView, privateView, notebook)` (rooms, Pawns from the log, the Line-up, the Shelf, Marks, inspected Zones, the Cold Spot, the Haunt, the Solution only at the end)
+- [x] 2. Pure logic (`shared/src/table/`)
+  - [x] 2.1 `data.ts`: `tableData(publicView, privateView, notebook)` (rooms, Pawns from the log, the Line-up, the Shelf, Marks, inspected Zones, the Cold Spot, the Haunt, the Solution only at the end)
+    - Built in `shared/src/table/data.ts` (`tableData` reading structural `TablePublicInput`/`TablePrivateInput` snapshots, `TableNotebook` + optional `theory`, and `roomCode`; reveals `ended` only when `pub.phase === "ended"`).
     - _Requirements: 2.2, 2.3, 3.1, 3.2, 3.3_
-  - [ ] 2.2 **Property 1: The table reads only what the phone may already see**
+  - [x] 2.2 **Property 1: The table reads only what the phone may already see**
+    - Built in `shared/src/table/data.prop.test.ts` (real `publicSnapshot`/`privateSnapshot` engine runs verifying room/suspect/relic sets, seat-only `inspected`, haunt/coldSpot, no hidden leak before `ended`, and solution revealed when `ended`).
     - **Validates: Requirements 3.1, 3.2, 3.3**
-  - [ ] 2.3 `layout.ts`: `tableLayout(roomCode, zones)` (a seeded shuffle by a hash of the Room Code, never the Room seed)
+  - [x] 2.3 `layout.ts`: `tableLayout(roomCode, zones)` (a seeded shuffle by a hash of the Room Code, never the Room seed)
+    - Built in `shared/src/table/layout.ts` (`SLOT_COUNT`, `slotCoord`, `tableLayout` backed by `shared/src/table/hash.ts` FNV-1a + Mulberry32).
     - _Requirements: 2.1, 2.3_
-  - [ ] 2.4 **Property 2: The layout is the same everywhere and says nothing**
+  - [x] 2.4 **Property 2: The layout is the same everywhere and says nothing**
+    - Built in `shared/src/table/layout.prop.test.ts` (bijection on 0..5, input-order invariance, distinct room codes diverge).
     - **Validates: Requirements 2.1, 2.3**
-  - [ ] 2.5 `pawns.ts`: `pawnsOf(publicView)` (the newest public event's Zone, the door, `mono` for a Poltergeist, the ring on the Turn seat)
+  - [x] 2.5 `pawns.ts`: `pawnsOf(publicView)` (the newest public event's Zone, the door, `mono` for a Poltergeist, the ring on the Turn seat)
+    - Built in `shared/src/table/pawns.ts` (`pawnsOf`).
     - _Requirements: 2.2_
-  - [ ] 2.6 **Property 3: Pawns stand where the public log says**
+  - [x] 2.6 **Property 3: Pawns stand where the public log says**
+    - Built in `shared/src/table/pawns.prop.test.ts` (latest `suggest`/`inspect` zone else `"door"`, `mono` for `poltergeist`, `active` on turn seat unless `"ended"`).
     - **Validates: Requirements 2.2**
-  - [ ] 2.7 `whisper.ts`: `whisperAt(roomCode, zones, coldSpot, haunt, tMs, reducedMotion)`
+  - [x] 2.7 `whisper.ts`: `whisperAt(roomCode, zones, coldSpot, haunt, tMs, reducedMotion)`
+    - Built in `shared/src/table/whisper.ts` (`whisperGlow`, `whisperAt`, `WHISPER_REST_MS`, `WHISPER_MOVE_MS`, `WHISPER_HEIGHT`, `WHISPER_BOB`).
     - _Requirements: 2.4_
-  - [ ] 2.8 **Property 4: The Whisper's tour reads nothing hidden**
+  - [x] 2.8 **Property 4: The Whisper's tour reads nothing hidden**
+    - Built in `shared/src/table/whisper.prop.test.ts` (Cold Spot pinning, continuous smoothstep tour, Room-Code-only dependency, `reducedMotion` stillness, haunt-ratio glow).
     - **Validates: Requirements 2.4**
-  - [ ] 2.9 `place.ts`: `placeTable(dir, lastHeading)`
+  - [x] 2.9 `place.ts`: `placeTable(dir, lastHeading)`
+    - Built in `shared/src/table/place.ts` (`placeTable`, matching `tools/playtest/js/ar-place.js`).
     - _Requirements: 4.1_
-  - [ ] 2.10 **Property 5: Place puts the table in front of the player**
+  - [x] 2.10 **Property 5: Place puts the table in front of the player**
+    - Built in `shared/src/table/place.prop.test.ts` (distance/elevation bounds, heading fallback when steep, camera-facing angle).
     - **Validates: Requirements 4.1**
-  - [ ] 2.11 `plan.ts`: `tablePlan({sensors, faceDown, hidden, reducedMotion, webgl, now})` (30 frames a second, pause, drag, list, still)
+  - [x] 2.11 `plan.ts`: `tablePlan({sensors, faceDown, hidden, reducedMotion, webgl, now})` (30 frames a second, pause, drag, list, still)
+    - Built in `shared/src/table/plan.ts` (`MAX_TABLE_FPS`, `MIN_FRAME_MS`, `tablePlan`).
     - _Requirements: 4.3, 6.1_
-  - [ ] 2.12 **Property 6: The table obeys its limits**
+  - [x] 2.12 **Property 6: The table obeys its limits**
+    - Built in `shared/src/table/plan.prop.test.ts` (frame-rate cap, `faceDown`/`hidden`/`!webgl` pause, sensor/drag/list fallback, `reducedMotion` stillness).
     - **Validates: Requirements 4.3, 6.1**
-  - [ ] 2.13 Source-level checks: nothing in `shared/src/table/` imports `party/solution`, a Hand, a Residue position or the Room seed, and nothing in it or `web/src/table/` sends a message or stores a Mark, a direction or a picture
+  - [x] 2.13 Source-level checks: nothing in `shared/src/table/` imports `party/solution`, a Hand, a Residue position or the Room seed, and nothing in it or `web/src/table/` sends a message or stores a Mark, a direction or a picture
+    - Verified by `shared/src/table/source.test.ts` and `web/src/table/source.test.ts` (6 deliberate rule breaks caught across the 6 modules + `vitest`).
     - _Requirements: 1.3, 3.1, 3.4_
   - [x] 2.14 `notebook.ts`: `markOf(notebook, card)` (ruled out when some column has the card, maybe when none does and some column is maybe, else none; no inference from lacks) and `tableData` using it for rooms, Suspects and Relics
     - Built in `shared/src/table/notebook.ts` (`markOf`, with the `TableNotebook` type). `tableData`, which will call it, is task 2.1.

@@ -6,14 +6,16 @@
  * Solution, but the notebook makes no inference (party-mode 4.4) and the table makes none either.
  */
 import { cellMark, type Column, type PlayerMarks } from "../party/notebook";
+import type { Theory } from "../party/theory";
 
 export type TableMark = "ruled_out" | "maybe";
 
-/** The notebook as the table reads it: the game's marks, the Player's own marks, and the columns (every seat and the Residue). */
+/** The notebook as the table reads it: the game's marks, the Player's own marks, columns (seats + Residue), and optional Theory marks. */
 export type TableNotebook = Readonly<{
   auto: ReadonlyMap<string, "has" | "lacks">;
   mine: PlayerMarks;
   columns: readonly Column[];
+  theory?: Theory;
 }>;
 
 export function markOf(notebook: TableNotebook, card: string): TableMark | undefined {
