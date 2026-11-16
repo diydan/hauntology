@@ -1,17 +1,19 @@
-// Run locally with `wrangler dev` (4.162.0, local R2 and Durable Object); never deployed. The secrets (HMAC_SECRET, TURNSTILE_SECRET) go in
-// `.dev.vars` (copy `.dev.vars.example`), and `TURNSTILE_SITE_KEY` when Turnstile is on. PlaySession (another spec) is added with its spec;
+// Run locally with `wrangler dev` (4.162.0, local R2 and Durable Object). Deployed with `wrangler deploy` from `main`, after `pnpm build:web` (first deploy 2026-11-16). The
+// secrets (HMAC_SECRET, which every request needs; ADMIN_TOKEN, for `/admin`; TURNSTILE_SECRET) go in `.dev.vars` locally (copy `.dev.vars.example`) and in `wrangler secret put`
+// when deployed; `TURNSTILE_SITE_KEY` when Turnstile is on. PlaySession (another spec) is added with its spec;
 // PartyRoom and PartyDirectory serve `/api/party` (party mode; `PARTY_ENABLED` off closes it).
 // The web app: the Worker serves `../web/dist` (build it first: `pnpm build:web`, or `pnpm dev:app` to build and run). `run_worker_first` sends every request
 // through the Worker, so every page carries the Content-Security-Policy (naming Turnstile only when it is configured; a static headers file could not) and
 // `/api/*` and `/admin/*` are never answered with a page. The Worker passes every other GET and HEAD to the `ASSETS` binding (`api/src/http/assets.ts`),
 // and `not_found_handling` makes the binding answer `index.html` for a page that is not a file, so a link such as `/shared/<id>` opens the app. Each file
 // request is then a Worker request; that is the price of the policy on the page.
-// The Place Brief check (a photo must pass it before a world can be made from it) and the sketch (drawing a place) need the Workers AI binding, which is NOT declared
-// here: in `wrangler dev` it always reaches the real service (a `wrangler login` and a small charge per check). To turn it on add
-// `"ai": { "binding": "AI" }` below. Without it every check answers `moderation_unavailable` and no photo can pass, and a sketch cannot be rendered.
+// The Workers AI binding (`AI`) is declared below (2026-11-16) so the ghost's voice can work. THE VOICE IS STILL OFF: it speaks only while the operator has opened a window
+// (`POST /admin/voice`, minutes and a line cap, closing by itself; `docs/VOICE-WINDOW.md`). The Place Brief check (a photo must pass it before a world can be made from it) and
+// the sketch (drawing a place) read the same binding, but they run only when world making is on (`WLT_API_KEY`, below) and the narrator only with `AI_GATEWAY_ID`: neither
+// is set. In `wrangler dev` the binding always reaches the real service (a `wrangler login` and a small charge per call).
 // The ghost's text, the free-text check (Llama Guard) and the portrait cut-out are built too (`WorkersAiClient`), with no route to use them yet. The first two use
 // the same `AI` binding; the cut-out needs the Images binding, `"images": { "binding": "IMAGES" }` (an Images Paid subscription, and `wrangler dev --remote`:
-// the default offline copy of the binding cannot remove a background). Neither binding is declared until you decide to spend (`docs/spikes/1.2.md`).
+// the default offline copy of the binding cannot remove a background). The Images binding is not declared until you decide to spend (`docs/spikes/1.2.md`).
 // World making is off until `WLT_API_KEY` is set (a secret: `.dev.vars` locally, `wrangler secret put` if ever deployed; see `.dev.vars.example`).
 {
   "name": "hauntology",
@@ -19,6 +21,7 @@
   "compatibility_date": "2025-06-01",
   "assets": { "directory": "../web/dist", "binding": "ASSETS", "not_found_handling": "single-page-application", "run_worker_first": true },
   "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hauntology-worlds" }],
+  "ai": { "binding": "AI" },
   "durable_objects": {
     "bindings": [
       { "name": "WORLD_JOB", "class_name": "WorldJob" },
