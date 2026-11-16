@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { MOON_PHASES, TIMES_OF_DAY, WEATHER_CLASSES } from "../conditions/types";
-import { WORD_CAP, wordCount, HISTORY_TURNS, LINE_MAX, MEMORY_MAX, MODEL_TURN_CAP, NARRATION_MAX_TOKENS, PROMPT_CHARS_MAX, REPLY_MAX_CHARS, buildNarrationPrompt, looksEnglish, narrationMode, replyChecksFor, sentenceCount, skyOf, validateGhostReply, visitorWords, wayIsRight, petNameUsed, type NarrationInput } from "./narration";
+import { WORD_CAP, trimToWords, wordCount, HISTORY_TURNS, LINE_MAX, MEMORY_MAX, MODEL_TURN_CAP, NARRATION_MAX_TOKENS, PROMPT_CHARS_MAX, REPLY_MAX_CHARS, buildNarrationPrompt, looksEnglish, narrationMode, replyChecksFor, sentenceCount, skyOf, validateGhostReply, visitorWords, wayIsRight, petNameUsed, type NarrationInput } from "./narration";
 import { BEARING_PHRASE } from "./scripted";
 import { LINES } from "./scripted";
 import { ACTION_KINDS, ANCHOR_IDS, BANDS, BEARINGS, VOICES, type Directive, type HistoryLine, type Memory, type Seed } from "./types";
@@ -517,16 +517,29 @@ describe("a pet name at most once (the third play-through, docs/spikes/4.4.md: \
 
 describe("the word caps (owner, 2026-11-16: tease 40, hint 30, memory 60, farewell 45)", () => {
   const words = (n: number) => Array.from({ length: n }, (_, i) => (i === 0 ? "Still" : "here")).join(" ") + ".";
-  it("a reply at its cap passes and one word over is refused, for each capped kind", () => {
+  it("a reply at its cap is kept whole; over it, it is cut back to the whole sentences that fit; a first sentence over the cap is refused", () => {
     const cases: [Directive, number][] = [[{ kind: "tease", band: "nearer" }, 40], [{ kind: "reveal", anchorId: "a1" }, 60], [{ kind: "ending" }, 45]];
     for (const [d, cap] of cases) {
-      const two = (n: number) => `${words(Math.ceil(n / 2))} ${words(Math.floor(n / 2))}`; // two sentences, so a reveal's minimum holds
-      expect(validateGhostReply(two(cap), replyChecksFor(d)).ok, `${d.kind} at ${cap}`).toBe(true);
-      expect(validateGhostReply(two(cap + 1), replyChecksFor(d)), `${d.kind} at ${cap + 1}`).toEqual({ ok: false, reason: "too_many_words" });
+      const a = words(Math.ceil(cap / 2)), b = words(Math.floor(cap / 2)), c = words(5);
+      expect(validateGhostReply(`${a} ${b}`, replyChecksFor(d)), `${d.kind} at ${cap}`).toEqual({ ok: true, text: `${a} ${b}` });
+      // over the cap by a third sentence: the third is dropped, never cut in the middle
+      const r = validateGhostReply(`${a} ${b} ${c}`, replyChecksFor(d));
+      expect(r, `${d.kind} trimmed`).toEqual({ ok: true, text: `${a} ${b}` });
+      expect(validateGhostReply(words(cap + 1), replyChecksFor(d)), `${d.kind}: one sentence over`).toEqual({ ok: false, reason: "too_many_words" });
     }
+    // a reveal cut to one sentence no longer has the two it needs, so it is refused, not shown short
+    expect(validateGhostReply(`${words(50)} ${words(20)}`, replyChecksFor({ kind: "reveal", anchorId: "a1" }))).toEqual({ ok: false, reason: "too_few_sentences" });
+    // a hint keeps its way and distance, which come first, and loses the tail
     const hint = replyChecksFor({ kind: "hint", bearing: "behind", band: "nearer" });
     expect(validateGhostReply("Behind you, and nearer than you think.", hint).ok).toBe(true);
-    expect(validateGhostReply(`Behind you, and nearer. ${words(27)}`, hint)).toEqual({ ok: false, reason: "too_many_words" });
+    expect(validateGhostReply(`Behind you, and nearer. ${words(27)}`, hint)).toEqual({ ok: true, text: "Behind you, and nearer." });
+    // the checks run on what is kept: a tail with a way in it is dropped, so a tease that ends by naming a way still passes
+    expect(validateGhostReply(`${words(30)} Look to your left, ${words(14).toLowerCase()}`, replyChecksFor({ kind: "tease", band: "nearer" }))).toEqual({ ok: true, text: words(30) });
+  });
+  it("trimToWords never cuts inside a sentence and keeps what fits", () => {
+    expect(trimToWords("One two. Three four five.", 5)).toBe("One two. Three four five.");
+    expect(trimToWords("One two. Three four five.", 4)).toBe("One two.");
+    expect(trimToWords("One two three.", 2)).toBeNull();
   });
   it("the caps are the owner's numbers, and a word is a run of letters, digits and apostrophes", () => {
     expect(WORD_CAP).toEqual({ tease: 40, hint: 30, reveal: 60, ending: 45 });
