@@ -725,10 +725,16 @@ function buildDollhouse() {
   const LINEUP_SPACING = 0.142;
   const SHELF_X = 1.5 * W + 0.122;
 
-  // Stepped moulded walnut maquette plinth (y = -0.020 .. 0)
-  p.addMesh(MAT.wood_dark, bevelBox(slabW + 0.02, 0.006, slabD + 0.02, 0.0014), C.ebony, 0, -0.02, 0);
-  p.addMesh(MAT.brass_aged, bevelBox(slabW + 0.01, 0.003, slabD + 0.01, 0.0007), C.brass, 0, -0.014, 0);
+  // Stepped moulded walnut maquette plinth (y = -0.0204 .. 0) with baize tabletop underlay & brass trim
+  p.addMesh(MAT.fabric_velvet, bevelBox(slabW + 0.026, 0.0016, slabD + 0.026, 0.0005), C.velvetGreen, 0, -0.0208, 0);
+  p.addMesh(MAT.wood_dark, bevelBox(slabW + 0.02, 0.0056, slabD + 0.02, 0.0014), C.ebony, 0, -0.0196, 0);
+  p.addMesh(MAT.brass_aged, bevelBox(slabW + 0.01, 0.0028, slabD + 0.01, 0.0007), C.brass, 0, -0.014, 0);
   p.addMesh(MAT.wood_dark, bevelBox(slabW, 0.014, slabD, 0.0015), C.walnutDark, 0, -0.014, 0);
+  // Subtle inlaid brass marquetry frame & four turned brass corner leveling bosses
+  p.addMesh(MAT.brass_aged, bevelBox(slabW - 0.006, 0.0012, slabD - 0.006, 0.0004), C.brassDark, 0, -0.0011, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    p.addMesh(MAT.brass_aged, cylY(0.011, 0.009, 0.0032, 14), C.brassDark, sx * (slabW / 2 - 0.004), -0.0202, sz * (slabD / 2 - 0.004));
+  }
 
   // 4 Mitered Brass Corner Brackets + Rivets on the maquette slab
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
@@ -738,21 +744,29 @@ function buildDollhouse() {
     p.addMesh(MAT.brass_aged, uvSphere(0.0026, 0.0026, 0.0026, 10, 8), C.brass, cx, 0.0012, sz * (slabD / 2 - 0.005));
   }
 
-  // Front Line-up Gallery Tray with 6 wide-spaced brass-rimmed Suspect sockets
+  // Front Line-up Gallery Tray with 6 bespoke brass-rimmed Suspect sockets & baize well
+  p.addMesh(MAT.fabric_velvet, bevelBox(slabW + 0.012, 0.0015, 0.102, 0.0005), C.velvetGreen, 0, -0.0206, TRAY_Z);
+  p.addMesh(MAT.wood_dark, bevelBox(slabW + 0.008, 0.0048, 0.098, 0.0012), C.ebony, 0, -0.0192, TRAY_Z);
   p.addMesh(MAT.wood_dark, bevelBox(slabW, 0.014, 0.09, 0.0015), C.walnutDark, 0, -0.014, TRAY_Z);
-  p.addMesh(MAT.brass_aged, bevelBox(slabW - 0.014, 0.002, 0.076, 0.0006), C.brassDark, 0, -0.001, TRAY_Z);
-  p.addMesh(MAT.wood_dark, bevelBox(slabW - 0.022, 0.0022, 0.068, 0.0006), C.ebony, 0, -0.0008, TRAY_Z);
-  const socketRing = lathe([[0.0225, 0], [0.0268, 0], [0.026, 0.0025], [0.0225, 0.0025]], 24);
+  p.addMesh(MAT.brass_aged, bevelBox(slabW - 0.012, 0.002, 0.078, 0.0006), C.brassDark, 0, -0.001, TRAY_Z);
+  p.addMesh(MAT.wood_dark, bevelBox(slabW - 0.02, 0.0022, 0.07, 0.0006), C.ebony, 0, -0.0008, TRAY_Z);
+  // Subtle brass nameplate strip along the front gallery lip
+  p.addMesh(MAT.brass_aged, bevelBox(slabW * 0.42, 0.0032, 0.0035, 0.0005), C.brassDark, 0, -0.0085, TRAY_Z + 0.0455);
+  const socketCollar = lathe([[0.0218, 0], [0.0282, 0], [0.0282, 0.0018], [0.0224, 0.0022]], 24);
+  const socketRing = lathe([[0.022, 0], [0.0268, 0], [0.026, 0.0032], [0.0222, 0.003]], 24);
   for (let i = 0; i < 6; i++) {
     const lx = (i - 2.5) * LINEUP_SPACING;
-    p.addMesh(MAT.brass_aged, socketRing, C.brass, lx, 0, TRAY_Z);
-    p.addMesh(MAT.fabric_velvet, cylY(0.0222, 0.0222, 0.001, 20), C.velvetRed, lx, 0, TRAY_Z);
+    p.addMesh(MAT.wood_dark, socketCollar, C.mahogany, lx, 0, TRAY_Z);
+    p.addMesh(MAT.brass_aged, socketRing, C.brass, lx, 0.0006, TRAY_Z);
+    p.addMesh(MAT.fabric_velvet, cylY(0.022, 0.022, 0.0012, 20), C.velvetRed, lx, 0, TRAY_Z);
   }
 
   // Side 6-Alcove Relic Curio Shelf (right side of dollhouse, wide 2 columns x 3 rows of velvet-lined sockets!)
   const shelfW = 0.18, shelfD = 2 * D + 0.055;
+  p.addMesh(MAT.fabric_velvet, bevelBox(shelfW + 0.012, 0.0015, shelfD + 0.012, 0.0005), C.velvetGreen, SHELF_X, -0.0206, 0);
   p.addMesh(MAT.wood_dark, bevelBox(shelfW, 0.016, shelfD, 0.0015), C.walnutDark, SHELF_X, -0.016, 0);
   p.addMesh(MAT.brass_aged, bevelBox(shelfW + 0.006, 0.0028, shelfD + 0.006, 0.0006), C.brassDark, SHELF_X, -0.015, 0);
+  p.addMesh(MAT.fabric_velvet, bevelBox(shelfW - 0.022, 0.0014, shelfD - 0.028, 0.0005), C.velvetGreen, SHELF_X - 0.004, -0.0002, 0);
   // Raised back curio rail, brass gallery rod & turned finials
   p.addMesh(MAT.wood_dark, bevelBox(0.007, 0.032, shelfD - 0.012, 0.0009), C.walnut, SHELF_X + shelfW / 2 - 0.0055, 0, 0);
   p.addMesh(MAT.brass_aged, bevelBox(0.0026, 0.0026, shelfD - 0.08, 0.0004), C.brass, SHELF_X + shelfW / 2 - 0.0055, 0.038, 0);
@@ -762,9 +776,9 @@ function buildDollhouse() {
   for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++) {
     const rx = SHELF_X - 0.039 + c * 0.078, rz = (r - 1) * 0.168;
     const rh = 0.0055 * (c + 1);
-    p.addMesh(MAT.wood_dark, bevelBox(0.052, rh, 0.052, 0.0008), C.ebony, rx, 0, rz);
-    p.addMesh(MAT.brass_aged, bevelBox(0.048, 0.0012, 0.048, 0.0003), C.brassDark, rx, rh - 0.0002, rz);
-    p.addMesh(MAT.fabric_velvet, bevelBox(0.044, 0.0014, 0.044, 0.0004), C.velvetRed, rx, rh, rz);
+    p.addMesh(MAT.wood_dark, bevelBox(0.054, rh, 0.054, 0.0008), C.ebony, rx, 0, rz);
+    p.addMesh(MAT.brass_aged, bevelBox(0.05, 0.0015, 0.05, 0.0003), C.brass, rx, rh - 0.0001, rz);
+    p.addMesh(MAT.fabric_velvet, bevelBox(0.044, 0.0014, 0.044, 0.0004), C.velvetRed, rx, rh + 0.0002, rz);
   }
 
   // Tall Exterior Back & Side Cutaway Walls with Fluted Pilasters, Wainscoting & 3 Gothic Lancet Windows
@@ -834,20 +848,28 @@ function buildDollhouse() {
     p.addMesh(MAT.brass_aged, lathe([[0, 0], [0.007, 0], [0.002, 0.005], [0, 0.008]], 10), C.brass, px, baseY + 0.054, D + WALL / 2);
   }
 
-  // Interior Partitions with Framed Doorways, Brass Knobs & Oak Thresholds
+  // Interior Partitions with Framed Doorways, Brass Knobs & Inlaid Brass Threshold Strips
   for (const x of [-0.5 * W, 0.5 * W]) for (const r of [0, 1]) {
     const cz = (r - 0.5) * D, ph = r === 0 ? 0.058 : 0.041;
     p.addMesh(MAT.wood_dark, bevelBox(WALL, ph, D * 0.31, 0.0006), C.walnut, x, baseY, cz - D * 0.345);
     p.addMesh(MAT.wood_dark, bevelBox(WALL, ph, D * 0.31, 0.0006), C.walnut, x, baseY, cz + D * 0.345);
-    for (const sz of [-1, 1]) p.addMesh(MAT.wood_dark, bevelBox(WALL + 0.004, ph + 0.0035, 0.006, 0.0006), C.mahogany, x, baseY, cz + sz * D * 0.19);
-    p.addMesh(MAT.wood_dark, bevelBox(0.014, 0.0018, D * 0.36, 0.0005), C.oak, x, baseY, cz);
+    for (const sz of [-1, 1]) {
+      p.addMesh(MAT.wood_dark, bevelBox(WALL + 0.004, ph + 0.0035, 0.006, 0.0006), C.mahogany, x, baseY, cz + sz * D * 0.19);
+      p.addMesh(MAT.brass_aged, uvSphere(0.0014, 0.0014, 0.0014, 8, 6), C.brass, x + (x < 0 ? 0.006 : -0.006), baseY + 0.016, cz + sz * D * 0.175);
+    }
+    p.addMesh(MAT.wood_dark, bevelBox(0.015, 0.0018, D * 0.36, 0.0005), C.oak, x, baseY, cz);
+    p.addMesh(MAT.brass_aged, bevelBox(0.003, 0.0022, D - 0.012, 0.0003), C.brassDark, x, baseY + 0.0001, cz);
   }
   for (const c of [-1, 0, 1]) {
     const cx = c * W;
     p.addMesh(MAT.wood_dark, bevelBox(W * 0.31, 0.036, WALL, 0.0006), C.walnut, cx - W * 0.345, baseY, 0);
     p.addMesh(MAT.wood_dark, bevelBox(W * 0.31, 0.036, WALL, 0.0006), C.walnut, cx + W * 0.345, baseY, 0);
-    for (const sx of [-1, 1]) p.addMesh(MAT.wood_dark, bevelBox(0.006, 0.039, WALL + 0.004, 0.0006), C.mahogany, cx + sx * W * 0.19, baseY, 0);
-    p.addMesh(MAT.wood_dark, bevelBox(W * 0.36, 0.0018, 0.014, 0.0005), C.oak, cx, baseY, 0);
+    for (const sx of [-1, 1]) {
+      p.addMesh(MAT.wood_dark, bevelBox(0.006, 0.039, WALL + 0.004, 0.0006), C.mahogany, cx + sx * W * 0.19, baseY, 0);
+      p.addMesh(MAT.brass_aged, uvSphere(0.0014, 0.0014, 0.0014, 8, 6), C.brass, cx + sx * W * 0.175, baseY + 0.015, 0.006);
+    }
+    p.addMesh(MAT.wood_dark, bevelBox(W * 0.36, 0.0018, 0.015, 0.0005), C.oak, cx, baseY, 0);
+    p.addMesh(MAT.brass_aged, bevelBox(W - 0.012, 0.0022, 0.003, 0.0003), C.brassDark, cx, baseY + 0.0001, 0);
   }
 
   bakePartAO(p, 0.06, -0.02, 0.5);
@@ -1006,33 +1028,48 @@ function buildColdSpotFrost() {
 // ------------------------------------------------------------------ 4. Turned Suspect Plinth & Player Pawns + Turn Ring
 function buildSuspectPlinth() {
   const p = new PartBuilder('suspect_plinth');
-  // Stepped Victorian ebony standee base with twin brass rings & portrait clasp jaws
+  // Heavy weighted Victorian Staunton-base standee plinth: baize felt pad, walnut body, twin brass rings & engraved clasp
+  p.addMesh(MAT.fabric_velvet, cylY(0.023, 0.0234, 0.0014, 24), C.velvetGreen, 0, 0, 0);
   const body = lathe([
-    [0, 0], [0.0222, 0], [0.0222, 0.002], [0.0198, 0.0034], [0.018, 0.0058], [0.016, 0.007], [0, 0.007],
+    [0, 0.0012], [0.0226, 0.0012], [0.0224, 0.0028], [0.0196, 0.0042], [0.018, 0.0064], [0.0156, 0.0076], [0, 0.0076],
   ], 24, 42);
-  p.addMesh(MAT.wood_dark, body, C.ebony);
-  const brassCollar = lathe([[0.0178, 0.003], [0.0205, 0.003], [0.0202, 0.0044], [0.0178, 0.0044]], 24, 42);
+  p.addMesh(MAT.wood_dark, body, C.walnutDark);
+  const lowerBead = lathe([[0.0218, 0.0012], [0.0234, 0.0014], [0.023, 0.0026], [0.0214, 0.0026]], 24, 42);
+  p.addMesh(MAT.brass_aged, lowerBead, C.brassDark);
+  const brassCollar = lathe([[0.0176, 0.0036], [0.0206, 0.0038], [0.0202, 0.0052], [0.0174, 0.0052]], 24, 42);
   p.addMesh(MAT.brass_aged, brassCollar, C.brass);
-  // Slotted brass portrait clasp jaws + front angled nameplate plaque
+  // Milled brass portrait clasp jaws + front angled nameplate plaque with corner studs
   for (const sz of [-1, 1]) {
-    p.addMesh(MAT.brass_aged, bevelBox(0.021, 0.0042, 0.0022, 0.0003), C.brassDark, 0, 0.0062, sz * 0.0022);
+    p.addMesh(MAT.brass_aged, bevelBox(0.022, 0.0048, 0.0024, 0.0004), C.brassDark, 0, 0.0068, sz * 0.0024);
   }
-  p.addMesh(MAT.brass_aged, bevelBox(0.022, 0.0034, 0.0056, 0.0004), C.brass, 0, 0.0018, 0.0182, -0.45, 0, 0);
+  p.addMesh(MAT.brass_aged, bevelBox(0.023, 0.0038, 0.0062, 0.0004), C.brass, 0, 0.0022, 0.0185, -0.45, 0, 0);
+  for (const sx of [-1, 1]) {
+    p.addMesh(MAT.brass_aged, uvSphere(0.0009, 0.0009, 0.0009, 6, 4), C.pearl, sx * 0.009, 0.0042, 0.0205);
+  }
   bakePartAO(p, 0.018, 0, 0.45);
   return p;
 }
 
 function buildPawnLiving() {
   const p = new PartBuilder('pawn_living');
-  // Carved Staunton-meets-lantern investigator pawn (~64 mm tall)
+  // Carved Staunton-meets-lantern investigator pawn (~65 mm tall) with felt base & glowing lantern cage finial
+  p.addMesh(MAT.fabric_velvet, cylY(0.0172, 0.0175, 0.0014, 22), C.velvetGreen, 0, 0, 0);
   const wood = lathe([
-    [0, 0], [0.0164, 0], [0.0164, 0.0028], [0.0136, 0.0056], [0.0098, 0.013],
-    [0.0075, 0.0285], [0.0106, 0.034], [0.0088, 0.0385], [0.0118, 0.049], [0.008, 0.0585], [0, 0.063],
+    [0, 0.0012], [0.0168, 0.0012], [0.0164, 0.0034], [0.0136, 0.0062], [0.0098, 0.0135],
+    [0.0074, 0.0285], [0.0108, 0.0345], [0.0086, 0.039], [0.0118, 0.049], [0.0082, 0.056], [0, 0.0565],
   ], 22, 46);
   p.addMesh(MAT.wood_dark, wood, C.mahogany);
-  const collar = lathe([[0.0072, 0.032], [0.0118, 0.0335], [0.0118, 0.036], [0.0072, 0.0372]], 22, 42);
+  const baseRing = lathe([[0.0156, 0.0012], [0.0174, 0.0014], [0.017, 0.003], [0.0154, 0.003]], 22, 42);
+  p.addMesh(MAT.brass_aged, baseRing, C.brassDark);
+  const collar = lathe([[0.0072, 0.032], [0.012, 0.0338], [0.012, 0.0365], [0.0072, 0.0375]], 22, 42);
   p.addMesh(MAT.brass_aged, collar, C.brass);
-  p.addMesh(MAT.brass_aged, uvSphere(0.0036, 0.0044, 0.0036, 12, 10), C.brass, 0, 0.0655, 0);
+  // Pierced brass lantern finial atop the Staunton crown
+  p.addMesh(MAT.glass_spectral, cylY(0.0042, 0.0046, 0.0075, 10), C.wax, 0, 0.0568, 0, 0, 0, 0, 1, 1, 1, 0.78);
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + 0.4;
+    p.addMesh(MAT.brass_aged, cylY(0.0007, 0.0007, 0.008, 6), C.brass, Math.cos(a) * 0.005, 0.0566, Math.sin(a) * 0.005);
+  }
+  p.addMesh(MAT.brass_aged, lathe([[0, 0.0642], [0.0072, 0.0645], [0.0044, 0.068], [0.002, 0.0705], [0, 0.072]], 14, 42), C.brass);
   bakePartAO(p, 0.02, 0, 0.48);
   return p;
 }
@@ -1053,12 +1090,15 @@ function buildPawnPoltergeist() {
 
 function buildPawnTurnRing() {
   const p = new PartBuilder('pawn_turn_ring');
-  const ring = lathe([[0.0195, 0], [0.0252, 0], [0.0245, 0.0025], [0.0202, 0.0025], [0.0195, 0]], 24, 42);
+  const ring = lathe([[0.0195, 0], [0.0258, 0], [0.025, 0.0028], [0.0202, 0.0028], [0.0195, 0]], 28, 42);
   p.addMesh(MAT.brass_aged, ring, C.brass);
   for (let i = 0; i < 4; i++) {
     const a = (i / 4) * Math.PI * 2;
-    p.addMesh(MAT.brass_aged, bevelBox(0.0046, 0.0036, 0.007, 0.0005), C.brass, Math.cos(a) * 0.023, 0, Math.sin(a) * 0.023, 0, -a, 0);
+    p.addMesh(MAT.brass_aged, bevelBox(0.0048, 0.0038, 0.0075, 0.0005), C.brass, Math.cos(a) * 0.0235, 0, Math.sin(a) * 0.0235, 0, -a, 0);
+    const b = a + Math.PI / 4;
+    p.addMesh(MAT.brass_aged, uvSphere(0.0016, 0.0016, 0.0016, 8, 6), C.pearl, Math.cos(b) * 0.0228, 0.0028, Math.sin(b) * 0.0228);
   }
+  p.addMesh(MAT.fabric_velvet, uvSphere(0.0022, 0.002, 0.0022, 8, 6), C.alarm, 0, 0.0034, 0.0235);
   return p;
 }
 

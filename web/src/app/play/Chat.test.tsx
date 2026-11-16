@@ -16,11 +16,11 @@ const ui = (over: Partial<PlayUi> = {}): PlayUi => ({
 const quiet: VoiceUi = { speak: false, speaking: false, mic: "idle", note: null };
 const whisper: GhostFace = { name: "Maren", sprite: "/demo/ghosts/preset-maren.svg", speaker: "whisper" };
 
-function show(over: { ui?: Partial<PlayUi>; ghost?: GhostFace; voice?: Partial<VoiceUi>; voiceAvailable?: boolean } = {}) {
+function show(over: { ui?: Partial<PlayUi>; ghost?: GhostFace; voice?: Partial<VoiceUi>; voiceAvailable?: boolean; modelOn?: boolean } = {}) {
   const calls = { submit: vi.fn(), close: vi.fn(), speak: vi.fn(), press: vi.fn(), release: vi.fn() };
   const r = render(
     <Chat
-      ui={ui(over.ui)} voice={{ ...quiet, ...over.voice }} voiceAvailable={over.voiceAvailable ?? false} ghost={over.ghost ?? whisper}
+      ui={ui(over.ui)} voice={{ ...quiet, ...over.voice }} voiceAvailable={over.voiceAvailable ?? false} modelOn={over.modelOn ?? false} ghost={over.ghost ?? whisper}
       onSubmit={calls.submit} onClose={calls.close} onSpeak={calls.speak} onPress={calls.press} onRelease={calls.release}
     />,
   );
@@ -94,9 +94,9 @@ describe("Chat: built from the design elements (ghost-engine 6.1, Requirement 10
   });
 });
 
-describe("Chat: the note that typed words go to a model", () => {
-  it("says it once, in one line, under the text box, and ties it to the box", () => {
-    show();
+describe("Chat: the note that typed words go to a model (Requirement 2.4)", () => {
+  it("when the server says a model is on, says it once, in one line, under the text box, and ties it to the box", () => {
+    show({ modelOn: true });
     const notes = document.querySelectorAll("[data-model-note]");
     expect(notes).toHaveLength(1);
     expect(notes[0]!.textContent).toBe(MODEL_NOTE);
@@ -108,8 +108,18 @@ describe("Chat: the note that typed words go to a model", () => {
     expect(notes[0]!.closest("form")).not.toBeNull();
   });
 
+  it("says nothing of a model when none is on, so it never tells a visitor something that is not so", () => {
+    show({ modelOn: false });
+    expect(document.querySelectorAll("[data-model-note]")).toHaveLength(0);
+    expect(document.body.textContent).not.toMatch(/AI model/);
+    expect(screen.getByLabelText("Say something").hasAttribute("aria-describedby")).toBe(false);
+  });
+
   it("is there with the voice controls on and with them off", () => {
-    show({ voiceAvailable: true });
+    show({ modelOn: true, voiceAvailable: true });
+    expect(document.querySelectorAll("[data-model-note]")).toHaveLength(1);
+    cleanup();
+    show({ modelOn: true, voiceAvailable: false });
     expect(document.querySelectorAll("[data-model-note]")).toHaveLength(1);
   });
 });
@@ -121,7 +131,7 @@ describe("Chat: the ghost on the stage", () => {
     expect(speech().textContent).toBe(STAGE_WAITING);
     expect(speech().classList.contains("ui-speech-tail")).toBe(true);
     rerender(
-      <Chat ui={ui({ reply: { n: 1, text: "Something was here." }, lines: [{ id: 1, who: "ghost", text: "Something was here." }] })} voice={quiet} voiceAvailable={false} ghost={whisper}
+      <Chat ui={ui({ reply: { n: 1, text: "Something was here." }, lines: [{ id: 1, who: "ghost", text: "Something was here." }] })} voice={quiet} voiceAvailable={false} modelOn={false} ghost={whisper}
         onSubmit={calls.submit} onClose={calls.close} onSpeak={calls.speak} onPress={calls.press} onRelease={calls.release} />,
     );
     expect(speech().textContent).toBe("Something was here.");

@@ -44,6 +44,7 @@ export const ShellFlagsSchema = z.object({
   voiceEnabled: z.boolean(),
   liveEnabled: z.boolean(),
   partyEnabled: z.boolean(),
+  ghostModel: z.boolean(),
 });
 
 export const SessionRecordSchema = z.object({

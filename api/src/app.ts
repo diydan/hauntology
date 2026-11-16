@@ -88,7 +88,10 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   if (options.admin !== undefined) app.route("/admin", adminRoutes({ log, ...options.admin }));
 
   const flags = async (c: Context<AppEnv>): Promise<ShellFlags> => {
-    const f = flagsFrom(c.env, options.spend ? await options.spend(c) : undefined);
+    // The same test the play route's narration uses: a narrator that exists and a switch that is on.
+    const narration = options.play?.narration;
+    const ghostModel = narration !== undefined && narration.narrator !== null && narration.enabled;
+    const f = flagsFrom(c.env, options.spend ? await options.spend(c) : undefined, { ghostModel });
     return options.worldGenAvailable === false ? { ...f, worldGenEnabled: false } : f;
   };
   app.route("/api/session", sessionRoutes({ flags }));

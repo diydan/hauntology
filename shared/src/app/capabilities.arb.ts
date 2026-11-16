@@ -23,4 +23,5 @@ export const shellFlagsArb: fc.Arbitrary<ShellFlags> = fc.record({
   voiceEnabled: fc.boolean(),
   liveEnabled: fc.boolean(),
   partyEnabled: fc.boolean(),
+  ghostModel: fc.boolean(),
 });

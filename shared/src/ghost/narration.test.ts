@@ -63,7 +63,8 @@ describe("buildNarrationPrompt (ghost-engine 2.15)", () => {
   it("leaves the tone to the voice: the shared rules say gentle in what is said, not wistful, so the stern ghost is not told to be warm", () => {
     for (const voice of VOICES) {
       const system = buildNarrationPrompt({ ...base, voice })!.system;
-      expect(system).toContain("Stay gentle in what you say");
+      expect(system).toContain("Be unsettling, and menacing toward the visitor only by hint and by politeness, never cruel");
+      expect(system).toContain("no gore, no violence done or described");
       expect(system).toContain("Keep to your own voice.");
       expect(system).not.toContain("wistful, strange, warm");
     }
@@ -176,6 +177,8 @@ describe("buildNarrationPrompt (ghost-engine 2.15)", () => {
     }
     expect(MEMORY_MAX).toBeLessThan(LINE_MAX * 2);
     expect(NARRATION_MAX_TOKENS).toBe(220);
+    // The price a call can reach is worked out from this bound (docs/spikes/4.2.md, tools/lib/ghost-playthrough.mjs): moving it moves the cost.
+    expect(PROMPT_CHARS_MAX).toBe(5_300);
   });
 });
 

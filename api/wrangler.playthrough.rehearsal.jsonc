@@ -1,0 +1,32 @@
+// LOCAL-ONLY config for dev/playthrough-worker.ts: the REHEARSAL of the narrator play-through (docs/spikes/4.2.md). NEVER deployed: `wrangler deploy` reads wrangler.jsonc.
+// This config has NO `ai` binding and no AI_GATEWAY_ID, so the narrator is off (`null`): every reply is a scripted line, nothing is called and nothing can be spent.
+// It runs the whole runner end to end over the real game routes. From the repo root, in one shell (the two values are random, 16+ characters, never written to a file):
+//   export RUN_TOKEN=$(openssl rand -hex 16); export HMAC=$(openssl rand -hex 16)
+//   pnpm --filter api exec wrangler dev -c wrangler.playthrough.rehearsal.jsonc --ip 127.0.0.1 --port 8801 \
+//     --persist-to $KIROCREW_SCRATCH/playthrough-state --var RUN_TOKEN:$RUN_TOKEN --var HMAC_SECRET:$HMAC
+//   GHOST_PLAYTHROUGH_TOKEN=$RUN_TOKEN node tools/ghost-playthrough.mjs --run --budget-usd 0.02 --worker http://127.0.0.1:8801
+// The paid run is the other file, wrangler.playthrough.jsonc, and it is the owner's to start.
+{
+  "name": "hauntology-playthrough-rehearsal",
+  "main": "dev/playthrough-worker.ts",
+  "compatibility_date": "2025-06-01",
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hauntology-worlds" }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "WORLD_JOB", "class_name": "WorldJob" },
+      { "name": "SPEND_GUARD", "class_name": "SpendGuard" },
+      { "name": "PARTY_ROOM", "class_name": "PartyRoom" },
+      { "name": "PARTY_DIRECTORY", "class_name": "PartyDirectory" },
+      { "name": "PLAY_SESSION", "class_name": "PlaySession" },
+      { "name": "PLAY_INDEX", "class_name": "PlayIndex" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["WorldJob"] },
+    { "tag": "v2", "new_sqlite_classes": ["SpendGuard"] },
+    { "tag": "v3", "new_sqlite_classes": ["PartyRoom", "PartyDirectory"] },
+    { "tag": "v4", "new_sqlite_classes": ["PlaySession", "PlayIndex"] }
+  ],
+  // The same caps as the paid run, so the counts read the same. No world is made, no weather is read, no room is made.
+  "vars": { "WORLD_GEN_ENABLED": "false", "PARTY_ENABLED": "false", "CONDITIONS_ENABLED": "false", "LLM_DAY_CAP": "60", "LLM_SESSION_CAP": "60" }
+}

@@ -106,7 +106,7 @@ const bucketOf = (hour: number): Atmosphere["timeOfDay"] => (hour >= 5 && hour <
 export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
   const stage = { queued: 1500, generating: 5000, ingesting: 3000, ...options.stageMs };
   const quota: QuotaSnapshot = { world: 2, image: 8, llm: 40, tts: 40, stt: 20, live: 30, ...options.quota };
-  const flags: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ...options.flags };
+  const flags: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false, ...options.flags };
   let ackNotice = options.ackNotice ?? false;
   let lastWorldId: string | undefined;
   let lastPlayId: string | undefined;

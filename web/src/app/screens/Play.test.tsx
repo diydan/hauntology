@@ -130,6 +130,19 @@ describe("Play: the interaction prompt and the Chat", () => {
     expect(box.maxLength).toBe(200);
   });
 
+  it("tells the visitor that typed words may go to a model only when the server says a model is on", async () => {
+    await enterPlay({ fake: { flags: { ghostModel: true } } });
+    await goIn();
+    await press("Talk");
+    expect(document.querySelector("[data-model-note]")?.textContent).toMatch(/AI model/);
+    cleanup();
+    await enterPlay();
+    await goIn();
+    await press("Talk");
+    await screen.findByRole("complementary", { name: "Chat with the ghost" });
+    expect(document.querySelector("[data-model-note]")).toBeNull();
+  });
+
   it("keeps the Chat usable after a failed turn, with fixed words and no error screen", async () => {
     const api = createFakeApi({ latencyMs: 0 });
     await enterPlay({ api });

@@ -50,7 +50,7 @@
       "very close"
     ]
   },
-  "count": 513,
+  "count": 510,
   "entries": [
     {
       "key": "speech/lib/v1/8818fdcc67badd8bd34f35ade581c0d4d205e9f56a6eaba69f0b294ea4cd1b19",
@@ -3213,22 +3213,6 @@
       ]
     },
     {
-      "key": "speech/lib/v1/9ef92d5438a7e7a05c0a8e1590f47f5c56588ad86cfbd667abcf2ec8d9d0b42b",
-      "voice": "inworld:Ronald",
-      "spoken": "Your hour begins. I have laid out the corridor, a lamp and a great many floorboards, in that order. Only the lamp is of any use.",
-      "sources": [
-        "turn-start.dry.7"
-      ]
-    },
-    {
-      "key": "speech/lib/v1/41fc96336a6dd6ccc08fcab661948a1175bbb52b069eab5d0f1efa8bf62f117c",
-      "voice": "inworld:Ronald",
-      "spoken": "A warning, before your hour begins: the stairs are fond of counting. They reached nine yesterday and thirteen the day before, and nobody has had the heart to ask them why.",
-      "sources": [
-        "turn-start.dry.8"
-      ]
-    },
-    {
       "key": "speech/lib/v1/ef431c33667d878d59d70d44b1e98a40c79bb43a87053213fc2021984046e51e",
       "voice": "inworld:Ronald",
       "spoken": "The candle is low. If there is something you mean to do, I would do it now, and not mention that I said so.",
@@ -3266,14 +3250,6 @@
       "spoken": "The lamp gutters. I am told that is the polite signal to stop dithering. I have never seen the impolite one.",
       "sources": [
         "time-warning.dry.5"
-      ]
-    },
-    {
-      "key": "speech/lib/v1/b57d276176a6ea6e92567ab2fd7ef4ed49f43b00914bb26c1b4e89b25bd2a6ba",
-      "voice": "inworld:Ronald",
-      "spoken": "I have watched four hundred guests dither in this very corridor, and not one improved by it. I say that kindly, and I say it once. The hour is thin.",
-      "sources": [
-        "time-warning.dry.7"
       ]
     },
     {

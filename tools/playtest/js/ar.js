@@ -85,18 +85,18 @@ const stage = $('#stage'), glCanvas = $('#gl'), tableCanvas = $('#table'), video
 const renderer = new THREE.WebGLRenderer({ canvas: glCanvas, alpha: true, antialias: true, powerPreference: 'low-power' });
 renderer.setClearColor(0x000000, 0);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.18;
+renderer.toneMappingExposure = 1.22;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(84, 1, 0.02, 12);
 scene.add(camera);
 const anchor = new THREE.Group();
 scene.add(anchor);
 
-scene.add(new THREE.HemisphereLight(0x9eb0d4, 0x24160c, 1.08));
-const sun = new THREE.DirectionalLight(0xfff0dc, 1.3);
-sun.position.set(-0.6, 1.25, 0.9);
+scene.add(new THREE.HemisphereLight(0xb2c0dd, 0x2c1c10, 1.12));
+const sun = new THREE.DirectionalLight(0xffeed6, 1.38);
+sun.position.set(-0.55, 1.35, 0.92);
 scene.add(sun);
-const moonRim = new THREE.DirectionalLight(0x9fc8dc, 0.62); // pale moonlight slanting through the three Gothic lancet windows
+const moonRim = new THREE.DirectionalLight(0xa4cee2, 0.66); // pale moonlight slanting through the three Gothic lancet windows
 moonRim.position.set(0.25, 0.85, -1.15);
 scene.add(moonRim);
 
@@ -116,26 +116,38 @@ function drawTable() {
   tableCanvas.width = w; tableCanvas.height = h;
   const g = tableCanvas.getContext('2d');
   let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#34231a'); bg.addColorStop(1, '#1d1209');
+  // Mahogany parlor gaming table border
+  const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#301f15'); bg.addColorStop(1, '#180e08');
   g.fillStyle = bg; g.fillRect(0, 0, w, h);
   const plank = h / 7;
   for (let i = 0; i < 7; i++) {
     const y = i * plank, tint = 0.5 + rnd() * 0.5;
-    g.fillStyle = `rgba(${90 + tint * 40},${55 + tint * 25},${30 + tint * 14},.28)`; g.fillRect(0, y, w, plank);
-    for (let k = 0; k < 26; k++) { // grain
-      g.strokeStyle = `rgba(20,10,4,${0.05 + rnd() * 0.1})`; g.lineWidth = 1;
+    g.fillStyle = `rgba(${90 + tint * 40},${55 + tint * 25},${30 + tint * 14},.24)`; g.fillRect(0, y, w, plank);
+    for (let k = 0; k < 22; k++) { // walnut/mahogany grain
+      g.strokeStyle = `rgba(18,8,3,${0.06 + rnd() * 0.1})`; g.lineWidth = 1;
       const yy = y + rnd() * plank; g.beginPath(); g.moveTo(0, yy);
       g.bezierCurveTo(w * 0.3, yy + (rnd() - 0.5) * 6, w * 0.6, yy + (rnd() - 0.5) * 6, w, yy + (rnd() - 0.5) * 4); g.stroke();
     }
-    g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, y, w, 2);
-    const jx = rnd() * w; g.fillRect(jx, y, 2, plank); // butt joint
+    g.fillStyle = 'rgba(0,0,0,.48)'; g.fillRect(0, y, w, 1.5);
   }
-  g.strokeStyle = 'rgba(15,8,3,.45)'; g.lineWidth = 3; g.beginPath(); g.arc(w * 0.82, h * 0.22, h * 0.035, 0, 7); g.stroke(); // mug ring
-  const lamp = g.createRadialGradient(w * 0.2, h * 0.1, 0, w * 0.2, h * 0.1, w * 0.9);
-  lamp.addColorStop(0, 'rgba(255,190,110,.28)'); lamp.addColorStop(1, 'rgba(255,190,110,0)');
+  // Inset forest-slate wool baize game cloth & hairline brass corner rule
+  const mx = Math.round(w * 0.085), my = Math.round(h * 0.095), bw = w - mx * 2, bh = h - my * 2;
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(mx - 4, my - 4, bw + 8, bh + 8);
+  const baize = g.createRadialGradient(w * 0.48, h * 0.45, bh * 0.08, w * 0.5, h * 0.5, Math.max(bw, bh) * 0.68);
+  baize.addColorStop(0, '#20332b'); baize.addColorStop(0.65, '#15231e'); baize.addColorStop(1, '#0d1614');
+  g.fillStyle = baize; g.fillRect(mx, my, bw, bh);
+  for (let k = 0; k < 90; k++) { // subtle felt wool nap
+    g.fillStyle = rnd() > 0.5 ? 'rgba(255,248,225,.022)' : 'rgba(0,0,0,.045)';
+    g.fillRect(mx + rnd() * bw, my + rnd() * bh, 2 + rnd() * 3, 1.5);
+  }
+  g.strokeStyle = 'rgba(212,176,106,.34)'; g.lineWidth = 1.5; g.strokeRect(mx + 6, my + 6, bw - 12, bh - 12);
+  g.strokeStyle = 'rgba(212,176,106,.16)'; g.lineWidth = 1; g.strokeRect(mx + 11, my + 11, bw - 22, bh - 22);
+  // Warm banker's lamp sheen + deep edge vignette
+  const lamp = g.createRadialGradient(w * 0.24, h * 0.14, 0, w * 0.24, h * 0.14, w * 0.85);
+  lamp.addColorStop(0, 'rgba(255,198,120,.26)'); lamp.addColorStop(1, 'rgba(255,198,120,0)');
   g.fillStyle = lamp; g.fillRect(0, 0, w, h);
   const vg = g.createRadialGradient(w / 2, h / 2, h * 0.2, w / 2, h / 2, h * 0.85);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.65)');
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.68)');
   g.fillStyle = vg; g.fillRect(0, 0, w, h);
 }
 
@@ -152,63 +164,77 @@ const radialTex = (rgb) => canvasTex(128, 128, (g, w, h) => {
 function hexRgb(n) { return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
 function floorTex(r) {
   const [br, bg, bb] = hexRgb(r.floor);
-  return canvasTex(128, 128, (g, w, h) => {
+  return canvasTex(256, 256, (g, w, h) => {
     g.fillStyle = `rgb(${br},${bg},${bb})`; g.fillRect(0, 0, w, h);
     let seed = r.c * 31 + r.r * 97 + 13; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     if (r.kind === 'tile') {
-      const s = 16;
+      const s = 32;
       for (let y = 0; y < h; y += s) for (let x = 0; x < w; x += s) {
         const dark = ((x / s + y / s) % 2) === 0;
-        const k = dark ? 0.78 : 1.16;
+        const k = (dark ? 0.76 : 1.18) * (0.94 + rnd() * 0.12);
         g.fillStyle = `rgb(${Math.round(br * k)},${Math.round(bg * k)},${Math.round(bb * k)})`;
-        g.fillRect(x + 1, y + 1, s - 2, s - 2);
+        g.fillRect(x + 2, y + 2, s - 4, s - 4);
       }
-      g.strokeStyle = 'rgba(12,14,16,.48)'; g.lineWidth = 1;
+      g.strokeStyle = 'rgba(10,12,14,.55)'; g.lineWidth = 2;
       for (let i = 0; i <= w; i += s) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, h); g.moveTo(0, i); g.lineTo(w, i); g.stroke(); }
     } else if (r.kind === 'slate') {
-      for (let y = 0; y < h; y += 22) {
-        const off = (y % 44 === 0) ? 0 : 14;
-        for (let x = -14; x < w; x += 28) {
-          const k = 0.85 + rnd() * 0.3;
+      for (let y = 0; y < h; y += 36) {
+        const off = (Math.floor(y / 36) % 2 === 0) ? 0 : 28;
+        for (let x = -28; x < w; x += 56) {
+          const k = 0.84 + rnd() * 0.32;
           g.fillStyle = `rgb(${Math.round(br * k)},${Math.round(bg * k)},${Math.round(bb * k)})`;
-          g.fillRect(x + off + 1, y + 1, 26, 20);
+          g.fillRect(x + off + 2, y + 2, 52, 32);
+          g.strokeStyle = 'rgba(255,255,255,.045)'; g.lineWidth = 1; g.strokeRect(x + off + 3, y + 3, 50, 30);
         }
       }
     } else {
-      const pw = 16;
+      const pw = 24;
       for (let x = 0; x < w; x += pw) {
         const k = 0.86 + rnd() * 0.28;
         g.fillStyle = `rgb(${Math.round(br * k)},${Math.round(bg * k)},${Math.round(bb * k)})`;
         g.fillRect(x, 0, pw - 1, h);
-        g.fillStyle = 'rgba(8,5,3,.52)'; g.fillRect(x, 0, 1, h);
-        const jy = Math.round(rnd() * h); g.fillRect(x, jy, pw, 1.2);
+        for (let s = 0; s < 5; s++) { // subtle timber grain
+          g.strokeStyle = `rgba(18,9,4,${0.08 + rnd() * 0.1})`; g.lineWidth = 1;
+          const gx = x + 3 + rnd() * (pw - 6); g.beginPath(); g.moveTo(gx, 0); g.bezierCurveTo(gx + (rnd() - 0.5) * 4, h * 0.35, gx + (rnd() - 0.5) * 4, h * 0.7, gx, h); g.stroke();
+        }
+        g.fillStyle = 'rgba(8,5,3,.52)'; g.fillRect(x, 0, 1.5, h);
+        const jy = Math.round(rnd() * h); g.fillRect(x, jy, pw, 1.5);
       }
     }
+    // Delicate inlaid marquetry border around each room floorboard tile
+    g.strokeStyle = 'rgba(212,176,106,.26)'; g.lineWidth = 2; g.strokeRect(5, 5, w - 10, h - 10);
     const vg = g.createRadialGradient(w / 2, h / 2, w * 0.18, w / 2, h / 2, w * 0.72);
-    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.38)');
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.36)');
     g.fillStyle = vg; g.fillRect(0, 0, w, h);
   });
 }
 function rugTex(hex) {
   const [rr, rg, rb] = hexRgb(hex);
-  return canvasTex(128, 96, (g, w, h) => {
+  return canvasTex(256, 192, (g, w, h) => {
     g.clearRect(0, 0, w, h);
-    // Fringed ends left & right
-    g.strokeStyle = 'rgba(225,212,184,.65)'; g.lineWidth = 1.4;
-    for (let y = 8; y < h - 8; y += 4) { g.beginPath(); g.moveTo(1, y); g.lineTo(7, y); g.moveTo(w - 7, y); g.lineTo(w - 1, y); g.stroke(); }
-    g.fillStyle = `rgb(${rr},${rg},${rb})`; g.fillRect(6, 4, w - 12, h - 8);
-    g.strokeStyle = 'rgba(224,164,58,.58)'; g.lineWidth = 2.5; g.strokeRect(11, 9, w - 22, h - 18);
-    g.strokeStyle = 'rgba(20,16,14,.55)'; g.lineWidth = 1.5; g.strokeRect(16, 14, w - 32, h - 28);
-    // Victorian centre medallion
+    g.strokeStyle = 'rgba(225,212,184,.72)'; g.lineWidth = 2;
+    for (let y = 12; y < h - 12; y += 6) { g.beginPath(); g.moveTo(2, y); g.lineTo(12, y); g.moveTo(w - 12, y); g.lineTo(w - 2, y); g.stroke(); }
+    g.fillStyle = `rgb(${rr},${rg},${rb})`; g.fillRect(10, 6, w - 20, h - 12);
+    g.strokeStyle = 'rgba(224,164,58,.64)'; g.lineWidth = 3.5; g.strokeRect(18, 14, w - 36, h - 28);
+    g.strokeStyle = 'rgba(20,16,14,.58)'; g.lineWidth = 2; g.strokeRect(26, 22, w - 52, h - 44);
+    g.strokeStyle = 'rgba(224,164,58,.32)'; g.lineWidth = 1.5; g.strokeRect(32, 28, w - 64, h - 56);
     g.fillStyle = 'rgba(224,164,58,.24)'; g.beginPath();
-    g.moveTo(w / 2, 22); g.lineTo(w / 2 + 22, h / 2); g.lineTo(w / 2, h - 22); g.lineTo(w / 2 - 22, h / 2); g.closePath(); g.fill();
+    g.moveTo(w / 2, 36); g.lineTo(w / 2 + 38, h / 2); g.lineTo(w / 2, h - 36); g.lineTo(w / 2 - 38, h / 2); g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(224,164,58,.52)'; g.lineWidth = 1.8; g.stroke();
   });
 }
-function labelTex(text, size = 54, color = '#efe3c8') {
-  return canvasTex(256, 64, (g, w, h) => {
+function labelTex(text, size = 34, color = '#efe3c8') {
+  return canvasTex(280, 64, (g, w, h) => {
+    // Antique brass-framed boardgame plaque with corner brads
+    g.fillStyle = 'rgba(14,11,9,.88)'; g.beginPath(); g.roundRect(6, 6, w - 12, h - 12, 8); g.fill();
+    g.strokeStyle = 'rgba(212,176,106,.78)'; g.lineWidth = 2.5; g.stroke();
+    g.fillStyle = '#c89b44';
+    for (const [bx, by] of [[15, 15], [w - 15, 15], [15, h - 15], [w - 15, h - 15]]) {
+      g.beginPath(); g.arc(bx, by, 2.5, 0, 7); g.fill();
+    }
     g.font = `600 ${size}px Georgia, "Times New Roman", serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(text.toUpperCase(), w / 2 + 2, h / 2 + 3);
-    g.fillStyle = color; g.fillText(text.toUpperCase(), w / 2, h / 2);
+    g.fillStyle = 'rgba(0,0,0,.65)'; g.fillText(text.toUpperCase(), w / 2 + 1.5, h / 2 + 2);
+    g.fillStyle = color; g.fillText(text.toUpperCase(), w / 2, h / 2 + 0.5);
   });
 }
 function pillTex(text, color) {
@@ -251,14 +277,14 @@ const animProps = { horse: null, pendulum: null, frost: null, frostMats: [], tur
 
   for (const r of ROOMS) {
     const c = roomCenter(r); roomPos[r.id] = c;
-    const fm = std(0xffffff, { map: floorTex(r), roughness: r.kind === 'slate' ? 0.92 : 0.78, metalness: 0.04, emissive: 0x000000 });
+    const fm = std(0xffffff, { map: floorTex(r), roughness: r.kind === 'slate' ? 0.84 : 0.64, metalness: 0.06, emissive: 0x000000 });
     const f = new THREE.Mesh(new THREE.BoxGeometry(W - 0.0015, 0.004, D - 0.0015), fm);
     f.position.set(c.x, 0.002, c.z); f.userData = { type: 'room', id: r.id }; board.add(f); floors[r.id] = f; hit.push(f);
     if (r.kind !== 'slate') {
       const rug = new THREE.Mesh(new THREE.PlaneGeometry(W * 0.62, D * 0.48), std(0xffffff, { map: rugTex(r.rug), transparent: true, roughness: 0.95 }));
       rug.rotation.x = -Math.PI / 2; rug.position.set(c.x, 0.0042, c.z + 0.015); board.add(rug);
     }
-    const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.132, 0.033), new THREE.MeshBasicMaterial({ map: labelTex(r.name), transparent: true, depthWrite: false }));
+    const lab = new THREE.Mesh(new THREE.PlaneGeometry(0.138, 0.034), new THREE.MeshBasicMaterial({ map: labelTex(r.name), transparent: true, depthWrite: false }));
     lab.rotation.x = -Math.PI / 2; lab.position.set(c.x, 0.0046, c.z + (r.r === 0 ? 0.085 : D / 2 - 0.025)); board.add(lab);
   }
 
@@ -665,6 +691,16 @@ function layout() { // where each character should stand: in the room it is mark
     else { const lp = lineupPos(SUSPECTS.findIndex((x) => x.id === s.id), SUSPECTS.length, LINEUP_SPACING, TRAY_Z); s.tx = lp.x; s.tz = lp.z; }
   });
 }
+function dropTarget(s, room) { // exact slot where dropping s on room (or null for the tray) will place it
+  const idx = SUSPECTS.findIndex((x) => x.id === s.id);
+  if (room) {
+    let k = 0;
+    for (let i = 0; i < idx; i++) if (marks[SUSPECTS[i].id] === room.id) k++;
+    const c = roomPos[room.id], o = slotPos(k, W, D);
+    return { x: c.x + o.x, z: c.z + o.z };
+  }
+  return lineupPos(idx, SUSPECTS.length, LINEUP_SPACING, TRAY_Z);
+}
 function refreshBadges() { standees.forEach((s) => { s.badge.visible = S.notes && !!marks[s.id]; }); }
 const _plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), _inv = new THREE.Matrix4(), _hit = new THREE.Vector3();
 function fingerOnPlane(cx, cy, y) { // where the finger's ray meets a flat plane at height y above the board, in the board's own frame
@@ -682,11 +718,17 @@ function standeeAt(cx, cy) {
   const hits = ray.intersectObjects(standees.map((s) => s.plane), false);
   return hits.length ? standees.find((s) => s.plane === hits[0].object) : null;
 }
-const dropRing = new THREE.Mesh(new THREE.PlaneGeometry(0.092, 0.092), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0.92, map: canvasTex(128, 128, (g, w, h) => {
+const dropRing = new THREE.Mesh(new THREE.PlaneGeometry(0.088, 0.088), new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, opacity: 0.92, map: canvasTex(128, 128, (g, w, h) => {
   const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w * 0.44);
-  r.addColorStop(0, 'rgba(6,9,12,.85)'); r.addColorStop(0.75, 'rgba(10,18,18,.45)'); r.addColorStop(1, 'rgba(10,18,18,0)');
+  r.addColorStop(0, 'rgba(6,9,12,.75)'); r.addColorStop(0.75, 'rgba(10,18,18,.38)'); r.addColorStop(1, 'rgba(10,18,18,0)');
   g.fillStyle = r; g.fillRect(0, 0, w, h);
-  g.strokeStyle = 'rgba(159,232,208,.78)'; g.lineWidth = 4; g.shadowColor = 'rgba(159,232,208,.8)'; g.shadowBlur = 8; g.beginPath(); g.arc(w / 2, h / 2, w * 0.34, 0, 7); g.stroke();
+  g.strokeStyle = 'rgba(224,164,58,.86)'; g.lineWidth = 3; g.beginPath(); g.arc(w / 2, h / 2, w * 0.36, 0, 7); g.stroke();
+  g.strokeStyle = 'rgba(159,232,208,.82)'; g.lineWidth = 2.5; g.shadowColor = 'rgba(159,232,208,.8)'; g.shadowBlur = 7; g.beginPath(); g.arc(w / 2, h / 2, w * 0.28, 0, 7); g.stroke();
+  for (let i = 0; i < 4; i++) {
+    const a = (i * Math.PI) / 2;
+    g.beginPath(); g.moveTo(w / 2 + Math.cos(a) * w * 0.31, h / 2 + Math.sin(a) * w * 0.31);
+    g.lineTo(w / 2 + Math.cos(a) * w * 0.41, h / 2 + Math.sin(a) * w * 0.41); g.stroke();
+  }
 }) }));
 dropRing.rotation.x = -Math.PI / 2; dropRing.visible = false; dropRing.renderOrder = 6; board.add(dropRing); // occult mark where the suspended effigy will drop
 function setHover(room) { for (const f of Object.values(floors)) f.material.emissive.setHex(0); if (room) floors[room.id].material.emissive.setHex(0x1b332e); }
@@ -713,12 +755,11 @@ function endCarry(cancelled) {
   carry = null; s.vy = 0; s.fallT = 0; s.settleT = 0;
   if (reduced || !s.rig) { s.mode = 'idle'; s.rig = null; s.pallor = 0; s.g.position.set(s.tx, groundAt(s.tx, s.tz), s.tz); } // reduced motion: no fall, no wobble
   else {
-    // Snap g.position.y to the floorboards at the exact drop spot while keeping s.rig.p in board-space Y so stepChain
-    // drives the entire severed plummet cleanly to the floor with zero mid-air float or ice-skating slide.
+    // Snap g.position.y to the floorboards while keeping s.rig.p in board-space Y so stepChain drives a clean vertical
+    // plummet directly onto the target slot (s.tx, s.tz) without crawling or wriggling across the floor afterward.
     s.g.position.y = groundAt(s.g.position.x, s.g.position.z);
     const dir = SUSPECTS.indexOf(s.s) % 2 ? 1 : -1;
-    s.rig.p[0] += dir * 0.008; s.rig.p[2] += dir * 0.005; s.rig.p[4] += dir * 0.003; s.rig.p[6] += dir * 0.001;
-    s.rig.q[0] = s.rig.p[0]; s.rig.q[2] = s.rig.p[2];
+    s.rig.p[4] += dir * 0.002; s.rig.p[6] += dir * 0.001; // gentle in-place fold without shoving sideways
     s.thread.visible = false;
     s.mode = 'falling';
   }
@@ -781,41 +822,44 @@ function updateStandee(s, t, dt) {
     } else s.plane.rotation.y = gazeYaw(s);
     return;
   }
-  if (s.mode === 'falling') { // severed strings: plummet straight down at the release point and fold into the floorboards
+  const shiftAnchorTo = (nx, nz) => {
+    const dx = nx - g.position.x, dz = nz - g.position.z;
+    g.position.x = nx; g.position.z = nz;
+    const du = dx * Math.cos(s.phi) - dz * Math.sin(s.phi);
+    s.u += du;
+    if (s.rig) for (let i = 0; i < s.rig.n; i++) { s.rig.p[2 * i] += du; s.rig.q[2 * i] += du; }
+  };
+  if (s.mode === 'falling') { // severed strings: plummet into the target slot and crumple there without sideways wandering
     s.fallT += dt;
+    const k = ease(24);
+    shiftAnchorTo(g.position.x + (s.tx - g.position.x) * k, g.position.z + (s.tz - g.position.z) * k);
     const floor = groundAt(g.position.x, g.position.z);
     g.position.y = floor;
-    s.wLag *= Math.max(0, 1 - dt * 14);
-    s.plane.rotation.z *= Math.max(0, 1 - dt * 14);
+    s.wLag *= Math.max(0, 1 - dt * 16);
+    s.plane.rotation.z *= Math.max(0, 1 - dt * 16);
     applyPallor(s, 0.96, ease(12));
     rigStep(s, dt, false, 0);
     if (s.rig.p[1] <= floor + 0.018 || s.fallT >= 0.24) {
+      shiftAnchorTo(s.tx, s.tz);
+      g.position.y = groundAt(s.tx, s.tz);
       s.mode = 'settle'; s.settleT = 0;
       haptic([24, 18, 10]);
     }
     return;
   }
-  // settle: motionless heap on the floorboards (~0.38 s), then ratcheted string-haul head-first back upright
+  // settle: brief motionless slump right in the destination plinth, then smooth eerie rise in place (zero floor wriggle)
   s.settleT += dt;
-  const u = clamp((s.settleT - 0.38) / 0.85, 0, 1);
-  const restoreK = u <= 0 ? 0
-    : u < 0.26 ? (u / 0.26) * 0.24
-    : u < 0.42 ? 0.24 + ((u - 0.26) / 0.16) * 0.04
-    : Math.min(1, 0.28 + ((u - 0.42) / 0.58) * 0.72);
-  if (u > 0.25) {
-    const glide = ease(12 * Math.min(1, (u - 0.25) / 0.45));
-    g.position.x += (s.tx - g.position.x) * glide;
-    g.position.z += (s.tz - g.position.z) * glide;
-    stepMotionAxes(s, prevX, prevZ, dt, ease(12));
-  }
-  g.position.y = groundAt(g.position.x, g.position.z);
-  s.wLag *= Math.max(0, 1 - dt * 12);
-  if (u > 0.15) creepPhi(s, ease(u > 0.45 ? 4.8 : 0.85));
-  s.plane.rotation.z = u > 0.26 && u < 0.42 ? Math.sin(s.settleT * 47) * 0.014 : s.plane.rotation.z * Math.max(0, 1 - dt * 12);
+  const u = clamp((s.settleT - 0.26) / 0.66, 0, 1);
+  const restoreK = u * u * (3 - 2 * u);
+  g.position.x = s.tx; g.position.z = s.tz;
+  g.position.y = groundAt(s.tx, s.tz);
+  s.wLag *= Math.max(0, 1 - dt * 16);
+  if (u > 0.25) creepPhi(s, ease(u > 0.5 ? 4.8 : 0.75));
+  s.plane.rotation.z *= Math.max(0, 1 - dt * 16);
   applyPallor(s, u <= 0 ? 0.96 : 1 - Math.pow(u, 1.35), ease(u <= 0 ? 10 : 7));
   rigStep(s, dt, false, restoreK);
   const { off, speed } = chainUnrest(s.rig, s.u, g.position.y + s.topY);
-  if (s.settleT > 1.25 && off < 0.0014 && speed < 8e-5 && Math.abs(s.wLag) < 4e-4 && Math.hypot(g.position.x - s.tx, g.position.z - s.tz) < 0.002) {
+  if ((s.settleT > 0.96 && off < 0.0014 && speed < 8e-5 && Math.abs(s.wLag) < 4e-4) || s.settleT > 1.75) {
     const pos = s.plane.geometry.attributes.position; pos.array.set(s.orig); pos.needsUpdate = true;
     applyPallor(s, 0, 1); s.plane.rotation.z = 0; s.rig = null; s.mode = 'idle';
   }
@@ -1065,7 +1109,12 @@ function frame(now) {
   // suspects face you (around the up axis only, like a standee), the selected one glows
   camera.getWorldPosition(_w);
   for (const s of standees) updateStandee(s, t, dt);
-  dropRing.visible = !!carry; if (carry) dropRing.position.set(carry.hx, groundAt(carry.hx, carry.hz) + 0.002, carry.hz);
+  dropRing.visible = !!carry;
+  if (carry) {
+    const dest = dropTarget(carry.s, carry.hover);
+    dropRing.position.set(dest.x, groundAt(dest.x, dest.z) + 0.0022, dest.z);
+    if (!reduced) dropRing.rotation.z = t * 0.45;
+  }
 
   // the Whisper: drifts room to room in her 3D shroud, bobs, flickers, trails mist
   if (ghost) {

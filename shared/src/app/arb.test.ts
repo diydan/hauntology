@@ -103,9 +103,9 @@ describe("quota, flags and errors", () => {
     }
   });
 
-  it("flags reach all 64 combinations", () => {
-    const seen = new Set(sample(shellFlagsArb).map((f) => `${f.worldGenEnabled}${f.dayCapReached}${f.totalCapReached}${f.voiceEnabled}${f.liveEnabled}${f.partyEnabled}`));
-    expect(seen.size).toBe(64);
+  it("flags reach all 128 combinations", () => {
+    const seen = new Set(sample(shellFlagsArb, 4000).map((f) => `${f.worldGenEnabled}${f.dayCapReached}${f.totalCapReached}${f.voiceEnabled}${f.liveEnabled}${f.partyEnabled}${f.ghostModel}`));
+    expect(seen.size).toBe(128);
   });
 
   it("error codes are real codes, and the other strings are not", () => {

@@ -1,0 +1,10 @@
+// LOCAL-ONLY config for dev/conditions-spike.ts (conditions Spike 1.1, docs/spikes/conditions-1.1.md). NEVER deployed: `wrangler deploy` reads wrangler.jsonc.
+// It makes about 25 FREE calls to Open-Meteo (no key, no credits, no SpendTicket) with generic made-up queries (two capital cities and fixed dates), from this machine's
+// Worker runtime. From the repo root:
+//   pnpm --filter api exec wrangler dev -c wrangler.conditions.jsonc --ip 127.0.0.1 --port 8811
+//   curl -s http://127.0.0.1:8811/run > $KIROCREW_SCRATCH/conditions-spike.json
+{
+  "name": "hauntology-conditions-spike",
+  "main": "dev/conditions-spike.ts",
+  "compatibility_date": "2025-06-01"
+}

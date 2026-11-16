@@ -1,0 +1,36 @@
+// LOCAL-ONLY config for dev/playthrough-worker.ts: the PAID narrator play-through (docs/spikes/4.2.md, ghost-engine checkpoint 8). NEVER deployed: `wrangler deploy` reads wrangler.jsonc.
+// !! The `AI` binding below reaches the real, billed service (Haiku 5.5 through the AI Gateway, from prepaid credits). Start this Worker ONLY after the owner has said go.
+// The default for a try-out is the REHEARSAL config, wrangler.playthrough.rehearsal.jsonc (no `ai` binding, nothing can be spent); its command is in that file's header.
+// The paid run, from the repo root, with random values of 16+ characters that are never written to a file:
+//   export RUN_TOKEN=$(openssl rand -hex 16); export HMAC=$(openssl rand -hex 16)
+//   pnpm --filter api exec wrangler dev -c wrangler.playthrough.jsonc --ip 127.0.0.1 --port 8802 \
+//     --persist-to ../.ghost-playthrough/state --var RUN_TOKEN:$RUN_TOKEN --var HMAC_SECRET:$HMAC
+//   GHOST_PLAYTHROUGH_TOKEN=$RUN_TOKEN node tools/ghost-playthrough.mjs --run --live --budget-usd 0.02 --worker http://127.0.0.1:8802
+// `--live` is required by the runner when the Worker says it has a model, so a paid run can never start by accident. The Durable Object keeps the call count in the persisted
+// state, so a restart does not reset the cap of 60 calls a day. The per-visitor cap equals the day cap on purpose: then what is left for any new visitor is exactly what
+// is left for the day, and `/dev/units` reads the count of the guard exactly.
+{
+  "name": "hauntology-playthrough",
+  "main": "dev/playthrough-worker.ts",
+  "compatibility_date": "2025-06-01",
+  "ai": { "binding": "AI" },
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "hauntology-worlds" }],
+  "durable_objects": {
+    "bindings": [
+      { "name": "WORLD_JOB", "class_name": "WorldJob" },
+      { "name": "SPEND_GUARD", "class_name": "SpendGuard" },
+      { "name": "PARTY_ROOM", "class_name": "PartyRoom" },
+      { "name": "PARTY_DIRECTORY", "class_name": "PartyDirectory" },
+      { "name": "PLAY_SESSION", "class_name": "PlaySession" },
+      { "name": "PLAY_INDEX", "class_name": "PlayIndex" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["WorldJob"] },
+    { "tag": "v2", "new_sqlite_classes": ["SpendGuard"] },
+    { "tag": "v3", "new_sqlite_classes": ["PartyRoom", "PartyDirectory"] },
+    { "tag": "v4", "new_sqlite_classes": ["PlaySession", "PlayIndex"] }
+  ],
+  // At most 60 narrator calls in all (the day cap is the hard stop; a retry is a call). No world is made, no weather is read, no room is made.
+  "vars": { "AI_GATEWAY_ID": "default", "WORLD_GEN_ENABLED": "false", "PARTY_ENABLED": "false", "CONDITIONS_ENABLED": "false", "LLM_DAY_CAP": "60", "LLM_SESSION_CAP": "60" }
+}
