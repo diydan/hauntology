@@ -146,7 +146,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - _Requirements: 1.3, 5.4_
 
 - [ ] 8. Checkpoint
-  - **Runner built and rehearsed 2026-11-16, no spend (the paid run waits for your go with `--live`):** see `docs/spikes/4.2.md`. Earlier note: **Plan written 2026-11-15:** the "once with the model" run, from the game itself, with the real Worker, `PlaySession` and `SpendGuard` behind a real Haiku 5.5: `docs/spikes/4.2.md` (60 calls, $0.02 cap, three games: a whole game, the hints, and the stern voice with the red-team lines).
+  - **Played once with the model 2026-11-16, with the owner's go (60 of 60 calls, `docs/spikes/4.2.md`): game A reached the ending, 42 of 48 eligible turns were worded by Haiku 5.5, median 1.7 s, no wrong hint, both voices held under four attacks; not ticked, because the six Gallery Worlds were not played (the run used one made-up attic) and the tone is the owner's to judge.** Earlier: runner built and rehearsed 2026-11-16, no spend: Earlier note: **Plan written 2026-11-15:** the "once with the model" run, from the game itself, with the real Worker, `PlaySession` and `SpendGuard` behind a real Haiku 5.5: `docs/spikes/4.2.md` (60 calls, $0.02 cap, three games: a whole game, the hints, and the stern voice with the red-team lines).
   - Run tests, typecheck, `node tools/check-traceability.mjs`; play each Gallery World to completion in Scripted Mode and once with the model; ask the user if questions arise.
 
 - [ ] 9. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 10 and the `design-system` spec)
