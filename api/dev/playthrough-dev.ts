@@ -5,6 +5,7 @@
  *   POST /dev/seed-gallery { id }   plants a made-up attic as a Gallery world (a place with no splat: the engine reads only its brief and bounds)
  *   GET  /dev/status                { ready, narrator, aiBinding, caps }   what the Worker can do (spends nothing)
  *   GET  /dev/units                 { used, remaining, cap, exact }   the units `SpendGuard` has counted for the `llm` meter today (spends nothing)
+ *   GET  /dev/calls?since=N         { epoch, next, lost, calls }   the model calls recorded after number N: each reply's text, stop reason and token counts (`playthrough-calls.ts`; reads only, spends nothing)
  *
  * Every call needs `RUN_TOKEN` (16 or more characters) in the `x-run-token` header and a loopback host, so nothing else on the machine or the network can plant a place
  * or read the counts. The host is checked first, then the token, then the method and the path.
@@ -50,6 +51,8 @@ export type DevDeps = {
   caps: { day: string | undefined; session: string | undefined };
   narrator: boolean;
   aiBinding: boolean;
+  /** What the recorder around the `AI` binding has kept (`playthrough-calls.ts`); empty when there is no binding. */
+  calls: { since(since: number): { epoch: string; next: number; lost: number; calls: unknown[] } };
 };
 
 export async function dev(request: Request, deps: DevDeps): Promise<Response> {
@@ -72,6 +75,13 @@ export async function dev(request: Request, deps: DevDeps): Promise<Response> {
     const cap = day !== null && session !== null ? Math.min(day, session) : null;
     const exact = day !== null && session !== null && session >= day;
     return json({ used: cap === null ? null : cap - left, remaining: left, cap, exact });
+  }
+  if (url.pathname === "/dev/calls") {
+    if (request.method !== "GET") return json({ error: "GET only" }, 405);
+    const raw = url.searchParams.get("since");
+    const since = raw === null ? 0 : whole(raw);
+    if (since === null) return json({ error: "since is a whole number" }, 400);
+    return json(deps.calls.since(since));
   }
   if (url.pathname === "/dev/seed-gallery") {
     if (request.method !== "POST") return json({ error: "POST only" }, 405);

@@ -18,10 +18,12 @@ stage_d = 56.0;  // Along Z in print orientation
 // moves the capstan's grooves 1 mm against the idler and the eyes.
 thread_z    = 20.2;  // the thread plane
 plate_t     = 2.2;   // servo back plate; the ears' underside is at Z = plate_t, so the drum's middle is at plate_t + 18.0 = thread_z
-servo_x     = 66.0;  // X of the servo spline and the capstan drum axis
-servo_y     = 47.0;  // Y of the spline (the case runs along Y, the spline end toward +Y, 5.5 mm from the case's middle)
-idler_x     = -68.0; // X of the idler pulley post
-idler_y     = 49.5;  // Y of the idler post (0.5 mm lower than before: the wheel's top flange reached the Y = 58 wall)
+servo_x     = 67.0;  // X of the servo spline and the capstan drum axis (1 mm right of before: 2.75 mm of plate beside the case hole)
+servo_y     = 46.0;  // Y of the spline (the case runs along Y, the spline end toward +Y, 5.5 mm from the case's middle; 1 mm lower than
+                      // before so the ears' tips, at Y = 56.75, are 1.2 mm from the Y = 57.95 wall instead of 0.2 mm)
+idler_x     = -66.0; // X of the idler pulley post (it turns the left panel's thread: up the west side, over the top, then east)
+idler_y     = 44.5;  // Y of the idler post (moved from 49.5: its wheel's top flange must stay above the rail bar, Y >= 35.5, and the
+                      // thread leaves the wheel's top at Y = 51 and runs east, sloping down to the drum's bottom)
 rail_z0     = 22.5;  // bottom of the 6 mm curtain rail bar, resting on the socket pockets' floor
 
 module prop_09_stage_frame() {
@@ -120,11 +122,11 @@ module prop_09_stage_frame() {
   }
 
   // 10. Internal Backstage Mounts (solidly bridged to the top/side frame walls and sitting on Z = 0!)
-  // a) Top-Right SG90 Curtain Servo Back Plate (Z = 0..plate_t, X = 58..82, Y = 24.5..59, fused into the right and top walls).
+  // a) Top-Right SG90 Curtain Servo Back Plate (Z = 0..plate_t, X = 58..82, Y = 23.5..59, fused into the right and top walls).
   //    The case (12.5 x 23.1 mm hole) goes down through it to the back; the ears (32.5 mm along Y) sit on top and take two M2 screws.
-  //    X >= 58 keeps 1 mm clear of the screen bezel (X <= 57); the drum (r 8.8 at Y = 47) clears the Y = 58 wall and the open panels.
+  //    X >= 58 keeps 1 mm clear of the screen bezel (X <= 57); the drum (r 8.8 at Y = 46) clears the Y = 58 wall and the open panels.
   difference() {
-    translate([58.0, 24.5, 0]) cube([24.0, 34.5, plate_t]);
+    translate([58.0, 23.5, 0]) cube([24.0, 35.5, plate_t]);
     translate([servo_x - sg90_body_d / 2, servo_y - 5.5 - sg90_body_w / 2, -0.1])
       cube([sg90_body_d, sg90_body_w, plate_t + 0.2]);
     for (sy = [-1, 1])
@@ -132,13 +134,23 @@ module prop_09_stage_frame() {
         cylinder(h = plate_t + 0.2, d = sg90_m2_pilot_d);
   }
 
+  // a2) Left thread post. The left panel's thread (Y = 26.8, through its carriages' eyes) turns round this post and runs up to the idler.
+  //     A 12 x 10 mm pad (Z = 0..plate_t) fused into the left wall and left rail socket carries a 3.2 mm post up to Z = 22.0, 0.5 mm
+  //     under the rail bar. Centre (-73.45, 28.8): the thread passes its bottom at Y = 26.8 and its west side 1 mm from the socket.
+  left_post = [-73.45, 28.8];
+  translate([-82.0, 23.5, 0]) cube([12.0, 10.0, plate_t]);
+  translate([left_post[0], left_post[1], plate_t - 0.01]) {
+    cylinder(h = 2.8, d1 = 6.0, d2 = 3.2);
+    cylinder(h = thread_z + 1.8 - plate_t + 0.01, d = 3.2);
+  }
+
   // b) Top-Left Idler Pulley Post: the wheel's groove (4.4 mm above its base) must sit on thread_z, so the boss is thread_z - 4.4 tall.
   idler_boss_h = thread_z - 4.4;
   translate([idler_x, idler_y, 0]) {
+    // the boss, tied to the left wall (X = -80) by a 6 mm rib, Y = 44.5..58.5, as tall as the boss
     hull() {
       cylinder(h = idler_boss_h, d1 = 14.0, d2 = 10.0);
-      translate([-12.0, 0, 0]) cube([6.0, 14.0, idler_boss_h]);
-      translate([-4.0, 8.0, 0]) cube([14.0, 6.0, idler_boss_h]);
+      translate([-14.0, 0, 0]) cube([6.0, 14.0, idler_boss_h]);
     }
     // 4.0 mm axle pin for the 4.6 mm idler pulley bore: 10 mm above the boss, 1.6 mm above the wheel top
     cylinder(h = idler_boss_h + 10.0, d = 4.0);

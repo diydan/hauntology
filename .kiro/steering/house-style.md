@@ -20,7 +20,7 @@ Hauntology is a gothic storybook: morbid but sweet, deadpan and exact, sad ghost
 - Instruments: celesta, music box, toy piano, tuba, plucked strings, a little organ, a bell.
 - Voices: a child choir's wordless "ooh", a cracked baritone, a sweet sad soprano.
 - Rhythm: a waltz in three, a lurching march, a slow lullaby.
-- Mood: spooky but cosy; a lullaby with a wink. Never loud scares.
+- Mood: horror first: creeping dread, minor key, a little dissonant, slow and sparse, with low drones, creaking wood and distant whispers. Never upbeat, bouncy or bright (owner, 2026-11-16), and never a loud jump scare. The storybook wink is in the words, not the music.
 - Words: story rhymes, a little morbid, a little funny, in the narrator's voice.
 
 ## Voice (narration, log lines, recap, lyrics)

@@ -1,18 +1,33 @@
 // Hauntology Tabletop Print Kit — Prop #9: Curtain Reveal (Slider Rail, Idler Pulley & Servo Drum)
 // Colour: Ink (#0b0d10, matte black)
-// Size: 158 W x 38 D x 10 H mm (arranged on one print bed)
+// Size: 158 W x 46 D x 13 H mm (arranged on one print bed)
 // Mechanism: 158 mm twin-track curtain rail + 16 mm grooved idler pulley (4.6 mm bore) + 17.6 mm SG90 capstan drum
 // Print orientation: Flat on bed (Z = 0). No supports: every downward-facing slope is <= 45 deg from vertical.
 
 include <_common.scad>
 
 module prop_09_rail_and_pulley() {
-  // 1. Twin-Track Curtain Slider Rail Bar (158 x 8.0 x 6.0 mm, sits at Y = -10)
-  translate([0, -10.0, 0])
+  // 1. Twin-Track Curtain Slider Rail Bar (158 x 8.0 x 6.0 mm, sits at Y = -10). In the stage it is turned over (tracks toward the
+  //    back, bottom on the socket floor at Z = 22.5), so print Y = 21.5 - stage Y and print Z = 28.5 - stage Z. The thread route hangs
+  //    two posts from it: the RIGHT post (stage X = 74, Y = 32.4) turns the right panel's thread up to the drum, and the CENTRE post
+  //    (stage X = 0, Y = 36.5, on a 9 x 4.5 mm tongue reaching to stage Y = 39.5) turns the elastic that closes the panels.
+  //    Both stand up from the printed top face (the track side), 4.1 mm tall, so in the stage they hang down to Z = 18.4.
   difference() {
-    chamfer_box(158.0, 8.0, 6.0, r = 1.2, ch_bot = 0.4, ch_top = 0.4);
+    union() {
+      translate([0, -10.0, 0])
+        chamfer_box(158.0, 8.0, 6.0, r = 1.2, ch_bot = 0.4, ch_top = 0.4);
+      // centre tongue: print Y = -18.0..-13.5 (stage Y 35.0..39.5), full 6 mm so it prints flat on the bed
+      translate([-4.5, -18.0, 0]) cube([9.0, 4.5, 6.0]);
+      // right post and centre post: a 45 degree flare at the foot, then a 4.1 mm stem to print Z = 10.1 (stage Z = 18.4)
+      for (pp = [[74.0, -10.9], [0.0, -15.0]]) {
+        translate([pp[0], pp[1], 5.99]) {
+          cylinder(h = 1.1, d1 = 5.2, d2 = 3.0);
+          cylinder(h = 10.1 - 5.99, d = 3.0);
+        }
+      }
+    }
     // Twin longitudinal slider tracks (2.6 mm wide x 3.2 mm deep)
-    for (sy = [-1.8, 1.8]) {
+    for (sy = [-11.8, -8.2]) {
       translate([0, sy, 4.6])
         cube([142.0, 2.2, 3.4], center = true);
     }
@@ -59,9 +74,13 @@ module prop_09_rail_and_pulley() {
     // Horn screw and screwdriver hole straight up the axis
     translate([0, 0, 5.0])
       cylinder(h = 9.0, d = 3.2);
-    // Thread anchor: a 1.6 mm hole across the ridge, to knot the thread's end through
-    translate([0, 0, 8.75])
+    // Two thread anchors, one in each groove floor, each a 1.6 mm hole straight across the drum (the cord's end goes in at the
+    // side it arrives and is knotted where it comes out): groove 1 (right panel's thread) along X, groove 2 (left panel's) along Y
+    translate([0, 0, 7.15])
       rotate([0, 90, 0])
+        cylinder(h = 20.0, d = 1.6, center = true);
+    translate([0, 0, 10.35])
+      rotate([90, 0, 0])
         cylinder(h = 20.0, d = 1.6, center = true);
   }
 }
