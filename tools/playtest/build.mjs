@@ -14,6 +14,11 @@ cpSync(resolve(root, 'css'), resolve(dist, 'css'), { recursive: true });
 cpSync(resolve(root, 'js'), resolve(dist, 'js'), { recursive: true });
 cpSync(resolve(root, 'art'), resolve(dist, 'art'), { recursive: true });
 cpSync(resolve(root, 'models'), resolve(dist, 'models'), { recursive: true });
+// The print-kit viewer (tools/prop-mockups/viewer.html) at /print/: it finds the STL files in stl/ and reference/ next to it.
+mkdirSync(resolve(dist, 'print'), { recursive: true });
+cpSync(resolve(root, '..', 'prop-mockups', 'viewer.html'), resolve(dist, 'print', 'index.html'));
+cpSync(resolve(root, '..', '..', 'print', 'stl'), resolve(dist, 'print', 'stl'), { recursive: true });
+cpSync(resolve(root, '..', '..', 'print', 'reference'), resolve(dist, 'print', 'reference'), { recursive: true });
 // Public-domain footage (see media/PROVENANCE.md): only the clip files go out, not the provenance note.
 mkdirSync(resolve(dist, 'media'), { recursive: true });
 for (const f of readdirSync(resolve(root, 'media')).filter((n) => /\.(mp4|webm|jpg)$/.test(n))) cpSync(resolve(root, 'media', f), resolve(dist, 'media', f));

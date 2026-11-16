@@ -76,6 +76,8 @@ node build-apps.mjs       # builds the web app's two phone pages with vite: dist
 wrangler deploy           # Worker + assets + Durable Object, custom domain mtest.hauntology.app
 ```
 
+The print-kit viewer is built in at `/print/` (`tools/prop-mockups/viewer.html` with the STL files from `print/stl` and `print/reference`).
+
 In one line: `node build.mjs && node build-apps.mjs && wrangler deploy`. `/controller/` is the phone Controller with a stand-in Room (the Room Code K7M2 joins as the Master; MAX6 is full, STR4 has started). Any session that deploys the lab should run `build-apps.mjs` first, or the live puzzles are the last ones built.
 
 ```
