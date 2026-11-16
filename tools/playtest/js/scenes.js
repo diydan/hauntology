@@ -81,8 +81,9 @@ export const WANDER = {
  * `clip` is `media/<clip>.webm`, `.mp4` and `.jpg`; `shape` is the frame the picture is shown in (the AI scenes are 3:4, the film is 4:3);
  * `text` is the scene in words for the live region; `line` is the Whisper's line written for the picture and `lineAt` its moment in seconds from the
  * start of the scene (a row of `docs/story/ghost-lines.md`, word for word; a test compares them), or null for the film, which has none.
- * A line sets a mood and never says what the memory is: the card after the scene does that. The promise scene is the farewell from Frankenstein (1910),
- * in black and white: both AI takes of `wander-letter` show faint writing on the letter (a clip never holds a text), so they are not used.
+ * A line sets a mood and never says what the memory is: the card after the scene does that. The promise scene is the AI envelope scene (the envelope lies
+ * sealed and blank). Both earlier takes of `wander-letter` show faint writing on the letter (a clip never holds a text), so they are not used. The farewell
+ * from Frankenstein (`wander-departure`, line `wander.departure.soft.1`) is kept as a spare promise scene.
  */
 export const WANDER_KINDS = ['sound', 'person', 'promise'];
 export const WANDER_SCENES = {
@@ -101,11 +102,11 @@ export const WANDER_SCENES = {
     lineAt: 1.5,
   },
   promise: {
-    clip: 'wander-departure',
+    clip: 'wander-envelope-take1',
     shape: 'landscape',
-    text: 'A young man says goodbye in a parlour and leaves. A woman goes to the window and waves after him.',
-    line: { id: 'wander.departure.soft.1', speaker: 'whisper', text: 'Somebody waves from this window until the road is empty. I wave too, now and then. Nobody has told me to stop.' },
-    lineAt: 2.3,
+    text: 'A windowsill table in afternoon light: a sealed envelope, a pair of gloves, a small dish, and a net curtain moving in the breeze.',
+    line: { id: 'wander.letter.soft.1', speaker: 'whisper', text: 'A sealed envelope, and a pair of gloves set down just so. It is not mine to open. I keep it safe all the same.' },
+    lineAt: 2.0,
   },
 };
 

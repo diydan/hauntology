@@ -1469,9 +1469,9 @@
       ]
     },
     {
-      "key": "speech/lib/v1/df5c27e6397241a1c65a9f5cbc2565e05a4520b003387cc216e1f0546f6d2bbd",
+      "key": "speech/lib/v1/26412c4912fe0c2e20cf4800689003f62d9c77735d0f7ffe24c9accc2a4b9b1e",
       "voice": "inworld:Pippa",
-      "spoken": "A letter, folded in three. A pair of gloves, set down just so. It is not for me to read.",
+      "spoken": "A sealed envelope, and a pair of gloves set down just so. It is not mine to open. I keep it safe all the same.",
       "sources": [
         "wander.letter.soft.1"
       ]

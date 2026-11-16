@@ -31,14 +31,14 @@ test('the character count is computed here, not copied: the spoken text plus the
   assert.equal(planPrerender({ manifest: lodgerOnly, lookup: nothingDone }).totals.chars, expected);
 });
 
-test('the whole manifest, nothing rendered: 532 files in 8 voices, 60,471 characters, about $1.51', () => {
+test('the whole manifest, nothing rendered: 532 files in 8 voices, 60,493 characters, about $1.51', () => {
   const p = planPrerender({ manifest, lookup: nothingDone });
   assert.equal(p.jobs.length, 532);
   assert.equal(p.rows.length, 8);
-  assert.equal(p.totals.chars, 60_471);
-  assert.equal(p.totals.usd, 1.5118);
+  assert.equal(p.totals.chars, 60_493);
+  assert.equal(p.totals.usd, 1.5123);
   const row = (v) => p.rows.find((r) => r.voice === v);
-  assert.deepEqual([row('inworld:Pippa').lines, row('inworld:Pippa').chars], [226, 26_717]);
+  assert.deepEqual([row('inworld:Pippa').lines, row('inworld:Pippa').chars], [226, 26_739]);
   assert.deepEqual([row('inworld:Ronald').lines, row('inworld:Ronald').chars], [240, 26_800]);
 });
 
@@ -144,8 +144,8 @@ test('CLI: the default is a dry run; it prints the table, says nothing was spent
     const r = run(['--out', dir]);
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /DRY RUN\. Nothing is spent, nothing is written\./);
-    assert.match(r.stdout, /Total\s+532\s+0\s+532\s+0\s+60,471\s+\$1\.5118/);
-    assert.match(r.stdout, /inworld:Pippa\s+226\s+0\s+226\s+0\s+26,717/);
+    assert.match(r.stdout, /Total\s+532\s+0\s+532\s+0\s+60,493\s+\$1\.5123/);
+    assert.match(r.stdout, /inworld:Pippa\s+226\s+0\s+226\s+0\s+26,739/);
     assert.deepEqual(readdirSync(dir), []);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

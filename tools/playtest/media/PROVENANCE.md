@@ -143,7 +143,7 @@ A clip cut from a source file already described in a **Source record** points to
 | | |
 |---|---|
 | Record | Source record: Frankenstein (1910) |
-| Shot | The farewell: the young man says goodbye in the parlour and leaves, and the woman goes to the window and waves after him, 0:13 for 12.5 s (between the two title cards). Wander's scene for a promise memory. |
+| Shot | The farewell: the young man says goodbye in the parlour and leaves, and the woman goes to the window and waves after him, 0:13 for 12.5 s (between the two title cards). A spare scene for a promise memory (the promise memory uses `wander-envelope-take1` since 2026-11-16). |
 | Picture only | No audio track (`-an`). No title card or intertitle. Turned to black and white (`format=gray`). |
 | Cut by | `ffmpeg`, 12.5 s from 13 s, scaled to 480 x 360, black and white, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 6 s |
 | Size | `.mp4` 528 KB, `.webm` 692 KB, `.jpg` 13 KB |
@@ -548,6 +548,24 @@ A windowsill table in afternoon light: a folded letter with no legible writing, 
 ### Scene 4, "Dawn at the door" (the detectives win; replaces the parlour)
 
 Not in `docs/story/ai-scene-prompts.md` yet. It replaces scene 4, "Dawn in the parlour", because the parlour takes show no event: mist leaves a room and a chair rocks once. This scene mirrors "The lights go out": the light comes back, the lamps go out one by one as morning takes over, the front door opens and the mist drifts out.
+
+#### wander-envelope-take1
+
+| | |
+|---|---|
+| Record | AI clip. Generated, not filmed and not cut from a film. |
+| Scene | Scene 8, "The letter" (Wander, a promise memory), made again with a sealed envelope lying face down so there is no surface to write on. Wander's scene for a promise memory. |
+| Overlay place | none (Wander has its own card) |
+| Model | MiniMax-H3, 1280 x 720 source (16:9; the 3:4 ratio was not used), 15 s. |
+| Take | 1 of 1. The envelope is blank and sealed with plain wax; checked by eye on frames every second: no writing, no face, no person. |
+| Sound | The model's own native audio track, kept: AAC in `.mp4`, Opus in `.webm` (mean about -36 dB, peak about -18 dB: breeze and room tone). |
+| Picture | Came back with a faint warm tint, so turned to black and white (`format=gray`). Cropped from 16:9 to 4:3 (960 x 720 from x 160), keeping the envelope, the gloves and the curtain. No platform stamp seen. |
+| Cut by | `ffmpeg`, 15.0 s, scaled to 480 x 360, H.264 (main, crf 29) and VP9 (crf 37); poster frame at 7 s |
+| Size | `.mp4` 460 KB, `.webm` 430 KB, `.jpg` 13 KB |
+| Flash check | `node flash-check.mjs media/wander-envelope-take1.mp4 media/wander-envelope-take1.webm` on 2026-11-16: 360 frames, at most 0 flashes in any second (limit 3). |
+| Where it came from | Made by the owner on 2026-11-16 from the prompt in `docs/story/ai-scene-prompts.md` (scene 8, the envelope version) and handed over as `Sunlight_moving_across_windowsil…_2e00dcd0.mp4`. |
+| Price | The owner's own generation; the amount is not recorded here. For scale, the price table in `docs/story/ai-scene-prompts.md` lists H3 768P at $1.20 for a 15 s take. |
+| Terms | MiniMax's terms for commercial use of generated output have not been read. Read them before the game is sold, and label the clip as AI-generated where the law asks for it. |
 
 #### ai-dawn-door-take1
 

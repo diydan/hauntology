@@ -620,9 +620,9 @@ Wander's one scene was a 99 second run of *Nosferatu* (`wander-harbour`). A memo
 |---|---|---|---|---|
 | Sound | `wander-chimes-take1`: wind chimes on a porch | 3:4 portrait | `wander.chimes.soft.1` | 5.0 s (the chimes begin to ring at 6 s) |
 | Person | `wander-chair-take1`: an empty chair, a coat, a cup of tea | 3:4 portrait | `wander.chair.soft.1` | 1.5 s (the coat sways from 6 s) |
-| Promise | `wander-departure`: a farewell at a window (*Frankenstein*, 1910, black and white) | 4:3 | `wander.departure.soft.1` | 2.3 s (she waves from the window from about 6 s) |
+| Promise | `wander-envelope-take1`: a sealed envelope and gloves by a window (AI, black and white) | 4:3 | `wander.letter.soft.1` | 2.0 s (the light moves across the envelope) |
 
-The AI letter scene (`wander-letter`) came back twice with faint writing on the letter (a clip never holds text), and the owner found the harbour film meant nothing, so on 2026-11-16 the promise memory became the farewell from *Frankenstein*. A Wander line sets a mood and never says what the memory is: the card after the scene says that, from the engine's narrated memory. The lines follow the single-player bank rules (the single-player bank never says "house", names no place and no card).
+The AI letter scene (`wander-letter`) came back twice with faint writing on the letter (a clip never holds text), and the owner found the harbour film meant nothing, so on 2026-11-16 the promise memory became the farewell from *Frankenstein*, and the same evening an AI envelope scene (sealed, face down, blank) replaced it; the farewell (`wander-departure`) stays as a spare. A Wander line sets a mood and never says what the memory is: the card after the scene says that, from the engine's narrated memory. The lines follow the single-player bank rules (the single-player bank never says "house", names no place and no card).
 
 The order, with narration on: the Whisper's reveal line first (a memory was found, never what it is), then the scene with its line, then the card. Two voices never speak at once, so the scene starts when the reveal has ended. With narration off the reveal is words and the scene starts at once. On `/footage.html` section 7 there is no audio: the reveal is words, a switch picks the kind, the scene plays in its own frame, and the line is shown as words at its moment.
 

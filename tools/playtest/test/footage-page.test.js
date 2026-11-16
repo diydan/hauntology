@@ -768,19 +768,19 @@ const CHIMES = 'Do you hear that? A row of small bells';
 const CHAIR = 'The tea is still warm';
 const says = (el, start) => assert.ok(el.textContent.startsWith(start), `${el.id} says "${el.textContent.slice(0, 40)}", expected it to start with "${start}"`);
 
-test('23.1 Wander begins on the promise memory with the farewell (Frankenstein, 1910) in its 4 by 3 frame, and its line', { skip }, async () => {
+test('23.1 Wander begins on the promise memory with the sealed envelope in its 4 by 3 frame, and its line', { skip }, async () => {
   open();
   await load(); await tick(5);
   assert.deepEqual([...document.querySelectorAll('[role="radio"][data-kind]')].map((b) => [b.dataset.kind, b.getAttribute('aria-checked')]), [['sound', 'false'], ['person', 'false'], ['promise', 'true']]);
-  assert.equal(wsrc(), 'media/wander-departure.webm');
+  assert.equal(wsrc(), 'media/wander-envelope-take1.webm');
   assert.equal($('#ft-wander').closest('.ft-film').dataset.shape, 'landscape');
   assert.equal($('#ft-wander-line').getAttribute('role'), 'status');
   await onClock(async (go) => {
     click(btn('Find the memory')); await flush();
-    await go(2299);
+    await go(1999);
     assert.equal($('#ft-wander-line').hidden, true, 'not before its moment');
     await go(1);
-    assert.match($('#ft-wander-line').textContent, /^Somebody waves from this window/);
+    assert.match($('#ft-wander-line').textContent, /^A sealed envelope, and a pair of gloves/);
   });
 });
 
@@ -805,7 +805,7 @@ test('23.1 choosing a kind swaps the scene and its frame, stops what played, and
   click(kindBtn('person')); await tick(5);
   assert.equal(wsrc(), 'media/wander-chair-take1.webm');
   click(kindBtn('promise')); await tick(5);
-  assert.equal(wsrc(), 'media/wander-departure.webm');
+  assert.equal(wsrc(), 'media/wander-envelope-take1.webm');
   assert.equal(v.closest('.ft-film').dataset.shape, 'landscape');
 });
 
