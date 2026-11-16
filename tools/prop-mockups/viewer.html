@@ -83,21 +83,14 @@ const STL_BASE = new URLSearchParams(location.search).get('stl') || (location.pa
 // Reference models (not printed) live next to the STL folder: print/reference/ in the repo, reference/ on the lab.
 const REF_BASE = location.pathname.includes('/tools/') ? '../../print/reference/' : 'reference/';
 
-// Core 6 spools + Silver & 6 Seat/Suspect accent colours from 3D_BRIEF.md section 2.
+// The 6 print spools.
 const SPOOLS = {
   iron:       { name: 'Dark Iron',        hex: '#262229' },
   brass:      { name: 'Antique Brass',    hex: '#d4a84b' },
   mint:       { name: 'Ectoplasm Mint',   hex: '#5ce6b8' },
   bone:       { name: 'Bone / Ivory',     hex: '#e8dec8' },
-  crimson:    { name: 'Crimson',          hex: '#d43838' },
-  wood:       { name: 'Warm Wood',        hex: '#422818' },
   silver:     { name: 'Tarnished Silver', hex: '#c9c9d4' },
-  seatRed:    { name: 'Seat Red',         hex: '#ff6b6b' },
-  seatBlue:   { name: 'Seat Blue',        hex: '#6bb6ff' },
-  seatYellow: { name: 'Seat Yellow',      hex: '#ffd86b' },
-  seatGreen:  { name: 'Seat Green',       hex: '#6be39a' },
-  seatViolet: { name: 'Seat Violet',      hex: '#c49bff' },
-  seatOrange: { name: 'Seat Orange',      hex: '#ffb27a' },
+  wood:       { name: 'Warm Wood',        hex: '#422818' },
 };
 const KIND = { M: 'Mechanical: it moves', E: 'Electrical: it holds electronics', S: 'Static: no moving or electronic parts', R: 'Reference model: shown for comparison, not printed' };
 
@@ -106,36 +99,36 @@ const G0 = 'Core game pieces', G1 = '#1 Ghost in the box', G3 = '#3 Haunt needle
       G9 = '#9 Curtain reveal', G12 = '#12 Rattle bats', G15 = '#15 Relic vault', G20 = '#20 Cut wires board', GR = 'Reference (not printed)',
       GX = 'Stand-alone figures';
 const PARTS = [
-  ['relic-music-box',   'Relic r1 music box',      G0, 'crimson',    'S', 1],
-  ['relic-music-box-lid','Relic r1 music box lid', G0, 'brass',      'S', 1],
+  ['relic-music-box',   'Relic r1 music box',      G0, 'silver',      'S', 1],
+  ['relic-music-box-lid','Relic r1 music box lid', G0, 'silver',      'S', 1],
   ['relic-wax-hand',    'Relic r2 wax hand',       G0, 'bone',       'S', 1],
   ['relic-locket',      'Relic r3 locket',         G0, 'brass',      'S', 1],
   ['relic-locket-lid',  'Relic r3 locket lid',     G0, 'brass',      'S', 1],
   ['relic-planchette',  'Relic r4 planchette',     G0, 'wood',       'S', 1],
-  ['relic-silver-key',  'Relic r5 silver key',     G0, 'silver',     'S', 1],
+  ['relic-silver-key',  'Relic r5 silver key',     G0, 'silver',    'S', 1],
   ['relic-bell',        'Relic r6 bell',           G0, 'brass',      'S', 1],
   ['relic-token-pocket','Relic Token base',        G0, 'iron',       'S', 6],
   ['pyramid-holder',    'Pyramid holder',          G0, 'iron',       'S', 1],
   ['standee-blank',     'Blank Suspect standee',   G0, 'bone',       'S', 1],
-  ['standee-s1-percy',  'Standee 1 Percy',         G0, 'seatRed',    'S', 1],
-  ['standee-s2-thorne', 'Standee 2 Thorne',        G0, 'seatBlue',   'S', 1],
-  ['standee-s3-pike',   'Standee 3 Pike',          G0, 'seatYellow', 'S', 1],
-  ['standee-s4-cora',   'Standee 4 Cora',          G0, 'seatGreen',  'S', 1],
-  ['standee-s5-vane',   'Standee 5 Vane',          G0, 'seatViolet', 'S', 1],
-  ['standee-s6-dunmore','Standee 6 Dunmore',       G0, 'seatOrange', 'S', 1],
+  ['standee-s1-percy',  'Standee 1 Percy',         G0, 'bone',    'S', 1],
+  ['standee-s2-thorne', 'Standee 2 Thorne',        G0, 'bone',   'S', 1],
+  ['standee-s3-pike',   'Standee 3 Pike',          G0, 'bone', 'S', 1],
+  ['standee-s4-cora',   'Standee 4 Cora',          G0, 'bone',  'S', 1],
+  ['standee-s5-vane',   'Standee 5 Vane',          G0, 'bone', 'S', 1],
+  ['standee-s6-dunmore','Standee 6 Dunmore',       G0, 'bone', 'S', 1],
   ['prop-01-chest-body','Chest body',              G1, 'wood',    'E', 1],
   ['prop-01-chest-lid', 'Chest lid',               G1, 'wood',    'M', 1],
   ['prop-01-ghost-figure','Ghost figure',          G1, 'bone',    'M', 1],
   ['prop-01-lever-arm', 'Lever arm',               G1, 'iron',    'M', 1],
   ['prop-03-dial-plate','Dial plate',              G3, 'iron',    'E', 1],
   ['prop-03-bezel-ring','Bezel ring',              G3, 'brass',   'S', 1],
-  ['prop-03-needle',    'Needle',                  G3, 'brass',   'M', 1],
-  ['prop-03-max-tab',   'MAX tab (clips on by hand)', G3, 'crimson', 'S', 1],
+  ['prop-03-needle',    'Needle',                  G3, 'silver',   'M', 1],
+  ['prop-03-max-tab',   'MAX tab (clips on by hand)', G3, 'silver', 'S', 1],
   ['prop-05-plinth-2seat','Plinth, 2 seats',       G5, 'iron',    'E', 3],
   ['prop-05-flap-pawn', 'Flap',                    G5, 'bone',    'M', 6],
   ['prop-05-resolve-insert','Resolve window insert', G5, 'mint',  'S', 6],
   ['prop-09-stage-frame','Stage frame',            G9, 'wood',    'S', 1],
-  ['prop-09-curtain-panel','Curtain panel',        G9, 'crimson', 'M', 2],
+  ['prop-09-curtain-panel','Curtain panel',        G9, 'iron', 'M', 2],
   ['prop-09-rail-and-pulley','Rail and pulley',    G9, 'iron',    'M', 1],
   ['prop-09-screen-bezel','Screen bezel',          G9, 'brass',   'E', 1],
   ['prop-12-beam-bracket','Beam bracket',          G12, 'wood',   'E', 1],
@@ -148,12 +141,13 @@ const PARTS = [
   ['prop-15-relic-tray','Relic tray',              G15, 'iron',   'S', 1],
   ['prop-15-keypad-pod','Keypad pod',              G15, 'iron',   'E', 1],
   ['prop-20-wires-panel','Wires panel',            G20, 'iron',   'E', 1],
-  ['prop-20-terminal-blocks','Terminal blocks',    G20, 'brass',  'E', 1],
-  ['prop-20-plug-heads','Plug heads (10 shells)',  G20, 'crimson','E', 1],
+  ['prop-20-terminal-blocks','Terminal blocks',    G20, 'silver',  'E', 1],
+  ['prop-20-plug-heads','Plug heads (10 shells)',  G20, 'silver','E', 1],
   // From Ghost.fbx via tools/prop-mockups/convert-ghost.mjs. The last two flags: a reference model (loads from REF_BASE), and a smooth one.
   ['ghost-original',    'Original ghost (Ghost.fbx)', GR, 'bone',  'R', 0, false, true, true],
   ['ghost-web',         'Original ghost web',      GR, 'mint',    'R', 0, false, true, true],
   // tools/ghost-print/make-ghost-print.py: a solid, smooth, flat-bottomed copy of the original ghost with two eye dimples. It does not go in the chest.
+  ['relic-ghost', 'Relic ghost (relic-sized, deep eyes)', G0, 'bone', 'S', 1],
   ['ghost-original-printable', 'Ghost, optimised from the original', GX, 'bone', 'S', 1, true, false, true],
 ].map(([file, label, group, spool, kind, qty, alt, ref, smooth]) => ({ file, label, group, spool, kind, qty, alt: !!alt, ref: !!ref, smooth: !!smooth }));
 const BY = Object.fromEntries(PARTS.map((p) => [p.file, p]));
@@ -223,7 +217,7 @@ const P = (p, at, o = {}) => ({ p, at, rot: o.rot || [], ex: o.ex || [0, 0, 0] }
 const ASSEMBLIES = [
   { id: 'relics', title: 'Relics on Relic Tokens', note: 'Each Relic has a 6 mm socket under a flat foot and drops onto the 6 mm peg of its token (no Relic base plate). Punch a 6 mm hole in the middle of the QR sticker for the peg.',
     build(S) {
-      const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell'], out = [];
+      const rel = ['relic-music-box', 'relic-wax-hand', 'relic-locket', 'relic-planchette', 'relic-silver-key', 'relic-bell', 'relic-ghost'], out = [];
       rel.forEach((r, i) => {
         const s = S(r);
         const bx = i * 48 + (40 - s[0]) / 2, by = (40 - s[1]) / 2;

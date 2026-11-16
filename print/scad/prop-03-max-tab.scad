@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Prop #3: Haunt Needle (Hand-Clipped Red MAX Tab)
-// Colour: Alarm (#d4604a, brick red)
+// Colour: Tarnished Silver (#c9c9d4)
 // Size: 20.8 W x 18.0 D x 24.8 H mm
 // Sticker details: Recessed "MAX" label sticker pocket (14 x 9 mm) facing forward (+Z of dial)
 // Mechanism: Clips radially onto dial plate rim detents at 8 (Quick), 10 (Classic), or 12 (Gentle),
@@ -46,4 +46,4 @@ module prop_03_max_tab() {
   }
 }
 
-color(col_alarm) prop_03_max_tab();
+color(col_silver) prop_03_max_tab();

@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Prop #20: Cut Wires Board (5 Terminal Sockets, 5 Wire Anchors & SET Bezel)
-// Colour: Ink (#0b0d10, matte black)
+// Colour: Tarnished Silver (#c9c9d4)
 // Size: 138 W x 48 D x 14 H mm (11 separate pieces arranged on one print bed with zero overlap)
 // Mechanism: Press-fit into the Cut Wires Board panel; terminals receive the 5 resistor plug heads
 // Print orientation: Flat on flange base (Z = 0), zero supports (11 connected components).
@@ -63,4 +63,4 @@ module prop_20_terminal_blocks() {
   }
 }
 
-color(col_ink) prop_20_terminal_blocks();
+color(col_silver) prop_20_terminal_blocks();

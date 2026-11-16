@@ -90,7 +90,7 @@ function turnText(d: Directive, input: NarrationInput): string | null {
     case "tease":
       return `A memory is kept near, and the visitor is ${d.band} to it. In one or two sentences say that something waits close, without saying what it is or which way. Use no numbers.`;
     case "hint":
-      return `Tell the visitor which way to go: ${BEARING_PHRASE[d.bearing]}. What they look for is ${d.band}. One or two sentences. Say the way and the distance in exactly these words and add nothing else about where things are: no objects of the room as landmarks, no turning, no "behind me". The way is from the visitor's point of view, so say "you" and "your", never "me" or "my", for it. Use no numbers or compass points.`;
+      return `Tell the visitor which way to go and how far it is. Say the way in exactly these words: "${BEARING_PHRASE[d.bearing]}". Say the distance in exactly ${d.band.includes(" ") ? "these words" : "this word"}: "${d.band}". Give no other distance: never "a few steps", "a short way", "closer", "near" alone or "straight". One or two sentences, and add nothing else about where things are: no objects of the room as landmarks, no turning, no "behind me". The way is from the visitor's point of view, so say "you" and "your", never "me" or "my", for it. Use no numbers or compass points.`;
     case "ambient":
       return input.sky === undefined ? "Nothing is happening. Say one or two quiet sentences about the place." : "Nothing is happening. Say one or two quiet sentences about the place or the sky tonight.";
     case "ending":
@@ -172,6 +172,11 @@ export type ReplyOptions = {
 
 const BANDS_ALL: readonly Band[] = ["very close", "nearer", "far"];
 const DIRECTION_WORDS = /\b(?:ahead|behind|left|right|forwards?|backwards?|north|south|east|west)\b/u;
+/**
+ * Distances of the model's own, which a hint may not give beside the engine's band (added 2026-11-16 after the second play-through: the model swapped
+ * "very close" for "a few steps away" or "closer than you think"). "close" is let by in "close your eyes" and the like, and "footsteps" is not "steps".
+ */
+const OTHER_DISTANCE = /\b(?:close(?! (?:your|the|it|them|a|my|his|her)\b)|closer|closest|near|nearby|a few (?:steps|paces|feet|yards)|(?:a|one|single) (?:step|pace)|steps? away|paces? away|a (?:short|little|long) way|way off|far off|straight|just beyond|just there|within reach|at hand)\b/u;
 /** "to the left" and "to your left" are one way; nothing else is loosened. */
 const canonical = (t: string): string => t.toLowerCase().replace(/\u2019/gu, "'").replace(/\bto (?:the|your) (left|right)\b/gu, "to your $1").replace(/\s+/gu, " ");
 
@@ -190,6 +195,7 @@ export function wayIsRight(text: string, way: WayCheck): boolean {
   const holdsBand = (w: string, from: string): boolean => new RegExp(`\\b${w}\\b`, "u").test(from);
   if (!holdsBand(band, rest)) return false;
   const withoutBand = rest.replace(new RegExp(`\\b${band}\\b`, "gu"), " ").replace(/\bnot (?:very close|nearer|far)\b/gu, " ");
+  if (OTHER_DISTANCE.test(withoutBand)) return false;
   return BANDS_ALL.filter((b) => b !== band).every((b) => !holdsBand(b, withoutBand));
 }
 

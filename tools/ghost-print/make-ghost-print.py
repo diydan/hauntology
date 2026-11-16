@@ -9,12 +9,12 @@ the bed and prints with no supports:
   3. Cut off the bottom until the figure stands on one piece of at least BASE_MM2 (the cloth only touches the bed at its tips).
   4. Carve bottom up: a layer keeps only what lies within one voxel sideways of the layer below, which is 45 degrees. The overhang
      under the shoulders becomes a 45-degree chamfer instead of an unprintable ceiling.
-  5. Let the skirt grow back down to the bed within FLARE_MM of the carved body (filled columns cannot overhang), for a stable base.
+  5. Let the skirt grow back down to the bed within `flare` mm of the carved body (filled columns cannot overhang), for a stable base.
   6. Mesh it, cut it flat, reduce the triangles, and cut two shallow eye dimples. Their upper edge leans less than about 40 degrees
      from vertical, so they print without supports. Paint them black, or pause the print and change filament at the dimple floor.
 
 Needs: pip install numpy scipy scikit-image trimesh manifold3d rtree shapely
-Run:   python make-ghost-print.py        (GHOST_OUT=/some/file.stl writes it somewhere else)
+Run:   python make-ghost-print.py [ghost|relic|both]     (GHOST_OUT=/some/file.stl writes one of them somewhere else)
 """
 import os
 import sys
@@ -27,7 +27,6 @@ from skimage import measure
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 SRC = os.path.join(REPO, "print", "reference", "ghost-original.stl")
-OUT = os.environ.get("GHOST_OUT") or os.path.join(REPO, "print", "stl", "ghost-original-printable.stl")
 
 PITCH = 0.3           # mm per voxel
 PAD_MM = 3.0          # empty space round the figure in the grid
@@ -39,14 +38,21 @@ CLOSE_MM = 5.0        # gaps in the hem up to twice this are closed, so the insi
 BLUR_MM = 1.2         # smoothing of the solid (the mesh texture is about 1.5 mm; the big folds are 5 mm and more)
 FINAL_BLUR_MM = 0.45  # a light blur after the carve, to round the 0.3 mm layer steps
 SLOPE_VOXELS = 1.0    # one voxel sideways per voxel up is 45 degrees
-FLARE_MM = 7.0        # the carve leaves a narrow trunk under the shoulders; the skirt may grow this far beyond it, down to the bed
 BASE_MM2 = 400.0      # the cloth only touches the bed at its tips, so the figure stands on its lowest slice that is one piece and
                       # at least this big (about a 22 mm circle); everything below that slice is cut off
 
-# eyes: half-width, half-height, depth, spacing between the centres, height as a share of the figure
-EYE_HALF_W, EYE_HALF_H, EYE_DEPTH = 3.2, 4.8, 1.6
-EYE_SPACING = 13.0
-EYE_Z_FRAC = 0.72
+# The two things this script makes. flare: the carve leaves a narrow trunk under the shoulders; the skirt may grow this far beyond it,
+# down to the bed. scale: 1 is the original's size. eye: half-width and half-height of the socket where it meets the surface, depth
+# into the head (along the surface normal), shift = how far the deepest point sits below the middle of the eye (keeps the top of
+# the socket steep enough to print with no supports), spacing between the centres, and the height as a share of the figure.
+PROFILES = {
+    "ghost": dict(out=os.path.join(REPO, "print", "stl", "ghost-original-printable.stl"), flare=7.0, scale=1.0, centre=False,
+                  eye=dict(half_w=3.2, half_h=4.8, depth=3.6, shift=3.0, spacing=13.0, z_frac=0.72)),
+    # The Relic version: a smaller ghost with no flare, so its base is narrow enough to sit on the relic foot (relic-ghost.scad
+    # imports this file and adds the 14.6 mm foot with its 6.1 mm socket). Centred on the base, so the foot can go under it.
+    "relic": dict(out=os.path.join(REPO, "print", "reference", "relic-ghost-body.stl"), flare=0.0, scale=0.68, centre=True,
+                  eye=dict(half_w=2.3, half_h=3.4, depth=2.5, shift=2.0, spacing=6.5, z_frac=0.80)),
+}
 
 
 # ---------------------------------------------------------------- shared helpers
@@ -72,37 +78,47 @@ def simplify(m, tol):
     return trimesh.Trimesh(np.array(out.vert_properties)[:, :3], np.array(out.tri_verts), process=True)
 
 
-def eye_cutters(m):
-    """Two ellipsoids, each pushed into the front surface so that only a shallow oval dimple is left."""
+def eye_cutters(m, e):
+    """Two sockets, each a cone: a wide oval just outside the surface narrowing to a deep blunt tip below the middle of the eye.
+    The upper wall then runs steeply down to the tip, so it prints with no supports; the lower wall faces up, which is always fine."""
     cx = (m.bounds[0][0] + m.bounds[1][0]) / 2
-    zc = m.bounds[1][2] * EYE_Z_FRAC
-    cutters = []
+    zc = m.bounds[1][2] * e["z_frac"]
+    W, H, D, S = e["half_w"], e["half_h"], e["depth"], e["shift"]
+    a2, b2 = 0.55 * W, 0.4 * H                           # the blunt tip: a small oval
+    t = D / (D + 1.0)                                    # the cone is cut 1 mm outside the surface to cut cleanly
+    a1, b1 = a2 + (W - a2) / t, b2 + (H - b2) / t        # so that it measures W x H where it meets the surface
+    ang = np.radians(np.arange(0, 360, 10))
+    out = np.stack([a1 * np.cos(ang), b1 * np.sin(ang), np.full_like(ang, 1.0)], 1)
+    tip = np.stack([a2 * np.cos(ang), -S + b2 * np.sin(ang), np.full_like(ang, -D)], 1)
+    cone = trimesh.convex.convex_hull(np.vstack([out, tip]))
+    cone.apply_translation([0, S * (1 - t), 0])          # the section at the surface is centred on the eye
     ray = trimesh.ray.ray_triangle.RayMeshIntersector(m)
-    C = 3.0                                              # half-depth of the ellipsoid
-    h = C - EYE_DEPTH                                    # the centre sits h outside the surface
-    t = np.sqrt(1 - (h / C) ** 2)
+    cutters = []
     for sx in (-1, 1):
-        x = cx + sx * EYE_SPACING / 2
+        x = cx + sx * e["spacing"] / 2
         loc, _, tri = ray.intersects_location([[x, m.bounds[0][1] - 5, zc]], [[0, 1, 0]], multiple_hits=False)
         p, n = loc[0], m.face_normals[tri[0]]
-        e = trimesh.creation.icosphere(subdivisions=4, radius=1.0)
-        e.apply_scale([EYE_HALF_W / t, EYE_HALF_H / t, C])
-        zax = n / np.linalg.norm(n)                      # ellipsoid z axis -> the surface normal; its y axis stays vertical
+        zax = n / np.linalg.norm(n)                      # cone z axis -> the surface normal; its y axis stays vertical
         xax = np.cross([0, 0, 1], zax); xax /= np.linalg.norm(xax)
         yax = np.cross(zax, xax)
         R = np.eye(4); R[:3, 0], R[:3, 1], R[:3, 2] = xax, yax, zax
-        R[:3, 3] = p + zax * h
-        e.apply_transform(R)
-        cutters.append(e)
+        R[:3, 3] = p
+        c = cone.copy()
+        c.apply_transform(R)
+        cutters.append(c)
     return cutters
 
 
-def finish(m):
+def finish(m, eye, centre):
     m = simplify(m, SIMPLIFY_MM)
     body = m
-    for c in eye_cutters(m):
+    for c in eye_cutters(m, eye):
         body = trimesh.boolean.difference([body, c], engine="manifold")
-    body.apply_translation([-body.bounds[0][0], -body.bounds[0][1], 0])
+    if centre:                                           # the middle of the base slice on the origin, so a foot can go under it
+        base = body.vertices[body.vertices[:, 2] < 0.05]
+        body.apply_translation([-(base[:, 0].min() + base[:, 0].max()) / 2, -(base[:, 1].min() + base[:, 1].max()) / 2, 0])
+    else:
+        body.apply_translation([-body.bounds[0][0], -body.bounds[0][1], 0])
     # Snap to a micrometre like tools/build-print.mjs does, and drop the triangles that collapse when it does, so the check passes.
     snapped = trimesh.Trimesh(np.round(np.asarray(body.vertices, np.float64), 3), body.faces, process=False)
     snapped.merge_vertices()
@@ -151,7 +167,7 @@ def carve_45(T):
     return S
 
 
-def solid_carve(src):
+def solid_carve(src, flare):
     shell, origin = shell_voxels(src)
     T, pad = closed_solid(shell)
     area = T.sum((0, 1)) * PITCH ** 2
@@ -159,11 +175,11 @@ def solid_carve(src):
     T = T[:, :, k0:]                                                                 # the new bed is this slice
     Tf = ndimage.gaussian_filter(T.astype(np.float32), BLUR_MM / PITCH) > LEVEL     # smooth the closed solid
     S = carve_45(Tf)                                                                 # carve it to 45 degrees
-    if FLARE_MM > 0:
-        # Fill straight down under every overhang (nothing can overhang a filled column), but only within FLARE_MM of the carved
+    if flare > 0:
+        # Fill straight down under every overhang (nothing can overhang a filled column), but only within `flare` mm of the carved
         # body. The edge of that zone is a copy of the 45-degree carve edge moved outward, so it is still support-free.
         fill = np.flip(np.maximum.accumulate(np.flip(Tf, 2), axis=2), 2)
-        near = ndimage.distance_transform_edt(~S) <= FLARE_MM / PITCH
+        near = ndimage.distance_transform_edt(~S) <= flare / PITCH
         S = S | (fill & near)
     lab, n = ndimage.label(S)                                                        # keep only the piece that sits on the bed
     if n > 1:
@@ -181,11 +197,19 @@ def solid_carve(src):
 
 
 # ---------------------------------------------------------------- main
-def make():
-    return finish(flat_at_bed(solid_carve(trimesh.load(SRC, force="mesh"))))
+def make(profile):
+    pr = PROFILES[profile]
+    m = flat_at_bed(solid_carve(trimesh.load(SRC, force="mesh"), pr["flare"]))
+    if pr["scale"] != 1:
+        m.apply_scale(pr["scale"])
+    return finish(m, pr["eye"], pr["centre"])
 
 
 if __name__ == "__main__":
-    mesh = make()
-    mesh.export(OUT)
-    print("wrote %s  tris %d  watertight %s  volume %.1f cm3  size %s" % (OUT, len(mesh.faces), mesh.is_watertight, mesh.volume / 1000, mesh.extents.round(1).tolist()))
+    which = sys.argv[1] if len(sys.argv) > 1 else "ghost"
+    names = list(PROFILES) if which == "both" else [which]
+    for name in names:
+        out = os.environ.get("GHOST_OUT") if len(names) == 1 and os.environ.get("GHOST_OUT") else PROFILES[name]["out"]
+        mesh = make(name)
+        mesh.export(out)
+        print("%-5s wrote %s  tris %d  watertight %s  volume %.1f cm3  size %s" % (name, out, len(mesh.faces), mesh.is_watertight, mesh.volume / 1000, mesh.extents.round(1).tolist()))

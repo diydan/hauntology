@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Hauntology · Character Atelier</title>
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -36,7 +36,8 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:400 12
 #stagebg .hero-shade{position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(10,13,17,.80) 0%,rgba(10,13,17,.36) 40%,rgba(10,13,17,.14) 70%),linear-gradient(0deg,rgba(14,17,20,.90) 0%,rgba(14,17,20,.10) 44%,rgba(10,13,17,.35) 100%)}
 body.thumbs #stagebg{display:none!important}
 @media (prefers-reduced-motion:reduce){#stagebg .herobg{transform:scale(1.04)}#stagebg .moonlayer{transform:scale(1.02)}#stagebg .skylayer{transform:none}}
-#view{position:absolute;inset:0;z-index:1}#view canvas{display:block;width:100%;height:100%;transition:filter .35s ease}
+#view{position:absolute;inset:0;z-index:1}#view canvas{display:block;width:100%;height:100%;touch-action:none;transition:filter .35s ease}
+button,select,input{touch-action:manipulation}
 body.daguerreotype #view canvas{filter:grayscale(.95) sepia(.22) contrast(1.16) brightness(.94)}
 body.daguerreotype #view::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 54% 44%,transparent 42%,rgba(5,6,7,.68) 100%)}
 
@@ -288,18 +289,72 @@ details.adv[open]>summary{color:var(--lantern-2);margin-bottom:4px}
 #stat{bottom:66px;right:16px;padding:6px 10px;font:400 10.5px var(--font-ui);color:var(--muted);white-space:pre;max-width:320px;overflow:hidden;text-overflow:ellipsis;z-index:4}
 body.thumbs .hud{display:none!important}
 
-@media (max-width:980px){#stageUtils{top:auto;bottom:68px;right:16px}}
+@media (max-width:980px){
+  #stageUtils{top:14px;right:12px;padding:6px 8px;gap:6px}
+  #title{width:min(352px,calc(100% - 370px));min-width:210px}
+}
 @media (max-width:760px){
-  #stat,#title p,#stageUtils{display:none}
-  #title,#look{width:min(352px,calc(100% - 20px));left:10px}
-  #look{top:68px;max-height:calc(100% - 92px)}
-  .tile{flex-basis:58px}.wheel{flex-wrap:wrap}
+  #stat,#title p,#title .crest,#stageUtils .grp>span,#stageUtils .sep,#copyJsonBtn{display:none}
+  #title{
+    top:max(8px,env(safe-area-inset-top));left:8px;width:auto;min-width:0;max-width:calc(100% - 224px);
+    padding:7px 10px;
+  }
+  #title h1{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #stageUtils{
+    top:max(8px,env(safe-area-inset-top));right:8px;bottom:auto;
+    padding:5px 7px;gap:4px;z-index:6;flex-wrap:nowrap;
+  }
+  #stageUtils .seg{gap:3px;flex-wrap:nowrap}
+  #stageUtils button{padding:5px 6px;font-size:10px;min-height:28px}
+  #look.closed{
+    top:auto;bottom:calc(124px + env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);
+    width:auto;max-width:calc(100% - 24px);max-height:none;border-radius:999px;outline-offset:-3px;
+    box-shadow:0 10px 26px rgba(0,0,0,.78);z-index:5;
+  }
+  #look.closed #lookTop{padding:7px 14px;background:rgba(15,11,8,.72)}
+  #look.closed #lookToggle{gap:10px;font-size:10px;letter-spacing:.12em}
+  #look.closed #lookToggle i{transform:rotate(-135deg);margin:3px 0 0}
+  #look:not(.closed){
+    top:auto;bottom:0;left:0;right:0;width:100%;max-width:none;
+    height:min(48dvh,430px);max-height:48dvh;
+    border-radius:14px 14px 0 0;border-left:0;border-right:0;border-bottom:0;outline-offset:-4px;
+    padding-bottom:env(safe-area-inset-bottom);z-index:5;
+  }
+  #look:not(.closed) #lookTop{padding:9px 14px 8px}
+  #look:not(.closed) #lookToggle i{transform:rotate(45deg);margin:-3px 2px 0 0}
   #look:not(.closed)~#bar{display:none}
-  #bar{left:10px;right:10px;bottom:10px;transform:none;max-width:none;gap:6px;padding:6px 8px}
-  #bar .grp{width:100%;justify-content:center;gap:4px}
-  #bar .grp>span{display:none}
-  #bar .seg{justify-content:center;flex:0 1 auto}
-  #bar .seg button{padding:4px 6px;font-size:10px}
+  #lookTabs{padding:6px 8px;gap:4px}
+  #lookTabs button{min-height:34px;font-size:10px;letter-spacing:.04em;padding:5px 2px}
+  .lbody{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:9px 12px calc(14px + env(safe-area-inset-bottom))}
+  .cast-scroll{max-height:192px;-webkit-overflow-scrolling:touch}
+  .cast-card{padding:6px 7px;min-height:44px}
+  .tile{flex-basis:64px}
+  .btn.mini{min-height:30px;padding:4px 9px}
+  .swdot{width:22px;height:22px}
+  .swatches.pal-wide{gap:6px}
+  .rng input{height:24px}
+  .wheel{flex-wrap:wrap}
+  #bar{
+    left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));transform:none;max-width:none;
+    gap:5px;padding:6px 8px;
+  }
+  #bar .grp{width:100%;justify-content:flex-start;gap:6px;min-width:0}
+  #bar .grp>span{display:block;flex:0 0 36px;font-size:8.5px;letter-spacing:.08em}
+  #bar #clipSeg,#bar #propSeg{
+    flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;justify-content:flex-start;padding:1px 0;
+  }
+  #bar #clipSeg::-webkit-scrollbar,#bar #propSeg::-webkit-scrollbar{display:none}
+  #bar #clipSeg button,#bar #propSeg button{flex:0 0 auto;white-space:nowrap;padding:5px 8px;font-size:10px;min-height:28px}
+  #bar .grp:last-child>span{display:none}
+  #bar .grp:last-child .seg{width:100%;justify-content:space-between}
+  #bar .grp:last-child .seg button{flex:1 1 0;text-align:center;padding:6px 4px;font-size:10px;min-height:30px}
+}
+@media (max-width:420px){
+  #title{max-width:calc(100% - 210px);padding:6px 8px}
+  #title h1{font-size:13px}
+  #stageUtils{padding:4px 5px;gap:3px}
+  #stageUtils button{padding:4px 5px;font-size:9.5px}
 }
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"}}</script>
@@ -341,52 +396,164 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const Q = new URLSearchParams(location.search), THUMBS = Q.has('thumbs'); if (THUMBS) document.body.classList.add('thumbs');
 const $ = id => document.getElementById(id), stat = $('stat'), status = m => { stat.textContent = m; stat.style.display = m ? '' : 'none'; };
 const view = $('view'), renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.setClearColor(0x000000, THUMBS ? 1 : 0); view.appendChild(renderer.domElement);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.setClearColor(0x000000, THUMBS ? 1 : 0);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+view.appendChild(renderer.domElement);
 const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(36, 1, 0.15, 80), controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0.85, 0); camera.position.set(1.05, 1.35, 3.85); controls.enableDamping = true; controls.enablePan = false; controls.minDistance = 0.45; controls.maxDistance = 8; controls.maxPolarAngle = 1.55;
 function resize() {
   const w = view.clientWidth, h = view.clientHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h;
-  const openDrawer = !THUMBS && w > 980 && !$('look').classList.contains('closed');
-  const shiftX = openDrawer ? -Math.round(Math.min(182, w * 0.125)) : 0;
-  if (THUMBS) camera.clearViewOffset();
-  else camera.setViewOffset(w, h, shiftX, Math.round(h * 0.05), w, h);
+  if (THUMBS) { camera.clearViewOffset(); camera.updateProjectionMatrix(); return; }
+  const isClosed = $('look').classList.contains('closed');
+  const isMobile = w <= 760;
+  const shiftX = (!isMobile && w > 980 && !isClosed) ? -Math.round(Math.min(182, w * 0.125)) : 0;
+  const shiftY = isMobile ? Math.round(h * (isClosed ? 0.07 : 0.12)) : Math.round(h * 0.05);
+  camera.setViewOffset(w, h, shiftX, shiftY, w, h);
   camera.updateProjectionMatrix();
 }
-new ResizeObserver(resize).observe(view); resize();
+new ResizeObserver(resize).observe(view);
+matchMedia('(max-width:760px)').addEventListener('change', resize);
+resize();
 
-/* ---- stage (hauntology.app layered parallax mist, moon, night sky & manor plinth) ---- */
+/* ---- stage (old weathered wooden stage, uneven planks + real-time character shadow) ---- */
 scene.fog = null;
-const floorTex = (() => {
-  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d'), cx = 256, cy = 256;
-  const r = g.createRadialGradient(cx, cy, 8, cx, cy, 256);
-  r.addColorStop(0, 'rgba(26,31,38,0.88)'); r.addColorStop(0.62, 'rgba(14,17,22,0.74)'); r.addColorStop(1, 'rgba(6,8,10,0.42)');
-  g.fillStyle = r; g.fillRect(0, 0, 512, 512);
-  // crooked Victorian chessboard tiles toward inner plinth + gothic concentric rings
-  for (let i = 0; i < 24; i++) {
-    const a0 = (i / 24) * Math.PI * 2, a1 = ((i + 1) / 24) * Math.PI * 2;
-    g.beginPath(); g.arc(cx, cy, 232, a0, a1); g.arc(cx, cy, 198, a1, a0, true); g.closePath();
-    g.fillStyle = i % 2 ? 'rgba(222,214,198,.08)' : 'rgba(5,6,7,.36)'; g.fill();
+const { woodMap, woodBump, woodRough } = (() => {
+  const S = 1024;
+  const cCol = document.createElement('canvas'); cCol.width = cCol.height = S; const g = cCol.getContext('2d');
+  const cBmp = document.createElement('canvas'); cBmp.width = cBmp.height = S; const gb = cBmp.getContext('2d');
+  const cRgh = document.createElement('canvas'); cRgh.width = cRgh.height = S; const gr = cRgh.getContext('2d');
+  const rng = (seed => () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296)(741923);
+  g.fillStyle = '#18110b'; g.fillRect(0, 0, S, S);
+  gb.fillStyle = '#202020'; gb.fillRect(0, 0, S, S);
+  gr.fillStyle = '#ebebeb'; gr.fillRect(0, 0, S, S);
+  const plankRows = [96, 114, 92, 108, 94, 116, 88, 110, 102, 104]; // unevenly milled timber planks
+  let y = 0;
+  for (let row = 0; row < plankRows.length; row++) {
+    const h = plankRows[row];
+    const joints = [Math.round(S * (0.22 + rng() * 0.56))];
+    if (rng() > 0.45) joints.push(Math.round(S * (rng() > 0.5 ? 0.14 : 0.86)));
+    joints.sort((a, b) => a - b);
+    const segs = [0, ...joints, S];
+    for (let s = 0; s < segs.length - 1; s++) {
+      const x0 = segs[s] + (s ? 2 : 0), x1 = segs[s + 1] - (s < segs.length - 2 ? 2 : 0), w = x1 - x0;
+      const tone = rng();
+      const baseR = Math.round(48 + tone * 28), baseG = Math.round(33 + tone * 19), baseB = Math.round(22 + tone * 13);
+      const grd = g.createLinearGradient(x0, y + 2, x1, y + h - 3);
+      grd.addColorStop(0, `rgb(${baseR - 6},${baseG - 4},${baseB - 3})`);
+      grd.addColorStop(0.5, `rgb(${baseR + 5},${baseG + 3},${baseB + 2})`);
+      grd.addColorStop(1, `rgb(${baseR - 8},${baseG - 6},${baseB - 4})`);
+      g.fillStyle = grd; g.fillRect(x0, y + 2, w, h - 4);
+      const bVal = Math.round(135 + (tone - 0.5) * 32);
+      gb.fillStyle = `rgb(${bVal},${bVal},${bVal})`; gb.fillRect(x0, y + 2, w, h - 4);
+      const rVal = Math.round(205 + (rng() - 0.5) * 34);
+      gr.fillStyle = `rgb(${rVal},${rVal},${rVal})`; gr.fillRect(x0, y + 2, w, h - 4);
+      // long grain fibers + dark annual rings + knots
+      for (let i = 0; i < 42; i++) {
+        const gy = y + 4 + rng() * (h - 8);
+        const dark = rng() > 0.42;
+        g.strokeStyle = dark ? `rgba(14,9,6,${0.14 + rng() * 0.22})` : `rgba(116,86,58,${0.08 + rng() * 0.12})`;
+        g.lineWidth = 0.7 + rng() * 1.9;
+        g.beginPath(); g.moveTo(x0, gy);
+        const wv = (rng() - 0.5) * 6;
+        g.bezierCurveTo(x0 + w * 0.33, gy + wv, x0 + w * 0.66, gy - wv, x1, gy + (rng() - 0.5) * 3);
+        g.stroke();
+        gb.strokeStyle = dark ? 'rgba(65,65,65,0.34)' : 'rgba(205,205,205,0.22)';
+        gb.lineWidth = g.lineWidth; gb.stroke();
+      }
+      if (rng() > 0.38 && w > 180) {
+        const kx = x0 + 48 + rng() * (w - 96), ky = y + 18 + rng() * (h - 36), kr = 6 + rng() * 11;
+        g.fillStyle = 'rgba(18,11,7,0.52)'; g.beginPath(); g.ellipse(kx, ky, kr * 1.8, kr * 0.68, (rng() - 0.5) * 0.2, 0, Math.PI * 2); g.fill();
+        gb.fillStyle = 'rgba(72,72,72,0.55)'; gb.beginPath(); gb.ellipse(kx, ky, kr * 1.8, kr * 0.68, 0, 0, Math.PI * 2); gb.fill();
+      }
+      // forged iron brads near butt seams
+      for (const nx of [x0 + 11, x1 - 11]) {
+        if (nx <= x0 || nx >= x1) continue;
+        for (const ny of [y + 16, y + h - 16]) {
+          g.fillStyle = 'rgba(12,11,10,0.78)'; g.fillRect(nx - 2.5, ny - 2.5, 5, 5);
+          gb.fillStyle = 'rgb(215,215,215)'; gb.fillRect(nx - 2, ny - 2, 4, 4);
+        }
+      }
+    }
+    // dark plank groove
+    g.fillStyle = 'rgba(7,5,4,0.88)'; g.fillRect(0, y, S, 3);
+    gb.fillStyle = 'rgb(24,24,24)'; gb.fillRect(0, y, S, 4);
+    gr.fillStyle = 'rgb(248,248,248)'; gr.fillRect(0, y, S, 3);
+    y += h;
   }
-  // spiral hill motif etched quietly across the slate
-  g.strokeStyle = 'rgba(196,143,54,.20)'; g.lineWidth = 1.5;
-  for (let rad = 36; rad <= 228; rad += 48) { g.beginPath(); g.arc(cx, cy, rad, 0, Math.PI * 2); g.stroke(); }
-  g.strokeStyle = 'rgba(142,191,176,.18)'; g.lineWidth = 1.25;
-  g.beginPath();
-  for (let t = 0; t < 44; t++) {
-    const ang = t * 0.28, rr = 14 + t * 3.8;
-    const px = cx + Math.cos(ang) * rr, py = cy + Math.sin(ang) * rr;
-    if (t === 0) g.moveTo(px, py); else g.lineTo(px, py);
-  }
-  g.stroke();
-  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  // aged centre scuffing, pale dust wear & damp border darkening
+  const scuff = g.createRadialGradient(S * 0.5, S * 0.52, 24, S * 0.5, S * 0.52, S * 0.46);
+  scuff.addColorStop(0, 'rgba(165,142,114,0.11)'); scuff.addColorStop(0.45, 'rgba(0,0,0,0)'); scuff.addColorStop(1, 'rgba(6,8,10,0.48)');
+  g.fillStyle = scuff; g.fillRect(0, 0, S, S);
+  const mk = (cv, srgb) => { const t = new THREE.CanvasTexture(cv); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t; };
+  return { woodMap: mk(cCol, true), woodBump: mk(cBmp, false), woodRough: mk(cRgh, false) };
 })();
-const floorM = new THREE.Mesh(new THREE.CircleGeometry(2.7, 72).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: floorTex, transparent: true })); scene.add(floorM);
-const ring = new THREE.Mesh(new THREE.TorusGeometry(2.7, 0.022, 10, 96).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x8d6735, roughness: 0.45, metalness: 0.45, emissive: 0x3b2608, emissiveIntensity: 0.45 })); ring.position.y = 0.01; scene.add(ring);
-const ectoRing = new THREE.Mesh(new THREE.TorusGeometry(2.8, 0.008, 8, 96).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x8ebfb0, transparent: true, opacity: 0.24 })); ectoRing.position.y = 0.006; scene.add(ectoRing);
-if (THUMBS) { [floorM, ring, ectoRing].forEach(o => o.visible = false); const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 28, 2, 32, 32, 46); r.addColorStop(0, '#2a2f3a'); r.addColorStop(1, '#101218'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; scene.background = t; }
-scene.add(new THREE.HemisphereLight(0x8fa4c6, 0x1b130e, 0.96));
-const key = new THREE.DirectionalLight(0xffe1b0, 2.1); key.position.set(1.7, 3.1, 2.8); scene.add(key);
+const stageGroup = new THREE.Group(); scene.add(stageGroup);
+const woodDeckMat = new THREE.MeshStandardMaterial({ map: woodMap, bumpMap: woodBump, bumpScale: 0.018, roughnessMap: woodRough, roughness: 0.88, metalness: 0.05 });
+const woodSideMat = new THREE.MeshStandardMaterial({ color: 0x22170f, bumpMap: woodBump, bumpScale: 0.014, roughness: 0.94, metalness: 0.04 });
+// Non-circular, hand-sawn crooked Victorian timber platform (jagged stepped vertices & asymmetrical radii)
+{
+  const shape = new THREE.Shape(), N = 18;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2;
+    const wob = 1 + 0.08 * Math.cos(3 * a + 0.5) + 0.055 * Math.sin(5 * a - 1.1) + 0.045 * Math.cos(7 * a + 0.9) + ((i % 2) ? 0.03 : -0.025);
+    const rx = 2.48 * wob, rz = 2.26 * wob;
+    const px = Math.cos(a) * rx, pz = Math.sin(a) * rz;
+    if (i === 0) shape.moveTo(px, pz); else shape.lineTo(px, pz);
+  }
+  shape.closePath();
+  const deckGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.11, bevelEnabled: true, bevelSize: 0.014, bevelThickness: 0.014, bevelSegments: 2, curveSegments: 1 });
+  deckGeo.rotateX(Math.PI / 2);
+  // planar top/side UVs so floorboards run naturally left-to-right across the irregular stage
+  const pos = deckGeo.attributes.position, uv = deckGeo.attributes.uv;
+  for (let i = 0; i < pos.count; i++) uv.setXY(i, (pos.getX(i) + 2.75) / 5.5, (pos.getZ(i) + 2.75) / 5.5);
+  uv.needsUpdate = true; deckGeo.computeVertexNormals();
+  const deck = new THREE.Mesh(deckGeo, [woodDeckMat, woodSideMat]);
+  deck.position.y = -0.014; deck.receiveShadow = true; stageGroup.add(deck);
+}
+// Protruding uneven sawed floorboards & rusted under-joists breaking any hint of round silhouette
+{
+  const plankLayout = [
+    [-1.42, 0.34, 4.18, -0.08, 0.014], [-1.05, 0.36, 4.72, 0.09, -0.011], [-0.66, 0.37, 5.14, -0.11, 0.009],
+    [-0.27, 0.36, 5.26, 0.07, -0.008], [0.12, 0.38, 5.18, -0.06, 0.010],  [0.52, 0.35, 4.96, 0.12, -0.012],
+    [0.91, 0.37, 4.52, -0.09, 0.011],  [1.30, 0.34, 3.92, 0.08, -0.015]
+  ];
+  const ironMat = new THREE.MeshStandardMaterial({ color: 0x2a241f, roughness: 0.68, metalness: 0.55 });
+  for (const [pz, pw, plen, xOff, yaw] of plankLayout) {
+    const pg = new THREE.BoxGeometry(plen, 0.036, pw - 0.018);
+    const pm = pg.attributes.uv, uOff = (pz + 2.5) / 5.0;
+    for (let i = 0; i < pm.count; i++) pm.setXY(i, pm.getX(i) * (plen / 5.2), uOff + pm.getY(i) * 0.08);
+    const plank = new THREE.Mesh(pg, woodDeckMat);
+    plank.position.set(xOff, -0.018, pz); plank.rotation.y = yaw;
+    plank.receiveShadow = true; plank.castShadow = true; stageGroup.add(plank);
+  }
+  for (const bx of [-1.65, -0.55, 0.55, 1.65]) {
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.09, 3.95), woodSideMat);
+    beam.position.set(bx, -0.095, 0); beam.receiveShadow = true; stageGroup.add(beam);
+  }
+  for (const [bx, bz, ry] of [[-1.95, 1.32, 0.42], [1.98, 1.24, -0.38], [-2.12, -1.08, -0.45], [2.04, -1.16, 0.48]]) {
+    const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.11, 0.04), ironMat);
+    bracket.position.set(bx, -0.065, bz); bracket.rotation.y = ry; bracket.receiveShadow = true; stageGroup.add(bracket);
+  }
+}
+// Soft ground-contact AO shadow under feet + real-time DirectionalLight silhouette shadow
+const contactShadow = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  const r = g.createRadialGradient(64, 64, 6, 64, 64, 62);
+  r.addColorStop(0, 'rgba(3,3,5,0.74)'); r.addColorStop(0.5, 'rgba(3,3,5,0.34)'); r.addColorStop(1, 'rgba(3,3,5,0)');
+  g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.86, 0.70).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
+  m.position.y = 0.0025; scene.add(m); return m;
+})();
+if (THUMBS) { stageGroup.visible = false; contactShadow.visible = false; const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), r = g.createRadialGradient(32, 28, 2, 32, 32, 46); r.addColorStop(0, '#2a2f3a'); r.addColorStop(1, '#101218'); g.fillStyle = r; g.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; scene.background = t; }
+scene.add(new THREE.HemisphereLight(0x8fa4c6, 0x0e0a07, 0.86));
+const key = new THREE.DirectionalLight(0xffe1b0, 2.25); key.position.set(2.1, 3.6, 2.7);
+key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.near = 0.6; key.shadow.camera.far = 10.5;
+key.shadow.camera.left = -1.65; key.shadow.camera.right = 1.65; key.shadow.camera.top = 2.4; key.shadow.camera.bottom = -0.5;
+key.shadow.bias = -0.0005; key.shadow.normalBias = 0.022; key.shadow.radius = 2.0;
+key.target.position.set(0, 0.85, 0); scene.add(key.target); scene.add(key);
 const rimP = new THREE.DirectionalLight(0x9fe8d0, 1.75); rimP.position.set(-2.9, 2.3, -2.5); scene.add(rimP);
 const rimC = new THREE.DirectionalLight(0xe0a43a, 1.3); rimC.position.set(2.9, 1.8, -2.4); scene.add(rimC);
 
@@ -1189,7 +1356,7 @@ const SK_FRAG = `
      float sd2 = texture2D( uSkDet, vSkP.yz * ( uSkInv * 2.35 ) + vec2( 0.37, 0.19 ) ).r * sw.x + texture2D( uSkDet, vSkP.zx * ( uSkInv * 2.35 ) + vec2( 0.13, 0.71 ) ).r * sw.y + texture2D( uSkDet, vSkP.yx * ( uSkInv * 2.35 ) + vec2( 0.53, 0.29 ) ).r * sw.z;
      float sd = mix( sd1, mix( 0.35 * sd1 + 0.65 * sd2, 0.52 * sd1 + 0.48 * sd2, handW ), max( handW, bodyBelowNeck ) );
      float limbCalm = mix( 1.0, mix( 0.50, 0.90, handW ), bodyBelowNeck );
-     skGrain = ( sd - 0.5 ) * 2.0 * uSkStr * limbCalm * ( 1.0 + 0.36 * handW + 1.1 * handW * vTisA.y ) * ( 1.0 - 0.85 * nailW ); // knuckles and fingertips get deeper creases, the nail plate stays smooth
+     skGrain = ( sd - 0.5 ) * 2.0 * uSkStr * limbCalm * ( 1.0 + 0.36 * handW ) * ( 1.0 - 0.72 * nailW );
    }
    // microvascular blood warmth under knuckles, fingertips, earlobes, nose wings
    diffuseColor.rgb *= mix( vec3( 1.0 ), vec3( 1.06, 0.85, 0.80 ), warmW * 0.85 );
@@ -1203,7 +1370,7 @@ const SK_FRAG = `
    }
    // preserve sculpted inner-ear concha & antihelix depth even when photo skin flattens shadow ratio
    float earConcha = smoothstep( 5.9, 6.9, abs( vSkP.x ) ) * smoothstep( 139.8, 142.2, vSkP.y ) * ( 1.0 - smoothstep( 150.2, 152.2, vSkP.y ) ) * ( 1.0 - smoothstep( 1.4, 3.5, vSkP.z ) );
-   diffuseColor.rgb *= mix( 1.0, mix( 0.62, 1.03, smoothstep( 0.16, 0.75, mk.r ) ), earConcha * uSkReal * 1.0 ); // deeper bowl
+   diffuseColor.rgb *= mix( 1.0, mix( 0.62, 1.03, smoothstep( 0.16, 0.75, mk.r ) ), earConcha * uSkReal * 0.72 );
  }`;
 const SK_POST_FP = `
  diffuseColor.rgb *= 1.0 + skGrain * max( 1.0 - fpA, 0.75 * fpSmear );
@@ -1247,22 +1414,9 @@ const EYE_PRE = `
      float lidAO = 1.0 - 0.22 * smoothstep( 0.55, 2.1, eyLoc.y );
      float corner = 1.0 - 0.14 * smoothstep( 0.65, 1.45, abs( eyLoc.x ) );
      diffuseColor.rgb *= mix( 1.0, lidAO * corner, scl );
-     diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * vec3( 1.0, 0.955, 0.9 ), scl * 0.5 ); // ivory, not blue-white
-     float inner = smoothstep( -0.55, -1.15, eyLoc.x ) * ( 1.0 - smoothstep( 0.0, 1.3, abs( eyLoc.y + 0.2 ) ) );
-     diffuseColor.rgb *= mix( vec3( 1.0 ), vec3( 1.0, 0.80, 0.76 ), scl * inner * 0.8 ); // the pink corner by the nose
+     diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * vec3( 0.98, 0.97, 1.0 ), scl * 0.4 );
      float ir = smoothstep( 0.08, 0.55, mk.g ) * ( 1.0 - smoothstep( 0.2, 0.6, mk.b ) );
      diffuseColor.rgb *= mix( 1.0, 0.78 + 0.36 * rmp( mk.g ), ir );
-     {
-       vec2 ec = vMapUv - 0.5; float er = clamp( length( ec ) / 0.2, 0.0, 1.2 ), ea = atan( ec.y, ec.x );
-       float irisD = smoothstep( 0.05, 0.3, mk.g );
-       float fib = 0.5 + 0.5 * sin( ea * 46.0 + 2.4 * sin( ea * 9.0 + er * 5.0 ) ) ;
-       float fib2 = 0.5 + 0.5 * sin( ea * 113.0 + 3.1 * sin( ea * 21.0 ) );
-       float fibres = 0.74 + 0.30 * fib + 0.18 * fib2;
-       float collar = 1.0 + 0.20 * exp( -pow( ( er - 0.42 ) / 0.10, 2.0 ) ); // the lighter ring round the pupil
-       float limbal = 1.0 - 0.62 * smoothstep( 0.72, 0.98, er ); // the dark ring at the iris edge
-       float pupilEdge = 1.0 - 0.35 * exp( -pow( ( er - 0.26 ) / 0.07, 2.0 ) );
-       diffuseColor.rgb *= mix( 1.0, fibres * collar * limbal * pupilEdge, irisD * ( 1.0 - 0.8 * smoothstep( 0.55, 0.9, mk.b ) ) );
-     }
    }
  }`;
 const EYE_LIGHT = `
@@ -1489,7 +1643,7 @@ async function makeMat(keyName, side) {
         .replace(anchor + (isSkin ? '\n' + SK_FRAG : ''), anchor + (isSkin ? '\n' + SK_FRAG : '') + '\n' + FP_FRAG + (isSkin ? '\n' + SK_POST_FP : '') + (isEye ? '\n' + EYE_PRE : '')) // the print goes on top of the skin detail, followed by grain/tone alignment and wet-cornea masking
         .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += fpC * uFpFlat * fpA;' + (isSkin ? '\n totalEmissiveRadiance += skBase * skFlat;' : ''))
         .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>' + (isSkin ? '\n { vec3 dLum = vec3( dot( reflectedLight.directDiffuse, vec3( 0.2126, 0.7152, 0.0722 ) ) ) * vec3( 1.02, 0.99, 0.97 ); reflectedLight.directDiffuse = mix( reflectedLight.directDiffuse, dLum, 0.44 * uSkReal * ( 1.0 - fpA ) ); }' : '') + (isEye ? '\n reflectedLight.directSpecular *= vec3( 1.0, 0.96, 0.92 ) * eyWet * 0.42;' : ''))
-        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n ' + (isEye ? 'roughnessFactor = uFpOn > 0.5 ? mix( 0.58, 0.032, eyWet ) : mix( roughnessFactor, 0.032, 0.35 + 0.65 * uEyReal );' : (isSkin ? '{ float skRgh = clamp( mix( 0.52, 0.12, vTisB.x ) - skGrain * 0.14, 0.18, 0.85 ); roughnessFactor = mix( roughnessFactor, skRgh, uSkReal ); roughnessFactor = mix( roughnessFactor, 0.66, fpA ); }' : 'roughnessFactor = mix( roughnessFactor, 0.95, fpA );')))
+        .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n ' + (isEye ? 'roughnessFactor = uFpOn > 0.5 ? mix( 0.58, 0.032, eyWet ) : mix( roughnessFactor, 0.032, 0.35 + 0.65 * uEyReal );' : (isSkin ? '{ float skRgh = clamp( mix( 0.52, 0.24, vTisB.x ) - skGrain * 0.14, 0.18, 0.85 ); roughnessFactor = mix( roughnessFactor, skRgh, uSkReal ); roughnessFactor = mix( roughnessFactor, 0.66, fpA ); }' : 'roughnessFactor = mix( roughnessFactor, 0.95, fpA );')))
         .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = mix( metalnessFactor, 0.0, ' + (isEye ? '1.0' : 'fpA') + ' );')
         .replace('outgoingLight += uTint *', (isSkin ? SK_LIGHT : '') + (isEye ? EYE_LIGHT : '') + 'outgoingLight += ' + (isEye ? '( 1.0 - fpLid ) * ( 1.0 - 0.8 * fpA ) * ( 1.0 - 0.85 * uEyReal ) * ' : isSkin ? '( 1.0 - 0.8 * fpA ) * ( 1.0 - 0.78 * uSkReal ) * ' : '( 1.0 - 0.8 * fpA ) * ') + 'uTint *');
     }
@@ -1511,7 +1665,7 @@ let bodyObj = null, B = {}, headBone = null, handR = null, mixer = null, action 
 const REST = {}, parts = {}, tokens = {}; let genToken = 0;
 const find = (slot, id) => (SL[slot] || []).find(e => e.id === id) || (SL_ALL[slot] || []).find(e => e.id === id);
 const fileFor = (it, g) => it[g] || it.file || it.F || it.M;
-const SHRINK = { hips: 1.3, legs_upper: 0.9, legs_knee: 1.0, legs_lower: 0.8, arms_upper: 0.8, arms_lower: 0.6 }; // torso, torso001 and shoulders stay put: they overlap each other and open cracks if moved
+const SHRINK = { hips: 1.3, legs_upper: 0.9, legs_knee: 1.0, legs_lower: 0.8, arms_upper: 0.35, arms_lower: 0.18 }; // torso, torso001 and shoulders stay put: they overlap each other and open cracks if moved; keep arms gentle so bare wrists stay natural alongside insetBody()
 
 async function applyMaterials(root, file, variant, side) {
   const map = { ...MAN.fbxMats[file.replace(/^.*\//, '')], ...(variant && variant.mats || {}) }, mats = [], jobs = [];
@@ -1613,11 +1767,16 @@ async function prepare(slot, w) {
   for (const e of mats) { const m = e.mat; if (!m) continue; if (polyOff) { m.polygonOffset = true; m.polygonOffsetFactor = polyOff; m.polygonOffsetUnits = polyOff * 2; } if (m.map) { try { renderer.initTexture(m.map); if (m.normalMap) renderer.initTexture(m.normalMap); } catch (_) { /* uploaded on first draw instead */ } } }
   progress.step(); return { slot, key: w.key, file: w.file, root, mats, gen: genToken };
 }
+function syncShadows() {
+  if (THUMBS) return;
+  character.traverse(o => { if (o.isMesh && !o.isPoints) o.castShadow = true; });
+}
 function install(slot, p) {
   removePart(slot);
   if (ATTACH.has(slot)) { headBone.add(p.root); p.objs = [p.root]; } else { p.objs = bindToBody(p.root); p.objs.forEach(deformMesh); }
   parts[slot] = p; if (slot === 'hair' || slot === 'bangs') { rebuildHairPhysics(); applyHairCards(); }
   if (slot === 'shoes') { updateGroundRef(); clearTimeout(shapeTimer); shapeTimer = setTimeout(() => setProps(S.clip), 180); }
+  syncShadows();
 }
 const discard = p => { if (p) p.mats.forEach(e => e.mat && e.mat.dispose && e.mat.dispose()); };
 /* what the current choices ask for in a slot: a file (and maybe a material variant), or nothing */
@@ -1648,6 +1807,7 @@ async function sync(slots, force = false) {
 }
 async function setSlot(slot, id, keep = false) {
   S[slot] = id; if (!keep) delete S.col[slot];
+  if (slot === 'outfit' && id) { S.top = null; S.bot = null; } // wearing a full outfit clears separates
   if ((slot === 'top' || slot === 'bot') && id) S.outfit = null; // choosing a top or bottom takes the outfit off
   refreshUI(); await sync(GROUP[slot] || [slot]);
 }
@@ -2046,10 +2206,16 @@ let BONE0 = null, SHP = null; const SHP_ORDER = [], ID4 = new THREE.Matrix4();
 const HEAD_REAL = 0.87; // a real head over the pack's: real adults' eye spacing is about 6.3 cm in 168 cm, the pack's 6.7 cm in 156 cm, so its heads are ~14% too big for the realistic style
 const headBase = () => lerp(1, HEAD_REAL, STYLE.k);
 const headScale = () => { const h = S.shape.head ?? 0.5; return headBase() * (h < 0.5 ? lerp(0.85, 1, h / 0.5) : lerp(1, 1.3, (h - 0.5) / 0.5)); };
-const shapeFactors = () => { const sh = S.shape, wide = 1 + 1.2 * STYLE.k, k = v => 1 + (v - 0.5) * 0.28 * wide; /* realistic: limbs can reach real proportions (about +-31% instead of +-14%) */ return { kLeg: k(sh.legs), kArm: k(sh.arms), t: sh.build < 0.5 ? lerp(0.8, 1, sh.build / 0.5) : lerp(1, 1.8, (sh.build - 0.5) / 0.5) }; };
+const shapeFactors = () => {
+  const sh = S.shape, wide = 1 + 1.2 * STYLE.k, k = v => 1 + (v - 0.5) * 0.28 * wide;
+  const t = sh.build < 0.5 ? lerp(0.8, 1, sh.build / 0.5) : lerp(1, 1.8, (sh.build - 0.5) / 0.5);
+  const armT = lerp(1, t, 0.60), hs = Math.max(0.86, Math.min(1.18, lerp(1, armT, 0.72)));
+  return { kLeg: k(sh.legs), kArm: 1 + (k(sh.arms) - 1) * 0.58, t, armT, hs };
+};
 function shapeSpec(n) {
   let m = n.match(/^CC_Base(Thigh|Calf)([LR])$/); if (m) return { kind: 'leg', child: m[1] === 'Thigh' ? 'CC_BaseCalf' + m[2] : 'CC_BaseFoot' + m[2] };
   if ((m = n.match(/^CC_Base(Upperarm|Forearm)([LR])$/))) return { kind: 'arm', child: m[1] === 'Upperarm' ? 'CC_BaseForearm' + m[2] : 'CC_BaseHand' + m[2] };
+  if ((m = n.match(/^CC_Base(?:Hand|(?:Thumb|Index|Mid|Ring|Pinky)[123])([LR])$/))) return { kind: 'hand' };
   if ((m = n.match(/^CC_Base_(Waist|Spine01|Spine02)$/))) return { kind: 'torso', child: { Waist: 'CC_Base_Spine01', Spine01: 'CC_Base_Spine02', Spine02: 'CC_Base_NeckTwist01' }[m[1]] };
   if (n === 'CC_Base_Pelvis') return { kind: 'pelvis' };
   return null;
@@ -2062,6 +2228,7 @@ function initShape() {
     BONE0[b.name] = { bone: real, W, P: v.setFromMatrixPosition(W).clone(), Q: real.quaternion.clone(), parent: q && q.isBone ? q.name : null, spec: null }; });
   bodyObj.traverse(o => { if (o.isBone && B[o.name] === o && BONE0[o.name] && !seen.has(o.name)) { seen.add(o.name); SHP_ORDER.push(o.name); } });
   for (const n of SHP_ORDER) { const b = BONE0[n], sp = shapeSpec(n); if (!sp) continue; b.spec = sp;
+    if (sp.kind === 'hand') { sp.along = 1; continue; }
     if (sp.kind === 'pelvis') { let best = 0, bv = -1; for (let a = 0; a < 3; a++) { const e = b.W.elements, l = Math.hypot(e[a * 4], e[a * 4 + 1], e[a * 4 + 2]) || 1, y = Math.abs(e[a * 4 + 1]) / l; if (y > bv) { bv = y; best = a; } } sp.along = best; }
     else { const c = BONE0[sp.child] && BONE0[sp.child].bone.position; if (!c) { b.spec = null; continue; } const ax = [Math.abs(c.x), Math.abs(c.y), Math.abs(c.z)]; sp.along = ax.indexOf(Math.max(...ax)); } }
   for (const n of SHP_ORDER) { const m = n.match(/^(CC_Base(?:Thigh|Calf|Upperarm|Forearm))Twist\d+([LR])$/); if (m && BONE0[m[1] + m[2]] && BONE0[m[1] + m[2]].spec) BONE0[n].spec = BONE0[m[1] + m[2]].spec; }
@@ -2072,8 +2239,8 @@ function computeShape() {
     const b = BONE0[name], par = b.parent && BONE0[b.parent]; let Pnew = b.P.clone();
     if (par && Pn.has(b.parent)) Pnew = Pn.get(b.parent).clone().add(v.copy(b.P).sub(par.P).applyMatrix3(Lin.get(b.parent)));
     const T = new THREE.Matrix4().makeTranslation(Pnew.x - b.P.x, Pnew.y - b.P.y, Pnew.z - b.P.z); let Dm = T, Lm = new THREE.Matrix3();
-    if (b.spec) { const sp = b.spec, a = sp.kind === 'leg' ? [f.t, f.t, f.t] : sp.kind === 'arm' ? [lerp(1, f.t, 0.7), lerp(1, f.t, 0.7), lerp(1, f.t, 0.7)] : [f.t, f.t, f.t];
-      a[sp.along] = sp.kind === 'leg' ? f.kLeg : sp.kind === 'arm' ? f.kArm : 1;
+    if (b.spec) { const sp = b.spec, a = sp.kind === 'leg' ? [f.t, f.t, f.t] : sp.kind === 'arm' ? [f.armT, f.armT, f.armT] : sp.kind === 'hand' ? [f.hs, f.hs, f.hs] : [f.t, f.t, f.t];
+      if (sp.kind !== 'hand') a[sp.along] = sp.kind === 'leg' ? f.kLeg : sp.kind === 'arm' ? f.kArm : 1;
       const Wsc = b.W.clone().multiply(new THREE.Matrix4().makeScale(a[0], a[1], a[2])), L = Wsc.clone().multiply(tmp.copy(b.W).invert()); Dm = T.clone().multiply(L); Lm = new THREE.Matrix3().setFromMatrix4(L); }
     D.set(name, Dm); Lin.set(name, Lm); Pn.set(name, Pnew); inv.set(name, T.clone().multiply(b.W).invert());
   }
@@ -2156,7 +2323,7 @@ async function buildBody(gen) {
   try { const gl = await new GLTFLoader().parseAsync(await fetchBuf('assets/clips_' + S.gender + '.glb'), ''); clips = {}; for (const c of gl.animations) clips[c.name] = c; } catch (e) { clips = {}; }
   if (gen !== genToken) return false;
   mixer = new THREE.AnimationMixer(root); buildClipUI(); if (clips[S.clip]) play(S.clip); else { const n = Object.keys(clips)[0]; if (n) play(n); }
-  addMic(); buildPropUI(); setGameProp(S.hand || 'none'); progress.step(); return true;
+  addMic(); buildPropUI(); setGameProp(S.hand || 'none'); syncShadows(); progress.step(); return true;
 }
 /* the whole character: hidden behind smoke until the body and every chosen piece are in, then revealed together */
 async function buildAll(quick = false) {
@@ -2257,6 +2424,44 @@ function restoreProcPose() {
 
 /* ---- per-clip finger grip & hand arch refinements (curl around local Z: -1 on L, +1 on R) ---- */
 const _phQ = new THREE.Quaternion(), _phE = new THREE.Euler();
+const _paQ = new THREE.Quaternion(), _paP = new THREE.Quaternion(), _paW = new THREE.Quaternion(), _paE = new THREE.Euler(), _paAx = new THREE.Vector3();
+const CALM_ARM_CLIPS = new Set(['Idle', 'Breathing_Idle', 'Happy_Idle', 'Weight_Shift', 'Bored', 'Looking_Behind', 'Nervously_Look_Around']);
+function nudgeBoneWorld(bone, worldQuat) {
+  if (!bone || !bone.parent) return;
+  bone.parent.getWorldQuaternion(_paP);
+  _paQ.copy(_paP).invert().multiply(worldQuat).multiply(_paP);
+  bone.quaternion.premultiply(_paQ);
+}
+function nudgeUpperarm(side, abductDeg, fwdDeg) {
+  const rad = Math.PI / 180;
+  _paW.setFromEuler(_paE.set(-fwdDeg * rad, 0, (side === 'R' ? -abductDeg : abductDeg) * rad, 'XYZ'));
+  nudgeBoneWorld(B['CC_BaseUpperarm' + side], _paW);
+}
+function nudgeForearmFwd(side, deg) {
+  const f = B['CC_BaseForearm' + side]; if (!f || !deg) return;
+  const rad = Math.PI / 180;
+  // Rotate forearm forward (+Z) around character-space X (slightly biased outward so forearm never crosses into torso)
+  _paAx.set(1, 0, side === 'R' ? -0.14 : 0.14).normalize();
+  _paW.setFromAxisAngle(_paAx, -deg * rad);
+  nudgeBoneWorld(f, _paW);
+}
+function poseCarryArm() {
+  if (!bodyObj || !CALM_ARM_CLIPS.has(S.clip)) return;
+  const rad = Math.PI / 180;
+  // Left arm: subtle resting outward clearance & soft elbow forward poise
+  nudgeUpperarm('L', 4.5, 2.0);
+  nudgeForearmFwd('L', 8);
+  // Right arm: carried manor prop poise & torso/trouser clearance
+  const prop = S.prop && S.hand && S.hand !== 'none' && S.clip !== 'Thinking_1_' ? GAME_PROPS[S.hand] : null;
+  const arm = prop && prop.arm ? prop.arm : { abduct: 4.5, fwd: 2.0, elbow: 8 };
+  nudgeUpperarm('R', arm.abduct || 0, arm.fwd || 0);
+  nudgeForearmFwd('R', arm.elbow || 0);
+  const hr = B.CC_BaseHandR;
+  if (hr && (arm.handRoll || arm.handPitch)) {
+    _paQ.setFromEuler(_paE.set((arm.handPitch || 0) * rad, (arm.handRoll || 0) * rad, 0));
+    hr.quaternion.multiply(_paQ);
+  }
+}
 function poseHands(clipName) {
   if (!bodyObj || !clipName) return;
   const curl = (side, fName, j, dz, dx = 0, dy = 0) => {
@@ -2290,9 +2495,18 @@ function poseHands(clipName) {
     }
     curl('R', 'Index', 1, 0.18); curl('R', 'Index', 2, 0.24); curl('R', 'Index', 3, 0.18);
     curl('R', 'Thumb', 2, 0.20); curl('R', 'Thumb', 3, 0.16);
-  } else if (clipName === 'grip') { // closing the right hand round a held manor prop
-    for (const f of ['Index', 'Mid', 'Ring', 'Pinky']) { curl('R', f, 1, 0.55); curl('R', f, 2, 0.6); curl('R', f, 3, 0.4); }
-    curl('R', 'Thumb', 1, 0.15, 0.1); curl('R', 'Thumb', 2, 0.3); curl('R', 'Thumb', 3, 0.25);
+  } else if (clipName === 'grip' || clipName === 'hook') { // wrapping fingers around handle/scroll/bail
+    const a1 = clipName === 'hook' ? 0.50 : 0.52, a2 = clipName === 'hook' ? 0.72 : 0.58, a3 = clipName === 'hook' ? 0.54 : 0.38;
+    for (const f of ['Index', 'Mid', 'Ring', 'Pinky']) { curl('R', f, 1, a1); curl('R', f, 2, a2); curl('R', f, 3, a3); }
+    curl('R', 'Thumb', 1, 0.16, 0.08); curl('R', 'Thumb', 2, 0.28); curl('R', 'Thumb', 3, 0.22);
+  } else if (clipName === 'cradle_book' || clipName === 'cradle_box') { // L-shelf fingers supporting book/camera/box externally without clipping
+    const isBk = clipName === 'cradle_book';
+    for (const f of ['Index', 'Mid', 'Ring', 'Pinky']) { curl('R', f, 1, 0.18); curl('R', f, 2, isBk ? 0.46 : 0.38); curl('R', f, 3, isBk ? 0.34 : 0.26); }
+    curl('R', 'Thumb', 1, 0.04, 0.06); curl('R', 'Thumb', 2, isBk ? 0.10 : 0.12); curl('R', 'Thumb', 3, isBk ? 0.06 : 0.08);
+  } else if (clipName === 'pinch') { // thumb + index pinching bow/planchette rim while trailing fingers relax clear
+    curl('R', 'Index', 1, 0.32); curl('R', 'Index', 2, 0.36); curl('R', 'Index', 3, 0.24);
+    for (const f of ['Mid', 'Ring', 'Pinky']) { curl('R', f, 1, 0.22); curl('R', f, 2, 0.26); curl('R', f, 3, 0.18); }
+    curl('R', 'Thumb', 1, 0.10, 0.06); curl('R', 'Thumb', 2, 0.18); curl('R', 'Thumb', 3, 0.14);
   } else if (clipName === 'Piano_Seated') {
     for (const f of ['Index', 'Mid', 'Ring', 'Pinky']) {
       curl('R', f, 1, 0.30); curl('R', f, 2, 0.22); curl('R', f, 3, 0.14);
@@ -2349,35 +2563,145 @@ const gpM = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness:
 const gpAdd = (g, geo, mat, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.set(rx, ry, rz); g.add(m); return m; };
 const GAME_PROPS = {
   none: { label: 'None' },
-  lantern: { label: 'Lantern', hang: true, make(g) { const brass = gpM(0x8a6a2e, { metalness: 0.7, roughness: 0.35 }), glass = gpM(0xffd27a, { emissive: 0xc48f36, emissiveIntensity: 1.35, transparent: true, opacity: 0.86 });
-    gpAdd(g, new THREE.TorusGeometry(2.2, 0.35, 8, 20), brass, 0, 0, 0, 0, Math.PI / 2, 0); gpAdd(g, new THREE.ConeGeometry(4.5, 3, 6), brass, 0, -4, 0); gpAdd(g, new THREE.CylinderGeometry(3.6, 3.6, 9, 6, 1, true), glass, 0, -10, 0);
-    gpAdd(g, new THREE.CylinderGeometry(4.6, 4.6, 1.2, 6), brass, 0, -15, 0); const l = new THREE.PointLight(0xe0a43a, 1.15, 120, 2); l.position.y = -10; g.add(l); } },
-  candle: { label: 'Candle', upright: true, make(g) { const pew = gpM(0x6e5a3a, { metalness: 0.5 });
-    gpAdd(g, new THREE.TorusGeometry(1.6, 0.35, 8, 14), pew, 0, -1, 0, 0, Math.PI / 2, 0); gpAdd(g, new THREE.BoxGeometry(0.8, 0.5, 4), pew, 0, -2.5, 2.5); gpAdd(g, new THREE.CylinderGeometry(4, 4.2, 0.8, 20), pew, 0, -2.8, 7.5);
-    gpAdd(g, new THREE.CylinderGeometry(1.2, 1.3, 10, 14), gpM(0xded6c6), 0, 2.6, 7.5); gpAdd(g, new THREE.SphereGeometry(0.7, 10, 8), gpM(0xc48f36, { emissive: 0xff9a2a, emissiveIntensity: 2 }), 0, 8.4, 7.5).scale.set(0.8, 1.6, 0.8);
-    const l = new THREE.PointLight(0xff9a40, 0.9, 90, 2); l.position.set(0, 8.6, 7.5); g.add(l); } },
-  key: { label: 'Old key', make(g) { const iron = gpM(0x47525e, { metalness: 0.8, roughness: 0.45 }); gpAdd(g, new THREE.TorusGeometry(1.8, 0.45, 8, 18), iron, 0, -1.5, 0); gpAdd(g, new THREE.CylinderGeometry(0.35, 0.35, 8, 8), iron, 0, 4, 0);
-    gpAdd(g, new THREE.BoxGeometry(1.6, 0.6, 0.5), iron, 0.8, 7.2, 0); gpAdd(g, new THREE.BoxGeometry(1.1, 0.6, 0.5), iron, 0.55, 6.2, 0); } },
-  bell: { label: 'Hand bell', hang: true, make(g) { const brass = gpM(0xb08a3a, { metalness: 0.85, roughness: 0.3 }); gpAdd(g, new THREE.CylinderGeometry(0.9, 1.1, 7, 12), gpM(0x2c1f18), 0, 2, 0);
-    const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(1 + 3.2 * t * t, -t * 6)); } gpAdd(g, new THREE.LatheGeometry(pts, 24), brass, 0, -1.5, 0).material.side = THREE.DoubleSide; g.children[0].position.y = 4; g.children[1].position.y = 0.5; } },
-  notebook: { label: 'Notebook', make(g) { gpAdd(g, new THREE.BoxGeometry(10, 14, 1.6), gpM(0x5e2429), 0, 3, 0); gpAdd(g, new THREE.BoxGeometry(9.4, 13.4, 1.65), gpM(0xded6c6), 0.3, 3, 0); } },
-  camera: { label: 'Camera', make(g) { const blk = gpM(0x141519, { roughness: 0.4 }); gpAdd(g, new THREE.BoxGeometry(5, 8, 13), blk, 0, 2, 4); gpAdd(g, new THREE.CylinderGeometry(2.4, 2.6, 4, 18), gpM(0x282b32, { metalness: 0.4 }), -4, 2, 4, 0, 0, Math.PI / 2);
-    gpAdd(g, new THREE.BoxGeometry(1.2, 2, 3), gpM(0x9c9484, { metalness: 0.8 }), 0, 6.8, 7); } },
-  map: { label: 'Map', make(g) { const m = gpAdd(g, new THREE.PlaneGeometry(18, 14, 6, 4), gpM(0xded6c6, { side: THREE.DoubleSide, roughness: 0.9 }), 0, 6, 1.5, 0, 0, Math.PI / 2); const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i++) P.setZ(i, Math.sin(P.getX(i) * 0.5) * 0.6); m.geometry.computeVertexNormals(); } },
-  planchette: { label: 'Planchette', make(g) { const sh = new THREE.Shape(); sh.moveTo(0, 6); sh.quadraticCurveTo(5, 0, 3, -3); sh.lineTo(-3, -3); sh.quadraticCurveTo(-5, 0, 0, 6);
-    gpAdd(g, new THREE.ExtrudeGeometry(sh, { depth: 0.8, bevelEnabled: true, bevelSize: 0.3, bevelThickness: 0.3, bevelSegments: 2 }), gpM(0x5c432e, { roughness: 0.5 }), 0, 2, -0.4); gpAdd(g, new THREE.TorusGeometry(1.2, 0.25, 8, 16), gpM(0xc48f36, { metalness: 0.8 }), 0, 4, 0.5); } },
-  musicbox: { label: 'Music box', make(g) { gpAdd(g, new THREE.BoxGeometry(9, 6, 7), gpM(0x2c1f18, { roughness: 0.45 }), 4, 3, 0); gpAdd(g, new THREE.CylinderGeometry(0.3, 0.3, 2.5, 8), gpM(0xc48f36, { metalness: 0.8 }), 9.5, 3, 0, 0, 0, Math.PI / 2); } },
+  lantern: {
+    label: 'Lantern', hang: true, grip: 'hook',
+    pos: [-2.05, 7.5, 0.75], rot: [0, 0, Math.PI],
+    arm: { abduct: 7.5, fwd: 8, elbow: 22 },
+    make(g) {
+      const brass = gpM(0x8a6a2e, { metalness: 0.7, roughness: 0.35 }), glass = gpM(0xffd27a, { emissive: 0xc48f36, emissiveIntensity: 1.25, transparent: true, opacity: 0.86 });
+      gpAdd(g, new THREE.TorusGeometry(1.75, 0.28, 8, 20), brass, 0, 0, 0, 0, Math.PI / 2, 0);
+      gpAdd(g, new THREE.ConeGeometry(4.2, 2.8, 6), brass, 0, -3.3, 0);
+      gpAdd(g, new THREE.CylinderGeometry(3.4, 3.4, 8.6, 6, 1, true), glass, 0, -9.0, 0);
+      gpAdd(g, new THREE.CylinderGeometry(4.4, 4.4, 1.1, 6), brass, 0, -13.7, 0);
+      const l = new THREE.PointLight(0xe0a43a, 0.62, 100, 2); l.position.y = -9.0; g.add(l);
+    }
+  },
+  candle: {
+    label: 'Candle', upright: true, grip: 'hook',
+    pos: [-1.95, 7.2, 1.15], rot: [0, 0, Math.PI],
+    arm: { abduct: 7, fwd: 10, elbow: 42, handPitch: -8 },
+    make(g) {
+      const pew = gpM(0x6e5a3a, { metalness: 0.5 });
+      gpAdd(g, new THREE.TorusGeometry(1.35, 0.28, 8, 16), pew, 0, 0, 0, 0, Math.PI / 2, 0);
+      gpAdd(g, new THREE.BoxGeometry(0.75, 0.45, 4.4), pew, 0, -1.5, 2.8);
+      gpAdd(g, new THREE.CylinderGeometry(3.8, 4.0, 0.75, 20), pew, 0, -1.8, 7.2);
+      gpAdd(g, new THREE.CylinderGeometry(1.1, 1.2, 9.2, 14), gpM(0xded6c6), 0, 3.1, 7.2);
+      gpAdd(g, new THREE.SphereGeometry(0.65, 10, 8), gpM(0xc48f36, { emissive: 0xff9a2a, emissiveIntensity: 1.85 }), 0, 8.4, 7.2).scale.set(0.8, 1.6, 0.8);
+      const l = new THREE.PointLight(0xff9a40, 0.55, 80, 2); l.position.set(0, 8.6, 7.2); g.add(l);
+    }
+  },
+  key: {
+    label: 'Old key', grip: 'pinch',
+    pos: [-2.35, 7.3, 2.95], rot: [0.38, 0.14, 0.12],
+    arm: { abduct: 6.5, fwd: 13, elbow: 32, handRoll: 12 },
+    make(g) {
+      const iron = gpM(0x47525e, { metalness: 0.8, roughness: 0.45 });
+      gpAdd(g, new THREE.TorusGeometry(1.55, 0.36, 8, 18), iron, 0, 0, 0);
+      gpAdd(g, new THREE.CylinderGeometry(0.32, 0.32, 7.8, 8), iron, 0, 5.2, 0);
+      gpAdd(g, new THREE.BoxGeometry(1.5, 0.55, 0.45), iron, 0.75, 8.3, 0);
+      gpAdd(g, new THREE.BoxGeometry(1.05, 0.55, 0.45), iron, 0.52, 7.3, 0);
+    }
+  },
+  bell: {
+    label: 'Hand bell', hang: true, grip: 'grip',
+    pos: [-2.0, 7.7, 0.75], rot: [0, 0, Math.PI],
+    arm: { abduct: 7.5, fwd: 10, elbow: 24 },
+    make(g) {
+      const brass = gpM(0xb08a3a, { metalness: 0.85, roughness: 0.3 });
+      // Ebony handle extends slightly above thumb & fingers while brass bell suspends cleanly below
+      gpAdd(g, new THREE.CylinderGeometry(0.85, 1.0, 7.2, 12), gpM(0x2c1f18), 0, -0.4, 0);
+      const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(1 + 3.2 * t * t, -t * 5.8)); }
+      gpAdd(g, new THREE.LatheGeometry(pts, 24), brass, 0, -4.0, 0).material.side = THREE.DoubleSide;
+    }
+  },
+  notebook: {
+    label: 'Notebook', grip: 'cradle_book',
+    pos: [-2.45, 2.4, 1.4], rot: [0.06, 0, -0.14],
+    arm: { abduct: 9, fwd: 11, elbow: 26, handRoll: 8 },
+    make(g) {
+      // 1.5 cm spine thickness along X rests cleanly between palm (-1.65) and outer fingertips (-3.15)
+      gpAdd(g, new THREE.BoxGeometry(1.5, 13.6, 9.6), gpM(0x5e2429, { roughness: 0.65 }), 0, 0, 0);
+      gpAdd(g, new THREE.BoxGeometry(1.22, 13.0, 9.1), gpM(0xded6c6, { roughness: 0.85 }), 0, 0, 0.32);
+    }
+  },
+  camera: {
+    label: 'Camera', grip: 'cradle_box',
+    pos: [-4.5, 4.8, 1.6], rot: [0.35, 0, 0],
+    arm: { abduct: 9, fwd: 12, elbow: 42, handRoll: 24, handPitch: -6 },
+    make(g) {
+      const blk = gpM(0x141519, { roughness: 0.4 });
+      // With bent elbow, +Y aims forward and +Z aims UP: lens projects along +Y, brass finder sits on top (+Z)
+      gpAdd(g, new THREE.BoxGeometry(5.0, 7.2, 8.2), blk, 0, 0, 0);
+      gpAdd(g, new THREE.CylinderGeometry(2.1, 2.3, 3.2, 18), gpM(0x282b32, { metalness: 0.45 }), 0, 5.1, 0);
+      gpAdd(g, new THREE.CylinderGeometry(1.4, 1.4, 0.4, 16), gpM(0x47525e, { metalness: 0.7, roughness: 0.2 }), 0, 6.7, 0);
+      gpAdd(g, new THREE.BoxGeometry(2.2, 2.8, 1.4), gpM(0x9c9484, { metalness: 0.8 }), 0, 1.2, 4.7);
+    }
+  },
+  map: {
+    label: 'Map', grip: 'grip',
+    pos: [-1.85, 7.6, 0.7], rot: [Math.PI / 2, 0, 0],
+    arm: { abduct: 7, fwd: 12, elbow: 28 },
+    make(g) {
+      const parch = gpM(0xded6c6, { side: THREE.DoubleSide, roughness: 0.88 });
+      const inner = gpM(0x9c9484, { side: THREE.DoubleSide, roughness: 0.92 });
+      const rib = gpM(0x5e2429, { roughness: 0.6 });
+      gpAdd(g, new THREE.CylinderGeometry(1.18, 1.24, 18.5, 16, 1, true), parch, 0, 0, 0);
+      gpAdd(g, new THREE.CylinderGeometry(0.95, 0.95, 18.6, 12, 1, true), inner, 0, 0, 0);
+      gpAdd(g, new THREE.CylinderGeometry(1.29, 1.29, 1.2, 16), rib, 0, 0, 0);
+    }
+  },
+  planchette: {
+    label: 'Planchette', grip: 'pinch',
+    pos: [-2.35, 8.2, 5.2], rot: [0, -Math.PI / 2, Math.PI / 2],
+    arm: { abduct: 8, fwd: 14, elbow: 34, handRoll: 18 },
+    make(g) {
+      const sh = new THREE.Shape(); sh.moveTo(0, 6); sh.quadraticCurveTo(4.6, 0.2, 2.8, -2.6); sh.lineTo(-2.8, -2.6); sh.quadraticCurveTo(-4.6, 0.2, 0, 6);
+      gpAdd(g, new THREE.ExtrudeGeometry(sh, { depth: 0.75, bevelEnabled: true, bevelSize: 0.22, bevelThickness: 0.22, bevelSegments: 2 }), gpM(0x5c432e, { roughness: 0.5 }), 0, 0, -0.38);
+      const bRing = gpM(0xc48f36, { metalness: 0.8 });
+      gpAdd(g, new THREE.TorusGeometry(1.1, 0.24, 8, 16), bRing, 0, 2.2, 0.46);
+      gpAdd(g, new THREE.TorusGeometry(1.1, 0.24, 8, 16), bRing, 0, 2.2, -0.46);
+    }
+  },
+  musicbox: {
+    label: 'Music box', grip: 'cradle_box',
+    pos: [-4.5, 4.8, 1.5], rot: [0, 0, 0],
+    arm: { abduct: 9, fwd: 12, elbow: 40, handRoll: 24, handPitch: -4 },
+    make(g) {
+      // Top walnut lid on +Z (world UP), brass winding key projecting forward/outward on -X side
+      gpAdd(g, new THREE.BoxGeometry(5.2, 7.2, 5.6), gpM(0x2c1f18, { roughness: 0.45 }), 0, 0, 0);
+      gpAdd(g, new THREE.BoxGeometry(4.8, 6.8, 0.5), gpM(0x5c432e, { roughness: 0.4 }), 0, 0, 2.95);
+      gpAdd(g, new THREE.CylinderGeometry(0.28, 0.28, 2.2, 8), gpM(0xc48f36, { metalness: 0.8 }), -3.7, 0, 0, 0, 0, Math.PI / 2);
+      gpAdd(g, new THREE.BoxGeometry(0.35, 1.4, 0.4), gpM(0xc48f36, { metalness: 0.8 }), -4.8, 0, 0);
+    }
+  }
 };
-let gameProp = null; const _gpQ = new THREE.Quaternion(), _gpQp = new THREE.Quaternion();
+let gameProp = null; const _gpQ = new THREE.Quaternion(), _gpQp = new THREE.Quaternion(), _gpUpW = new THREE.Vector3(), _gpWorldUp = new THREE.Vector3(0, 1, 0), _gpSwing = new THREE.Quaternion(), _gpE = new THREE.Euler();
 function setGameProp(id) {
   if (gameProp) { gameProp.parent && gameProp.parent.remove(gameProp); gameProp = null; } S.hand = id;
-  const d = GAME_PROPS[id]; if (d && d.make && handR) { const g = new THREE.Group(); d.make(g); g.userData.hang = !!(d.hang || d.upright); g.userData.up = d.upright ? 1 : 0; g.position.copy(_micPosR); g.quaternion.copy(_micQR); handR.add(g); gameProp = g; }
+  const d = GAME_PROPS[id];
+  if (d && d.make && handR) {
+    const g = new THREE.Group(); d.make(g);
+    g.userData.hang = !!(d.hang || d.upright); g.userData.up = d.upright ? 1 : 0;
+    g.userData.baseQ = new THREE.Quaternion().setFromEuler(_gpE.set(...(d.rot || [0, 0, 0])));
+    g.position.set(...(d.pos || [-1.88, 4.95, 0.55]));
+    g.quaternion.copy(g.userData.baseQ);
+    handR.add(g); gameProp = g; syncShadows();
+  }
   [...document.querySelectorAll('#propSeg button')].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === id)));
 }
 function updateGameProp() {
-  if (gameProp) gameProp.visible = S.prop && S.clip !== 'Thinking_1_';
-  if (!gameProp || !gameProp.userData.hang || !gameProp.parent) return;
-  gameProp.parent.getWorldQuaternion(_gpQp); _gpQ.copy(_gpQp).invert(); gameProp.quaternion.copy(_gpQ); gameProp.updateMatrixWorld(true);
+  if (!gameProp) return;
+  gameProp.visible = Boolean(S.prop && S.clip !== 'Thinking_1_');
+  if (!gameProp.visible || !gameProp.parent) return;
+  const base = gameProp.userData.baseQ;
+  if (base) gameProp.quaternion.copy(base);
+  if (!gameProp.userData.hang) return;
+  gameProp.parent.getWorldQuaternion(_gpQp);
+  _gpQ.copy(_gpQp).multiply(gameProp.quaternion);
+  _gpUpW.set(0, 1, 0).applyQuaternion(_gpQ).normalize();
+  _gpSwing.setFromUnitVectors(_gpUpW, _gpWorldUp);
+  gameProp.quaternion.copy(_gpQp).invert().multiply(_gpSwing).multiply(_gpQ);
+  gameProp.updateMatrixWorld(true);
 }
 function buildPropUI() {
   const seg = $('propSeg'); if (!seg) return; seg.innerHTML = '';
@@ -2843,8 +3167,10 @@ function fixShapeAnimation() {
 function play(name) {
   if (!mixer || !clips[name]) return; restoreProcPose(); S.clip = name; micW = 0;
   mixer.timeScale = S.pause ? 0 : 1;
-  if (action) action.fadeOut(0.25);
-  action = mixer.clipAction(clips[name]).reset().fadeIn(0.25).play();
+  const next = mixer.clipAction(clips[name]);
+  if (action && action !== next) action.fadeOut(0.25);
+  next.stopFading().reset().setEffectiveTimeScale(1).setEffectiveWeight(1);
+  action = (action && action !== next ? next.fadeIn(0.25) : next).play();
   if (S.pause) mixer.update(0);
   setProps(name);
   [...$('clipSeg').querySelectorAll('button')].forEach(b => b.setAttribute('aria-pressed', String(b.dataset.n === name)));
@@ -3396,23 +3722,58 @@ function fitShape(c) {
   if (presetSel) presetSel.value = ''; syncSlidersUI(); applySculptMorphs();
   res.rowRatio = +ratio.toFixed(3); return res;
 }
+let fpSeq = 0;
+function resetCharacterAttrs() {
+  S.hair = null; S.bangs = null; S.hat = null; S.glasses = null; S.scarf = null;
+  S.outfit = null; S.top = null; S.bot = null; S.shoes = 'shoes.001';
+  S.col = {}; S.variant = {};
+  S.skin = '#dfd0be'; S.eyes = '#546470'; S.hairCol = '#141519'; S.expr = 'neutral';
+  S.face = zeroFace(); S.hairShape = {};
+  S.shape = { legs: 0.5, arms: 0.5, build: 0.5, head: 0.5 };
+  BEAUTY.k = 0.5; BEAUTY.photo = 0.5; BEAUTY.compare = false; BEAUTY.on = true;
+  CL.on.value = 0; CL.str.value = 0; CL.an = null; CL.mul = 1; CL.prev = null;
+  FP.hem = null; FP.hairMask = null; FP.ears = null; FP.det = null; FP.cfg = null; FP.expr = {};
+  FP.bodyMeas = null; FP.prevAcc = null; FP.prevHair = null; FP.prevHat = null; FP.prevShape = null; FP.prevShoes = null; FP.prevSkin = null;
+  HC.wave.value = 0; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; HP.mask.value = WHITE;
+  HR.str.value = HR.want; HR.det.value = HR_DEFAULT; MO.on.value = 0;
+  FP.bodyMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace); FP.hairMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace);
+}
 async function setFacePrint(id, custom) {
+  const tok = ++fpSeq, stale = () => tok !== fpSeq;
   if (!id) {
-    FP.bodyMeas = null; FP.hem = null; if (FP.prevShoes) { const ps = FP.prevShoes; FP.prevShoes = null; await setSlot('shoes', ps.id); S.col.shoes = ps.col; applyEverything(); } await fpClothesOff(); if (FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; applyShape(); syncSlidersUI(); }
-    FP.on = false; FP.id = null; FP.expr = {}; FP.hairMask = null; HC.wave.value = 0; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0; syncSlidersUI(); syncSkinUniforms(); HR.str.value = HR.want; HR.det.value = HR_DEFAULT; MO.on.value = 0; fpBase();
+    FP.bodyMeas = null; FP.hem = null; if (FP.prevShoes) { const ps = FP.prevShoes; FP.prevShoes = null; await setSlot('shoes', ps.id); if (stale()) return null; S.col.shoes = ps.col; applyEverything(); } await fpClothesOff(); if (stale()) return null; if (FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; applyShape(); syncSlidersUI(); }
+    FP.on = false; FP.id = null; FP.expr = {}; FP.hairMask = null; HC.wave.value = 0; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; HP.mask.value = WHITE; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0; syncSlidersUI(); syncSkinUniforms(); HR.str.value = HR.want; HR.det.value = HR_DEFAULT; MO.on.value = 0; fpBase();
     if (FP.prevSkin) { S.skin = FP.prevSkin; FP.prevSkin = null; }
-    if (FP.prevHair) { const h = FP.prevHair; FP.prevHair = null; S.hair = h.hair; S.bangs = h.bangs; await sync(['hair', 'bangs', 'hat']); }
-    if (FP.prevHat) { const h = FP.prevHat; FP.prevHat = null; await setSlot('hat', h.hat); S.col.hat = h.col; }
-    if (FP.prevAcc) { const a = FP.prevAcc; FP.prevAcc = null; S.hat = a.hat; S.glasses = a.glasses; S.scarf = a.scarf; await sync(['hat', 'glasses', 'scarf']); }
-    applyEverything(); fpApply(); return null;
+    if (FP.prevHair) { const h = FP.prevHair; FP.prevHair = null; S.hair = h.hair; S.bangs = h.bangs; await sync(['hair', 'bangs', 'hat']); if (stale()) return null; }
+    if (FP.prevHat) { const h = FP.prevHat; FP.prevHat = null; await setSlot('hat', h.hat); if (stale()) return null; S.col.hat = h.col; }
+    if (FP.prevAcc) { const a = FP.prevAcc; FP.prevAcc = null; S.hat = a.hat; S.glasses = a.glasses; S.scarf = a.scarf; await sync(['hat', 'glasses', 'scarf']); if (stale()) return null; }
+    applyEverything(); fpApply(); applySculptMorphs(); refreshUI(); return null;
   }
   const cfg = custom || FACES[id]; if (!cfg) return null;
-  FP.prevAcc ||= { hat: S.hat, glasses: S.glasses, scarf: S.scarf };
-  if (cfg.gender && S.gender !== cfg.gender) { S.gender = cfg.gender; await applyLook(); } // the pack's body for this character
-  const tex = await fpLoad(cfg.url); if (!tex) return { error: 'could not load ' + cfg.url };
+  if (id !== 'custom') {
+    // Full attribute reset & atomic sync before face projection so clothing/hair/accessories/body never lag or retain the previous cast member
+    resetCharacterAttrs();
+    if (cfg.gender) S.gender = cfg.gender;
+    S.head = cfg.head || 'head.002';
+    S.hair = cfg.hair || null; S.bangs = cfg.bangs || null; S.hat = cfg.hat || null;
+    S.glasses = cfg.glasses || null; S.scarf = cfg.scarf || null;
+    if (cfg.outfit) { S.outfit = cfg.outfit; S.top = null; S.bot = null; }
+    else { S.outfit = null; S.top = cfg.top || null; S.bot = cfg.bot || null; }
+    S.shoes = cfg.shoes || 'shoes.001';
+    FP.hem = FP.matchClothes ? (cfg.hem || null) : null;
+    if (cfg.shape) Object.assign(S.shape, cfg.shape);
+    if (cfg.col) for (const [sl, regMap] of Object.entries(cfg.col)) S.col[sl] = Object.fromEntries(Object.entries(regMap).map(([r, hx]) => [r, snapToLimited(hx)]));
+    await applyLook(true); if (stale()) return null;
+    applyShape(); applySculptMorphs(); syncSlidersUI(); refreshUI();
+  } else {
+    FP.prevAcc ||= { hat: S.hat, glasses: S.glasses, scarf: S.scarf };
+    S.face = zeroFace(); S.hairShape = {}; FP.expr = {}; MO.on.value = 0;
+    if (cfg.gender && S.gender !== cfg.gender) { S.gender = cfg.gender; await applyLook(); if (stale()) return null; }
+  }
+  const tex = await fpLoad(cfg.url); if (stale()) return null; if (!tex) return { error: 'could not load ' + cfg.url };
   FP.u.uFpMap.value = tex; FP.origTex = tex; if (FP.retouch) { FP.retouch.tex.dispose(); FP.retouch = null; } FP.id = id; FP.on = true;
   // 1. find the face: the detector's points when it is available, the hand-marked ones otherwise
-  let c = cfg, det = null; if (FP.auto) { det = await fpDetect(tex.image, cfg.size); if (det) c = fpAuto(cfg, det, cfg.size); }
+  let c = cfg, det = null; if (FP.auto) { det = await fpDetect(tex.image, cfg.size); if (stale()) return null; if (det) c = fpAuto(cfg, det, cfg.size); }
   FP.det = det; FP.cfg = c; FP.expr = det ? fpExpression(det.bs) : {};
   { // the face turned in the photo: the narrow cheek (nose tip to the face edge) is the far side; mirror the near side onto it, more the more it is turned
     let mx = 0, my = 0; if (det) { const n = det.lm[1][0], a = n - det.lm[234][0], b = det.lm[454][0] - n, lo = Math.min(a, b), hi = Math.max(a, b), w = hi > 0 ? Math.max(0, Math.min(0.85, (1 - lo / hi - 0.1) * 3)) : 0;
@@ -3420,42 +3781,37 @@ async function setFacePrint(id, custom) {
     FP.u.uFpMirror.value.set(mx, my); FP.turn = { mx: +mx.toFixed(2), my: +my.toFixed(2) }; }
   // 2. front + side view guess: the face-shape morphs and the feature blendshapes (the resting expression is already in FP.expr)
   const res = (det || !cfg.noFit) ? fitShape(c) : null; fpProject();
-  if (det && c.lipTop && c.mouthHalf) { const ratio = (c.lipBot - c.lipTop) / (2 * c.mouthHalf); S.face.lipFullness = Math.max(-1.5, Math.min(1.5, Math.round((ratio - 0.38) * 6 * 20) / 20)); } // lip height against mouth width (typical 0.38)
-  if (det) { const nw = (c.noseW || 1) * 2, drop = ((c.noseSub - c.nose[1]) / Math.max(nw, 1)); S.face.noseTip = Math.max(-1.5, Math.min(1.5, Math.round((drop - 0.3) * 4 * 20) / 20)); // nose tip droop: the gap from tip to the base of the nose, against the nostril width
-    const ears = await fpEars(tex.image, c, cfg.size); for (const k of ['earSize', 'earFlare', 'earHeight']) S.face[k] = ears ? Math.round(ears[k] * 20) / 20 : 0; S.face.ears = 0; FP.ears = ears; syncSlidersUI(); applySculptMorphs(); }
+  if (det && c.lipTop && c.mouthHalf) { const ratio = (c.lipBot - c.lipTop) / (2 * c.mouthHalf); S.face.lipFullness = Math.max(-1.5, Math.min(1.5, Math.round((ratio - 0.38) * 6 * 20) / 20)); }
+  if (det) { const nw = (c.noseW || 1) * 2, drop = ((c.noseSub - c.nose[1]) / Math.max(nw, 1)); S.face.noseTip = Math.max(-1.5, Math.min(1.5, Math.round((drop - 0.3) * 4 * 20) / 20));
+    const ears = await fpEars(tex.image, c, cfg.size); if (stale()) return null; for (const k of ['earSize', 'earFlare', 'earHeight']) S.face[k] = ears ? Math.round(ears[k] * 20) / 20 : 0; S.face.ears = 0; FP.ears = ears; syncSlidersUI(); applySculptMorphs(); }
   FP.rawFace = { ...S.face }; FP.exprBase = { ...FP.expr };
   FP.an = fpAnalyse(c, tex.image); syncSkinUniforms(); HR.det.value = FP.an.hair ? FP.an.hair.det : GREYTEX;
-  FP.bodyMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace); FP.prevSkin ||= S.skin; skinMatch(FP.an);
-  if (FP.matchHair && cfg.hair && (S.hair !== cfg.hair || (S.bangs || null) !== (cfg.bangs || null))) { FP.prevHair ||= { hair: S.hair, bangs: S.bangs }; S.bangs = null; await setSlot('hair', cfg.hair); if (cfg.bangs) await setSlot('bangs', cfg.bangs); } // the closest pack style to the photo's hair
+  FP.bodyMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace); if (id === 'custom') FP.prevSkin ||= S.skin; skinMatch(FP.an);
+  if (FP.matchHair && cfg.hair && (S.hair !== cfg.hair || (S.bangs || null) !== (cfg.bangs || null))) { if (id === 'custom') FP.prevHair ||= { hair: S.hair, bangs: S.bangs }; S.bangs = null; await setSlot('hair', cfg.hair); if (stale()) return null; if (cfg.bangs) await setSlot('bangs', cfg.bangs); if (stale()) return null; }
   if (FP.matchHair && (cfg.hat !== undefined || id !== 'custom')) {
-    FP.prevHat ||= { hat: S.hat, col: S.col.hat };
-    if (S.hat !== (cfg.hat || null)) await setSlot('hat', cfg.hat || null);
+    if (id === 'custom') FP.prevHat ||= { hat: S.hat, col: S.col.hat };
+    if (S.hat !== (cfg.hat || null)) await setSlot('hat', cfg.hat || null); if (stale()) return null;
   }
-  if (FP.matchClothes && id !== 'custom') {
-    const gWant = cfg.glasses || null, scWant = cfg.scarf || null;
-    if (S.glasses !== gWant || S.scarf !== scWant) { S.glasses = gWant; S.scarf = scWant; await sync(['glasses', 'scarf']); }
-  }
-  FP.skinMask = await fpClassMask(tex.image, cfg.size, [1, 2, 3], 8); /* skin AND hair: the scalp under the hair shell is printed with the photo's hair colour, so a gap between locks shows hair, not bare skin */ FP.u.uFpSkinMask.value = FP.skinMask ? FP.skinMask.tex : BLACK; // the photo's skin (face + neck), softly edged: the neck is printed where it shows
+  FP.skinMask = await fpClassMask(tex.image, cfg.size, [1, 2, 3], 8); if (stale()) return null;
+  FP.u.uFpSkinMask.value = FP.skinMask ? FP.skinMask.tex : BLACK;
   // 3. the hair mask: print the photo's hair on the hair shell and bend the shell to the photo's hair outline
   let hairFit = null; FP.hairMask = null; HC.wave.value = 0; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0;
-  if (FP.matchHair && parts.hair && !cfg.noHairPrint) { FP.hairMask = await fpHairMask(tex.image, cfg.size); if (FP.hairMask) { HP.mask.value = FP.hairMask.tex; HP.texE.value = fpHairBleed(tex.image, FP.hairMask) || WHITE; FP.hairWave = fpHairWave(tex.image, FP.hairMask); HC.wave.value = FP.hairWave ? FP.hairWave.wave : 0; { const fm = await fpClassMask(tex.image, cfg.size, [3], 4); HP.face.value = fm ? fm.tex : BLACK; } hairFit = fitHair(c, FP.hairMask); } }
+  if (FP.matchHair && parts.hair && !cfg.noHairPrint) { FP.hairMask = await fpHairMask(tex.image, cfg.size); if (stale()) return null; if (FP.hairMask) { HP.mask.value = FP.hairMask.tex; HP.texE.value = fpHairBleed(tex.image, FP.hairMask) || WHITE; FP.hairWave = fpHairWave(tex.image, FP.hairMask); HC.wave.value = FP.hairWave ? FP.hairWave.wave : 0; { const fm = await fpClassMask(tex.image, cfg.size, [3], 4); if (stale()) return null; HP.face.value = fm ? fm.tex : BLACK; } hairFit = fitHair(c, FP.hairMask); } }
   // 4. body shape from full-body picture or curated character build
-  let bodyFit = null; if (FP.matchBody && cfg.full) { bodyFit = await fpBodyFit(cfg.full); if (!bodyFit && FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; } }
-  if (FP.matchBody && !bodyFit && cfg.shape) { FP.prevShape ||= { ...S.shape }; Object.assign(S.shape, cfg.shape); applyShape(); syncSlidersUI(); }
-  FP.hairMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace); applyBeauty(); fpApply(); applyEverything(); const cal = calibrateSkin(); const hcal = cal && cal.length ? calibrateHair(cal[cal.length - 1].face) : null; if (hcal) applyEverything(); // 5. clothes from the shoulders picture, at the exposure the printed face shows
+  let bodyFit = null; if (FP.matchBody && cfg.full) { bodyFit = await fpBodyFit(cfg.full); if (stale()) return null; if (!bodyFit && FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; } }
+  if (FP.matchBody && !bodyFit && cfg.shape) { if (id === 'custom') FP.prevShape ||= { ...S.shape }; Object.assign(S.shape, cfg.shape); applyShape(); syncSlidersUI(); }
+  FP.hairMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace); applyBeauty(); fpApply(); applyEverything(); const cal = calibrateSkin(); const hcal = cal && cal.length ? calibrateHair(cal[cal.length - 1].face) : null; if (hcal) applyEverything();
+  // 5. clothes & shoes: curated cast slots are already synced above; layer shoulder texture match & curated palette safely
   FP.hem = FP.matchClothes ? cfg.hem || null : null;
-  let clothes = null; if (FP.matchClothes && cfg.shoulders) { const lumOf = a => 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2], fr = cal && cal.length ? cal[cal.length - 1].face : null; clothes = await fpClothes(cfg, fr ? lumOf(fr) / Math.max(1e-3, lumOf(FP.an.mean)) : 1); }
+  let clothes = null; if (FP.matchClothes && cfg.shoulders) { const lumOf = a => 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2], fr = cal && cal.length ? cal[cal.length - 1].face : null; clothes = await fpClothes(cfg, fr ? lumOf(fr) / Math.max(1e-3, lumOf(FP.an.mean)) : 1); if (stale()) return null; }
   if (FP.matchHair && cfg.hat && FP.an.cap) { const order = regionsOf('hat').order, hx = c0 => snapToLimited('#' + c0.clone().multiplyScalar(CL.mul).getHexString(THREE.SRGBColorSpace)); S.col.hat = {}; order.forEach((r, i) => { S.col.hat[r] = hx(FP.an.cap[Math.min(i, FP.an.cap.length - 1)].c); }); applyEverything(); }
-  if (FP.matchClothes && cfg.col) {
-    for (const [sl, regMap] of Object.entries(cfg.col)) {
-      S.col[sl] ||= {};
-      for (const [r, hx] of Object.entries(regMap)) S.col[sl][r] = snapToLimited(hx);
-    }
+  if (cfg.col && (FP.matchClothes || id !== 'custom')) {
+    for (const [sl, regMap] of Object.entries(cfg.col)) S.col[sl] = Object.fromEntries(Object.entries(regMap).map(([r, hx]) => [r, snapToLimited(hx)]));
     applyEverything();
   }
-  let shoes = null; if (FP.matchClothes && cfg.shoes) shoes = await fpShoes(cfg);
-  if (FP.matchClothes && cfg.col && cfg.col.shoes) { S.col.shoes = Object.fromEntries(Object.entries(cfg.col.shoes).map(([r, hx]) => [r, snapToLimited(hx)])); applyEverything(); }
-  scheduleInset();
+  let shoes = null; if (FP.matchClothes && cfg.shoes) { shoes = await fpShoes(cfg); if (stale()) return null; }
+  if (cfg.col && cfg.col.shoes && (FP.matchClothes || id !== 'custom')) { S.col.shoes = Object.fromEntries(Object.entries(cfg.col.shoes).map(([r, hx]) => [r, snapToLimited(hx)])); applyEverything(); }
+  syncShadows(); scheduleInset(); refreshUI(); syncSlidersUI();
   if (res) { res.shoes = shoes; res.bodyFit = bodyFit; res.clothes = clothes; res.hairFit = hairFit; res.hairCal = hcal; res.calibration = cal; res.source = det ? 'detector' : 'hand-marked'; res.expr = FP.expr; } return res;
 }
 
@@ -3684,7 +4040,9 @@ function setCreatorTab(id) {
 }
 async function applyManorPreset(key) {
   const p = MANOR_PRESETS[key]; if (!p) return;
-  if (FP.on) await setFacePrint(null);
+  ++fpSeq;
+  if (FP.on) { FP.on = false; FP.id = null; fpApply(); }
+  resetCharacterAttrs();
   activeArchetype = key;
   S.gender = p.gender;
   S.head = find('head', p.head) ? p.head : SL.head[0].id;
@@ -4097,8 +4455,16 @@ function buildUI() {
 async function applyLook(quick = false) { if (builtGender !== S.gender) { await buildAll(quick); return; } await sync(ALL); applyEverything(); applySculptMorphs(); refreshUI(); }
 let builtGender = null;
 const rebuild = buildAll;
-$('lookToggle').addEventListener('click', () => { const open = $('look').classList.toggle('closed'); $('lookToggle').setAttribute('aria-expanded', String(!open)); resize(); });
-if (matchMedia('(max-width:760px)').matches) { $('look').classList.add('closed'); $('lookToggle').setAttribute('aria-expanded', 'false'); resize(); }
+const syncLookToggleText = () => {
+  const closed = $('look').classList.contains('closed');
+  $('lookToggle').setAttribute('aria-expanded', String(!closed));
+  const lbl = matchMedia('(max-width:760px)').matches ? (closed ? 'Customize Look' : 'Hide Controls') : 'Atelier Controls';
+  $('lookToggle').innerHTML = `${lbl} <i></i>`;
+};
+$('lookToggle').addEventListener('click', () => { $('look').classList.toggle('closed'); syncLookToggleText(); resize(); if (matchMedia('(max-width:760px)').matches) setCameraView(S.camView); });
+if (matchMedia('(max-width:760px)').matches) { $('look').classList.add('closed'); }
+matchMedia('(max-width:760px)').addEventListener('change', syncLookToggleText);
+syncLookToggleText(); resize();
 $('spin').addEventListener('click', e => e.currentTarget.setAttribute('aria-pressed', String(e.currentTarget.getAttribute('aria-pressed') !== 'true')));
 
 /* ---- seeded random gothic/Hauntology character generator ---- */
@@ -4194,11 +4560,13 @@ function setCameraView(mode = 'full') {
   let hx = hipX, hy = 1.54, hz = hipZ;
   if (headBone) { headBone.getWorldPosition(_camHeadV); hx = _camHeadV.x; hy = _camHeadV.y; hz = _camHeadV.z; }
   if (S.camView === 'head') $('spin').setAttribute('aria-pressed', 'false');
+  const mobOpen = view.clientWidth <= 760 && !$('look').classList.contains('closed');
+  const distMul = mobOpen ? (S.camView === 'full' ? 1.24 : S.camView === 'bust' ? 1.16 : 1.08) : 1;
   const cfg = S.camView === 'head'
-    ? { tx: hx, ty: hy + 0.08, tz: hz, dy: 0.03, dist: 1.02, az: 0.14 }
+    ? { tx: hx, ty: hy + 0.08, tz: hz, dy: 0.03, dist: 1.02 * distMul, az: 0.14 }
     : S.camView === 'bust'
-      ? { tx: hx * 0.6 + hipX * 0.4, ty: hy - 0.16, tz: hz * 0.6 + hipZ * 0.4, dy: 0.08, dist: 1.82, az: 0.22 }
-      : { tx: hipX, ty: 0.85, tz: hipZ, dy: 0.50, dist: 3.85, az: 0.27 };
+      ? { tx: hx * 0.6 + hipX * 0.4, ty: hy - 0.16, tz: hz * 0.6 + hipZ * 0.4, dy: 0.08, dist: 1.82 * distMul, az: 0.22 }
+      : { tx: hipX, ty: mobOpen ? 0.94 : 0.85, tz: hipZ, dy: 0.50, dist: 3.85 * distMul, az: 0.27 };
   controls.target.set(cfg.tx, cfg.ty, cfg.tz);
   camera.position.set(cfg.tx + Math.sin(cfg.az) * cfg.dist, cfg.ty + cfg.dy, cfg.tz + Math.cos(cfg.az) * cfg.dist);
   const prevDamp = controls.enableDamping; controls.enableDamping = false; controls.update(); controls.enableDamping = prevDamp;
@@ -4274,8 +4642,12 @@ renderer.setAnimationLoop(now => {
     mixer.update(S.pause ? 0 : dt);
     saveProcPose();
     fixShapeAnimation();
+    poseCarryArm();
     poseHands(S.clip);
-    if (gameProp) poseHands('grip');
+    if (gameProp && S.prop && S.clip !== 'Thinking_1_' && !/Singing|Rapping|Guitar|Piano|Drums|Waving|Pointing|Pick_Up/.test(S.clip)) {
+      const gpDef = GAME_PROPS[S.hand];
+      poseHands((gpDef && gpDef.grip) || 'grip');
+    }
     groundFeet();
     character.updateMatrixWorld(true);
     updateGameProp();
@@ -4285,6 +4657,10 @@ renderer.setAnimationLoop(now => {
     for (const n of propNodes) n.visible = S.prop;
     fixMic(dt);
     updateArmTwist();
+    if (hipBone && typeof contactShadow !== 'undefined') {
+      hipBone.getWorldPosition(hipPos);
+      contactShadow.position.set(hipPos.x, 0.0025, hipPos.z);
+    }
     updateDrums(dt);
   }
   const trackBone = (S.camView === 'head' && headBone) ? headBone : hipBone;

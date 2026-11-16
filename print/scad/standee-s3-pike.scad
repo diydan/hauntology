@@ -76,4 +76,4 @@ module standee_s3_pike() {
   }
 }
 
-color(col_seat_yellow) standee_s3_pike();
+color(col_bone) standee_s3_pike();

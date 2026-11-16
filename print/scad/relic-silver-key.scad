@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Relic r5: Warded Silver Skeleton Key
-// Colour: Silver (#c9c9d4) or Bone (#e9e4d8)
+// Colour: Tarnished Silver (#c9c9d4)
 // Height: ~54 mm on 33 mm stepped token base
 // Sticker details: Keyhole escutcheon crest sticker pocket on plinth front (14 x 8 mm)
 // Print orientation: Flat on pedestal base (Z = 0), zero supports (45-deg corbels under bit & bow).

@@ -48,13 +48,13 @@ The seven were rendered in Inworld (Pippa with `[whisper]`, speaking rate 0.9, t
 
 | Id | Voice | Scene | Line |
 |---|---|---|---|
-| `scene.hand-door.soft.1` | Whisper | Hand at the door | That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it. |
-| `scene.bed.soft.1` | Whisper | The empty bed | I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit. |
+| `scene.hand-door.soft.1` | Whisper | Hand at the door | That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait. |
+| `scene.bed.soft.1` | Whisper | The empty bed | I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway. |
 | `scene.lights-out.soft.1` | Whisper | The lights go out (the house wins) | One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely. |
-| `scene.dawn-door.dry.1` | Keeper | Dawn at the door (detectives win) | The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out. |
+| `scene.dawn-door.dry.1` | Keeper | Dawn at the door (detectives win) | Morning has arrived, a little late and quite sure of itself. I shall open the door now. Mind the step. |
 | `wander.chimes.soft.1` | Whisper | Wander, a sound memory | Do you hear that? A row of small bells, and not one in tune. I would not change a single one. |
-| `wander.chair.soft.1` | Whisper | Wander, a person memory | The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I keep the kettle patient, in case of a quick return. |
-| `wander.letter.soft.1` | Whisper | Wander, a promise memory (clip held back) | A letter, folded in three. A pair of gloves, set down just so. The breeze lifts one corner and puts it back, very politely. It is not for me to read. |
+| `wander.chair.soft.1` | Whisper | Wander, a person memory | The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I shall wait. |
+| `wander.letter.soft.1` | Whisper | Wander, a promise memory (clip held back) | A letter, folded in three. A pair of gloves, set down just so. It is not for me to read. |
 
 The Wander lines set a mood and never say what the player's memory is. The card after the scene does that.
 
@@ -72,9 +72,9 @@ The Wander lines set a mood and never say what the player's memory is. The card 
 
 Most of `party-lines.md` and `ghost-lines.md` is already close: dry, polite, patient. The lean-in is small: add the warning ("I must warn you"), add exact small things, add one house-gloss now and then. No line needs a rewrite. New lines are added beside the old ones, so the Voice Library keeps its five-per-kind floor.
 
-## Not done yet
+## State (2026-11-16)
 
-- The audio of the new lines is not in the Voice Library: the manifest lists them, but nothing is rendered or uploaded to R2 for them (`tools/prerender-voice.mjs`). `ambient.dry.6` expands to six texts (one per weather word).
-- The seven picture lines were rendered only for the preview, in session scratch, not as library files.
+- All twelve lines are in the banks and the Voice Library list, and **rendered** into the local library (`.voice-library/`, git-ignored; Inworld, 17 files, $0.055). They are not uploaded to R2.
+- The seven picture lines are on `/footage.html` as words at their moment: the hand, bed, house and dawn lines in the Reel and the endings, the chimes and chair lines in Wander.
 - The dawn line is `scene.dawn-door.dry.1`, written for `ai-dawn-door-take3` (the Room's own `end.solved` lines follow the shot, and none of them is used over it).
-- The puzzles spec 20.7 to 20.9 still describes the rejected pairing (generic Event lines over mood shots). It should say each shot has its own written line.
+- The Wander letter line (`wander.letter.soft.1`) is rendered but unused: its clip is held back (writing on the letter).

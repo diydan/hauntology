@@ -36,19 +36,20 @@ export const SHOT_TEXT = {
  * have none: they are old film, and the stairs are scrubbed by the clock. A line is the speaker's own, never an Event line and never a clue.
  */
 export const SHOT_LINE = {
-  hand: { id: 'scene.hand-door.soft.1', speaker: 'whisper', text: 'That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait here, and be very polite about it.' },
-  bed: { id: 'scene.bed.soft.1', speaker: 'whisper', text: 'I sit on the edge of the bed, very lightly, so as not to wake anyone. The pillow keeps a small dent. Nobody is in it. I look anyway, out of habit.' },
+  hand: { id: 'scene.hand-door.soft.1', speaker: 'whisper', text: 'That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait.' },
+  bed: { id: 'scene.bed.soft.1', speaker: 'whisper', text: 'I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway.' },
   house: { id: 'scene.lights-out.soft.1', speaker: 'whisper', text: 'One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely.' },
-  dawn: { id: 'scene.dawn-door.dry.1', speaker: 'keeper', text: 'The house is quiet, and I note that its lamp has kept watch all night. Now the morning comes, and the door opens to meet it. Mind the step on your way out.' },
+  dawn: { id: 'scene.dawn-door.dry.1', speaker: 'keeper', text: 'Morning has arrived, a little late and quite sure of itself. I shall open the door now. Mind the step.' },
 };
 
 /**
  * When each line starts, in seconds from the start of its shot, so that it falls on the picture it is about (puzzles Requirement 20.8). Found by laying
- * each rendered line over its clip (`narration-preview-4`, then the dawn take 3): `hand` the shadow is already on the wall and the knocks come at 9 seconds;
- * `bed` the mattress sinks at about 6 seconds; `house` the lights go out from 3 seconds; `dawn` "the door opens" is said at 7.3 seconds into the line and the
- * door opens in the picture at 10.4 seconds, so the line starts at 2.9 and "Mind the step" is said as the mist comes out.
+ * each rendered line over its clip, from the pauses in the audio (the shorter lines of 2026-11-16, not yet checked by ear): `hand` the shadow is already on the wall
+ * and the knocks come at 9 seconds, just after "four seems desperate" (said at 8.3 s into the line) and before "I shall wait"; `bed` the mattress sinks at about
+ * 6 seconds, as "Nobody is in it" begins (6.5 s into the line); `house` the lights go out from 3 seconds; `dawn` "open the door" is said at about 4.9 seconds
+ * into the line and the door opens in the picture at 10.4 seconds, so the line starts at 5.5 and "Mind the step" (5.9 s into the line) is said as the mist comes out.
  */
-export const LINE_AT = { hand: 0.8, bed: 0.5, house: 1.2, dawn: 2.9 };
+export const LINE_AT = { hand: 0.8, bed: 0.3, house: 1.2, dawn: 5.5 };
 
 /** The line written for a shot, or null when it has none. Total: an unknown shot gives null. */
 export function shotLine(shot) {
@@ -67,9 +68,41 @@ export function reelLine(level, max) {
  */
 export const WANDER = {
   scene: 'wander-harbour',
-  reveal: 'Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks.',
+  reveal: 'Here. I have kept this a long time, and shown it to no one. Hold it gently. I have kept you a little while too, and I find I like it.',
   text: 'A tree by a house, a ship at sea, the sails, the water, and a ship coming into the harbour.',
 };
+
+/**
+ * The three kinds of memory of Wander (a sound, a person, a promise) and the scene that plays when one is found (puzzles Requirement 23).
+ * `clip` is `media/<clip>.webm`, `.mp4` and `.jpg`; `shape` is the frame the picture is shown in (the AI scenes are 3:4, the film is 4:3);
+ * `text` is the scene in words for the live region; `line` is the Whisper's line written for the picture and `lineAt` its moment in seconds from the
+ * start of the scene (a row of `docs/story/ghost-lines.md`, word for word; a test compares them), or null for the film, which has none.
+ * A line sets a mood and never says what the memory is: the card after the scene does that. The promise scene stays the film until a clean AI scene
+ * exists: both takes of `wander-letter` show faint writing on the letter (a clip never holds a text), so they are not used.
+ */
+export const WANDER_KINDS = ['sound', 'person', 'promise'];
+export const WANDER_SCENES = {
+  sound: {
+    clip: 'wander-chimes-take1',
+    shape: 'portrait',
+    text: 'A porch in the summer sun. The wind chimes hang still, then a breeze comes and they ring softly.',
+    line: { id: 'wander.chimes.soft.1', speaker: 'whisper', text: 'Do you hear that? A row of small bells, and not one in tune. I would not change a single one.' },
+    lineAt: 5.0,
+  },
+  person: {
+    clip: 'wander-chair-take1',
+    shape: 'portrait',
+    text: 'A kitchen in the morning. A coat on a pulled-out chair, and a cup of tea still steaming.',
+    line: { id: 'wander.chair.soft.1', speaker: 'whisper', text: 'The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I shall wait.' },
+    lineAt: 1.5,
+  },
+  promise: { clip: WANDER.scene, shape: 'landscape', text: WANDER.text, line: null, lineAt: null },
+};
+
+/** The scene for a kind of memory. Total: an unknown kind gets the promise scene (the film), never a throw and never an inherited property. */
+export function wanderScene(kind) {
+  return Object.hasOwn(WANDER_SCENES, kind) ? WANDER_SCENES[kind] : WANDER_SCENES.promise;
+}
 
 /**
  * The title card after the film: our own words. In Wander the words are the memory the engine narrated (two to four sentences from the

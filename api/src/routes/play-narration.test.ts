@@ -39,7 +39,7 @@ const ok = (text: string): NarrationAnswer => ({ ok: true, text, stopReason: "en
 /** What a good model says for the turn in the prompt: the engine's way and distance for a hint, a memory for a reveal, a quiet line otherwise. */
 function well(req: NarrationRequest): string {
   if (req.system.includes("has reached the place of a memory")) return MEMORY;
-  const hint = /which way to go: (.+?)\. What they look for is (very close|nearer|far)\./.exec(req.system);
+  const hint = /Say the way in exactly these words: "(.+?)"\. Say the distance in exactly (?:these words|this word): "(very close|nearer|far)"\./.exec(req.system);
   if (hint !== null) return `Go ${hint[1]}; it is ${hint[2]}.`;
   return LINE;
 }

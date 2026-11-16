@@ -76,4 +76,4 @@ module standee_s6_dunmore() {
   }
 }
 
-color(col_seat_orange) standee_s6_dunmore();
+color(col_bone) standee_s6_dunmore();

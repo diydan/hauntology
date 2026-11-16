@@ -33,6 +33,7 @@ worldlabs-credentials*
 /.ghost-spike/
 # The narrator play-through's replies, ledger and Durable Object state (tools/ghost-playthrough.mjs, docs/spikes/4.2.md). Local only.
 /.ghost-playthrough/
+/.ghost-playthrough-*/
 
 # Dev MCP ledger and recorded raw responses with keys
 tools/worldlabs-mcp/.ledger.json
@@ -72,3 +73,8 @@ Thumbs.db
 # Uncut model renders for the web hero media (web/public/media). The cut loops ship; the
 # raw renders carry a burned-in vendor watermark and are kept locally as provenance only.
 web/public/media/src/
+
+# Mixamo animation assets (not redistributable; never commit regardless of branch/folder state)
+tools/animations/*
+!tools/animations/.gitignore
+tools/character-builder/**/clips_*.glb

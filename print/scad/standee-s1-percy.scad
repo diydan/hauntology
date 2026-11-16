@@ -76,4 +76,4 @@ module standee_s1_percy() {
   }
 }
 
-color(col_seat_red) standee_s1_percy();
+color(col_bone) standee_s1_percy();

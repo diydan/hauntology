@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EVENT_LEVELS, LINE_AT, SHOTS, SHOT_LINE, SHOT_SOUND, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, endingCard, frameTime, isEventLevel, reelLine, reelShot, reelSound, shadowPosition, shotLine, stepPosition, wanderCard } from '../js/scenes.js';
+import { EVENT_LEVELS, LINE_AT, SHOTS, SHOT_LINE, SHOT_SOUND, SHOT_TEXT, SOUND_AT, SOUND_TEXT, WANDER, WANDER_KINDS, WANDER_SCENES, endingCard, frameTime, isEventLevel, reelLine, reelShot, reelSound, shadowPosition, shotLine, stepPosition, wanderCard, wanderScene } from '../js/scenes.js';
 import { root } from './helpers.js';
 
 const MAXES = [8, 10, 12];
@@ -195,7 +195,7 @@ test('20.6 every sound has a start time inside its shot, and the shot is long en
 });
 
 // ---- 20.7 to 20.9: a line written for each shot's own picture ----
-const story = readFileSync(resolve(root, '..', '..', 'docs', 'story', 'party-lines.md'), 'utf8');
+const story = ['party-lines.md', 'ghost-lines.md'].map((f) => readFileSync(resolve(root, '..', '..', 'docs', 'story', f), 'utf8')).join('\n');
 const rowOf = (id) => new RegExp(`^\\| \`${id.replace(/\./g, '\\.')}\` \\| (.+?) \\|\\s*$`, 'm').exec(story)?.[1];
 const SIGNS = /\b(moon|key|eye|hand|star|bell)\b/i; // the six Signs: a line never names one, so it can never read as a clue
 const BANNED = /\b(AI|model|prompt|instructions?|rules?|turns?|rounds?|points?|scores?|cards?|hands?|clocks?|seconds?|levels?|games?|play|master|poltergeist|cannot|cold spot|blackout|restless|lull)\b/i;
@@ -216,18 +216,25 @@ test('20.7 exactly the AI shots have a line, each is its own story-bank row word
   }
 });
 
+/** The bank rules for a spoken line, as a list of what is wrong with it (none when it is fine). */
+const lineProblems = (text) => {
+  const bad = [];
+  if (text.length > 240) bad.push('over 240 characters');
+  const n = text.split(/(?<=[.!?])\s+/).length;
+  if (n < 1 || n > 4) bad.push(`${n} sentences`);
+  if (/\d/.test(text)) bad.push('a digit');
+  if (/[\[\]<>`*#{}|]/.test(text)) bad.push('markup or a placeholder');
+  if (!/\b(I|me|my|we|us)\b/.test(text)) bad.push('no first person');
+  if (SIGNS.test(text)) bad.push('a Sign word');
+  if (BANNED.test(text)) bad.push('a banned or Event word');
+  if (/\b(was|were|had|did|have been)\b/i.test(text)) bad.push('past tense');
+  return bad;
+};
+
 test('20.7 every shot line follows the bank rules and never names a Sign, a clue, a card or an Event kind', () => {
-  for (const [shot, { text }] of Object.entries(SHOT_LINE)) {
-    assert.ok(text.length <= 240, `${shot}: at most 240 characters`);
-    const sentences = text.split(/(?<=[.!?])\s+/);
-    assert.ok(sentences.length >= 1 && sentences.length <= 4, `${shot}: one to four sentences`);
-    assert.doesNotMatch(text, /\d/, `${shot}: no digit`);
-    assert.doesNotMatch(text, /[\[\]<>`*#{}|]/, `${shot}: no markup or placeholder`);
-    assert.match(text, /\b(I|me|my|we|us)\b/, `${shot}: first person`);
-    assert.doesNotMatch(text, SIGNS, `${shot}: no Sign word`);
-    assert.doesNotMatch(text, BANNED, `${shot}: no banned or Event word`);
-    assert.doesNotMatch(text, /\b(was|were|had|did|have been)\b/i, `${shot}: present tense`);
-  }
+  for (const [shot, { text }] of Object.entries(SHOT_LINE)) assert.deepEqual(lineProblems(text), [], shot);
+  assert.deepEqual(lineProblems('I count 3 steps.'), ['a digit'], 'the rule can fail: a digit');
+  assert.deepEqual(lineProblems('The moon is up. I wait.'), ['a Sign word'], 'the rule can fail: a Sign');
 });
 
 test('20.7 the line of a shot is the line of its level: only the hand, the bed and the house have one, over every level and maximum', () => {
@@ -253,8 +260,8 @@ test('20.7 shotLine and reelLine are total: odd input gives a line or null, and 
 
 test('20.8 every line starts inside its shot and ends before the shot does, using the rendered length of the line', { skip: probe(resolve(root, 'media', `${SHOTS.hand}.mp4`)) === null && 'ffprobe not installed' }, () => {
   assert.deepEqual(Object.keys(LINE_AT).sort(), Object.keys(SHOT_LINE).sort(), 'a start time for each line, and no other');
-  // The length of each line as rendered by Inworld (Whisper: Pippa, rate 0.9; Keeper: Ronald, rate 0.9), measured on 2026-11-16.
-  const RENDERED_S = { hand: 13.1, bed: 13.8, house: 13.5, dawn: 11.1 };
+  // The length of each line as rendered into the Voice Library by Inworld (Whisper: Pippa, rate 0.9; Keeper: Ronald, rate 0.9), measured on 2026-11-16 and rounded up.
+  const RENDERED_S = { hand: 10.4, bed: 10.2, house: 13.7, dawn: 7.3 };
   for (const shot of Object.keys(SHOT_LINE)) {
     const clip = probe(resolve(root, 'media', `${SHOTS[shot]}.mp4`));
     const at = LINE_AT[shot];
@@ -264,7 +271,60 @@ test('20.8 every line starts inside its shot and ends before the shot does, usin
 });
 
 test('20.8 the dawn line is placed so that "the door opens" is said as the door opens in the picture (10.4 s)', () => {
-  const DOOR_OPENS_IN_LINE = 7.3; // seconds into the rendered line (the pauses of the render: the second sentence starts at 5.15 s)
+  const DOOR_OPENS_IN_LINE = 4.9; // seconds into the rendered line (the 2026-11-16 render: the second sentence starts at 4.3 s, "open the door" about 0.6 s in)
   const at = LINE_AT.dawn + DOOR_OPENS_IN_LINE;
   assert.ok(Math.abs(at - 10.4) <= 0.5, `said at ${at.toFixed(1)} s of the shot, the door opens at 10.4 s`);
+});
+
+// ---- 23: the scenes of Wander ----
+const filmEntry = (file) => new RegExp(`^${file.startsWith('ai-') || file.startsWith('wander-chimes') || file.startsWith('wander-chair') || file.startsWith('wander-letter') ? '#### ' : '## '}${file}$`, 'm');
+const size = (file) => { const r = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', file], { encoding: 'utf8' }); return r.status === 0 ? r.stdout.trim().split(',').map(Number) : null; };
+
+test('23.1 the three kinds of memory each have a scene, with files, a record and the words of the scene', () => {
+  assert.deepEqual(WANDER_KINDS, ['sound', 'person', 'promise']);
+  assert.deepEqual(Object.keys(WANDER_SCENES).sort(), [...WANDER_KINDS].sort());
+  const prov = readFileSync(resolve(root, 'media', 'PROVENANCE.md'), 'utf8');
+  for (const [kind, sc] of Object.entries(WANDER_SCENES)) {
+    for (const ext of ['webm', 'mp4', 'jpg']) assert.ok(existsSync(resolve(root, 'media', `${sc.clip}.${ext}`)), `${kind}: ${sc.clip}.${ext}`);
+    assert.match(prov, filmEntry(sc.clip), `${sc.clip} has an entry`);
+    assert.ok(sc.text.length > 20 && !/\d/.test(sc.text), `${kind} has its words, with no digit`);
+    assert.ok(['portrait', 'landscape'].includes(sc.shape));
+  }
+  assert.equal(WANDER_SCENES.promise.clip, WANDER.scene, 'the promise memory keeps the harbour film');
+  assert.equal(WANDER_SCENES.promise.text, WANDER.text);
+});
+
+test('23.2 the held-back letter is not used: a clip with writing on it never ships as a scene', () => {
+  for (const sc of Object.values(WANDER_SCENES)) assert.doesNotMatch(sc.clip, /letter/);
+  assert.equal(WANDER_SCENES.promise.line, null);
+});
+
+test('23.3 the AI scenes have a Whisper line each, a row of ghost-lines.md word for word, and the film has none', () => {
+  for (const [kind, sc] of Object.entries(WANDER_SCENES)) {
+    if (kind === 'promise') { assert.equal(sc.line, null); assert.equal(sc.lineAt, null); continue; }
+    assert.equal(rowOf(sc.line.id), sc.line.text, `${kind}: ${sc.line.id} is a row of ghost-lines.md, word for word`);
+    assert.equal(sc.line.speaker, 'whisper');
+    assert.ok(sc.line.id.startsWith('wander.') && sc.line.id.endsWith('.soft.1'));
+    assert.deepEqual(lineProblems(sc.line.text), [], kind);
+    assert.doesNotMatch(sc.line.text, /\b(house|memory|memories|ghost)\b/i, `${kind}: a single-player line names no place and never says what the memory is`);
+  }
+  assert.notEqual(WANDER_SCENES.sound.line.id, WANDER_SCENES.person.line.id);
+});
+
+test('23.3 each Wander line starts inside its scene and ends before the scene does; each shape matches its clip', { skip: probe(resolve(root, 'media', `${WANDER.scene}.mp4`)) === null && 'ffprobe not installed' }, () => {
+  const RENDERED_S = { sound: 8.5, person: 12.2 }; // the Voice Library renders (Pippa, rate 0.9), measured on 2026-11-16 and rounded up
+  for (const [kind, sc] of Object.entries(WANDER_SCENES)) {
+    const file = resolve(root, 'media', `${sc.clip}.mp4`);
+    const [w, h] = size(file);
+    assert.equal(h > w, sc.shape === 'portrait', `${kind}: a ${w} x ${h} clip is ${sc.shape}`);
+    if (!sc.line) continue;
+    const dur = probe(file);
+    assert.ok(Number.isFinite(sc.lineAt) && sc.lineAt >= 0, `${kind} starts at a real time`);
+    assert.ok(sc.lineAt + RENDERED_S[kind] <= dur - 0.1, `${kind}: starts at ${sc.lineAt} s, runs ${RENDERED_S[kind]} s, in a ${dur.toFixed(2)} s scene`);
+  }
+});
+
+test('23 wanderScene is total: an odd kind gets the film and never an inherited property', () => {
+  for (const bad of [undefined, null, 5, '', 'toString', 'constructor', '__proto__', {}, [], 'letter']) assert.equal(wanderScene(bad), WANDER_SCENES.promise, String(bad));
+  for (const kind of WANDER_KINDS) assert.equal(wanderScene(kind), WANDER_SCENES[kind]);
 });

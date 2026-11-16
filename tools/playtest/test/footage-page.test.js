@@ -602,7 +602,7 @@ test('Wander: Find plays the film from the start with the Whisper line and a Sto
   assert.equal(v.__playing, true);
   assert.equal(v.currentTime, 0, 'it starts from the beginning');
   assert.equal($('#ft-wander-whisper').hidden, false);
-  assert.equal($('#ft-wander-whisper').textContent, 'Here. I have kept this a long time, and shown it to no one. Hold it gently. It is older than it looks.');
+  assert.equal($('#ft-wander-whisper').textContent, 'Here. I have kept this a long time, and shown it to no one. Hold it gently. I have kept you a little while too, and I find I like it.');
   assert.equal($('#ft-wander-stop').hidden, false, 'a Stop shows while a scene over 5 seconds plays');
   assert.equal($('#ft-wander-card').hidden, true, 'the card waits for the film');
   v.dispatchEvent(new window.Event('ended')); await tick(5);
@@ -708,7 +708,7 @@ test('20.8 a picture the browser blocked has no moment either: the line shows at
   });
 });
 
-test('21 the endings have their lines at their moments: the house at 1.2 s, the dawn at 2.9 s, and Skip drops one that is waiting', { skip }, async () => {
+test('21 the endings have their lines at their moments: the house at 1.2 s, the dawn at 5.5 s, and Skip drops one that is waiting', { skip }, async () => {
   open();
   await load(); await tick(5);
   const endLine = () => $('#ft-end-line');
@@ -722,10 +722,10 @@ test('21 the endings have their lines at their moments: the house at 1.2 s, the 
     assert.equal(endLine().dataset.speaker, 'whisper');
     click(btn('Detectives win')); await flush();
     assert.equal(endLine().hidden, true, 'a new ending clears the old line');
-    await go(2899);
-    assert.equal(endLine().hidden, true, 'the dawn line is not yet there at 2.899 s');
+    await go(5499);
+    assert.equal(endLine().hidden, true, 'the dawn line is not yet there at 5.499 s');
     await go(1);
-    assert.match(endLine().textContent, /^The house is quiet, and I note/);
+    assert.match(endLine().textContent, /^Morning has arrived/);
     assert.equal(endLine().dataset.speaker, 'keeper');
     click(btn('The house wins')); await flush(); await go(500);
     click(btn('Skip')); await flush(); await go(SETTLE);
@@ -741,5 +741,117 @@ test('21 with footage off an ending shows its line and its card at once', { skip
   assert.equal($('#ft-end-line').hidden, false);
   assert.equal($('#ft-card').hidden, false);
   assert.equal($('#ft-end-line').dataset.speaker, 'keeper');
+});
+
+// ---- 23: the scenes of Wander, by kind of memory ----
+const kindBtn = (k) => document.querySelector(`[role="radio"][data-kind="${k}"]`);
+const wsrc = () => $('#ft-wander').querySelector('source[type="video/webm"]').getAttribute('src');
+const CHIMES = 'Do you hear that? A row of small bells';
+const CHAIR = 'The tea is still warm';
+const says = (el, start) => assert.ok(el.textContent.startsWith(start), `${el.id} says "${el.textContent.slice(0, 40)}", expected it to start with "${start}"`);
+
+test('23.1 Wander begins on the promise memory with the harbour film in its 4 by 3 frame, and no line', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  assert.deepEqual([...document.querySelectorAll('[role="radio"][data-kind]')].map((b) => [b.dataset.kind, b.getAttribute('aria-checked')]), [['sound', 'false'], ['person', 'false'], ['promise', 'true']]);
+  assert.equal(wsrc(), 'media/wander-harbour.webm');
+  assert.equal($('#ft-wander').closest('.ft-film').dataset.shape, 'landscape');
+  assert.equal($('#ft-wander-line').getAttribute('role'), 'status');
+  click(btn('Find the memory')); await tick(5);
+  assert.equal($('#ft-wander-line').hidden, true, 'the film has no line of its own');
+});
+
+test('23.1 choosing a kind swaps the scene and its frame, stops what played, and clears the old words', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  const v = $('#ft-wander');
+  click(btn('Find the memory')); await tick(5);
+  assert.equal(v.__playing, true);
+  click(kindBtn('sound')); await tick(5);
+  assert.equal(v.__playing, false, 'a new kind stops the scene that was playing');
+  assert.equal(wsrc(), 'media/wander-chimes-take1.webm');
+  assert.equal(v.querySelector('source[type="video/mp4"]').getAttribute('src'), 'media/wander-chimes-take1.mp4');
+  assert.equal(v.getAttribute('poster'), 'media/wander-chimes-take1.jpg');
+  assert.equal(v.closest('.ft-film').dataset.shape, 'portrait', 'a 3 by 4 scene gets a portrait frame');
+  assert.equal(kindBtn('sound').getAttribute('aria-checked'), 'true');
+  assert.equal(kindBtn('promise').getAttribute('aria-checked'), 'false');
+  assert.equal($('#ft-wander-whisper').hidden, true);
+  assert.equal($('#ft-wander-card').hidden, true);
+  assert.equal($('#ft-wander-stop').hidden, true);
+  assert.match($('#ft-status').textContent, /A memory of a sound\./);
+  click(kindBtn('person')); await tick(5);
+  assert.equal(wsrc(), 'media/wander-chair-take1.webm');
+  click(kindBtn('promise')); await tick(5);
+  assert.equal(wsrc(), 'media/wander-harbour.webm');
+  assert.equal(v.closest('.ft-film').dataset.shape, 'landscape');
+});
+
+test('23.3 the line of a Wander scene is hidden until its moment: the chimes at 5.0 s, the chair at 1.5 s, in words only', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    click(kindBtn('sound')); click(btn('Find the memory')); await flush();
+    assert.match($('#ft-status').textContent, /wind chimes/, 'the scene is said in words');
+    assert.equal($('#ft-wander-whisper').hidden, false, 'the reveal line is first');
+    await go(4999);
+    assert.equal($('#ft-wander-line').hidden, true, 'not yet: 4999 ms');
+    await go(1);
+    says($('#ft-wander-line'), CHIMES);
+    assert.equal($('#ft-wander-line').dataset.speaker, 'whisper');
+    click(kindBtn('person')); click(btn('Find the memory')); await flush();
+    assert.equal($('#ft-wander-line').hidden, true, 'a new Find clears the old line');
+    await go(1499);
+    assert.equal($('#ft-wander-line').hidden, true, 'not yet: 1499 ms');
+    await go(1);
+    says($('#ft-wander-line'), CHAIR);
+  });
+});
+
+test('23.3 a line still waiting is dropped by Stop, by another kind, and by a new Find', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    click(kindBtn('sound')); click(btn('Find the memory')); await flush(); await go(2000);
+    click(btn('Stop')); await flush(); await go(SETTLE);
+    assert.equal($('#ft-wander-line').hidden, true, 'Stop drops the waiting line');
+    assert.equal($('#ft-wander-card').hidden, false, 'and shows the card');
+    click(btn('Find the memory')); await flush(); await go(2000);
+    click(kindBtn('person')); await flush(); await go(SETTLE);
+    assert.equal($('#ft-wander-line').hidden, true, 'another kind drops the waiting line');
+    click(btn('Find the memory')); await flush(); await go(1000);
+    click(btn('Find the memory')); await flush(); await go(1000); // the second Find restarts its own wait: 1.5 s from now
+    assert.equal($('#ft-wander-line').hidden, true, 'the first Find\'s wait is gone');
+    await go(500);
+    assert.equal($('#ft-wander-line').hidden, false);
+  });
+});
+
+test('23.3 a Find followed at once by Stop or another kind, before its picture has started, leaves no line', { skip }, async () => {
+  open();
+  await load(); await tick(5);
+  await onClock(async (go) => {
+    click(kindBtn('sound')); click(btn('Find the memory')); click(btn('Stop')); // the play() of the Find has not settled when Stop comes
+    await flush(); await go(SETTLE);
+    assert.equal($('#ft-wander-line').hidden, true, 'Stop in the same moment: no line');
+    click(btn('Find the memory')); click(kindBtn('person')); // and a new kind in the same moment
+    await flush(); await go(SETTLE);
+    assert.equal($('#ft-wander-line').hidden, true, 'another kind in the same moment: no line');
+  });
+});
+
+test('23.5 with footage off a Wander scene gives its line and its card at once; a blocked clip does the same', { skip }, async () => {
+  { open({ reduce: true });
+    await load(); await tick(5);
+    click(kindBtn('person')); click(btn('Find the memory')); await tick(5);
+    says($('#ft-wander-line'), CHAIR);
+    assert.equal($('#ft-wander-card').hidden, false); }
+  const { w } = open();
+  w.HTMLMediaElement.prototype.play = function () { return Promise.reject(new Error('blocked')); };
+  await load(); await tick(5);
+  await onClock(async () => {
+    click(kindBtn('sound')); click(btn('Find the memory')); await flush();
+    says($('#ft-wander-line'), CHIMES);
+    assert.equal($('#ft-wander-card').hidden, false);
+  });
 });
 

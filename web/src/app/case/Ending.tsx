@@ -1,5 +1,6 @@
 import type { PublicSnapshot } from "@hauntology/shared/party/engine";
-import { useEffect, useState } from "react";
+import { STOCK_SONGS } from "@hauntology/shared/songs/stock";
+import { useEffect, useRef, useState } from "react";
 import { eventLine, type Names } from "./words";
 
 /**
@@ -9,6 +10,37 @@ import { eventLine, type Names } from "./words";
  * the whole recap at once. Never the word "Poltergeist": players "joined the haunting".
  */
 export const RECAP_STEP_MS = 1200;
+
+/**
+ * The ending song (game-songs 6.5): a ready-made Stock Song, played only when the visitor taps Play (browsers block
+ * sound that starts alone). Its words always show, so the song is never the only way to get anything.
+ */
+export function EndingSong({ id }: { id: "fb-house" | "fb-detectives" }) {
+  const song = STOCK_SONGS.find((s) => s.id === id);
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => () => { audio.current?.pause(); }, []);
+  if (!song) return null;
+
+  const toggle = () => {
+    if (playing) { audio.current?.pause(); setPlaying(false); return; }
+    const a = audio.current ?? new Audio(`/songs/${id}.mp3`);
+    audio.current = a;
+    a.onended = () => setPlaying(false);
+    a.onerror = () => { setFailed(true); setPlaying(false); };
+    a.play().then(() => setPlaying(true)).catch(() => { setFailed(true); setPlaying(false); });
+  };
+
+  return (
+    <section aria-label="The ending song" className="ui-stack--tight">
+      <h3 className="ui-heading">{song.title}</h3>
+      <button type="button" className="ui-button" onClick={toggle}>{playing ? "Stop the song" : "Play the song"}</button>
+      {failed ? <p role="status">The song would not play. The words are below.</p> : null}
+      <pre className="ui-lyrics">{(song.lyrics ?? "").replace(/\[[^\]]+\]\n?/g, "")}</pre>
+    </section>
+  );
+}
 
 export function Ending({ view, n, reducedMotion = false }: { view: PublicSnapshot; n: Names; reducedMotion?: boolean }) {
   const e = view.ending!;
@@ -62,6 +94,8 @@ export function Ending({ view, n, reducedMotion = false }: { view: PublicSnapsho
           </ul>
         </section>
       ) : null}
+
+      <EndingSong id={e.houseWins ? "fb-house" : "fb-detectives"} />
 
       <section aria-label="What happened">
         <h3 className="ui-heading">What happened, in order</h3>
