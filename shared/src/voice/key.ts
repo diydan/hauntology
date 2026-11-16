@@ -9,7 +9,7 @@ import type { VoiceId } from "./voices";
 
 /** The Library: kept with no expiry, never deleted by a lifecycle rule. */
 export const LIBRARY_PREFIX = "speech/lib/v1/";
-/** The cache: deleted after 30 days. */
+/** The cache: deleted after 60 days. */
 export const CACHE_PREFIX = "speech/v1/";
 
 /** SHA-256 of a string, as 64 lowercase hex characters. May be async. */
@@ -36,7 +36,7 @@ export function libraryKey(voice: VoiceId, text: string, digest: Digest): Promis
   return keyWith(LIBRARY_PREFIX, voice, text, digest);
 }
 
-/** The R2 key of a cached file (30 days). */
+/** The R2 key of a cached file (60 days). */
 export function speechCacheKey(voice: VoiceId, text: string, digest: Digest): Promise<string> {
   return keyWith(CACHE_PREFIX, voice, text, digest);
 }

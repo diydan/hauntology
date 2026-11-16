@@ -5,7 +5,7 @@ import type { VoiceId } from "@hauntology/shared/voice/voices";
 import { AUDIO_MAX_BYTES, AUDIO_MIN_BYTES } from "../guarded/workersai/speak";
 
 /**
- * The speech cache in R2 (ghost-voice 3.4): clips under `speech/v1/<sha-256 of [voice, text]>`, kept 30 days.
+ * The speech cache in R2 (ghost-voice 3.4): clips under `speech/v1/<sha-256 of [voice, text]>`, kept 60 days.
  *
  * - The key is made from the voice id and the plain spoken text, so no Steering Tag is ever in it (`key.ts`).
  * - An object's custom metadata is `storedAt` and `voice` and **never the text**: nobody can read what was said from the bucket's listing.
@@ -13,7 +13,8 @@ import { AUDIO_MAX_BYTES, AUDIO_MIN_BYTES } from "../guarded/workersai/speak";
  * - A cache that fails is a miss and a write that fails is not an error: the clip is still played, only not kept.
  * - It never touches `speech/lib/v1/` (the Library, no expiry): it only makes keys with `speechCacheKey`.
  *
- * The 30-day R2 lifecycle rule is a bucket setting, not code: `wrangler r2 bucket lifecycle add hauntology-worlds speech-cache speech/v1/ --expire-days 30`.
+ * The 60-day R2 lifecycle rule is a bucket setting, not code. It is set on `hauntology-worlds` (rule `speech-cache`, set 2026-11-16):
+ * `wrangler r2 bucket lifecycle add hauntology-worlds speech-cache speech/v1/ --expire-days 60`.
  * The prefix is not optional: a rule with none would delete the Library.
  */
 

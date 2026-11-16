@@ -91,7 +91,7 @@ describe("R2SpeechCache.lookup", () => {
     expect(both!.audio).toEqual(mp3(4_000, 3));
   });
 
-  it("serves a clip up to the last millisecond of day 30 and not at day 30, and does not delete the stale object", async () => {
+  it("serves a clip up to the last millisecond of day 60 and not at day 60, and does not delete the stale object", async () => {
     const { r2, cache, at } = setup();
     await cache.put(PIPPA, SPOKEN, mp3());
     at(T0 + CACHE_MAX_AGE_MS - 1);
