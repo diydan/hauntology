@@ -44,6 +44,10 @@ const lib01 = `
 module body() { ${imp("prop-01-chest-body")}; }
 // lid turned right way up onto the chest: 90.3 puts the hinge axes together with 0.3 mm of rim clearance
 module lid(dz = 90.3) { translate([0, 0, dz]) rotate([180, 0, 0]) ${imp("prop-01-chest-lid")}; }
+// the same lid opened th degrees (negative) about the hinge axis at Y = +51.2, Z = 69.0
+module lidopen(th) { translate([0, 51.2, 69.0]) rotate([th, 0, 0]) translate([0, -51.2, -69.0]) lid(); }
+// the same lid opened th degrees (negative) about the hinge axis at Y = +51.2, Z = 69.0
+module lidopen(th) { translate([0, 51.2, 69.0]) rotate([th, 0, 0]) translate([0, -51.2, -69.0]) lid(); }
 // servo shaft along -Y at X = -48.5, Z = 32; the lever sweeps in the XZ plane, th degrees up from level
 module lever(a) { translate([-48.5, -11.0, 32]) rotate([0, a, 0]) rotate([-90, 0, 0]) ${imp("prop-01-lever-arm")}; }
 module ghost(zo) { translate([0, 1.0, zo]) rotate([90, 0, 0]) ${imp("prop-01-ghost-figure")}; }
@@ -57,6 +61,13 @@ function checks01() {
     ["lever-rest-ghost", "lever(18);", "ghost(9.1);", "clear", "the lever at its lowest, round the ghost's pin"],
   ];
   for (const [name, a, th] of [["m18", 18, -18], ["m10", 10, -10], ["0", 0, 0], ["20", -20, 20], ["45", -45, 45]]) c.push([`lever-${name}-body`, `lever(${a});`, "body();", "clear", `the lever ${th} degrees from level`]);
+  // The lever's nose pushes the lid ramp; the ghost's pin sits 48.5 mm from the servo shaft, so the fork angle sets both: ghost Z = 32 + 48.5 tan(a) - 7.5.
+  // Rest (a = -18): lid shut. a = 0: ghost 24.5, lid at 20. a = 15: ghost 37.5, lid at 30. a = 22: ghost 44.1 (full 35 mm lift), lid at 30.
+  for (const [a, th] of [[0, -20], [15, -30], [22, -30]]) c.push([`lever-${a}-lid-${-th}`, `lever(${-a});`, `lidopen(${th});`, "clear", `the lever at ${a} degrees up with the lid pushed open ${-th} degrees`]);
+  c.push(["control-lever-15-lid-20", "lever(-15);", "lidopen(-20);", "collide", "control: the lid only 20 degrees open at 15 degrees of lever, so the nose would be inside it"]);
+  for (const [lift, th] of [[24.5, -20], [37.5, -30], [44.1, -30]]) c.push([`ghost-${lift}-lid-${-th}`, `ghost(${lift});`, `lidopen(${th});`, "clear", `the ghost lifted to Z = ${lift} under the lid pushed open ${-th} degrees`]);
+  for (const [a, lift] of [[0, 24.5], [15, 37.5], [22, 44.1]]) c.push([`lever-${a}-ghost-${lift}`, `lever(${-a});`, `ghost(${lift});`, "clear", `the lever at ${a} degrees with the ghost it has lifted to Z = ${lift}`]);
+  c.push(["control-ghost-lift-lid-closed", "ghost(34.1);", "lid();", "collide", "control: the ghost lifted with the lid still shut"]);
   c.push(["control-lid-low", "lid(88);", "body();", "collide", "control: the lid 2.3 mm too low"]);
   return c.map(([id, a, b, expect, note]) => ({ id: `p01/${id}`, prop: "p01", lib: lib01, a, b, expect, note }));
 }
