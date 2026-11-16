@@ -56,10 +56,12 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
     - **Validates: Requirements 3.6, 8.1**
 
 - [ ] 3. Loader and fallbacks
-  - [ ] 3.1 `WorldLoader`: manifest fetch, LOD choice, progress stages, retry ×2 with backoff, orientation applied, spawn placed
+  - [x] 3.1 `WorldLoader`: manifest fetch, LOD choice, progress stages, retry ×2 with backoff, orientation applied, spawn placed
     - _Requirements: 1.1, 1.3, 1.4_
+    - Done (2026-11-16): `loadWorld` in `shared/src/viewer/loader.ts` over injected ports (`fetchManifest`, `fetchAsset`, `initSplat`, `sleep`), so the whole ladder is tested over fakes in `loader.test.ts` (6 tests, 4 deliberate breakages caught): the manifest is validated with `WorldManifestSchema`, the LOD comes from `chooseLod`, stages are labelled (`LOAD_STAGE_LABELS`), a failed collider is a warning, not a stop.
   - [ ] 3.2 WebGL2 / Spark capability check and `PanoFallback` (pano → thumbnail ladder), chat still mounted
     - _Requirements: 1.2_
+    - Progress (2026-11-16): the decision half is in `loadWorld`: no WebGL2, or the splat start failing, gives the pano rung, then the thumbnail, then a fatal code; the shell keeps the Chat at every rung (it only receives a `degraded` message). Not done: reading real device capabilities in the browser and drawing the panorama — both wait on task 1, which picks the Spark and three versions.
 
 - [ ] 4. Player controls and collision
   - [ ] 4.1 Desktop controls: pointer lock, WASD/arrows, Shift, Esc
