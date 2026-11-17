@@ -2,6 +2,7 @@
 // Device state (name, capabilities, join time) lives in each socket's attachment and survives hibernation.
 import { DurableObject } from 'cloudflare:workers';
 import { RoomCore } from './room-core.js';
+import { cleanState } from '../js/shake-core.js';
 
 function wrap(ws) {
   const sock = {
@@ -21,7 +22,10 @@ export class LabRoom extends DurableObject {
       now: () => Date.now(),
       rand: () => Math.random(),
       list: () => this.ctx.getWebSockets().map(wrap),
+      saveState: (st) => { this.ctx.waitUntil(this.ctx.storage.put('state', st)); },
     });
+    // the room's shared state (a door open, a chair moved) outlives hibernation: read it before any message is handled
+    ctx.blockConcurrencyWhile(async () => { this.core.state = cleanState(await ctx.storage.get('state')); });
   }
 
   async fetch(request) {

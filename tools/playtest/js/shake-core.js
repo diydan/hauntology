@@ -11,6 +11,22 @@ export const ACTIONS = Object.freeze({
 });
 export const WINDOW_MS = 2000;
 
+/** The room is 10 m by 10 m. Where each action happens, in metres. */
+export const ROOM_SIZE = 10;
+export const SPOTS = Object.freeze({
+  knock: { x: 5, y: 0.4, name: 'door' },
+  chair: { x: 5, y: 5, name: 'chair' },
+  wind: { x: 9.6, y: 5, name: 'window' },
+  bigDoor: { x: 0.4, y: 5, name: 'big door' },
+});
+
+/** A position a phone reports: numbers only, kept inside the room, facing 0 to 359. Anything else gives null. */
+export function cleanPos(p) {
+  if (!p || typeof p !== 'object' || ![p.x, p.y, p.facing].every((n) => typeof n === 'number' && Number.isFinite(n))) return null;
+  const c = (n) => Math.round(Math.min(ROOM_SIZE, Math.max(0, n)) * 100) / 100;
+  return { x: c(p.x), y: c(p.y), facing: ((Math.round(p.facing) % 360) + 360) % 360 };
+}
+
 /**
  * Counts Players acting together. One Player counts once, however often they act.
  * @returns {{ add(id: string, t: number): { fired: boolean, count: number, need: number, who: string[] }, reset(): void }}
@@ -65,4 +81,22 @@ export function feel(from, to) {
   const off = Math.abs((((bearing - to.facing) % 360) + 540) % 360 - 180); // 0 = looking right at it
   if (off > 100) return { level: 'faint', meters, buzz: false, picture: false, sound: 0.2 };
   return { level: base, meters, buzz: base === 'strong', picture: true, sound: base === 'strong' ? 1 : 0.5 };
+}
+
+/**
+ * What a shared action leaves behind in the room, so a phone that joins late sees it. The big door swings open and shut each time it
+ * fires; the chair moves one step each time (0 to 3, then back to its place); the knock and the wind leave nothing.
+ */
+export const CHAIR_STEPS = 4;
+export const INITIAL_STATE = Object.freeze({ bigDoor: 'shut', chair: 0 });
+export function applyAction(state, action) {
+  const s = { ...INITIAL_STATE, ...state };
+  if (action === 'bigDoor') s.bigDoor = s.bigDoor === 'open' ? 'shut' : 'open';
+  else if (action === 'chair') s.chair = (s.chair + 1) % CHAIR_STEPS;
+  return s;
+}
+/** Keep only what a stored state may hold, so a bad store cannot hand a phone anything else. */
+export function cleanState(st) {
+  const chair = Number.isInteger(st?.chair) && st.chair >= 0 && st.chair < CHAIR_STEPS ? st.chair : 0;
+  return { bigDoor: st?.bigDoor === 'open' ? 'open' : 'shut', chair };
 }

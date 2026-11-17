@@ -412,11 +412,13 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - **Property 36: A phone is never given more than its place allows**
     - **Validates: Requirements 25.4**
   - [x] 17.3 The demo on the lab: `tools/playtest/shake.html` (four actions, You and three pretend Players, tap to move, turn, Start for motion, the You acts control), linked from the hub
-    - _Requirements: 25.3, 25.5, 25.7_
+    - _Requirements: 25.3, 25.5, 25.8_
   - [ ] 17.4 Spike puzzles 1.10 (shake together): on two real phones, can two people shake within two seconds and does the buzz by distance feel right; how often does a pocket or a walk count as a shake
     - _Requirements: 25.3, 25.4_
-  - [ ] 17.5 The relay: a shared action message in the lab Worker (`src/room-core.js`) that counts Players on the server and tells every screen, with a size cap and a rate limit per phone
+  - [x] 17.5 The relay: `act` and `pos` messages in the lab Worker (`src/room-core.js`) that count phones on the server and tell each phone what it feels, with a rate limit per phone and clamped positions; tests in `tools/playtest/test/shake-room.test.js`; the demo joins a room with `#room=CODE`
     - _Requirements: 25.1, 25.2_
-  - [ ] 17.6 Phone positions and facing from each phone's own view, in place of the pretend phones
+  - [x] 17.5b The room's memory: `applyAction`, `cleanState`, saved in the room's storage and sent with `welcome` and `shared`
+    - _Requirements: 25.7_
+  - [ ] 17.6 Phone positions and facing from each phone's own view, in place of the tap-to-move and Turn controls
     - _Requirements: 25.6_
   - [ ] 17.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `makeTogether` and `feel`. Ensure every test passes, ask the user if questions arise.
