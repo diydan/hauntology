@@ -33,6 +33,25 @@ function motionHost(over: Partial<MotionHost> = {}) {
 }
 
 describe("BrowserMotion", () => {
+  it("gives the biggest jolt since it was last read, from every motion reading, and zero after (the Secret knock)", async () => {
+    const m = motionHost();
+    const motion = new BrowserMotion(m.host, settings());
+    const on = motion.enable();
+    m.orientation(0, 0);
+    expect(await on).toBe("on");
+    const accel = (x: number, y: number, z: number) => m.fire("devicemotion", { accelerationIncludingGravity: { x, y, z } });
+    expect(motion.takeJolt()).toBe(0);
+    accel(0, 0, 9.8);
+    accel(0, 0, 9.9); // resting: a tiny change
+    accel(0, 3, 13.8); // a knock on the table: a jolt of 5
+    accel(0, 0, 9.8);
+    expect(motion.takeJolt()).toBeCloseTo(5, 5);
+    expect(motion.takeJolt()).toBe(0); // read once
+    motion.disable();
+    accel(0, 0, 30);
+    expect(motion.takeJolt()).toBe(0); // no readings once it is off
+  });
+
   it("turns on once a real reading arrives, with the first pose as neutral", async () => {
     const m = motionHost();
     const motion = new BrowserMotion(m.host, settings());

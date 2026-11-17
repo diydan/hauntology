@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { knockWords } from "@hauntology/shared/puzzles/knock";
 import type { Sight } from "@hauntology/shared/puzzles/types";
 import { PictureSvg } from "./art/Picture";
 import { StoppedClock } from "./art/ClockFace";
@@ -21,5 +22,12 @@ export function SightClue({ sight }: { sight: Sight }): ReactNode {
     );
     case "moved": return (<><p className="ui-hint pz-hint">A shelf:</p><Shelf items={p.shelf} cols={p.shelf.length === 6 ? 3 : 4} /></>);
     case "photo": return (<><p className="ui-hint pz-hint">A photo, pinned to the wall:</p><div className="pz-sight-picture" style={{ aspectRatio: `${p.cols} / ${p.rows}` }}><PictureSvg picture={p.picture} cols={p.cols} rows={p.rows} label="The whole photo" /></div></>);
+    case "knock": return (
+      <>
+        <p className="ui-hint pz-hint">Someone knocks at a door, a secret knock:</p>
+        <p className="pz-knock-marks" aria-hidden="true">{p.groups.map((g, i) => "●".repeat(g).split("").join(" ") + (i < p.groups.length - 1 ? (p.long === i ? "      " : "   ") : "")).join("")}</p>
+        <p className="ui-hint">{knockWords(p)}</p>
+      </>
+    );
   }
 }

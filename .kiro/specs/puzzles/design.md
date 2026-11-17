@@ -645,7 +645,9 @@ The owner tried the Knock test page (`knock.html`) on his phone and it worked, s
 
 The timings leave room on both sides: the ghost's own knock is read back as itself for every seed (a test), a Player's knocks inside a group can be up to 700 ms apart, and a normal pause can be anything from 700 ms to 1.4 s.
 
-Not decided: whether the Lock's door is a Zone door in Party Mode or the Haunt Event where every Player knocks at once (Requirement 24.6). Not built: the `knock` Kind in `shared/src/puzzles` and `web/src/puzzles`; the demo is the lab page only.
+Not decided: whether the Lock's door is a Zone door in Party Mode or the Haunt Event where every Player knocks at once (Requirement 24.6).
+
+**Built 2026-11-16 (task 16.5):** the `knock` Kind. `shared/src/puzzles/knock.ts` holds the pattern logic (`knockPlayTimes`, `knockWords`, `readKnocks`, `judgeKnock`), `makeLock("knock", …)` makes the pattern from the Lock's seed, `verify` judges the Transcript `{ kind: "knock", times }`, and the clue is a Sight (`KnockSight`) that the Sight card plays once as thunks and buzzes and shows as dots and words. It is a Memory Kind with a World Clue and a Decoy (same groups and long pause, other counts). It is not in `DEFAULT_KINDS` until task 16.4 has been run. The screen (`web/src/puzzles/kinds/Knock.tsx`) feels and hears knocks: the feel layer's `Motion.takeJolt()` gives the biggest sudden change in acceleration since the last frame, from every motion reading, and the microphone's loudness comes through `Breath`. With both on, a knock is a jolt of 2.5 m/s² or more and a click within 90 ms of each other (as the Knock test page found steadiest); with one on, that one alone; the door itself is the Tap control. Motion is asked from the Knock tap only when it was never tried, so a phone that said no is not asked again.
 
 ### Property 34: A secret knock opens to itself and to nothing else
 For every level and seed: the pattern is valid (Requirement 24.1), the ghost's own knock judged as the Player's opens the door, any other group counts do not, and on hard a missing or misplaced long pause does not.

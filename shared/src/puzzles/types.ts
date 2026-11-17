@@ -1,14 +1,14 @@
 import { z } from "zod";
 
-/** Every Kind of Puzzle: the ten of the spec plus the optional marble maze. */
-export const KINDS = ["lockpick", "wires", "clock", "safe", "musicbox", "candles", "moved", "photo", "words", "board", "maze"] as const;
+/** Every Kind of Puzzle: the ten of the spec plus the optional marble maze and the Secret knock (Requirement 24). */
+export const KINDS = ["lockpick", "wires", "clock", "safe", "musicbox", "candles", "moved", "photo", "words", "board", "maze", "knock"] as const;
 export type Kind = (typeof KINDS)[number];
 
-/** The Kinds a Room uses by default: the ten, without the optional maze. */
-export const DEFAULT_KINDS: readonly Kind[] = KINDS.filter((k) => k !== "maze");
+/** The Kinds a Room uses by default: the ten, without the optional maze, and without the Secret knock until it has been tried on real tables (task 16.4). */
+export const DEFAULT_KINDS: readonly Kind[] = KINDS.filter((k) => k !== "maze" && k !== "knock");
 
 /** Memory Kinds need a Sight from an earlier place. */
-export const MEMORY_KINDS: readonly Kind[] = ["wires", "clock", "safe", "moved", "photo"];
+export const MEMORY_KINDS: readonly Kind[] = ["wires", "clock", "safe", "moved", "photo", "knock"];
 export const isMemoryKind = (kind: Kind): boolean => MEMORY_KINDS.includes(kind);
 
 export const LEVELS = ["easy", "medium", "hard"] as const;
@@ -41,7 +41,9 @@ export type PhotoView = Readonly<{ kind: "photo"; cols: number; rows: number; pi
 export type WordsView = Readonly<{ kind: "words"; n: number; letters: readonly WordLetter[] }>;
 export type BoardView = Readonly<{ kind: "board"; length: number; plays: number; dwellMs: number; clue: string }>;
 export type MazeView = Readonly<{ kind: "maze"; grid: readonly string[] }>;
-export type LockView = LockPickView | WiresView | ClockView | SafeView | MusicboxView | CandlesView | MovedView | PhotoView | WordsView | BoardView | MazeView;
+/** The door shows how many groups the knock has and whether one pause is long, never the counts. */
+export type KnockView = Readonly<{ kind: "knock"; groups: number; longPause: boolean }>;
+export type LockView = LockPickView | WiresView | ClockView | SafeView | MusicboxView | CandlesView | MovedView | PhotoView | WordsView | BoardView | MazeView | KnockView;
 
 export type LockPickSecret = Readonly<{ kind: "lockpick"; centers: readonly number[]; width: number }>;
 /** `terminalOf[wire]` is the terminal (0 is the top one) the wire belongs on. */
@@ -56,7 +58,8 @@ export type PhotoSecret = Readonly<{ kind: "photo"; turns0: readonly number[] }>
 export type WordsSecret = Readonly<{ kind: "words"; order: readonly number[]; word: string }>;
 export type BoardSecret = Readonly<{ kind: "board"; word: string }>;
 export type MazeSecret = Readonly<{ kind: "maze" }>;
-export type LockSecret = LockPickSecret | WiresSecret | ClockSecret | SafeSecret | MusicboxSecret | CandlesSecret | MovedSecret | PhotoSecret | WordsSecret | BoardSecret | MazeSecret;
+export type KnockSecret = Readonly<{ kind: "knock"; groups: readonly number[]; long: number | null }>;
+export type LockSecret = LockPickSecret | WiresSecret | ClockSecret | SafeSecret | MusicboxSecret | CandlesSecret | MovedSecret | PhotoSecret | WordsSecret | BoardSecret | MazeSecret | KnockSecret;
 
 /** The clue a Memory Kind shows in an earlier place. */
 export type WiresSight = Readonly<{ kind: "wires"; order: readonly number[] }>;
@@ -64,7 +67,9 @@ export type ClockSight = Readonly<{ kind: "clock"; h: number; m: number }>;
 export type SafeSight = Readonly<{ kind: "safe"; code: readonly number[] }>;
 export type MovedSight = Readonly<{ kind: "moved"; shelf: readonly number[] }>;
 export type PhotoSight = Readonly<{ kind: "photo"; picture: Picture; cols: number; rows: number }>;
-export type SightPayload = WiresSight | ClockSight | SafeSight | MovedSight | PhotoSight;
+/** The ghost's knock, heard once. */
+export type KnockSight = Readonly<{ kind: "knock"; groups: readonly number[]; long: number | null }>;
+export type SightPayload = WiresSight | ClockSight | SafeSight | MovedSight | PhotoSight | KnockSight;
 
 type LockBase = Readonly<{ level: Level; seed: number }>;
 type Made<K extends Kind, V, S, G> = LockBase & Readonly<{ kind: K; view: V; secret: S; sight: G }>;
@@ -79,8 +84,9 @@ export type PhotoLock = Made<"photo", PhotoView, PhotoSecret, PhotoSight>;
 export type WordsLock = Made<"words", WordsView, WordsSecret, null>;
 export type BoardLock = Made<"board", BoardView, BoardSecret, null>;
 export type MazeLock = Made<"maze", MazeView, MazeSecret, null>;
+export type KnockLock = Made<"knock", KnockView, KnockSecret, KnockSight>;
 /** A made Lock. `makeLock` takes only a Kind, a level and a seed, so it can never depend on a Solution, a Hand or a Residue position. */
-export type Lock = LockPickLock | WiresLock | ClockLock | SafeLock | MusicboxLock | CandlesLock | MovedLock | PhotoLock | WordsLock | BoardLock | MazeLock;
+export type Lock = LockPickLock | WiresLock | ClockLock | SafeLock | MusicboxLock | CandlesLock | MovedLock | PhotoLock | WordsLock | BoardLock | MazeLock | KnockLock;
 
 export type Sight = Readonly<{ kind: Kind; payload: SightPayload; showMs: number }>;
 
@@ -109,6 +115,8 @@ export const TranscriptSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("words"), letters: smallInts(15), elapsedMs }).strict(),
   z.object({ kind: z.literal("board"), letters: z.string().regex(/^[A-Z]{0,8}$/), elapsedMs }).strict(),
   z.object({ kind: z.literal("maze"), reachedAtMs: finite, hits: finite, elapsedMs }).strict(),
+  /** The times of the Player's knocks, in ms from the start of the try (motion, microphone or the Tap control alike). */
+  z.object({ kind: z.literal("knock"), times: z.array(z.number().finite().nonnegative()).max(MAX_EVENTS), elapsedMs }).strict(),
 ]);
 export type Transcript = z.infer<typeof TranscriptSchema>;
 

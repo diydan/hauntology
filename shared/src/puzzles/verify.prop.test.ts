@@ -23,6 +23,7 @@ function spoil(t: Transcript): Transcript {
     case "words": return { ...t, letters: [t.letters[1] as number, t.letters[0] as number, ...t.letters.slice(2)] };
     case "board": return { ...t, letters: `${t.letters.slice(0, -1)}${t.letters.endsWith("Z") ? "Y" : "Z"}` };
     case "maze": return { ...t, reachedAtMs: 0 };
+    case "knock": return { ...t, times: t.times.slice(1) }; // one knock short: the first group is one smaller
   }
 }
 
@@ -35,6 +36,7 @@ function moreSpoils(t: Transcript): Transcript[] {
   if (t.kind === "moved") return [{ ...t, changed: [...t.changed, (t.changed.at(-1) ?? 0) + 1] }];
   if (t.kind === "wires" && t.pairs.length >= 2) return [{ ...t, pairs: t.pairs.slice(1) }];
   if (t.kind === "lockpick") return [{ ...t, sets: t.sets.map((e, i) => (i === 1 ? { ...e, atMs: 0 } : e)) }]; // too close in time
+  if (t.kind === "knock") return [{ ...t, times: [...t.times, (t.times.at(-1) ?? 0) + 3000] }]; // one knock too many, as a group of its own
   return [];
 }
 

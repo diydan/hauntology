@@ -3,7 +3,7 @@ import type { Kind, Sight } from "@hauntology/shared/puzzles/types";
 import { SightClue } from "./SightClue";
 import "./SightsPage.css";
 
-const TITLES: Readonly<Partial<Record<Kind, string>>> = { wires: "The fuse box", clock: "The stopped clock", safe: "The brass plaque", moved: "The shelf", photo: "The photo" };
+const TITLES: Readonly<Partial<Record<Kind, string>>> = { wires: "The fuse box", clock: "The stopped clock", safe: "The brass plaque", moved: "The shelf", photo: "The photo", knock: "The secret knock" };
 
 /**
  * The Sights page of the notebook: every clue shown to this Player, kept only where Assist is on. With Assist off a clue is

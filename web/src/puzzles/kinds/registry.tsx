@@ -18,4 +18,5 @@ export const KIND_SCREENS: { readonly [K in Kind]: LazyExoticComponent<Component
   words: lazy(() => import("./Words")),
   board: lazy(() => import("./Board")),
   maze: lazy(() => import("./Maze")),
+  knock: lazy(() => import("./Knock")),
 };

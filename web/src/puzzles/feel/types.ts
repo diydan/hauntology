@@ -51,6 +51,11 @@ export interface Motion {
   disable(): void;
   /** The angle the phone is held at now becomes neutral. */
   holdLevel(): void;
+  /**
+   * The biggest sudden change in acceleration (m/s², gravity cancels out between close readings) since the last call, and back to zero:
+   * a knock on the table the phone lies on is a short jolt (the Secret knock). Read it once a frame. Zero when there is no sensor.
+   */
+  takeJolt(): number;
   /** Called when `state` changes. */
   subscribe: Subscribe;
 }

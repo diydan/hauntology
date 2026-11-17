@@ -37,6 +37,8 @@ export class BrowserMotion implements Motion {
   dial: number | null = null;
   private smoothed: Tilt = { x: 0, y: 0 };
   private raw: Tilt = { x: 0, y: 0 };
+  private prevAccel: { x: number; y: number; z: number } | null = null;
+  private peakJolt = 0;
   private zero: Tilt | null = null;
   private last = 0;
   private listening = false;
@@ -133,9 +135,19 @@ export class BrowserMotion implements Motion {
   private readonly onMotion = (e: Event): void => {
     const g = (e as MotionLike).accelerationIncludingGravity;
     if (!g) return;
-    const a = dialFromGravity(g.x ?? 0, g.y ?? 0, g.z ?? 0);
+    const cur = { x: g.x ?? 0, y: g.y ?? 0, z: g.z ?? 0 };
+    // every reading, not sampled: a knock lasts a few hundredths of a second
+    if (this.prevAccel !== null && !this.host.isHidden()) this.peakJolt = Math.max(this.peakJolt, Math.hypot(cur.x - this.prevAccel.x, cur.y - this.prevAccel.y, cur.z - this.prevAccel.z));
+    this.prevAccel = cur;
+    const a = dialFromGravity(cur.x, cur.y, cur.z);
     this.dial = a === null ? null : (this.settings().dialInvert ? -a : a);
   };
+
+  takeJolt(): number {
+    const j = this.peakJolt;
+    this.peakJolt = 0;
+    return j;
+  }
   private readonly onRotate: Handler = () => { this.zero = null; }; // a turned screen needs a new neutral
 
   private listen(): void {
@@ -148,6 +160,8 @@ export class BrowserMotion implements Motion {
   private unlisten(): void {
     if (!this.listening) return;
     this.listening = false;
+    this.prevAccel = null;
+    this.peakJolt = 0;
     this.host.removeEventListener("deviceorientation", this.onOrientation);
     this.host.removeEventListener("devicemotion", this.onMotion);
     this.host.removeEventListener("orientationchange", this.onRotate);

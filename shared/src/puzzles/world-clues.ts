@@ -1,3 +1,4 @@
+import { knockPlayTimes } from "./knock";
 import { makePicture } from "./make";
 import { hash, mulberry32, randInt, shuffle, type Rng } from "./rng";
 import { isMemoryKind, type Kind, type Lock, type SightPayload, type Transcript } from "./types";
@@ -27,6 +28,7 @@ export function answerFromSight(lock: Lock, sight: SightPayload): Transcript | n
   if (lock.kind === "clock" && sight.kind === "clock") return { kind: "clock", h: sight.h, m: sight.m, elapsedMs };
   if (lock.kind === "safe" && sight.kind === "safe") return { kind: "safe", code: [...sight.code], elapsedMs };
   if (lock.kind === "moved" && sight.kind === "moved") return { kind: "moved", changed: sight.shelf.flatMap((v, i) => (v !== lock.view.after[i] ? [i] : [])), elapsedMs };
+  if (lock.kind === "knock" && sight.kind === "knock") return { kind: "knock", times: knockPlayTimes(sight), elapsedMs };
   return null;
 }
 
@@ -68,6 +70,11 @@ function tryDecoy(r: Rng, lock: Lock): SightPayload | null {
       return { kind: "moved", shelf };
     }
     case "photo": return { kind: "photo", picture: makePicture(r), cols: lock.sight.cols, rows: lock.sight.rows };
+    case "knock": {
+      // the same number of groups and the same long pause, other counts: it looks like the knock, and does not open the door
+      const groups = lock.sight.groups.map(() => 1 + randInt(r, 4));
+      return groups.some((g, i) => i > 0 && g === groups[i - 1]) ? null : { kind: "knock", groups, long: lock.sight.long };
+    }
     default: return null;
   }
 }
@@ -100,7 +107,7 @@ export const signForLock = (clues: readonly WorldClue[], lockZone: string): Sign
 export function worldCluePrompt(kind: Kind, sign: Sign): string {
   const thing: Partial<Record<Kind, string>> = {
     clock: "Set the clock to the time on the clock", safe: "Dial the code on the plaque", wires: "Join the wires as in the fuse box",
-    moved: "Find what changed since the shelf", photo: "Put back the photo",
+    moved: "Find what changed since the shelf", photo: "Put back the photo", knock: "Knock the knock",
   };
   return `${thing[kind] ?? "Use the clue"} marked with the ${sign}.`;
 }
