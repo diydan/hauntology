@@ -154,6 +154,8 @@ describe("worker", () => {
 
     it("words a turn with Haiku 5.5 through the gateway when the binding and a gateway are set, and takes one unit from the real SpendGuard", async () => {
       const r = await playOne({ AI_GATEWAY_ID: "default" }, true);
+      // The `AI` binding is there, so the voice could be served, but it is OFF until the operator opens a window (`POST /admin/voice`): the reply names no line.
+      // (`worker.voice.test.ts` has the replies with a window open.)
       expect(r.turn.reply).toEqual({ text: REPLY, scripted: false });
       expect(r.turn.view.journal[0]!.text).toBe(REPLY);
       expect(r.seen).toHaveLength(1);

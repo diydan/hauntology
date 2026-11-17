@@ -83,20 +83,25 @@ module prop_01_chest_body() {
               cube([1.5, chest_d - 16, 1.5], center = true);
     }
 
-    // 9. Rear hinge pin bores (3.2 mm through-hole at Y = +51.2, Z = chest_h - 1.0 = 69.0 mm, coaxial with lid hinge barrels)
+    // 9. Rear hinge pin bores (3.4 mm teardropped horizontal hole at Y = +51.2, Z = 69.0 mm, coaxial with lid hinge barrels)
     for (hx = [-52, 52]) {
-      translate([hx, chest_d / 2 + 6.2, chest_h - 1.0])
-        rotate([0, 90, 0])
-          cylinder(h = 20.0, d = 3.2, center = true);
+      hull() {
+        translate([hx, chest_d / 2 + 6.2, chest_h - 1.0])
+          rotate([0, 90, 0])
+            cylinder(h = 20.0, d = 3.4, center = true);
+        translate([hx, chest_d / 2 + 6.2, chest_h + 0.1])
+          rotate([0, 90, 0])
+            cylinder(h = 20.0, d = 0.8, center = true);
+      }
     }
 
-    // 10. Rear bottom USB-C cable exit port aligned with ESP32 cradle at X = 58
-    translate([58.0, chest_d / 2, 10.5])
+    // 10. Rear bottom 45-deg gabled USB-C cable exit port aligned with ESP32 cradle (Z_pcb = 12.0 -> USB center Z = 15.2)
+    translate([58.0, chest_d / 2, 15.2])
       rotate([90, 0, 0])
         hull() {
-          cube([esp32_usb_w, esp32_usb_h, 10.0], center = true);
-          translate([0, esp32_usb_h / 2 + 2.5, 0])
-            cylinder(h = 10.0, d = 2.0, center = true);
+          cube([esp32_usb_w + 0.8, esp32_usb_h + 0.6, 12.0], center = true);
+          translate([0, (esp32_usb_h + 0.6) / 2 + 5.6, 0])
+            cylinder(h = 12.0, d = 1.6, center = true);
         }
   }
 
@@ -114,9 +119,12 @@ module prop_01_chest_body() {
       }
     }
 
-    // b) Rubber-band return anchor hook post on front floor clear of lever sweep
-    translate([-12.0, -24.0, 0])
-      cylinder(h = 11.0, d1 = 5.4, d2 = 4.0);
+    // b) Grooved mushroom-cap rubber-band return anchor post (45-deg overhanging cap locks upward-pulling band!)
+    translate([-12.0, -24.0, 0]) {
+      cylinder(h = 7.0, d1 = 5.8, d2 = 4.2);
+      translate([0, 0, 7.0]) cylinder(h = 1.2, d1 = 4.2, d2 = 6.4);
+      translate([0, 0, 8.2]) cylinder(h = 1.4, d1 = 6.4, d2 = 5.0);
+    }
 
     // c) Horizontal-Shaft SG90 Servo Pedestal at X = -43.0, Y = 16.75 (front wall at Y = +3.5, cleanly 0.8 mm behind ghost tracks;
     //    shaft points along -Y at X = -48.5, Z_world = 32.0, swinging the lever arm vertically in Y = -11.0..-6.5 XZ plane!)
@@ -141,9 +149,9 @@ module prop_01_chest_body() {
     }
 
     // d) ESP32-WROOM-32E DevKitC V4 Board Cradle on right side of floor (X = 58, Y = 12, clear of X <= 39.5 ghost track;
-    //    includes 4x M2 screw bosses, antenna keep-out window, and rear USB-C channel)
+    //    includes 4x intact M2 screw bosses, 9 mm pin-header clearance, antenna keep-out window, and rear USB-C channel)
     translate([58.0, 12.0, 0])
-      esp32_devkitc_cradle(wall = 2.4, h = 7.5);
+      esp32_devkitc_cradle(wall = 2.4, h = 12.6, z_pcb = 9.0);
   }
 }
 

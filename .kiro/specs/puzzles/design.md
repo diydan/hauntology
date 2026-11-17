@@ -591,12 +591,16 @@ The first idea was to let the Whisper's Haunt Event line (Cold Spot, Blackout, R
 
 | Shot | Clip | Line | Speaker | Starts at | The picture at that moment |
 |---|---|---|---|---|---|
+| Ship | `reel-ship` | `scene.ship.soft.1` | Whisper | 0.1 s | a ship at sea; the line is short enough for the 3.6 s shot |
+| Crate | `reel-coffin` | `scene.crate.soft.1` | Whisper | 0.3 s | something rises in the hold; the scrape at 3.1 s comes under the end of the line |
+| Street | `reel-streets` | `scene.street.soft.1` | Whisper | 0.4 s | the empty street |
+| Mirror | `reel-mirror` | `scene.mirror.soft.1` | Whisper | 1.2 s | a man in his chair; a figure shows in the mirror from about 3 s (Frankenstein, 1910) |
 | Hand | `ai-hand-door-take2` | `scene.hand-door.soft.1` | Whisper | 0.8 s | the shadow already on the wall; the knocks come at 9 s |
 | Bed | `ai-empty-bed-take1` | `scene.bed.soft.1` | Whisper | 0.3 s | the bed, still; the mattress sinks at 6 s |
 | House | `ai-lights-out-take1` | `scene.lights-out.soft.1` | Whisper | 1.2 s | every window warm; the lights go out from 3 s |
 | Dawn | `ai-dawn-door-take3` | `scene.dawn-door.dry.1` | Keeper | 4.3 s | the quiet house at dusk; "the door opens" is said as it opens, at 10.4 s |
 
-The ship, the crate, the street and the stairs are old film with no picture of ours, and the stairs are scrubbed by the clock: they have no line. The lines are rows of `docs/story/party-lines.md` (the `scene.*` sections) and are in the Voice Library like every spoken line; a test compares the rows with `SHOT_LINE` word for word, and checks that each line ends before its shot does (`LINE_AT`, and the rendered length of the line). A line is a `scene.*` row on purpose: it is never drawn as an `end.solved` or an Event line, so it cannot be said over another moment or twice.
+Since 2026-11-16 every shot has a line, the film shots too (the owner asked: a Reel where only some shots speak felt broken). The stair shadow left the Reel: the Haunt 6 Event is the mirror from *Frankenstein* (1910), and the stair shadow is only the turn timer (`clock-shadow`, slowed to 30 seconds so it climbs smoothly). The lines are rows of `docs/story/party-lines.md` (the `scene.*` sections) and are in the Voice Library like every spoken line; a test compares the rows with `SHOT_LINE` word for word, and checks that each line ends before its shot does (`LINE_AT`, and the rendered length of the line). A line is a `scene.*` row on purpose: it is never drawn as an `end.solved` or an Event line, so it cannot be said over another moment or twice.
 
 The Room's own lines stay as they are: the Whisper still says her Event line when a Haunt Event applies (`party-mode` 11.2) and the Keeper still closes the game after a Lodger confession. Two voices never speak at once, so when a Room line is speaking or due the shot's line is shown in words only for that turn. A Blackout still dims the shot as it dims the scene, and a Lull still holds the lower shot on its last frame with no line.
 
@@ -616,9 +620,9 @@ Wander's one scene was a 99 second run of *Nosferatu* (`wander-harbour`). A memo
 |---|---|---|---|---|
 | Sound | `wander-chimes-take1`: wind chimes on a porch | 3:4 portrait | `wander.chimes.soft.1` | 5.0 s (the chimes begin to ring at 6 s) |
 | Person | `wander-chair-take1`: an empty chair, a coat, a cup of tea | 3:4 portrait | `wander.chair.soft.1` | 1.5 s (the coat sways from 6 s) |
-| Promise | `wander-harbour`: the ship comes into the harbour (film) | 4:3 | none | |
+| Promise | `wander-envelope-take1`: a sealed envelope and gloves by a window (AI, black and white) | 4:3 | `wander.letter.soft.1` | 2.0 s (the light moves across the envelope) |
 
-The promise memory keeps the film because the AI letter scene (`wander-letter`) came back twice with faint writing on the letter: a clip never holds text. When a clean take exists the promise memory moves to it. A Wander line sets a mood and never says what the memory is: the card after the scene says that, from the engine's narrated memory. The lines follow the single-player bank rules (the single-player bank never says "house", names no place and no card).
+The AI letter scene (`wander-letter`) came back twice with faint writing on the letter (a clip never holds text), and the owner found the harbour film meant nothing, so on 2026-11-16 the promise memory became the farewell from *Frankenstein*, and the same evening an AI envelope scene (sealed, face down, blank) replaced it; the farewell (`wander-departure`) stays as a spare. A Wander line sets a mood and never says what the memory is: the card after the scene says that, from the engine's narrated memory. The lines follow the single-player bank rules (the single-player bank never says "house", names no place and no card).
 
 The order, with narration on: the Whisper's reveal line first (a memory was found, never what it is), then the scene with its line, then the card. Two voices never speak at once, so the scene starts when the reveal has ended. With narration off the reveal is words and the scene starts at once. On `/footage.html` section 7 there is no audio: the reveal is words, a switch picks the kind, the scene plays in its own frame, and the line is shown as words at its moment.
 

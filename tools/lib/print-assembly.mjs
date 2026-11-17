@@ -78,14 +78,21 @@ PH = ${plateH};
 module plate() { ${imp("prop-03-dial-plate")}; }
 module bezel(z = PH) { translate([0, 0, z]) ${imp("prop-03-bezel-ring")}; }
 module needle(a) { translate([0, 0, PH]) rotate([0, 0, a]) ${imp("prop-03-needle")}; }
+module maxtab(ang, r0 = 98.0, z0 = 14.4) { rotate([0, 0, ang]) translate([r0, 0, z0]) rotate([0, -90, 0]) ${imp("prop-03-max-tab")}; }
 `;
 function checks03(root) {
   const src = fs.readFileSync(path.join(root, "print", "scad", "prop-03-dial-plate.scad"), "utf8");
   const plateH = Number(src.match(/^\s*plate_h\s*=\s*(-?[\d.]+)\s*;/m)[1]);
   const lib = lib03(plateH);
   const c = [["bezel-plate", "bezel();", "plate();", "clear", "the bezel ring on the dial plate"]];
-  for (const a of [15, 90, 165]) c.push([`needle-${a}-plate`, `needle(${a});`, "plate();", "clear", `the needle at ${a} degrees`], [`needle-${a}-bezel`, `needle(${a});`, "bezel();", "clear", `the needle at ${a} degrees, inside the bezel`]);
-  c.push(["control-bezel-low", `bezel(${plateH - 4.4});`, "plate();", "collide", "control: the bezel sunk 4.4 mm into the plate"]);
+  for (const a of [15, 40, 65, 90, 130, 165]) c.push([`needle-${a}-plate`, `needle(${a});`, "plate();", "clear", `the needle at ${a} degrees`], [`needle-${a}-bezel`, `needle(${a});`, "bezel();", "clear", `the needle at ${a} degrees, inside the bezel`]);
+  for (const [lv, ang] of [[8, 65], [10, 40], [12, 15]]) {
+    c.push([`maxtab-${lv}-plate`, `maxtab(${ang});`, "plate();", "clear", `MAX tab clipped at ${lv} against plate`],
+      [`maxtab-${lv}-bezel`, `maxtab(${ang});`, "bezel();", "clear", `MAX tab clipped at ${lv} stepping over bezel`],
+      [`maxtab-${lv}-needle`, `maxtab(${ang});`, `needle(${ang});`, "clear", `MAX tab clipped at ${lv} clearing needle`]);
+  }
+  c.push(["control-bezel-low", `bezel(${plateH - 4.4});`, "plate();", "collide", "control: the bezel sunk 4.4 mm into the plate"],
+    ["control-maxtab-low", "maxtab(40, 98.0, 11.0);", "bezel();", "collide", "control: MAX tab 3.4 mm too low, hitting bezel"]);
   return c.map(([id, a, b, expect, note]) => ({ id: `p03/${id}`, prop: "p03", lib, a, b, expect, note }));
 }
 
@@ -94,6 +101,8 @@ const lib05 = `
 module plinth(dx = 0) { translate([dx, 0, 0]) ${imp("prop-05-plinth-2seat")}; }
 // a flap turned th degrees about its servo's axis (Z = 5 in the file), placed dx along
 module pw(dx, th) { translate([dx, 0, 5]) rotate([0, th, 0]) translate([0, 0, -5]) ${imp("prop-05-flap-pawn")}; }
+// a flap stood up on the plinth's centered SG90 boss (X = sx, Y = 3.0, stem bottom at Z = 47.2)
+module pw_on_plinth(sx, th, zbot = 47.2) { translate([sx, 3.0, zbot + 13.3]) rotate([0, 0, th]) translate([0, 5.0, 0]) rotate([90, 0, 0]) ${imp("prop-05-flap-pawn")}; }
 `;
 function checks05() {
   const c = [
@@ -104,7 +113,9 @@ function checks05() {
     ["control-plinth-pitch-99", "plinth();", "plinth(99);", "collide", "control: 1 mm too close"],
   ];
   for (const a of [0, 60, 120, 180]) for (const b of [0, 90]) c.push([`flaps-${a}-${b}`, `pw(0, ${a});`, `pw(50, ${b});`, "clear", `neighbouring flaps at ${a} and ${b} degrees, 50 mm apart`]);
-  c.push(["control-flaps-30", "pw(0, 0);", "pw(30, 0);", "collide", "control: flaps 30 mm apart"]);
+  for (const th of [0, 45, 90, 135, 180]) c.push([`flap-plinth-${th}`, `pw_on_plinth(-25, ${th});`, "plinth();", "clear", `seated flap at ${th} degrees clearing plinth`]);
+  c.push(["control-flaps-30", "pw(0, 0);", "pw(30, 0);", "collide", "control: flaps 30 mm apart"],
+    ["control-flap-sunk", "pw_on_plinth(-25, 0, 30.0);", "plinth();", "collide", "control: flap sunk into plinth"]);
   return c.map(([id, a, b, expect, note]) => ({ id: `p05/${id}`, prop: "p05", lib: lib05, a, b, expect, note }));
 }
 
@@ -214,11 +225,14 @@ module lid_closed() { translate([0, 0, 102.3]) rotate([180, 0, 0]) ${imp("prop-1
 module hasp() { intersection() { ${imp("prop-15-vault-clasp")}; translate([${s1}, -30, -1]) cube([${s2 - s1}, 60, 12]); } }
 module arm() { intersection() { ${imp("prop-15-vault-clasp")}; translate([${s2}, -30, -1]) cube([60, 60, 12]); } }
 module plate() { intersection() { ${imp("prop-15-vault-clasp")}; translate([-80, -30, -1]) cube([${80 + s1}, 60, 12]); } }
-// the hasp stood in the lid's slot (its middle on the slot's middle, X = 0), the escutcheon on the chest front with its keeper slot
-// over the latch window, and the latch arm on the servo's spline (X = 0, Y = -47.7, horn at Z = 74.5), th degrees round
+// the hasp stood in the lid's slot (its middle on the slot's middle, X = 0), the escutcheon (printed back-down on Z = 0) on the chest
+// front with its keeper slot over the latch window, and the latch arm on the servo's spline (X = 0, Y = -47.7, horn at Z = 74.5), th degrees round
 module hasp_in_slot(zoff = 81.8, yc = -57.2) { translate([${-C.hasp[0]}, yc, zoff]) rotate([90, 0, 0]) translate([0, 0, -1.9]) hasp(); }
-module plate_posed() { multmatrix([[1,0,0,${-C.plate[0]}],[0,0,1,-62.2],[0,1,0,66],[0,0,0,1]]) plate(); }
+module plate_posed() { translate([${-C.plate[0]}, -56.8, 66]) rotate([90, 0, 0]) plate(); }
 module arm_at(px, py, zb, th) { translate([px, py, zb]) rotate([0, 0, 180 + th]) translate([${-C.arm[0]}, ${-C.arm[1]}, 0]) arm(); }
+module lid_and_hasp(openDeg) { translate([0, 63.6, 79.0]) rotate([-openDeg, 0, 0]) translate([0, -63.6, -79.0]) { lid_closed(); hasp_in_slot(); } }
+module token_in_tray(bx = 0, by = 23.5, dz = 25.5) { translate([bx, by, dz]) ${imp("relic-token-pocket")}; }
+module relic_standing(bx = 0, by = -23.5) { translate([bx, by, 31.5]) ${imp("relic-wax-hand")}; }
 `;
 }
 function checks15(root) {
@@ -227,12 +241,18 @@ function checks15(root) {
     throw new Error(`print-assembly: the clasp plate's pieces are no longer apart at X = ${CLASP_SPLITS.join(" and ")}; move CLASP_SPLITS`);
   const c = [
     ["lid-chest", "lid_closed();", "chest();", "clear", "the closed lid on the vault"], ["tray-chest", "tray();", "chest();", "clear", "the tray on its ledges"],
+    ["token-tray", "token_in_tray();", "tray();", "clear", "a Relic Token with corner lugs seated in the tray bay"],
+    ["relic-chest", "relic_standing();", "chest();", "clear", "tallest Relic standing in front-centre bay clears servo cradle"],
+    ["relic-lid", "relic_standing();", "lid_closed();", "clear", "tallest Relic standing on token clears closed vault lid"],
     ["hasp-chest", "hasp_in_slot();", "chest();", "clear", "the hasp in the lid's slot"], ["hasp-lid", "hasp_in_slot();", "lid_closed();", "clear", "the hasp in the lid's slot"],
     ["hasp-plate", "hasp_in_slot();", "plate_posed();", "clear", "the hasp and the escutcheon"], ["pod-docked", "pod(127);", "chest();", "clear", "the keypad pod docked on the right wall"],
   ];
+  for (const od of [2, 5, 15, 45, 90]) c.push([`lid-open-${od}`, `lid_and_hasp(${od});`, "chest(); plate_posed(); arm_at(0, -47.7, 74.5, 95);", "clear", `vault lid and hasp swung open ${od} degrees with latch open`]);
   for (const th of [0, 45, 90, 135, 180]) for (const [n, b] of [["chest", "chest();"], ["hasp", "hasp_in_slot();"], ["plate", "plate_posed();"], ["lid", "lid_closed();"]]) c.push([`arm-${th}-${n}`, `arm_at(0, -47.7, 74.5, ${th});`, b, "clear", `the latch arm turned ${th} degrees, against the ${n}`]);
   c.push(["control-pod-126", "pod(126);", "chest();", "collide", "control: pod 1 mm too close"], ["control-arm-low", "arm_at(0, -47.7, 50, 0);", "chest();", "collide", "control: latch arm 24 mm too low"],
-    ["control-hasp-low", "hasp_in_slot(76.8);", "chest();", "collide", "control: hasp 5 mm too low"]);
+    ["control-hasp-low", "hasp_in_slot(76.8);", "chest();", "collide", "control: hasp 5 mm too low"],
+    ["control-latched-blocks-lid", "lid_and_hasp(2);", "arm_at(0, -47.7, 74.5, 0);", "collide", "control: latched arm (0 deg) blocks the lid from lifting"],
+    ["control-token-low", "token_in_tray(0, 23.5, 23.0);", "tray();", "collide", "control: token 2.5 mm into tray floor"]);
   const lib = lib15(C);
   return c.map(([id, a, b, expect, note]) => ({ id: `p15/${id}`, prop: "p15", lib, a, b, expect, note }));
 }

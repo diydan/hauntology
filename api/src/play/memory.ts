@@ -1,4 +1,5 @@
 import type { PlaySession } from "@hauntology/shared/ghost/session";
+import type { VoiceLine } from "@hauntology/shared/voice/line";
 import { PlayCore } from "./core";
 import type { Peek, PlayRefusal, PlaySessions, Settled, TurnDone } from "./ports";
 import type { Settle, WorldFacts } from "@hauntology/shared/ghost/play";
@@ -8,14 +9,15 @@ export class MemoryPlaySessions implements PlaySessions {
   private readonly games = new Map<string, { core: PlayCore; text: string | null; worldId: string }>();
   /** Every game id the routes asked about, in order: a test reads this to see that an id that cannot be one never gets as far as the games. */
   readonly asked: string[] = [];
-  constructor(private readonly now: () => number = Date.now) {}
+  /** `newId` makes the ids of lines for speech: random by default, fixed or counted by a test that needs to know them. */
+  constructor(private readonly now: () => number = Date.now, private readonly newId?: () => string) {}
 
   private slotFor(id: string): { core: PlayCore; text: string | null; worldId: string } {
     this.asked.push(id);
     let g = this.games.get(id);
     if (g === undefined) {
       const holder = { text: null as string | null, worldId: "" };
-      const core = new PlayCore({ load: async () => holder.text, save: async (t) => void (holder.text = t), clear: async () => void (holder.text = null) }, this.now);
+      const core = new PlayCore({ load: async () => holder.text, save: async (t) => void (holder.text = t), clear: async () => void (holder.text = null) }, this.now, this.newId);
       g = Object.assign(holder, { core }) as { core: PlayCore; text: string | null; worldId: string };
       this.games.set(id, g);
     }
@@ -39,6 +41,9 @@ export class MemoryPlaySessions implements PlaySessions {
   }
   reset(id: string, ownerSid: string, args: { world: WorldFacts; seed: number }): Promise<Peek | PlayRefusal> {
     return this.slotFor(id).core.reset(ownerSid, args);
+  }
+  voiceLine(id: string, ownerSid: string, lineId: string): Promise<VoiceLine | null> {
+    return this.slotFor(id).core.voiceLine(ownerSid, lineId);
   }
 
   /** The `PlaySessionPurger` of the world store: every game of a world is gone. */

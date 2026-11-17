@@ -7,43 +7,45 @@
 include <_common.scad>
 
 module prop_15_vault_clasp() {
-  // 1. Chest Front Gothic Wrought-Iron Escutcheon Plate (at X = -28, rear boss 35.6 x 23.6 preserved)
+  // 1. Chest Front Gothic Wrought-Iron Escutcheon Plate (at X = -28, printed BACK-DOWN on Z = 0 so the 30 x 18 x 0.4 mm
+  //    sticker pocket faces UP on +Z with zero upside-down Z = 0 bridge; rear locating pad 35.6 x 23.6 x 1.2 preserved!)
   translate([-28.0, 0, 0])
   difference() {
     union() {
-      // Core escutcheon frame
-      chamfer_box(36.0, 24.0, 4.2, r = 2.4, ch_bot = 0.5, ch_top = 0.6);
-      // Gothic scrollwork wings & pointed keyhole crown flare (flat on Z = 0..3.8, clears Y = +12..+18 safely!)
+      // Rear locating boss flat on Z = 0..1.2 + 45-deg step up into core escutcheon frame (Z = 1.2..5.2)
+      chamfer_box(35.6, 23.6, 1.4, r = 2.0, ch_bot = 0.2, ch_top = 0);
+      translate([0, 0, 1.2])
+        chamfer_box(36.0, 24.0, 4.0, r = 2.4, ch_bot = 0.2, ch_top = 0.5);
+      // Gothic scrollwork wings & pointed keyhole crown flare (supported from Z = 1.2 via 45-deg bevels or flat on Z = 0..4.8!)
       for (sx = [-1, 1]) {
         hull() {
-          translate([sx * 16.5, 2.0, 0]) cylinder(h = 4.0, d = 6.0);
-          translate([sx * 22.8, 0.5, 0]) cylinder(h = 3.6, d = 2.6);
-          translate([sx * 17.5, -5.0, 0]) cylinder(h = 4.0, d = 5.4);
+          translate([sx * 16.5, 2.0, 1.2]) cylinder(h = 3.8, d = 6.0);
+          translate([sx * 22.8, 0.5, 1.2]) cylinder(h = 3.4, d = 2.6);
+          translate([sx * 17.5, -5.0, 1.2]) cylinder(h = 3.8, d = 5.4);
+          translate([sx * 16.5, -1.5, 0]) cylinder(h = 1.4, d = 5.6);
+          translate([sx * 21.6, 0.5, 0]) cylinder(h = 1.4, d = 2.2);
         }
-        // Bottom-corner filigree scroll curl
+        // Bottom-corner filigree scroll curl sitting flat from Z = 0..4.8 (zero overhang!)
         translate([sx * 16.5, -9.5, 0])
           rotate([0, 0, sx > 0 ? -40 : 140])
-            linear_extrude(height = 3.8)
+            linear_extrude(height = 4.8)
               burton_spiral_2d(turns = 0.85, r0 = 0.9, r1 = 3.8, w = 1.9, dir = sx, steps = 14);
       }
-      // Pointed gothic lower drop shield finial
+      // Pointed gothic lower drop shield finial sitting flat from Z = 0..4.8
       hull() {
-        translate([-7.0, -10.5, 0]) cylinder(h = 4.0, d = 3.0);
-        translate([ 7.0, -10.5, 0]) cylinder(h = 4.0, d = 3.0);
-        translate([ 0.0, -15.8, 0]) cylinder(h = 3.4, d = 2.0);
+        translate([-7.0, -10.5, 0]) cylinder(h = 4.8, d = 3.0);
+        translate([ 7.0, -10.5, 0]) cylinder(h = 4.8, d = 3.0);
+        translate([ 0.0, -15.8, 0]) cylinder(h = 4.4, d = 2.0);
       }
-      // Exact rear locating boss that drops into the vault chest front recess
-      translate([0, 0, 4.0])
-        chamfer_box(35.6, 23.6, 1.2, r = 2.0, ch_bot = 0, ch_top = 0.3);
     }
-    // Front 0.4 mm sticker pocket for brass clasp rivets & engraving (30 x 18 mm preserved 1:1)
-    translate([0, 0, -0.1])
+    // Upward-facing (+Z) 0.40 mm sticker pocket for brass clasp rivets & engraving (30 x 18 mm preserved 1:1!)
+    translate([0, 0, 5.2 - sticker_depth])
       linear_extrude(height = sticker_depth + 0.5)
         rrect2d(30.0, 18.0, r = 1.4);
-    // Center keeper slot where the lid hasp loop enters
-    translate([0, 5.0, 2.0])
+    // Center keeper slot where the lid hasp loop enters (open through plate)
+    translate([0, 5.0, 2.5])
       cube([18.0, 14.0, 12.0], center = true);
-    translate([13.5, 10.0, 2.0])
+    translate([13.5, 10.0, 2.5])
       cube([11.0, 6.0, 12.0], center = true);
   }
 

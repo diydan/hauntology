@@ -42,9 +42,11 @@ module relic_token_pocket() {
       }
     }
 
-    // 6. Generic centre peg that every Relic's socket drops onto (rises from pocket floor)
+    // 6. Generic centre peg that every Relic's socket drops onto (rises from pocket floor, with 0.3 mm base fillet inside Ø6 mm QR hole)
     translate([0, 0, token_height_mm - sticker_depth - 0.01])
-      cylinder(h = sticker_depth + relic_peg_h - 0.5 + 0.01, d = relic_peg_d);
+      cylinder(h = 0.31, d1 = relic_peg_d + 0.35, d2 = relic_peg_d);
+    translate([0, 0, token_height_mm - sticker_depth + 0.29])
+      cylinder(h = sticker_depth + relic_peg_h - 0.8 + 0.01, d = relic_peg_d);
     translate([0, 0, token_height_mm + relic_peg_h - 0.5])
       cylinder(h = 0.5, d1 = relic_peg_d, d2 = relic_peg_d - 1.0);
   }

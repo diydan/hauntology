@@ -42,9 +42,15 @@ module burton_tombstone_outer_2d(w, h) {
     ]);
     // Ensure solid backing behind entire 30x46 sticker pocket + generous margin
     gothic_arch_2d(w, h);
-    // Flanking crooked iron corner ear lugs (print upward at <= 45 deg from plinth!)
-    translate([-w * 0.52, rect_h * 0.72]) circle(r = 3.0);
-    translate([ w * 0.55, rect_h * 0.80]) circle(r = 3.2);
+    // Flanking crooked iron corner ear lugs (45-deg corbelled into blade so no floating bottom tangent!)
+    hull() {
+      translate([-w * 0.52, rect_h * 0.72]) circle(r = 3.0);
+      translate([-w * 0.38, rect_h * 0.72 - 6.2]) circle(r = 1.5);
+    }
+    hull() {
+      translate([ w * 0.55, rect_h * 0.80]) circle(r = 3.2);
+      translate([ w * 0.40, rect_h * 0.80 - 6.6]) circle(r = 1.5);
+    }
   }
 }
 

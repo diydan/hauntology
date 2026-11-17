@@ -41,14 +41,14 @@ module prop_15_vault_chest() {
           chamfer_box(3.0, 5.4, vault_h - 3.0, r = 0.9, ch_bot = 0.6, ch_top = 0.6);
       }
 
-      // 4. Rear twin spring-hinge knuckles (X = -56, +56; Y = +63.6, Z = vault_h - 1.0 = 79.0 mm — behind rear wall, coaxial with lid!)
+      // 4. Rear twin spring-hinge knuckles (X = -56, +56; Y = +63.6, Z = 79.0 mm — root tucked inside Y <= 58 rear wall so zero Z = 63.5 step!)
       for (hx = [-56.0, 56.0]) {
         hull() {
           translate([hx, vault_d / 2 + 5.6, vault_h - 1.0])
             rotate([0, 90, 0])
               cylinder(h = 16.0, d = 8.2, center = true);
-          translate([hx, vault_d / 2 - 0.5, vault_h - 15.5])
-            cube([16.0, 4.0, 2.0], center = true);
+          translate([hx, vault_d / 2 - 2.2, vault_h - 15.5])
+            cube([16.0, 3.6, 2.0], center = true);
         }
       }
 
@@ -83,28 +83,39 @@ module prop_15_vault_chest() {
           translate([-4.2, 0, 0]) cylinder(h = 12.0, d = 1.6, center = true);
         }
 
-    // 8. Crooked Haunted Timber Plank V-grooves on front, back and sides
+    // 8. Crooked Haunted Timber Plank V-grooves (kept clear of vertical iron pilasters so zero floating outer slivers!)
     for (idx = [0 : 2]) {
       zp = 22 + idx * 20;
-      tilt = (idx % 2 == 0) ? 2.4 : -2.0;
-      for (sy = [-1, 1])
-        translate([0, sy * (vault_d / 2 + 0.1), zp])
-          rotate([0, tilt, 0])
-            rotate([45, 0, 0])
-              cube([vault_w - 18, 1.5, 1.5], center = true);
-      for (sx = [-1, 1])
-        translate([sx * (vault_w / 2 + 0.1), 0, zp])
-          rotate([tilt, 0, 0])
-            rotate([0, 45, 0])
-              cube([1.5, vault_d - 18, 1.5], center = true);
+      tilt = (idx % 2 == 0) ? 2.0 : -1.8;
+      // Back (+Y) full span; Front (-Y) center span between X = +-48 pilasters
+      translate([0, vault_d / 2 + 0.1, zp])
+        rotate([0, tilt, 0])
+          rotate([45, 0, 0])
+            cube([vault_w - 22, 1.4, 1.4], center = true);
+      translate([0, -vault_d / 2 - 0.1, zp])
+        rotate([0, tilt, 0])
+          rotate([45, 0, 0])
+            cube([82.0, 1.4, 1.4], center = true);
+      // Left (-X) center span between Y = +-26 pilasters
+      translate([-(vault_w / 2 + 0.1), 0, zp])
+        rotate([tilt, 0, 0])
+          rotate([0, 45, 0])
+            cube([1.4, 40.0, 1.4], center = true);
     }
 
-    // 9. Rear Hinge Pin Bore (3.4 mm ID at Y = +63.6, Z = vault_h - 1.0 = 79.0 mm, coaxial with lid hinge barrels)
+    // 9. Rear Hinge Pin Bore (3.5 mm teardropped ID at Y = +63.6, Z = 79.0 mm, coaxial with lid hinge barrels) + central torsion-spring leg notch
     for (hx = [-56.0, 56.0]) {
-      translate([hx, vault_d / 2 + 5.6, vault_h - 1.0])
-        rotate([0, 90, 0])
-          cylinder(h = 20.0, d = 3.4, center = true);
+      hull() {
+        translate([hx, vault_d / 2 + 5.6, vault_h - 1.0])
+          rotate([0, 90, 0])
+            cylinder(h = 20.0, d = 3.5, center = true);
+        translate([hx, vault_d / 2 + 5.6, vault_h + 0.1])
+          rotate([0, 90, 0])
+            cylinder(h = 20.0, d = 0.8, center = true);
+      }
     }
+    translate([0, vault_d / 2 + 0.2, vault_h - 4.5])
+      cube([5.0, 1.6, 9.5], center = true);
   }
 
   // 10. Upper-Front SG90 Latch Servo Cradle on 45-Degree Self-Supporting Gusset Bracket

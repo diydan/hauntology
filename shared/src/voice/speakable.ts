@@ -46,12 +46,20 @@ export function splitSentences(text: string): string[] {
 /**
  * The spoken part of a line: the leading whole sentences that fit in `max` characters, stopping before the first
  * sentence that holds player text. Returns "" when no sentence qualifies (the line is subtitle only).
+ *
+ * Player text is a placeholder for it (`{nick}`, `{zone}`, `{memory}`) in a scripted line, and, when the caller gives `playerText` (the visitor's own words
+ * that reached a line), any of those texts found in a sentence, ignoring case. An empty entry never matches anything.
  */
-export function spokenPart(text: string, max: number = MAX_SPOKEN_CHARS): string {
+export function spokenPart(text: string, max: number = MAX_SPOKEN_CHARS, playerText: readonly string[] = []): string {
+  const needles = playerText.map((p) => p.trim().toLowerCase()).filter((p) => p !== "");
   const out: string[] = [];
   let length = 0;
   for (const sentence of splitSentences(text)) {
     if (PLAYER_PLACEHOLDERS.some((p) => sentence.includes(p))) break;
+    if (needles.length > 0) {
+      const lower = sentence.toLowerCase();
+      if (needles.some((n) => lower.includes(n))) break;
+    }
     const next = length + (out.length > 0 ? 1 : 0) + sentence.length;
     if (next > max) break;
     out.push(sentence);

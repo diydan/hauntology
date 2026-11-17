@@ -22,6 +22,9 @@ import { galleryRoutes } from "./routes/gallery";
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
 import { partyRoutes, type PartyDeps } from "./routes/party";
 import { ipHashOf } from "./routes/world-create";
+import { voiceRoutes } from "./routes/voice";
+import type { SpeakDeps } from "./voice/speak";
+import type { VoiceWindow } from "./voice/window";
 
 export type AppOptions = SessionOptions & {
   /**
@@ -54,6 +57,14 @@ export type AppOptions = SessionOptions & {
   };
   /** The party Rooms (`PartyRoom`) and their directory (`PartyDirectory`). When given, `/api/party` is served; it answers `party_disabled` when `PARTY_ENABLED` is off (the same switch as the Home flag). */
   party?: Pick<PartyDeps, "rooms" | "directory">;
+  /**
+   * The ghost's voice (ghost-voice 3.6). When given, `POST /api/voice/speak` is served: audio for a line the visitor's own game holds, or a quiet
+   * `503 voice_unavailable`. It answers that whenever `VOICE_ENABLED` is off. The Worker passes it when it has the games and the `AI` binding.
+   *
+   * With a `window` the voice is also off until the operator opens a window (`POST /admin/voice`), and off again when it closes: while it is closed the speech
+   * route is quiet, no reply names a line and Home says `voiceEnabled: false`, so the client hides its speak control. Without a `window` only `VOICE_ENABLED` decides.
+   */
+  voice?: { speak: SpeakDeps; window?: Pick<VoiceWindow, "isOpen"> };
 };
 
 /**
@@ -91,7 +102,10 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     // The same test the play route's narration uses: a narrator that exists and a switch that is on.
     const narration = options.play?.narration;
     const ghostModel = narration !== undefined && narration.narrator !== null && narration.enabled;
-    const f = flagsFrom(c.env, options.spend ? await options.spend(c) : undefined, { ghostModel });
+    const base = flagsFrom(c.env, options.spend ? await options.spend(c) : undefined, { ghostModel });
+    // The voice is on only while its window is open: the client hides its speak control when this is false. A window that cannot be read is closed.
+    const window = options.voice?.window;
+    const f = window === undefined || !base.voiceEnabled ? base : { ...base, voiceEnabled: await window.isOpen() };
     return options.worldGenAvailable === false ? { ...f, worldGenEnabled: false } : f;
   };
   app.route("/api/session", sessionRoutes({ flags }));
@@ -104,7 +118,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     app.route("/api/worlds", worldRoutes(options.worlds));
     // The Gallery needs the store and nothing else: no key, no quota, no open switch (world-pipeline 9.2, Requirement 9.3).
     app.route("/api/gallery", galleryRoutes({ store: options.worlds.store }));
-    if (options.play !== undefined) app.route("/api/play", playRoutes({ store: options.worlds.store, sessions: options.play.sessions, ...(options.play.narration !== undefined ? { narration: options.play.narration } : {}), ...(options.play.conditions !== undefined ? { conditions: options.play.conditions } : {}), log, now: options.now ?? Date.now }));
+    if (options.play !== undefined) app.route("/api/play", playRoutes({ store: options.worlds.store, sessions: options.play.sessions, voice: options.voice === undefined ? false : options.voice.window === undefined ? true : () => (options.voice as { window: Pick<VoiceWindow, "isOpen"> }).window.isOpen(), ...(options.play.narration !== undefined ? { narration: options.play.narration } : {}), ...(options.play.conditions !== undefined ? { conditions: options.play.conditions } : {}), log, now: options.now ?? Date.now }));
     const creation = options.worlds.creation;
     if (creation !== undefined) {
       app.route("/api/worlds", worldCreateRoutes({ store: options.worlds.store, ...creation, now: options.now ?? Date.now, worldGenEnabled: async (c) => (await flags(c)).worldGenEnabled }));
@@ -141,6 +155,17 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
         sessionOf: (c) => (c as Context<AppEnv>).get("session").sid,
         ipHashOf: (c) => ipHashOf(c as Context<AppEnv>, (c as Context<AppEnv>).env.HMAC_SECRET as string),
         enabled: (c) => flagsFrom((c as Context<AppEnv>).env).partyEnabled,
+      }),
+    );
+  }
+  if (options.voice !== undefined) {
+    const window = options.voice.window;
+    app.route(
+      "/api/voice",
+      voiceRoutes({
+        speak: { log, ...options.voice.speak },
+        // Off while `VOICE_ENABLED` is off or the window is closed (or cannot be read): nothing is looked up and nothing is called.
+        enabled: async (c) => flagsFrom((c as Context<AppEnv>).env).voiceEnabled && (window === undefined || (await window.isOpen())),
       }),
     );
   }

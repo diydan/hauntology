@@ -94,13 +94,13 @@ module relic_locket() {
           cube([4.0, 3.60, 9.2]);
       }
 
-      // 7. Right-side Clasp Catch Saddle & Friction Detent (X = +13.1..+14.0, Z = 23.6..28.4)
+      // 7. Right-side Clasp Catch Saddle & Friction Detent (anchored inside oval bowl so zero floating start!)
       hull() {
         translate([12.2, 2.2, 21.4]) cylinder(h = 0.8, d = 1.8);
         translate([13.2, 1.8, 23.8]) cylinder(h = 4.4, d = 1.8);
       }
       hull() {
-        translate([13.2, 0.9, 22.4]) sphere(r = 0.40);
+        translate([11.8, 1.2, 22.0]) sphere(r = 0.55);
         translate([13.55, -0.65, 24.0]) cylinder(h = 4.0, d = 0.85);
       }
 

@@ -118,6 +118,14 @@ A bright kitchen at morning: a wooden chair pulled out from a scrubbed table, a 
 
 The first set came back with faint writing on the letter in both takes, so the scene is held back. Say it again in the prompt: the letter is blank.
 
+**Made (2026-11-16):** the envelope version below came back clean and is the promise scene, `wander-envelope-take1` (16:9, cropped to 4:3).
+
+```
+A windowsill table in soft afternoon light. On the table: a closed envelope lying face down, sealed with a plain round blob of dark wax with no stamp or pattern, a pair of folded gloves beside it, a small empty dish. The envelope is plain, smooth and blank: no handwriting, no ink, no address, no marks of any kind. Net curtains move gently. 0-6 s: sunlight moves slowly across the envelope and the gloves. 6-12 s: a breeze lifts one glove finger and lets it fall; the camera drifts a little closer. 12-15 s: the curtain passes across the frame and the light fades to dusk. Sound: breeze, a distant church bell once, quiet.
+```
+
+The first prompt, which gave writing:
+
 ```
 A windowsill table in afternoon light: a folded letter of plain blank paper with no marks at all on it, a pair of gloves, a small dish, net curtains moving. 0-6 s: light moves slowly across the letter. 6-12 s: a breeze lifts the corner of the letter and lets it fall; the camera drifts closer. 12-15 s: the curtain passes across the frame and the light fades to dusk. Sound: breeze, a distant church bell once, quiet.
 ```

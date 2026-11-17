@@ -1,6 +1,10 @@
 import type { PlayView } from "@hauntology/shared/app/api";
 import type { PlaySession } from "@hauntology/shared/ghost/session";
 import type { NarrationJob, Settle, WorldFacts } from "@hauntology/shared/ghost/play";
+import type { VoiceLine } from "@hauntology/shared/voice/line";
+
+/** The id of the line a reply is kept under for speech (ghost-voice 3.5), or `null` when the reply has nothing to say aloud. Only the id ever reaches the client. */
+export type VoiceRef = { lineId: string } | null;
 
 /**
  * What the play routes talk to (ghost-engine 3.1 and 5). Behind it sit one `PlaySession` Durable Object for each game and a `PlayIndex` object that
@@ -13,9 +17,12 @@ export type Peek = { ok: true; worldId: string; view: PlayView; turns: number; e
  * A turn, played with scripted words and kept. `job` is what the narrator needs to word it with the model, or `null` when the engine's rules call for scripted
  * words; it never goes to the client. The reply is the scripted one until the route settles a better one.
  */
-export type TurnDone = { ok: true; reply: { text: string; scripted: true }; view: PlayView; directive: string; revealed: boolean; ended: boolean; turns: number; job: NarrationJob | null };
-/** Whether the model's words were put in the game: `false` when the answer is for another game (a reset made a new one). */
-export type Settled = { ok: true; applied: boolean; /** The client view after the words were put in (the journal now holds the model's memory), when they were. */ view?: PlayView };
+export type TurnDone = { ok: true; reply: { text: string; scripted: true }; view: PlayView; directive: string; revealed: boolean; ended: boolean; turns: number; job: NarrationJob | null; voice: VoiceRef };
+/**
+ * Whether the model's words were put in the game: `false` when the answer is for another game (a reset made a new one). `voice` is the line for the words the
+ * visitor now sees (a new id: the scripted turn's line is gone), or `null` when those words have nothing to say aloud; absent when they were not applied.
+ */
+export type Settled = { ok: true; applied: boolean; /** The client view after the words were put in (the journal now holds the model's memory), when they were. */ view?: PlayView; voice?: VoiceRef };
 
 export interface PlaySessions {
   /** Keeps a new game. `false` when a game with that id is there already (nothing changes). */
@@ -26,4 +33,9 @@ export interface PlaySessions {
   get(id: string, ownerSid: string): Promise<Peek | PlayRefusal>;
   /** "Haunt again": the same game id with a fresh seed, new anchors and an empty journal. */
   reset(id: string, ownerSid: string, args: { world: WorldFacts; seed: number }): Promise<Peek | PlayRefusal>;
+  /**
+   * A line the game holds for speech, found by the game's id, its owner and the line's id. Someone else's game, a game that is not there, a line that has expired and a
+   * line that never was are all the same `null`, so an id tells nobody anything.
+   */
+  voiceLine(id: string, ownerSid: string, lineId: string): Promise<VoiceLine | null>;
 }

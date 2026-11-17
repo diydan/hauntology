@@ -5,11 +5,12 @@ import { MAX_BODY_BYTES } from "@hauntology/shared/world/requests";
 import { toBase64Url } from "@hauntology/shared/session-cookie";
 import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
+import { flagsFrom } from "../http/flags";
 import { setLastPlay, setLastWorld } from "../http/session";
 import type { ConditionsService } from "../conditions/snapshot-store";
 import { SILENT, type Logger } from "../log";
 import { narrateTurn, type Narration } from "../play/narrate";
-import type { PlayRefusal, PlaySessions } from "../play/ports";
+import type { PlayRefusal, PlaySessions, VoiceRef } from "../play/ports";
 import { accessOf, mayRead } from "../worlds/access";
 import type { WorldRecord, WorldStore } from "../worlds/store";
 import { ipHashOf, readBody } from "./world-create";
@@ -21,6 +22,11 @@ export type PlayDeps = {
   narration?: Narration;
   /** The real world, read once when a game starts and kept with it (conditions 3.3; ghost-engine 3.1). Without it every game has the normal look and the narrator is told no sky. */
   conditions?: ConditionsService;
+  /**
+   * Whether `POST /api/voice/speak` is served by this app. Only then does a reply name a line (`reply.voice.lineId`), and only while `VOICE_ENABLED` is on. Default off.
+   * A function says it for each reply: the voice window (`POST /admin/voice`) is open or it is not. It is asked only once `VOICE_ENABLED` is on.
+   */
+  voice?: boolean | (() => boolean | Promise<boolean>);
   log?: Logger;
   now?: () => number;
 };
@@ -133,6 +139,7 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
     let text: string = r.reply.text;
     let view = r.view;
     let scripted = true;
+    let voice: VoiceRef = r.voice;
     if (r.job !== null && deps.narration !== undefined) {
       const said = await narrateTurn(deps.narration, r.job, { sessionId: sid, ipHash: await ipHashOf(c, c.env.HMAC_SECRET as string) });
       log.info("play.narrate", { outcome: said.outcome, attempts: said.attempts });
@@ -140,20 +147,23 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
         const job = r.job;
         const reply = job.farewell !== null ? `${said.text} ${job.farewell}` : said.text;
         const settled = await deps.sessions
-          .settle(id, sid, { stamp: job.stamp, turn: job.turn, text: reply, ...(job.memoryAnchor !== null ? { memory: { anchorId: job.memoryAnchor, text: said.text } } : {}) })
+          .settle(id, sid, { stamp: job.stamp, turn: job.turn, text: reply, ...(job.memoryAnchor !== null ? { memory: { anchorId: job.memoryAnchor, text: said.text } } : {}), ...(job.typed !== undefined ? { typed: job.typed } : {}) })
           .catch(() => null);
         // The model's words are shown only if the game kept them, so the reply, the journal and the history never disagree.
         if (settled !== null && settled.ok && settled.applied) {
           text = reply;
           scripted = false;
           if (settled.view !== undefined) view = settled.view;
+          voice = settled.voice ?? null; // the line for these words: the scripted turn's line is gone
         }
       }
     }
     log.info("play.turn", { directive: r.directive, revealed: r.revealed, scripted });
     if (r.revealed && r.ended) log.info("play.end", { turns: r.turns });
     c.header("Cache-Control", "no-store");
-    return c.json({ reply: { text, scripted }, view });
+    // The reply names its line only when the speech route is served here and speech is on, so a client is never handed an id it cannot use (`VOICE_ENABLED`).
+    const speak = flagsFrom(c.env).voiceEnabled && (typeof deps.voice === "function" ? await deps.voice() : deps.voice === true);
+    return c.json({ reply: { text, scripted, ...(speak && voice !== null ? { voice } : {}) }, view });
   });
 
   routes.get("/:id", async (c) => {
