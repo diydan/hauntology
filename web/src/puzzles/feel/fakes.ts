@@ -36,6 +36,9 @@ export class FakeMotion implements Motion {
   }
   disable(): void { this.userOff = true; this.state = "off"; this.tilt = { x: 0, y: 0 }; this.sub.fire(); }
   holdLevel(): void { this.leveled++; this.tilt = { x: 0, y: 0 }; }
+  /** The jolt the next `takeJolt` gives (a test sets it, as a knock on the table would). */
+  jolt = 0;
+  takeJolt(): number { const j = this.jolt; this.jolt = 0; return j; }
   /** Test helpers. */
   setTilt(x: number, y: number): void { this.tilt = { x, y }; }
   setState(state: TiltState): void { this.state = state; this.sub.fire(); }

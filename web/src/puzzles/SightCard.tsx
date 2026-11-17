@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { knockPlayTimes } from "@hauntology/shared/puzzles/knock";
 import type { Sight } from "@hauntology/shared/puzzles/types";
 import type { PuzzleFeel } from "./feel/types";
 import { useLatest } from "./hooks";
@@ -22,7 +23,10 @@ export function SightCard({ sight, title, feel, onDone, now = () => performance.
       const remaining = sight.showMs - (now() - start);
       if (remaining <= 0) { clearInterval(timer); setLeft(0); done.current(); } else setLeft(remaining);
     }, 100);
-    return () => clearInterval(timer);
+    // a secret knock is heard: the ghost knocks it once, a thunk and a buzz for each knock, after the heartbeat (the dots and words show it too)
+    const p = sight.payload;
+    const knocks = p.kind === "knock" ? knockPlayTimes(p).map((ms) => setTimeout(() => { feel.synth.play("thunk"); feel.haptics.buzz("tick"); }, 500 + ms)) : [];
+    return () => { clearInterval(timer); for (const k of knocks) clearTimeout(k); };
     // the card starts once, when it appears
   }, []);
   return (

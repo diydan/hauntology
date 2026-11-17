@@ -137,6 +137,19 @@ export const KIND_HELP: Readonly<Record<Kind, KindHelp>> = {
       "Buzz and sound: a bump when the orb hits a wall.",
     ],
   },
+  knock: {
+    title: "Secret knock",
+    steps: [
+      "A door opens only to the ghost's knock, heard once in an earlier place.",
+      "Press Knock, then knock on the table: groups of knocks with pauses between.",
+      "Tap the door for a knock if you cannot knock.",
+      "After a quiet moment the knocks are checked. Done checks them at once.",
+    ],
+    extras: [
+      "The phone feels each knock, and the microphone hears it. It only measures loudness. Nothing is recorded.",
+      "Buzz and sound: each knock thunks and buzzes, and adds a dot.",
+    ],
+  },
 };
 
 /** The lines every puzzle shares. */

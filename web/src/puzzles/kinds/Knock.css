@@ -1,0 +1,20 @@
+/* Secret knock. An old wooden door with a brass ring knocker; tapping the door is one knock. Listening is a soft warm edge, never a flash. */
+.pz-knock .pz-door {
+  position: relative; display: block; width: min(56%, 12rem); aspect-ratio: 1 / 1.8; margin: 0 auto; padding: 0;
+  border: var(--stroke-ring) solid color-mix(in srgb, var(--art-wood) 60%, var(--void)); border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 22%, color-mix(in srgb, var(--void) 22%, transparent) 22% 23%),
+    linear-gradient(180deg, color-mix(in srgb, var(--art-wood) 78%, var(--text)) 0%, var(--art-wood) 50%, color-mix(in srgb, var(--art-wood) 60%, var(--void)) 100%);
+  box-shadow: inset 0 0 0 0.6rem color-mix(in srgb, var(--art-wood) 55%, var(--void)), 0 4px 0 color-mix(in srgb, var(--void) 70%, transparent);
+  cursor: pointer; touch-action: manipulation; min-height: var(--pz-target, 48px);
+  transition: box-shadow var(--fade);
+}
+.pz-knock .pz-door:disabled { cursor: default; }
+.pz-knock .pz-door[data-listening="true"] {
+  box-shadow: inset 0 0 0 0.6rem color-mix(in srgb, var(--art-wood) 55%, var(--void)), 0 0 0 var(--stroke-ring) var(--accent), 0 4px 0 color-mix(in srgb, var(--void) 70%, transparent);
+}
+.pz-door-knocker {
+  position: absolute; left: 50%; top: 26%; width: 28%; aspect-ratio: 1; transform: translateX(-50%);
+  border: 0.32rem solid var(--art-brass); border-radius: 50%;
+}
+.pz-door-handle { position: absolute; right: 14%; top: 54%; width: 9%; aspect-ratio: 1; border-radius: 50%; background: var(--art-brass); }
