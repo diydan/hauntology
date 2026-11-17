@@ -16,7 +16,7 @@ import { ASSET_NAME, WorldManifestSchema, type AssetRef, type WorldManifest } fr
  */
 
 export type AssetRole = "splat" | "collider" | "pano" | "thumb";
-export type Lod = "100k" | "500k" | "full";
+export type Lod = "100k" | "150k" | "500k" | "full";
 
 /** The formats a role may have. A file in any other format is treated as not there. */
 export const ASSET_FORMATS: Record<AssetRole, readonly string[]> = {

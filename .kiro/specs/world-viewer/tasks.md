@@ -5,74 +5,78 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
 - [ ] 1. Spike: render a real splat in three + Spark
   - Load a fixture World Bundle in a bare page. Record in `docs/spikes/2.1.md`: Spark version and API for opacity/recolor/LOD, orientation and scale of a real world, spawn defaults, frame rate on an integrated-GPU laptop and a mid-range phone at each LOD, whether the Collider GLB needs Draco/Meshopt decoders.
   - _Requirements: 1.4, 5.1_
+  - Progress (2026-11-17): everything except phone `full` is done, in `docs/spikes/2.1.md` with the recorded `marble-1.1` kitchen (bare page `tools/viewer-spike/`). Settled: Spark 2.4.0 + three 0.187.0; `opacity` and `recolor` hooks exist and work; `poseFromService` is confirmed by eye (upright, facing as the photo, floor under the spawn; without the fix the room is inverted); the Collider GLB needs no decoder. Owner hardware frame rates at 100k / 150k / 500k / full: phone 120 / 54.0 / 37.0 fps (full missing); laptop 120.4 / 114.4 / 92.0 / 49.4 and 55.6 fps (two `full` runs).
 
-- [ ] 2. Pure viewer logic (`shared/src/viewer/`)
-  - [ ] 2.1 `orientationTransform`
+- [x] 2. Pure viewer logic (`shared/src/viewer/`)
+  - [x] 2.1 `orientationTransform`
     - _Requirements: 1.4_
-  - [ ]* 2.2 Write property test for orientation
+  - [x]* 2.2 Write property test for orientation
     - **Property 1: Orientation maps up to +Y and preserves handedness**
     - **Validates: Requirements 1.4**
-  - [ ] 2.3 `stepMovement` and `constrainToDisc`
+  - [x] 2.3 `stepMovement` and `constrainToDisc`
     - _Requirements: 2.3, 2.5, 2.6_
-  - [ ]* 2.4 Write property test for movement
+  - [x]* 2.4 Write property test for movement
     - **Property 2: Movement stays in bounds, never exceeds speed, and is frame-rate independent**
     - **Validates: Requirements 2.3, 2.6**
-  - [ ]* 2.5 Write property test for disc fallback
+  - [x]* 2.5 Write property test for disc fallback
     - **Property 4: Disc fallback confines and holds height**
     - **Validates: Requirements 2.5**
-  - [ ] 2.6 `flicker`
+  - [x] 2.6 `flicker`
     - _Requirements: 3.2, 6.2_
-  - [ ]* 2.7 Write property test for flicker
+  - [x]* 2.7 Write property test for flicker
     - **Property 5: Flicker is bounded and off under reduced motion**
     - **Validates: Requirements 3.2, 6.2**
-  - [ ] 2.8 `orbIntensity` and `ghostPlacement`
+  - [x] 2.8 `orbIntensity` and `ghostPlacement`
     - _Requirements: 3.3, 3.4_
-  - [ ]* 2.9 Write property test for orb intensity
+  - [x]* 2.9 Write property test for orb intensity
     - **Property 6: Orb intensity is monotone and zero when found**
     - **Validates: Requirements 3.3**
-  - [ ]* 2.10 Write property test for ghost placement
+  - [x]* 2.10 Write property test for ghost placement
     - **Property 7: Ghost placement keeps distance and bounds**
     - **Validates: Requirements 3.4**
-  - [ ] 2.11 `nextQuality` and `chooseLod`
+  - [x] 2.11 `nextQuality` and `chooseLod`
     - _Requirements: 1.1, 5.2_
-  - [ ]* 2.12 Write property test for quality control
+  - [x]* 2.12 Write property test for quality control
     - **Property 8: Quality control obeys its timing rules**
     - **Validates: Requirements 5.2**
-  - [ ]* 2.13 Write property test for LOD choice
+  - [x]* 2.13 Write property test for LOD choice
     - **Property 10: LOD choice is available and monotone**
     - **Validates: Requirements 1.1**
-  - [ ] 2.14 `inputReduce` and `layoutMemoryCard`
+  - [x] 2.14 `inputReduce` and `layoutMemoryCard`
     - _Requirements: 4.2, 7.1_
-  - [ ]* 2.15 Write property test for input mode
+  - [x]* 2.15 Write property test for input mode
     - **Property 9: Chat mode suspends movement**
     - **Validates: Requirements 4.2**
-  - [ ]* 2.16 Write property test for the memory card
+  - [x]* 2.16 Write property test for the memory card
     - **Property 11: Memory card contains exactly the found memories**
     - **Validates: Requirements 7.1**
-  - [ ] 2.17 `atmosphereParams` and `tiltLook`
+  - [x] 2.17 `atmosphereParams` and `tiltLook`
     - _Requirements: 3.6, 8.1_
-  - [ ]* 2.18 Write property test for atmosphere and tilt
+  - [x]* 2.18 Write property test for atmosphere and tilt
     - **Property 12: Atmosphere and tilt are bounded and never touch movement**
     - **Validates: Requirements 3.6, 8.1**
 
 - [ ] 3. Loader and fallbacks
-  - [ ] 3.1 `WorldLoader`: manifest fetch, LOD choice, progress stages, retry ×2 with backoff, orientation applied, spawn placed
+  - [x] 3.1 `WorldLoader`: manifest fetch, LOD choice, progress stages, retry ×2 with backoff, orientation applied, spawn placed
     - _Requirements: 1.1, 1.3, 1.4_
+    - Done (2026-11-16): `loadWorld` in `shared/src/viewer/loader.ts` over injected ports (`fetchManifest`, `fetchAsset`, `initSplat`, `sleep`), so the whole ladder is tested over fakes in `loader.test.ts` (6 tests, 4 deliberate breakages caught): the manifest is validated with `WorldManifestSchema`, the LOD comes from `chooseLod`, stages are labelled (`LOAD_STAGE_LABELS`), a failed collider is a warning, not a stop.
   - [ ] 3.2 WebGL2 / Spark capability check and `PanoFallback` (pano → thumbnail ladder), chat still mounted
     - _Requirements: 1.2_
+    - Progress (2026-11-16): the decision half is in `loadWorld`: no WebGL2, or the splat start failing, gives the pano rung, then the thumbnail, then a fatal code; the shell keeps the Chat at every rung (it only receives a `degraded` message). Not done: reading real device capabilities in the browser and drawing the panorama — both wait on task 1, which picks the Spark and three versions.
 
-- [ ] 4. Player controls and collision
-  - [ ] 4.1 Desktop controls: pointer lock, WASD/arrows, Shift, Esc
+- [x] 4. Player controls and collision
+  - [x] 4.1 Desktop controls: pointer lock, WASD/arrows, Shift, Esc
     - _Requirements: 2.1_
-  - [ ] 4.2 Touch controls: movement stick, look drag, scroll/zoom prevention
+  - [x] 4.2 Touch controls: movement stick, look drag, scroll/zoom prevention
     - _Requirements: 2.2_
-  - [ ] 4.3 `CollisionWorld`: build BVH from Collider, capsule resolve, floor snap, slope limit; disc fallback when absent; last-safe-position reset
+  - [x] 4.3 `CollisionWorld`: build BVH from Collider, capsule resolve, floor snap, slope limit; disc fallback when absent; last-safe-position reset
     - _Requirements: 2.3, 2.4, 2.5, 2.6_
-  - [ ]* 4.4 Write property test for collision
+  - [x]* 4.4 Write property test for collision
     - **Property 3: Collision resolution never leaves the player inside geometry**
     - **Validates: Requirements 2.4**
-  - [ ] 4.5 Tilt to look on phones: one motion-permission tap, a calibration tap, wobble threshold, drag-to-look as the fallback, movement and collision untouched
+  - [x] 4.5 Tilt to look on phones: one motion-permission tap, a calibration tap, wobble threshold, drag-to-look as the fallback, movement and collision untouched
     - _Requirements: 8.1_
+  - Done (2026-11-16): the real Viewer mounts behind the shell seam (`web/src/app/viewer/mount.ts`, the default `LoadViewer`; the demo keeps the stand-in). Controls mapping is pure and tested (`controls.ts`); collision is a BVH capsule with floor snap and the 35 degree slope limit (`collision.ts`, Property 3 over generated rooms); tilt uses the pure `tiltLook`. Deps pinned by Spike 2.1: three 0.187.0, Spark 2.4.0, three-mesh-bvh 0.9.18. Verified headless end to end with the recorded kitchen world served through intercepted routes: spawn upright, W walks forward at the clamped rate, poses flow at 4 Hz. Two build notes: Spark's console.log calls are rewritten out of its module at build (Requirement 9.5), and the bundle test's Viewer marker and the demo platform keys were updated for the real Viewer.
 
 - [ ] 5. Haunt layer
   - [ ] 5.1 Grade overlay (desaturate, vignette, grain, dim) driven by Haunt Level with smoothing

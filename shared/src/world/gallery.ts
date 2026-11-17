@@ -29,7 +29,7 @@ export function isSafeRelativePath(p: string): boolean {
   return p.split("/").every((part) => part !== "" && part !== "." && part !== "..");
 }
 const RelPath = z.string().refine(isSafeRelativePath, "must be a relative path inside the plan's folder");
-const Lod = z.enum(["100k", "500k", "full"]);
+const Lod = z.enum(["100k", "150k", "500k", "full"]);
 
 export const GalleryFilesSchema = z
   .object({
@@ -155,7 +155,7 @@ export function buildGalleryWorld(plan: GalleryWorldPlan, facts: ReadonlyMap<str
   const id = plan.id;
   const fail = (code: GalleryCode, detail: string): GalleryWorld => ({ ok: false, id, code, detail });
 
-  const entries: { role: AssetRole; file: string; lod?: "100k" | "500k" | "full" }[] = [
+  const entries: { role: AssetRole; file: string; lod?: "100k" | "150k" | "500k" | "full" }[] = [
     ...plan.files.splat.map((s) => ({ role: "splat" as const, file: s.file, ...(s.lod !== undefined ? { lod: s.lod } : {}) })),
     ...(plan.files.collider !== undefined ? [{ role: "collider" as const, file: plan.files.collider }] : []),
     ...(plan.files.pano !== undefined ? [{ role: "pano" as const, file: plan.files.pano }] : []),

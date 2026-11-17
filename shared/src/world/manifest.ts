@@ -20,7 +20,7 @@ const Vec3 = z.tuple([Num, Num, Num]);
 export const AssetRefSchema = z.object({
   path: AssetNameSchema,
   bytes: z.number().int().positive(),
-  lod: z.enum(["100k", "500k", "full"]).optional(),
+  lod: z.enum(["100k", "150k", "500k", "full"]).optional(),
 });
 export type AssetRef = z.infer<typeof AssetRefSchema>;
 

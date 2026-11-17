@@ -16,6 +16,7 @@
     "./conditions/*": "./src/conditions/*.ts",
     "./ghost/*": "./src/ghost/*.ts",
     "./world/*": "./src/world/*.ts",
+    "./viewer/*": "./src/viewer/*.ts",
     "./puzzles/*": "./src/puzzles/*.ts",
     "./table/*": "./src/table/*.ts",
     "./party/*": "./src/party/*.ts",

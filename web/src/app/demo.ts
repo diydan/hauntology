@@ -46,8 +46,8 @@ export async function loadDemoApi(search: string): Promise<ShellApi | null> {
 export async function loadDemoPlatform(search: string): Promise<Partial<PlatformKit> | null> {
   if (!import.meta.env.PROD && wantsDemo(search)) {
     const { standinTurnstile } = await import("./confirm/turnstile-standin");
-    // No server behind the demo: "Play a case" uses the stand-in Host.
-    return { loadTurnstile: standinTurnstile, loadHost: () => import("./case/standin") };
+    // No server behind the demo: "Play a case" uses the stand-in Host, and Play the stand-in Viewer.
+    return { loadTurnstile: standinTurnstile, loadHost: () => import("./case/standin"), loadViewer: () => import("./viewer/standin") };
   }
   return null;
 }

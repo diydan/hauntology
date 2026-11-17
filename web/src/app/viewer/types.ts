@@ -26,4 +26,4 @@ export type ViewerModule = {
 export type LoadViewer = () => Promise<ViewerModule>;
 
 /** Loaded only when the visitor enters Play, so Home's first load does not carry it (Requirement 10.1). */
-export const defaultLoadViewer: LoadViewer = () => import("./standin");
+export const defaultLoadViewer: LoadViewer = () => import("./mount");

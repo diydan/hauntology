@@ -1,0 +1,326 @@
+{
+  "model": "marble-1.1",
+  "wallClockSeconds": 314,
+  "timeline": [
+    {
+      "seconds": 20,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 30,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 41,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 51,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 62,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 72,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 83,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 93,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 104,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 114,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 125,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 136,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 146,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 157,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 167,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 178,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 188,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 199,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 209,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 220,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 230,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 241,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 251,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 262,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 272,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 283,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 293,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 304,
+      "status": "IN_PROGRESS",
+      "description": "World generation in progress",
+      "done": false
+    },
+    {
+      "seconds": 314,
+      "status": "SUCCEEDED",
+      "description": "World generation completed successfully",
+      "done": true
+    }
+  ],
+  "cost": {
+    "total_credits": 1580,
+    "line_items": [
+      {
+        "name": "Pano generation (image, non-pano)",
+        "credits": 80
+      },
+      {
+        "name": "World generation",
+        "credits": 1500
+      }
+    ]
+  },
+  "error": null,
+  "operationExpiresInMinutes": 180,
+  "pictureBytes": 451542,
+  "pictureExtension": "jpg",
+  "assets": {
+    "spz_500k": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "spz",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "application/octet-stream",
+        "contentLength": "7569264",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "spz_100k": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "spz",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "application/octet-stream",
+        "contentLength": "1306956",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "spz_150k": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "spz",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "application/octet-stream",
+        "contentLength": "2276118",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "spz_full_res": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "spz",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "application/octet-stream",
+        "contentLength": "29043011",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "collider_mesh": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "glb",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "model/gltf-binary",
+        "contentLength": "1862636",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "pano": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "png",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "image/png",
+        "contentLength": "11215614",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    },
+    "thumbnail": {
+      "host": "cdn.marble.worldlabs.ai",
+      "extension": "webp",
+      "queryParams": [],
+      "looksSigned": false,
+      "head": {
+        "status": 200,
+        "contentType": "image/webp",
+        "contentLength": "31472",
+        "acceptRanges": "bytes",
+        "cacheControl": "public,max-age=3600"
+      }
+    }
+  },
+  "world": {
+    "idField": "world_id",
+    "assetKeys": {
+      "top": [
+        "mesh",
+        "imagery",
+        "splats",
+        "thumbnail_url",
+        "caption"
+      ],
+      "splats": [
+        "spz_urls",
+        "semantics_metadata"
+      ],
+      "mesh": [
+        "collider_mesh_url",
+        "hq_mesh_url",
+        "full_res_mesh_url"
+      ],
+      "imagery": [
+        "pano_url"
+      ]
+    },
+    "semantics": {
+      "metric_scale_factor": 1.091861,
+      "ground_plane_offset": 1.3802699
+    },
+    "captionCharacters": 1870,
+    "model": null
+  },
+  "delete": {
+    "status": 200,
+    "assetStatusAfter": 200
+  },
+  "balanceBefore": 2790,
+  "balanceAfter": 1210
+}

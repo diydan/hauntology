@@ -23,8 +23,10 @@ describe("the demo switches", () => {
     expect(await loadDemoPlatform("?demo=0")).toBeNull();
     const kit = await loadDemoPlatform("?demo=1");
     expect(kit?.loadTurnstile).toBe(standinTurnstile);
-    expect(Object.keys(kit ?? {}).sort()).toEqual(["loadHost", "loadTurnstile"]);
+    expect(Object.keys(kit ?? {}).sort()).toEqual(["loadHost", "loadTurnstile", "loadViewer"]);
     const host = await kit!.loadHost!();
     expect(host).toBe(await import("./case/standin"));
+    // The real Viewer needs a server's worlds; the demo keeps the stand-in.
+    expect(await kit!.loadViewer!()).toBe(await import("./viewer/standin"));
   });
 });
