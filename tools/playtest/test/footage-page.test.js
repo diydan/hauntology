@@ -152,8 +152,8 @@ test('18.3 the build copies the clip files, the poster and the two Reel sounds, 
     // narration (voice-<line id>.mp3) and lip-synced clips (lip-<name>.mp4) come from folders that are not in git, so they are there only when those folders are
     assert.ok(built.filter((n) => /^voice-/.test(n)).every((n) => /^voice-((scene|wander)\.[a-z-]+|reveal)\.(soft|dry)\.1\.mp3$/.test(n)), 'narration files are named by line id');
     assert.ok(built.filter((n) => /^lip-/.test(n)).every((n) => /^lip-hero-[a-z-]+\.mp4$/.test(n)), 'lip-synced clips are named lip-hero-<name>.mp4');
-    assert.deepEqual(built.filter((n) => !/^(voice|lip)-/.test(n)), [...clips.flatMap((c) => [`${c}.jpg`, `${c}.mp4`, `${c}.webm`]), 'knock.m4a', 'scrape.m4a'].sort());
-    for (const n of ['knock', 'scrape']) assert.deepEqual(readFileSync(resolve(dist, 'media', `${n}.m4a`)), readFileSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${n}.m4a`)), `${n}.m4a is the game's own file`);
+    assert.deepEqual(built.filter((n) => !/^(voice|lip)-/.test(n)), [...clips.flatMap((c) => [`${c}.jpg`, `${c}.mp4`, `${c}.webm`]), 'creak.m4a', 'knock.m4a', 'scrape.m4a'].sort());
+    for (const n of ['knock', 'scrape', 'creak']) assert.deepEqual(readFileSync(resolve(dist, 'media', `${n}.m4a`)), readFileSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${n}.m4a`)), `${n}.m4a is the game's own file`);
     assert.ok(existsSync(resolve(dist, 'footage.html')));
   } finally {
     rmSync(dist, { recursive: true, force: true });

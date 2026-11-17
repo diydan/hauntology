@@ -386,3 +386,19 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ] 15.11 Spike puzzles 1.8 (scene clues): on a real TV at three metres and on a laptop, does the clue read as part of the scene (ask five people, 1 to 5, and where they looked first) and can a 480 pixel frame hold letters of 5 per cent of its height? If not, make the Place larger in the prompts or fall back to the panel only
     - _Requirements: 22.4, 22.6_
   - [ ] 15.12 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `sceneClue`, `fitToPlace` and the edge check. Ensure every test passes; ask the user if questions arise.
+
+- [ ] 16. Secret knock (added 2026-11-16; satisfies Requirement 24)
+  - [x] 16.1 The pattern, the clue timing, reading and judging knocks: `tools/playtest/js/secret-knock-core.js`
+    - _Requirements: 24.1, 24.2, 24.4_
+  - [x]* 16.2 Write property test for the secret knock (`tools/playtest/test/secret-knock-core.test.js`, every seed of every level)
+    - **Property 34: A secret knock opens to itself and to nothing else**
+    - **Validates: Requirements 24.1, 24.2, 24.4**
+  - [x] 16.3 The demo on the lab: `tools/playtest/secret-knock.html` (three levels, the clue once, sensors or Tap, three tries, the creak), linked from the hub; the build copies `creak.m4a`
+    - _Requirements: 24.3, 24.5, 24.7_
+  - [ ] 16.4 Spike puzzles 1.9 (secret knock): on three phones and two tables, can five people open easy, medium and hard in three tries; how often does a knock go unheard or a bump count
+    - _Requirements: 24.3, 24.4_
+  - [ ] 16.5 The `knock` Kind in `shared/src/puzzles` (make, verify) and `web/src/puzzles/kinds` (the door, the look of the design system, the Tap control), with the clue as a Sight
+    - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
+  - [ ] 16.6 Hand the door between Zones and the Haunt Event knock to the Party Mode spec, and write there which it takes
+    - _Requirements: 24.6_
+  - [ ] 16.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `judge` and `readKnocks`. Ensure every test passes, ask the user if questions arise.

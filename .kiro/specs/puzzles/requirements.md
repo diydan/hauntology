@@ -9,7 +9,7 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 ## Glossary
 
 - **Puzzle**: one playable mini-game of a **Kind**.
-- **Kind**: one of `lockpick`, `wires`, `clock`, `safe`, `musicbox`, `candles`, `moved`, `photo`, `words`, `board`, and the optional `maze`.
+- **Kind**: one of `lockpick`, `wires`, `clock`, `safe`, `musicbox`, `candles`, `moved`, `photo`, `words`, `board`, the optional `maze`, and `knock` (the Secret knock, Requirement 24, a lab demo so far).
 - **Lock**: a Puzzle placed in front of something: a Zone's Residue (Party Mode) or a memory (Wander). A Lock has a Kind, a level and a seed.
 - **Level**: `easy`, `medium` or `hard`. They differ only in size, tolerance, step and how often a clue can be replayed.
 - **Puzzle setting**: `off`, `easy`, `medium` or `hard`, set for a Room by the Master (Party) or by a visitor (Wander).
@@ -327,3 +327,17 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 5. WHERE the Whisper's reveal line is spoken THEN the scene SHALL start when the reveal has ended, so that two voices never speak at once, and WHERE narration or footage is off THEN the reveal SHALL be words, the scene SHALL start at once or not at all, and the line and the card SHALL show at once and read the same.
 6. WHILE a scene over 5 seconds plays THEN a Stop control SHALL be on screen, Stop SHALL show the card at once, and a scene SHALL be shown in its own shape (the AI scenes are 3:4 and SHALL NOT be cropped to a landscape frame).
 
+
+### Requirement 24
+
+**User Story:** As a Player, I want some doors to open only to the ghost's secret knock, which I hear once and then knock back on the table, so that opening a door feels like a ritual and not a menu. (Secret knock, added 2026-11-16 by the owner after the Knock test page worked on his phone)
+
+#### Acceptance Criteria
+
+1. THE Puzzle SHALL have a Kind `knock` (the Secret knock): a locked door whose Lock is a pattern of knocks, a few groups with pauses between them (`makePattern(level, seed)` in `tools/playtest/js/secret-knock-core.js`): two groups on easy, three on medium, and three on hard with one pause that is long; each group SHALL be one to four knocks, no two groups side by side SHALL be the same size, and easy SHALL have at least four knocks.
+2. THE clue SHALL be the ghost's own knock, played once (our `knock` sound and a buzz for each knock, at `PLAY` timing), and in words and marks ("3, pause, 2" and dots) for a Player who cannot hear it; the clue SHALL be a Sight in Party Mode (heard on one phone in an earlier Zone) and the Faded clue at the Lock when it was missed (Requirement 3), and it SHALL NOT be played again at the Lock.
+3. THE Player SHALL knock on the table with the phone lying on it, and a knock SHALL be what `tools/playtest/js/knock-core.js` counts (a jolt the motion sensor feels and/or a click the microphone hears; the microphone SHALL give a loudness number only, and nothing SHALL be recorded or sent); a Tap control SHALL always count as a knock, so a Player with no sensor, a soft table, a quiet room or no wish to knock can still open the door.
+4. WHEN the Player has been quiet for `READ.quietMs` after a knock THEN the attempt SHALL be judged (`judge`): knocks closer than `READ.groupGapMs` are one group, the group counts SHALL match the pattern exactly, and on hard the long pause SHALL be at least `READ.longMs` and every other pause shorter; the Lock has three tries like every Kind (Requirement 2), and a wrong try SHALL say what was heard ("You knocked 2, 3.") and never the answer.
+5. WHEN the knock is right THEN the door SHALL open with our `creak` sound and a buzz, and its words SHALL be on screen and in the live region; a door that opens SHALL move slowly and never flash, and with reduced motion it SHALL simply be open.
+6. THE Room MAY place a `knock` Lock on a door between Zones, and a Haunt Event MAY have the ghost knock a pattern on the TV for every Player at once (the first to knock it back gets Help); these two are ideas until the Party Mode spec takes them.
+7. THE demo SHALL be `tools/playtest/secret-knock.html` on the lab (three levels, Start for the sensors, Hear the knock once, Knock now, the Tap control, three tries), so the feel can be tried on a real phone before the Kind is built into `web/src/puzzles`.

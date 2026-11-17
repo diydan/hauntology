@@ -629,3 +629,24 @@ The order, with narration on: the Whisper's reveal line first (a memory was foun
 ### Property 33: A Wander scene is its kind's, and its line is its own
 For every kind of memory: the scene is the one of that kind (the film for a promise, never the letter), its frame has the shape of its clip, the AI scenes have a `wander.*` line that is a row of the story bank word for word, follows the bank rules and ends before the scene does, the film has none, a line is said once at its moment and dropped by Stop, another kind or a new Find, and with footage off or a blocked clip the line and the card show at once.
 **Validates: Requirements 23.1, 23.2, 23.3, 23.4, 23.5, 23.6**
+
+## Secret knock (2026-11-16)
+
+The owner tried the Knock test page (`knock.html`) on his phone and it worked, so knocking becomes a Lock: a door that opens only to the ghost's knock. The ghost already knocks three times in the hand-at-the-door scene, so the picture and the puzzle tell the same story.
+
+| Part | Where | What it does |
+|---|---|---|
+| Pattern | `makePattern(level, seed)` | 2 groups (easy), 3 (medium), 3 with one long pause (hard); groups of 1 to 4, never two equal side by side |
+| Clue | `playTimes`, `describe` | the ghost's knock played once at 260 ms in a group, 900 ms between groups, 1,900 ms for the long pause; the same in words ("2, pause, 1, long pause, 3") and dots |
+| Knocks | `knock-core.js` | motion and microphone together when both are on, either alone otherwise; the Tap control always |
+| Reading | `readKnocks` | a gap over 700 ms starts a new group; a pause of 1,400 ms or more is long |
+| Judging | `judge`, `isDone` | after 2.2 s of quiet: the groups must match, and on hard the long pause must be in its place |
+| Open | the page | `creak.m4a` and a slow swing of the door; reduced motion: it is just open |
+
+The timings leave room on both sides: the ghost's own knock is read back as itself for every seed (a test), a Player's knocks inside a group can be up to 700 ms apart, and a normal pause can be anything from 700 ms to 1.4 s.
+
+Not decided: whether the Lock's door is a Zone door in Party Mode or the Haunt Event where every Player knocks at once (Requirement 24.6). Not built: the `knock` Kind in `shared/src/puzzles` and `web/src/puzzles`; the demo is the lab page only.
+
+### Property 34: A secret knock opens to itself and to nothing else
+For every level and seed: the pattern is valid (Requirement 24.1), the ghost's own knock judged as the Player's opens the door, any other group counts do not, and on hard a missing or misplaced long pause does not.
+**Validates: Requirements 24.1, 24.2, 24.4**
