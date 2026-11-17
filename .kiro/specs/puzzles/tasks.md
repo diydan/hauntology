@@ -402,3 +402,21 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ] 16.6 Hand the door between Zones and the Haunt Event knock to the Party Mode spec, and write there which it takes
     - _Requirements: 24.6_
   - [ ] 16.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `judge` and `readKnocks`. Ensure every test passes, ask the user if questions arise.
+
+- [ ] 17. Shared actions and Shake (added 2026-11-17; satisfies Requirement 25)
+  - [x] 17.1 The needs, the shake reading and what a phone feels: `tools/playtest/js/shake-core.js`
+    - _Requirements: 25.1, 25.3, 25.4_
+  - [x]* 17.2 Write tests for shared actions and Shake (`tools/playtest/test/shake-core.test.js`)
+    - **Property 35: A shared action fires when enough different Players act together, and for no fewer**
+    - **Validates: Requirements 25.1**
+    - **Property 36: A phone is never given more than its place allows**
+    - **Validates: Requirements 25.4**
+  - [x] 17.3 The demo on the lab: `tools/playtest/shake.html` (four actions, You and three pretend Players, tap to move, turn, Start for motion, the You acts control), linked from the hub
+    - _Requirements: 25.3, 25.5, 25.7_
+  - [ ] 17.4 Spike puzzles 1.10 (shake together): on two real phones, can two people shake within two seconds and does the buzz by distance feel right; how often does a pocket or a walk count as a shake
+    - _Requirements: 25.3, 25.4_
+  - [ ] 17.5 The relay: a shared action message in the lab Worker (`src/room-core.js`) that counts Players on the server and tells every screen, with a size cap and a rate limit per phone
+    - _Requirements: 25.1, 25.2_
+  - [ ] 17.6 Phone positions and facing from each phone's own view, in place of the pretend phones
+    - _Requirements: 25.6_
+  - [ ] 17.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `makeTogether` and `feel`. Ensure every test passes, ask the user if questions arise.
