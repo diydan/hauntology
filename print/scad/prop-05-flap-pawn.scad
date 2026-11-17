@@ -47,19 +47,21 @@ module prop_05_flap_pawn() {
       linear_extrude(height = sticker_depth + 0.5)
         rrect2d(32.0, 52.0, r = 3.0);
 
-    // 4. Open-Bottom Keyed SG90 Spline Bore & Horn Socket in Stem (cross-pin aligned right through horn slot at z_local = 2.2!)
+    // 4. Open-Bottom Keyed SG90 Spline Bore & Horn Socket in Stem (perpendicular Ø1.9 mm cross-pin bore across local Y pinches
+    //    right through the flat horn faces at z_local = 2.2 instead of lengthwise along X!)
     translate([0, -13.4, 5.0])
       rotate([-90, 0, 0]) {
         cylinder(h = 11.5, d = sg90_spline_d);
         hull() {
           cylinder(h = 4.2, d = sg90_horn_hub_d);
-          translate([5.2, 0, 0]) cylinder(h = 4.2, d = 3.8);
-          translate([-5.2, 0, 0]) cylinder(h = 4.2, d = 3.8);
+          translate([5.6, 0, 0]) cylinder(h = 4.2, d = 3.8);
+          translate([-5.6, 0, 0]) cylinder(h = 4.2, d = 3.8);
         }
-        // Cross-pin hole aligned right through the horn slot (z_local = 2.2 -> Y = -11.2) to lock onto the horn's own holes!
-        translate([0, 0, 2.2])
-          rotate([0, 90, 0])
-            cylinder(h = 16.0, d = 2.0, center = true);
+        for (px = [-4.2, 4.2]) {
+          translate([px, 0, 2.2])
+            rotate([90, 0, 0])
+              cylinder(h = 12.0, d = 1.9, center = true);
+        }
       }
   }
 }

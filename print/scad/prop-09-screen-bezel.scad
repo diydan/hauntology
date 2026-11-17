@@ -43,7 +43,7 @@ module prop_09_screen_bezel() {
     }
     for (sx = [-46.0, 46.0], sy = [-44.0, 45.0]) {
       translate([sx, sy, -0.5])
-        cylinder(h = 6.0, d = 3.4);
+        cylinder(h = 6.0, d = 2.75);
     }
 
     // 7. ESP32 DevKitC Cavity (with 4 corner standoffs at Z = 10.6 + deep pin-header relief down to Z = 2.0) & Right-End USB-C Cutout

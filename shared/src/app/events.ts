@@ -20,11 +20,12 @@ export type AnchorId = z.infer<typeof AnchorIdSchema>;
 export const AnchorSchema = z.object({ id: AnchorIdSchema, pos: Vec3Schema, radius: z.number().finite().positive() }).strict();
 export type Anchor = z.infer<typeof AnchorSchema>;
 
-/** Viewer to Shell. `pose` is sent at most 4 times a second. */
+/** Viewer to Shell. `pose` is sent at most 4 times a second; `fps` about once a second, for the debug overlay. */
 export const ViewerToShellSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("pose"), pos: Vec3Schema, yaw: z.number().finite() }).strict(),
   z.object({ t: z.literal("prompt"), target: z.enum(["anchor", "ghost"]).nullable() }).strict(),
   z.object({ t: z.literal("degraded"), rung: z.enum(VIEWER_RUNGS) }).strict(),
+  z.object({ t: z.literal("fps"), fps: z.number().finite().nonnegative() }).strict(),
 ]);
 export type ViewerToShell = z.infer<typeof ViewerToShellSchema>;
 

@@ -5,7 +5,7 @@ import { parseCreatorMessage, parseHostMessage, parseShellMessage, parseViewerMe
 const anchor = { id: "a1", pos: [1, 0, -2], radius: 2.5 };
 
 describe("ViewerToShell", () => {
-  it("accepts a pose, a prompt (with a target or none) and a degraded notice", () => {
+  it("accepts a pose, a prompt (with a target or none), a degraded notice and a frame rate", () => {
     const ok: ViewerToShell[] = [
       { t: "pose", pos: [0, 1.6, 0], yaw: -3.1 },
       { t: "prompt", target: "ghost" },
@@ -13,6 +13,8 @@ describe("ViewerToShell", () => {
       { t: "prompt", target: null },
       { t: "degraded", rung: "pano" },
       { t: "degraded", rung: "thumb" },
+      { t: "fps", fps: 59.6 },
+      { t: "fps", fps: 0 },
     ];
     for (const m of ok) expect(parseViewerMessage(m)).toEqual(m);
   });
@@ -28,6 +30,9 @@ describe("ViewerToShell", () => {
       { t: "pose", pos: [0, 0, 0], yaw: 0, seed: "hidden" },
       { t: "prompt", target: "wall" },
       { t: "prompt" },
+      { t: "fps", fps: -1 },
+      { t: "fps", fps: Number.NaN },
+      { t: "fps" },
       { t: "degraded", rung: "splat" },
       { t: "set_input_mode", mode: "chat" },
       { t: "unknown" },

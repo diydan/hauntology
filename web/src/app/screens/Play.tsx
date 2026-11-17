@@ -57,6 +57,7 @@ export default function Play() {
       navigate: (route) => router.navigate(route),
       setFlow: (patch) => router.setFlow(patch),
       onNoticeAcked: () => quota.setNoticeAcked(),
+      onFps: (fps) => shell.debug.setFps(fps),
     });
     const voice = createVoice({
       api, recorder: platform.voice.recorder, createAudio: platform.voice.createAudio, unlockAudio: platform.voice.unlockAudio,

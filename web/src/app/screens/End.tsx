@@ -1,6 +1,7 @@
 import type { PlayView } from "@hauntology/shared/app/api";
 import { errorCopy } from "@hauntology/shared/app/errors-copy";
 import { memoryCardSvg } from "@hauntology/shared/app/memory-card";
+import { layoutMemoryCard } from "@hauntology/shared/viewer/card";
 import { routeForApiError } from "@hauntology/shared/app/routes";
 import { useCallback, useEffect, useState } from "react";
 import { useRouterState, useShell } from "../context";
@@ -57,9 +58,19 @@ export default function End() {
     announce(`${copy.title}. ${copy.body}`);
   }, [failedCode, announce]);
 
-  const save = (view: PlayView) => {
-    const svg = memoryCardSvg(view.journal.map((j) => ({ anchorId: j.anchorId, text: j.text })));
-    platform.saveFile("hauntology-memory-card.svg", new Blob([svg], { type: "image/svg+xml" }));
+  const save = async (view: PlayView) => {
+    // The canvas PNG (world-viewer task 9) carries the world's thumbnail; where a canvas
+    // cannot be made, the SVG card is saved instead, with the same layout and words.
+    const w = await api.world(worldId).catch(() => null);
+    const thumbUrl = w?.ok ? (w.value.thumbUrl ?? null) : null;
+    const layout = layoutMemoryCard(view.journal.map((j) => ({ text: j.text, found: true })), thumbUrl);
+    const { renderMemoryCardPng } = await import("../viewer/memory-card");
+    const png = await renderMemoryCardPng(layout);
+    if (png) platform.saveFile("hauntology-memory-card.png", png);
+    else {
+      const svg = memoryCardSvg(view.journal.map((j) => ({ anchorId: j.anchorId, text: j.text })));
+      platform.saveFile("hauntology-memory-card.svg", new Blob([svg], { type: "image/svg+xml" }));
+    }
     announce("Memory card saved.");
   };
 
@@ -95,7 +106,7 @@ export default function End() {
             ))}
           </ol>
           <p className="ui-row">
-            <button className="ui-button ui-button--primary" type="button" onClick={() => save(state.view)}>
+            <button className="ui-button ui-button--primary" type="button" onClick={() => void save(state.view)}>
               Save memory card
             </button>{" "}
             <button className="ui-button" type="button" onClick={hauntAgain}>

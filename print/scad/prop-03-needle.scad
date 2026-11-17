@@ -9,16 +9,16 @@ include <_common.scad>
 module prop_03_needle() {
   difference() {
     union() {
-      // 1. Central circular boss hub with gothic turret cap at pivot (0,0)
+      // 1. Central circular boss hub with gothic turret cap at pivot (0,0) (sized for flush Ø5.4 M2 spline-screw counterbore!)
       cylinder(h = 5.6, d1 = 17.6, d2 = 15.6);
       translate([0, 0, 5.6])
-        cylinder(h = 1.0, d1 = 11.2, d2 = 7.0);
+        cylinder(h = 1.0, d1 = 11.4, d2 = 8.8);
 
       // 2. Wrought-iron gnarled skeletal pointer spine (+X direction to 64 mm)
-      //    Stays thick enough over X = 0..16 for the SG90 horn recess!
+      //    Stays thick enough over X = 0..19 for a full-length SG90 single-arm horn recess!
       hull() {
         translate([4.0, 0, 0]) cylinder(h = 4.2, d = 8.4);
-        translate([16.0, 0, 0]) cylinder(h = 4.0, d = 6.2);
+        translate([18.5, 0, 0]) cylinder(h = 4.0, d = 6.4);
       }
       linear_extrude(height = 3.2)
         burton_gnarled_path_2d(
@@ -70,15 +70,17 @@ module prop_03_needle() {
     translate([0, 0, -5.0])
       cube([200, 100, 10.0], center = true);
 
-    // 4. Keyed SG90 Single-Arm Horn Recess on Underside (with 0.25 mm sacrificial bridge skin at Z = 3.10..3.35 so M2 holes never print in mid-air!)
+    // 4. Keyed SG90 Single-Arm Horn Recess on Underside (18.65 mm reach fits standard SG90 horn; 0.25 mm sacrificial bridge + top M2 screw counterbore!)
     translate([0, 0, -0.1])
       hull() {
         cylinder(h = 3.2, d = sg90_horn_hub_d);
-        translate([14.0, 0, 0])
+        translate([16.5, 0, 0])
           cylinder(h = 3.2, d = sg90_horn_tip_d);
       }
     translate([0, 0, 3.35])
       cylinder(h = 4.5, d = 2.4);
+    translate([0, 0, 5.0])
+      cylinder(h = 2.2, d = 5.4);
     translate([10.0, 0, 3.35])
       cylinder(h = 3.0, d = 1.8);
   }

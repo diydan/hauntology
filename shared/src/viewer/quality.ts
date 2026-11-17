@@ -103,6 +103,15 @@ export function capabilityScore(caps: DeviceCaps): number {
   return (caps.mobile ? 0 : 30) + Math.min(memory, 16) * 3 + Math.min(cores, 16) * 2 + Math.min(texture / 1024, 16);
 }
 
+/** The renderer resolution scale per Quality Level, lowest first (Requirement 5.2's step down). */
+export const RESOLUTION_SCALES: Readonly<Record<QualityLevel, number>> = { 0: 0.5, 1: 0.7, 2: 0.85, 3: 1 };
+
+/** Where rendering starts on this device, before frame rates say otherwise: its LOD score step. */
+export function initialQualityLevel(caps: DeviceCaps): QualityLevel {
+  const score = capabilityScore(caps);
+  return score >= 85 ? 3 : score >= 55 ? 2 : score >= 35 ? 1 : 0;
+}
+
 /** The score a device needs before each LOD rank is offered. */
 const LOD_NEEDS = [0, 35, 55, 85];
 

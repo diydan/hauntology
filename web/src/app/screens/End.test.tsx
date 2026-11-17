@@ -44,7 +44,8 @@ describe("Ending: the main path", () => {
     const h = await finishGame();
     await screen.findByText(MEMORIES.a1);
     await press("Save memory card");
-    expect(h.p.saveFile).toHaveBeenCalledTimes(1);
+    // The save now asks for the world's thumbnail first (the PNG card carries it), so it lands a tick later.
+    await waitFor(() => expect(h.p.saveFile).toHaveBeenCalledTimes(1));
     const [name, blob] = h.p.saveFile.mock.calls[0]! as [string, Blob];
     expect(name).toBe("hauntology-memory-card.svg");
     expect(blob.type).toBe("image/svg+xml");

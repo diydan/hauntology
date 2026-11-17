@@ -88,7 +88,7 @@ PH = ${plateH};
 module plate() { ${imp("prop-03-dial-plate")}; }
 module bezel(z = PH) { translate([0, 0, z]) ${imp("prop-03-bezel-ring")}; }
 module needle(a) { translate([0, 0, PH]) rotate([0, 0, a]) ${imp("prop-03-needle")}; }
-module maxtab(ang, r0 = 98.0, z0 = 14.4) { rotate([0, 0, ang]) translate([r0, 0, z0]) rotate([0, -90, 0]) ${imp("prop-03-max-tab")}; }
+module maxtab(ang, r0 = 98.0, z0 = PH - 12.0) { rotate([0, 0, ang]) translate([r0, 0, z0]) rotate([0, -90, 0]) ${imp("prop-03-max-tab")}; }
 `;
 function checks03(root) {
   const src = fs.readFileSync(path.join(root, "print", "scad", "prop-03-dial-plate.scad"), "utf8");
@@ -101,8 +101,8 @@ function checks03(root) {
       [`maxtab-${lv}-bezel`, `maxtab(${ang});`, "bezel();", "clear", `MAX tab clipped at ${lv} stepping over bezel`],
       [`maxtab-${lv}-needle`, `maxtab(${ang});`, `needle(${ang});`, "clear", `MAX tab clipped at ${lv} clearing needle`]);
   }
-  c.push(["control-bezel-low", `bezel(${plateH - 4.4});`, "plate();", "collide", "control: the bezel sunk 4.4 mm into the plate"],
-    ["control-maxtab-low", "maxtab(40, 98.0, 11.0);", "bezel();", "collide", "control: MAX tab 3.4 mm too low, hitting bezel"]);
+  c.push(["control-bezel-low", `bezel(${(plateH - 4.4).toFixed(2)});`, "plate();", "collide", "control: the bezel sunk 4.4 mm into the plate"],
+    ["control-maxtab-low", `maxtab(40, 98.0, ${(plateH - 15.4).toFixed(2)});`, "bezel();", "collide", "control: MAX tab 3.4 mm too low, hitting bezel"]);
   return c.map(([id, a, b, expect, note]) => ({ id: `p03/${id}`, prop: "p03", lib, a, b, expect, note }));
 }
 
@@ -165,7 +165,11 @@ function checks09(root) {
   const fSrc = fs.readFileSync(path.join(root, "print", "scad", "prop-09-stage-frame.scad"), "utf8");
   const optN = (s, k) => { const m = s.match(new RegExp(`^\\s*${k}\\s*=\\s*(-?[\\d.]+)\\s*;`, "m")); return m ? Number(m[1]) : null; };
   const rbx = optN(fSrc, "rattle_bx"), rby = optN(fSrc, "rattle_by"), rafY = optN(fSrc, "rafter_y"), rafZ = optN(fSrc, "rafter_z");
+  const dcy = optN(fSrc, "dial_cy"), dz0 = optN(fSrc, "dial_z0");
+  const dSrc = fs.readFileSync(path.join(root, "print", "scad", "prop-03-dial-plate.scad"), "utf8");
+  const dPH = optN(dSrc, "plate_h") ?? 15.4;
   const hasRattle = rbx !== null && rby !== null;
+  const hasClocktower = dcy !== null && dz0 !== null;
   const rattleLib = hasRattle ? `
 module rattle_servo(dy = 0, dz = 0) { translate([${rbx}, ${rby} + dy, PLATE - 16.0 + dz]) {
   translate([-11.4, -6.1, 0]) cube([22.8, 12.2, 22.5]);
@@ -181,7 +185,18 @@ module hanging_bats(dz = 0) {
   translate([0, ${rafY - 29.0}, ${rafZ - 1.3} + dz]) translate([0, -9, 0]) rotate([0, 0, 180]) translate([0, 9, 0]) bats_three0();
 }
 ` : "";
-  const lib = lib09(L) + routeScad(L, THREAD_POS09) + rattleLib;
+  const clockLib = hasClocktower ? `
+module clock_dial(dx = 0, dy = 0, dz = 0) { translate([dx, ${dcy} + dy, ${dz0} + dz]) ${imp("prop-03-dial-plate")}; }
+module clock_bezel() { translate([0, ${dcy}, ${(dz0 + dPH).toFixed(2)}]) ${imp("prop-03-bezel-ring")}; }
+module clock_needle(a = 90) { translate([0, ${dcy}, ${(dz0 + dPH).toFixed(2)}]) rotate([0, 0, a]) ${imp("prop-03-needle")}; }
+module clock_maxtab(ang = 15) { translate([0, ${dcy}, ${(dz0 + dPH - 12.0).toFixed(2)}]) rotate([0, 0, ang]) translate([98.0, 0, 0]) rotate([0, -90, 0]) ${imp("prop-03-max-tab")}; }
+module clock_servo() { translate([5.5, ${dcy}, ${(dz0 + dPH - 25.9).toFixed(2)}]) {
+  translate([-11.4, -6.1, 0]) cube([22.8, 12.2, 22.5]);
+  translate([-16.25, -6.1, 16.0]) cube([32.5, 12.2, 2.5]);
+  translate([-5.5, 0, 22.5]) cylinder(h = 4.0, d = 11.8);
+} }
+` : "";
+  const lib = lib09(L) + routeScad(L, THREAD_POS09) + rattleLib + clockLib;
   const ALL = "frame(); bezel(); bar(); wheel(); drum(); servo(); horn();";
   const c = [
     ["servo-frame", "servo();", "frame();"], ["servo-bezel", "servo();", "bezel();"], ["servo-drum", "servo();", "drum();"],
@@ -196,6 +211,14 @@ module hanging_bats(dz = 0) {
       ["hanging-bats-stage", "hanging_bats();", `${ALL} panelR(26.2); panelL(26.2);`, "clear", "#12 branch & 3 bats suspended from front belfry rafter"],
     );
     for (const th of [-25, 0, 25]) c.push([`rattle-horn-${th < 0 ? "m" + -th : th}`, `rattle_horn(${th});`, `${ALL} ${cordName("left", 26.2)}();`, "clear", `#12 rattle horn at ${th} degrees clearing belfry & curtain top thread`]);
+  }
+  if (hasClocktower) {
+    const stageAndBats = hasRattle ? `${ALL} rattle_servo(); hanging_bats();` : ALL;
+    c.push(
+      ["clocktower-dial-stage", "clock_dial();", stageAndBats, "clear", "#3 clocktower dial plate mounted on #9 stage saddle & locating pins"],
+      ["clocktower-bezel-stage", "clock_bezel(); clock_needle(15); clock_maxtab(15);", stageAndBats, "clear", "#3 bezel, needle & MAX tab clearing #9 stage & #12 rafter bats"],
+      ["clocktower-servo-stage", "clock_servo();", `${stageAndBats} clock_dial();`, "clear", "#3 SG90 servo protruding backstage behind clocktower dial"],
+    );
   }
   for (const x of POS09) {
     c.push([`panelR-${x}`, `panelR(${x});`, ALL, "clear", `right panel at X = ${x}`], [`panelL-${x}`, `panelL(${x});`, ALL, "clear", `left panel at X = -${x}`],
@@ -229,6 +252,13 @@ module hanging_bats(dz = 0) {
       ["bats-into-arch", "hanging_bats(-15);", "frame();", "#12 hanging bats shifted 15 mm back into proscenium valance"],
     );
   }
+  if (hasClocktower) {
+    ctl.push(
+      ["clocktower-back", "clock_dial(0, 0, -1.0);", "frame();", "#3 clocktower dial shifted 1.0 mm back into backstage yoke"],
+      ["clocktower-down", "clock_dial(0, -1.0, 0);", "frame();", "#3 clocktower dial shifted 1.0 mm down onto saddle cornice"],
+      ["clocktower-pin-x", "clock_dial(1.2, 0, 0);", "frame();", "#3 clocktower dial shifted 1.2 mm sideways onto conical locating pin"],
+    );
+  }
   for (const [id, a, b, note] of ctl) c.push([`control-${id}`, a, b, "collide", `control: ${note}`]);
   return c.map(([id, a, b, expect, note]) => ({ id: `p09/${id}`, prop: "p09", lib, a, b, expect, note }));
 }
@@ -255,7 +285,7 @@ export function piecesSeparate(buf, xs) {
   }
   return true;
 }
-function lib15(C, vd, vh, vlh, { combined = false, xv = 0, xl = 0, lh01 = 20 } = {}) {
+function lib15(C, vd, vh, vlh, { combined = false, xv = 0, xl = 0, lh01 = 20, kyy = null, kyz = null } = {}) {
   const [s1, s2] = CLASP_SPLITS;
   const lidZ = vh + 0.3 + vlh;
   const hy = vd / 2 + (combined ? 6.2 : 5.6);
@@ -267,6 +297,18 @@ function lib15(C, vd, vh, vlh, { combined = false, xv = 0, xl = 0, lh01 = 20 } =
   const armY = -vd / 2 + 10.3;
   const armZ = vh - 5.5;
   const chestFile = combined ? "prop-01-chest-body" : "prop-15-vault-chest";
+  const sideLocksBlock = (combined && kyy !== null) ? `
+module mts103_bank(dz = 0) {
+  for (si = [0 : 3]) translate([76.5, -24.5 + si * 14.0, 54.5 + dz]) {
+    cube([14.2, 8.2, 13.4], center = true);
+    translate([8.0, 0, 0]) rotate([0, 90, 0]) cylinder(h = 10.0, d = 5.9, center = true);
+  }
+}
+module ky040_and_knob(dx = 0) {
+  translate([-88.2 + dx, ${kyy}, ${kyz}]) rotate([0, -90, 0]) ${imp("prop-01-safe-knob")};
+  translate([-76.2, ${kyy}, ${kyz} - 3.5]) cube([13.0, 19.2, 26.5], center = true);
+}
+` : "";
   const tokBlock = combined
     ? `module token_upright(i) { translate([${xv}, -34.8 + i * 9.8, 24.0]) rotate([-90, 0, 0]) ${imp("relic-token-pocket")}; }
 module stored_tokens() { for (i = [0 : 5]) token_upright(i); }
@@ -274,7 +316,7 @@ module left_lid_closed() { translate([${xl}, 0, ${vh + 0.3 + lh01}]) rotate([180
 module p20_sock0() { translate([65.0, -9.25, 0]) intersection() { ${imp("prop-20-terminal-blocks")}; translate([-77, -3, -1]) cube([24, 24, 18]); } }
 module p20_bezel0() { translate([-64.5, 9.25, 0]) intersection() { ${imp("prop-20-terminal-blocks")}; translate([51, -23, -1]) cube([27, 27, 10]); } }
 module p20_plug0() { translate([48, 11, 0]) intersection() { ${imp("prop-20-plug-heads")}; translate([-60, -23, -1]) cube([24, 24, 28]); } }
-module p20_set_bezel_on_back(dy = 0) { translate([64.5, ${vd / 2 + 3.6} + dy, 26.5]) rotate([90, 0, 0]) p20_bezel0(); }`
+module p20_set_bezel_on_back(dy = 0) { translate([64.5, ${vd / 2 + 3.6} + dy, 26.5]) rotate([90, 0, 0]) p20_bezel0(); }${sideLocksBlock}`
     : `module stored_relics() {
   translate([-42.0, 21.5, 2.0]) rotate([0, 0, 90]) { ${imp("relic-music-box")}; translate([0, 0, 34.4]) rotate([180, 0, 0]) ${imp("relic-music-box-lid")}; }
   translate([-43.0, -9.5, 2.0]) ${imp("relic-wax-hand")};
@@ -312,6 +354,7 @@ function checks15(root) {
   const vh = combined ? optN(b01, "chest_h") : optN(cSrc, "vault_h");
   const vlh = optN(lSrc, "vlid_h");
   const xl = optN(b01, "xl_01", 0), lh01 = optN(l01, "lid_h", 20);
+  const kyy = optN(b01, "ky_y", null), kyz = optN(b01, "ky_z", null);
   const px = combined ? xv : 0;
   const armY = -vd / 2 + 10.3, armZ = vh - 5.5, haspZ = vh + 1.8;
   if (!piecesSeparate(fs.readFileSync(path.join(root, "print", "stl", "prop-15-vault-clasp.stl")), CLASP_SPLITS))
@@ -331,8 +374,18 @@ function checks15(root) {
       ["p20-set-bezel-back", "p20_set_bezel_on_back(0.2);", "chest();", "clear", "#20 SET bezel seated on the +Y back wall"],
       ["p20-plug-in-sock", "p20_sock0();", "translate([0, 0, -16.5]) p20_plug0();", "clear", "#20 resistor plug nose seated in terminal socket shroud"],
       ["control-twin-lids-overlap", "translate([-2.0, 0, 0]) lid_closed();", "left_lid_closed();", "collide", "control: right split lid shifted 2 mm into left split lid"],
+      ["control-left-lid-axial-lock", "translate([1.0, 0, 0]) left_lid_closed();", "chest();", "collide", "control: left lid axial stop prevents > 0.5 mm slide along hinge pin"],
+      ["control-right-lid-axial-lock", "translate([-1.0, 0, 0]) lid_closed();", "chest();", "collide", "control: right lid axial stop prevents > 0.5 mm slide along hinge pin"],
       ["control-p20-plug-deep", "p20_sock0();", "translate([0, 0, -14.0]) p20_plug0();", "collide", "control: #20 plug pushed 2.5 mm past socket shoulder"],
     );
+    if (kyy !== null) {
+      c.push(
+        ["mts103-switches-box", "mts103_bank();", "chest(); stored_tokens(); lid_closed();", "clear", "4x MTS-103 toggle switches clearing right chest wall, 6 QR cards & closed lid"],
+        ["ky040-safe-dial-box", "ky040_and_knob();", "chest(); left_lid_closed();", "clear", "KY-040 encoder & safe dial knob clearing left chest wall & closed lid"],
+        ["control-mts103-into-tokens", "mts103_bank(-12.0);", "stored_tokens();", "collide", "control: MTS-103 switches shifted 12 mm down into QR cards"],
+        ["control-safe-knob-deep", "ky040_and_knob(2.5);", "chest();", "collide", "control: safe dial knob pushed 2.5 mm into -X medallion"],
+      );
+    }
   } else {
     c.push(["stored-relics-box", "stored_relics();", "chest(); lid_closed();", "clear", "all 6 Relics standing on keeper pegs inside closed lockbox"]);
   }
@@ -343,7 +396,7 @@ function checks15(root) {
     ["control-hasp-low", `hasp_in_slot(${haspZ - 5});`, "chest();", "collide", "control: hasp 5 mm too low"],
     ["control-latched-blocks-lid", "lid_and_hasp(2);", `arm_at(${px}, ${armY}, ${armZ}, 0);`, "collide", "control: latched arm (0 deg) blocks the lid from lifting"],
     ["control-token-low", "token_in_tray(0, 23.5, 23.0);", "tray();", "collide", "control: token 2.5 mm into tray floor"]);
-  const lib = lib15(C, vd, vh, vlh, { combined, xv: px, xl, lh01 });
+  const lib = lib15(C, vd, vh, vlh, { combined, xv: px, xl, lh01, kyy, kyz });
   return c.map(([id, a, b, expect, note]) => ({ id: `p15/${id}`, prop: "p15", lib, a, b, expect, note }));
 }
 

@@ -23,6 +23,7 @@ function setup(over: { ackNotice?: boolean; lastPlayId?: string; lastWorldId?: s
   const navigated: Route[] = [];
   const flows: Array<Partial<FlowState>> = [];
   const noticeAcked = vi.fn();
+  const fpsSeen: number[] = [];
   const deps: PlayDeps = {
     api, worldId: W, memory,
     session: { ackNotice: over.ackNotice ?? false, lastPlayId: over.lastPlayId, lastWorldId: over.lastWorldId },
@@ -30,9 +31,10 @@ function setup(over: { ackNotice?: boolean; lastPlayId?: string; lastWorldId?: s
     navigate: (r) => { navigated.push(r); log.push(`navigate ${r.screen}`); },
     setFlow: (p) => { flows.push(p); log.push(`setFlow ${JSON.stringify(p)}`); },
     onNoticeAcked: noticeAcked,
+    onFps: (fps) => fpsSeen.push(fps),
   };
   const controller = createPlayController(deps);
-  return { controller, log, sent, api, memory, navigated, flows, noticeAcked };
+  return { controller, log, sent, api, memory, navigated, flows, noticeAcked, fpsSeen };
 }
 
 const at = (i: number) => ({ t: "pose", pos: [ANCHORS[i]!.pos[0], 1.6, ANCHORS[i]!.pos[2]], yaw: 0.5 });
@@ -309,6 +311,15 @@ describe("what the Viewer says", () => {
     t.controller.onViewerMessage({ t: "degraded", rung: "thumb" });
     t.controller.onViewerMessage({ t: "degraded", rung: "pano" });
     expect(t.controller.getSnapshot().play.degraded).toBe("thumb");
+  });
+
+  it("passes the Viewer's frame rate to the debug overlay and nowhere else", async () => {
+    const t = setup();
+    await t.controller.begin();
+    t.controller.onViewerMessage({ t: "fps", fps: 59.6 });
+    t.controller.onViewerMessage({ t: "fps", fps: -2 });
+    expect(t.fpsSeen).toEqual([59.6]);
+    expect(t.controller.getSnapshot().prompt).toBeNull();
   });
 });
 
