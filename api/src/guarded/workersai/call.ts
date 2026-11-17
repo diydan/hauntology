@@ -4,8 +4,8 @@ export interface AiBinding {
   run(model: string, input: Record<string, unknown>, options?: { gateway: { id: string } }): Promise<unknown>;
 }
 
-/** Why a call to the model or the image service gave nothing: it was busy or limiting (`rate_limited`), or anything else (`failed`). Neither is charged. */
-export type CallFailure = "rate_limited" | "failed";
+/** Why a call to the model or the image service gave nothing: busy or limiting (`rate_limited`), its own safety filter refused the output (`flagged`), or anything else (`failed`). None is charged. */
+export type CallFailure = "rate_limited" | "failed" | "flagged";
 
 /** Rejects with a plain error when `promise` takes longer than `ms`; the timer never outlives the call. */
 export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -21,6 +21,7 @@ export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 /** A failure whose message says the service is busy or limiting is `rate_limited`, so the caller may say "try again soon"; any other is `failed`. Only the message is read. */
 export function failureKind(error: unknown): CallFailure {
   const message = error instanceof Error ? error.message : "";
+  if (/\b3030\b|flagged/i.test(message)) return "flagged";
   return /\b429\b|rate.?limit|too many|capacity|busy|overload/i.test(message) ? "rate_limited" : "failed";
 }
 
