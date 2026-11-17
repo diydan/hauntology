@@ -6,6 +6,10 @@ import "./Knock.css";
 
 /** A click the microphone hears counts as a knock when its loudness jumps past this and past three times the room. */
 const MIC_KNOCK = 0.12;
+/** A jolt the motion sensor feels counts as a knock from this sudden change, m/s² (the Knock test page's starting value). */
+const JOLT_KNOCK = 2.5;
+/** With both sensors on, the jolt and the click of one knock come this close together. */
+const PAIR_MS = 90;
 /** One knock cannot count twice inside this. */
 const DEBOUNCE_MS = 150;
 
@@ -19,7 +23,7 @@ const DEBOUNCE_MS = 150;
 export default function Knock({ view, feel, elapsed, submit, announce, resetKey, reducedMotion }: KindProps<"knock">) {
   const [listening, setListening] = useState(false);
   const [times, setTimes] = useState<number[]>([]);
-  const latest = useRef({ listening: false, times: [] as number[], last: -Infinity, prev: 0 }); // the live values, read inside a frame and a tap
+  const latest = useRef({ listening: false, times: [] as number[], last: -Infinity, prev: 0, lastJolt: -Infinity, lastClick: -Infinity }); // the live values, read inside a frame and a tap
 
   useEffect(() => () => { feel.breath.stop(); }, [feel]);
 
@@ -47,18 +51,31 @@ export default function Knock({ view, feel, elapsed, submit, announce, resetKey,
     submit({ times: cur.times });
   };
 
-  // every frame while listening: a click from the microphone is a knock, and a quiet spell after the last knock ends the try
+  // every frame while listening: a knock is a jolt the motion sensor feels and/or a click the microphone hears. With both on, a knock must be
+  // both, within PAIR_MS (the Knock test page found that the steadiest: talk is not a jolt and a bump is not a click). With one on, that one.
+  // A quiet spell after the last knock ends the try.
   useFrame(() => {
     const cur = latest.current;
     if (!cur.listening) return;
+    const t = elapsed();
     const b = feel.breath;
-    if (b.state === "on") {
+    const micOn = b.state === "on";
+    const motionOn = feel.motion.state === "on";
+    let jolt = false;
+    let click = false;
+    if (motionOn) jolt = feel.motion.takeJolt() >= JOLT_KNOCK;
+    if (micOn) {
       const level = b.level;
       const needed = Math.max(MIC_KNOCK, b.threshold);
-      if (level >= needed && cur.prev < needed) knock();
+      click = level >= needed && cur.prev < needed;
       cur.prev = level;
     }
-    if (cur.times.length > 0 && elapsed() - (cur.times[cur.times.length - 1] as number) >= KNOCK_READ.quietMs) finish();
+    if (jolt) cur.lastJolt = t;
+    if (click) cur.lastClick = t;
+    if (micOn && motionOn) {
+      if ((jolt || click) && Math.abs(cur.lastJolt - cur.lastClick) <= PAIR_MS) { cur.lastJolt = cur.lastClick = -Infinity; knock(); }
+    } else if (jolt || click) knock();
+    if (cur.times.length > 0 && t - (cur.times[cur.times.length - 1] as number) >= KNOCK_READ.quietMs) finish();
   }, listening);
 
   const start = (): void => {
@@ -68,10 +85,16 @@ export default function Knock({ view, feel, elapsed, submit, announce, resetKey,
     cur.times = [];
     cur.last = -Infinity;
     cur.prev = 0;
+    cur.lastJolt = -Infinity;
+    cur.lastClick = -Infinity;
     setTimes([]);
     setListening(true);
     feel.haptics.newAttempt();
-    void feel.breath.start(); // from this tap, so a phone that asks can ask; the Tap control works whatever it answers
+    // both from this tap, so a phone that asks can ask; the Tap control works whatever they answer. Motion is asked only if it was never tried,
+    // so a phone that said no is not asked again, and nothing here turns tilt on for another Lock (the Lock's close stops every sensor).
+    void feel.breath.start();
+    if (feel.motion.state === "off") void feel.motion.enable();
+    feel.motion.takeJolt(); // a jolt from before the tap does not count
     announce("Knock now. Tap the door if you cannot knock.");
   };
 
@@ -110,7 +133,7 @@ export default function Knock({ view, feel, elapsed, submit, announce, resetKey,
         <button type="button" className="ui-button ui-button--primary" disabled={listening} onClick={start}>{listening ? "Listening…" : "Knock"}</button>
         <button type="button" className="ui-button" disabled={!listening || times.length === 0} onClick={finish}>Done</button>
       </div>
-      <p className="ui-hint pz-hint pz-more">The phone listens for knocks on the table. It hears loudness only. Or tap the door, once a knock.</p>
+      <p className="ui-hint pz-hint pz-more">The phone feels and hears knocks on the table. It hears loudness only. Or tap the door, once a knock.</p>
     </div>
   );
 }

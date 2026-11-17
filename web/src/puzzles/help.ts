@@ -146,7 +146,7 @@ export const KIND_HELP: Readonly<Record<Kind, KindHelp>> = {
       "After a quiet moment the knocks are checked. Done checks them at once.",
     ],
     extras: [
-      "The microphone hears each knock. It only measures loudness. Nothing is recorded.",
+      "The phone feels each knock, and the microphone hears it. It only measures loudness. Nothing is recorded.",
       "Buzz and sound: each knock thunks and buzzes, and adds a dot.",
     ],
   },

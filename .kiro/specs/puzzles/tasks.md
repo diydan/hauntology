@@ -397,7 +397,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 24.3, 24.5, 24.7_
   - [ ] 16.4 Spike puzzles 1.9 (secret knock): on three phones and two tables, can five people open easy, medium and hard in three tries; how often does a knock go unheard or a bump count
     - _Requirements: 24.3, 24.4_
-  - [x] 16.5 The `knock` Kind in `shared/src/puzzles` (make, verify) and `web/src/puzzles/kinds` (the door, the look of the design system, the Tap control), with the clue as a Sight (built 2026-11-16: microphone and Tap; the motion jolt waits for a jolt in the feel layer's `Motion`)
+  - [x] 16.5 The `knock` Kind in `shared/src/puzzles` (make, verify) and `web/src/puzzles/kinds` (the door, the look of the design system, the Tap control), with the clue as a Sight (built 2026-11-16: motion and the microphone through the feel layer, and Tap)
     - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
   - [ ] 16.6 Hand the door between Zones and the Haunt Event knock to the Party Mode spec, and write there which it takes
     - _Requirements: 24.6_

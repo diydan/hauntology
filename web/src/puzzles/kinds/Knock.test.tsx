@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeLock } from "@hauntology/shared/puzzles/make";
 import { knockPlayTimes } from "@hauntology/shared/puzzles/knock";
 import { verify } from "@hauntology/shared/puzzles/verify";
@@ -65,5 +65,51 @@ describe("Knock (the Secret knock, puzzles Requirement 24)", () => {
     act(() => { m.reset(1); });
     expect(screen.getByRole("img", { name: "No knocks yet" })).toBeTruthy();
     expect((start() as HTMLButtonElement).disabled).toBe(false);
+  });
+});
+
+describe("Knock: the phone feels and hears knocks on the table", () => {
+  beforeEach(() => { vi.useFakeTimers({ toFake: ["requestAnimationFrame", "cancelAnimationFrame", "performance"] }); });
+  afterEach(() => { vi.useRealTimers(); });
+  const frame = (): void => { act(() => { vi.advanceTimersByTime(17); }); };
+  const marks = (): string => screen.getByRole("img", { name: /Knocked so far|No knocks yet/ }).getAttribute("aria-label") ?? "";
+
+  it("asks for motion from the Knock tap, and with only motion on, a jolt is a knock and a small one is not", async () => {
+    const lock = lockOf("easy", 3);
+    const m = mountKind(Knock, lock.view);
+    m.feel.breath.startResult = "denied";
+    await act(async () => { fireEvent.click(start()); });
+    expect(m.feel.motion.enabled).toBe(1);
+    expect(m.feel.motion.state).toBe("on");
+    m.feel.motion.jolt = 1.2; frame();
+    expect(marks()).toBe("No knocks yet");
+    m.clock.ms = 500; m.feel.motion.jolt = 4; frame();
+    expect(marks()).toBe("Knocked so far: 1");
+  });
+
+  it("with motion and the microphone both on, a knock must be a jolt and a click together: talk alone or a bump alone is not", async () => {
+    const lock = lockOf("easy", 3);
+    const m = mountKind(Knock, lock.view);
+    await act(async () => { fireEvent.click(start()); });
+    expect(m.feel.breath.state).toBe("on");
+    m.clock.ms = 100; m.feel.breath.level = 0.4; frame(); // a laugh: loud, no jolt
+    m.feel.breath.level = 0; frame();
+    m.clock.ms = 600; m.feel.motion.jolt = 5; frame(); // a cup put down: a jolt, no click
+    expect(marks()).toBe("No knocks yet");
+    m.clock.ms = 1200; m.feel.motion.jolt = 5; m.feel.breath.level = 0.4; frame(); // a knock: both at once
+    expect(marks()).toBe("Knocked so far: 1");
+    m.feel.breath.level = 0; frame();
+    m.clock.ms = 1500; m.feel.motion.jolt = 5; frame(); m.clock.ms = 1550; m.feel.breath.level = 0.4; frame(); // both, 50 ms apart
+    expect(marks()).toBe("Knocked so far: 2");
+  });
+
+  it("does not ask for motion again when the phone said no, and the door still takes taps", async () => {
+    const lock = lockOf("easy", 3);
+    const m = mountKind(Knock, lock.view);
+    m.feel.motion.setState("denied");
+    await act(async () => { fireEvent.click(start()); });
+    expect(m.feel.motion.enabled).toBe(0);
+    m.clock.ms = 10; fireEvent.click(door());
+    expect(marks()).toBe("Knocked so far: 1");
   });
 });
