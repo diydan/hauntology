@@ -1,3 +1,4 @@
+import { color } from "@hauntology/shared/design/tokens";
 import { hashText } from "@hauntology/shared/ghost/rng";
 import { parseShellMessage, type Anchor, type ShellToViewer } from "@hauntology/shared/app/events";
 import { atmosphereParams, tiltLook, type AtmosphereParams, type LookState, type TiltCalibration, type TiltReading } from "@hauntology/shared/viewer/atmosphere";
@@ -150,16 +151,21 @@ type SceneHooks = {
   registerDeliver: (fn: (m: ShellToViewer) => void) => void;
 };
 
+const rgba = (hex: string, alpha: number): string => {
+  const n = Number.parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+};
+
 /** A soft round sprite texture, drawn once. */
 function glowTexture(): THREE.CanvasTexture {
   const c = document.createElement("canvas");
   c.width = c.height = 128;
   const g = c.getContext("2d")!;
   const grad = g.createRadialGradient(64, 64, 2, 64, 64, 64);
-  grad.addColorStop(0, "rgba(255,246,220,1)");
-  grad.addColorStop(0.18, "rgba(255,196,96,0.95)");
-  grad.addColorStop(0.45, "rgba(255,170,70,0.45)");
-  grad.addColorStop(1, "rgba(255,170,70,0)");
+  grad.addColorStop(0, rgba(color["orb-lantern-core"], 1));
+  grad.addColorStop(0.18, rgba(color.lantern, 0.95));
+  grad.addColorStop(0.45, rgba(color.lantern, 0.45));
+  grad.addColorStop(1, rgba(color.lantern, 0));
   g.fillStyle = grad;
   g.fillRect(0, 0, 128, 128);
   return new THREE.CanvasTexture(c);
@@ -173,7 +179,7 @@ function ghostTexture(): THREE.CanvasTexture {
   const c = document.createElement("canvas");
   c.width = 256; c.height = 384;
   const g = c.getContext("2d")!;
-  g.fillStyle = "rgba(205,228,232,0.82)";
+  g.fillStyle = rgba(color.ghost, 0.82);
   g.beginPath();
   g.moveTo(48, 356);
   g.lineTo(48, 150);
@@ -187,7 +193,7 @@ function ghostTexture(): THREE.CanvasTexture {
   }
   g.closePath();
   g.fill();
-  g.fillStyle = "rgba(16,18,24,0.9)";
+  g.fillStyle = rgba(color.ink, 0.9);
   for (const x of [102, 154]) { g.beginPath(); g.arc(x, 140, 10, 0, Math.PI * 2); g.fill(); }
   g.beginPath(); g.ellipse(128, 178, 11, 15, 0, 0, Math.PI * 2); g.fill();
   const tex = new THREE.CanvasTexture(c);
@@ -216,11 +222,10 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setSize(container.clientWidth || innerWidth, container.clientHeight || innerHeight);
-  renderer.domElement.style.touchAction = "none";
   container.append(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b0b10);
+  scene.background = new THREE.Color(color.ink);
   const camera = new THREE.PerspectiveCamera(62, (container.clientWidth || innerWidth) / (container.clientHeight || innerHeight), 0.05, 500);
   camera.rotation.order = "YXZ";
   scene.add(new SparkRenderer({ renderer }));
@@ -248,15 +253,19 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
 
   // The haunt layer (group 5): grade overlays over the canvas, orbs, the ghost, sky and weather.
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const overlay = (css: Partial<CSSStyleDeclaration>): HTMLDivElement => {
+  container.classList.add("ui-viewer-stage");
+  const overlay = (className: string): HTMLDivElement => {
     const d = document.createElement("div");
-    Object.assign(d.style, { position: "absolute", inset: "0", pointerEvents: "none" }, css);
+    d.className = className;
     container.append(d);
     return d;
   };
-  if (getComputedStyle(container).position === "static") container.style.position = "relative";
-  const vignetteEl = overlay({ background: "radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,0.9) 100%)", opacity: "0" });
-  const grainEl = overlay({ backgroundImage: `url(${grainDataUrl()})`, opacity: "0", mixBlendMode: "overlay" });
+  const vignetteEl = overlay("ui-viewer-vignette");
+  const grainEl = overlay("ui-viewer-grain");
+  grainEl.style.backgroundImage = `url(${grainDataUrl()})`;
+  const toolsEl = document.createElement("div");
+  toolsEl.className = "ui-viewer-tools";
+  container.append(toolsEl);
 
   const haunt = {
     anchors: [] as Anchor[],
@@ -308,7 +317,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       const geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
       precip = new THREE.Points(geo, new THREE.PointsMaterial({
-        color: p.precipitation.kind === "snow" ? 0xffffff : 0xbcd2ee, size: p.precipitation.kind === "snow" ? 0.07 : 0.045,
+        color: new THREE.Color(color.bone), size: p.precipitation.kind === "snow" ? 0.07 : 0.045,
         transparent: true, opacity: 0.75, depthWrite: false,
       }));
       scene.add(precip);
@@ -325,7 +334,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       });
       const geo = new THREE.BufferGeometry();
       geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-      stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.9, depthWrite: false }));
+      stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: new THREE.Color(color.bone), size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.9, depthWrite: false }));
       scene.add(stars);
     }
   };
@@ -365,7 +374,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     muteButton.setAttribute("aria-pressed", String(!drone.muted));
     if (drone.ctx && drone.gain) drone.gain.gain.setTargetAtTime(drone.muted ? 0 : 0.035, drone.ctx.currentTime, 0.2);
   });
-  container.append(muteButton);
+  toolsEl.append(muteButton);
 
   // Collision: the collider merged into one world-space geometry, else the disc.
   let collision: CollisionWorld | null = null;
@@ -468,7 +477,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       }
     })();
   });
-  if (matchMedia("(pointer: coarse)").matches) container.append(tiltButton);
+  if (matchMedia("(pointer: coarse)").matches) toolsEl.append(tiltButton);
 
   const onResize = () => {
     const w = container.clientWidth || innerWidth, h = container.clientHeight || innerHeight;

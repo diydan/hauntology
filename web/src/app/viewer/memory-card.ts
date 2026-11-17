@@ -17,7 +17,7 @@ type Ctx = Pick<CanvasRenderingContext2D, "fillStyle" | "font" | "fillRect" | "s
 export type CardCanvas = { width: number; height: number; getContext(kind: "2d"): Ctx | null };
 export type CardImage = { width: number; height: number };
 
-const FONT = "ui-monospace, Menlo, Consolas, monospace";
+const FONT = "'IBM Plex Mono', Menlo, Consolas, monospace";
 
 /** The wrapped lines of every entry, and the card's full height for this layout. */
 export function cardPlan(layout: CardLayout, hasThumbImage: boolean): { height: number; blocks: { title: string; lines: string[] }[] } {

@@ -121,13 +121,15 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
 
 - [ ] 10. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; complete the manual perf checklist; ask the user if questions arise.
+  - Progress (2026-11-17): shared 1419, web 1033 and api 1081 tests green; shared and web typecheck, lint, tokens and traceability green. Two pre-existing reds from the merged main are recorded, not fixed here: `api` typecheck fails in two merged test files on missing Node types, and two tools tests fail on merged dev/config state (`api/dev/playthrough-calls.ts`, the declared AI binding). Manual perf checklist: every LOD on phone and laptop recorded except phone `full` (`docs/spikes/2.1.md`).
 
-- [ ] 11. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 9 and the `design-system` spec)
-  - [ ] 11.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+- [x] 11. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 9 and the `design-system` spec)
+  - [x] 11.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
     - _Requirements: 9.1, 9.3_
-  - [ ] 11.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 11.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 9.2_
-  - [ ] 11.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 11.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 9.4_
-  - [ ] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+  - [x] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 9.1_
+  - Done (2026-11-17): the viewer's own pieces moved onto the elements in the same change that built them: new `ui-viewer-stage`, `ui-viewer-vignette`, `ui-viewer-grain` and `ui-viewer-tools` in `design/elements.css` and the catalogue; the mount's static inline styles are gone (opacity, filter and the grain tile stay CSSOM, as moving numbers); canvas and three colours come from `shared/src/design/tokens.ts` (orb lantern core, ghost, ink, bone). Checked headless at 390 px and 1280 px with the recorded world: tools measure 44 px high, the stage and grade read at both widths. Along the way: `ui-lyrics`, used by the merged case ending screen but never defined, is now defined and catalogued.
