@@ -26,9 +26,9 @@ module prop_01_chest_lid() {
           chamfer_box(4.8, 4.2, lid_h - 0.6, r = 0.8, ch_bot = 0.7, ch_top = 0.4);
       }
 
-      // 2. Rear hinge barrels (at X_local = -22, +21 -> X_world = -55.4, -12.4 between chest knuckles -75 and +8.5;
-      //    Y_lid = -(lid_d/2 + 5.2) = -62.2, Z_lid = lid_h + 1.3 = 21.3 -> lands on Y = +62.2, Z = 69.0 when flipped!)
-      for (hx = [-22.0, 21.0]) {
+      // 2. Rear hinge barrels (at X_local = -29.1, +29.9 -> X_world = -60.5, -1.5 with exact 0.50 mm axial constraint inside
+      //    chest knuckles -82..-68 and +6..+20 so the lid can never slide sideways into the Right Lid or wander off the cam lever!)
+      for (hx = [-29.1, 29.9]) {
         hull() {
           translate([hx, -(lid_d / 2 + 5.2), lid_h + 1.3])
             rotate([0, 90, 0])
@@ -56,7 +56,7 @@ module prop_01_chest_lid() {
     }
 
     // 5. Hinge pin bores (Ø3.5 mm teardropped ID)
-    for (hx = [-22.0, 21.0]) {
+    for (hx = [-29.1, 29.9]) {
       hull() {
         translate([hx, -(lid_d / 2 + 5.2), lid_h + 1.3])
           rotate([0, 90, 0]) cylinder(h = 18.0, d = 3.5, center = true);

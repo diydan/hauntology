@@ -106,12 +106,16 @@ module prop_05_plinth_2seat() {
         cube([37.0, 2.8, 19.6], center = true);
     }
 
-    // 8. Underside ESP32 DevKitC & WS2812B Bus Vault (29.6 x 84 mm) + High Weight-Relief Vaults in Unused Solid Piers:
+    // 8. Underside ESP32-DevKitC V4 & WS2812B Bus Vault (28.6 mm self-centering 45-deg V-seat along X at Z = 5.75 + 4x M2 bores!)
     translate([0, 2.4, 0])
       hull() {
-        translate([0, 0, 3.55]) cube([seg_w - 16.0, 29.6, 7.3], center = true);
-        translate([0, 0, 19.8]) cube([seg_w - 20.0, 4.0, 0.4], center = true);
+        translate([0, 0, 2.7]) cube([seg_w - 14.0, 28.6, 5.6], center = true);
+        translate([0, 0, 17.0]) cube([seg_w - 18.0, 2.8, 0.4], center = true);
       }
+    for (sx = [-1, 1], sy = [-1, 1]) {
+      translate([-10.0 + sx * esp32_hole_w / 2, 2.4 + sy * esp32_hole_d / 2, 6.2])
+        cylinder(h = 8.5, d = sg90_m2_pilot_d);
+    }
     // High center vault between left & right SG90s (X = -3.4..+14.4, clear of M2 bores at -5.75 & +16.75 and ears!)
     translate([5.5, 3.2, -0.1])
       hull() {
@@ -137,13 +141,21 @@ module prop_05_plinth_2seat() {
         translate([0, 0, 42.2]) linear_extrude(height = 0.3) rrect2d(78.8, 1.8, r = 0.6);
       }
 
-    // Continuous inter-segment wire & LED bus pass-through trench through left & right dovetail ends
+    // Continuous inter-segment wire & LED bus pass-through + Left-End (-X) 45-deg Gabled USB-C Port aligned with X-oriented ESP32!
     translate([0, 2.4, 0])
       hull() {
-        translate([0, 0, 2.5]) cube([seg_w + 20.0, 14.0, 5.2], center = true);
-        translate([0, 0, 10.1]) cube([seg_w + 20.0, 2.0, 0.4], center = true);
+        translate([0, 0, 3.8]) cube([seg_w + 20.0, esp32_usb_w + 1.2, esp32_usb_h + 0.8], center = true);
+        translate([0, 0, 11.4]) cube([seg_w + 20.0, 1.8, 0.4], center = true);
       }
-    // Rear (+Y) 45-deg gabled USB-C power & programming port
+    // Internal WS2812B 3-wire jumper pass-through connecting front Resolve LED gallery (Y = -8.9) into central ESP32 vault
+    for (sx = [-34.0, 34.0]) {
+      translate([sx, -4.5, 2.2])
+        hull() {
+          cube([6.0, 10.0, 4.6], center = true);
+          translate([0, 0, 4.8]) cube([1.2, 10.0, 0.4], center = true);
+        }
+    }
+    // Rear (+Y) auxiliary 5V power / jumper cable exit notch
     translate([0, seg_d / 2, 3.8])
       rotate([90, 0, 0])
         hull() {

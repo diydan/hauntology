@@ -26,9 +26,9 @@ module prop_15_vault_lid() {
           chamfer_box(4.4, 4.0, vlid_h - 0.6, r = 0.8, ch_bot = 0.7, ch_top = 0.4);
       }
 
-      // 2. Rear hinge barrels (at X_local = -11.5, +11.5 -> X_world = +43.9, +66.9 between chest knuckles +30 and +79.5;
-      //    Y_lid = -(vlid_d/2 + 5.2) = -62.2, Z_lid = vlid_h + 1.3 = 21.3 -> lands on Y = +62.2, Z = 69.0 when flipped!)
-      for (hx = [-11.5, 11.5]) {
+      // 2. Rear hinge barrels (at X_local = -14.4, +14.4 -> X_world = +41.0, +69.8 with exact 0.50 mm axial constraint inside
+      //    chest knuckles +25..+35 and +75.8..+85.8 so the front hasp stays dead-center on the latch hook!)
+      for (hx = [-14.4, 14.4]) {
         hull() {
           translate([hx, -(vlid_d / 2 + 5.2), vlid_h + 1.3])
             rotate([0, 90, 0])
@@ -49,9 +49,9 @@ module prop_15_vault_lid() {
       }
     }
 
-    // 4. Front Clasp Hasp Slot (15.0 mm slot depth matching prop-15-vault-clasp hasp tab!)
+    // 4. Front Clasp Hasp Slot (snug 24.3 x 3.95 x 15.0 mm press/CA-glue mortise for 24.0 x 3.8 mm hasp tab!)
     translate([0, vlid_d / 2 - 1.8, vlid_h - 6.5])
-      cube([24.6, 4.2, 15.0], center = true);
+      cube([24.3, 3.95, 15.0], center = true);
 
     // 5. Shallow Crooked Timber V-grooves on top
     for (ty = [-26, 0, 26]) {
@@ -60,7 +60,7 @@ module prop_15_vault_lid() {
     }
 
     // 6. Hinge Pin Bores (Ø3.5 mm teardropped ID) + central torsion-spring leg notch
-    for (hx = [-11.5, 11.5]) {
+    for (hx = [-14.4, 14.4]) {
       hull() {
         translate([hx, -(vlid_d / 2 + 5.2), vlid_h + 1.3])
           rotate([0, 90, 0]) cylinder(h = 16.0, d = 3.5, center = true);
