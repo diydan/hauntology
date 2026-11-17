@@ -182,7 +182,7 @@ test('the two local configs: the rehearsal has no AI binding and no gateway, the
   assert.equal(rehearsal.vars.AI_GATEWAY_ID, undefined);
   assert.deepEqual(paid.ai, { binding: 'AI' });
   assert.equal(paid.vars.AI_GATEWAY_ID, 'default');
-  assert.equal(product.ai, undefined, 'the product config never declares the AI binding');
+  assert.deepEqual(product.ai, { binding: 'AI' }, 'the product config declares the AI binding for the voice (PR #47); the play-through tool does not edit it');
   assert.equal(product.vars.AI_GATEWAY_ID, undefined);
   for (const c of [rehearsal, paid]) {
     assert.equal(c.main, 'dev/playthrough-worker.ts');
