@@ -9,7 +9,7 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 ## Glossary
 
 - **Puzzle**: one playable mini-game of a **Kind**.
-- **Kind**: one of `lockpick`, `wires`, `clock`, `safe`, `musicbox`, `candles`, `moved`, `photo`, `words`, `board`, the optional `maze`, and `knock` (the Secret knock, Requirement 24, a lab demo so far).
+- **Kind**: one of `lockpick`, `wires`, `clock`, `safe`, `musicbox`, `candles`, `moved`, `photo`, `words`, `board`, the optional `maze`, and `knock` (the Secret knock, Requirement 24, a lab demo so far); Requirement 25 (shared actions and Shake) is a lab demo too.
 - **Lock**: a Puzzle placed in front of something: a Zone's Residue (Party Mode) or a memory (Wander). A Lock has a Kind, a level and a seed.
 - **Level**: `easy`, `medium` or `hard`. They differ only in size, tolerance, step and how often a clue can be replayed.
 - **Puzzle setting**: `off`, `easy`, `medium` or `hard`, set for a Room by the Master (Party) or by a visitor (Wander).
@@ -341,3 +341,17 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 5. WHEN the knock is right THEN the door SHALL open with our `creak` sound and a buzz, and its words SHALL be on screen and in the live region; a door that opens SHALL move slowly and never flash, and with reduced motion it SHALL simply be open.
 6. THE Room MAY place a `knock` Lock on a door between Zones, and a Haunt Event MAY have the ghost knock a pattern on the TV for every Player at once (the first to knock it back gets Help); these two are ideas until the Party Mode spec takes them.
 7. THE demo SHALL be `tools/playtest/secret-knock.html` on the lab (three levels, Start for the sensors, Hear the knock once, Knock now, the Tap control, three tries), so the feel can be tried on a real phone before the Kind is built into `web/src/puzzles`.
+
+### Requirement 25
+
+**User Story:** As a Player, I want some things in the room to happen only when two or three of us act together, and I want to feel them by where my phone is and which way it faces, so that the shared room feels like one place and not four separate screens. (Shared actions and Shake, added 2026-11-17 by the owner)
+
+#### Acceptance Criteria
+
+1. THE Room SHALL have shared actions, each needing a number of different Players to act inside `WINDOW_MS` (2 seconds): `knock` 1, `chair` (shake the chair) 2, `wind` (the wind through the window, two ghosts) 2 and `bigDoor` 3 (`ACTIONS` and `makeTogether` in `tools/playtest/js/shake-core.js`); one Player SHALL count once however often they act, acts further apart than the window SHALL NOT count together, and when an action fires the count SHALL start again.
+2. THE server SHALL own the state of every shared thing (a door open or shut, a chair moved); a phone only asks, and every screen is told the result.
+3. A Player SHALL act by shaking their phone: three jolts of at least 8 m/s² inside one second, then a rest of 1.2 seconds (`makeShakeDetector`); the motion SHALL be read on the phone only and nothing SHALL be recorded or sent but the act, and a control SHALL always act, so a Player with no motion sensor or no wish to shake can still take part.
+4. WHEN an action fires THEN each phone SHALL feel it by where it is and which way it faces (`feel`): within 2.5 m and facing the thing: a buzz, the picture shakes and the sound is full; within 6 m and facing it: no buzz, the picture shakes and the sound is half; facing away from it (more than 100 degrees off): a faint sound only; beyond 6 m: nothing.
+5. WHERE a phone cannot buzz (an iPhone in the browser) THEN the picture shake and the sound SHALL carry the same meaning, and with reduced motion the picture SHALL NOT shake.
+6. THE positions and facing of phones SHALL come from the phones' own view of the room (the Spirit table's marks and each phone's orientation), and until that is built, the demo SHALL use pretend phones on a floor plan; the real relay between phones is not part of this Requirement yet.
+7. THE demo SHALL be `tools/playtest/shake.html` on the lab (four actions, You and three pretend Players, a tap to move and a turn to face, Start for the motion sensor, a You acts control and a line for what each phone feels), so the rules can be tried on a real phone.

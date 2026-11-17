@@ -650,3 +650,24 @@ Not decided: whether the Lock's door is a Zone door in Party Mode or the Haunt E
 ### Property 34: A secret knock opens to itself and to nothing else
 For every level and seed: the pattern is valid (Requirement 24.1), the ghost's own knock judged as the Player's opens the door, any other group counts do not, and on hard a missing or misplaced long pause does not.
 **Validates: Requirements 24.1, 24.2, 24.4**
+
+## Shared actions and Shake (2026-11-17)
+
+The owner's idea: the TV or laptop shows one room, and each phone is its own lens on it. Some things are shared (a door opens for everyone), some are private (a clue, a ghost only one phone sees). A shared thing may need more than one Player, and what a phone feels depends on where it is and which way it faces.
+
+| Part | Where | What it does |
+|---|---|---|
+| Needs | `ACTIONS`, `makeTogether` | how many different Players must act inside 2 s: knock 1, chair 2, wind 2, big door 3 |
+| Shake | `makeShakeDetector` | three jolts of 8 m/s² or more inside 1 s; then 1.2 s of rest |
+| Feel | `feel(from, to)` | strong (within 2.5 m, facing it): buzz, picture and full sound; soft (within 6 m): picture and half sound; facing away: faint sound; beyond 6 m: nothing |
+| Owner of state | the server (not built) | a phone asks; the server decides and tells every screen |
+
+Not decided: the real relay. The lab Worker (`src/room-core.js`) only pushes ready-made effects to devices, so a shared action needs a new message type and a count on the server. Not built: the phones' positions from their own views; the demo uses pretend phones on a floor plan.
+
+### Property 35: A shared action fires when enough different Players act together, and for no fewer
+For every action: fewer than `need` different Players inside the window never fires it, `need` different Players inside the window always does, and one Player acting many times counts once.
+**Validates: Requirements 25.1**
+
+### Property 36: A phone is never given more than its place allows
+For any positions and facings: beyond 6 m nothing is felt, a phone facing away gets no buzz and no picture, and a buzz only goes to a phone within 2.5 m that faces the thing.
+**Validates: Requirements 25.4**
