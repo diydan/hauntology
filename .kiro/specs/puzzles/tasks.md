@@ -395,7 +395,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - **Validates: Requirements 24.1, 24.2, 24.4**
   - [x] 16.3 The demo on the lab: `tools/playtest/secret-knock.html` (three levels, the clue once, sensors or Tap, three tries, the creak), linked from the hub; the build copies `creak.m4a`
     - _Requirements: 24.3, 24.5, 24.7_
-  - [ ] 16.4 Spike puzzles 1.9 (secret knock): on three phones and two tables, can five people open easy, medium and hard in three tries; how often does a knock go unheard or a bump count
+  - [ ] 16.4 Spike puzzles 1.9 (secret knock): on three phones and two tables, can five people open easy, medium and hard in three tries; how often does a knock go unheard or a bump count (the plan, the results sheet and the pass marks: `docs/spikes/knock-1.md`)
     - _Requirements: 24.3, 24.4_
   - [x] 16.5 The `knock` Kind in `shared/src/puzzles` (make, verify) and `web/src/puzzles/kinds` (the door, the look of the design system, the Tap control), with the clue as a Sight (built 2026-11-16: motion and the microphone through the feel layer, and Tap)
     - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
