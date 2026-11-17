@@ -1,13 +1,17 @@
 // The device-lab room logic with no Cloudflare types, so it can be tested in Node.
 // The Durable Object (lab-room.js) is a thin adapter: it lists its sockets and feeds messages in.
-// host:  { now(): ms, rand(): [0,1), list(): Sock[] }
+// host:  { now(): ms, rand(): [0,1), list(): Sock[], loadState?(): object, saveState?(state): void }   (the room's shared state survives hibernation)
 // Sock:  { id, meta, send(obj), setMeta(meta), close(code, reason) }   meta survives hibernation (a socket attachment)
+import { ACTIONS, INITIAL_STATE, SPOTS, applyAction, cleanPos, cleanState, feel, makeTogether } from '../js/shake-core.js';
 import { MAX_DEVICES, parseMessage, validateFx, planPush, cleanName, cleanCaps, platformOf } from '../js/protocol.js';
 
 const ACK_STATUS = ['played', 'blocked', 'skipped', 'dropped'];
 const PUSH_BUCKET = { cap: 10, perSec: 1 }; // ten pushes at once, then one a second
 const PING_BUCKET = { cap: 40, perSec: 8 };
 const ROSTER_MIN_GAP_MS = 1500;
+const ACT_BUCKET = { cap: 6, perSec: 1 };
+const POS_BUCKET = { cap: 10, perSec: 4 };
+const DEFAULT_POS = { x: 5, y: 7, facing: 270 }; // a phone that has not said where it is stands south of the chair, facing north
 
 export class RoomCore {
   constructor(host, { maxDevices = MAX_DEVICES } = {}) {
@@ -15,6 +19,8 @@ export class RoomCore {
     this.max = maxDevices;
     this.buckets = new Map();
     this.lastRoster = 0;
+    this.state = cleanState(host.loadState?.() ?? INITIAL_STATE);
+    this.together = Object.fromEntries(Object.keys(ACTIONS).map((a) => [a, makeTogether(a)]));
   }
 
   // ---------------------------------------------------------- helpers
@@ -26,7 +32,7 @@ export class RoomCore {
       .sort((a, b) => a.meta.joinedAt - b.meta.joinedAt || (a.id < b.id ? -1 : 1));
   }
   roster(exceptId = null) {
-    return this.devices(exceptId).map((s) => ({ id: s.id, name: s.meta.name, platform: s.meta.platform, caps: s.meta.caps || {}, joinedAt: s.meta.joinedAt }));
+    return this.devices(exceptId).map((s) => ({ id: s.id, name: s.meta.name, platform: s.meta.platform, caps: s.meta.caps || {}, joinedAt: s.meta.joinedAt, pos: s.meta.pos || null }));
   }
   broadcast(msg, exceptId = null) { for (const s of this.socks()) if (s.id !== exceptId) s.send(msg); }
   broadcastRoster(exceptId = null) {
@@ -74,6 +80,8 @@ export class RoomCore {
       case 'ping': return this.ping(sock, m);
       case 'push': return this.push(sock, m);
       case 'ack': return this.ack(sock, m);
+      case 'pos': return this.pos(sock, m);
+      case 'act': return this.act(sock, m);
       default: return sock.send({ t: 'error', code: 'bad_message' });
     }
   }
@@ -84,7 +92,7 @@ export class RoomCore {
       platform: platformOf(typeof m.ua === 'string' ? m.ua.slice(0, 300) : ''),
       caps: cleanCaps(m.caps),
     });
-    sock.send({ t: 'welcome', id: sock.id, serverTime: this.now(), roster: this.roster() });
+    sock.send({ t: 'welcome', id: sock.id, serverTime: this.now(), roster: this.roster(), state: this.state });
     this.broadcastRoster();
   }
   capsUpdate(sock, m) {
@@ -121,5 +129,31 @@ export class RoomCore {
       t: 'ack', id: sock.id, name: sock.meta.name, fxId: String(m.fxId ?? '').slice(0, 12), status: m.status,
       reason: typeof m.reason === 'string' ? m.reason.slice(0, 24) : '', lateMs,
     });
+  }
+
+  // ---------------------------------------------------------- shared actions (puzzles Requirement 25)
+  /** A phone says where it is and which way it faces. Others are told, so their floor plans move it. */
+  pos(sock, m) {
+    if (!this.take(sock.id, 'pos', POS_BUCKET)) return;
+    const pos = cleanPos(m);
+    if (!pos) return sock.send({ t: 'error', code: 'bad_message' });
+    this.update(sock, { pos });
+    this.broadcast({ t: 'pos', id: sock.id, pos }, sock.id);
+  }
+  /**
+   * A phone acts (a shake or a tap). The server counts different phones inside the window. When enough have acted, every phone is told
+   * what it feels from where it stands; until then everyone is told how many have acted, never who is waiting for whom beyond names.
+   */
+  act(sock, m) {
+    if (!Object.hasOwn(ACTIONS, m.action)) return sock.send({ t: 'error', code: 'bad_action' });
+    if (!this.take(sock.id, 'act', ACT_BUCKET)) return sock.send({ t: 'error', code: 'rate_limited' });
+    const r = this.together[m.action].add(sock.id, this.now());
+    const names = new Map(this.devices().map((s) => [s.id, s.meta.name]));
+    const who = r.who.map((id) => names.get(id)).filter(Boolean);
+    if (!r.fired) return this.broadcast({ t: 'acted', action: m.action, id: sock.id, name: sock.meta.name, count: r.count, need: r.need });
+    const src = SPOTS[m.action];
+    this.state = applyAction(this.state, m.action);
+    this.host.saveState?.(this.state);
+    for (const d of this.devices()) d.send({ t: 'shared', action: m.action, who, src: { x: src.x, y: src.y, name: src.name }, state: this.state, ...feel(src, d.meta.pos || DEFAULT_POS) });
   }
 }

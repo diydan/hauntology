@@ -60,7 +60,7 @@ export class LabClient {
   onMessage(raw) {
     let m; try { m = JSON.parse(raw); } catch { return; }
     switch (m.t) {
-      case 'welcome': this.id = m.id; this.roster = m.roster; this.setStatus('online'); this.emit({ type: 'roster', devices: this.roster, welcome: true }); break;
+      case 'welcome': this.id = m.id; this.roster = m.roster; this.setStatus('online'); this.emit({ type: 'roster', devices: this.roster, welcome: true, state: m.state }); break;
       case 'roster': {
         const before = new Set(this.roster.map((d) => d.id));
         const after = new Set(m.devices.map((d) => d.id));
@@ -81,7 +81,7 @@ export class LabClient {
         break;
       }
       case 'fx': this.handleFx(m); break;
-      case 'pushed': case 'ack': case 'error': this.emit({ ...m, type: m.t }); break;
+      case 'pushed': case 'ack': case 'error': case 'shared': case 'acted': case 'pos': this.emit({ ...m, type: m.t }); break;
       default: break;
     }
   }

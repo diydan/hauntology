@@ -130,6 +130,20 @@ const SECTIONS = [
         desc: 'Lay the phone on a table and tap: compare motion and mic knock detection vs speech.',
         tags: ['motion', 'mic', 'idea'],
       },
+      {
+        href: 'secret-knock.html',
+        accent: 'accent-lab',
+        title: 'Secret knock',
+        desc: 'A locked door: hear the ghost knock once, then knock it back on the table to open it.',
+        tags: ['motion', 'mic', 'lock'],
+      },
+      {
+        href: 'shake.html',
+        accent: 'accent-lab',
+        title: 'Shake together',
+        desc: 'Actions that need two or three Players at once, and what each phone feels by where it is and which way it faces.',
+        tags: ['motion', 'buzz', 'idea'],
+      },
     ],
   },
 ];

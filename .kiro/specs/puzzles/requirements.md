@@ -9,7 +9,7 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 ## Glossary
 
 - **Puzzle**: one playable mini-game of a **Kind**.
-- **Kind**: one of `lockpick`, `wires`, `clock`, `safe`, `musicbox`, `candles`, `moved`, `photo`, `words`, `board`, and the optional `maze`.
+- **Kind**: one of `lockpick`, `wires`, `clock`, `safe`, `musicbox`, `candles`, `moved`, `photo`, `words`, `board`, the optional `maze`, and `knock` (the Secret knock, Requirement 24, a lab demo so far); Requirement 25 (shared actions and Shake) is a lab demo too.
 - **Lock**: a Puzzle placed in front of something: a Zone's Residue (Party Mode) or a memory (Wander). A Lock has a Kind, a level and a seed.
 - **Level**: `easy`, `medium` or `hard`. They differ only in size, tolerance, step and how often a clue can be replayed.
 - **Puzzle setting**: `off`, `easy`, `medium` or `hard`, set for a Room by the Master (Party) or by a visitor (Wander).
@@ -327,3 +327,32 @@ A Puzzle changes no rule. It never touches the Solution, a Hand, a Residue posit
 5. WHERE the Whisper's reveal line is spoken THEN the scene SHALL start when the reveal has ended, so that two voices never speak at once, and WHERE narration or footage is off THEN the reveal SHALL be words, the scene SHALL start at once or not at all, and the line and the card SHALL show at once and read the same.
 6. WHILE a scene over 5 seconds plays THEN a Stop control SHALL be on screen, Stop SHALL show the card at once, and a scene SHALL be shown in its own shape (the AI scenes are 3:4 and SHALL NOT be cropped to a landscape frame).
 
+
+### Requirement 24
+
+**User Story:** As a Player, I want some doors to open only to the ghost's secret knock, which I hear once and then knock back on the table, so that opening a door feels like a ritual and not a menu. (Secret knock, added 2026-11-16 by the owner after the Knock test page worked on his phone)
+
+#### Acceptance Criteria
+
+1. THE Puzzle SHALL have a Kind `knock` (the Secret knock): a locked door whose Lock is a pattern of knocks, a few groups with pauses between them (`makePattern(level, seed)` in `tools/playtest/js/secret-knock-core.js`): two groups on easy, three on medium, and three on hard with one pause that is long; each group SHALL be one to four knocks, no two groups side by side SHALL be the same size, and easy SHALL have at least four knocks.
+2. THE clue SHALL be the ghost's own knock, played once (our `knock` sound and a buzz for each knock, at `PLAY` timing), and in words and marks ("3, pause, 2" and dots) for a Player who cannot hear it; the clue SHALL be a Sight in Party Mode (heard on one phone in an earlier Zone) and the Faded clue at the Lock when it was missed (Requirement 3), and it SHALL NOT be played again at the Lock.
+3. THE Player SHALL knock on the table with the phone lying on it, and a knock SHALL be what `tools/playtest/js/knock-core.js` counts (a jolt the motion sensor feels and/or a click the microphone hears; the microphone SHALL give a loudness number only, and nothing SHALL be recorded or sent); a Tap control SHALL always count as a knock, so a Player with no sensor, a soft table, a quiet room or no wish to knock can still open the door.
+4. WHEN the Player has been quiet for `READ.quietMs` after a knock THEN the attempt SHALL be judged (`judge`): knocks closer than `READ.groupGapMs` are one group, the group counts SHALL match the pattern exactly, and on hard the long pause SHALL be at least `READ.longMs` and every other pause shorter; the Lock has three tries like every Kind (Requirement 2), and a wrong try SHALL say what was heard ("You knocked 2, 3.") and never the answer.
+5. WHEN the knock is right THEN the door SHALL open with our `creak` sound and a buzz, and its words SHALL be on screen and in the live region; a door that opens SHALL move slowly and never flash, and with reduced motion it SHALL simply be open.
+6. THE Room MAY place a `knock` Lock on a door between Zones, and a Haunt Event MAY have the ghost knock a pattern on the TV for every Player at once (the first to knock it back gets Help); these two are ideas until the Party Mode spec takes them.
+7. THE demo SHALL be `tools/playtest/secret-knock.html` on the lab (three levels, Start for the sensors, Hear the knock once, Knock now, the Tap control, three tries), so the feel can be tried on a real phone before the Kind is built into `web/src/puzzles`.
+
+### Requirement 25
+
+**User Story:** As a Player, I want some things in the room to happen only when two or three of us act together, and I want to feel them by where my phone is and which way it faces, so that the shared room feels like one place and not four separate screens. (Shared actions and Shake, added 2026-11-17 by the owner)
+
+#### Acceptance Criteria
+
+1. THE Room SHALL have shared actions, each needing a number of different Players to act inside `WINDOW_MS` (2 seconds): `knock` 1, `chair` (shake the chair) 2, `wind` (the wind through the window, two ghosts) 2 and `bigDoor` 3 (`ACTIONS` and `makeTogether` in `tools/playtest/js/shake-core.js`); one Player SHALL count once however often they act, acts further apart than the window SHALL NOT count together, and when an action fires the count SHALL start again.
+2. THE server SHALL own the state of every shared thing (a door open or shut, a chair moved); a phone only asks, and every screen is told the result.
+3. A Player SHALL act by shaking their phone: three jolts of at least 8 m/s² inside one second, then a rest of 1.2 seconds (`makeShakeDetector`); the motion SHALL be read on the phone only and nothing SHALL be recorded or sent but the act, and a control SHALL always act, so a Player with no motion sensor or no wish to shake can still take part.
+4. WHEN an action fires THEN each phone SHALL feel it by where it is and which way it faces (`feel`): within 2.5 m and facing the thing: a buzz, the picture shakes and the sound is full; within 6 m and facing it: no buzz, the picture shakes and the sound is half; facing away from it (more than 100 degrees off): a faint sound only; beyond 6 m: nothing.
+5. WHERE a phone cannot buzz (an iPhone in the browser) THEN the picture shake and the sound SHALL carry the same meaning, and with reduced motion the picture SHALL NOT shake.
+6. THE positions and facing of phones SHALL come from the phones' own view of the room (the Spirit table's marks and each phone's orientation), and until that is built, a phone SHALL say where it is by a tap on the floor plan and a Turn control; alone, the demo SHALL use pretend phones, and in a room (`#room=CODE`, the same code on two or more phones) the Worker SHALL count the real phones (`act`) and tell each what it feels from the place it last reported (`pos`, clamped to the room, rate limited).
+7. THE server SHALL remember what a shared action leaves behind (`applyAction`): the big door swings open and shut each time it fires, the chair moves one step each time (0 to 3, then back); the knock and the wind leave nothing; the state SHALL be sent with every `shared` message and with `welcome`, so a phone that joins late sees the room as it is, and SHALL be kept in the room's storage so it outlives hibernation (a stored value that is not one of the known ones SHALL fall back to the start).
+8. THE demo SHALL be `tools/playtest/shake.html` on the lab (four actions, You and three pretend Players, a tap to move and a turn to face, Start for the motion sensor, a You acts control and a line for what each phone feels), so the rules can be tried on a real phone.

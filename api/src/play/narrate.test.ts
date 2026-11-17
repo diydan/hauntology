@@ -74,13 +74,14 @@ describe("narrateTurn (ghost-engine 4.1, Requirements 5.1, 5.3 and 6)", () => {
     expect(guard.usedOn("llm", "visitor-1")).toBe(1);
   });
 
-  it("refuses a second pet name for the visitor, from the game's own history, and uses the first (docs/spikes/4.4.md)", async () => {
+  it("shows a reply with the visitor's pet name cut out, whatever the history, and retries one it cannot cut (owner, 2026-11-16)", async () => {
     const job = jobFor("ambient");
     const PET = "The rain is soft on the glass tonight, dear, and the window has noticed you.";
+    const CUT = "The rain is soft on the glass tonight, and the window has noticed you.";
     const fresh = { ...job, input: { ...job.input, history: [] } };
-    expect(await narrateTurn(setup([ok(PET)]).deps, fresh, WHO)).toEqual({ outcome: "model", attempts: 1, text: PET });
+    expect(await narrateTurn(setup([ok(PET)]).deps, fresh, WHO)).toEqual({ outcome: "model", attempts: 1, text: CUT });
     const used = { ...job, input: { ...job.input, history: [{ role: "ghost" as const, text: "Come in, dear. It is quiet." }] } };
-    const { deps, n } = setup([ok(PET), ok(GOOD)]);
+    const { deps, n } = setup([ok("Come in, my dear friend of the rain, the window has noticed you."), ok(GOOD)]);
     expect(await narrateTurn(deps, used, WHO)).toEqual({ outcome: "model", attempts: 2, text: GOOD });
     expect(n.seen).toHaveLength(2);
   });

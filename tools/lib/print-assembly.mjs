@@ -39,20 +39,30 @@ export function findOpenscad() {
 
 const imp = (file) => `import(str(S, "${file}.stl"))`;
 
-// ---------------------------------------------------------------- #1 ghost in the box
-const lib01 = `
+// ---------------------------------------------------------------- #1 ghost in the box (standalone or Master 3-in-1 Left Bay)
+function lib01(cd, ch, lh, xg, yg, xl) {
+  const lidZ = ch + 0.3 + lh;
+  const hy = cd / 2 + 6.2;
+  const hz = ch - 1.0;
+  return `
 module body() { ${imp("prop-01-chest-body")}; }
-// lid turned right way up onto the chest: 90.3 puts the hinge axes together with 0.3 mm of rim clearance
-module lid(dz = 90.3) { translate([0, 0, dz]) rotate([180, 0, 0]) ${imp("prop-01-chest-lid")}; }
-// the same lid opened th degrees (negative) about the hinge axis at Y = +51.2, Z = 69.0
-module lidopen(th) { translate([0, 51.2, 69.0]) rotate([th, 0, 0]) translate([0, -51.2, -69.0]) lid(); }
-// the same lid opened th degrees (negative) about the hinge axis at Y = +51.2, Z = 69.0
-module lidopen(th) { translate([0, 51.2, 69.0]) rotate([th, 0, 0]) translate([0, -51.2, -69.0]) lid(); }
-// servo shaft along -Y at X = -48.5, Z = 32; the lever sweeps in the XZ plane, th degrees up from level
-module lever(a) { translate([-48.5, -11.0, 32]) rotate([0, a, 0]) rotate([-90, 0, 0]) ${imp("prop-01-lever-arm")}; }
-module ghost(zo) { translate([0, 1.0, zo]) rotate([90, 0, 0]) ${imp("prop-01-ghost-figure")}; }
+// lid turned right way up onto the chest: ${lidZ} puts the hinge axes together with 0.3 mm of rim clearance
+module lid(dz = ${lidZ}) { translate([${xl}, 0, dz]) rotate([180, 0, 0]) ${imp("prop-01-chest-lid")}; }
+// the same lid opened th degrees (negative) about the hinge axis at Y = +${hy}, Z = ${hz}
+module lidopen(th) { translate([0, ${hy}, ${hz}]) rotate([th, 0, 0]) translate([0, -${hy}, -${hz}]) lid(); }
+// servo shaft along -Y at X = ${xg - 48.5}, Z = 32; the lever sweeps in the XZ plane, th degrees up from level
+module lever(a) { translate([${xg - 48.5}, ${yg - 11.0}, 32]) rotate([0, a, 0]) rotate([-90, 0, 0]) ${imp("prop-01-lever-arm")}; }
+module ghost(zo) { translate([${xg}, ${yg + 1.0}, zo]) rotate([90, 0, 0]) ${imp("prop-01-ghost-figure")}; }
 `;
-function checks01() {
+}
+function checks01(root) {
+  const bSrc = fs.readFileSync(path.join(root, "print", "scad", "prop-01-chest-body.scad"), "utf8");
+  const lSrc = fs.readFileSync(path.join(root, "print", "scad", "prop-01-chest-lid.scad"), "utf8");
+  const optN = (s, k, def) => { const m = s.match(new RegExp(`^\\s*${k}\\s*=\\s*(-?[\\d.]+)\\s*;`, "m")); return m ? Number(m[1]) : def; };
+  const cd = optN(bSrc, "chest_d", 90.0), ch = optN(bSrc, "chest_h", 70.0), lh = optN(lSrc, "lid_h", 20.0);
+  const xg = optN(bSrc, "xg_01", 0.0), yg = optN(bSrc, "yg_01", 0.0), xl = optN(bSrc, "xl_01", 0.0);
+  const lidZ = ch + 0.3 + lh;
+  const lib = lib01(cd, ch, lh, xg, yg, xl);
   const c = [
     ["lid-body", "lid();", "body();", "clear", "the closed lid on the chest"],
     ["ghost-rest-body", "ghost(9.1);", "body();", "clear", "the ghost at rest"],
@@ -68,8 +78,8 @@ function checks01() {
   for (const [lift, th] of [[24.5, -20], [37.5, -30], [44.1, -30]]) c.push([`ghost-${lift}-lid-${-th}`, `ghost(${lift});`, `lidopen(${th});`, "clear", `the ghost lifted to Z = ${lift} under the lid pushed open ${-th} degrees`]);
   for (const [a, lift] of [[0, 24.5], [15, 37.5], [22, 44.1]]) c.push([`lever-${a}-ghost-${lift}`, `lever(${-a});`, `ghost(${lift});`, "clear", `the lever at ${a} degrees with the ghost it has lifted to Z = ${lift}`]);
   c.push(["control-ghost-lift-lid-closed", "ghost(34.1);", "lid();", "collide", "control: the ghost lifted with the lid still shut"]);
-  c.push(["control-lid-low", "lid(88);", "body();", "collide", "control: the lid 2.3 mm too low"]);
-  return c.map(([id, a, b, expect, note]) => ({ id: `p01/${id}`, prop: "p01", lib: lib01, a, b, expect, note }));
+  c.push(["control-lid-low", `lid(${(lidZ - 2.3).toFixed(1)});`, "body();", "collide", "control: the lid 2.3 mm too low"]);
+  return c.map(([id, a, b, expect, note]) => ({ id: `p01/${id}`, prop: "p01", lib, a, b, expect, note }));
 }
 
 // ---------------------------------------------------------------- #3 Haunt needle
@@ -152,7 +162,26 @@ const POS09 = [26.2, 32, 38.2, 44, 48.5, 50.2]; // panel positions, closed to op
 const THREAD_POS09 = [26.2, 38.2, 50.2];
 function checks09(root) {
   const L = loadLayout(root);
-  const lib = lib09(L) + routeScad(L, THREAD_POS09);
+  const fSrc = fs.readFileSync(path.join(root, "print", "scad", "prop-09-stage-frame.scad"), "utf8");
+  const optN = (s, k) => { const m = s.match(new RegExp(`^\\s*${k}\\s*=\\s*(-?[\\d.]+)\\s*;`, "m")); return m ? Number(m[1]) : null; };
+  const rbx = optN(fSrc, "rattle_bx"), rby = optN(fSrc, "rattle_by"), rafY = optN(fSrc, "rafter_y"), rafZ = optN(fSrc, "rafter_z");
+  const hasRattle = rbx !== null && rby !== null;
+  const rattleLib = hasRattle ? `
+module rattle_servo(dy = 0, dz = 0) { translate([${rbx}, ${rby} + dy, PLATE - 16.0 + dz]) {
+  translate([-11.4, -6.1, 0]) cube([22.8, 12.2, 22.5]);
+  translate([-16.25, -6.1, 16.0]) cube([32.5, 12.2, 2.5]);
+  translate([-5.5, 0, 22.5]) cylinder(h = 4.0, d = 11.8);
+  translate([-5.5, 0, 26.5]) cylinder(h = 3.5, d = 4.8);
+} }
+module rattle_horn(th = 0) { translate([${rbx - 5.5}, ${rby}, PLATE - 16.0 + 26.5]) rotate([0, 0, th]) hull() { cylinder(h = 4.2, d = 7.2); translate([14.0, 0, 0]) cylinder(h = 4.2, d = 4.0); } }
+module bats_branch0() { intersection() { ${imp("prop-12-bats-mobile")}; translate([-80, 8, -1]) cube([160, 30, 8]); } }
+module bats_three0() { intersection() { ${imp("prop-12-bats-mobile")}; translate([-80, -25, -1]) cube([160, 32, 8]); } }
+module hanging_bats(dz = 0) {
+  translate([0, ${rafY - 28.8}, ${rafZ - 1.7} + dz]) bats_branch0();
+  translate([0, ${rafY - 29.0}, ${rafZ - 1.3} + dz]) translate([0, -9, 0]) rotate([0, 0, 180]) translate([0, 9, 0]) bats_three0();
+}
+` : "";
+  const lib = lib09(L) + routeScad(L, THREAD_POS09) + rattleLib;
   const ALL = "frame(); bezel(); bar(); wheel(); drum(); servo(); horn();";
   const c = [
     ["servo-frame", "servo();", "frame();"], ["servo-bezel", "servo();", "bezel();"], ["servo-drum", "servo();", "drum();"],
@@ -161,6 +190,13 @@ function checks09(root) {
     ["wheel-bar", "wheel();", "bar();"], ["bar-frame", "bar();", "frame();"], ["bar-bezel", "bar();", "bezel();"],
     ["bar-servo", "bar();", "servo(); horn(); drum();"], ["wheel-bezel", "wheel();", "bezel();"], ["wheel-servo", "wheel();", "servo(); drum();"],
   ].map(([id, a, b]) => [id, a, b, "clear", "parts in the finished stage"]);
+  if (hasRattle) {
+    c.push(
+      ["rattle-servo-frame", "rattle_servo();", ALL, "clear", "#12 rattle SG90 in upper belfry gable against stage & curtain hardware"],
+      ["hanging-bats-stage", "hanging_bats();", `${ALL} panelR(26.2); panelL(26.2);`, "clear", "#12 branch & 3 bats suspended from front belfry rafter"],
+    );
+    for (const th of [-25, 0, 25]) c.push([`rattle-horn-${th < 0 ? "m" + -th : th}`, `rattle_horn(${th});`, `${ALL} ${cordName("left", 26.2)}();`, "clear", `#12 rattle horn at ${th} degrees clearing belfry & curtain top thread`]);
+  }
   for (const x of POS09) {
     c.push([`panelR-${x}`, `panelR(${x});`, ALL, "clear", `right panel at X = ${x}`], [`panelL-${x}`, `panelL(${x});`, ALL, "clear", `left panel at X = -${x}`],
       [`panels-${x}`, `panelR(${x});`, `panelL(${x});`, "clear", `the two panels at +-${x}`],
@@ -187,6 +223,12 @@ function checks09(root) {
     ["right-onto-ridge", `translate([0, 0, 1.6]) ${cordName("right", 26.2)}();`, "drum();", "right thread lifted onto the drum's ridge"],
     ["left-into-wheel", `translate([0, 0, -2.5]) ${cordName("left", 26.2)}();`, "wheel();", "left thread dropped into the idler wheel"],
   ];
+  if (hasRattle) {
+    ctl.push(
+      ["rattle-servo-up", "rattle_servo(10, 0);", "frame();", "#12 rattle SG90 shifted 10 mm into belfry roof"],
+      ["bats-into-arch", "hanging_bats(-15);", "frame();", "#12 hanging bats shifted 15 mm back into proscenium valance"],
+    );
+  }
   for (const [id, a, b, note] of ctl) c.push([`control-${id}`, a, b, "collide", `control: ${note}`]);
   return c.map(([id, a, b, expect, note]) => ({ id: `p09/${id}`, prop: "p09", lib, a, b, expect, note }));
 }
@@ -213,47 +255,95 @@ export function piecesSeparate(buf, xs) {
   }
   return true;
 }
-function lib15(C) {
+function lib15(C, vd, vh, vlh, { combined = false, xv = 0, xl = 0, lh01 = 20 } = {}) {
   const [s1, s2] = CLASP_SPLITS;
+  const lidZ = vh + 0.3 + vlh;
+  const hy = vd / 2 + (combined ? 6.2 : 5.6);
+  const hz = vh - 1.0;
+  const haspY = -(vd / 2 - 0.8);
+  const haspZ = vh + 1.8;
+  const plateY = -(vd / 2 - 1.2);
+  const plateZ = vh - 14.0;
+  const armY = -vd / 2 + 10.3;
+  const armZ = vh - 5.5;
+  const chestFile = combined ? "prop-01-chest-body" : "prop-15-vault-chest";
+  const tokBlock = combined
+    ? `module token_upright(i) { translate([${xv}, -34.8 + i * 9.8, 24.0]) rotate([-90, 0, 0]) ${imp("relic-token-pocket")}; }
+module stored_tokens() { for (i = [0 : 5]) token_upright(i); }
+module left_lid_closed() { translate([${xl}, 0, ${vh + 0.3 + lh01}]) rotate([180, 0, 0]) ${imp("prop-01-chest-lid")}; }
+module p20_sock0() { translate([65.0, -9.25, 0]) intersection() { ${imp("prop-20-terminal-blocks")}; translate([-77, -3, -1]) cube([24, 24, 18]); } }
+module p20_bezel0() { translate([-64.5, 9.25, 0]) intersection() { ${imp("prop-20-terminal-blocks")}; translate([51, -23, -1]) cube([27, 27, 10]); } }
+module p20_plug0() { translate([48, 11, 0]) intersection() { ${imp("prop-20-plug-heads")}; translate([-60, -23, -1]) cube([24, 24, 28]); } }
+module p20_set_bezel_on_back(dy = 0) { translate([64.5, ${vd / 2 + 3.6} + dy, 26.5]) rotate([90, 0, 0]) p20_bezel0(); }`
+    : `module stored_relics() {
+  translate([-42.0, 21.5, 2.0]) rotate([0, 0, 90]) { ${imp("relic-music-box")}; translate([0, 0, 34.4]) rotate([180, 0, 0]) ${imp("relic-music-box-lid")}; }
+  translate([-43.0, -9.5, 2.0]) ${imp("relic-wax-hand")};
+  translate([-42.0, -34.0, 2.0]) ${imp("relic-locket")};
+  translate([0.0, 33.0, 19.7]) ${imp("relic-bell")};
+  translate([0.0, 7.0, 19.7]) ${imp("relic-planchette")};
+  translate([-2.0, -14.0, 19.7]) ${imp("relic-silver-key")};
+}
+module stored_tokens() { for (i = [0 : 5]) translate([42.0, 6.9 + i * 6.6, 24.0]) rotate([-90, 0, 0]) ${imp("relic-token-pocket")}; }`;
   return `
-module chest() { ${imp("prop-15-vault-chest")}; }
+module chest() { ${imp(chestFile)}; }
 module tray() { translate([0, 0, 22]) ${imp("prop-15-relic-tray")}; }
-module pod(dx) { translate([dx, 0, 0]) ${imp("prop-15-keypad-pod")}; }
-// the lid turned right way up: 102.3 puts the hinge axes together with 0.3 mm of rim clearance
-module lid_closed() { translate([0, 0, 102.3]) rotate([180, 0, 0]) ${imp("prop-15-vault-lid")}; }
-// the clasp file holds three pieces on one plate (cut out here by X): the escutcheon, the lid's hasp and the servo's latch arm
+module lid_closed() { translate([${xv}, 0, ${lidZ}]) rotate([180, 0, 0]) ${imp("prop-15-vault-lid")}; }
 module hasp() { intersection() { ${imp("prop-15-vault-clasp")}; translate([${s1}, -30, -1]) cube([${s2 - s1}, 60, 12]); } }
 module arm() { intersection() { ${imp("prop-15-vault-clasp")}; translate([${s2}, -30, -1]) cube([60, 60, 12]); } }
 module plate() { intersection() { ${imp("prop-15-vault-clasp")}; translate([-80, -30, -1]) cube([${80 + s1}, 60, 12]); } }
-// the hasp stood in the lid's slot (its middle on the slot's middle, X = 0), the escutcheon (printed back-down on Z = 0) on the chest
-// front with its keeper slot over the latch window, and the latch arm on the servo's spline (X = 0, Y = -47.7, horn at Z = 74.5), th degrees round
-module hasp_in_slot(zoff = 81.8, yc = -57.2) { translate([${-C.hasp[0]}, yc, zoff]) rotate([90, 0, 0]) translate([0, 0, -1.9]) hasp(); }
-module plate_posed() { translate([${-C.plate[0]}, -56.8, 66]) rotate([90, 0, 0]) plate(); }
-module arm_at(px, py, zb, th) { translate([px, py, zb]) rotate([0, 0, 180 + th]) translate([${-C.arm[0]}, ${-C.arm[1]}, 0]) arm(); }
-module lid_and_hasp(openDeg) { translate([0, 63.6, 79.0]) rotate([-openDeg, 0, 0]) translate([0, -63.6, -79.0]) { lid_closed(); hasp_in_slot(); } }
+module hasp_in_slot(zoff = ${haspZ}, yc = ${haspY}) { translate([${xv - C.hasp[0]}, yc, zoff]) rotate([90, 0, 0]) translate([0, 0, -1.9]) hasp(); }
+module plate_posed() { translate([${xv - C.plate[0]}, ${plateY}, ${plateZ}]) rotate([90, 0, 0]) plate(); }
+module arm_at(px = ${xv}, py = ${armY}, zb = ${armZ}, th = 0) { translate([px, py, zb]) rotate([0, 0, 180 + th]) translate([${-C.arm[0]}, ${-C.arm[1]}, 0]) arm(); }
+module lid_and_hasp(openDeg) { translate([0, ${hy}, ${hz}]) rotate([-openDeg, 0, 0]) translate([0, ${-hy}, ${-hz}]) { lid_closed(); hasp_in_slot(); } }
 module token_in_tray(bx = 0, by = 23.5, dz = 25.5) { translate([bx, by, dz]) ${imp("relic-token-pocket")}; }
-module relic_standing(bx = 0, by = -23.5) { translate([bx, by, 31.5]) ${imp("relic-wax-hand")}; }
+${tokBlock}
 `;
 }
 function checks15(root) {
   const C = clasp15(root);
+  const b01 = fs.readFileSync(path.join(root, "print", "scad", "prop-01-chest-body.scad"), "utf8");
+  const l01 = fs.readFileSync(path.join(root, "print", "scad", "prop-01-chest-lid.scad"), "utf8");
+  const cSrc = fs.readFileSync(path.join(root, "print", "scad", "prop-15-vault-chest.scad"), "utf8");
+  const lSrc = fs.readFileSync(path.join(root, "print", "scad", "prop-15-vault-lid.scad"), "utf8");
+  const optN = (s, k, def = null) => { const m = s.match(new RegExp(`^\\s*${k}\\s*=\\s*(-?[\\d.]+)\\s*;`, "m")); return m ? Number(m[1]) : def; };
+  const xv = optN(b01, "xv_15", null);
+  const combined = xv !== null;
+  const vd = combined ? optN(b01, "chest_d") : optN(cSrc, "vault_d");
+  const vh = combined ? optN(b01, "chest_h") : optN(cSrc, "vault_h");
+  const vlh = optN(lSrc, "vlid_h");
+  const xl = optN(b01, "xl_01", 0), lh01 = optN(l01, "lid_h", 20);
+  const px = combined ? xv : 0;
+  const armY = -vd / 2 + 10.3, armZ = vh - 5.5, haspZ = vh + 1.8;
   if (!piecesSeparate(fs.readFileSync(path.join(root, "print", "stl", "prop-15-vault-clasp.stl")), CLASP_SPLITS))
     throw new Error(`print-assembly: the clasp plate's pieces are no longer apart at X = ${CLASP_SPLITS.join(" and ")}; move CLASP_SPLITS`);
   const c = [
-    ["lid-chest", "lid_closed();", "chest();", "clear", "the closed lid on the vault"], ["tray-chest", "tray();", "chest();", "clear", "the tray on its ledges"],
-    ["token-tray", "token_in_tray();", "tray();", "clear", "a Relic Token with corner lugs seated in the tray bay"],
-    ["relic-chest", "relic_standing();", "chest();", "clear", "tallest Relic standing in front-centre bay clears servo cradle"],
-    ["relic-lid", "relic_standing();", "lid_closed();", "clear", "tallest Relic standing on token clears closed vault lid"],
+    ["lid-chest", "lid_closed();", "chest();", "clear", "the closed lid on the lockbox"],
+    ["stored-tokens-box", "stored_tokens();", "chest(); lid_closed();", "clear", "all 6 QR Relic Tokens upright in 1..6 dispenser rack inside closed lockbox"],
+    ["token-tray", "token_in_tray();", "tray();", "clear", "a Relic Token seated in the optional tray bay"],
     ["hasp-chest", "hasp_in_slot();", "chest();", "clear", "the hasp in the lid's slot"], ["hasp-lid", "hasp_in_slot();", "lid_closed();", "clear", "the hasp in the lid's slot"],
-    ["hasp-plate", "hasp_in_slot();", "plate_posed();", "clear", "the hasp and the escutcheon"], ["pod-docked", "pod(127);", "chest();", "clear", "the keypad pod docked on the right wall"],
+    ["hasp-plate", "hasp_in_slot();", "plate_posed();", "clear", "the hasp and the escutcheon"],
   ];
-  for (const od of [2, 5, 15, 45, 90]) c.push([`lid-open-${od}`, `lid_and_hasp(${od});`, "chest(); plate_posed(); arm_at(0, -47.7, 74.5, 95);", "clear", `vault lid and hasp swung open ${od} degrees with latch open`]);
-  for (const th of [0, 45, 90, 135, 180]) for (const [n, b] of [["chest", "chest();"], ["hasp", "hasp_in_slot();"], ["plate", "plate_posed();"], ["lid", "lid_closed();"]]) c.push([`arm-${th}-${n}`, `arm_at(0, -47.7, 74.5, ${th});`, b, "clear", `the latch arm turned ${th} degrees, against the ${n}`]);
-  c.push(["control-pod-126", "pod(126);", "chest();", "collide", "control: pod 1 mm too close"], ["control-arm-low", "arm_at(0, -47.7, 50, 0);", "chest();", "collide", "control: latch arm 24 mm too low"],
-    ["control-hasp-low", "hasp_in_slot(76.8);", "chest();", "collide", "control: hasp 5 mm too low"],
-    ["control-latched-blocks-lid", "lid_and_hasp(2);", "arm_at(0, -47.7, 74.5, 0);", "collide", "control: latched arm (0 deg) blocks the lid from lifting"],
+  if (combined) {
+    c.push(
+      ["twin-lids-closed", "lid_closed();", "left_lid_closed();", "clear", "left (#1) and right (#15) split lids side by side"],
+      ["twin-lids-right-open-90", "lid_and_hasp(90);", "left_lid_closed();", "clear", "right lockbox lid open 90 degrees beside closed left ghost lid"],
+      ["neighbor-tokens", "token_upright(0);", "token_upright(1);", "clear", "adjacent upright QR Relic Stands in slots 1 and 2"],
+      ["p20-set-bezel-back", "p20_set_bezel_on_back(0.2);", "chest();", "clear", "#20 SET bezel seated on the +Y back wall"],
+      ["p20-plug-in-sock", "p20_sock0();", "translate([0, 0, -16.5]) p20_plug0();", "clear", "#20 resistor plug nose seated in terminal socket shroud"],
+      ["control-twin-lids-overlap", "translate([-2.0, 0, 0]) lid_closed();", "left_lid_closed();", "collide", "control: right split lid shifted 2 mm into left split lid"],
+      ["control-p20-plug-deep", "p20_sock0();", "translate([0, 0, -14.0]) p20_plug0();", "collide", "control: #20 plug pushed 2.5 mm past socket shoulder"],
+    );
+  } else {
+    c.push(["stored-relics-box", "stored_relics();", "chest(); lid_closed();", "clear", "all 6 Relics standing on keeper pegs inside closed lockbox"]);
+  }
+  for (const od of [2, 5, 15, 45, 90]) c.push([`lid-open-${od}`, `lid_and_hasp(${od});`, `chest(); plate_posed(); arm_at(${px}, ${armY}, ${armZ}, 95);`, "clear", `lockbox lid and hasp swung open ${od} degrees with latch open`]);
+  for (const th of [0, 45, 90, 135, 180]) for (const [n, b] of [["chest", "chest();"], ["hasp", "hasp_in_slot();"], ["plate", "plate_posed();"], ["lid", "lid_closed();"]]) c.push([`arm-${th}-${n}`, `arm_at(${px}, ${armY}, ${armZ}, ${th});`, b, "clear", `the latch arm turned ${th} degrees, against the ${n}`]);
+  c.push(["control-lid-low", `translate([0,0,-2.0]) lid_closed();`, "chest();", "collide", "control: lid 2 mm into chest rim"],
+    ["control-arm-low", `arm_at(${px}, ${armY}, ${armZ - 18}, 0);`, "chest();", "collide", "control: latch arm 18 mm too low"],
+    ["control-hasp-low", `hasp_in_slot(${haspZ - 5});`, "chest();", "collide", "control: hasp 5 mm too low"],
+    ["control-latched-blocks-lid", "lid_and_hasp(2);", `arm_at(${px}, ${armY}, ${armZ}, 0);`, "collide", "control: latched arm (0 deg) blocks the lid from lifting"],
     ["control-token-low", "token_in_tray(0, 23.5, 23.0);", "tray();", "collide", "control: token 2.5 mm into tray floor"]);
-  const lib = lib15(C);
+  const lib = lib15(C, vd, vh, vlh, { combined, xv: px, xl, lh01 });
   return c.map(([id, a, b, expect, note]) => ({ id: `p15/${id}`, prop: "p15", lib, a, b, expect, note }));
 }
 
@@ -261,7 +351,7 @@ export const PROPS = ["p01", "p03", "p05", "p09", "p15"];
 
 /** Every check, as {id, prop, lib, a, b, expect, note}. */
 export function buildChecks(root, only = PROPS) {
-  const all = { p01: checks01, p03: () => checks03(root), p05: checks05, p09: () => checks09(root), p15: () => checks15(root) };
+  const all = { p01: () => checks01(root), p03: () => checks03(root), p05: checks05, p09: () => checks09(root), p15: () => checks15(root) };
   return only.flatMap((p) => all[p]());
 }
 

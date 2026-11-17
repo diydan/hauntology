@@ -27,7 +27,7 @@ mkdirSync(resolve(dist, 'media'), { recursive: true });
 for (const f of readdirSync(resolve(root, 'media')).filter((n) => /\.(mp4|webm|jpg)$/.test(n))) cpSync(resolve(root, 'media', f), resolve(dist, 'media', f));
 // Our own two sounds for the Reel (puzzles Requirement 20.6) come from the game's own folder, so there is one copy to credit and to check.
 // They go in media/ so the Worker's range handler (src/route.js) serves them too: Safari asks for audio in ranges as well.
-for (const name of ['knock', 'scrape']) cpSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${name}.m4a`), resolve(dist, 'media', `${name}.m4a`));
+for (const name of ['knock', 'scrape', 'creak']) cpSync(resolve(root, '..', '..', 'web', 'public', 'sounds', `${name}.m4a`), resolve(dist, 'media', `${name}.m4a`));
 // The narration of the scene lines (the Whisper's and the Keeper's Library audio) and the lip-synced talking clips, for the footage page's Voice switch and section 8.
 // Both come from folders that are not in git (.voice-library, docs/story/art/clips). When a folder is not there, nothing is copied and the page falls back to the words
 // (the Voice switch finds no file; the lip-sync section says its clips are not on this build).

@@ -386,3 +386,39 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ] 15.11 Spike puzzles 1.8 (scene clues): on a real TV at three metres and on a laptop, does the clue read as part of the scene (ask five people, 1 to 5, and where they looked first) and can a 480 pixel frame hold letters of 5 per cent of its height? If not, make the Place larger in the prompts or fall back to the panel only
     - _Requirements: 22.4, 22.6_
   - [ ] 15.12 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `sceneClue`, `fitToPlace` and the edge check. Ensure every test passes; ask the user if questions arise.
+
+- [ ] 16. Secret knock (added 2026-11-16; satisfies Requirement 24)
+  - [x] 16.1 The pattern, the clue timing, reading and judging knocks: `tools/playtest/js/secret-knock-core.js`
+    - _Requirements: 24.1, 24.2, 24.4_
+  - [x]* 16.2 Write property test for the secret knock (`tools/playtest/test/secret-knock-core.test.js`, every seed of every level)
+    - **Property 34: A secret knock opens to itself and to nothing else**
+    - **Validates: Requirements 24.1, 24.2, 24.4**
+  - [x] 16.3 The demo on the lab: `tools/playtest/secret-knock.html` (three levels, the clue once, sensors or Tap, three tries, the creak), linked from the hub; the build copies `creak.m4a`
+    - _Requirements: 24.3, 24.5, 24.7_
+  - [ ] 16.4 Spike puzzles 1.9 (secret knock): on three phones and two tables, can five people open easy, medium and hard in three tries; how often does a knock go unheard or a bump count
+    - _Requirements: 24.3, 24.4_
+  - [ ] 16.5 The `knock` Kind in `shared/src/puzzles` (make, verify) and `web/src/puzzles/kinds` (the door, the look of the design system, the Tap control), with the clue as a Sight
+    - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
+  - [ ] 16.6 Hand the door between Zones and the Haunt Event knock to the Party Mode spec, and write there which it takes
+    - _Requirements: 24.6_
+  - [ ] 16.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `judge` and `readKnocks`. Ensure every test passes, ask the user if questions arise.
+
+- [ ] 17. Shared actions and Shake (added 2026-11-17; satisfies Requirement 25)
+  - [x] 17.1 The needs, the shake reading and what a phone feels: `tools/playtest/js/shake-core.js`
+    - _Requirements: 25.1, 25.3, 25.4_
+  - [x]* 17.2 Write tests for shared actions and Shake (`tools/playtest/test/shake-core.test.js`)
+    - **Property 35: A shared action fires when enough different Players act together, and for no fewer**
+    - **Validates: Requirements 25.1**
+    - **Property 36: A phone is never given more than its place allows**
+    - **Validates: Requirements 25.4**
+  - [x] 17.3 The demo on the lab: `tools/playtest/shake.html` (four actions, You and three pretend Players, tap to move, turn, Start for motion, the You acts control), linked from the hub
+    - _Requirements: 25.3, 25.5, 25.8_
+  - [ ] 17.4 Spike puzzles 1.10 (shake together): on two real phones, can two people shake within two seconds and does the buzz by distance feel right; how often does a pocket or a walk count as a shake
+    - _Requirements: 25.3, 25.4_
+  - [x] 17.5 The relay: `act` and `pos` messages in the lab Worker (`src/room-core.js`) that count phones on the server and tell each phone what it feels, with a rate limit per phone and clamped positions; tests in `tools/playtest/test/shake-room.test.js`; the demo joins a room with `#room=CODE`
+    - _Requirements: 25.1, 25.2_
+  - [x] 17.5b The room's memory: `applyAction`, `cleanState`, saved in the room's storage and sent with `welcome` and `shared`
+    - _Requirements: 25.7_
+  - [ ] 17.6 Phone positions and facing from each phone's own view, in place of the tap-to-move and Turn controls
+    - _Requirements: 25.6_
+  - [ ] 17.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `makeTogether` and `feel`. Ensure every test passes, ask the user if questions arise.
