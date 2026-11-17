@@ -27,6 +27,58 @@ export function orbIntensity(distance: number, found: boolean, radius: number): 
   return clamp01(1 - d / (5 * r));
 }
 
+export type PromptTarget = "anchor" | "ghost" | null;
+/** How close to the ghost the speak prompt appears (Requirement 4.1). */
+export const GHOST_PROMPT_DISTANCE = 4;
+
+/**
+ * Whom the interaction prompt offers (Requirement 4.1): an anchor the player stands
+ * within (its own radius, found or not — a found memory can be revisited), else the
+ * ghost when it is visible and within 4 m, else nobody. The anchor wins ties.
+ */
+export function promptFor(
+  playerPos: Vec3,
+  anchors: readonly { pos: Vec3; radius: number }[],
+  ghostPos: Vec3 | null,
+  ghostVisible: boolean,
+): PromptTarget {
+  if (!playerPos.every(Number.isFinite)) return null;
+  for (const a of anchors) {
+    if (a.pos.every(Number.isFinite) && a.radius > 0 && distance3(playerPos, a.pos) <= a.radius) return "anchor";
+  }
+  if (ghostVisible && ghostPos && ghostPos.every(Number.isFinite) && distance3(playerPos, ghostPos) <= GHOST_PROMPT_DISTANCE) return "ghost";
+  return null;
+}
+
+/** The full grade at Haunt Level 1; at 0 every part is off (Requirement 3.1). */
+export const GRADE_FULL = { desaturate: 0.85, vignette: 0.55, grain: 0.18, dim: 0.45 } as const;
+export type GradeParams = { desaturate: number; vignette: number; grain: number; dim: number };
+
+/** The tonal grade for a Haunt Level: each part scales linearly between off and full. */
+export function gradeParams(hauntLevel: number): GradeParams {
+  const h = clamp01(finiteOr(hauntLevel, 0));
+  return {
+    desaturate: GRADE_FULL.desaturate * h,
+    vignette: GRADE_FULL.vignette * h,
+    grain: GRADE_FULL.grain * h,
+    dim: GRADE_FULL.dim * h,
+  };
+}
+
+/** One smoothing step toward a target Haunt Level, frame-rate independent (about 0.6 s to close most of a gap). */
+export function smoothHaunt(current: number, target: number, dtMs: number): number {
+  const c = clamp01(finiteOr(current, 0));
+  const t = clamp01(finiteOr(target, 0));
+  const dt = Math.max(0, finiteOr(dtMs, 0)) / 1000;
+  return c + (t - c) * (1 - Math.exp(-dt * 4));
+}
+
+/** An orb's pulse in [0.75, 1]: a slow swell, slower still under reduced motion (Requirement 6.2). */
+export function orbPulse(tMs: number, reducedMotion: boolean): number {
+  const period = reducedMotion ? 5200 : 1900;
+  return 0.875 + 0.125 * Math.sin((finiteOr(tMs, 0) / period) * Math.PI * 2);
+}
+
 const GHOST_DISTANCE = 2.5;
 const GHOST_BOB = 0.05;
 /** Directions tried, in order, as offsets from the preferred heading (radians). */

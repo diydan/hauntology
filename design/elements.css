@@ -116,6 +116,7 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-line--whisper { padding-left: var(--space-3); border-left: var(--stroke-frame) solid var(--speaker-whisper); font-family: var(--font-ghost); font-size: var(--text-title); }
 .ui-line--system { color: var(--danger); }
 .ui-line-who { color: var(--text-quiet); font-size: var(--text-small); }
+.ui-lyrics { margin: 0; white-space: pre-wrap; font: italic 400 var(--text-body) / 1.6 var(--font-ghost); color: var(--text); }
 
 /* ---- form fields ---------------------------------------------------------------------------------------------------------------------- */
 .ui-select, .ui-range, .ui-input { width: 100%; min-height: var(--target); padding: var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); font: inherit; font-size: var(--text-input); accent-color: var(--accent); }
@@ -200,6 +201,13 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-chip { padding: var(--space-0) var(--space-2); border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-pill); color: var(--text-quiet); font-size: var(--text-small); letter-spacing: 0.04em; text-transform: none; }
 .ui-chip.is-active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface-panel)); color: var(--accent); }
 .ui-chip.is-haunting { border-style: dashed; font-style: italic; opacity: 0.75; }
+/* The 3D stage: the canvas box the Viewer mounts in, its haunt grade overlays and its own small tools.
+   Opacity and filter are moving numbers and go through the CSSOM; everything else is here. */
+.ui-viewer-stage { position: relative; }
+.ui-viewer-stage canvas { display: block; touch-action: none; }
+.ui-viewer-vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 52%, var(--void) 100%); opacity: 0; }
+.ui-viewer-grain { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: 0; }
+.ui-viewer-tools { position: absolute; right: var(--space-2); bottom: var(--space-2); display: flex; gap: var(--space-2); }
 
 /* ---- the transport bar: always in reach -------------------------------------------------------------------------------------------------- */
 /* A tool starts from the width of its own label and is never narrower than a touch target, and the tools share what is left of the row. When they do not fit in one row (below about 355 px), the last one wraps onto a row of its own and takes its width. From the wide breakpoint the Director tool is gone and the five are a grid. */

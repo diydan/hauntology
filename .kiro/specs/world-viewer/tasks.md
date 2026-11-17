@@ -78,53 +78,60 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
     - _Requirements: 8.1_
   - Done (2026-11-16): the real Viewer mounts behind the shell seam (`web/src/app/viewer/mount.ts`, the default `LoadViewer`; the demo keeps the stand-in). Controls mapping is pure and tested (`controls.ts`); collision is a BVH capsule with floor snap and the 35 degree slope limit (`collision.ts`, Property 3 over generated rooms); tilt uses the pure `tiltLook`. Deps pinned by Spike 2.1: three 0.187.0, Spark 2.4.0, three-mesh-bvh 0.9.18. Verified headless end to end with the recorded kitchen world served through intercepted routes: spawn upright, W walks forward at the clamped rate, poses flow at 4 Hz. Two build notes: Spark's console.log calls are rewritten out of its module at build (Requirement 9.5), and the bundle test's Viewer marker and the demo platform keys were updated for the real Viewer.
 
-- [ ] 5. Haunt layer
-  - [ ] 5.1 Grade overlay (desaturate, vignette, grain, dim) driven by Haunt Level with smoothing
+- [x] 5. Haunt layer
+  - [x] 5.1 Grade overlay (desaturate, vignette, grain, dim) driven by Haunt Level with smoothing
     - _Requirements: 3.1_
-  - [ ] 5.2 Flicker applied to the brightness uniform; reduced-motion switch
+  - [x] 5.2 Flicker applied to the brightness uniform; reduced-motion switch
     - _Requirements: 3.2, 6.2_
-  - [ ] 5.3 Orbs (additive sprites) with proximity pulse; fade on found
+  - [x] 5.3 Orbs (additive sprites) with proximity pulse; fade on found
     - _Requirements: 3.3_
-  - [ ] 5.4 Ghost billboard (alpha-tested sprite, y-locked) with bob and fade
+  - [x] 5.4 Ghost billboard (alpha-tested sprite, y-locked) with bob and fade
     - _Requirements: 3.4_
-  - [ ] 5.5 Procedural ambient audio with mute and ducking (optional stretch)
+  - [x] 5.5 Procedural ambient audio with mute and ducking (optional stretch)
     - _Requirements: 3.5_
-  - [ ] 5.6 Atmosphere from `setAtmosphere`: tint and fog by weather class and time of day, capped rain or snow, sky dome from the star texture at dusk and night (the `conditions` spec supplies the snapshot and the texture)
+  - [x] 5.6 Atmosphere from `setAtmosphere`: tint and fog by weather class and time of day, capped rain or snow, sky dome from the star texture at dusk and night (the `conditions` spec supplies the snapshot and the texture)
     - _Requirements: 3.6_
+  - Done (2026-11-17) in `mount.ts` over the pure functions: `gradeParams`/`smoothHaunt` (canvas filter + vignette and grain overlays), `flicker` scaled by the smoothed level and off under reduced motion, orbs as camera-facing additive planes (`orbIntensity`, `orbPulse`; depth test off so the hint reads), the ghost as a y-locked billboard from `ghostPlacement` with a code-drawn texture until the chosen sprite reaches the viewer, `atmosphereParams` driving tint (splat `recolor`), fog, capped precipitation and a star-points sky, and a procedural drone after a gesture with mute and chat ducking (5.5). Quality for precipitation is fixed at the middle level until group 7 wires `nextQuality`. Verified headless with the recorded world: grade, flicker-era rain, ghost and orb all seen in screenshots.
 
-- [ ] 6. HUD and interaction
-  - [ ] 6.1 Interaction prompt, memory counter, journal button, Exit control
+- [x] 6. HUD and interaction
+  - [x] 6.1 Interaction prompt, memory counter, journal button, Exit control
     - _Requirements: 4.1, 4.3, 4.4_
-  - [ ] 6.2 `InputRouter` integration: chat open releases pointer lock and suspends movement
+  - [x] 6.2 `InputRouter` integration: chat open releases pointer lock and suspends movement
     - _Requirements: 4.2_
-  - [ ] 6.3 `ViewerBridge` to the ghost engine (pose ≤ 4 Hz, haunt level, found ids, ghost visibility, `setAtmosphere`), importing its messages from `shared/src/app/events.ts`
+  - [x] 6.3 `ViewerBridge` to the ghost engine (pose ≤ 4 Hz, haunt level, found ids, ghost visibility, `setAtmosphere`), importing its messages from `shared/src/app/events.ts`
     - _Requirements: 3.3, 3.4, 3.6, 4.1_
+  - Done (2026-11-17): the HUD itself (counter, journal, Exit, prompt words) was already the shell's; the viewer's half is in `mount.ts`: `promptFor` (pure, in `shared/src/viewer/haunt.ts`, tested) sends `prompt` only on change — an anchor inside its radius first, else the visible ghost within 4 m; pose at 4 Hz; `apply_view` and `set_atmosphere` consumed from `shared/src/app/events.ts`; chat mode releases pointer lock and suspends movement through `inputReduce`, and typing in the chat no longer walks the player. Verified headless: one `{t: prompt, target: anchor}` on entering an anchor's radius.
 
-- [ ] 7. Performance
-  - [ ] 7.1 `QualityController` wired to render loop; resolution scale and LOD switching; `?debug=1` overlay
+- [x] 7. Performance
+  - [x] 7.1 `QualityController` wired to render loop; resolution scale and LOD switching; `?debug=1` overlay
     - _Requirements: 5.1, 5.2_
-  - [ ] 7.2 Pause when hidden; dispose geometries, textures, listeners on unmount
+  - [x] 7.2 Pause when hidden; dispose geometries, textures, listeners on unmount
     - _Requirements: 5.3, 5.4_
+  - Done (2026-11-17): the loop feeds one-second frame rates to `nextQuality`; a step changes the resolution scale (`RESOLUTION_SCALES`) and the splat `lodScale`, starting from `initialQualityLevel`. The viewer reports `fps` about once a second through the bridge to the shell's existing `?debug=1` overlay (a new strict message kind). Hidden pages do not render or step; dispose removes listeners and releases geometries, materials, textures and the audio context.
 
-- [ ] 8. Accessibility and safety
-  - [ ] 8.1 Content notice with acknowledgement; keyboard-only path; focus rings; contrast check of HUD tokens
+- [x] 8. Accessibility and safety
+  - [x] 8.1 Content notice with acknowledgement; keyboard-only path; focus rings; contrast check of HUD tokens
     - _Requirements: 6.1, 6.3, 6.5_
-  - [ ] 8.2 Live region for ghost speech; captions for any audio
+  - [x] 8.2 Live region for ghost speech; captions for any audio
     - _Requirements: 6.4_
+  - Done (2026-11-17): the shell already carried the content notice with its Go-in acknowledgement and the polite live region that announces ghost replies; the viewer's half is a focusable, labelled canvas (arrows walk without scrolling the page, typing in chat does not walk), native `ui-button` tools with the shared focus ring and 44 px targets, token colours throughout (checked at 390 and 1280 px in group 11), and no audio-only information: the drone is ambience with a labelled mute, all speech is text in the Chat.
 
-- [ ] 9. Memory card
+- [x] 9. Memory card
   - Render `layoutMemoryCard` to a canvas PNG with download button; strip any metadata (canvas export has none).
   - _Requirements: 7.1_
+  - Done (2026-11-17): `web/src/app/viewer/memory-card.ts` draws the layout (thumbnail cover-cropped, token colours, the shell's excerpt wrapping) to a canvas PNG; the End screen's Save fetches the world's `thumbUrl`, saves the PNG, and falls back to the SVG card where a canvas cannot be made (a thumbnail that never answers times out to a text-only card). Renderer tested over a recording canvas; the End save test follows the now-asynchronous save.
 
 - [ ] 10. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; complete the manual perf checklist; ask the user if questions arise.
+  - Progress (2026-11-17): shared 1419, web 1033 and api 1081 tests green; shared and web typecheck, lint, tokens and traceability green. Two pre-existing reds from the merged main are recorded, not fixed here: `api` typecheck fails in two merged test files on missing Node types, and two tools tests fail on merged dev/config state (`api/dev/playthrough-calls.ts`, the declared AI binding). Manual perf checklist: every LOD on phone and laptop recorded except phone `full` (`docs/spikes/2.1.md`).
 
-- [ ] 11. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 9 and the `design-system` spec)
-  - [ ] 11.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+- [x] 11. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 9 and the `design-system` spec)
+  - [x] 11.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
     - _Requirements: 9.1, 9.3_
-  - [ ] 11.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 11.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 9.2_
-  - [ ] 11.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 11.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 9.4_
-  - [ ] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+  - [x] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 9.1_
+  - Done (2026-11-17): the viewer's own pieces moved onto the elements in the same change that built them: new `ui-viewer-stage`, `ui-viewer-vignette`, `ui-viewer-grain` and `ui-viewer-tools` in `design/elements.css` and the catalogue; the mount's static inline styles are gone (opacity, filter and the grain tile stay CSSOM, as moving numbers); canvas and three colours come from `shared/src/design/tokens.ts` (orb lantern core, ghost, ink, bone). Checked headless at 390 px and 1280 px with the recorded world: tools measure 44 px high, the stage and grade read at both widths. Along the way: `ui-lyrics`, used by the merged case ending screen but never defined, is now defined and catalogued.

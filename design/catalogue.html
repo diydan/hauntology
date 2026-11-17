@@ -188,6 +188,18 @@
     </div>
     <p class="cat-use">The HUD shows only what the rules give the player: memories found, the Hint's bearing and distance, the Haunt and where a Haunt Event fires, who is at the table. Nothing else goes in it.</p>
   </div>
+  <div class="cat-item">
+    <h3><code>ui-viewer-stage</code> <code>ui-viewer-vignette</code> <code>ui-viewer-grain</code> <code>ui-viewer-tools</code></h3>
+    <div class="ui-viewer-stage cat-box" style="min-height: 7rem">
+      <div class="ui-viewer-vignette" style="opacity: .55"></div>
+      <div class="ui-viewer-grain"></div>
+      <div class="ui-viewer-tools">
+        <button class="ui-button" type="button" aria-pressed="true">Sound: on</button>
+        <button class="ui-button" type="button">Tilt to look</button>
+      </div>
+    </div>
+    <p class="cat-use">The 3D Viewer's box and its haunt grade: the vignette darkens the edges and the grain tile (set as a background image at runtime) roughens the picture, each no more than its Haunt Level share; the tools row holds the Viewer's own buttons. Shown here at a still vignette.</p>
+  </div>
 </section>
 
 <section class="cat-section" aria-labelledby="h-nav">
@@ -274,7 +286,9 @@
     <p class="cat-use">Loading is a feature: stage steps with a calm bar, not a spinner alone.</p>
   </div>
   <div class="cat-item">
-    <h3><code>ui-lines</code> <code>ui-line</code> <code>ui-line--whisper</code> <code>ui-line--system</code> <code>ui-line-who</code></h3>
+    <h3><code>ui-lines</code> <code>ui-line</code> <code>ui-line--whisper</code> <code>ui-line--system</code> <code>ui-line-who</code> <code>ui-lyrics</code></h3>
+    <pre class="ui-lyrics cat-box">The words of a song,
+kept as they were sung.</pre>
     <div class="ui-panel cat-box">
       <p class="ui-line"><span class="ui-line-who">You</span><br>look</p>
       <p class="ui-line ui-line--whisper"><span class="ui-line-who">The Whisper</span><br>A room, once. Quiet now.</p>
