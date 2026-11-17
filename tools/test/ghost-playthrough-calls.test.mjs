@@ -233,10 +233,10 @@ test('every reason a reply can be refused for is named, from the game\'s own che
     ['the call failed', HINT, raw(null, { ok: false, error: 'Error: boom' }), 'call_failed'],
   ];
   for (const [name, directive, call, reason] of cases) assert.equal(why(call, directive), reason, name);
-  // a second pet name, after one in the game's history (the third play-through, 2026-11-16)
+  // a pet name (2026-11-16): one used only as a form of address is cut out, so the reply is fine; one that cannot be cut cleanly is refused, history or not
   const used = [{ role: 'ghost', text: 'Come in, dear. The attic is quiet.' }];
-  assert.equal(explainCall(plan, raw('Go to your left, dear, and it is nearer.'), { directive: HINT, system, history: used }).reason, 'pet_name', 'a second pet name');
-  assert.equal(why(raw('Go to your left, dear, and it is nearer.'), HINT), 'ok', 'the first pet name of a game is let by');
+  assert.equal(explainCall(plan, raw('Go to your left, dear, and it is nearer.'), { directive: HINT, system, history: used }).reason, 'ok', 'a cut-out pet name');
+  assert.equal(why(raw('Come in, my dear friend of the attic. It is nearer, to your left.'), HINT), 'pet_name', 'a pet name that cannot be cut out');
   assert.equal(why(raw('The attic is quiet around you. Dust drifts in the light.', { textChars: 4000 }), AMBIENT), 'ok', 'a reply of exactly 4,000 characters is still read');
   // the order the game uses: a failed call before anything, a refusal before the text, an unreadable text before the token cap, the token cap before the checks
   assert.equal(why(raw('**x**', { ok: false }), HINT), 'call_failed');

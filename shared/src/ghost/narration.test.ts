@@ -362,11 +362,11 @@ describe("the hint check: the engine's way and distance, in its own words", () =
   });
 
   it("is a check on the hint reply only through replyChecksFor, and a tease must not say which way", () => {
-    expect(replyChecksFor({ kind: "hint", bearing: "left", band: "far" })).toEqual({ forbidDigits: true, way: { bearing: "left", band: "far" }, maxWords: 30 });
-    expect(replyChecksFor({ kind: "tease", band: "nearer" })).toEqual({ forbidDigits: true, noWay: true, maxWords: 40 });
-    expect(replyChecksFor({ kind: "reveal", anchorId: "a1" })).toEqual({ minSentences: 2, maxWords: 60 });
-    expect(replyChecksFor({ kind: "ending" })).toEqual({ maxWords: 45 });
-    for (const d of [{ kind: "echo", anchorId: "a1" }, { kind: "ambient" }, { kind: "refuse" }] as Directive[]) expect(replyChecksFor(d), d.kind).toEqual({});
+    expect(replyChecksFor({ kind: "hint", bearing: "left", band: "far" })).toEqual({ forbidDigits: true, way: { bearing: "left", band: "far" }, maxWords: 30, noPetName: true });
+    expect(replyChecksFor({ kind: "tease", band: "nearer" })).toEqual({ forbidDigits: true, noWay: true, maxWords: 40, noPetName: true });
+    expect(replyChecksFor({ kind: "reveal", anchorId: "a1" })).toEqual({ minSentences: 2, maxWords: 60, noPetName: true });
+    expect(replyChecksFor({ kind: "ending" })).toEqual({ maxWords: 45, noPetName: true });
+    for (const d of [{ kind: "echo", anchorId: "a1" }, { kind: "ambient" }, { kind: "refuse" }] as Directive[]) expect(replyChecksFor(d), d.kind).toEqual({ noPetName: true });
     const hint = replyChecksFor({ kind: "hint", bearing: "behind", band: "nearer" });
     expect(validateGhostReply("Behind you, and nearer than you think.", hint).ok).toBe(true);
     expect(validateGhostReply("Somewhere near.", hint)).toEqual({ ok: false, reason: "wrong_way" });
@@ -476,8 +476,8 @@ describe("the words the ghost has worn out are in the prompt (the repetition of 
     expect(list).not.toMatch(/[<>]/);
   });
 
-  it("asks for different openings and a pet name only now and then, as one of the rules", () => {
-    for (const voice of VOICES) expect(sys({ voice })).toContain('Never open two lines the same way, and use a pet name such as "dear" at most once a visit.');
+  it("asks for different openings and never a pet name, as one of the rules", () => {
+    for (const voice of VOICES) expect(sys({ voice })).toContain('Never open two lines the same way, and never call the visitor "dear" or any pet name.');
   });
 
   it("describes the whisper as too fond of the visitor rather than gentle with them, and leaves the stern ghost without endearments", () => {
@@ -498,20 +498,17 @@ describe("a pet name at most once (the third play-through, docs/spikes/4.4.md: \
     for (const t of ["A dear little room, kept very still.", "The attic is quiet.", "It is dearer to me than the window."]) expect(petNameUsed([ghost(t)]), t).toBe(false);
   });
 
-  it("lets the first pet name of a game through, and refuses a second for every kind of turn", () => {
-    const reply = "Ahead and to the right, dear, and you will find it very close.";
+  it("since 2026-11-16 refuses a pet name it cannot cut out in every turn, whatever the history (pets.test.ts has the cutting)", () => {
     const hint: Directive = { kind: "hint", bearing: "ahead-right", band: "very close" };
-    expect(validateGhostReply(reply, replyChecksFor(hint, [])).ok).toBe(true);
-    expect(validateGhostReply(reply, replyChecksFor(hint, used))).toEqual({ ok: false, reason: "pet_name" });
-    expect(validateGhostReply("Ahead and to the right, and you will find it very close.", replyChecksFor(hint, used)).ok).toBe(true);
+    expect(validateGhostReply("Ahead and to the right, dear, and you will find it very close.", replyChecksFor(hint, [])).ok).toBe(true);
     for (const d of [{ kind: "ambient" }, { kind: "tease", band: "far" }, { kind: "echo" }] as Directive[]) {
-      expect(validateGhostReply("The room is quiet, dear. It has noticed you.", replyChecksFor(d, used)), d.kind).toEqual({ ok: false, reason: "pet_name" });
+      expect(validateGhostReply("Come in, my dear friend of the attic. It has noticed you.", replyChecksFor(d, [])), d.kind).toEqual({ ok: false, reason: "pet_name" });
+      expect(validateGhostReply("Come in, my dear friend of the attic. It has noticed you.", replyChecksFor(d, used)), d.kind).toEqual({ ok: false, reason: "pet_name" });
     }
   });
 
-  it("tells the model when one is used, and only then", () => {
-    expect(buildNarrationPrompt({ ...base, history: used })!.system).toContain("You have already called the visitor by a pet name. Use none now");
-    expect(buildNarrationPrompt({ ...base, history: [] })!.system).not.toContain("already called the visitor by a pet name");
+  it("no longer needs to tell the model that one was used: the rule is never", () => {
+    expect(buildNarrationPrompt({ ...base, history: used })!.system).not.toContain("already called the visitor by a pet name");
   });
 });
 
