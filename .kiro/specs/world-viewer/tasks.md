@@ -114,9 +114,10 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
   - [ ] 8.2 Live region for ghost speech; captions for any audio
     - _Requirements: 6.4_
 
-- [ ] 9. Memory card
+- [x] 9. Memory card
   - Render `layoutMemoryCard` to a canvas PNG with download button; strip any metadata (canvas export has none).
   - _Requirements: 7.1_
+  - Done (2026-11-17): `web/src/app/viewer/memory-card.ts` draws the layout (thumbnail cover-cropped, token colours, the shell's excerpt wrapping) to a canvas PNG; the End screen's Save fetches the world's `thumbUrl`, saves the PNG, and falls back to the SVG card where a canvas cannot be made (a thumbnail that never answers times out to a text-only card). Renderer tested over a recording canvas; the End save test follows the now-asynchronous save.
 
 - [ ] 10. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; complete the manual perf checklist; ask the user if questions arise.
