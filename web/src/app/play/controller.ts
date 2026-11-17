@@ -60,6 +60,8 @@ export type PlayDeps = {
   setFlow(patch: Partial<FlowState>): void;
   /** The notice was acknowledged: tell the shared boot data. */
   onNoticeAcked(): void;
+  /** The Viewer's frame rate, for the debug overlay; unused when debug is off. */
+  onFps?(fps: number): void;
 };
 
 export type PlayController = {
@@ -327,6 +329,9 @@ export function createPlayController(deps: PlayDeps): PlayController {
           return;
         case "degraded":
           void dispatch({ t: "viewer_degraded", rung: message.rung });
+          return;
+        case "fps":
+          deps.onFps?.(message.fps);
           return;
       }
     },

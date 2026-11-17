@@ -102,17 +102,19 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
     - _Requirements: 3.3, 3.4, 3.6, 4.1_
   - Done (2026-11-17): the HUD itself (counter, journal, Exit, prompt words) was already the shell's; the viewer's half is in `mount.ts`: `promptFor` (pure, in `shared/src/viewer/haunt.ts`, tested) sends `prompt` only on change — an anchor inside its radius first, else the visible ghost within 4 m; pose at 4 Hz; `apply_view` and `set_atmosphere` consumed from `shared/src/app/events.ts`; chat mode releases pointer lock and suspends movement through `inputReduce`, and typing in the chat no longer walks the player. Verified headless: one `{t: prompt, target: anchor}` on entering an anchor's radius.
 
-- [ ] 7. Performance
-  - [ ] 7.1 `QualityController` wired to render loop; resolution scale and LOD switching; `?debug=1` overlay
+- [x] 7. Performance
+  - [x] 7.1 `QualityController` wired to render loop; resolution scale and LOD switching; `?debug=1` overlay
     - _Requirements: 5.1, 5.2_
-  - [ ] 7.2 Pause when hidden; dispose geometries, textures, listeners on unmount
+  - [x] 7.2 Pause when hidden; dispose geometries, textures, listeners on unmount
     - _Requirements: 5.3, 5.4_
+  - Done (2026-11-17): the loop feeds one-second frame rates to `nextQuality`; a step changes the resolution scale (`RESOLUTION_SCALES`) and the splat `lodScale`, starting from `initialQualityLevel`. The viewer reports `fps` about once a second through the bridge to the shell's existing `?debug=1` overlay (a new strict message kind). Hidden pages do not render or step; dispose removes listeners and releases geometries, materials, textures and the audio context.
 
-- [ ] 8. Accessibility and safety
-  - [ ] 8.1 Content notice with acknowledgement; keyboard-only path; focus rings; contrast check of HUD tokens
+- [x] 8. Accessibility and safety
+  - [x] 8.1 Content notice with acknowledgement; keyboard-only path; focus rings; contrast check of HUD tokens
     - _Requirements: 6.1, 6.3, 6.5_
-  - [ ] 8.2 Live region for ghost speech; captions for any audio
+  - [x] 8.2 Live region for ghost speech; captions for any audio
     - _Requirements: 6.4_
+  - Done (2026-11-17): the shell already carried the content notice with its Go-in acknowledgement and the polite live region that announces ghost replies; the viewer's half is a focusable, labelled canvas (arrows walk without scrolling the page, typing in chat does not walk), native `ui-button` tools with the shared focus ring and 44 px targets, token colours throughout (checked at 390 and 1280 px in group 11), and no audio-only information: the drone is ambience with a labelled mute, all speech is text in the Chat.
 
 - [x] 9. Memory card
   - Render `layoutMemoryCard` to a canvas PNG with download button; strip any metadata (canvas export has none).

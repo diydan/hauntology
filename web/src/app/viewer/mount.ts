@@ -7,6 +7,7 @@ import { ghostPlacement, gradeParams, orbIntensity, orbPulse, promptFor, smoothH
 import { inputReduce } from "@hauntology/shared/viewer/input";
 import { assetUrl, loadWorld, LOAD_STAGE_LABELS, type LoadStage, type LoadedWorld, type LoaderPorts } from "@hauntology/shared/viewer/loader";
 import { constrainToDisc, stepMovement } from "@hauntology/shared/viewer/movement";
+import { initialQuality, initialQualityLevel, nextQuality, RESOLUTION_SCALES } from "@hauntology/shared/viewer/quality";
 import {
   SPRINT_MUL, WALK_SPEED, type DeviceCaps, type InputMode, type PlayerState, type Vec3,
 } from "@hauntology/shared/viewer/types";
@@ -100,7 +101,8 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
     };
 
-    const result = await loadWorld(worldId, deviceCaps(), ports, (stage: LoadStage) => {
+    const caps = deviceCaps();
+    const result = await loadWorld(worldId, caps, ports, (stage: LoadStage) => {
       if (!disposed) loadingNote.querySelector("p")!.textContent = LOAD_STAGE_LABELS[stage];
     });
     if (disposed) return;
@@ -111,7 +113,7 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
     }
     const world: LoadedWorld = result.world;
     if (world.rung !== "splat") onMessage({ t: "degraded", rung: world.rung });
-    cleanup = startScene(container, world, splatMesh, {
+    cleanup = startScene(container, world, splatMesh, caps, {
       onMessage,
       mode: () => mode,
       movementEnabled: () => inputMode.movementEnabled,
@@ -217,11 +219,20 @@ function grainDataUrl(): string {
   return c.toDataURL();
 }
 
-function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: SplatMesh | null, hooks: SceneHooks): () => void {
+function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: SplatMesh | null, caps: DeviceCaps, hooks: SceneHooks): () => void {
   const manifest = world.manifest;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth || innerWidth, container.clientHeight || innerHeight);
+  // Quality (7.1): start where this device's score puts it, then follow nextQuality's timing rules.
+  let quality = initialQuality(initialQualityLevel(caps));
+  const applyQuality = () => {
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2) * RESOLUTION_SCALES[quality.level]);
+    renderer.setSize(container.clientWidth || innerWidth, container.clientHeight || innerHeight);
+    if (splatMesh) splatMesh.lodScale = [0.4, 0.65, 0.85, 1][quality.level] ?? 1;
+  };
+  applyQuality();
+  renderer.domElement.tabIndex = 0;
+  renderer.domElement.setAttribute("role", "img");
+  renderer.domElement.setAttribute("aria-label", "The place in 3D. Walk with W, A, S and D or the arrow keys; click to look with the mouse.");
   container.append(renderer.domElement);
 
   const scene = new THREE.Scene();
@@ -408,6 +419,8 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   let lookTouch: { id: number; x: number; y: number } | null = null;
   const onKey = (down: boolean) => (e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    // While walking, the arrows are feet, not page scroll (keyboard-only path, 8.1).
+    if (down && hooks.movementEnabled() && e.code.startsWith("Arrow")) e.preventDefault();
     if (down) keys.add(e.code); else keys.delete(e.code);
   };
   const kd = onKey(true), ku = onKey(false);
@@ -502,11 +515,26 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   canvas.addEventListener("pointerdown", startDrone);
 
   let lastFrameAt = performance.now();
+  let frames = 0;
+  let fpsWindowAt = lastFrameAt;
   renderer.setAnimationLoop(() => {
     if (hooks.isDisposed()) return;
     const frameNow = performance.now();
     const dtMs = frameNow - lastFrameAt;
     lastFrameAt = frameNow;
+    if (document.hidden) return;
+    frames += 1;
+    if (frameNow - fpsWindowAt >= 1000) {
+      const fps = (frames * 1000) / (frameNow - fpsWindowAt);
+      frames = 0;
+      fpsWindowAt = frameNow;
+      const stepped = nextQuality(quality, fps, frameNow);
+      if (stepped.level !== quality.level) {
+        quality = stepped.state;
+        applyQuality();
+      } else quality = stepped.state;
+      hooks.onMessage({ t: "fps", fps: Math.round(fps) });
+    }
     if (tiltOn && tiltCal && hooks.movementEnabled()) look = tiltLook(look, tiltReading, tiltCal, dtMs);
     const yawDelta = look.yaw - player.yaw;
     if (!hooks.movementEnabled()) keys.clear();
@@ -593,6 +621,15 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     removeEventListener("deviceorientation", onOrient);
     if (document.pointerLockElement === canvas) document.exitPointerLock?.();
     splatMesh?.dispose?.();
+    scene.traverse((o) => {
+      if (o instanceof THREE.Mesh || o instanceof THREE.Points) {
+        o.geometry.dispose();
+        const m = o.material as THREE.Material & { map?: THREE.Texture };
+        m.map?.dispose();
+        m.dispose();
+      }
+    });
+    orbTex.dispose();
     if (drone.ctx) void drone.ctx.close();
     renderer.dispose();
   };

@@ -5,7 +5,9 @@ import type { AssetRef } from "../world/manifest";
 import {
   chooseLod,
   initialQuality,
+  initialQualityLevel,
   nextQuality,
+  RESOLUTION_SCALES,
   QUALITY_MIN_CHANGE_GAP_MS,
   QUALITY_NO_UP_AFTER_DOWN_MS,
   type QualityState,
@@ -53,6 +55,15 @@ describe("Property 8: Quality control obeys its timing rules", () => {
     expect(state.level).toBe(0);
     for (let t = 120100; t <= 180000; t += 100) state = nextQuality(state, 10, t).state;
     expect(state.level).toBe(0);
+  });
+
+  it("starts a strong desktop at the top level, a weak phone at the bottom, and scales resolution by level", () => {
+    expect(initialQualityLevel({ mobile: false, memoryGb: 16, cores: 8, maxTexture: 16384, webgl2: true })).toBe(3);
+    expect(initialQualityLevel({ mobile: true, memoryGb: 2, cores: 2, maxTexture: 2048, webgl2: true })).toBe(0);
+    expect(initialQualityLevel({ mobile: true, memoryGb: 16, cores: 8, maxTexture: 16384, webgl2: false })).toBe(0);
+    expect(RESOLUTION_SCALES[0]).toBeLessThan(RESOLUTION_SCALES[1]);
+    expect(RESOLUTION_SCALES[2]).toBeLessThan(RESOLUTION_SCALES[3]);
+    expect(RESOLUTION_SCALES[3]).toBe(1);
   });
 
   it("does not step down on a brief dip", () => {
