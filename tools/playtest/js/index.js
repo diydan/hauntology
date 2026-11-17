@@ -130,6 +130,13 @@ const SECTIONS = [
         desc: 'Lay the phone on a table and tap: compare motion and mic knock detection vs speech.',
         tags: ['motion', 'mic', 'idea'],
       },
+      {
+        href: 'secret-knock.html',
+        accent: 'accent-lab',
+        title: 'Secret knock',
+        desc: 'A locked door: hear the ghost knock once, then knock it back on the table to open it.',
+        tags: ['motion', 'mic', 'lock'],
+      },
     ],
   },
 ];
