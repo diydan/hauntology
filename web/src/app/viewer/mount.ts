@@ -81,6 +81,7 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
 
   void (async () => {
     let splatMesh: SplatMesh | null = null;
+    let ghostSpriteUrl: string | null = null;
     const ports: LoaderPorts = {
       fetchManifest: async (id) => {
         const r = await fetch(`/api/worlds/${encodeURIComponent(id)}`);
@@ -113,7 +114,16 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
     }
     const world: LoadedWorld = result.world;
     if (world.rung !== "splat") onMessage({ t: "degraded", rung: world.rung });
-    cleanup = startScene(container, world, splatMesh, caps, {
+    // The world's own ghost picture, when the Creator made one (best effort; the drawn ghost stands in).
+    try {
+      const r = await fetch(`/api/worlds/${encodeURIComponent(worldId)}/ghost`);
+      if (r.ok) {
+        const view = (await r.json()) as { spriteUrl?: string };
+        if (typeof view.spriteUrl === "string") ghostSpriteUrl = view.spriteUrl;
+      }
+    } catch { /* the drawn ghost stands in */ }
+    if (disposed) return;
+    cleanup = startScene(container, world, splatMesh, caps, ghostSpriteUrl, {
       onMessage,
       mode: () => mode,
       movementEnabled: () => inputMode.movementEnabled,
@@ -219,7 +229,7 @@ function grainDataUrl(): string {
   return c.toDataURL();
 }
 
-function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: SplatMesh | null, caps: DeviceCaps, hooks: SceneHooks): () => void {
+function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: SplatMesh | null, caps: DeviceCaps, ghostSpriteUrl: string | null, hooks: SceneHooks): () => void {
   const manifest = world.manifest;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   // Quality (7.1): start where this device's score puts it, then follow nextQuality's timing rules.
@@ -311,6 +321,13 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   ghost.visible = false;
   ghost.renderOrder = 10;
   scene.add(ghost);
+  if (ghostSpriteUrl) {
+    new THREE.TextureLoader().load(ghostSpriteUrl, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      (ghost.material as THREE.MeshBasicMaterial).map = tex;
+      (ghost.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    });
+  }
 
   let precip: THREE.Points | null = null;
   let stars: THREE.Points | null = null;

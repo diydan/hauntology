@@ -64,6 +64,8 @@ export const GalleryItemSchema = z.object({
 
 export const GhostPresetSchema = z.object({ id: Id, name: Text(60), spriteUrl: OwnPathSchema });
 
+export const GhostProfileViewSchema = z.object({ name: Text(60), spriteUrl: OwnPathSchema, voice: z.enum(["soft", "dry"]) });
+
 export const CandidateSchema = z.object({ imageId: Id, imageUrl: OwnPathSchema });
 
 export const WorldStatusSchema = z.object({
@@ -108,6 +110,7 @@ export const API_SCHEMAS = {
   deleteWorld: z.null(),
   shareWorld: z.object({ shared: z.boolean() }),
   ghostPresets: z.array(GhostPresetSchema).max(12),
+  ghostProfile: GhostProfileViewSchema,
   searchPlaces: z.array(PlaceMatchSchema).max(5),
   listen: z.object({ transcript: Text(1000) }),
   playStart: z.object({ playId: Id, view: PlayViewSchema }),

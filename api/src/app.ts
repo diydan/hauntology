@@ -19,6 +19,8 @@ import { uploadRoutes, type UploadsDeps } from "./routes/uploads";
 import { imageRoutes, worldCreateRoutes, type CreationDeps } from "./routes/world-create";
 import { SILENT, type Logger } from "./log";
 import { galleryRoutes } from "./routes/gallery";
+import type { Creator } from "./creator/service";
+import { creatorRoutes, ghostRoutes, worldGhostRoutes } from "./routes/ghosts";
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
 import { partyRoutes, type PartyDeps } from "./routes/party";
 import { ipHashOf } from "./routes/world-create";
@@ -65,6 +67,8 @@ export type AppOptions = SessionOptions & {
    * route is quiet, no reply names a line and Home says `voiceEnabled: false`, so the client hides its speak control. Without a `window` only `VOICE_ENABLED` decides.
    */
   voice?: { speak: SpeakDeps; window?: Pick<VoiceWindow, "isOpen"> };
+  /** The Ghost Creator (ghost-creator task 3). When given, the paid creator steps and the world's ghost are served. */
+  creator?: Creator;
 };
 
 /**
@@ -111,6 +115,12 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   app.route("/api/session", sessionRoutes({ flags }));
   // What the visitor has left, asked for by the shell as it opens (world-pipeline 5.7). Needs only the guard; with none it reads as no places.
   app.route("/api/quota", quotaRoutes({ ...(options.worlds?.creation?.guard !== undefined ? { guard: options.worlds.creation.guard } : {}) }));
+  if (options.creator !== undefined) {
+    app.route("/api/ghosts", creatorRoutes(options.creator));
+    app.route("/api/worlds", worldGhostRoutes(options.creator));
+  }
+  // The Preset Ghosts are static shipped content (ghost-creator task 2): no store, no key.
+  app.route("/api/ghosts", ghostRoutes());
   if (options.uploads !== undefined) {
     app.route("/api/uploads", uploadRoutes({ ...options.uploads, enabled: async (c) => (await flags(c)).worldGenEnabled }));
   }

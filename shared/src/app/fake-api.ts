@@ -301,6 +301,13 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
       return guarded("ghostPresets", () => ok(GHOST_PRESETS.map((g) => ({ ...g }))));
     },
 
+    ghostProfile(_now, _worldId) {
+      return guarded("ghostProfile", () => {
+        const g = GHOST_PRESETS[0] as (typeof GHOST_PRESETS)[number];
+        return ok({ name: g.name, spriteUrl: g.spriteUrl, voice: "soft" as const });
+      });
+    },
+
     searchPlaces(_now, q) {
       return guarded("searchPlaces", () => {
         if (options.conditionsEnabled === false) return fail(ErrorCode.conditions_disabled);

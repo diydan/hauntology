@@ -30,7 +30,8 @@ export default function Play() {
   const shell = useShell();
   const { api, router, quota, memory, platform } = shell;
   const boot = useBoot();
-  const worldId = useRouterState().route.worldId ?? "";
+  const routerState = useRouterState();
+  const worldId = routerState.route.worldId ?? "";
   const container = useRef<HTMLDivElement>(null);
 
   // One controller and one voice per visit to this Screen. Creating them has no side effect; `begin` runs in an effect and runs once.
@@ -119,6 +120,17 @@ export default function Play() {
     announce(`${copy.title}. ${copy.body}`);
   }, [failure, announce]);
 
+  // A ghost made in the Creator kept its profile with the API, so when memory holds no picture the world is asked.
+  const [madeGhost, setMadeGhost] = useState<{ name: string; sprite: string } | null>(null);
+  useEffect(() => {
+    if (ghostFace(memory.get()).sprite !== null || !routerState.flow.ghostReady) return;
+    let live = true;
+    void api.ghostProfile(worldId).then((r) => {
+      if (live && r.ok) setMadeGhost({ name: r.value.name, sprite: r.value.spriteUrl });
+    });
+    return () => { live = false; };
+  }, [routerState.flow.ghostReady, api, worldId]);
+
   // A still picture of the place, when the Viewer cannot show it.
   const [thumb, setThumb] = useState<string | null>(null);
   useEffect(() => {
@@ -173,7 +185,8 @@ export default function Play() {
 
   const chatOpen = ui.play.mode === "chat";
   // Who the visitor picked on Haunt; it does not change during a visit to this Screen.
-  const ghost = ghostFace(memory.get());
+  const picked = ghostFace(memory.get());
+  const ghost = madeGhost && picked.sprite === null ? { ...picked, name: madeGhost.name, sprite: madeGhost.sprite } : picked;
   return (
     <div className="play-layout">
       <main className="play-main ui-stack">

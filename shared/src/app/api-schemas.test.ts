@@ -61,6 +61,7 @@ describe("the demo FakeApi and the real client share the same shapes", () => {
     check("world", b.world(t + 60_000, created.worldId));
     check("searchPlaces", b.searchPlaces(t, "lis"));
     check("ghostPresets", b.ghostPresets(t));
+    check("ghostProfile", b.ghostProfile(t, "attic-room"));
     check("ackNotice", b.ackNotice(t));
     const play = value(b.playStart(t, { worldId: "attic-room" }));
     check("playStart", { ok: true, value: play });
