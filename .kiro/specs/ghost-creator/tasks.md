@@ -38,9 +38,10 @@ Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) a
     - **Validates: Requirements 6.2, 4.3**
   - Done (2026-11-17): `traits.ts`, `sanitize.ts`, `portrait-prompt.ts`, `sprite.ts`, `persona.ts` and `profile.ts` in `shared/src/creator/`, with Properties 1 to 6 and 8 in `creator.prop.test.ts` (generators in `creator.arb.ts`); three deliberate breakages caught. One reading of the design worth recording: a detail over 140 characters as sent is refused on `detail` rather than silently cut, and the profile id is a content hash, so the same ghost is the same id everywhere.
 
-- [ ] 2. Presets
+- [x] 2. Presets
   - Produce six Preset Ghosts and `GET /api/ghosts/presets`. The art is already made, one set of three crops per Suspect in `docs/story/art/` (colour by default, plus a black and white version and a transparent cut-out of each); ship the colour cut-out as `spriteUrl` and the black and white one as `monoUrl`, compressed (WebP) under `web/public/ghosts/` with a licence note. Give each Preset its `lodgerVoice`: Percy `mark`, Captain Thorne `conrad`, Dr. Pike `arjun`, Cora Bell `chloe`, Lady Vane `eleanor`, Mrs. Dunmore `victoria`.
   - _Requirements: 3.3, 4.2_
+  - Done (2026-11-17): the made art lives in `tools/playtest/art/` (transparent colour cut-outs, 300 px wide); the colour WebP and a black-and-white version of each ship under `web/public/ghosts/` with `LICENCE.md` (alpha coverage 0.52 to 0.70, each at most 36 KB). The six profiles are authored in `shared/src/creator/presets.ts` (traits from the characters in `docs/story/CHARACTERS.md`, persona built then named, locked Lodger Voices) and listed by `GET /api/ghosts/presets` with the Gallery's public footing.
 
 - [ ] 3. API
   - [ ] 3.1 `POST /api/ghosts/portraits`
