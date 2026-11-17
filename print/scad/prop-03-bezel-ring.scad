@@ -1,5 +1,5 @@
 // Hauntology Tabletop Print Kit — Prop #3: Haunt Needle (Tim Burton Gothic Instrument Bezel Ring)
-// Colour: Lantern (#e0a43a, amber/matte gold)
+// Colour: Tarnished Silver (#c9c9d4)
 // Size: ~176 W x 108 H x 4.8 D mm
 // Features: Wrought-iron crown & gargoyle rim cusps (clear of lv=8,10,12 MAX tab clip arcs!),
 //           raised index notches at Haunt 3, 6, 9; 4 alignment holes matching dial-plate
@@ -113,4 +113,4 @@ module prop_03_bezel_ring() {
   }
 }
 
-color(col_lantern) prop_03_bezel_ring();
+color(col_silver) prop_03_bezel_ring();
