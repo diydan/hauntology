@@ -52,7 +52,21 @@ heavyNeed(door, seated): number                                  // 1 for a knoc
 liveActs / actCount / actsTogether(acts, nowMs, need)            // different seats inside ACT_WINDOW_MS (2000)
 canSlam(state, playersBehind, round): boolean
 slamTargets(states, behind, round): string[]
+
+// the Room's side (task 2)
+type DoorSetup = { doors: Door[]; passages: Passage[]; home: string };
+type DoorsState = { v: 1; doors; passages; home; states: DoorState[]; acts: Record<id, DoorAct[]>; tries: Record<id, number>; heardBy: Record<id, seat> };
+setupDoors(setup, zoneIds, puzzlesOn): { state: DoorsState | null; problems: string[] }   // null and no problems for no doors; null and the reasons when the check fails
+parseDoorsState(raw): DoorsState | null                          // a saved value, or null so the Room falls back to the start
+closedZones(d, zoneIds): string[]                                // the Zones nobody can reach now
+actOnDoor(d, doorId, seat, nowMs, seated): { ok, state, opened, need, have } | { ok: false, code }
+knockOnDoor(d, doorId, times, round, roomSeed): { ok, state, outcome, heard, triesLeft } | { ok: false, code }
+newTurnDoors(d) / newRoundDoors(d, round): { state, opened: id[] }
+nearZone / knocksHeardOnEntry / markHeard / knockSightFor        // the ghost's knock, once, to one phone
+publicDoors(d, seated, nowMs): PublicDoor[]                      // what every screen sees; never the pattern
 ```
+
+In `engine.ts`: `createEngine({ doors })`, `repairDoors(engine)` (used when a Room wakes), the `doorAct` and `doorKnock` messages, `walk` refused with `zone_closed` for a closed Zone, Bots choosing only among open Zones (`BotTurn.open`), `tickDoors` at a Round start, and the public view's `doors`, `closedZones` and `doorProblems`.
 
 - **Manifest check** (`doorProblems`): at most 3 doors; ids valid and unique; `at` finite; width 0.9 to 1.6 m; both Zones known and different; lock known; `need` 2 or 3 on a heavy door and absent on a knock door; every Zone reachable from `home` through Passages and doors taken as open. Reasons are short codes: `count`, `0:id`, `1:id_dup`, `0:at`, `0:width`, `0:zone`, `0:same_zone`, `0:lock`, `0:need`, `home`, `cut_off:<zone>`.
 - **Closed Zones**: `reachableZones` is the Zones a Player can reach from the Home Zone now. The Turn picker and the Lock placement use it, so a Zone behind a shut door is not offered. `zonesBehind` is what a Slam counts Players in.
@@ -79,12 +93,16 @@ A stored value that does not parse falls back to `initialDoors(doors, puzzlesOn)
 | `doorAct` | a Player's phone | server | `doorId` |
 | `door` | server | every screen | `id`, `open`, `reason`, and `need`/`have` while a heavy door waits |
 | `welcome` | server | one screen | `doors`: every door's state, joining late |
-| Sight (knock) | server | the one Player | the pattern, once; never in `door` |
+| `doorResult` | server | the one Detective | `doorId`, `outcome` (`opened`, `wrong`, `failed`), `heard` ("You knocked 2, 3."), `triesLeft` |
+| Sight (knock) | server | the one Player | `sightId` `door-<id>`, the pattern, once; never in `door`; given to the first Detective into the door's near Zone |
+| `public` view | server | every screen | adds `doors` (each with `need` and `have`), `closedZones` and `doorProblems` |
+
+`welcome` also carries `doors` when the world has any. The Room gets a world's doors from the optional `doors()` port of `Ports` (`server.ts`); `createEngine` takes them as `doors` and `step` checks them with the pool's Zones at the start.
 
 ## Error handling
 
 - A world whose doors fail the check is played with no doors; the Master is told the reasons in words (Requirement 1.4).
-- A malformed or rate-limited door message is dropped without an answer. A `doorKnock` off the sender's own Turn is dropped. An unknown `doorId` is dropped.
+- A malformed door message closes the socket (4400) and one over the per-socket limit gets `rate_limited`, as for every message. A refused `doorKnock` or `doorAct` changes nothing and tells only the sender a code: `not_your_turn`, `not_a_detective`, `not_at_door`, `door_unknown`, `not_knock`, `not_heavy`, `door_open`, `no_knocks`, `no_tries_left`, `paused`, `game_over`.
 - A stored door state that does not parse falls back to the start.
 - A Slam finds no target: it is not offered, and the Haunt Event offers its other options.
 

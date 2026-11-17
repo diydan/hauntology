@@ -1,5 +1,6 @@
 import { whoIs } from "./auth";
-import { createEngine, step, type EngineSettings, type EngineState, type Outbound } from "./engine";
+import { publicDoors, type DoorSetup } from "./doors";
+import { createEngine, repairDoors, seatedHumans, step, type EngineSettings, type EngineState, type Outbound } from "./engine";
 import { handOver } from "./master";
 import { PRESET_GHOST_IDS } from "./preset-ghosts";
 import { parseClientMessage } from "./protocol";
@@ -24,6 +25,8 @@ export type Ports = {
   randomBytes(n: number): Uint8Array;
   /** Told once when the Room ends (by the Master, the host or its time to live), so the directory can free its place. */
   ended?(code: string): Promise<void>;
+  /** The doors the world brings, or none (knock-door 1.4). Checked with the Zones when the game starts; the Worker plugs a world's doors in here. */
+  doors?(): DoorSetup | null;
 };
 
 /** At most this many messages per socket per second (party-mode 3.2: the Controller sends at most 30); the rest are refused unread. */
@@ -54,7 +57,8 @@ export class RoomCore {
     const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; sockets: Record<string, SocketInfo> };
     const room = parseRoom(raw.room);
     if (room === null) return null;
-    this.state = { room, engine: raw.engine, lobbySettings: raw.lobbySettings, sockets: raw.sockets };
+    // a saved door state that does not parse falls back to the start (knock-door 8.1)
+    this.state = { room, engine: raw.engine === null ? null : repairDoors(raw.engine), lobbySettings: raw.lobbySettings, sockets: raw.sockets };
     return this.state;
   }
 
@@ -92,7 +96,7 @@ export class RoomCore {
 
   private draftEngine(s: ServerState): EngineState {
     const botLevel = s.lobbySettings.preset === "gentle" ? ("gentle" as const) : ("standard" as const);
-    return createEngine({ seed: s.room.seed, seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })), settings: s.lobbySettings, presetIds: PRESET_GHOST_IDS });
+    return createEngine({ seed: s.room.seed, seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })), settings: s.lobbySettings, presetIds: PRESET_GHOST_IDS, doors: this.ports.doors?.() ?? null });
   }
 
   // ------------------------------------------------------------ HTTP-side calls (from the routes)
@@ -228,7 +232,9 @@ export class RoomCore {
       if (next.engine !== null) { const r = step(next.engine, { kind: "connect", seat: who.seat }, now); next = { ...next, engine: r.state }; out = r.out; wake = r.wakeAtMs; }
     }
     await this.commit(next, out, wake);
-    this.ports.send(socketId, { t: "welcome", role: who.role, seat: who.seat });
+    // a phone or a TV that joins late is told the state of every door (knock-door 8.4); nothing is added when the world has none
+    const doors = next.engine?.doors ? publicDoors(next.engine.doors, seatedHumans(next.engine), now) : null;
+    this.ports.send(socketId, { t: "welcome", role: who.role, seat: who.seat, ...(doors ? { doors } : {}) });
     this.ports.send(socketId, this.lobbyView(next));
   }
 

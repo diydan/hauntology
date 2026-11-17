@@ -37,34 +37,37 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
   - Progress (2026-11-17): done, 21 tests in `shared/src/party/doors.test.ts`. Mutation checks on the route check, the Player cap, the act count, the Slam rule, the puzzles-off rule and the seed rule are NOT yet run.
 
 - [ ] 2. Room wiring (`shared/src/party/`, `api/`)
-  - [ ] 2.1 Keep `{ doors, acts }` in the Room's storage; a stored value that does not parse falls back to the start
+  - [x] 2.1 Keep `{ doors, acts }` in the Room's storage; a stored value that does not parse falls back to the start
     - _Requirements: 8.1_
-  - [ ] 2.2 Messages `door`, `doorKnock` and `doorAct` in `protocol.ts`: validated, rate limited, malformed ones dropped; `doorKnock` only on the sender's own Turn
+  - [x] 2.2 Messages `door`, `doorKnock` and `doorAct` in `protocol.ts`: validated by the socket protocol and counted by the per-socket rate limit, a refused one changes nothing and gets a code; `doorKnock` only on the sender's own Turn
     - _Requirements: 8.2_
-  - [ ] 2.3 `welcome` carries the state of every door
+  - [x] 2.3 `welcome` carries the state of every door
     - _Requirements: 8.4_
-  - [ ] 2.4 The knock pattern goes only to the one phone that hears it, as the Sight, and never in `door`
+  - [x] 2.4 The knock pattern goes only to the one phone that hears it, as the Sight, and never in `door`
     - _Requirements: 8.3, 3.2_
-  - [ ] 2.5 Reduce door changes with the pure functions only; the Durable Object stores and sends
+  - [x] 2.5 Reduce door changes with the pure functions only; the Durable Object stores and sends
     - _Requirements: 8.5, 2.1_
-  - [ ] 2.6 The start of a Round calls `tickRound`
+  - [x] 2.6 The start of a Round calls `tickRound`
     - _Requirements: 2.6_
+  - Progress (2026-11-17): 2.1 to 2.6 are in `shared/src/party/` (`doors.ts`, `engine.ts`, `protocol.ts`, `server.ts`, `bot.ts`) with `doors-engine.test.ts` and new tests in `doors.test.ts` and `server.test.ts`. The Durable Object in `api/` is untouched: the Room core already saves the whole Engine state as one text, so the doors persist with it. 2.7 is half done: the check, the fallback and the reasons are built (`createEngine({ doors })`, `Ports.doors()`), but the Room has no world pick yet, so nothing feeds a real world's doors in, and the Master is not told in words (that is UI). 2.8 is half done: a walk into a closed Zone is refused and Bots avoid them, but Lock placement (`placePuzzles`) is unchanged.
   - [ ] 2.7 When the Master picks the world, check its doors with the Zones; a world that fails is played with no doors and the Master is told why; a door never holds a card or a clue answer
     - _Requirements: 1.4, 1.5_
   - [ ] 2.8 The Turn picker and Lock placement use `reachableZones`, so a Zone behind a shut door is not offered
     - _Requirements: 2.3_
 
 - [ ] 3. Knock door in a Turn
-  - [ ] 3.1 A Detective's try goes to `judgeKnock` with the door's pattern; right opens the door for everyone
+  - [x] 3.1 A Detective's try goes to `judgeKnock` with the door's pattern; right opens the door for everyone
     - _Requirements: 3.3, 2.4_
-  - [ ] 3.2 Wrong tries say what was heard and never the answer; three wrong tries call `failKnock` and end the Turn with no other cost
+  - [x] 3.2 Wrong tries say what was heard and never the answer; three wrong tries call `failKnock` and end the Turn with no other cost
     - _Requirements: 3.4, 3.5_
+  - Progress (2026-11-17): 3.1, 3.2 and the Sight of 3.3 are in the Engine (`doorKnock`, `hearKnocks`) with tests; the Faded clue for a Detective who missed the Sight is not built.
   - [ ] 3.3 The ghost's knock is a Sight on one phone, and the Faded clue at the Lock when missed
     - _Requirements: 3.2_
 
 - [ ] 4. Heavy door in the Room
-  - [ ] 4.1 `doorAct` appends an act; `actsTogether` with `heavyNeed` opens the door and clears the acts
+  - [x] 4.1 `doorAct` appends an act; `actsTogether` with `heavyNeed` opens the door and clears the acts
     - _Requirements: 4.1, 4.2_
+  - Progress (2026-11-17): 4.1 is in the Engine (`doorAct`) with tests; the public view and every `door` message carry `need` and `have`, so 4.2 only needs the screens.
   - [ ] 4.2 Every phone shows "n of need" in words and in the live region, with a control to act
     - _Requirements: 4.4_
 

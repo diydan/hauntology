@@ -38,6 +38,10 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("giveUp"), lockId: id }).strict(),
   z.object({ t: z.literal("sightAck"), sightId: id }).strict(),
   z.object({ t: z.literal("plainInspect"), on: z.boolean() }).strict(),
+  /** A Player acts on a heavy door (knock-door 4.1). */
+  z.object({ t: z.literal("doorAct"), doorId: id }).strict(),
+  /** A Detective's try at a knock door: the times of their knocks in ms (knock-door 3.3). At most 64, like every knock transcript. */
+  z.object({ t: z.literal("doorKnock"), doorId: id, times: z.array(z.number().finite().nonnegative()).max(64) }).strict(),
 ]);
 
 /** Room controls handled by the server around the Engine (the lobby), not by the Engine itself. */

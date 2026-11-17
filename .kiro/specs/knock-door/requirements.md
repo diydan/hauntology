@@ -106,7 +106,7 @@ This spec joins four others. `puzzles` owns the Secret knock Kind and the shared
 #### Acceptance Criteria
 
 1. THE Room SHALL keep the state of its doors in its storage, so that it outlives hibernation; a stored door state that is not valid SHALL fall back to the start (every door shut, or open when puzzles are off).
-2. THE Room SHALL have messages `door` (to every screen: which door, open or shut, and why), `doorKnock` (a Detective's try, taken only on their own Turn) and `doorAct` (a Player acts on a Heavy door); every message SHALL be validated and rate limited, and a malformed one SHALL be dropped without an answer.
+2. THE Room SHALL have messages `door` (to every screen: which door, open or shut, and why), `doorKnock` (a Detective's try, taken only on their own Turn) and `doorAct` (a Player acts on a Heavy door); every message SHALL be validated by the socket protocol and counted by the Room's per-socket rate limit like every other message (a malformed one closes the socket, a message over the limit is refused unread), and a `doorKnock` or `doorAct` the rules do not allow SHALL be refused with a code, and SHALL change nothing; the Detective also gets a `doorResult` for each try.
 3. THE knock pattern SHALL never leave the server except in the Sight sent to the one Player who hears it.
 4. A phone or a TV that joins late SHALL be told the state of every door in `welcome`.
 5. THE changes of a door SHALL be made by pure functions in `shared/src/party/doors.ts` (`openDoor`, `failKnock`, `shutDoor`, `tickRound`), so the Durable Object only stores the result and sends it.

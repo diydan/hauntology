@@ -1,9 +1,12 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { knockPlayTimes } from "../puzzles/knock";
 import { makeLock } from "../puzzles/make";
 import {
-  ACT_WINDOW_MS, DOOR_WIDTH_MAX, DOOR_WIDTH_MIN, MAX_DOORS, actCount, actsTogether, canSlam, doorKnock, doorProblems, failKnock,
-  heavyNeed, initialDoors, openDoor, reachableZones, shutDoor, slamTargets, tickRound, zonesBehind, type Door, type DoorAct, type DoorState, type Passage,
+  ACT_WINDOW_MS, DOOR_WIDTH_MAX, DOOR_WIDTH_MIN, MAX_DOORS, actCount, actOnDoor, actsTogether, canSlam, closedZones, doorKnock, doorProblems, failKnock,
+  heavyNeed, initialDoors, knockOnDoor, knockSightFor, knocksHeardOnEntry, markHeard, nearZone, newRoundDoors, newTurnDoors, openDoor, parseDoorsState,
+  publicDoors, reachableZones, setupDoors, shutDoor, slamTargets, tickRound, zonesBehind,
+  type Door, type DoorAct, type DoorSetup, type DoorsState, type DoorState, type Passage,
 } from "./doors";
 
 const ZONES = ["hall", "cellar", "attic", "garden", "study", "porch"] as const;
@@ -200,6 +203,118 @@ describe("doors: heavy doors (Property 5: A door never asks for more Players tha
     }));
   });
 });
+
+describe("doors: the Room's door state (Requirement 8.1, 8.5)", () => {
+  const z = ["hall", "cellar", "attic", "garden"];
+  const setup: DoorSetup = {
+    home: "hall", passages: [["attic", "garden"]],
+    doors: [door({ id: "one", a: "hall", b: "cellar" }), door({ id: "two", a: "cellar", b: "attic", lock: "heavy", need: 3 })],
+  };
+  const room = (puzzlesOn = true): DoorsState => setupDoors(setup, z, puzzlesOn).state as DoorsState;
+
+  it("sets up nothing for no doors, nothing and the reasons for a bad list, and the doors for a good one", () => {
+    expect(setupDoors(null, z, true)).toEqual({ state: null, problems: [] });
+    expect(setupDoors({ ...setup, doors: [] }, z, true)).toEqual({ state: null, problems: [] });
+    expect(setupDoors({ ...setup, passages: [] }, z, true).problems).toContain("cut_off:garden");
+    expect(setupDoors({ ...setup, passages: [] }, z, true).state).toBeNull();
+    expect(room().states.map((s) => s.open)).toEqual([false, false]);
+    expect(room(false).states.map((s) => s.open)).toEqual([true, true]);
+  });
+
+  it("round-trips through JSON, and refuses anything else as a saved value", () => {
+    const d = room();
+    expect(parseDoorsState(JSON.parse(JSON.stringify(d)))).toEqual(d);
+    expect(parseDoorsState(null)).toBeNull();
+    expect(parseDoorsState({})).toBeNull();
+    expect(parseDoorsState({ ...d, v: 2 })).toBeNull();
+    expect(parseDoorsState({ ...d, states: [] })).toBeNull(); // the states must match the doors
+    expect(parseDoorsState({ ...d, states: [...d.states].reverse() })).toBeNull();
+    expect(parseDoorsState({ ...d, doors: [...d.doors, ...d.doors, ...d.doors, ...d.doors] })).toBeNull();
+    expect(parseDoorsState({ ...d, tries: { one: 99 } })).toBeNull();
+    expect(parseDoorsState({ ...d, extra: 1 })).toBeNull();
+    expect(parseDoorsState({ ...d, acts: { two: [{ seat: 1, atMs: Number.NaN }] } })).toBeNull();
+  });
+
+  it("acts on a heavy door: counts, opens at the need, and refuses a knock door, an open door and an unknown one", () => {
+    let d = room();
+    expect(actOnDoor(d, "one", 1, 0, 6)).toEqual({ ok: false, code: "not_heavy" });
+    expect(actOnDoor(d, "nope", 1, 0, 6)).toEqual({ ok: false, code: "door_unknown" });
+    for (const [seat, want] of [[1, 1], [2, 2]] as const) {
+      const r = actOnDoor(d, "two", seat, 100 * seat, 6);
+      expect(r).toMatchObject({ ok: true, opened: false, need: 3, have: want });
+      if (r.ok) d = r.state;
+    }
+    const last = actOnDoor(d, "two", 3, 400, 6);
+    expect(last).toMatchObject({ ok: true, opened: true, need: 3, have: 3 });
+    if (!last.ok) return;
+    expect(last.state.states[1]?.open).toBe(true);
+    expect(last.state.acts).toEqual({});
+    expect(actOnDoor(last.state, "two", 1, 500, 6)).toEqual({ ok: false, code: "door_open" });
+    expect(actOnDoor(d, "two", 3, 400, 2)).toMatchObject({ ok: true, opened: true, need: 2 }); // only two seated: it asks for two
+  });
+
+  it("keeps at most a handful of acts per door", () => {
+    let d = room();
+    for (let i = 0; i < 40; i++) { const r = actOnDoor(d, "two", 1, 1000 + i, 6); if (r.ok) d = r.state; }
+    expect(d.acts["two"]?.length ?? 0).toBeLessThanOrEqual(12);
+  });
+
+  it("judges a knock: refuses non-knock doors, open doors, no knocks and a fourth try; opens on the right one", () => {
+    const d = room();
+    const right = (): number[] => { const k = doorKnock(5, "one"); const l = makeLock("knock", k.level, k.seed); return l.kind === "knock" ? knockPlayTimes(l.secret) : []; };
+    expect(knockOnDoor(d, "two", [0, 300], 1, 5)).toEqual({ ok: false, code: "not_knock" });
+    expect(knockOnDoor(d, "nope", [0, 300], 1, 5)).toEqual({ ok: false, code: "door_unknown" });
+    expect(knockOnDoor(d, "one", [], 1, 5)).toEqual({ ok: false, code: "no_knocks" });
+    expect(knockOnDoor(d, "one", [Number.NaN], 1, 5)).toEqual({ ok: false, code: "no_knocks" });
+    expect(knockOnDoor({ ...d, tries: { one: 3 } }, "one", [0, 300], 1, 5)).toEqual({ ok: false, code: "no_tries_left" });
+    const ok = knockOnDoor({ ...d, tries: { one: 2 } }, "one", right(), 1, 5);
+    expect(ok).toMatchObject({ ok: true, outcome: "opened" });
+    if (ok.ok) { expect(ok.state.states[0]?.open).toBe(true); expect(ok.state.tries).toEqual({}); }
+    expect(knockOnDoor(openDoorIn(d, "one"), "one", right(), 1, 5)).toEqual({ ok: false, code: "door_open" });
+  });
+
+  it("starts each Turn with fresh tries, and opens due doors at a Round start, saying which", () => {
+    const d = room();
+    expect(newTurnDoors({ ...d, tries: { one: 2 } }).tries).toEqual({});
+    expect(newTurnDoors(d)).toBe(d);
+    const failed: DoorsState = { ...d, states: failKnock(d.states, "one", 4) };
+    expect(newRoundDoors(failed, 4)).toEqual({ state: failed, opened: [] });
+    const next = newRoundDoors(failed, 5);
+    expect(next.opened).toEqual(["one"]);
+    expect(next.state.states[0]).toMatchObject({ open: true, autoOpenedRound: 5 });
+  });
+
+  it("gives the ghost's knock once, from the near Zone, as a Sight with the knock's own groups", () => {
+    const d = room();
+    expect(nearZone(d, d.doors[0] as Door, z)).toBe("hall");
+    expect(knocksHeardOnEntry(d, "hall", z)).toEqual(["one"]);
+    expect(knocksHeardOnEntry(d, "cellar", z)).toEqual([]);
+    expect(knocksHeardOnEntry(markHeard(d, "one", 2), "hall", z)).toEqual([]);
+    expect(knocksHeardOnEntry(openDoorIn(d, "one"), "hall", z)).toEqual([]);
+    const sight = knockSightFor(5, "one");
+    const k = doorKnock(5, "one");
+    const lock = makeLock("knock", k.level, k.seed);
+    expect(sight).toMatchObject({ kind: "knock", payload: { kind: "knock", groups: lock.kind === "knock" ? lock.secret.groups : null } });
+    expect(knockSightFor(5, "one", true)?.showMs).not.toBe(sight?.showMs);
+  });
+
+  it("shows each door to every screen with its count and never the pattern", () => {
+    const d = room();
+    expect(publicDoors(d, 6, 0).map((x) => [x.id, x.open, x.need, x.have])).toEqual([["one", false, 1, 0], ["two", false, 3, 0]]);
+    const r = actOnDoor(d, "two", 1, 1000, 6);
+    if (!r.ok) throw new Error("act");
+    expect(publicDoors(r.state, 6, 1500).find((x) => x.id === "two")).toMatchObject({ need: 3, have: 1 });
+    expect(publicDoors(r.state, 6, 1000 + ACT_WINDOW_MS)[1]?.have).toBe(0); // the act is out of the window
+    expect(JSON.stringify(publicDoors(d, 6, 0))).not.toMatch(/groups|secret|seed/);
+    expect(closedZones(d, z)).toEqual(["cellar", "attic", "garden"]);
+    expect(closedZones(openDoorIn(openDoorIn(d, "one"), "two"), z)).toEqual([]);
+  });
+});
+
+/** The Room's doors with one door opened, for the tests above. */
+function openDoorIn(d: DoorsState, id: string): DoorsState {
+  return { ...d, states: openDoor(d.states, id) };
+}
 
 describe("doors: the Haunt Slam (Property 7: A Slam shuts only an open door that nobody stands behind)", () => {
   const open = (over: Partial<DoorState> = {}): DoorState => ({ id: "one", open: true, opensAtRound: null, autoOpenedRound: null, ...over });

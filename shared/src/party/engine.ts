@@ -3,6 +3,10 @@ import { roundEnd, sealAccusation, type AccuseState } from "./accuse";
 import { botAct, newMind, observe, type Fact, type Mind, type MindCard } from "./bot";
 import { bonusSeconds, clockStatus, deadlineOf, earned, expire, nextWake, pause, resume, turnBudget, type BaseSeconds, type ClockEvent, type TurnClock } from "./clock";
 import { dealCase, type Card, type Deal, type Solution } from "./deal";
+import {
+  actOnDoor, closedZones, knockOnDoor, knockSightFor, knocksHeardOnEntry, markHeard, newRoundDoors, newTurnDoors, parseDoorsState, publicDoors, setupDoors,
+  type DoorReason, type DoorSetup, type DoorsState, type PublicDoor,
+} from "./doors";
 import { endingPayload, type EndingPayload, type RecapEvent, type Source } from "./ending";
 import { applyEvent, chooseOption, chooserFor, coldSpotIn, defaultOption, fireEvent, takeBlackout, type Haunt, type HauntOption } from "./haunt";
 import { buildPool, type Pool } from "./pool";
@@ -94,6 +98,12 @@ export type EngineState = Readonly<{
   outbox: readonly Outbound[];
   /** The Locks (puzzles spec): one per Zone, the open one per seat, the Sights each seat has seen. */
   locks: PartyLocks;
+  /** The doors between Zones (knock-door spec): null when the world has none or they failed the check. Optional, so a Room saved before doors still loads. */
+  doors?: DoorsState | null;
+  /** What the world brought, kept so a saved state that does not parse can be rebuilt from it (knock-door 8.1). */
+  doorSetup?: DoorSetup | null;
+  /** Why the world's doors were refused, for the Master (knock-door 1.4). */
+  doorProblems?: readonly string[];
 }>;
 
 // ---------------------------------------------------------------- actions and messages
@@ -118,7 +128,11 @@ export type ClientMsg =
   | Readonly<{ t: "attempt"; lockId: string; transcript: unknown }>
   | Readonly<{ t: "giveUp"; lockId: string }>
   | Readonly<{ t: "sightAck"; sightId: string }>
-  | Readonly<{ t: "plainInspect"; on: boolean }>;
+  | Readonly<{ t: "plainInspect"; on: boolean }>
+  /** A Player acts on a heavy door (knock-door 4.1). */
+  | Readonly<{ t: "doorAct"; doorId: string }>
+  /** A Detective's try at a knock door: the times of their knocks, in ms (knock-door 3.3). */
+  | Readonly<{ t: "doorKnock"; doorId: string; times: readonly number[] }>;
 export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> | Readonly<{ kind: "alarm" }> | Readonly<{ kind: "connect"; seat: number }> | Readonly<{ kind: "disconnect"; seat: number }>;
 
 export type PublicSnapshot = Readonly<{
@@ -131,6 +145,12 @@ export type PublicSnapshot = Readonly<{
   relics: readonly Readonly<{ id: string; name: string }>[];
   events: readonly EngineEvent[];
   ending: EndingPayload | null;
+  /** Every door as every screen sees it (never a pattern); empty when the world has none. */
+  doors: readonly PublicDoor[];
+  /** The Zones nobody can reach now, behind a shut door. */
+  closedZones: readonly string[];
+  /** Why the world's doors were refused, as short codes (the game plays without them). */
+  doorProblems: readonly string[];
 }>;
 export type PrivateSnapshot = Readonly<{
   seat: number; hand: readonly Card[]; shownToMe: readonly Readonly<{ card: string; by: number }>[]; found: readonly string[];
@@ -141,8 +161,9 @@ export type PrivateSnapshot = Readonly<{
   soundConsent: boolean;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
 }>;
-export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> }>
+export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> | Readonly<{ t: "door"; id: string; open: boolean; reason: DoorReason; need: number; have: number }> }>
   | Readonly<{ to: "seat"; seat: number; msg: Readonly<{ t: "private"; view: PrivateSnapshot }> | Readonly<{ t: "refused"; code: string }>
+      | Readonly<{ t: "doorResult"; doorId: string; outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>
       | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }>
       | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null }>
       | Readonly<{ t: "lockResult"; lockId: string; outcome: "solved" | "wrong" | "failed"; attemptsLeft?: number; zone?: string; card?: string | null }>
@@ -150,7 +171,7 @@ export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; vie
 export type StepResult = Readonly<{ state: EngineState; out: readonly Outbound[]; wakeAtMs: number | null; refused?: string }>;
 
 // ---------------------------------------------------------------- creating a game
-export function createEngine(o: Readonly<{ seed: number; seats: readonly EngineSeat[]; settings: EngineSettings; presetIds: readonly string[]; pool?: Pool }>): EngineState {
+export function createEngine(o: Readonly<{ seed: number; seats: readonly EngineSeat[]; settings: EngineSettings; presetIds: readonly string[]; pool?: Pool; doors?: DoorSetup | null }>): EngineState {
   const master = o.seats.find((s) => !s.bot)?.seat ?? (o.seats[0]?.seat as number);
   return {
     v: 1, seed: o.seed, phase: "lobby", settings: o.settings, seats: [...o.seats].sort((a, b) => a.seat - b.seat), masterSeat: master,
@@ -160,7 +181,19 @@ export function createEngine(o: Readonly<{ seed: number; seats: readonly EngineS
     log: [], nextId: 1, shownLog: {}, bluffs: [], sources: [], botFacts: {}, winners: [], houseWins: false, ending: null,
     pausedSinceMs: null, lastSpook: null, nudgeCounts: { haunting: 0, others: 0 }, eavesdrop: null,
     playing: [], masterAwaySinceMs: null, outbox: [], locks: initPartyLocks([]),
+    doors: null, doorSetup: o.doors ?? null, doorProblems: [],
   };
+}
+
+/**
+ * A saved Engine whose doors do not parse falls back to the start, rebuilt from the world's setup, so a damaged value never
+ * blocks a Room (knock-door 8.1). A saved Engine with no doors field (from before doors) is left as it is.
+ */
+export function repairDoors(s: EngineState): EngineState {
+  if (s.doors === undefined || s.doors === null || parseDoorsState(s.doors) !== null) return s;
+  const zoneIds = s.pool.zones.map((z) => z.id);
+  const r = setupDoors(s.doorSetup, zoneIds, (s.settings.puzzles ?? "off") !== "off" && s.seats.some((x) => !x.bot));
+  return { ...s, doors: r.state, doorProblems: r.problems };
 }
 
 // ---------------------------------------------------------------- helpers
@@ -195,7 +228,7 @@ function startTurn(s: EngineState, seat: number, now: number): EngineState {
   const bonus = bonusSeconds(earned(s.log as readonly ClockEvent[], seat));
   const budget = turnBudget({ baseSeconds: s.settings.baseSeconds, bonusSeconds: bonus, blackout });
   const turnNo = s.turnNo + 1;
-  const base: EngineState = { ...s, haunt, turnNo };
+  const base: EngineState = { ...s, haunt, turnNo, ...(s.doors ? { doors: newTurnDoors(s.doors) } : {}) };
   const [s2] = addLog(base, { kind: "turn-start", seat });
   const turn: TurnRec = {
     seat, turnNo, startedMs: now, clock: { startedMs: now, budgetMs: budget === null ? null : budget * 1000, pausedMs: 0, pausedSinceMs: null, ended: false },
@@ -268,12 +301,46 @@ function endTurn(s0: EngineState, now: number): EngineState {
   };
   for (const r of res.reveals) st = addLog(st, { kind: "accuse", seat: r.seat, right: r.right })[0];
   if (res.state.phase === "ended") return finish({ ...st, winners: res.state.winners, houseWins: res.state.houseWins }, now);
+  st = tickDoors(st);
   st = fireHaunt(st, now);
   st = { ...st, players: st.players.map((p) => ({ ...p, resolve: gainResolve(p.resolve), soundsThisRound: 0 })) };
   const first = firstPlayer(order(st), st.first, st.seed);
   if (first === null) return finish({ ...st, houseWins: true }, now);
   return startTurn({ ...st, first }, first, now);
 }
+
+/** A door change for every screen (knock-door 2.4). */
+const doorMsg = (id: string, open: boolean, reason: DoorReason, need = 0, have = 0): Outbound => ({ to: "public", msg: { t: "door", id, open, reason, need, have } });
+
+/** A Player acts on a heavy door; the door opens when enough different Players have acted together (knock-door 4.1, 4.2, 4.4). */
+function doorAct(s: EngineState, seat: number, doorId: string, now: number): EngineState | string {
+  if (!s.doors) return "door_unknown";
+  const r = actOnDoor(s.doors, doorId, seat, now, seatedHumans(s));
+  if (!r.ok) return r.code;
+  return { ...s, doors: r.state, outbox: [...s.outbox, r.opened ? doorMsg(doorId, true, "together", r.need, r.have) : doorMsg(doorId, false, "act", r.need, r.have)] };
+}
+
+/** The ghost's knock is heard once, on one phone: the first Detective into the near Zone of a shut knock door (knock-door 3.2). */
+function hearKnocks(s: EngineState, seat: number, zone: string): EngineState {
+  if (!s.doors || player(s, seat)?.poltergeist) return s;
+  let st = s;
+  for (const id of knocksHeardOnEntry(s.doors, zone, s.pool.zones.map((z) => z.id))) {
+    const sight = knockSightFor(s.seed, id);
+    if (sight === null) continue;
+    st = { ...st, doors: markHeard(st.doors as DoorsState, id, seat), outbox: [...st.outbox, { to: "seat", seat, msg: { t: "sight", sightId: `door-${id}`, sight } }] };
+  }
+  return st;
+}
+
+/** The start of a Round: doors that are due open by themselves, and every screen is told (knock-door 2.6). */
+function tickDoors(s: EngineState): EngineState {
+  if (!s.doors) return s;
+  const r = newRoundDoors(s.doors, s.round);
+  return r.opened.length === 0 ? s : { ...s, doors: r.state, outbox: [...s.outbox, ...r.opened.map((id) => doorMsg(id, true, "timeout"))] };
+}
+
+/** How many Players are seated: a door never asks for more than this (knock-door 4.2). */
+export const seatedHumans = (s: EngineState): number => s.seats.filter((x) => !x.bot).length;
 
 function finish(s: EngineState, _now: number): EngineState {
   const deal = s.deal as Deal;
@@ -311,7 +378,9 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       connected: !s.seats.find((y) => y.seat === x)?.bot, missed: 0, lastCueMs: null, soundsThisRound: 0, frameSentRound: null, framedRound: null, soundConsent: false, hasAudio: true }));
     const zoneIds = s.pool.zones.map((z) => z.id);
     const placed = placePuzzles(s.seed, zoneIds, s.settings.puzzles ?? "off");
-    const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(zoneIds, deal.residue, s.seed), players, round: 1, locks: initPartyLocks(placed.ok ? placed.value : []) };
+    // doors start shut with puzzles on and open with puzzles off, and open when no human is seated to open them (knock-door 2.2, 2.6)
+    const dr = setupDoors(s.doorSetup, zoneIds, (s.settings.puzzles ?? "off") !== "off" && seatedHumans(s) > 0);
+    const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(zoneIds, deal.residue, s.seed), players, round: 1, locks: initPartyLocks(placed.ok ? placed.value : []), doors: dr.state, doorProblems: dr.problems };
     const first = firstPlayer(order(st), null, s.seed) as number;
     return startTurn({ ...st, first }, first, now);
   }
@@ -344,9 +413,11 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     return resumeAll(s, now);
   }
   if (msg.t === "plainInspect") return { ...s, locks: { ...s.locks, plain: { ...s.locks.plain, [String(seat)]: msg.on } } };
+  if (msg.t === "sightAck" && msg.sightId.startsWith("door-")) return s; // the ghost's knock at a door is heard once and is not kept in the Locks
   if (msg.t === "sightAck") { const r = ackSight(s.locks, String(seat), msg.sightId); return r.ok ? { ...s, locks: r.value } : "sight_unknown"; }
   if (msg.t === "sound") return setPlayer(s, seat, (p) => ({ ...p, soundConsent: msg.consent, hasAudio: msg.audio ?? p.hasAudio }));
   if (s.pausedSinceMs !== null) return "paused";
+  if (msg.t === "doorAct") return doorAct(s, seat, msg.doorId, now);
   if (msg.t === "cue") {
     if (!isCue(msg.cue)) return "cue_denied:unknown";
     const me = player(s, seat) as PlayerRec;
@@ -420,13 +491,26 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
   switch (msg.t) {
     case "walk": {
       if (!s.pool.zones.some((z) => z.id === msg.zone)) return "not_in_zone";
+      if (s.doors && closedZones(s.doors, s.pool.zones.map((z) => z.id)).includes(msg.zone)) return "zone_closed"; // behind a shut door (knock-door 2.3)
       if (t.suggested) return "already_suggested";
       const [st] = addLog(s, { kind: "visit", seat, zone: msg.zone, sinceTurnMs: now - t.startedMs });
       const st2: EngineState = { ...st, turn: { ...t, at: msg.zone, inspecting: null } };
       if (isBot(st2, seat)) return st2;
       const sight = sightsOnEntry(st2.locks, String(seat), msg.zone);
-      return sight.delivery === null ? { ...st2, locks: sight.state }
+      const st3: EngineState = sight.delivery === null ? { ...st2, locks: sight.state }
         : { ...st2, locks: sight.state, outbox: [...st2.outbox, { to: "seat", seat, msg: { t: "sight", sightId: sight.delivery.sightId, sight: sight.delivery.sight } }] };
+      return hearKnocks(st3, seat, msg.zone);
+    }
+    case "doorKnock": {
+      if (me.poltergeist) return "not_a_detective";
+      const door = s.doors?.doors.find((d) => d.id === msg.doorId);
+      if (!s.doors || door === undefined) return "door_unknown";
+      if (t.at !== door.a && t.at !== door.b) return "not_at_door";
+      const r = knockOnDoor(s.doors, msg.doorId, msg.times, s.round, s.seed);
+      if (!r.ok) return r.code;
+      let st: EngineState = { ...s, doors: r.state, outbox: [...s.outbox, { to: "seat", seat, msg: { t: "doorResult", doorId: msg.doorId, outcome: r.outcome, heard: r.heard, triesLeft: r.triesLeft } }] };
+      if (r.outcome === "opened") st = { ...st, outbox: [...st.outbox, doorMsg(msg.doorId, true, "knock")] };
+      return r.outcome === "failed" ? endTurn(st, now) : st; // three wrong tries end the Turn; the door opens by itself next Round (knock-door 3.5)
     }
     case "inspect": {
       const why = inspectRefusal({ seat, activeSeat: t.seat, poltergeist: me.poltergeist, inZone: t.at, inspected: me.inspected, inspecting: t.inspecting !== null });
@@ -617,11 +701,15 @@ function botTurn(s: EngineState, now: number): EngineState {
   if (t.botActions >= BOT_ACTIONS_PER_TURN) return endTurn(s, now);
   const me = player(s, t.seat) as PlayerRec;
   const seatInfo = s.seats.find((x) => x.seat === t.seat) as EngineSeat;
+  // a Bot never walks behind a shut door (knock-door 2.3); with no doors it may go anywhere, as before
+  const zoneIds = s.pool.zones.map((z) => z.id);
+  const shut = s.doors ? closedZones(s.doors, zoneIds) : [];
+  const open = shut.length === 0 ? {} : { open: zoneIds.filter((z) => !shut.includes(z)) };
   const act = t.windowUntilMs !== null
-    ? botAct(mindOf(s, t.seat), seatInfo.botLevel, { inZone: null, inspected: me.inspected, suggested: true, canSuggestHere: false, residueFound: me.found.length, seed: s.seed, turn: t.turnNo })
+    ? botAct(mindOf(s, t.seat), seatInfo.botLevel, { inZone: null, inspected: me.inspected, suggested: true, canSuggestHere: false, residueFound: me.found.length, seed: s.seed, turn: t.turnNo, ...open })
     : botAct(mindOf(s, t.seat), seatInfo.botLevel, {
       inZone: t.at, inspected: me.inspected, suggested: t.suggested, canSuggestHere: t.at !== null && t.at !== coldSpotIn(s.haunt, s.round),
-      residueFound: me.found.length, seed: s.seed, turn: t.turnNo,
+      residueFound: me.found.length, seed: s.seed, turn: t.turnNo, ...open,
     });
   const counted: EngineState = { ...s, turn: { ...t, botActions: t.botActions + 1, botDueMs: now + thinkMs(s, t.botActions + 1) } };
   const msg: ClientMsg = act.kind === "seal" ? { t: "seal", suspect: act.suspect, zone: act.zone, relic: act.relic }
@@ -647,6 +735,9 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
     relics: s.pool.relics.map((x) => ({ id: x.id, name: x.name })),
     events: s.log.map((e) => ({ ...e })),
     ending: s.phase === "ended" ? s.ending : null,
+    doors: s.doors ? publicDoors(s.doors, seatedHumans(s), now) : [],
+    closedZones: s.doors ? closedZones(s.doors, s.pool.zones.map((z) => z.id)) : [],
+    doorProblems: [...(s.doorProblems ?? [])],
   };
 }
 
