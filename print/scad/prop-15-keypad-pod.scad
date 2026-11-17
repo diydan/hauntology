@@ -62,33 +62,40 @@ module prop_15_keypad_pod() {
     translate([0, 21.0, 27.0])
       cube([24.0, 6.0, 18.0], center = true);
 
-    // 5. Upper 4-Digit Display Window Recess on flat header deck (42 x 15 mm at Y = 37, Z = 34.8..38)
+    // 5. Upper 4-Digit Display Window Recess on flat header deck (42 x 15 mm at Y = 37, Z = 34.8..38) + wire/pin slot into ESP32 bay!
     translate([0, 37.0, pod_h - 3.2])
       linear_extrude(height = 5.0)
         rrect2d(42.0, 15.0, r = 1.8);
+    translate([0, 35.0, 26.0])
+      cube([26.0, 6.0, 20.0], center = true);
 
     // 6. Recessed 0.4 mm Sticker Pocket for "ENTER PIN" Label (48 x 9 mm at top header Y = 52.0)
     translate([0, 52.0, pod_h - sticker_depth])
       linear_extrude(height = sticker_depth + 0.6)
         rrect2d(48.0, 9.0, r = 1.0);
 
-    // 7. Underside / Interior ESP32-WROOM-32E DevKitC V4 Cavity (14.5 mm straight walls + <= 45-deg vaulted roof -> zero supports!)
+    // 7. Underside / Interior ESP32-WROOM-32E DevKitC V4 Cavity: 28.6 mm wide up to Z = 9.0 (so 27.9 mm PCB + 8.5 mm header pins fit
+    //    pins-down and self-seat against the 45-deg bevel at Z = 9.35 mm!), then <= 45-deg vaulted roof + 4 M2 screw bores in bevel!
     translate([0, 18.0, -0.1])
       hull() {
-        linear_extrude(height = 14.6)
-          rrect2d(esp32_d + 2.0, esp32_w + 4.0, r = 2.0);
-        translate([0, 0, 31.4])
+        linear_extrude(height = 9.1)
+          rrect2d(esp32_d + 0.2, esp32_w + 2.0, r = 1.4);
+        translate([0, 0, 21.6])
           linear_extrude(height = 0.4)
-            rrect2d(4.0, 26.0, r = 1.0);
+            rrect2d(3.8, 33.0, r = 1.0);
       }
+    for (sx = [-1, 1], sy = [-1, 1]) {
+      translate([sx * esp32_hole_d / 2, 18.0 + sy * esp32_hole_w / 2, 11.5])
+        cylinder(h = 7.0, d = sg90_m2_pilot_d);
+    }
 
-    // 8. Rear USB-C Power & Programming Port Cutout (Y = pod_d/2, Z = 5.0; reaches into ESP32 cavity!)
-    translate([0, pod_d / 2, 5.0])
+    // 8. Rear 45-deg Gabled USB-C Power & Programming Port Cutout (Y = pod_d/2, Z = 4.6 -> true <= 45-deg roof, zero wide bridge!)
+    translate([0, pod_d / 2, 4.6])
       rotate([90, 0, 0])
         hull() {
           cube([esp32_usb_w, esp32_usb_h, 36.0], center = true);
-          translate([0, esp32_usb_h / 2 + 2.5, 0])
-            cylinder(h = 36.0, d = 2.0, center = true);
+          translate([0, esp32_usb_h / 2 + 5.4, 0])
+            cylinder(h = 36.0, d = 1.6, center = true);
         }
 
     // 9. Left-side cable pass-through hole matching the Vault Chest conduit

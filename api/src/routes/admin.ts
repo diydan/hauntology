@@ -2,7 +2,9 @@ import { Hono, type Context } from "hono";
 import type { SpendStatus } from "@hauntology/shared/world/spend-ledger";
 import { flagsFrom } from "../http/flags";
 import type { AppEnv } from "../http/env";
+import { readWindowRequest, type VoiceWindowStatus } from "@hauntology/shared/voice/window";
 import { SILENT, type Logger } from "../log";
+import type { VoiceWindowAdmin } from "../voice/window";
 
 /** The part of `SpendGuard` the operator's routes use. `SpendGuardClient` fits it. */
 export interface AdminSpend {
@@ -16,9 +18,19 @@ export type AdminDeps = {
   spend: AdminSpend;
   /** Whether anything is set up to make a world at all (a key for the world service). */
   worldGenAvailable: boolean;
+  /**
+   * The voice window (`POST /admin/voice`), when the Worker can serve the voice at all (it has the games and the `AI` binding). Without it there is no such route and
+   * the status has no `voice`.
+   */
+  voice?: VoiceWindowAdmin;
   /** Where the operator's actions are logged (world-pipeline 8.2). Default: nowhere. */
   log?: Logger;
 };
+
+/** The window as the operator reads it: a time they can read and minutes they can count, not milliseconds. */
+function voiceView(s: VoiceWindowStatus) {
+  return { open: s.open, until: s.until === null ? null : new Date(s.until).toISOString(), remainingMinutes: Math.ceil(s.remainingMs / 60_000), cap: s.cap, used: s.used, remainingLines: s.remainingLines };
+}
 
 export const ADMIN_TOKEN_MIN = 32;
 
@@ -50,6 +62,9 @@ const MAX_BODY = 1024;
  *
  *   GET  /admin/status          -> {worldGen: "open" | "closed", reasons: [...], killed, dayCapReached, totalCapReached}
  *   POST /admin/kill {on: bool} -> the same, after the change. `on: true` closes new worlds, `false` opens them again.
+ *   POST /admin/voice {minutes?, cap?} -> the same, after the change, with `voice: {open, until, remainingMinutes, cap, used, remainingLines}`. Opens the voice window for
+ *        `minutes` (1 to 480, default 60) with `cap` paid lines (1 to 1000, default 200), replacing any window; `{"minutes": 0}` closes it. It closes by itself. The body must be
+ *        a JSON object (an empty body is refused, and so is a field that is not listed). Only there when the Worker can serve the voice; then the status carries `voice` too.
  *
  * Closing stops new worlds, uploads and picture checks (all look at the same switch) and leaves worlds already being made, the
  * Gallery and everything downstream of it as they are (Requirement 9.3). The switch is the one the world service's 402 also
@@ -75,7 +90,8 @@ export function adminRoutes(deps: AdminDeps): Hono<AppEnv> {
     if (!flagsFrom(env).worldGenEnabled) reasons.push("WORLD_GEN_ENABLED");
     if (status.killed) reasons.push("kill_switch");
     if (!deps.worldGenAvailable) reasons.push("no_world_service_key");
-    return { worldGen: reasons.length === 0 ? "open" : "closed", reasons, killed: status.killed, dayCapReached: status.dayCapReached, totalCapReached: status.totalCapReached };
+    const voice = deps.voice === undefined ? undefined : voiceView(await deps.voice.status());
+    return { worldGen: reasons.length === 0 ? "open" : "closed", reasons, killed: status.killed, dayCapReached: status.dayCapReached, totalCapReached: status.totalCapReached, ...(voice !== undefined ? { voice } : {}) };
   };
   const unavailable = (c: Context<AppEnv>) => c.json({ ok: false, code: "spend_guard_unavailable" }, 502);
 
@@ -107,6 +123,30 @@ export function adminRoutes(deps: AdminDeps): Hono<AppEnv> {
       return unavailable(c);
     }
   });
+
+  if (deps.voice !== undefined) {
+    const window = deps.voice;
+    routes.post("/voice", async (c) => {
+      const declared = Number(c.req.header("Content-Length") ?? 0);
+      let body: unknown;
+      try {
+        const text = await c.req.text();
+        if ((Number.isFinite(declared) && declared > MAX_BODY) || text.length > MAX_BODY) return c.json({ ok: false, code: "bad_request" }, 413);
+        body = JSON.parse(text); // an empty body is not JSON: a window costs money, so it is never opened by a call that said nothing
+      } catch {
+        return c.json({ ok: false, code: "bad_request" }, 400);
+      }
+      const req = readWindowRequest(body);
+      if (req.kind === "bad") return c.json({ ok: false, code: "bad_request", message: req.error }, 400);
+      try {
+        const after = req.kind === "close" ? await window.close() : await window.open(req.minutes, req.cap);
+        (deps.log ?? SILENT).info("admin.voice", { on: after.open, minutes: req.kind === "open" ? req.minutes : 0, cap: req.kind === "open" ? req.cap : 0 });
+        return c.json(await report(c));
+      } catch {
+        return unavailable(c);
+      }
+    });
+  }
 
   return routes;
 }

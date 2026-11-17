@@ -60,12 +60,12 @@ module prop_03_bezel_ring() {
             translate([bezel_r_out + 4.8,  0.6, 0]) cylinder(h = bezel_h - 0.5, d = 1.8);
           }
       }
-      // Subtle lower-left & lower-right gothic wrought-iron ear lugs above Y = -18 base line
+      // Subtle lower-left & lower-right gothic wrought-iron ear lugs above Y = -18 base line (X <= 172 mm for slicer skirt margin!)
       for (sx = [-1, 1]) {
-        translate([sx * (bezel_r_out + 0.5), -11.5, 0])
+        translate([sx * (bezel_r_out - 1.5), -11.5, 0])
           hull() {
             cylinder(h = bezel_h, d = 7.4);
-            translate([sx * 4.2, 2.0, 0]) cylinder(h = bezel_h - 0.4, d = 2.4);
+            translate([sx * 3.2, 2.0, 0]) cylinder(h = bezel_h - 0.4, d = 2.4);
           }
       }
 

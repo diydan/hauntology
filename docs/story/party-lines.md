@@ -366,7 +366,11 @@ New 2026-11-16, in the storybook voice of `narration-style.md`. One line for eac
 |---|---|
 | `scene.hand-door.soft.1` | That is me, at the door. I knock three times. Two seems timid, and four seems desperate. I shall wait. |
 | `scene.bed.soft.1` | I sit on the edge of the bed, very lightly, so as not to wake anyone. Nobody is in it. I look anyway. |
-| `scene.lights-out.soft.1` | One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. You tried very nicely. |
+| `scene.lights-out.soft.1` | One window, then the next, then the last. Three floors, and I put out each one myself. Do not mind the dark. I will keep you company. |
+| `scene.ship.soft.1` | A ship comes in, and I know that ship. |
+| `scene.crate.soft.1` | Something below is waking. It is not me. |
+| `scene.street.soft.1` | The street is empty. I emptied it myself. |
+| `scene.mirror.soft.1` | Look in the glass. There is someone in it who is not in the room. Do not be cross. It is only me. |
 
 ## Whisper: midnight (spoken) PROPOSED
 

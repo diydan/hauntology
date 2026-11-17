@@ -18,8 +18,8 @@ module prop_01_lever_arm() {
       }
 
       // 2. Stage 1 Lid-Lift Cam Nose (at -54 deg, R = 85 mm -> becomes +54 deg upward in XZ when mounted via Rx(-90))
-      //    R = 85 (was 52) so the nose pushes the lid ramp on to 30 deg, enough for the ghost's full 35 mm lift (it needs 25 deg).
-      //    The nose swings into the chest's left wall past about 50 deg of fork travel, so the servo must stop at 30 deg.
+      //    R = 85 opens the lid ~29-30 deg for the ghost's full 35 mm lift at +22 deg fork angle.
+      //    Servo stops: -20 deg (closed rest; hits floor at -22 deg) to +22..+25 deg (open; ghost crown hits lid at +27 deg, nose hits left wall past +56 deg).
       hull() {
         cylinder(h = 4.5, d = 10.0);   // 10 mm root: a 14 mm root leaves sliver triangles where it meets the hub circle
         translate([85.0 * cos(-54), 85.0 * sin(-54), 0])

@@ -80,6 +80,7 @@ describe("formatLog", () => {
       "request.error": { route: "route", errorName: "name", status: "int" },
       "job.step": { worldId: "id", status: "word", code: "word" },
       "cleanup.done": { deleted: "int", worlds: "int" },
+      "admin.voice": { on: "bool", minutes: "int", cap: "int" },
       "admin.kill": { on: "bool" },
       "play.start": { worldId: "id", access: "word" },
       "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
@@ -88,7 +89,16 @@ describe("formatLog", () => {
       "play.end": { turns: "int" },
       "play.reset": { turns: "int" },
       "play.refused": { code: "word" },
+      "voice.speak": { via: "word", outcome: "word", paid: "bool", prefetch: "bool", ms: "int" },
     });
+  });
+
+  it("voice.speak keeps its five counters and drops the line's words, a line id, a game id and the audio, whatever a caller passes", () => {
+    const out = JSON.parse(formatLog("info", "voice.speak", { via: "cache", outcome: "ok", paid: false, prefetch: true, ms: 12, text: "Somebody was in the kitchen.", spoken: "Somebody", lineId: "L1", playId: "p-1", audio: "AAAA", voice: "inworld:Pippa" }, 5));
+    expect(out).toEqual({ t: 5, level: "info", event: "voice.speak", via: "cache", outcome: "ok", paid: false, prefetch: true, ms: 12, dropped: 6 });
+    // a field of the right name but the wrong kind is dropped too: words with a capital, spaces or a sentence are not a `word`
+    const bad = JSON.parse(formatLog("info", "voice.speak", { via: "Somebody was in the kitchen.", outcome: "ok", paid: "yes", ms: -1 }, 5));
+    expect(bad).toEqual({ t: 5, level: "info", event: "voice.speak", outcome: "ok", dropped: 3 });
   });
 
   // ghost-engine Property 14: telemetry carries counters and codes, never what a visitor said or the ghost answered

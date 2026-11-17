@@ -31,15 +31,15 @@ module prop_05_flap_pawn() {
         }
       }
 
-      // 2. Bottom Servo Pivot Stem & Collar Hub (Y = -10.5..2, centered on X = 0)
+      // 2. Bottom Servo Pivot Stem & Collar Hub (Y = -13.3..2, centered on X = 0, 10 mm thick with >= 1.2 mm walls around horn slot)
       hull() {
-        translate([0, 2.0, 0]) cylinder(h = flap_t, d = 14.0);
-        translate([0, -6.5, 0]) cylinder(h = 10.0, d = 11.6);
+        translate([0, 2.0, 0]) cylinder(h = flap_t, d = 14.4);
+        translate([0, -6.5, 0]) cylinder(h = 10.0, d = 13.2);
       }
       translate([0, -6.5, 0])
-        cylinder(h = 10.0, d = 11.6);
-      translate([-5.8, -13.3, 0])
-        cube([11.6, 6.8, 10.0]);
+        cylinder(h = 10.0, d = 13.2);
+      translate([-6.6, -13.3, 0])
+        cube([13.2, 6.8, 10.0]);
     }
 
     // 3. Front (+Z) 0.4 mm Recessed Sticker Pocket for Seat Portrait (32 x 52 mm)
@@ -47,18 +47,17 @@ module prop_05_flap_pawn() {
       linear_extrude(height = sticker_depth + 0.5)
         rrect2d(32.0, 52.0, r = 3.0);
 
-    // 4. Open-Bottom Keyed SG90 Servo Shaft & Horn Socket in Stem (starts at Y = -13.0 so bottom entry at Y = -12.3 is 100% open!)
+    // 4. Open-Bottom Keyed SG90 Spline Bore & Horn Socket in Stem (cross-pin aligned right through horn slot at z_local = 2.2!)
     translate([0, -13.4, 5.0])
       rotate([-90, 0, 0]) {
         cylinder(h = 11.5, d = sg90_spline_d);
-        // Keyed anti-rotation horn slot at bottom entry (Y = -13.0..-9.5)
         hull() {
           cylinder(h = 4.2, d = sg90_horn_hub_d);
-          translate([5.0, 0, 0]) cylinder(h = 4.2, d = 3.2);
-          translate([-5.0, 0, 0]) cylinder(h = 4.2, d = 3.2);
+          translate([5.2, 0, 0]) cylinder(h = 4.2, d = 3.8);
+          translate([-5.2, 0, 0]) cylinder(h = 4.2, d = 3.8);
         }
-        // Set-screw / horn pin cross hole
-        translate([0, 0, 6.5])
+        // Cross-pin hole aligned right through the horn slot (z_local = 2.2 -> Y = -11.2) to lock onto the horn's own holes!
+        translate([0, 0, 2.2])
           rotate([0, 90, 0])
             cylinder(h = 16.0, d = 2.0, center = true);
       }

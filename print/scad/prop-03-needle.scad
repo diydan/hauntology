@@ -70,17 +70,17 @@ module prop_03_needle() {
     translate([0, 0, -5.0])
       cube([200, 100, 10.0], center = true);
 
-    // 4. Keyed SG90 Single-Arm Horn Recess on Underside (1:1 preserved)
+    // 4. Keyed SG90 Single-Arm Horn Recess on Underside (with 0.25 mm sacrificial bridge skin at Z = 3.10..3.35 so M2 holes never print in mid-air!)
     translate([0, 0, -0.1])
       hull() {
         cylinder(h = 3.2, d = sg90_horn_hub_d);
         translate([14.0, 0, 0])
           cylinder(h = 3.2, d = sg90_horn_tip_d);
       }
-    translate([0, 0, -0.1])
-      cylinder(h = 8.0, d = 2.4);
-    translate([10.0, 0, -0.1])
-      cylinder(h = 6.0, d = 1.8);
+    translate([0, 0, 3.35])
+      cylinder(h = 4.5, d = 2.4);
+    translate([10.0, 0, 3.35])
+      cylinder(h = 3.0, d = 1.8);
   }
 }
 

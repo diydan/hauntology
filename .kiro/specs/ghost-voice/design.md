@@ -34,13 +34,13 @@ sequenceDiagram
     W->>A: POST /api/voice/speak {playId, lineId}
     A->>S: take the line (spoken text, voice)
     A->>R: get speech/v1/hash(voice, text)
-    alt hit younger than 30 days
+    alt hit younger than 60 days
       R-->>W: audio
     else miss
       A->>G: reserve(tts)
       A->>B: Inworld TTS 2, then Aura-2 English if it fails, all within 5 s
       B-->>A: audio
-      A->>R: put (30 days)
+      A->>R: put (60 days)
       A-->>W: audio
     end
   end
@@ -55,7 +55,7 @@ flowchart TD
   P -- no --> S[Subtitle only]
   P -- yes --> K{Library file exists}
   K -- yes --> A[Play audio]
-  K -- no --> C{cached audio younger than 30 days}
+  K -- no --> C{cached audio younger than 60 days}
   C -- yes --> A
   C -- no --> T{kill switch off and ticket granted}
   T -- no --> B
@@ -193,7 +193,7 @@ resolveSpeech(ctx: { kill: boolean; ticket: boolean; browserVoice: boolean },
 ```
 Order is Library, cache, Inworld TTS 2, Aura-2 English, browser, subtitle. The Library and cache steps are free reads: they run with the kill switch on, with no ticket and with every cap spent. The paid steps are skipped when `kill` is on or no ticket was granted; one ticket covers the Inworld attempt and, if it fails, the Aura-2 attempt, because the unit is one spoken line. Audio counts only if the whole clip is ready within 5000 ms of the request; a step that would start after 5000 ms is skipped. In the 2026-11-14 and 2026-11-15 samples, run through a local Worker, the first Inworld call after the Worker started took 3.6 to 4.8 seconds and later calls took 2.0 to 3.9 seconds, and Aura-2 took 1.7 to 3.1 seconds. So every sample fit inside 5 seconds, but a slow Inworld call can still leave little time for Aura-2 and go straight to the browser voice or the Subtitle (Spike 1.1 measures this on a deployed Worker). The limit was 4 seconds until 2026-11-15 and was raised to 5 because the first Inworld call after a cold start took up to 4.8 seconds. That is by design: the Subtitle is always there. Inworld returns a URL to a finished file, not a stream, so "ready" means the Worker has fetched the file and playback never stalls. If Spike 1.1 shows that streaming works, "ready" could mean first audio, and Requirement 1.3 would change only with the owner's approval.
 
-**Speech cache.** `canonicalSpeechKey(voice, text)` is `JSON.stringify([voice, normalise(text)])`, where `normalise` is NFC plus collapsed and trimmed whitespace, so it is injective. `speechCacheKey` is `speech/v1/` plus the SHA-256 hex of that string, with the digest function injected so `shared/` stays pure (Node's and Workers' `crypto.subtle` are passed in). The R2 object body is the audio; custom metadata holds `storedAt` and `voice` and never the text. `cacheFresh(storedAt, now)` is `now - storedAt < 30 days`. An R2 lifecycle rule deletes objects under `speech/v1/` at 30 days (never under `speech/lib/v1/`, the Library), and the read path also checks `cacheFresh`, so a lifecycle delay never serves old audio. Lookup order is the line's own Inworld voice key, then its Aura-2 key. The key is made from the voice id and the plain `spoken` text, so a Steering Tag is never in it; the tag is a fixed function of the Speaker, which the voice id already names. The cache is shared across sessions, but a hit is only ever returned for a line the server itself just validated, never fetched by key from the client.
+**Speech cache.** `canonicalSpeechKey(voice, text)` is `JSON.stringify([voice, normalise(text)])`, where `normalise` is NFC plus collapsed and trimmed whitespace, so it is injective. `speechCacheKey` is `speech/v1/` plus the SHA-256 hex of that string, with the digest function injected so `shared/` stays pure (Node's and Workers' `crypto.subtle` are passed in). The R2 object body is the audio; custom metadata holds `storedAt` and `voice` and never the text. `cacheFresh(storedAt, now)` is `now - storedAt < 60 days`. An R2 lifecycle rule deletes objects under `speech/v1/` at 60 days (never under `speech/lib/v1/`, the Library), and the read path also checks `cacheFresh`, so a lifecycle delay never serves old audio. Lookup order is the line's own Inworld voice key, then its Aura-2 key. The key is made from the voice id and the plain `spoken` text, so a Steering Tag is never in it; the tag is a fixed function of the Speaker, which the voice id already names. The cache is shared across sessions, but a hit is only ever returned for a line the server itself just validated, never fetched by key from the client.
 
 **Reuse and pre-generation.** Four rules, cheapest first.
 1. **The Library.** Every scripted line is rendered once, ahead of time, and kept under `speech/lib/v1/<hash>` with the same key function and no expiry. `buildLibrary(banks)` is pure: it lists every `(speaker, spoken text)` pair of the scripted banks, expanding the finite placeholders (`{weather}` over the weather classes, `{time}` over the parts of the day, `{moon}` over the phases, `{bearing}` and `{band}` over their eight and three values) into concrete texts, in a fixed order. A line whose spoken part would hold player text is not a Library line (rule 3). The list is committed as a manifest (`shared/fixtures/voice-library.json`, keys and text, no audio) and `tools/check-voice-library.mjs` fails the build when a scripted spoken text has no entry, an entry has no line, or a text holds a Steering Tag or markup. `tools/prerender-voice.mjs` is run by the owner, with a manual budget, before a deploy: it skips keys already in R2 and renders the rest with the Speaker's settings, so a change to one line renders one file. The Library makes scripted speech free, instant, and independent of quota and the kill switch, so the zero-quota path (the Gallery) sounds like the real game. Measured on 2026-11-15 from the written banks (`docs/story/ghost-lines.md`, `party-lines.md`, `lodger-lines.md`): **503 files, 50,328 characters, about $1.26 at $25 per million characters** (Pippa 209 files, Ronald 228, the six Lodger Voices 66 in all; see `docs/VOICE-LIBRARY-PLAN.md`). Most of it is the ten `hint` lines, which expand 24 ways each (240 files). The finite placeholders are filled with spoken words from one table, `shared/src/voice/placeholders.ts`, used by the Library and, when the ghost engine is built, by the live fill: `{weather}` is an adjective (clear, cloudy, foggy, rainy, stormy, snowy), so a line says "it is {weather}", never "the {weather}". Files are not committed (tens of megabytes); a file is smaller if Spike 1.1 shows that `sample_rate` 24000 and `bit_rate` 64000 sound the same.
@@ -304,13 +304,13 @@ These controls are built under the web shell spec `.kiro/specs/haunwallker` (Pla
 | `VOICE_LIVE_SESSION_SECONDS` | `300` | 5 minutes a session |
 | `VOICE_LIVE_DAY_SECONDS` | `1800` | 30 minutes a day, read as the `live` Meter's global day cap |
 
-The rules that are not caps (240 characters, 5 seconds, 30 days, the 15th line, 8 seconds, 12 words, 2 seconds, two retries, 60 seconds, one a Round and two a game, 6 hours, 10 seconds of silence, the 10-second slice) are named constants in `limits.ts`, changed only with the requirements.
+The rules that are not caps (240 characters, 5 seconds, 60 days, the 15th line, 8 seconds, 12 words, 2 seconds, two retries, 60 seconds, one a Round and two a game, 6 hours, 10 seconds of silence, the 10-second slice) are named constants in `limits.ts`, changed only with the requirements.
 
 ### Privacy and the EU-child question
 - **Single player.** The microphone opens only while the Talk Button is held (or Live Mode listens, with its indicator and stop button). The browser's own permission prompt is the visitor's consent. The recording is sent to Workers AI Whisper, held in memory for that one call, then zeroed and dropped; nothing is written to R2, KV, Durable Object storage or a log. The transcript is returned to the visitor and from then on is typed text, so the Session keeps it among the last 8 turns for up to 24 hours like any typed line.
 - **Multiplayer.** Phones record only for Stitch, only for a player who said yes, one word at a time. Accepted Clips stay in the room's own storage and are sent to nothing except the Host's WebSocket for playback. The Word Check sends a Clip to Whisper once; the transcript is compared and discarded, and only pass or fail and a counter are kept.
 - **Logs and telemetry** carry ids, counters and error codes only: speech requests, cache hits, fallbacks by step, listen calls, Clips checked, accepted and rejected, stitches played, live slices and stop reasons. Never audio, a transcript, a prompt, a word, a nickname or a line of text. The only log text for Stitch is "a voice whispered", which is also what the public log shows.
-- **Cached ghost speech** is keyed by voice and text, not by world, and lives at most 30 days. "Delete my place" does not remove it, which is an honest limit; it holds only the ghost's own validated lines and never a visitor's voice.
+- **Cached ghost speech** is keyed by voice and text, not by world, and lives at most 60 days. "Delete my place" does not remove it, which is an honest limit; it holds only the ghost's own validated lines and never a visitor's voice.
 - **The EU-child question.** A recording of a voice is personal data, and a child's recording is the sensitive case. In the EU the age below which a child's own consent is not enough for an online service is 16 unless a member state lowers it (to as low as 13), which is why the tick says 16. **Nothing checks age.** The tick is a statement by whoever taps it: a child can tick it, and nothing checks that a parent or guardian is present or is who they say. It is stored only as a yes or no; no age, date of birth or guardian name is asked, stored or checked, which keeps the data small but also means the tick is a prompt to stop and think, not verification. Other places have other rules (for example COPPA for under-13s in the US). This project is not legal advice, and the owner should take advice before putting Stitch in front of the public.
 - **What the design does to limit harm.** Stitch is off by default, needs the Master and then each player for themselves, the Master cannot say yes for anyone, the question says in plain words what happens to the Clips, Clips are deleted on leaving, on withdrawing, when the game ends or after 6 hours, they go to no model but the Word Check, and logs hold no content. The safe public launch setting is `VOICE_STITCH_ENABLED=false`, which costs the rest of the game nothing.
 
@@ -363,7 +363,7 @@ type StitchState = {
 type StitchPublicEvent = { kind: 'stitch'; text: 'a voice whispered' };   // no seat, no template
 ```
 
-Persistence. A Single-player `VoiceLine` lives in the `PlaySession` for 10 minutes (the last 8) and goes with the Session. A room's voice counters (`spoken`) and `StitchState` live in `PartyRoom` state and go with the room; Clip bytes live under their own keys and also go at game end or 6 hours, whichever is first. The speech cache is R2 objects, 30 days.
+Persistence. A Single-player `VoiceLine` lives in the `PlaySession` for 10 minutes (the last 8) and goes with the Session. A room's voice counters (`spoken`) and `StitchState` live in `PartyRoom` state and go with the room; Clip bytes live under their own keys and also go at game end or 6 hours, whichever is first. The speech cache is R2 objects, 60 days.
 
 ## Error handling
 Codes added to `shared/src/errors.ts` (stable strings): `voice_unavailable`, `clip_too_long`, `clip_not_heard`, `stitch_not_on`, `stitch_no_consent`, `stitch_check_limit`, `live_unavailable`. Existing codes `rate_limited`, `bad_origin`, `bad_token` and `session_expired` are reused. None of the voice codes is mapped to an error screen: the Web app turns each into the quiet fallback in the table.
@@ -401,8 +401,8 @@ Turns, the Hunt and the Haunt never wait on audio. A speech request that fails h
 *For any* outcomes and durations of the Library, cache, Inworld, Aura-2 and browser steps, any kill switch value, any ticket result and any browser-voice availability, `resolveSpeech` ends in the Library, cache, Inworld, Aura-2, the browser voice or the subtitle and never in an error, reports the Subtitle as shown in every case, makes no paid call when the kill switch is on or no ticket was granted, never uses audio that was ready after 5000 ms, and with every meter at zero the engine's `Progress` sequence for any sequence of actions equals the one with working voice.
 **Validates: Requirements 1.2, 1.3, 4.2, 4.3**
 
-### Property 3: The audio cache key depends on voice and text and expires after 30 days
-*For any* voice and text, the cache key is the same every time, the same for texts that differ only in surrounding or repeated whitespace, different when the voice differs or the text differs in any other way, and contains no readable part of the text; and *for any* stored time and current time, `cacheFresh` is true if and only if less than 30 days have passed.
+### Property 3: The audio cache key depends on voice and text and expires after 60 days
+*For any* voice and text, the cache key is the same every time, the same for texts that differ only in surrounding or repeated whitespace, different when the voice differs or the text differs in any other way, and contains no readable part of the text; and *for any* stored time and current time, `cacheFresh` is true if and only if less than 60 days have passed.
 **Validates: Requirements 1.4**
 
 ### Property 4: The speaking policy

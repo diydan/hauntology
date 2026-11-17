@@ -8,6 +8,10 @@ export type Bindings = {
   WORLD_GEN_ENABLED?: string;
   /** `false`, `0` or `off` stops speech, listening, Stitch and live mode (the ghost-voice spec). Unset is on. */
   VOICE_ENABLED?: string;
+  /** The speech model (a model is also a price): blank is `inworld/tts-2`, which is the only id accepted; anything else turns the voice off (`voiceModelsFromEnv`). */
+  VOICE_TTS_MODEL_ID?: string;
+  /** The fallback speech model: blank is `@cf/deepgram/aura-2-en`, which is the only id accepted; anything else turns the voice off. */
+  VOICE_TTS_FALLBACK_MODEL_ID?: string;
   /** `true` or `1` turns live conversation mode on (a stretch). Unset is off. */
   VOICE_LIVE_ENABLED?: string;
   /** `false`, `0` or `off` stops new Party Rooms, a solo case included; Wander stays (party-mode). Unset is on. */

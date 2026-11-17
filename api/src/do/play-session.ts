@@ -12,6 +12,7 @@ type IndexLike = { idFromName(name: string): unknown; get(id: unknown): { fetch(
  * An alarm at the game's end of life deletes it, and tells the world's index. Internal addresses, to the Worker only, each a `POST` with a JSON body:
  *   /start {game}  keep a new game (200, or 409 when a live one is there)    /turn {ownerSid, input, pose, world}   /get {ownerSid}
  *   /settle {ownerSid, settle}  put the model's words where the scripted ones were (ghost-engine 4.2)
+ *   /voice-line {ownerSid, lineId}  `{line}`: a line kept for speech, or `null` (ghost-voice 3.5)
  *   /reset {ownerSid, world, seed}                                            /delete  forget the game (204)
  * Every answer but `/start` and `/delete` is the core's answer as it is: `{ok: true, ...}` or `{ok: false, code}`.
  */
@@ -45,6 +46,9 @@ export class PlaySession {
         return json(await this.core.settle(owner, body["settle"]));
       case "/get":
         return json(await this.core.get(owner));
+      case "/voice-line":
+        // `{ line }`: the line, or `null` for anything that is not this owner's live line (the speech route; ghost-voice 3.5).
+        return json({ line: await this.core.voiceLine(owner, typeof body["lineId"] === "string" ? body["lineId"] : "") });
       case "/reset": {
         const r = await this.core.reset(owner, { world: body["world"] as never, seed: typeof body["seed"] === "number" ? body["seed"] : 0 });
         if (r.ok) {

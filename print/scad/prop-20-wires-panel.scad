@@ -81,35 +81,54 @@ module prop_20_wires_panel() {
         }
     }
 
-    // 5. 16 mm SET Pushbutton Mounting Hole (16.2 mm ID at X = 12, Y = -46) + "SET" Sticker Pocket (26 x 11 mm)
+    // 5. 16 mm SET Pushbutton Mounting Hole (16.2 mm ID at X = 12, Y = -46) + 45-deg Vaulted Underside Nut Chamber (leaves 4.5 mm panel!)
     translate([12.0, -46.0, -0.5])
       cylinder(h = panel_d + 2.0, d = 16.2);
+    translate([12.0, -44.0, -0.1])
+      hull() {
+        linear_extrude(height = 19.5) rrect2d(22.4, 24.0, r = 2.0);
+        translate([0, -2.0, 25.4]) cylinder(h = 0.3, d = 16.4);
+      }
     translate([-14.0, -46.0, panel_d - sticker_depth])
       linear_extrude(height = sticker_depth + 0.6)
         rrect2d(26.0, 11.0, r = 1.2);
 
-    // 6. 5 mm "paired" LED Mounting Hole (5.2 mm ID at X = -44, Y = 50) + "paired" Sticker Pocket (30 x 8 mm)
+    // 6. 5 mm "paired" LED Mounting Hole (5.2 mm ID at X = -44, Y = 50) + 45-deg Underside LED Pocket & Wire Trench into ESP32 Bay!
     translate([-44.0, 50.0, -0.5])
       cylinder(h = panel_d + 2.0, d = 5.2);
+    translate([-44.0, 50.0, -0.1])
+      hull() {
+        linear_extrude(height = 19.5) rrect2d(12.0, 12.0, r = 1.6);
+        translate([0, 0, 24.0]) cylinder(h = 0.3, d = 5.6);
+      }
+    hull() {
+      translate([-31.0, 48.0, 1.5]) cube([28.0, 5.2, 3.2], center = true);
+      translate([-31.0, 48.0, 4.1]) cube([28.0, 1.2, 0.4], center = true);
+    }
     translate([-18.0, 50.0, panel_d - sticker_depth])
       linear_extrude(height = sticker_depth + 0.6)
         rrect2d(30.0, 8.0, r = 1.0);
 
-    // 7. Central 45-Degree Vaulted Underside ESP32 & Wiring Bay (tapers to a 3.6 mm ridge at Z = 27.5 -> no supports).
-    //    The ridge used to stop at Z = 24, which made the sides 50.5 deg from vertical, not 45; the ridge is now 3.5 mm higher (46 deg),
-    //    leaving 2.2 mm of skin above it.
-    translate([-3.0, 4.0, -0.1])
+    // 7. Central 45-Degree Vaulted Underside ESP32 & Wiring Bay (28.8 mm self-centering PCB pocket at Z = 0..9.5,
+    //    tapering at <= 44 deg to a 2.0 mm ridge at Z = 24.0 -> seats 27.9 mm ESP32 PCB at Z = 10.0 with zero supports!)
+    translate([-4.0, 6.0, -0.1])
       hull() {
-        linear_extrude(height = 5.0) rrect2d(50.0, 94.0, r = 3.0);
-        translate([0, 0, 27.5]) linear_extrude(height = 0.4) rrect2d(3.6, 56.0, r = 1.2);
+        linear_extrude(height = 9.6) rrect2d(28.8, 90.0, r = 2.0);
+        translate([0, 0, 24.0]) linear_extrude(height = 0.4) rrect2d(2.0, 62.0, r = 0.8);
       }
 
-    // 8. Rear USB-C cable exit notch at Y = panel_h / 2 (h = 28.0 reaches Y = 46.0, breaking cleanly into the ESP32 bay!)
-    translate([-3.0, panel_h / 2, 5.0])
+    // Four M2 self-tapping pilot bores piercing directly into the 44-deg side bevels behind the Z = 10.0 ESP32 PCB
+    for (sx = [-1, 1], sy = [-1, 1]) {
+      translate([-4.0 + sx * esp32_hole_d / 2, 12.0 + sy * esp32_hole_w / 2, 10.5])
+        cylinder(h = 11.5, d = sg90_m2_pilot_d);
+    }
+
+    // 8. Rear 45-deg Gabled USB-C cable exit notch at Y = panel_h / 2 (aligned with Z = 10.0 ESP32 PCB, <= 44-deg roof!)
+    translate([-4.0, panel_h / 2, 6.8])
       rotate([90, 0, 0])
         hull() {
-          cube([esp32_usb_w, esp32_usb_h, 28.0], center = true);
-          translate([0, 5.0, 0]) cylinder(h = 28.0, d = 2.0, center = true);
+          cube([esp32_usb_w, esp32_usb_h, 44.0], center = true);
+          translate([0, esp32_usb_h / 2 + 5.6, 0]) cylinder(h = 44.0, d = 1.6, center = true);
         }
   }
 }

@@ -86,12 +86,12 @@ module relic_music_box() {
       }
 
       // Front (-Y) Continuous Gothic Shield Corbel + Pointed Arch Keyhole Escutcheon
-      // Flows smoothly up from the waist girdle (Z = 10.6) -> zero harsh horizontal shelf underneath!
+      // Anchored inside the 0.78x waist (Y = -8.8) so it rises at <= 38 deg with zero floating base bar!
       // Terminates cleanly at Z = 26.6 (underneath lid brass eaves Z >= 27.0)
       hull() {
-        translate([0, -9.9, 10.6])
+        translate([0, -8.8, 10.8])
           rotate([90, 0, 0])
-            linear_extrude(height = 0.5)
+            linear_extrude(height = 0.8)
               rrect2d(10.8, 0.8, r = 0.3);
         translate([0, -12.6, 16.6])
           rotate([90, 0, 0])
@@ -262,9 +262,9 @@ module relic_music_box() {
                 [ 4.2, 11.2],  // upper key horn (Z_world = 26.4 < 26.7!)
                 [ 5.6,  9.5],  // upper wing cusp
                 [ 8.2,  8.6],  // outer point (X_world = +25.8 -> clear!)
-                [ 6.0,  6.2],  // lower wing cusp
-                [ 5.0,  3.8],  // lower spur (40-deg upward slope from X=1.0,Z=0.4!)
-                [ 2.6,  5.0]   // lower neck
+                [ 6.0,  6.4],  // lower wing cusp (rises at <= 42 deg from stem — no hanging tooth!)
+                [ 4.4,  4.9],  // lower spur anchored monotonically into stem
+                [ 1.8,  3.8]   // lower neck inside stem collar
               ]);
       }
       // Clean self-supporting 45-deg diamond aperture cut right through the bow center!

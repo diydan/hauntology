@@ -16,15 +16,15 @@ module prop_09_rail_and_pulley() {
     union() {
       translate([0, -10.0, 0])
         chamfer_box(158.0, 8.0, 6.0, r = 1.2, ch_bot = 0.4, ch_top = 0.4);
-      // centre tongue: print Y = -18.0..-13.5 (stage Y 35.0..39.5), full 6 mm so it prints flat on the bed
-      translate([-4.5, -18.0, 0]) cube([9.0, 4.5, 6.0]);
-      // right post and centre post: a 45 degree flare at the foot, then a 4.1 mm stem to print Z = 10.1 (stage Z = 18.4)
-      for (pp = [[74.0, -10.9], [0.0, -15.0]]) {
+      // centre tongue: print Y = -18.5..-13.5 (stage Y 35.0..40.0), full 6 mm so it prints flat on the bed
+      translate([-4.5, -18.5, 0]) cube([9.0, 5.0, 6.0]);
+      // right post and centre post: reinforced 45-deg base flare up to print Z = 7.75 (stage Z = 20.75, clear above Z = 19.9 cord line & rail socket!),
+      // then exact 3.0 mm stem to print Z = 10.1 (stage Z = 18.4)
+      for (pp = [[74.0, -10.9], [0.0, -15.0]])
         translate([pp[0], pp[1], 5.99]) {
-          cylinder(h = 1.1, d1 = 5.2, d2 = 3.0);
+          cylinder(h = (pp[0] == 0.0) ? 1.75 : 1.4, d1 = (pp[0] == 0.0) ? 6.4 : 5.3, d2 = 3.0);
           cylinder(h = 10.1 - 5.99, d = 3.0);
         }
-      }
     }
     // Twin longitudinal slider tracks (2.6 mm wide x 3.2 mm deep)
     for (sy = [-11.8, -8.2]) {
@@ -71,9 +71,9 @@ module prop_09_rail_and_pulley() {
         for (sx = [-1, 1])
           translate([sx * 4.5, 0, 0]) cylinder(h = 4.4, d = sg90_horn_tip_d);
       }
-    // Horn screw and screwdriver hole straight up the axis
-    translate([0, 0, 5.0])
-      cylinder(h = 9.0, d = 3.2);
+    // Horn screw and screwdriver hole straight up the axis (starts 0.25 mm above Z = 5.65 horn-pocket roof as a 1-layer sacrificial bridge!)
+    translate([0, 0, 5.90])
+      cylinder(h = 8.0, d = 3.2);
     // Two thread anchors, one in each groove floor, each a 1.6 mm hole straight across the drum (the cord's end goes in at the
     // side it arrives and is knotted where it comes out): groove 1 (right panel's thread) along X, groove 2 (left panel's) along Y
     translate([0, 0, 7.15])

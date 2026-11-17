@@ -3,7 +3,7 @@
  * See `.kiro/specs/ghost-voice/design.md` ("The cast", "The Lodger's six voices") and `docs/story/CHARACTERS.md`.
  * Pure data and pure functions. No I/O, no clock, no randomness.
  *
- * Only what the Library needs is here so far (ghost-voice task 2.2 will add `speakerForPersona`, `toVoiceLine` and the rest).
+ * The tables, the lookups and the two maps from a ghost's voice to its Speaker. `toVoiceLine` is in `speakable.ts`.
  */
 
 export type Speaker = "whisper" | "keeper" | "lodger";
@@ -68,6 +68,22 @@ export function voiceFor(speaker: Speaker, step: "inworld" | "aura", lodgerVoice
   }
   const s = SPEAKERS[speaker];
   return step === "inworld" ? `inworld:${s.inworld}` : `aura-2:${s.aura}`;
+}
+
+/** The two voices a ghost Persona has (ghost-creator): soft is the Whisper, dry is the Keeper. */
+export type PersonaVoice = "soft" | "dry";
+
+export function speakerForPersona(voice: PersonaVoice): Speaker {
+  return voice === "soft" ? "whisper" : "keeper";
+}
+
+/**
+ * The game's own two ghost voices (`Voice` in `ghost/types`: `wistful` and `stern`) are the same two voices as a Persona's: the tender, moonlit one is the
+ * Whisper and the understated host is the Keeper (`ghost/style.ts` describes each). Anything that is not `wistful` is the Keeper, so a value that is not one
+ * of the two can never pick the Lodger or a voice outside the cast.
+ */
+export function speakerForGhostVoice(voice: "wistful" | "stern"): Speaker {
+  return voice === "wistful" ? "whisper" : "keeper";
 }
 
 /** The Speaker's Steering Tag. Used only by the Inworld wrapper (and by cost estimates). */

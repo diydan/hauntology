@@ -30,10 +30,18 @@ module prop_15_relic_tray() {
       bx = col * 46.5;
       by = row * 23.5;
 
-      // Token bay pocket (Z = 3.5..15.0)
+      // Token bay pocket (Z = 3.5..15.0) including 4 splayed corner lug-ear reliefs for 43.6 x 43.6 mm relic-token-pocket.stl!
       translate([bx, by, 3.5])
         linear_extrude(height = tray_h)
-          rrect2d(bay_mm, bay_mm, r = 2.4);
+          union() {
+            rrect2d(bay_mm, bay_mm, r = 2.4);
+            for (sx = [-1, 1], sy = [-1, 1]) {
+              hull() {
+                translate([sx * 17.5, sy * 17.5]) circle(d = 6.4);
+                translate([sx * 20.6, sy * 20.6]) circle(d = 3.6);
+              }
+            }
+          }
 
       // Recessed 0.4 mm Relic Icon Sticker Pocket in the floor of each bay (22 x 22 mm, Z = 3.1..3.6)
       translate([bx, by, 3.5 - sticker_depth])

@@ -1,3 +1,4 @@
+import { singleFlight } from "@hauntology/shared/voice/flight";
 import { retentionFromEnv } from "@hauntology/shared/world/retention";
 import { createApp } from "./app";
 import { conditionsFromEnv } from "./conditions/snapshot-store";
@@ -10,6 +11,7 @@ import { WorldJob } from "./do/live-world-job";
 import type { AiBinding } from "./guarded/workersai/call";
 import { WorkersAiClient } from "./guarded/workersai/client";
 import type { ImagesBinding } from "./guarded/workersai/cutout";
+import { WorkersAiSpeaker, voiceModelsFromEnv } from "./guarded/workersai/speak";
 import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
 import type { AssetsPort } from "./http/assets";
 import type { Bindings } from "./http/env";
@@ -17,6 +19,10 @@ import { createLogger } from "./log";
 import { adminTokenFrom } from "./routes/admin";
 import { CloudflarePlaySessions } from "./play/cloudflare";
 import { SpendGuardClient } from "./spend/client";
+import { R2SpeechCache } from "./voice/cache";
+import { R2SpeechLibrary } from "./voice/library";
+import { PlayVoiceLines } from "./voice/lines";
+import { SpendGuardVoiceWindow, windowedSpend } from "./voice/window";
 import { cleanupExpired } from "./worlds/cleanup";
 import { CloudflareCandidateStore } from "./worlds/cloudflare-candidates";
 import { CloudflareImageStore } from "./worlds/cloudflare-images";
@@ -56,16 +62,30 @@ export default {
       const guard = new SpendGuardClient(env.SPEND_GUARD);
       // Every Workers AI and Images adapter (world-pipeline 5.2), each `null` without its binding or with a model id it does not accept.
       const ai = new WorkersAiClient(env);
+      // The ghost's voice (ghost-voice 3.6 and 3.12): `POST /api/voice/speak`, served only when the Worker has the games, the Workers AI binding and speech model ids it accepts.
+      // The `AI` binding is not declared in `wrangler.jsonc` until the owner decides to spend, so until then there is no voice route and no reply names a line. The Library and the
+      // cache are read first, so a scripted line and a line already heard cost nothing; one `singleFlight` for the isolate makes two requests for one line one paid call.
+      // Even with the binding the voice is OFF until the operator opens a window (`POST /admin/voice`, minutes and a line cap, closing by itself): a paid `tts` reservation takes
+      // a line of the window first, and the speech route, the replies and the Home flag all say "off" while it is closed (`voice/window.ts`).
+      const plays = playsFor(env);
+      const voiceModels = voiceModelsFromEnv(env);
+      const voiceWindow = new SpendGuardVoiceWindow(env.SPEND_GUARD);
+      const voice =
+        plays !== null && env.AI !== undefined && voiceModels !== null
+          ? { speak: { lines: new PlayVoiceLines(plays), cache: new R2SpeechCache(env.BUCKET), library: new R2SpeechLibrary(env.BUCKET), maker: new WorkersAiSpeaker(env.AI, voiceModels), spend: windowedSpend(guard, voiceWindow), flights: singleFlight(), log: logger }, window: voiceWindow }
+          : null;
       app = createApp({
         log: logger,
         // The web app: with the `ASSETS` binding the Worker serves the pages too (`servePage`); without it, only the API.
         ...(env.ASSETS !== undefined ? { assets: env.ASSETS } : {}),
         worldGenAvailable: live,
         // The operator's routes exist only when `ADMIN_TOKEN` is set to a token of at least 32 characters.
-        ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: live } } : {}),
+        // The voice window's route is there only when the voice can be served at all.
+        ...(adminTokenFrom(env.ADMIN_TOKEN) !== null ? { admin: { token: adminTokenFrom(env.ADMIN_TOKEN) as string, spend: guard, worldGenAvailable: live, ...(voice !== null ? { voice: voiceWindow } : {}) } } : {}),
         // Uploads are taken only where a world can be made from them: with no key there is nothing to keep a picture for.
         ...(live ? { uploads: { store: new CloudflareUploadStore(env.BUCKET) } } : {}),
         spend: () => guard.status(),
+        ...(voice !== null ? { voice } : {}),
         // Party mode (integration 3.2): one `PartyRoom` per Room Code, one `PartyDirectory` for the caps.
         party: { rooms: env.PARTY_ROOM, directory: env.PARTY_DIRECTORY },
         // The ghost's games (ghost-engine 3 and 5): one `PlaySession` for each, so a reader of a shared place can play it.

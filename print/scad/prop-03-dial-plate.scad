@@ -7,7 +7,7 @@
 
 include <_common.scad>
 
-dial_w      = 170.0;
+dial_w      = 168.0;
 dial_r      = 82.0;
 sticker_r   = 74.0;
 plate_h     = 26.4;
@@ -52,13 +52,13 @@ module prop_03_dial_plate() {
       }
 
       // 2. Bottom tabletop base plinth + gothic splayed buttress wings (Y = -26..-16, Z = 0..plate_h)
-      //    Flanks keep X <= 176 mm (<= 180 mm bed) and stay below bezel clip line!
+      //    Flanks keep X <= 172.6 mm (generous slicer skirt/brim margin inside 180 mm bed) and stay below bezel clip line!
       translate([0, -21.0, 0])
         chamfer_box(dial_w, 10.0, plate_h, r = 2.4, ch_bot = 0.6, ch_top = 0.4);
       for (sx = [-1, 1]) {
         hull() {
           translate([sx * (dial_w / 2 - 2.2), -18.0, 0]) cylinder(h = plate_h, d = 7.0);
-          translate([sx * (dial_w / 2 + 1.8), -20.5, 0]) cylinder(h = 16.0, d = 4.2);
+          translate([sx * (dial_w / 2 + 0.2), -20.5, 0]) cylinder(h = 16.0, d = 4.2);
         }
       }
     }
@@ -78,45 +78,50 @@ module prop_03_dial_plate() {
     translate([0, 0, -0.5])
       cylinder(h = plate_h + 1.0, d = sg90_boss_d);
 
-    // 6. Rear SG90 Servo Cavity (ear shelf at Z = 18.9 so servo back stays at Z = 0.4 >= 0, case top clears 23.8, and shaft protrudes 5.5 mm past Z = 26.4!)
-    translate([-sg90_shaft_off_x, 0, 11.85])
-      cube([sg90_body_w, sg90_body_d, 23.9], center = true);
+    // 6. Rear SG90 Servo Cavity: ear shelf at Z = 18.9, true 45-deg gabled body roof (23.0 -> 25.4, top width 7.7 mm < 10 mm!),
+    //    and 0.25 mm sacrificial bridge skin under M2 pilot holes so no hole prints in mid-air!
+    hull() {
+      translate([-sg90_shaft_off_x, 0, 11.45])
+        cube([sg90_body_w, sg90_body_d, 23.1], center = true);
+      translate([-sg90_shaft_off_x, 0, 25.3])
+        cube([sg90_body_w, 7.7, 0.2], center = true);
+    }
     translate([-sg90_shaft_off_x, 0, 9.4])
       cube([sg90_flange_w, sg90_body_d, 19.0], center = true);
-    // M2 screw pilot holes into the Z = 18.9 ear shelf
+    // M2 screw pilot holes into the Z = 18.9 ear shelf (with 0.25 mm Voron-style straight bridge slot so 1 manifold & zero mid-air circle!)
     for (sx = [-1, 1]) {
-      translate([-sg90_shaft_off_x + sx * sg90_hole_span / 2, 0, 18.8])
-        cylinder(h = 6.2, d = sg90_m2_pilot_d);
+      mx = -sg90_shaft_off_x + sx * sg90_hole_span / 2;
+      translate([mx, 0, 19.0])
+        cube([sg90_m2_pilot_d, sg90_body_d + 0.4, 0.3], center = true);
+      translate([mx, 0, 19.1])
+        cylinder(h = 6.0, d = sg90_m2_pilot_d);
     }
-    // 45-deg vaulted rear wire channel connecting servo cavity to ESP32 pocket (zero overhangs)
+    // 45-deg vaulted rear wire channel connecting servo cavity up into horizontal ESP32 pocket
     hull() {
-      translate([23.0, -8.0, 3.0])
-        cube([46.0, 8.0, 6.2], center = true);
-      translate([23.0, -8.0, 9.2])
-        cube([42.0, 1.4, 0.5], center = true);
+      translate([16.0, 11.0, 3.0])
+        cube([16.0, 14.0, 6.2], center = true);
+      translate([16.0, 11.0, 9.2])
+        cube([14.0, 1.6, 0.5], center = true);
     }
 
-    // 7. Rear ESP32-WROOM-32E DevKitC V4 Cavity (X = 46, Y = 12): 45-deg vaulted roof converging to a 4.5 mm ridge at Z = 24.0
-    //    (prints 100% support-free!) + 4x corner M2 screw pad shelves at Z = 10.5 with pilot bores
-    difference() {
-      translate([46.0, 12.0, -0.1])
-        hull() {
-          linear_extrude(height = 12.1)
-            rrect2d(esp32_d + 0.8, esp32_w + 0.8, r = 1.2);
-          translate([0, 0, 24.0])
-            linear_extrude(height = 0.2)
-              rrect2d(4.5, 31.6, r = 1.0);
-        }
-      // Retain 4x small corner M2 screw bosses (5.0 x 6.5 mm -> <= 5 mm bridge) from Z = 10.5 upward
-      for (sx = [-1, 1], sy = [-1, 1]) {
-        translate([46.0 + sx * (esp32_d / 2 - 2.3), 12.0 + sy * (esp32_w / 2 - 3.1), 17.5])
-          cube([5.2, 6.8, 14.0], center = true);
+    // 7. Horizontal Rear ESP32-WROOM-32E DevKitC V4 Cavity (X = 43, Y = 22): <= 44-deg vaulted roof converging to a
+    //    4.5 mm ridge at Z = 24.3 + right-rim USB-C exit!
+    translate([43.0, 22.0, -0.1])
+      hull() {
+        linear_extrude(height = 11.5)
+          rrect2d(esp32_w + 1.2, esp32_d + 0.8, r = 1.2);
+        translate([0, 0, 24.3])
+          linear_extrude(height = 0.2)
+            rrect2d(32.0, 4.5, r = 1.0);
       }
-    }
-    for (sx = [-1, 1], sy = [-1, 1]) {
-      translate([46.0 + sx * esp32_hole_d / 2, 12.0 + sy * esp32_hole_w / 2, 10.3])
-        cylinder(h = 7.5, d = sg90_m2_pilot_d);
-    }
+    // Right-rim (+X) 45-deg gabled USB-C cable exit channel reaching cleanly out of the horizontal ESP32 bay
+    translate([76.0, 22.0, 4.0])
+      rotate([0, 90, 0])
+        hull() {
+          cube([8.2, esp32_usb_w + 1.0, 18.0], center = true);
+          translate([-6.0, 0, 0])
+            cylinder(h = 18.0, d = 1.6, center = true);
+        }
 
     // 8. Three Perimeter Clip Detent Slots at Haunt 8, 10, and 12 for the Red MAX Tab
     for (lv = [8, 10, 12]) {
@@ -124,6 +129,21 @@ module prop_03_dial_plate() {
       rotate([0, 0, ang])
         translate([dial_r - 1.2, 0, plate_h - 5.5])
           cube([4.4, 4.4, 12.0], center = true);
+    }
+  }
+
+  // 9. Four 45-deg corbelled ESP32 corner M2 mounting bosses fused directly into the vaulted ESP32 bay walls (1 connected solid!)
+  for (sx = [-1, 1], sy = [-1, 1]) {
+    bx = 43.0 + sx * esp32_hole_w / 2;
+    by = 22.0 + sy * esp32_hole_d / 2;
+    difference() {
+      hull() {
+        translate([bx, by, 13.5]) cylinder(h = 6.5, d = 5.4);
+        translate([43.0 + sx * (esp32_w / 2 + 1.2), 22.0 + sy * (esp32_d / 2 + 1.0), 19.5]) cube([2.0, 2.0, 2.0], center = true);
+      }
+      // Open M2 pilot bore + Voron bridge slot across the 5.4 mm boss bottom (1 manifold, zero mid-air circle!)
+      translate([bx, by, 13.6]) cube([6.0, sg90_m2_pilot_d, 0.35], center = true);
+      translate([bx, by, 13.7]) cylinder(h = 5.5, d = sg90_m2_pilot_d);
     }
   }
 }
