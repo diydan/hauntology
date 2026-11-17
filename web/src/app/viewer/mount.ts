@@ -2,7 +2,7 @@ import { hashText } from "@hauntology/shared/ghost/rng";
 import { parseShellMessage, type Anchor, type ShellToViewer } from "@hauntology/shared/app/events";
 import { atmosphereParams, tiltLook, type AtmosphereParams, type LookState, type TiltCalibration, type TiltReading } from "@hauntology/shared/viewer/atmosphere";
 import { flicker } from "@hauntology/shared/viewer/flicker";
-import { ghostPlacement, gradeParams, orbIntensity, orbPulse, smoothHaunt } from "@hauntology/shared/viewer/haunt";
+import { ghostPlacement, gradeParams, orbIntensity, orbPulse, promptFor, smoothHaunt, type PromptTarget } from "@hauntology/shared/viewer/haunt";
 import { inputReduce } from "@hauntology/shared/viewer/input";
 import { assetUrl, loadWorld, LOAD_STAGE_LABELS, type LoadStage, type LoadedWorld, type LoaderPorts } from "@hauntology/shared/viewer/loader";
 import { constrainToDisc, stepMovement } from "@hauntology/shared/viewer/movement";
@@ -391,6 +391,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   let look: LookState = { yaw: world.spawn.yaw, pitch: 0 };
   let lastSafe: Vec3 = [...world.spawn.pos] as Vec3;
   let lastPoseAt = 0;
+  let lastPrompt: PromptTarget = null;
 
   // Input state.
   const keys = new Set<string>();
@@ -536,10 +537,12 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       orb.visible = k > 0;
     }
     haunt.ghostOpacity += ((haunt.ghostVisible ? 0.85 : 0) - haunt.ghostOpacity) * Math.min(1, dtMs / 350);
+    let ghostAt: Vec3 | null = null;
     if (haunt.ghostOpacity > 0.01) {
       const nearest = haunt.anchors.filter((a) => !haunt.found.has(a.id))
         .sort((x, y) => Math.hypot(player.pos[0] - x.pos[0], player.pos[2] - x.pos[2]) - Math.hypot(player.pos[0] - y.pos[0], player.pos[2] - y.pos[2]))[0];
       const at = ghostPlacement(player.pos, player.yaw, nearest?.pos, frameNow, manifest.bounds);
+      ghostAt = at;
       ghost.position.set(at[0], at[1], at[2]);
       ghost.rotation.set(0, Math.atan2(player.pos[0] - at[0], player.pos[2] - at[2]), 0);
       (ghost.material as THREE.MeshBasicMaterial).opacity = haunt.ghostOpacity;
@@ -553,6 +556,11 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       precip.geometry.getAttribute("position").needsUpdate = true;
     }
     if (stars) stars.position.set(player.pos[0], player.pos[1], player.pos[2]);
+    const prompt = promptFor(player.pos, haunt.anchors, ghostAt, haunt.ghostVisible);
+    if (prompt !== lastPrompt) {
+      lastPrompt = prompt;
+      hooks.onMessage({ t: "prompt", target: prompt });
+    }
     if (drone.ctx && drone.gain && !drone.muted) {
       drone.gain.gain.setTargetAtTime(hooks.mode() === "chat" ? 0.012 : 0.035, drone.ctx.currentTime, 0.3);
     }

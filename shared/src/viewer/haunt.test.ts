@@ -1,5 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { GRADE_FULL, gradeParams, orbPulse, smoothHaunt } from "./haunt";
+import { GRADE_FULL, gradeParams, orbPulse, promptFor, smoothHaunt } from "./haunt";
+
+describe("interaction prompt (world-viewer 6.1, Requirement 4.1)", () => {
+  const me: [number, number, number] = [0, 1.6, 0];
+  const near = { pos: [0, 1, -2] as [number, number, number], radius: 2.5 };
+  const far = { pos: [0, 1, -9] as [number, number, number], radius: 2.5 };
+
+  it("offers an anchor inside its radius first, the ghost within 4 m, else nobody", () => {
+    expect(promptFor(me, [near], [0, 1, -1], true)).toBe("anchor");
+    expect(promptFor(me, [far], [0, 1, -3.9], true)).toBe("ghost");
+    expect(promptFor(me, [far], [0, 1, -4.1], true)).toBeNull();
+    expect(promptFor(me, [far], [0, 1, -1], false)).toBeNull();
+    expect(promptFor(me, [], null, true)).toBeNull();
+    expect(promptFor([Number.NaN, 0, 0], [near], null, true)).toBeNull();
+  });
+
+  it("counts the edge of the radius as inside", () => {
+    expect(promptFor([0, 1, 0], [{ pos: [0, 1, -2.5], radius: 2.5 }], null, false)).toBe("anchor");
+    expect(promptFor([0, 1, 0], [{ pos: [0, 1, -2.5001], radius: 2.5 }], null, false)).toBeNull();
+  });
+});
 
 describe("haunt grade (world-viewer 5.1)", () => {
   it("is off at level 0, full at level 1, and half-way at a half", () => {

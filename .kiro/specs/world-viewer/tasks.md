@@ -93,13 +93,14 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
     - _Requirements: 3.6_
   - Done (2026-11-17) in `mount.ts` over the pure functions: `gradeParams`/`smoothHaunt` (canvas filter + vignette and grain overlays), `flicker` scaled by the smoothed level and off under reduced motion, orbs as camera-facing additive planes (`orbIntensity`, `orbPulse`; depth test off so the hint reads), the ghost as a y-locked billboard from `ghostPlacement` with a code-drawn texture until the chosen sprite reaches the viewer, `atmosphereParams` driving tint (splat `recolor`), fog, capped precipitation and a star-points sky, and a procedural drone after a gesture with mute and chat ducking (5.5). Quality for precipitation is fixed at the middle level until group 7 wires `nextQuality`. Verified headless with the recorded world: grade, flicker-era rain, ghost and orb all seen in screenshots.
 
-- [ ] 6. HUD and interaction
-  - [ ] 6.1 Interaction prompt, memory counter, journal button, Exit control
+- [x] 6. HUD and interaction
+  - [x] 6.1 Interaction prompt, memory counter, journal button, Exit control
     - _Requirements: 4.1, 4.3, 4.4_
-  - [ ] 6.2 `InputRouter` integration: chat open releases pointer lock and suspends movement
+  - [x] 6.2 `InputRouter` integration: chat open releases pointer lock and suspends movement
     - _Requirements: 4.2_
-  - [ ] 6.3 `ViewerBridge` to the ghost engine (pose ≤ 4 Hz, haunt level, found ids, ghost visibility, `setAtmosphere`), importing its messages from `shared/src/app/events.ts`
+  - [x] 6.3 `ViewerBridge` to the ghost engine (pose ≤ 4 Hz, haunt level, found ids, ghost visibility, `setAtmosphere`), importing its messages from `shared/src/app/events.ts`
     - _Requirements: 3.3, 3.4, 3.6, 4.1_
+  - Done (2026-11-17): the HUD itself (counter, journal, Exit, prompt words) was already the shell's; the viewer's half is in `mount.ts`: `promptFor` (pure, in `shared/src/viewer/haunt.ts`, tested) sends `prompt` only on change — an anchor inside its radius first, else the visible ghost within 4 m; pose at 4 Hz; `apply_view` and `set_atmosphere` consumed from `shared/src/app/events.ts`; chat mode releases pointer lock and suspends movement through `inputReduce`, and typing in the chat no longer walks the player. Verified headless: one `{t: prompt, target: anchor}` on entering an anchor's radius.
 
 - [ ] 7. Performance
   - [ ] 7.1 `QualityController` wired to render loop; resolution scale and LOD switching; `?debug=1` overlay

@@ -27,6 +27,29 @@ export function orbIntensity(distance: number, found: boolean, radius: number): 
   return clamp01(1 - d / (5 * r));
 }
 
+export type PromptTarget = "anchor" | "ghost" | null;
+/** How close to the ghost the speak prompt appears (Requirement 4.1). */
+export const GHOST_PROMPT_DISTANCE = 4;
+
+/**
+ * Whom the interaction prompt offers (Requirement 4.1): an anchor the player stands
+ * within (its own radius, found or not — a found memory can be revisited), else the
+ * ghost when it is visible and within 4 m, else nobody. The anchor wins ties.
+ */
+export function promptFor(
+  playerPos: Vec3,
+  anchors: readonly { pos: Vec3; radius: number }[],
+  ghostPos: Vec3 | null,
+  ghostVisible: boolean,
+): PromptTarget {
+  if (!playerPos.every(Number.isFinite)) return null;
+  for (const a of anchors) {
+    if (a.pos.every(Number.isFinite) && a.radius > 0 && distance3(playerPos, a.pos) <= a.radius) return "anchor";
+  }
+  if (ghostVisible && ghostPos && ghostPos.every(Number.isFinite) && distance3(playerPos, ghostPos) <= GHOST_PROMPT_DISTANCE) return "ghost";
+  return null;
+}
+
 /** The full grade at Haunt Level 1; at 0 every part is off (Requirement 3.1). */
 export const GRADE_FULL = { desaturate: 0.85, vignette: 0.55, grain: 0.18, dim: 0.45 } as const;
 export type GradeParams = { desaturate: number; vignette: number; grain: number; dim: number };
