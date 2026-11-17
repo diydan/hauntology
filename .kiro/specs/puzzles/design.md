@@ -662,7 +662,7 @@ The owner's idea: the TV or laptop shows one room, and each phone is its own len
 | Feel | `feel(from, to)` | strong (within 2.5 m, facing it): buzz, picture and full sound; soft (within 6 m): picture and half sound; facing away: faint sound; beyond 6 m: nothing |
 | Owner of state | the server (not built) | a phone asks; the server decides and tells every screen |
 
-Not decided: the real relay. The lab Worker (`src/room-core.js`) only pushes ready-made effects to devices, so a shared action needs a new message type and a count on the server. Not built: the phones' positions from their own views; the demo uses pretend phones on a floor plan.
+The relay (built): the lab Worker takes `pos` (where a phone is and faces) and `act` (a phone acts); it counts different phones inside the window and sends each phone a `shared` message with what it feels from its own place, or an `acted` message with the count so far. The roster carries each phone's place. Not built: positions from the phones' own views; a phone says where it is by a tap and a Turn control. The room's memory (built): the big door is open or shut, the chair is at step 0 to 3; `applyAction` moves them, the room saves them in Durable Object storage (`ctx.storage`) and reads them back before any message is handled, and every phone gets them with `welcome` and `shared`. Not decided: whether the knock should open a Zone door, and what the ghost does with the chair.
 
 ### Property 35: A shared action fires when enough different Players act together, and for no fewer
 For every action: fewer than `need` different Players inside the window never fires it, `need` different Players inside the window always does, and one Player acting many times counts once.

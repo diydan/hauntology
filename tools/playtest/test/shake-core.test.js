@@ -1,7 +1,7 @@
 // Shared actions and Shake: how many Players an action needs, how a shake is read, and what a phone feels by where it is.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACTIONS, REACH, SHAKE, WINDOW_MS, feel, makeShakeDetector, makeTogether } from '../js/shake-core.js';
+import { ACTIONS, CHAIR_STEPS, INITIAL_STATE, REACH, SHAKE, WINDOW_MS, applyAction, cleanState, feel, makeShakeDetector, makeTogether } from '../js/shake-core.js';
 
 test('a one-Player action fires at once; a two-Player action waits for a second Player', () => {
   assert.equal(makeTogether('knock').add('a', 0).fired, true);
@@ -64,4 +64,24 @@ test('a phone facing away from the source gets only a faint sound, near or far',
 test('the facing wraps round: 540 degrees is 180', () => {
   assert.equal(feel({ x: 0, y: 0 }, { x: 1, y: 0, facing: 540 }).level, 'strong');
   assert.equal(feel({ x: 0, y: 0 }, { x: 1, y: 0, facing: -180 }).level, 'strong');
+});
+
+test('the big door swings open and shut, the chair moves a step each time and comes back; knock and wind leave nothing', () => {
+  let st = INITIAL_STATE;
+  st = applyAction(st, 'bigDoor'); assert.equal(st.bigDoor, 'open');
+  st = applyAction(st, 'bigDoor'); assert.equal(st.bigDoor, 'shut');
+  const seen = [];
+  for (let i = 0; i < CHAIR_STEPS; i++) { st = applyAction(st, 'chair'); seen.push(st.chair); }
+  assert.deepEqual(seen, [1, 2, 3, 0]);
+  assert.deepEqual(applyAction(st, 'knock'), st);
+  assert.deepEqual(applyAction(st, 'wind'), st);
+  assert.deepEqual(applyAction(INITIAL_STATE, 'chair'), { bigDoor: 'shut', chair: 1 }, 'the first state is not changed');
+  assert.deepEqual(INITIAL_STATE, { bigDoor: 'shut', chair: 0 });
+});
+
+test('a stored state is cleaned: anything unexpected falls back to the start', () => {
+  assert.deepEqual(cleanState(undefined), INITIAL_STATE);
+  assert.deepEqual(cleanState({ bigDoor: 'open', chair: 2, extra: '<script>' }), { bigDoor: 'open', chair: 2 });
+  assert.deepEqual(cleanState({ bigDoor: 'ajar', chair: 99 }), INITIAL_STATE);
+  assert.deepEqual(cleanState({ chair: '2' }), INITIAL_STATE);
 });
