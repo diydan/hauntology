@@ -506,7 +506,7 @@ function checkBinaryStl(filePath, bedMm = 180) {
     "prop-12-bats-mobile.stl": 4,
     "prop-15-vault-clasp.stl": 3,
     "prop-20-plug-heads.stl": 10,
-    "prop-20-terminal-blocks.stl": 11,
+    "prop-20-terminal-blocks.stl": 6,
   };
   const baseName = path.basename(filePath);
   const expectedComps = EXPECTED_COMPONENTS[baseName] ?? 1;
