@@ -25,6 +25,8 @@ xg_01   = -16.0; // #1 Ghost X center
 yg_01   =  -3.8; // #1 Ghost Y center (pedestal backs into Y = +25.4 bulkhead; lever at Y = -14.8..-10.3)
 xl_01   = -31.4; // Left Split Ghost Lid X center (lid_w = 110.2 -> X = -86.5..+23.7)
 xv_15   =  55.4; // Right Split Lockbox & Clasp X center (vlid_w = 61.6 -> X = +24.6..+86.2)
+ky_y    =  37.5; // Left-wall (-X) KY-040 Rotary Encoder Safe-Dial Y center (inside open-bottom rear electronics bay!)
+ky_z    =  36.5; // Left-wall (-X) KY-040 Rotary Encoder Safe-Dial Z center (32.7 mm above USB-C, 28.5 mm below closed lid!)
 
 module prop_01_chest_body() {
   difference() {
@@ -56,9 +58,24 @@ module prop_01_chest_body() {
       translate([24.9, -chest_d / 2 + 0.4, 0])
         chamfer_box(4.6, 2.6, chest_h - 0.6, r = 0.8, ch_bot = 0.6, ch_top = 0.4);
 
+      // 3b. Right-Wall (+X) 45-deg Corbelled Gothic Escutcheon for 4x MTS-103 Toggle Switches + SUBMIT Button (X <= +87.0 <= 175.6 W!)
+      hull() {
+        translate([chest_w / 2 + 0.2, 7.5, 40.5])
+          cube([1.6, 82.0, 42.0], center = true);
+        translate([chest_w / 2 - 0.6, 7.5, 18.0])
+          cube([0.8, 84.0, 1.0], center = true);
+      }
+      // 3c. Left-Wall (-X) 45-deg Corbelled Circular Gothic Safe-Dial Escutcheon Medallion around KY-040 (Y = ky_y, Z = ky_z)
+      hull() {
+        translate([-chest_w / 2 + 0.2, ky_y, ky_z])
+          rotate([0, -90, 0]) cylinder(h = 1.0, d1 = 35.0, d2 = 33.4, $fn = 48);
+        translate([-chest_w / 2 + 0.2, ky_y, ky_z - 18.5])
+          rotate([0, -90, 0]) cylinder(h = 0.3, d = 4.0, $fn = 16);
+      }
+
       // 4. Four Coaxial Rear Hinge Knuckles at Y = chest_d/2 + 6.2 = +62.2, Z = chest_h - 1.0 = 69.0 mm
       //    45-deg gussets root into +Y = +56.0 at Z = 60.2 so Z <= 59.5 sticker pockets stay 100% clear!
-      for (hk = [[-75.0, 14.0], [13.0, 14.0], [30.0, 10.0], [79.5, 10.0]]) {
+      for (hk = [[-75.0, 14.0], [13.0, 14.0], [30.0, 10.0], [80.8, 10.0]]) {
         hull() {
           translate([hk[0], chest_d / 2 + 6.2, chest_h - 1.0])
             rotate([0, 90, 0])
@@ -113,56 +130,88 @@ module prop_01_chest_body() {
         translate([-30.5, 23.2, 8.75]) cube([110.0, 6.2, 17.5], center = true);
         translate([-30.5, 15.5, 1.0])  cube([110.0, 21.6, 2.0], center = true);
       }
-      // Internal backing pad behind Right-Bay (#15) front escutcheon recess
+      // Internal backing pad behind Right-Bay (#15) front escutcheon recess + 45-deg corbelled housing boss for X = 30.5 rim switch!
       hull() {
         translate([xv_15, -chest_d / 2 + 2.2, chest_h - 14.0]) cube([39.6, 3.2, 26.8], center = true);
         translate([xv_15, -chest_d / 2 + 1.2, chest_h - 30.5]) cube([39.6, 0.8, 2.0], center = true);
       }
+      hull() {
+        translate([30.2, -chest_d / 2 + 3.6, chest_h - 3.5]) cube([9.2, 7.2, 7.0], center = true);
+        translate([28.0, -chest_d / 2 + 1.4, chest_h - 11.5]) cube([4.8, 1.6, 1.4], center = true);
+      }
     }
 
-    // 6b. WIDE OPEN-BOTTOM REAR #20 SOLDERING & WIRING BAY (Y = +27.8 .. +51.2 = 23.4 mm wide x 162 mm long, OPEN AT Z = 0!!):
-    //     Leaves a thin 4.8 mm rear panel wall (Y = +51.2..+56.0) so all 5 socket backs, LED leads, M16 SET nut, and bottom wire knots
-    //     are wide-open to your fingers, wrench, and soldering iron straight from underneath!
-    //     Roof tapers at <= 43 deg from Z = 50.5 to a 2.0 mm ridge at Z = 62.0 -> 100% support-free!
-    difference() {
-      union() {
-        hull() {
-          translate([0, 39.5, -0.2])
-            linear_extrude(height = 50.7)
-              rrect2d(chest_w - 10.0, 23.4, r = 2.0);
-          translate([0, 39.5, 62.0])
-            linear_extrude(height = 0.3)
-              rrect2d(chest_w - 22.0, 2.0, r = 0.8);
-        }
-        // Left-side 28.6 mm-wide ESP32-DevKitC V4 pocket extension at bottom (X = -79..-13, Y = +22.6..+51.2, Z = 0..5.4,
-        // tapering at 45 deg up into the 23.4 mm soldering bay so ALL 38 header pins have 45+ mm of open DuPont connector room above!)
-        translate([-46.0, 36.9, -0.2])
-          hull() {
-            linear_extrude(height = 5.6) rrect2d(66.0, 28.6, r = 1.8);
-            translate([0, 0, 15.2]) linear_extrude(height = 0.3) rrect2d(54.0, 10.0, r = 1.2);
-          }
-      }
-      // Four 45-deg self-supporting M2 screw corbel shoulders at X = -46 +- 24.13, Y = 36.9 +- 11.43 (starting at Z = 5.5 -> 0 overhang!)
-      for (sx = [-1, 1]) {
-        hull() {
-          translate([-46.0 + sx * esp32_hole_w / 2, 51.2, 10.5]) cube([8.0, 1.0, 9.6], center = true);
-          translate([-46.0 + sx * esp32_hole_w / 2, 47.0, 12.6]) cube([7.2, 4.2, 5.4], center = true);
-        }
-      }
+    // 6b. WIDE OPEN-BOTTOM REAR #20 SOLDERING & WIRING BAY + SELF-CENTERING 45-DEG ESP32 SEAT:
+    //     - X = -25..+81 (and Z = 16..62 across full X = -81..+81!): 23.4 mm wide open-bottom soldering bay leaving a thin 4.8 mm rear wall!
+    //     - X = -82.6..-26.6, Z = 0..16: symmetric 28.6 mm 45-deg V-seat holding the ESP32 level at Z = 5.95 mm (4 mm from -X USB-C wall!)
+    //       with all 38 header pins projecting into the wide-open Z = 16..62 chamber above!
+    hull() {
+      translate([28.0, 39.5, -0.2])
+        linear_extrude(height = 50.7)
+          rrect2d(106.0, 23.4, r = 2.0);
+      translate([28.0, 39.5, 62.0])
+        linear_extrude(height = 0.3)
+          rrect2d(94.0, 2.0, r = 0.8);
     }
-    // Four vertical M2 pilot bores (48.26 x 22.86 mm) seating the ESP32 upside-down at Z = 5.5 inside the open rear bay!
+    hull() {
+      translate([-28.0, 39.5, 16.0])
+        linear_extrude(height = 34.5)
+          rrect2d(106.0, 23.4, r = 2.0);
+      translate([-28.0, 39.5, 62.0])
+        linear_extrude(height = 0.3)
+          rrect2d(94.0, 2.0, r = 0.8);
+    }
+    translate([-54.6, 36.9, -0.2])
+      hull() {
+        linear_extrude(height = 5.8) rrect2d(56.4, 28.6, r = 1.6);
+        translate([0, 0, 16.5]) linear_extrude(height = 0.3) rrect2d(48.0, 7.6, r = 1.2);
+      }
     for (sx = [-1, 1], sy = [-1, 1]) {
-      translate([-46.0 + sx * esp32_hole_w / 2, 36.9 + sy * esp32_hole_d / 2, 6.2])
+      translate([-54.6 + sx * esp32_hole_w / 2, 36.9 + sy * esp32_hole_d / 2, 7.2])
         cylinder(h = 8.5, d = sg90_m2_pilot_d);
     }
 
-    // Concealed internal servo wire pass-throughs through the Y = +25.4..+27.8 bulkhead into the open rear bay:
+    // Concealed internal servo, switch & WS2812B LED strip pass-throughs through the Y = +25.4..+27.8 bulkhead & X = +24.9 divider:
     translate([-52.0, 26.6, 23.0])
       rotate([90, 0, 0])
         hull() { cylinder(h = 6.0, d = 6.0, center = true); translate([0, 3.2, 0]) cylinder(h = 6.0, d = 1.2, center = true); }
     translate([77.0, 26.6, 23.0])
       rotate([90, 0, 0])
         hull() { cylinder(h = 6.0, d = 6.0, center = true); translate([0, 3.2, 0]) cylinder(h = 6.0, d = 1.2, center = true); }
+    //   - Upper-Right 4x MTS-103 switch ribbon pass-through from Right Bay (Z = 53.5) straight into open-bottom rear ESP32 bay!
+    translate([78.0, 26.6, 53.5])
+      rotate([90, 0, 0])
+        hull() { cylinder(h = 6.0, d = 6.4, center = true); translate([0, 3.4, 0]) cylinder(h = 6.0, d = 1.2, center = true); }
+    //   - Inner Left-Wall (-X) 3.0 mm Thin-Wall Seat inside open-bottom rear bay for KY-040 M7 Bushing (X = -83.0..-80.0, Y = 28..48.5, Z = 16..50)
+    hull() {
+      translate([-81.5, ky_y, 33.0]) cube([3.2, 20.6, 34.0], center = true);
+      translate([-80.2, ky_y, 56.5]) cube([0.6, 12.0, 0.4], center = true);
+    }
+    //   - Inner Right-Wall (+X) 3.8 mm Thin-Wall Seat inside open-bottom rear bay for 16 mm SUBMIT Pushbutton Nut (X = 80.0..83.2, Y = 29..49, Z = 19..43)
+    hull() {
+      translate([81.6, 39.0, 30.5]) cube([3.4, 20.4, 23.0], center = true);
+      translate([80.2, 39.0, 48.0]) cube([0.6, 12.0, 0.4], center = true);
+    }
+    //   - WS2812B LED strip entry slot from open-bottom rear ESP32 bay into Right (#15) Lockbox LED channel (X = +31.0, Z = 54.1)
+    translate([31.0, 26.6, 54.1])
+      hull() {
+        cube([5.2, 6.0, 10.6], center = true);
+        translate([0, 0, 7.6]) cube([0.8, 6.0, 0.4], center = true);
+      }
+    //   - Aligned internal light window through Y = +26.6 bulkhead at X = +64.5, Z = 53.5 so internal WS2812B glow ALSO reaches +Y status slits!
+    for (lx = [-5.5, 0.0, 5.5]) {
+      translate([64.5 + lx, 26.6, 53.5])
+        hull() {
+          cube([3.2, 6.0, 6.5], center = true);
+          translate([0, 0, 4.8]) cube([0.8, 6.0, 0.4], center = true);
+        }
+    }
+    //   - WS2812B LED strip daisy-chain slot through X = +24.9 divider into Left (#1) Ghost LED channel (Y = +23.8, Z = 54.1)
+    translate([24.9, 23.8, 54.1])
+      hull() {
+        cube([5.0, 3.4, 10.6], center = true);
+        translate([0, 0, 6.8]) cube([5.0, 0.6, 0.4], center = true);
+      }
 
     // Left-Rear (-X) 45-deg Gabled USB-C Port into the shared ESP32 bay (X = -86, Y = +36.9, Z = 3.8)
     translate([-chest_w / 2, 36.9, 3.8])
@@ -228,12 +277,16 @@ module prop_01_chest_body() {
         linear_extrude(height = sticker_depth + 0.6)
           rrect2d(20.0, 5.8, r = 1.0);
 
-    translate([64.5, chest_d / 2 - 6.0, 45.0])
-      rotate([-90, 0, 0])
-        hull() {
-          cylinder(h = 8.0, d = 5.2);
-          translate([0, -2.8, 0]) cylinder(h = 8.0, d = 1.0);
-        }
+    // Three-Lancet Gothic Status Light Grille (Green / Orange / Red WS2812B glow for #20 Cut Wires!) + sticker pocket
+    for (lx = [-6.0, 0.0, 6.0]) {
+      translate([64.5 + lx, chest_d / 2 - 6.0, 45.2])
+        rotate([-90, 0, 0])
+          hull() {
+            translate([0, 2.2, 0]) cylinder(h = 8.0, d = 3.2);
+            translate([0, -2.0, 0]) cylinder(h = 8.0, d = 3.2);
+            translate([0, -4.4, 0]) cylinder(h = 8.0, d = 0.9); // local -Y -> world +Z pointed gothic lancet arch!
+          }
+    }
     translate([64.5, chest_d / 2 - sticker_depth, 56.2])
       rotate([-90, 0, 0])
         linear_extrude(height = sticker_depth + 0.6)
@@ -252,22 +305,104 @@ module prop_01_chest_body() {
     translate([xv_15 + 2.25, -chest_d / 2, chest_h - 7.5])
       cube([32.5, 10.0, 18.0], center = true);
 
-    translate([30.5, -chest_d / 2 + 1.7, chest_h - 1.8])
-      cube([6.5, 6.5, 4.0], center = true);
+    // Right-Bay (#15) 6x6x5 mm tactile rim-switch pocket (Z = 66.0 solid seat floor -> actuator at Z = 71.0!) + solder-pin wire slot
+    translate([30.5, -chest_d / 2 + 3.8, chest_h - 1.9])
+      cube([6.5, 6.5, 4.2], center = true);
+    translate([30.5, -chest_d / 2 + 3.8, chest_h - 6.0])
+      cube([5.0, 2.4, 8.0], center = true);
 
-    // Shallow Crooked Timber Plank V-grooves on Front & Sides
+    // Front (-Y) Top/Phone-Lock Active Status Keyhole Lancet directly underneath #15 Gold Brass Clasp (X = xv_15 = +55.4, Z = 26.5)
+    translate([xv_15, -chest_d / 2 - 2.0, 26.5])
+      rotate([-90, 0, 0])
+        hull() {
+          translate([0, 2.4, 0]) cylinder(h = 6.0, d = 3.6);
+          translate([0, -2.0, 0]) cylinder(h = 6.0, d = 3.4);
+          translate([0, -4.6, 0]) cylinder(h = 6.0, d = 0.9); // local -Y -> world +Z pointed gothic lancet!
+        }
+
+    // =========================================================================
+    // 8b. RIGHT WALL (+X): 4x SPDT MTS-103 (ON-OFF-ON) Toggle Bank + SUBMIT Button + Status Lancet
+    // =========================================================================
+    for (si = [0 : 3]) {
+      sy_sw = -24.5 + si * 14.0; // Comfortable 14.0 mm nut & finger pitch: Y = -24.5, -10.5, +3.5, +17.5 (Z = 54.5 clears QR cards <= 45.7!)
+      // Ø6.4 mm teardropped M6 bushing through-bore
+      translate([chest_w / 2 - 4.0, sy_sw, 54.5])
+        rotate([0, 90, 0])
+          hull() {
+            cylinder(h = 7.0, d = 6.4);
+            translate([-3.5, 0, 0]) cylinder(h = 7.0, d = 0.9); // local -X -> world +Z teardrop!
+          }
+      // Ø2.3 mm anti-rotation keyway dimple 5.8 mm below bore for MTS-103 locking tab washer
+      translate([chest_w / 2 - 0.2, sy_sw, 54.5 - 5.8])
+        rotate([0, 90, 0])
+          cylinder(h = 1.6, d = 2.3);
+    }
+    // Recessed 0.4 mm Roman-numeral / Rune Sticker Strip Pocket below the 4 switches (54.0 x 5.2 mm at Z = 42.5)
+    translate([chest_w / 2 + 1.0 - sticker_depth, -3.5, 42.5])
+      rotate([0, 90, 0])
+        linear_extrude(height = sticker_depth + 0.6)
+          rrect2d(5.2, 54.0, r = 0.9);
+
+    // Right-Wall 16.2 mm SUBMIT Pushbutton Bore (Y = +39.0, Z = 31.0 -> opens directly into 23.4 mm wide open-bottom rear soldering bay!)
+    translate([chest_w / 2 - 4.0, 39.0, 31.0])
+      rotate([0, 90, 0])
+        hull() {
+          cylinder(h = 7.0, d = 16.2);
+          translate([-8.8, 0, 0]) cylinder(h = 7.0, d = 1.5); // local -X -> world +Z teardrop!
+        }
+    translate([chest_w / 2 + 1.0 - sticker_depth, 39.0, 17.5])
+      rotate([0, 90, 0])
+        linear_extrude(height = sticker_depth + 0.6)
+          rrect2d(5.2, 16.0, r = 0.9);
+
+    // Right-Wall Pointed Gothic Active-Lock Status Lancet above SUBMIT button (Y = +39.0, Z = 52.5)
+    translate([chest_w / 2 - 4.0, 39.0, 52.5])
+      rotate([0, 90, 0])
+        hull() {
+          translate([ 2.2, 0, 0]) cylinder(h = 7.0, d = 3.4);
+          translate([-2.0, 0, 0]) cylinder(h = 7.0, d = 3.4);
+          translate([-4.5, 0, 0]) cylinder(h = 7.0, d = 0.9); // local -X -> world +Z pointed gothic lancet!
+        }
+
+    // =========================================================================
+    // 8c. LEFT WALL (-X): KY-040 Safe-Cracker Combination Dial + Status Lancet
+    // =========================================================================
+    // Ø7.3 mm teardropped M7 bushing through-bore at (Y = ky_y = 37.5, Z = ky_z = 36.5) inside open-bottom rear electronics bay!
+    translate([-chest_w / 2 - 3.0, ky_y, ky_z])
+      rotate([0, 90, 0])
+        hull() {
+          cylinder(h = 7.0, d = 7.3);
+          translate([-3.9, 0, 0]) cylinder(h = 7.0, d = 1.0); // local -X -> world +Z teardrop!
+        }
+    // 12 Engraved Radial Safe-Combination Tick Marks around R = 13.8..16.2 mm on -X Medallion (12 o'clock major tick slightly longer!)
+    for (ti = [0 : 11]) {
+      ang_t = ti * 30;
+      t_len = (ti % 3 == 0) ? 3.2 : 2.1;
+      translate([-chest_w / 2 - 0.8, ky_y + 14.8 * sin(ang_t), ky_z + 14.8 * cos(ang_t)])
+        rotate([-ang_t, 0, 0])
+          cube([1.2, 0.85, t_len], center = true);
+    }
+    // Left-Wall Pointed Gothic Active-Lock Status Lancet forward of Safe Dial (Y = +14.5, Z = 53.5)
+    translate([-chest_w / 2 - 3.0, 14.5, 53.5])
+      rotate([0, 90, 0])
+        hull() {
+          translate([ 2.2, 0, 0]) cylinder(h = 7.0, d = 3.4);
+          translate([-2.0, 0, 0]) cylinder(h = 7.0, d = 3.4);
+          translate([-4.5, 0, 0]) cylinder(h = 7.0, d = 0.9);
+        }
+
+    // Shallow Crooked Timber Plank V-grooves on Front & Lower Front Flanks (clear of Left/Right puzzle escutcheons!)
     for (idx = [0 : 2]) {
       zp = 18 + idx * 16;
       tilt = (idx % 2 == 0) ? 2.2 : -1.8;
       translate([xl_01, -chest_d / 2 - 0.1, zp])
         rotate([0, tilt, 0]) rotate([45, 0, 0]) cube([88.0, 1.0, 1.0], center = true);
-      for (sx = [-1, 1])
-        translate([sx * (chest_w / 2 + 0.1), -8.0, zp])
-          rotate([tilt, 0, 0]) rotate([0, 45, 0]) cube([1.0, 74.0, 1.0], center = true);
+      translate([-chest_w / 2 - 0.1, -22.0, zp])
+        rotate([tilt, 0, 0]) rotate([0, 45, 0]) cube([1.0, 44.0, 1.0], center = true);
     }
 
     // 9. Coaxial Rear Hinge Pin Bores (Ø3.5 mm teardropped across all 4 knuckles at Y = +62.2, Z = 69.0) + Right Lid Spring Notch
-    for (hx = [-75.0, 13.0, 30.0, 79.5]) {
+    for (hx = [-75.0, 13.0, 30.0, 80.8]) {
       hull() {
         translate([hx, chest_d / 2 + 6.2, chest_h - 1.0])
           rotate([0, 90, 0]) cylinder(h = 18.0, d = 3.5, center = true);
@@ -364,6 +499,48 @@ module prop_01_chest_body() {
           rotate([0, -90, 0])
             cylinder(h = 1.1, d1 = 2.3, d2 = 0.4, $fn = 4);
       }
+    }
+  }
+
+  // ===========================================================================
+  // 12. INTEGRATED 10 mm WS2812B LED STRIP CHANNELS (45-deg self-supporting upper/lower guide rails ->
+  //     11.0 mm clear channel for 10 mm NeoPixel tape lighting ALL 4 Active-Lock Status Windows + Left & Right Bays!)
+  // ===========================================================================
+  for (zr = [48.0, 60.2]) {
+    // a) Right Bay (#15 Lockbox) rear bulkhead rail (X = +34..+74, clear of +78 switch pass-through!)
+    hull() {
+      translate([54.0, 25.5, zr]) cube([40.0, 0.4, 2.8], center = true);
+      translate([54.0, 24.3, zr]) cube([40.0, 0.4, 0.5], center = true);
+    }
+    // b) Left Bay (#1 Ghost) rear bulkhead uplight rail (X = -83.5..+22.5) + Left-wall (-X) status-lancet turn rail (Y = +6..+24)
+    hull() {
+      translate([-30.5, 25.5, zr]) cube([106.0, 0.4, 2.8], center = true);
+      translate([-30.5, 24.3, zr]) cube([106.0, 0.4, 0.5], center = true);
+    }
+    hull() {
+      translate([-83.9, 15.0, zr]) cube([0.4, 18.0, 2.8], center = true);
+      translate([-82.7, 15.0, zr]) cube([0.4, 18.0, 0.5], center = true);
+    }
+  }
+  // c) Inner +Y = +51.2 Rear Wall WS2812B Strip Guide Rails right behind the 3-Lancet #20 Status Grille (X = +53..+76, Z = 39.2 & 51.4)
+  for (zr2 = [39.2, 51.4]) {
+    hull() {
+      translate([64.5, chest_d / 2 - 4.9, zr2]) cube([22.0, 0.4, 2.8], center = true);
+      translate([64.5, chest_d / 2 - 6.1, zr2]) cube([22.0, 0.4, 0.5], center = true);
+    }
+  }
+  // d) Inner +X = +81.0 Rear-Bay WS2812B Strip Guide Rails behind Right Toggle Status Lancet (Y = +31..+47, Z = 46.5 & 58.7)
+  for (zr3 = [46.5, 58.7]) {
+    hull() {
+      translate([80.9, 39.0, zr3]) cube([0.4, 16.0, 2.6], center = true);
+      translate([79.8, 39.0, zr3]) cube([0.4, 16.0, 0.5], center = true);
+    }
+  }
+  // e) Inner -Y = -53.8 Front-Wall WS2812B Strip Guide Rails behind Front Phone-Lock Keyhole Lancet (X = +45..+66, Z = 20.5 & 32.7)
+  for (zr4 = [20.5, 32.7]) {
+    hull() {
+      translate([xv_15, -chest_d / 2 + 2.3, zr4]) cube([21.0, 0.4, 2.6], center = true);
+      translate([xv_15, -chest_d / 2 + 3.4, zr4]) cube([21.0, 0.4, 0.5], center = true);
     }
   }
 }
