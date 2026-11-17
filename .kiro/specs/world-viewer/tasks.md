@@ -78,19 +78,20 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
     - _Requirements: 8.1_
   - Done (2026-11-16): the real Viewer mounts behind the shell seam (`web/src/app/viewer/mount.ts`, the default `LoadViewer`; the demo keeps the stand-in). Controls mapping is pure and tested (`controls.ts`); collision is a BVH capsule with floor snap and the 35 degree slope limit (`collision.ts`, Property 3 over generated rooms); tilt uses the pure `tiltLook`. Deps pinned by Spike 2.1: three 0.187.0, Spark 2.4.0, three-mesh-bvh 0.9.18. Verified headless end to end with the recorded kitchen world served through intercepted routes: spawn upright, W walks forward at the clamped rate, poses flow at 4 Hz. Two build notes: Spark's console.log calls are rewritten out of its module at build (Requirement 9.5), and the bundle test's Viewer marker and the demo platform keys were updated for the real Viewer.
 
-- [ ] 5. Haunt layer
-  - [ ] 5.1 Grade overlay (desaturate, vignette, grain, dim) driven by Haunt Level with smoothing
+- [x] 5. Haunt layer
+  - [x] 5.1 Grade overlay (desaturate, vignette, grain, dim) driven by Haunt Level with smoothing
     - _Requirements: 3.1_
-  - [ ] 5.2 Flicker applied to the brightness uniform; reduced-motion switch
+  - [x] 5.2 Flicker applied to the brightness uniform; reduced-motion switch
     - _Requirements: 3.2, 6.2_
-  - [ ] 5.3 Orbs (additive sprites) with proximity pulse; fade on found
+  - [x] 5.3 Orbs (additive sprites) with proximity pulse; fade on found
     - _Requirements: 3.3_
-  - [ ] 5.4 Ghost billboard (alpha-tested sprite, y-locked) with bob and fade
+  - [x] 5.4 Ghost billboard (alpha-tested sprite, y-locked) with bob and fade
     - _Requirements: 3.4_
-  - [ ] 5.5 Procedural ambient audio with mute and ducking (optional stretch)
+  - [x] 5.5 Procedural ambient audio with mute and ducking (optional stretch)
     - _Requirements: 3.5_
-  - [ ] 5.6 Atmosphere from `setAtmosphere`: tint and fog by weather class and time of day, capped rain or snow, sky dome from the star texture at dusk and night (the `conditions` spec supplies the snapshot and the texture)
+  - [x] 5.6 Atmosphere from `setAtmosphere`: tint and fog by weather class and time of day, capped rain or snow, sky dome from the star texture at dusk and night (the `conditions` spec supplies the snapshot and the texture)
     - _Requirements: 3.6_
+  - Done (2026-11-17) in `mount.ts` over the pure functions: `gradeParams`/`smoothHaunt` (canvas filter + vignette and grain overlays), `flicker` scaled by the smoothed level and off under reduced motion, orbs as camera-facing additive planes (`orbIntensity`, `orbPulse`; depth test off so the hint reads), the ghost as a y-locked billboard from `ghostPlacement` with a code-drawn texture until the chosen sprite reaches the viewer, `atmosphereParams` driving tint (splat `recolor`), fog, capped precipitation and a star-points sky, and a procedural drone after a gesture with mute and chat ducking (5.5). Quality for precipitation is fixed at the middle level until group 7 wires `nextQuality`. Verified headless with the recorded world: grade, flicker-era rain, ghost and orb all seen in screenshots.
 
 - [ ] 6. HUD and interaction
   - [ ] 6.1 Interaction prompt, memory counter, journal button, Exit control
