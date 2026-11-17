@@ -5,7 +5,7 @@ import { COMMON_HELP, KIND_HELP } from "./help";
 
 const screens = import.meta.glob("./kinds/*.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 const source = (kind: Kind): string => {
-  const name = { lockpick: "LockPick", wires: "Wires", clock: "Clock", safe: "Safe", musicbox: "MusicBox", candles: "Candles", moved: "Moved", photo: "Photo", words: "Words", board: "Board", maze: "Maze" }[kind];
+  const name = { lockpick: "LockPick", wires: "Wires", clock: "Clock", safe: "Safe", musicbox: "MusicBox", candles: "Candles", moved: "Moved", photo: "Photo", words: "Words", board: "Board", maze: "Maze", knock: "Knock" }[kind];
   return screens[`./kinds/${name}.tsx`] ?? "";
 };
 const textOf = (kind: Kind): string => [KIND_HELP[kind].title, ...KIND_HELP[kind].steps, ...KIND_HELP[kind].extras].join("\n");
@@ -42,9 +42,9 @@ describe("the help of every puzzle", () => {
       const extras = KIND_HELP[k].extras.join(" ");
       if (KIND_INFO[k].usesTilt || k === "clock" || k === "safe") expect(/Tilt|Twist/.test(extras), `${k} tilt or twist`).toBe(true);
     }
-    expect(KIND_HELP.candles.extras.join(" ")).toMatch(/microphone.*only measures loudness.*Nothing is recorded/);
-    for (const k of KINDS.filter((x) => x !== "candles")) expect(/microphone/i.test(textOf(k)), `${k} has no microphone`).toBe(false);
-    for (const k of ["wires", "clock", "safe", "musicbox", "moved", "photo", "maze", "lockpick", "words", "board"] as const) expect(/Buzz|Sound/.test(KIND_HELP[k].extras.join(" ")), `${k} buzz or sound`).toBe(true);
+    for (const k of ["candles", "knock"] as const) expect(KIND_HELP[k].extras.join(" "), k).toMatch(/microphone.*only measures loudness.*Nothing is recorded/);
+    for (const k of KINDS.filter((x) => x !== "candles" && x !== "knock")) expect(/microphone/i.test(textOf(k)), `${k} has no microphone`).toBe(false);
+    for (const k of ["wires", "clock", "safe", "musicbox", "moved", "photo", "maze", "lockpick", "words", "board", "knock"] as const) expect(/Buzz|Sound/.test(KIND_HELP[k].extras.join(" ")), `${k} buzz or sound`).toBe(true);
   });
 
   it("says that every puzzle can be done by touch, that sound and buzz are shown on screen, and how many tries there are", () => {
@@ -58,7 +58,7 @@ describe("the help of every puzzle", () => {
     const labels: Readonly<Record<Kind, readonly string[]>> = {
       lockpick: ["Tension"], wires: ["Check the wires"], clock: ["Set this time", "Flip it"], safe: ["Set", "Undo", "Flip it"],
       musicbox: ["Wind", "Clear"], candles: ["Watch", "Relight", "Blow to snuff"], moved: ["These changed"], photo: ["Check", "Turn"],
-      words: ["Pick"], board: ["Pick"], maze: [],
+      words: ["Pick"], board: ["Pick"], maze: [], knock: ["Knock", "Done"],
     };
     for (const k of KINDS) {
       expect(source(k).length, `${k} source`).toBeGreaterThan(200);

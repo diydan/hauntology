@@ -131,5 +131,18 @@ export function makeLock(kind: Kind, level: Level, seed: number): Lock {
       const grid = list[randInt(r, list.length)] as readonly string[];
       return { kind, level, seed, view: { kind, grid }, secret: { kind }, sight: null };
     }
+    case "knock": {
+      // 2 groups on easy, 3 on medium and hard; 1 to 4 knocks a group, never two equal groups side by side; easy has at least four knocks
+      const n = pick(2, 3, 3);
+      const groups: number[] = [];
+      while (groups.length < n) {
+        const g = 1 + randInt(r, 4);
+        if (groups.length > 0 && groups[groups.length - 1] === g) continue;
+        groups.push(g);
+      }
+      if (n === 2 && (groups[0] ?? 0) + (groups[1] ?? 0) < 4) groups[0] = groups[1] === 3 ? 2 : 3;
+      const long = level === "hard" ? randInt(r, n - 1) : null;
+      return { kind, level, seed, view: { kind, groups: n, longPause: long !== null }, secret: { kind, groups, long }, sight: { kind, groups, long } };
+    }
   }
 }

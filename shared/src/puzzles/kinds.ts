@@ -15,6 +15,7 @@ export const KIND_INFO: Readonly<Record<Kind, KindInfo>> = {
   words: { memory: false, usesTilt: true, touchPath: true },
   board: { memory: false, usesTilt: true, touchPath: true },
   maze: { memory: false, usesTilt: true, touchPath: true },
+  knock: { memory: true, usesTilt: false, touchPath: true },
 };
 
 /** The smallest believable solve time for a Lock, in ms (starting guesses; Spike puzzles 1.5 tunes them). */
@@ -31,5 +32,6 @@ export function minSolveMs(lock: Lock): number {
     case "words": return 3000;
     case "board": return 800 * lock.view.length;
     case "maze": return 3000;
+    case "knock": return 150 * lock.secret.groups.reduce((a, b) => a + b, 0) + 700 * (lock.secret.groups.length - 1);
   }
 }

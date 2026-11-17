@@ -20,7 +20,7 @@ describe("SightsPage", () => {
     render(<SightsPage assist sights={list} />);
     expect(screen.getByRole("region", { name: "Clues" })).toBeTruthy();
     const names = [...document.querySelectorAll(".pz-sight-name")].map((n) => n.textContent);
-    expect(names).toEqual(MEMORY_KINDS.map((k) => ({ wires: "The fuse box", clock: "The stopped clock", safe: "The brass plaque", moved: "The shelf", photo: "The photo" })[k as "wires"]));
+    expect(names).toEqual(MEMORY_KINDS.map((k) => ({ wires: "The fuse box", clock: "The stopped clock", safe: "The brass plaque", moved: "The shelf", photo: "The photo", knock: "The secret knock" })[k as "wires"]));
     expect(document.querySelectorAll(".pz-sight-item").length).toBe(MEMORY_KINDS.length);
   });
 

@@ -1,7 +1,8 @@
 import { minSolveMs } from "./kinds";
+import { KNOCK_READ, judgeKnock, knockPlayTimes } from "./knock";
 import { MAX_BYTES, MAX_EVENTS, TranscriptSchema, type Lock, type Transcript, type Verdict } from "./types";
 
-const EVENT_KEYS = ["sets", "pairs", "code", "notes", "order", "changed", "placed", "letters"] as const;
+const EVENT_KEYS = ["sets", "pairs", "code", "notes", "order", "changed", "placed", "letters", "times"] as const;
 
 /** How many events a raw Transcript claims, however malformed it is. */
 function eventCount(input: unknown): number {
@@ -92,6 +93,7 @@ function check(lock: Lock, t: Transcript): Verdict {
     }
     case "words": return t.kind === "words" && same(t.letters, lock.secret.order) ? good : bad("wrong");
     case "board": return t.kind === "board" && t.letters === lock.secret.word ? good : bad("wrong");
+    case "knock": return t.kind === "knock" && judgeKnock(lock.secret, t.times).ok ? good : bad("wrong");
     case "maze": {
       if (t.kind !== "maze") return bad("malformed");
       if (t.hits < 0 || t.hits > 500) return bad("malformed");
@@ -119,5 +121,9 @@ export function referenceSolve(lock: Lock): Transcript {
     case "words": return { kind: "words", letters: [...lock.secret.order], elapsedMs: base };
     case "board": return { kind: "board", letters: lock.secret.word, elapsedMs: base };
     case "maze": return { kind: "maze", reachedAtMs: minSolveMs(lock) + 500, hits: 0, elapsedMs: base };
+    case "knock": {
+      const times = knockPlayTimes(lock.secret).map((t) => t + 500);
+      return { kind: "knock", times, elapsedMs: Math.max(base, (times[times.length - 1] ?? 0) + KNOCK_READ.quietMs) };
+    }
   }
 }

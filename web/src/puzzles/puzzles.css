@@ -214,3 +214,5 @@
   .pz-host .pz-under, .pz-host .pz-lit { font-size: var(--text-body); }
   .pz-digits > span { height: 2.75rem; }
 }
+/* The secret knock as dots (the clue and the door alike): groups of dots, a wider gap for a pause and a wider one still for the long pause. */
+.pz-knock-marks { min-height: 1.6em; margin: var(--space-1) 0 0; text-align: center; font-size: var(--text-title); letter-spacing: 0.1em; white-space: pre; }

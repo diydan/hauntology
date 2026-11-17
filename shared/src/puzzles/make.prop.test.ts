@@ -35,7 +35,7 @@ describe("Property 2: Every generated Lock is solvable by the touch path", () =>
     fc.assert(
       fc.property(lockArb, (lock) => {
         const t = referenceSolve(lock);
-        const touchOnly = new Set(["kind", "sets", "pairs", "h", "m", "code", "notes", "order", "changed", "placed", "letters", "reachedAtMs", "hits", "elapsedMs"]);
+        const touchOnly = new Set(["kind", "sets", "pairs", "h", "m", "code", "notes", "order", "changed", "placed", "letters", "reachedAtMs", "hits", "times", "elapsedMs"]); // `times`: the Tap control, a touch
         if (!Object.keys(t).every((k) => touchOnly.has(k))) return false; // no tilt, sound, buzz or breath field
         if (t.elapsedMs < minSolveMs(lock)) return false;
         return verify(lock, t).ok === true;
