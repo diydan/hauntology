@@ -30,11 +30,11 @@ export const LINES: Readonly<Record<Voice, Readonly<Record<Kind, readonly string
       "Close your eyes and you might feel it: you are {band} to what I am keeping. It is keeping you in mind.",
     ],
     hint: [
-      "Something is {band}, {dir}. Walk toward it, if you will. I do like to watch you walk.",
-      "I would look {dir}. It is {band}. Mind the floor on the way. It has opinions.",
-      "It is {dir}, {band}: that is where I keep the next one. Do come along. I shall be here when you arrive.",
-      "Turn a little. It is {dir}, and {band}. The house will not mind, and it will watch.",
-      "If you are lost, go {dir}. What you want is {band}. Being lost here is rather restful.",
+      "Something is {band}, {dir}. Walk toward it. I like to watch you walk.",
+      "I would look {dir}. It is {band}. Mind the floor.",
+      "It is {dir}, {band}. Do come along. I shall be waiting.",
+      "Turn a little. It is {dir}, and {band}. The house will watch.",
+      "If you are lost, go {dir}. What you want is {band}.",
     ],
     ambient: [
       "The room is quiet. I am still here, and so are you. We are agreed on that.",
@@ -74,10 +74,10 @@ export const LINES: Readonly<Record<Voice, Readonly<Record<Kind, readonly string
       "The room is not silent here. You are {band}. Something is clearing its throat.",
     ],
     hint: [
-      "It is {dir}. It is {band}. That is all I will say, and more than I should.",
+      "It is {dir}. It is {band}. That is all I will say.",
       "Look {dir}. It is {band}. Do mind the floor. It has been expecting you.",
-      "You wanted a hint: {dir}, and {band}. I do not make a habit of it, so listen.",
-      "Go {dir}. It is {band}. Do not make me say it twice. I have such a long time to say it in.",
+      "You wanted a hint: {dir}, and {band}. So listen.",
+      "Go {dir}. It is {band}. Do not make me say it twice.",
       "What you want is {dir}, {band}. Go on. I shall watch, as I do.",
     ],
     ambient: [
