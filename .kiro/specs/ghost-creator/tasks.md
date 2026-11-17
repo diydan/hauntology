@@ -43,39 +43,42 @@ Depends on `world-pipeline` tasks 1.2 (Workers AI behaviour), 4.1 (SpendGuard) a
   - _Requirements: 3.3, 4.2_
   - Done (2026-11-17): the made art lives in `tools/playtest/art/` (transparent colour cut-outs, 300 px wide); the colour WebP and a black-and-white version of each ship under `web/public/ghosts/` with `LICENCE.md` (alpha coverage 0.52 to 0.70, each at most 36 KB). The six profiles are authored in `shared/src/creator/presets.ts` (traits from the characters in `docs/story/CHARACTERS.md`, persona built then named, locked Lodger Voices) and listed by `GET /api/ghosts/presets` with the Gallery's public footing.
 
-- [ ] 3. API
-  - [ ] 3.1 `POST /api/ghosts/portraits`
+- [x] 3. API
+  - [x] 3.1 `POST /api/ghosts/portraits`
     - Validate traits, sanitise, moderate non-empty detail through the guarded WorkersAiClient, Llama Guard 3 (fail closed), reserve `image`, request two candidates, return quota.
     - _Requirements: 1.5, 2.2, 3.1, 3.2_
-  - [ ] 3.2 `POST /api/ghosts/sprite`
+  - [x] 3.2 `POST /api/ghosts/sprite`
     - Background removal with Cloudflare Images `segment=foreground`, downscale to ≤ 768 px, validate, retry once with new seed, store RGBA PNG ≤ 1 MB, build Ghost Profile.
     - _Requirements: 4.1, 4.2, 4.3_
-  - [ ] 3.3 `GET /api/worlds/:id/ghost` and profile persistence
+  - [x] 3.3 `GET /api/worlds/:id/ghost` and profile persistence
     - _Requirements: 6.2_
-  - [ ]* 3.4 Write property test for failure handling
+  - [x]* 3.4 Write property test for failure handling
     - **Property 7: Failure never blocks the game**
     - **Validates: Requirements 3.3, 4.2**
+  - Done (2026-11-17) over fakes: `api/src/creator/{service,store}.ts` behind the guarded doors (new text-to-image door in `guarded/workersai/image.ts`, `WorkersAiClient.portraitist`), routes in `api/src/routes/ghosts.ts`, mounted in the Worker when the bindings exist. The sprite step validates through the guarded cut-out door and `validateSprite`, retries once with a new seed, and falls back to a deterministic Preset. The shell reads `GET /api/worlds/:id/ghost` as a small portrait view (`GhostProfileView`).
 
-- [ ] 4. Web UI
-  - [ ] 4.1 `TraitForm`
+- [x] 4. Web UI
+  - [x] 4.1 `TraitForm`
     - Controls for all traits, free-text with counter and prompt, Randomise, three presets, field-level errors.
     - _Requirements: 1.1, 1.2, 1.3, 1.5_
-  - [ ] 4.2 Candidate picker
+  - [x] 4.2 Candidate picker
     - Two candidates, pick or regenerate, quota display, Preset Ghosts when exhausted or failed, skip option using the default ghost.
     - _Requirements: 1.4, 3.2, 3.3_
-  - [ ] 4.3 Ghost presentation
+  - [x] 4.3 Ghost presentation
     - Circular chat portrait with alt text, billboard texture hand-off to the Viewer, "meet your ghost" scripted line, restore on reload.
     - _Requirements: 6.1, 6.2, 6.3_
+  - Done (2026-11-17): `web/src/app/haunt/creator-ui.tsx` is the real Creator behind the shell seam (the demo keeps the stand-in). Play asks the world for its ghost when memory holds no picture, so a made ghost's sprite is the chat portrait; the Viewer fetches the same profile and swaps its billboard texture to the sprite. Restore is the Creator opening on the ghost already made.
 
 - [ ] 5. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; review three generated ghosts for tone; ask the user if questions arise.
 
-- [ ] 6. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
-  - [ ] 6.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+- [x] 6. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
+  - [x] 6.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
     - _Requirements: 7.1, 7.3_
-  - [ ] 6.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 6.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 7.2_
-  - [ ] 6.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 6.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 7.4_
-  - [ ] 6.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+  - [x] 6.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 7.1_
+  - Done (2026-11-17): the Creator is built from `ui-card`, `ui-field`, `ui-select`, `ui-range`, `ui-check`, `ui-portrait` and one `ui-button--primary`; checked headless at 390 and 1280 px (every control at least 44 px, no horizontal overflow inside `ui-page`). One elements fix rode along: a field's children may shrink, so a range track fits its column at phone widths.

@@ -1,6 +1,9 @@
 import { singleFlight } from "@hauntology/shared/voice/flight";
 import { retentionFromEnv } from "@hauntology/shared/world/retention";
+import { WorldManifestSchema } from "@hauntology/shared/world/manifest";
 import { createApp } from "./app";
+import { createCreator } from "./creator/service";
+import { R2CreatorStore } from "./creator/store";
 import { conditionsFromEnv } from "./conditions/snapshot-store";
 import { PartyDirectory } from "./do/party-directory";
 import { PartyRoom } from "./do/party-room";
@@ -85,6 +88,28 @@ export default {
         // Uploads are taken only where a world can be made from them: with no key there is nothing to keep a picture for.
         ...(live ? { uploads: { store: new CloudflareUploadStore(env.BUCKET) } } : {}),
         spend: () => guard.status(),
+        // The Ghost Creator (ghost-creator task 3): paid steps only through the guarded doors, each adapter
+        // null without its binding, so without the AI binding the routes answer creator_unavailable and Presets stand in.
+        creator: createCreator({
+          guard,
+          ...(ai.portraitist !== null ? { portraitist: ai.portraitist } : {}),
+          ...(ai.guard !== null ? { moderator: ai.guard } : {}),
+          ...(ai.cutter !== null ? { cutter: ai.cutter } : {}),
+          store: new R2CreatorStore(env.BUCKET),
+          briefFor: async (worldId) => {
+            const store = storeFor(env);
+            const record = await store.find(worldId).catch(() => null);
+            if (!record) return "";
+            const bytes = await store.read(record, "world.json").catch(() => null);
+            if (!bytes || bytes instanceof ReadableStream) return "";
+            try {
+              const parsed = WorldManifestSchema.safeParse(JSON.parse(new TextDecoder().decode(bytes)));
+              return parsed.success ? parsed.data.brief : "";
+            } catch {
+              return "";
+            }
+          },
+        }),
         ...(voice !== null ? { voice } : {}),
         // Party mode (integration 3.2): one `PartyRoom` per Room Code, one `PartyDirectory` for the caps.
         party: { rooms: env.PARTY_ROOM, directory: env.PARTY_DIRECTORY },

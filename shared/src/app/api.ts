@@ -62,6 +62,9 @@ export type PlayView = {
 /** A Preset Ghost the visitor can pick on Haunt (`GET /api/ghosts/presets`, flattened to what the shell shows). */
 export type GhostPreset = { id: string; name: string; spriteUrl: string };
 
+/** What the shell may know of a world's ghost for its portrait: a name, a picture, a voice. */
+export type GhostProfileView = { name: string; spriteUrl: string; voice: "soft" | "dry" };
+
 /** One city-search match: the position is already rounded to two decimals. */
 export type PlaceMatch = { label: string; lat: number; lon: number; tz: string | null };
 
@@ -92,6 +95,7 @@ export interface ShellApi {
   shareWorld(worldId: string, on: boolean): Promise<ApiResult<{ shared: boolean }>>;
 
   ghostPresets(): Promise<ApiResult<GhostPreset[]>>;
+  ghostProfile(worldId: string): Promise<ApiResult<GhostProfileView>>;
   searchPlaces(q: string): Promise<ApiResult<PlaceMatch[]>>;
   /** The audio of a line the server holds. A refusal is `voice_unavailable` and the client falls back quietly to the subtitle. */
   speak(req: { playId: string; lineId: string }): Promise<ApiResult<{ audio: Blob }>>;
