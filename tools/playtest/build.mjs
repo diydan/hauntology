@@ -67,6 +67,10 @@ if (existsSync(resolve(props, 'index.html'))) {
     mkdirSync(resolve(dist, 'props', 'stl'), { recursive: true });
     cpSync(resolve(props, 'viewer.html'), resolve(dist, 'props', 'viewer.html'));
     for (const f of readdirSync(stlSrc).filter((n) => n.endsWith('.stl'))) cpSync(resolve(stlSrc, f), resolve(dist, 'props', 'stl', f));
+    if (existsSync(resolve(stlSrc, 'old'))) {
+      mkdirSync(resolve(dist, 'props', 'stl', 'old'), { recursive: true });
+      for (const f of readdirSync(resolve(stlSrc, 'old')).filter((n) => n.endsWith('.stl'))) cpSync(resolve(stlSrc, 'old', f), resolve(dist, 'props', 'stl', 'old', f));
+    }
     // Reference models the viewer shows for comparison and that are not printed (print/reference/*.stl): /props/reference/.
     const refSrc = resolve(repo, 'print', 'reference');
     if (existsSync(refSrc)) {
