@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LODGER_VOICE_ORDER, LODGER_VOICES, SPEAKERS } from "@hauntology/shared/voice/voices";
+import { LODGER_VOICE_ORDER, LODGER_VOICES, SPEAKERS, SPEAKER_ORDER } from "@hauntology/shared/voice/voices";
+import { SpeakRequestSchema } from "@hauntology/shared/voice/requests";
 import type { SpendTicket } from "@hauntology/shared/world/spend";
 import { NoTicketError } from "../ticket";
 import type { AiBinding } from "./call";
@@ -264,5 +265,28 @@ describe("the Steering Tag has one home", () => {
     const root = join(__dirname, "..", "..");
     const users = Object.entries(sources(root)).filter(([, text]) => /\bsteeringTag\b/.test(text)).map(([p]) => relative(root, p).split(sep).join("/"));
     expect(users).toEqual(["guarded/workersai/speak.ts"]);
+  });
+
+  it("synthesis request shapes carry no reference-voice field for any Speaker or Lodger Voice", async () => {
+    const AURA = DEFAULT_TTS_FALLBACK_MODEL;
+    const cases: Array<{ speaker: "whisper" | "keeper" | "lodger"; lodgerVoice?: (typeof LODGER_VOICE_ORDER)[number] }> = [
+      { speaker: "whisper" },
+      { speaker: "keeper" },
+      ...LODGER_VOICE_ORDER.map((lodgerVoice) => ({ speaker: "lodger" as const, lodgerVoice })),
+    ];
+    for (const c of cases) {
+      const inAi = fakeAi({ [DEFAULT_TTS_MODEL]: { audio: b64(mp3()) } });
+      await speaker(inAi).speak({ ...c, spoken: LINE });
+      expect(Object.keys(inAi.seen[0]!.input).sort()).toEqual(["output_format", "speaking_rate", "temperature", "text", "timestamp_type", "voice_id"]);
+
+      const auraAi = fakeAi({ [DEFAULT_TTS_MODEL]: new Error("down"), [AURA]: mp3().buffer });
+      await speaker(auraAi).speak({ ...c, spoken: LINE });
+      expect(Object.keys(auraAi.seen[1]!.input).sort()).toEqual(["encoding", "speaker", "text"]);
+      expect(auraAi.seen[1]!.input.text).toBe(LINE);
+    }
+    for (const sp of SPEAKER_ORDER) expect(SPEAKERS[sp]).toBeDefined();
+    expect(SpeakRequestSchema.safeParse({ playId: "p1", lineId: "l1", reference_voice: "Pippa" }).success).toBe(false);
+    expect(SpeakRequestSchema.safeParse({ playId: "p1", lineId: "l1", referenceVoice: "Pippa" }).success).toBe(false);
+    expect(SpeakRequestSchema.safeParse({ playId: "p1", lineId: "l1", text: "hi" }).success).toBe(false);
   });
 });

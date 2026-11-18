@@ -1,10 +1,13 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { propParams } from "../app/prop-config";
 import { validateGhostReply } from "../ghost/narration";
 import { playTurn, startSession, type WorldFacts } from "../ghost/play";
 import type { PlaySession } from "../ghost/session";
 import { MAX_SPOKEN_CHARS, splitSentences } from "./speakable";
 import { PLAYER_WORD_MIN_LETTERS, playerTextOf, toVoiceLine } from "./to-line";
+import { lodgerVoiceArb, speakerArb, voiceTextArb } from "./voice.arb";
+import { LODGER_VOICES, LODGER_VOICE_ORDER, SPEAKERS, voiceFor } from "./voices";
 
 const base = { id: "L1", kind: "narration" as const, speaker: "whisper" as const, playerText: [] as string[], now: 5 };
 const TEXT = "The kettle is still warm. Somebody was here before you. I kept the window open.";
@@ -114,6 +117,8 @@ describe("toVoiceLine: no word a visitor typed is spoken", () => {
 });
 
 describe("toVoiceLine: Property 1, spoken lines are short, safe and validated", () => {
+  // Feature: ghost-voice, Property 1: Spoken lines are short, safe and validated
+  // Validates: Requirements 1.1, 1.5
   const sentence = fc.constantFrom(
     "The kettle is still warm.", "Somebody was here before you.", "I kept the window open.", "The stairs remember every foot.", "There is rain on a roof nobody can see.",
     "I have heard it in a narrow kitchen with a window over the sink more times than I can count.", "Listen.", "It was a very long evening and the lamp would not stay lit, though everyone tried to keep it.",
@@ -129,22 +134,47 @@ describe("toVoiceLine: Property 1, spoken lines are short, safe and validated", 
         if (l.spoken === "") return;
         expect(splitSentences(l.text).slice(0, splitSentences(l.spoken).length).join(" ")).toBe(l.spoken);
         expect(validateGhostReply(l.spoken).ok).toBe(true);
-        expect(/[[\]<>`{}]/.test(l.spoken)).toBe(false);
+        expect(/[[\]<>`*#{}]/.test(l.spoken)).toBe(false);
         for (const p of playerText) if (p.trim() !== "") expect(l.spoken.toLowerCase()).not.toContain(p.trim().toLowerCase());
       }),
-      { numRuns: 300 },
+      propParams(),
     );
   });
-  it("for any string at all: no line, or a line whose spoken part is a prefix of its text, at most 240 characters, and with no bracket, tag or link", () => {
+  it("for any string (empty, long runs, URLs, markup, control chars, banned phrases, random): yields null when validateGhostReply rejects it (except length), and otherwise a safe <=240-char whole-sentence spoken prefix", () => {
     fc.assert(
-      fc.property(fc.string({ maxLength: 700 }), (text) => {
+      fc.property(voiceTextArb, (text) => {
+        const check = validateGhostReply(text);
         const l = toVoiceLine({ ...base, text, playerText: [] });
+        if (!check.ok && check.reason !== "too_long" && check.reason !== "too_many_sentences") {
+          expect(l).toBeNull();
+          return;
+        }
         if (l === null) return;
         expect(l.text.startsWith(l.spoken)).toBe(true);
         expect(l.spoken.length).toBeLessThanOrEqual(MAX_SPOKEN_CHARS);
-        expect(/[[\]<>`{}]|https?:/i.test(l.spoken)).toBe(false);
+        if (l.spoken !== "") {
+          expect(splitSentences(l.text).slice(0, splitSentences(l.spoken).length).join(" ")).toBe(l.spoken);
+          expect(validateGhostReply(l.spoken).ok).toBe(true);
+          expect(/[[\]<>`*#{}]|https?:/i.test(l.spoken)).toBe(false);
+        }
       }),
-      { numRuns: 500 },
+      propParams(),
+    );
+  });
+  it("voiceFor returns only the fixed English cast voices (Pippa, Ronald, Mark / six Lodger Voices, or their Aura-2 speakers)", () => {
+    const allowedInworld = new Set([
+      `inworld:${SPEAKERS.whisper.inworld}`,
+      `inworld:${SPEAKERS.keeper.inworld}`,
+      ...LODGER_VOICE_ORDER.map((v) => `inworld:${LODGER_VOICES[v].inworld}`),
+    ]);
+    const allowedAura = new Set([`aura-2:${SPEAKERS.whisper.aura}`, `aura-2:${SPEAKERS.keeper.aura}`, `aura-2:${SPEAKERS.lodger.aura}`]);
+    fc.assert(
+      fc.property(speakerArb, fc.constantFrom("inworld" as const, "aura" as const), fc.option(lodgerVoiceArb, { nil: undefined }), (speaker, step, lv) => {
+        const got = voiceFor(speaker, step, lv);
+        if (step === "inworld") expect(allowedInworld.has(got)).toBe(true);
+        else expect(allowedAura.has(got)).toBe(true);
+      }),
+      propParams(),
     );
   });
 });

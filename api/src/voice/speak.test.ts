@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { createEngine, publicSnapshot, step } from "@hauntology/shared/party/engine";
+import { PRESET_GHOST_IDS } from "@hauntology/shared/party/preset-ghosts";
+import { SCRIPTED_BANKS } from "@hauntology/shared/voice/banks/index";
 import { sha256Hex } from "@hauntology/shared/voice/digest";
 import { singleFlight } from "@hauntology/shared/voice/flight";
 import { LIBRARY_PREFIX, canonicalSpeechKey, libraryKey } from "@hauntology/shared/voice/key";
+import { buildLibrary, prefetchPlan } from "@hauntology/shared/voice/library";
 import type { VoiceLine } from "@hauntology/shared/voice/line";
+import { FINITE_VALUES } from "@hauntology/shared/voice/placeholders";
 import type { ReserveResult, SpendTicket } from "@hauntology/shared/world/spend";
 import type { AiBinding } from "../guarded/workersai/call";
 import { DEFAULT_TTS_FALLBACK_MODEL, DEFAULT_TTS_MODEL, WorkersAiSpeaker, type SpeechAnswer, type SpeechMaker, type SpeechRequest } from "../guarded/workersai/speak";
@@ -535,5 +540,77 @@ describe("speakLine: the log after the Library, flights and prefetch", () => {
     const rows = t.logged.map((l) => JSON.parse(l)).map((l) => [l.via, l.outcome, l.paid, l.prefetch]);
     expect(rows).toEqual([["library", "ok", false, false], ["inworld", "ok", true, false], ["flight", "ok", false, false], ["cache", "ok", false, false]]);
     for (const secret of [SPOKEN, "kitchen", "Library.", "LIB", "p-1", SESSION, "iphash"]) expect(t.logged.join("\n")).not.toContain(secret);
+  });
+});
+
+describe("Property 14 (3.12 speak service): secret-differing states make the same upstream calls", () => {
+  it("two game states differing only in Solution, Hands, Residue or accusation accuracy produce the exact same prefetch and speak calls", async () => {
+    const entries = buildLibrary(SCRIPTED_BANKS, FINITE_VALUES);
+    const byKey = new Map(entries.map((e) => [canonicalSpeechKey(e.voice, e.spoken), e]));
+    const seats = [1, 2, 3].map((seat) => ({ seat, nickname: `P${seat}`, bot: seat !== 1, botLevel: "standard" as const }));
+
+    const runForState = async (state: ReturnType<typeof createEngine>, minutesToMidnight: number | null) => {
+      const pub = publicSnapshot(state, T0);
+      const keys = prefetchPlan({ phase: pub.phase, haunt: { level: pub.haunt.level, max: pub.haunt.max }, minutesToMidnight }, entries);
+      const held: Record<string, VoiceLine> = {};
+      const linesToRun: VoiceLine[] = [];
+      for (let i = 0; i < keys.length; i++) {
+        const entry = byKey.get(keys[i]!)!;
+        const id = `P${i}`;
+        const vLine = line({ id, speaker: entry.speaker, voice: entry.voice, text: entry.spoken, spoken: entry.spoken });
+        held[id] = vLine;
+        linesToRun.push(vLine);
+      }
+
+      const t = setup({ held });
+      // Put the first half in the Library, cache one more, and leave any remaining lines uncached.
+      for (const l of linesToRun.slice(0, Math.floor(linesToRun.length / 2))) {
+        t.libR2.put(await libraryKey(l.voice, l.spoken, sha256Hex), mp3(4_000, 3));
+      }
+      const mid = linesToRun[Math.floor(linesToRun.length / 2)];
+      if (mid !== undefined) await t.cache.put(mid.voice, mid.spoken, mp3(4_000, 4));
+
+      const prefetchResults = [];
+      for (const l of linesToRun) prefetchResults.push(await ask(t.deps, { playId: "p-1", lineId: l.id, prefetch: true }));
+      expect(t.maker.requests).toEqual([]);
+      expect(t.spend.reserved).toEqual([]);
+
+      const earlyResults = [];
+      for (const l of linesToRun) earlyResults.push(await speakFoundLine(t.deps, WHO, l));
+
+      return {
+        keys,
+        prefetchVias: prefetchResults.map((r) => (r.ok ? r.via : r.reason)),
+        earlyVias: earlyResults.map((r) => (r.ok ? r.via : r.reason)),
+        upstreamRequests: t.maker.requests,
+        ticketsReserved: t.spend.reserved,
+      };
+    };
+
+    for (const [seed, level, minutes] of [[1, 2, 30], [7, 0, null], [13, 5, 15]] as const) {
+      const base = step(createEngine({ seed, seats, settings: { baseSeconds: 60, hauntMax: 10 }, presetIds: PRESET_GHOST_IDS }), { kind: "client", seat: 1, msg: { t: "start" } }, 0).state;
+      const sol = base.pool;
+      const stateA = {
+        ...base,
+        haunt: { ...base.haunt, level },
+        players: base.players.map((p, idx) => (idx === 0 ? { ...p, sealed: base.deal!.solution, hasSealed: true } : p)),
+      };
+      const stateB = {
+        ...base,
+        haunt: { ...base.haunt, level },
+        deal: {
+          ...base.deal!,
+          solution: { suspect: sol.suspects[1]!.id, zone: sol.zones[1]!.id, relic: sol.relics[1]!.id },
+          hands: { 1: base.deal!.hands[2] ?? [], 2: base.deal!.hands[3] ?? [], 3: base.deal!.hands[1] ?? [] },
+        },
+        residueAt: { [sol.zones[2]!.id]: sol.relics[2]!.id },
+        players: base.players.map((p, idx) => (idx === 0 ? { ...p, sealed: base.deal!.solution, hasSealed: true } : p)),
+      };
+
+      const a = await runForState(stateA, minutes);
+      const b = await runForState(stateB, minutes);
+      expect(a).toEqual(b);
+      expect(a.keys.length).toBeGreaterThan(0);
+    }
   });
 });

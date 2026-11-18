@@ -21,12 +21,14 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 2.1 `limits.ts`, `config.ts` and the generators
     - `limits.ts` names every number in the requirements (the 200-character cap and 1.5-second gap come from `shared/src/ghost/`). `config.ts` has `parseVoiceConfig(env)` with the `VOICE_*` defaults from the design, zod, a bad value falling back to its default, and the room line cap never above 20. `voice.arb.ts` generates texts with sentence ends, long runs, URLs, markup, control characters and banned phrases. Unit tests for the defaults and clamps.
     - _Requirements: 4.1, 2.3_
-  - [ ] 2.2 `voices.ts` and `speakable.ts`
+  - [x] 2.2 `voices.ts` and `speakable.ts`
     - `SPEAKERS` (the three-entry cast: Whisper is Pippa, Keeper is Ronald, Lodger is Mark by default, each with its tag, rate, temperature and Aura-2 fallback speaker), `LODGER_VOICES` (Mark, Conrad, Arjun, Chloe, Eleanor and Victoria, same tag, rate and temperature), `lodgerVoiceFor(profile)` (the Profile's `lodgerVoice`, else Mark, reading nothing else), `speakerForPersona` (soft is the Whisper, dry is the Keeper), `voiceFor(speaker, step, lodgerVoice?)` and `steeringTag`; `splitSentences`; `toVoiceLine` takes the Speaker and `playerText`, calls the engine's `validateGhostReply`, stops before the first sentence that contains any player text, cuts at the last sentence end within 240 characters, leaves `spoken` empty when none fits, and never puts a Steering Tag in `text` or `spoken`. No second banned-phrase list. The synthesis request type has no field for a reference voice.
     - _Requirements: 1.1, 1.5, 1.6, 1.7, 1.10, 1.11_
-  - [ ]* 2.3 Write property test for spoken lines
+    - Done (2026-11-18): verified every clause across `shared/src/voice/{voices,speakable,to-line,line}.ts`, `shared/src/voice/requests.ts`, and `api/src/guarded/workersai/speak.ts` (`SpeechRequest` and upstream Inworld/Aura-2 payloads have no reference-voice field; `steeringTag` is added only in `api/src/guarded/workersai/speak.ts`).
+  - [x]* 2.3 Write property test for spoken lines
     - **Property 1: Spoken lines are short, safe and validated**
     - **Validates: Requirements 1.1, 1.5**
+    - Done (2026-11-18): `shared/src/voice/to-line.test.ts` with generators in `shared/src/voice/voice.arb.ts` (empty, long runs without sentence ends, URLs, markup, control chars, banned phrases, non-English) and `propParams()`, checking `toVoiceLine` and `voiceFor`.
   - [ ] 2.4 `fallback.ts`: `resolveSpeech`
     - Library, cache, Inworld, Aura-2, browser, subtitle in order (the first two are free reads that ignore the kill switch, the ticket and the caps); paid steps skipped on the kill switch or no ticket; no step starts after 5000 ms; the result type has no error member and always reports the Subtitle shown. Includes a test helper that runs the engine's `step` with working and failed voice.
     - _Requirements: 1.2, 1.3, 4.2, 4.3_
@@ -65,16 +67,17 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 2.16 `telemetry.ts`: the voice counter whitelist
     - Counters for speech requests, cache hits, fallbacks by step, listen calls, Clips checked, accepted and rejected, stitches played, live slices and stop reasons, added to the ghost engine's whitelist. Unit test: no event carries audio, a transcript, a prompt, a word or text.
     - _Requirements: 3.3, 5.5_
-  - [ ]* 2.17 Write property test for Speakers and Steering Tags
+  - [x]* 2.17 Write property test for Speakers and Steering Tags
     - **Property 13: Every line has one Speaker, and a Steering Tag stays in the Inworld request**
     - **Validates: Requirements 1.6, 1.7, 1.11**
+    - Done (2026-11-18): `shared/src/voice/voices.prop.test.ts` (all cast, `speakerForPersona`, `lodgerVoiceFor` secret independence, `toVoiceLine` and cache-key tag absence) plus contract assertions in `api/src/guarded/workersai/speak.test.ts` (Steering Tag added only in `api/src/guarded/workersai/speak.ts`; no reference-voice field).
   - [x] 2.18 `library.ts`: `buildLibrary` (every scripted spoken text per Speaker, the shared Lodger bank once per Lodger Voice, the finite placeholders expanded, fixed order, no duplicate key) and `prefetchPlan(publicView)` (the next Turn's `turn-start`, the four Haunt Event lines one level below a threshold, the midnight line; takes no secret); the Library key is the speech key under `speech/lib/v1/`
     - _Requirements: 1.8, 1.9_
     - Done (2026-11-16): `buildLibrary`, the key functions (`key.ts`), the spoken-part rule (`speakable.ts`), the cast tables (`voices.ts`) and all three generated banks (`shared/src/voice/banks/`). `prefetchPlan(view, entries)` is in `library.ts` with tests in `shared/src/voice/prefetch.test.ts` over the real banks (3 deliberate breakages caught). One deviation from the design signature: the built Public View is the party engine's `PublicSnapshot`, so the plan takes a narrow `PrefetchView` (phase, Haunt level and maximum, minutes to the host's midnight) and the Library entries, and returns canonical speech keys; the type holds no field a secret could hide in.
-  - [ ]* 2.19 Write property test for the Library, player-text-free speech and secret-free prefetch (two states that differ only in the Solution, a Hand or whether an Accusation is right give the same plan and the same upstream calls)
+  - [x]* 2.19 Write property test for the Library, player-text-free speech and secret-free prefetch (two states that differ only in the Solution, a Hand or whether an Accusation is right give the same plan and the same upstream calls)
     - **Property 14: The Library is complete and free of player text, and nothing is prepared because of a secret**
     - **Validates: Requirements 1.8, 1.9, 1.10**
-    - Progress (2026-11-16): the Library half is `library.prop.test.ts` and the prefetch-plan half is `prefetch.test.ts` (the plan is a function of public facts only, so secret-differing states plan identically by construction; confession, reveal and ending lines are never warmed). Not done: "the same upstream calls", which needs the speak service of 3.12; player-text-free `spoken` in full, which needs `toVoiceLine` (2.2).
+    - Done (2026-11-18): `shared/src/voice/library.prop.test.ts` (`buildLibrary`, player-text-free `toVoiceLine`, secret-differing `EngineState` `prefetchPlan` equality), `shared/src/voice/prefetch.test.ts`, and `api/src/voice/speak.test.ts` (secret-differing `EngineState` pairs driven through the 3.12 `speakLine` / `speakFoundLine` service over fakes produce identical prefetch and upstream calls).
 
 - [ ] 3. API (`api/src/voice/` and `api/src/guarded/workersai/`)
   - [ ] 3.1 Error codes
