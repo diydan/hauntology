@@ -29,22 +29,26 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - **Property 1: Spoken lines are short, safe and validated**
     - **Validates: Requirements 1.1, 1.5**
     - Done (2026-11-18): `shared/src/voice/to-line.test.ts` with generators in `shared/src/voice/voice.arb.ts` (empty, long runs without sentence ends, URLs, markup, control chars, banned phrases, non-English) and `propParams()`, checking `toVoiceLine` and `voiceFor`.
-  - [ ] 2.4 `fallback.ts`: `resolveSpeech`
+  - [x] 2.4 `fallback.ts`: `resolveSpeech`
     - Library, cache, Inworld, Aura-2, browser, subtitle in order (the first two are free reads that ignore the kill switch, the ticket and the caps); paid steps skipped on the kill switch or no ticket; no step starts after 5000 ms; the result type has no error member and always reports the Subtitle shown. Includes a test helper that runs the engine's `step` with working and failed voice.
     - _Requirements: 1.2, 1.3, 4.2, 4.3_
-  - [ ]* 2.5 Write property test for the fallback chain
+    - Done (2026-11-19): `shared/src/voice/fallback.ts` (`resolveSpeech`, `runWithVoice`) using `SPEECH_DEADLINE_MS` from `shared/src/voice/limits.ts`.
+  - [x]* 2.5 Write property test for the fallback chain
     - **Property 2: The fallback chain always ends in a subtitle**
     - **Validates: Requirements 1.2, 1.3, 4.2, 4.3**
+    - Done (2026-11-19): `shared/src/voice/fallback.prop.test.ts` with `propParams()` and `runWithVoice` comparing working voice vs zero meters.
   - [ ] 2.6 `cache.ts`: `canonicalSpeechKey`, `speechCacheKey` (digest injected) and `cacheFresh`
     - _Requirements: 1.4_
   - [ ]* 2.7 Write property test for the cache key
     - **Property 3: The audio cache key depends on voice and text and expires after 60 days**
     - **Validates: Requirements 1.4**
-  - [ ] 2.8 `policy.ts`: `decideSpeak` and `canSwitchSpeaking`
+  - [x] 2.8 `policy.ts`: `decideSpeak` and `canSwitchSpeaking`
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
-  - [ ]* 2.9 Write property test for the speaking policy
+    - Done (2026-11-19): `shared/src/voice/policy.ts` (`decideSpeak`, `canSwitchSpeaking`) using `VOICE_ROOM_LINE_CAP` and `VOICE_ROOM_LATE_AT` from `limits.ts`.
+  - [x]* 2.9 Write property test for the speaking policy
     - **Property 4: The speaking policy**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
+    - Done (2026-11-19): `shared/src/voice/policy.prop.test.ts` with `propParams()`.
   - [ ] 2.10 `listen.ts`: `listeningAllowed`, `clipVerdict` and `withTransientClip`
     - The holder zeroes the buffer and drops its reference exactly once on success, throw or timeout.
     - _Requirements: 3.1, 3.2, 3.3_
