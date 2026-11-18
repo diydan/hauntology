@@ -880,7 +880,7 @@ function hairCardMat() {
   const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.78, metalness: 0, side: THREE.DoubleSide, alphaToCoverage: false, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 });
   const col = new THREE.Color(0x5a3e2b), darkCol = new THREE.Color(0x2d1e14); m.userData = { cardCol: col, cardDark: darkCol };
   m.onBeforeCompile = sh => {
-    Object.assign(sh.uniforms, { uCardTex: { value: hairCardTex() }, uCardWTex: { value: hairCardWavyTex() }, uWave: HC.wave, uCardCol: { value: col }, uCardDark: { value: darkCol }, uHrTexE: HP.texE, uHrPrint: HP.on, uHrFlatK: HP.flat, uHrAlpha: FP.u.uFpAlpha, uHrC: FP.u.uFpC, uHrW: FP.u.uFpW, uHrShine: HR.shine, uHrRoot: HR.root, uHrKey: HR.key, uHrRim1: HR.rim1, uHrRim2: HR.rim2 });
+    Object.assign(sh.uniforms, { uCardTex: { value: hairCardTex() }, uCardWTex: { value: hairCardWavyTex() }, uWave: HC.wave, uCardCol: { value: col }, uCardDark: { value: darkCol }, uHrTexE: HP.texE, uHrPrint: HP.on, uHrFlatK: HP.flat, uHrCut: HP.cut, uHrAlpha: FP.u.uFpAlpha, uHrC: FP.u.uFpC, uHrW: FP.u.uFpW, uHrShine: HR.shine, uHrRoot: HR.root, uHrKey: HR.key, uHrRim1: HR.rim1, uHrRim2: HR.rim2 });
     sh.vertexShader = 'attribute vec3 headP; attribute vec3 aCard; attribute vec4 aSide; uniform float uWave; varying vec3 vHrP, vCard, vCardTan;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
  transformed += aSide.xyz * uWave * 0.32 * smoothstep( 0.0, 0.2, aCard.y ) * sin( 6.2832 * aCard.y * aSide.w / 3.5 + aCard.z * 1.7 + headP.x * 0.9 + headP.z * 0.6 );`).replace('#include <morphtarget_vertex>', `#include <morphtarget_vertex>
  vHrP = headP; vCard = aCard;
@@ -1370,8 +1370,13 @@ function skinTile() {
   const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.NoColorSpace; tx.wrapS = tx.wrapT = THREE.RepeatWrapping; tx.anisotropy = 4; tx.needsUpdate = true; return tx;
 }
 const SK_DEFAULT = skinTile();
-const SK = { det: { value: SK_DEFAULT }, str: { value: 0.14 }, inv: { value: 1 / 5.5 }, want: 0.3, base: 0.14, real: { value: 1 } };
-const SK_GLSL = `uniform sampler2D uSkDet; uniform float uSkStr, uSkInv, uSkReal; uniform vec3 uSkKey, uSkRim1, uSkRim2; varying vec3 vSkP, vSkN; varying vec2 vTisA, vTisB; float skGrain = 0.0, skFlat = 0.0; vec3 skBase = vec3( 0.0 ); float skSock = 0.0;`;
+const SK = { det: { value: SK_DEFAULT }, str: { value: 0.14 }, inv: { value: 1 / 5.5 }, want: 0.3, base: 0.14, real: { value: 1 }, bump: { value: 0.00035 } }; // bump: height of the grain as relief, in scene units per unit of grain
+const SK_GLSL = `uniform sampler2D uSkDet; uniform float uSkStr, uSkInv, uSkReal, uSkBump; uniform vec3 uSkKey, uSkRim1, uSkRim2; varying vec3 vSkP, vSkN; varying vec2 vTisA, vTisB; float skGrain = 0.0, skFlat = 0.0; vec3 skBase = vec3( 0.0 ); float skSock = 0.0;
+vec3 skBump( vec3 N, vec3 pos, float h, float k ) { // bump mapping from screen-space derivatives of a height: the grain catches the light instead of only darkening the colour
+  vec3 sx = dFdx( pos ), sy = dFdy( pos ); float hx = dFdx( h ), hy = dFdy( h );
+  vec3 R1 = cross( sy, N ), R2 = cross( N, sx ); float det = dot( sx, R1 ); vec3 g = sign( det ) * ( hx * R1 + hy * R2 );
+  return normalize( abs( det ) * N - k * g );
+}`;
 const SK_FRAG = `
  {
    float handW = vTisB.y, nailW = vTisB.x * uSkReal, warmW = vTisA.y * uSkReal;
@@ -1380,7 +1385,8 @@ const SK_FRAG = `
      float bodyBelowNeck = 1.0 - smoothstep( 130.0, 138.0, vSkP.y );
      float sd1 = texture2D( uSkDet, vSkP.zy * uSkInv ).r * sw.x + texture2D( uSkDet, vSkP.xz * uSkInv ).r * sw.y + texture2D( uSkDet, vSkP.xy * uSkInv ).r * sw.z;
      float sd2 = texture2D( uSkDet, vSkP.yz * ( uSkInv * 2.35 ) + vec2( 0.37, 0.19 ) ).r * sw.x + texture2D( uSkDet, vSkP.zx * ( uSkInv * 2.35 ) + vec2( 0.13, 0.71 ) ).r * sw.y + texture2D( uSkDet, vSkP.yx * ( uSkInv * 2.35 ) + vec2( 0.53, 0.29 ) ).r * sw.z;
-     float sd = mix( sd1, mix( 0.35 * sd1 + 0.65 * sd2, 0.52 * sd1 + 0.48 * sd2, handW ), max( handW, bodyBelowNeck ) );
+     float sd3 = texture2D( uSkDet, vSkP.zy * ( uSkInv * 5.1 ) + vec2( 0.61, 0.43 ) ).r * sw.x + texture2D( uSkDet, vSkP.xz * ( uSkInv * 5.1 ) + vec2( 0.27, 0.88 ) ).r * sw.y + texture2D( uSkDet, vSkP.xy * ( uSkInv * 5.1 ) + vec2( 0.74, 0.12 ) ).r * sw.z;
+     float sd = mix( sd1, mix( 0.35 * sd1 + 0.65 * sd2, 0.14 * sd1 + 0.50 * sd2 + 0.36 * sd3, handW ), max( handW, bodyBelowNeck ) );
      float limbCalm = mix( 1.0, mix( 0.50, 0.90, handW ), bodyBelowNeck );
      skGrain = ( sd - 0.5 ) * 2.0 * uSkStr * limbCalm * ( 1.0 + 0.36 * handW ) * ( 1.0 - 0.72 * nailW );
    }
@@ -1400,6 +1406,11 @@ const SK_FRAG = `
    // preserve sculpted inner-ear concha & antihelix depth even when photo skin flattens shadow ratio
    float earConcha = smoothstep( 5.9, 6.9, abs( vSkP.x ) ) * smoothstep( 139.8, 142.2, vSkP.y ) * ( 1.0 - smoothstep( 150.2, 152.2, vSkP.y ) ) * ( 1.0 - smoothstep( 1.4, 3.5, vSkP.z ) );
    diffuseColor.rgb *= mix( 1.0, mix( 0.62, 1.03, smoothstep( 0.16, 0.75, mk.r ) ), earConcha * uSkReal * 0.72 );
+ }`;
+const SK_BUMP = `
+ if ( uSkReal > 0.01 ) { // micro relief of the body skin (pores, creases) from the grain, so limbs and hands pick up the light
+   float bbnB = 1.0 - smoothstep( 130.0, 138.0, vSkP.y );
+   normal = normalize( mix( normal, skBump( normal, - vViewPosition, skGrain, uSkBump ), bbnB * uSkReal * ( 1.0 - 0.85 * vTisB.x ) ) );
  }`;
 const SK_POST_FP = `
  diffuseColor.rgb *= 1.0 + skGrain * max( 1.0 - fpA, 0.75 * fpSmear );
@@ -1521,8 +1532,8 @@ const CL_FRAG = `
    clPC = texture2D( uClTex, uv ).rgb;
    diffuseColor.rgb = mix( diffuseColor.rgb, clPC * ( 1.0 - uClFlat ), clPA );
  }`;
-const HP = { on: { value: 0 }, mask: { value: WHITE }, texE: { value: WHITE }, face: { value: BLACK }, flat: { value: 0.8 } }; // hair keeps more of the photo's own light than skin does: dark hair under coloured stage lights otherwise turns blue and pink
-const HP_GLSL = `uniform sampler2D uHrMask, uHrTex, uHrTexE, uHrFace; uniform float uHrPrint, uHrFlatK, uHrAlpha; uniform vec2 uHrC, uHrW; uniform vec4 uHrEll; varying vec3 vHrP, vHrN; float hrPA = 0.0; vec3 hrPC = vec3( 0.0 );`;
+const HP = { on: { value: 0 }, mask: { value: WHITE }, texE: { value: WHITE }, face: { value: BLACK }, flat: { value: 0.8 }, cut: { value: 1 } }; // cut: how much the photo's hair mask carves the shell (1 = fully, 0 = the pack's own outline; a face's hairCut sets it) // hair keeps more of the photo's own light than skin does: dark hair under coloured stage lights otherwise turns blue and pink
+const HP_GLSL = `uniform sampler2D uHrMask, uHrTex, uHrTexE, uHrFace; uniform float uHrPrint, uHrFlatK, uHrAlpha, uHrCut; uniform vec2 uHrC, uHrW; uniform vec4 uHrEll; varying vec3 vHrP, vHrN; float hrPA = 0.0; vec3 hrPC = vec3( 0.0 );`;
 /* the photo's hair, printed on the hair shell from the front and CUT by the photo's hair mask: where the photo shows no hair, the shell is not drawn either */
 const HP_FRAG = `
  if ( uHrPrint > 0.5 ) {
@@ -1533,7 +1544,7 @@ const HP_FRAG = `
    float fwUnder = smoothstep( -0.3, -0.7, hn.y ) * smoothstep( 1.2, 3.2, vHrP.z );
    float fwFore = smoothstep( 2.4, 5.2, vHrP.z ) * smoothstep( 144.0, 146.8, vHrP.y ) * max( 1.0 - smoothstep( 0.5, 0.7, er ), smoothstep( 0.55, 0.8, texture2D( uHrFace, uv ).r ) );
    float fwCrownGuard = ( 1.0 - smoothstep( 148.8, 152.2, vHrP.y ) ) * ( 1.0 - smoothstep( 0.26, 0.54, hn.y ) ); // never carve bald cutouts into the top crown dome
-   float fw = max( max( fwFront, fwUnder ), fwFore ) * fwCrownGuard, fb = fw;
+   float fw = max( max( fwFront, fwUnder ), fwFore ) * fwCrownGuard * uHrCut, fb = fw;
    diffuseColor.a = mix( 1.0, mix( 1.0, smoothstep( 0.16, 0.42, m ), fw ), uHrAlpha );
    if ( uHrAlpha > 0.5 && fb > 0.3 && ! gl_FrontFacing ) discard;
    float zc = vHrP.z + 0.5, rad = max( length( vec2( vHrP.x, zc ) ), 0.001 ), th = atan( vHrP.x, zc );
@@ -1611,14 +1622,14 @@ async function makeMat(keyName, side) {
       .replace('#include <opaque_fragment>', 'outgoingLight += uTint * pow( 1.0 - saturate( dot( normalize( vViewPosition ), normal ) ), 3.0 ) * 0.22;\n#include <opaque_fragment>');
     const anchor = 'diffuseColor.rgb = ccColour( mk.rgb );\n#endif';
     if (isSkin) {
-      Object.assign(sh.uniforms, { uSkDet: SK.det, uSkStr: SK.str, uSkInv: SK.inv, uSkReal: SK.real, uSkKey: HR.key, uSkRim1: HR.rim1, uSkRim2: HR.rim2 });
+      Object.assign(sh.uniforms, { uSkDet: SK.det, uSkStr: SK.str, uSkInv: SK.inv, uSkReal: SK.real, uSkBump: SK.bump, uSkKey: HR.key, uSkRim1: HR.rim1, uSkRim2: HR.rim2 });
       sh.vertexShader = 'attribute vec3 aInset; attribute float aHide; attribute vec2 aTisA, aTisB; varying vec3 vSkP, vSkN; varying float vSkHide; varying vec2 vTisA, vTisB;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vSkP = position; vSkN = normal; vSkHide = aHide; vTisA = aTisA; vTisB = aTisB; transformed += aInset; // aInset: skin that would poke through a garment is pushed back under it (insetBody)');
       sh.fragmentShader = SK_GLSL + '\nvarying float vSkHide;\n' + sh.fragmentShader.replace(anchor, anchor + '\n' + SK_FRAG).replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n if ( vSkHide > 0.5 ) discard; // skin a garment fully covers is not drawn, so it cannot poke through in any pose');
     }
     if (isHair) {
       const hrCoil = /afro|curly/i.test(keyName) ? 1 : 0;
       Object.assign(sh.uniforms, { uHrDet: HR.det, uHrStr: HR.str, uHrM: HR.m, uHrShine: HR.shine, uHrRoot: HR.root, uHrFlip: HR.flip, uHrCoil: { value: hrCoil }, uHrKey: HR.key, uHrRim1: HR.rim1, uHrRim2: HR.rim2 });
-      Object.assign(sh.uniforms, { uHrMask: HP.mask, uHrFace: HP.face, uHrTexE: HP.texE, uHrTex: FP.u.uFpMap, uHrPrint: HP.on, uHrFlatK: HP.flat, uHrAlpha: FP.u.uFpAlpha, uHrC: FP.u.uFpC, uHrW: FP.u.uFpW, uHrEll: FP.u.uFpEll });
+      Object.assign(sh.uniforms, { uHrMask: HP.mask, uHrFace: HP.face, uHrTexE: HP.texE, uHrTex: FP.u.uFpMap, uHrPrint: HP.on, uHrFlatK: HP.flat, uHrCut: HP.cut, uHrAlpha: FP.u.uFpAlpha, uHrC: FP.u.uFpC, uHrW: FP.u.uFpW, uHrEll: FP.u.uFpEll });
       sh.vertexShader = 'attribute vec3 headP, aShellN; uniform float uHrAlpha, uHrPrint; varying vec3 vHrP, vHrN;\n' + sh.vertexShader.replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
  if ( dot( aShellN, aShellN ) > 0.5 ) objectNormal = normalize( mix( objectNormal, aShellN, max( 0.62 * uHrPrint * uHrAlpha * ( 1.0 - smoothstep( -2.0, 4.0, headP.z ) ), max( 0.40 * smoothstep( 0.62, 0.90, aShellN.y ), 0.36 * uHrAlpha ) ) ) ); // smooth crown seams and, in the realistic style, soften the pack's leaf shapes everywhere (the leaves stay in the silhouette)`).replace('#include <morphtarget_vertex>', `#include <morphtarget_vertex>
  vHrP = headP; vHrN = normal;
@@ -1672,6 +1683,7 @@ async function makeMat(keyName, side) {
         .replace(anchor + (isSkin ? '\n' + SK_FRAG : ''), anchor + (isSkin ? '\n' + SK_FRAG : '') + '\n' + FP_FRAG + (isSkin ? '\n' + SK_POST_FP : '') + (isEye ? '\n' + EYE_PRE : '')) // the print goes on top of the skin detail, followed by grain/tone alignment and wet-cornea masking
         .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n totalEmissiveRadiance += fpC * uFpFlat * fpA;' + (isSkin ? '\n totalEmissiveRadiance += skBase * skFlat;' : ''))
         .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>' + (isSkin ? '\n { vec3 dLum = vec3( dot( reflectedLight.directDiffuse, vec3( 0.2126, 0.7152, 0.0722 ) ) ) * vec3( 1.02, 0.99, 0.97 ); reflectedLight.directDiffuse = mix( reflectedLight.directDiffuse, dLum, 0.44 * uSkReal * ( 1.0 - fpA ) ); }' : '') + (isEye ? '\n reflectedLight.directSpecular *= vec3( 1.0, 0.96, 0.92 ) * eyWet * 0.42;' : ''))
+        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>' + (isSkin ? SK_BUMP : ''))
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n ' + (isEye ? 'roughnessFactor = uFpOn > 0.5 ? mix( 0.58, 0.032, eyWet ) : mix( roughnessFactor, 0.032, 0.35 + 0.65 * uEyReal );' : (isSkin ? '{ float skRgh = clamp( mix( 0.52, 0.24, vTisB.x ) - skGrain * 0.14, 0.18, 0.85 ); roughnessFactor = mix( roughnessFactor, skRgh, uSkReal ); roughnessFactor = mix( roughnessFactor, 0.66, fpA ); }' : 'roughnessFactor = mix( roughnessFactor, 0.95, fpA );')))
         .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = mix( metalnessFactor, 0.0, ' + (isEye ? '1.0' : 'fpA') + ' );')
         .replace('outgoingLight += uTint *', (isSkin ? SK_LIGHT : '') + (isEye ? EYE_LIGHT : '') + 'outgoingLight += ' + (isEye ? '( 1.0 - fpLid ) * ( 1.0 - 0.8 * fpA ) * ( 1.0 - 0.85 * uEyReal ) * ' : isSkin ? '( 1.0 - 0.8 * fpA ) * ( 1.0 - 0.78 * uSkReal ) * ' : '( 1.0 - 0.8 * fpA ) * ') + 'uTint *');
@@ -2225,12 +2237,63 @@ function tagSkinAnatomy(root, slot) {
         const elbow = Math.min(1, 4 * wU * wF); // both bones pull on the vertex: the elbow
         tisA[2 * i] = 0.1; tisA[2 * i + 1] = Math.min(1, 0.12 + 0.8 * elbow); tisB[2 * i + 1] = 0.8;
       }
+    } else if (/^[MF]_body_legs_(upper|knee|lower)$/.test(m.name) && m.isSkinnedMesh && g.attributes.skinIndex && g.attributes.skinWeight) {
+      // bare legs: like the elbow, the knee gets blood warmth and fine creases, and the whole leg a little of the hand's finer skin grain
+      const SI = g.attributes.skinIndex, SW = g.attributes.skinWeight, bones = m.skeleton.bones, role = bones.map(b => /^CC_BaseThigh/.test(b.name) ? 1 : /^CC_BaseCalf/.test(b.name) ? 2 : 0);
+      for (let i = 0; i < cnt; i++) {
+        let wT = 0, wC = 0; for (let c = 0; c < 4; c++) { const w = SW.getComponent(i, c); if (!w) continue; const r = role[SI.getComponent(i, c)]; if (r === 1) wT += w; else if (r === 2) wC += w; }
+        const knee = Math.min(1, 4 * wT * wC);
+        tisA[2 * i] = 0.08; tisA[2 * i + 1] = Math.min(1, 0.06 + 0.7 * knee); tisB[2 * i + 1] = 0.3 + 0.4 * knee;
+      }
     } else {
       for (let i = 0; i < cnt; i++) tisA[2 * i] = 0.08;
     }
     g.setAttribute('aTisA', new THREE.BufferAttribute(tisA, 2));
     g.setAttribute('aTisB', new THREE.BufferAttribute(tisB, 2));
   });
+}
+
+/* ---- REALISTIC LIMB SCULPT: the pack's legs and arms are smooth tubes. In the bind pose each vertex of the arm and leg pieces is pushed out (or in) along its own radial direction by a few
+   millimetres: quadriceps, kneecap, calf, shin ridge, narrow ankle; biceps, forearm swell, elbow point, narrow wrist. The push depends only on the vertex's position (its place along the limb
+   chain and which way it faces), so vertices shared by two pieces move together and no seam opens, and it fades to zero where a piece meets one that is not sculpted (hips, shoulders, hands, feet).
+   It is stored as a delta and mixed in by the master style (deformMesh), so stylised keeps the pack's own tubes and the body-shape sliders reskin the sculpted mesh. ---- */
+const SCULPT = { k: 1.5 }; // overall strength of the limb sculpt (1 = the sizes written in legSculptD and armSculptD)
+const bumpG = (s, c, w) => Math.exp(-(((s - c) / w) ** 2));
+function legSculptD(s, u, lat) {
+  const fz = Math.max(0, u.z), fr = ss(-0.2, 0.9, u.z), bk = ss(-0.1, 0.9, -u.z);
+  const d = 0.30 * bumpG(s, 0.17, 0.13) * (0.45 + 0.55 * fr) + 0.30 * bumpG(s, 0.50, 0.045) * fz * fz - 0.12 * bumpG(s, 0.40, 0.05) + 0.50 * bumpG(s, 0.64, 0.085) * (0.35 + 0.65 * bk) + 0.14 * bumpG(s, 0.72, 0.11) * fz * fz * fz - 0.22 * bumpG(s, 0.89, 0.06) + 0.10 * bumpG(s, 0.80, 0.08) * lat * lat;
+  return d * ss(0.015, 0.09, s) * (1 - ss(0.95, 0.995, s));
+}
+function armSculptD(s, u) {
+  const bk = ss(0.0, 0.8, -u.z), d = 0.28 * bumpG(s, 0.30, 0.14) - 0.10 * bumpG(s, 0.45, 0.04) + 0.30 * bumpG(s, 0.60, 0.10) - 0.28 * bumpG(s, 0.88, 0.07) + 0.22 * bumpG(s, 0.505, 0.03) * bk;
+  return d * ss(0.0, 0.08, s) * (1 - ss(0.93, 0.99, s));
+}
+function sculptBody(root) {
+  const meshes = []; root.traverse(o => { if (o.isSkinnedMesh && /^[MF]_body_(legs_upper|legs_knee|legs_lower|arms_upper|arms_lower)$/.test(o.name) && !o.userData.sculpt) meshes.push(o); });
+  if (!meshes.length) return;
+  const org = {}; { const m0 = meshes[0]; m0.skeleton.bones.forEach((b, i) => { const e = m0.skeleton.boneInverses[i].clone().invert().elements; org[b.name] = new THREE.Vector3(e[12], e[13], e[14]); }); }
+  const chain = { leg: { R: [org.CC_BaseThighR, org.CC_BaseCalfR, org.CC_BaseFootR], L: [org.CC_BaseThighL, org.CC_BaseCalfL, org.CC_BaseFootL] }, arm: { R: [org.CC_BaseUpperarmR, org.CC_BaseForearmR, org.CC_BaseHandR], L: [org.CC_BaseUpperarmL, org.CC_BaseForearmL, org.CC_BaseHandL] } };
+  if (![chain.leg.R, chain.leg.L, chain.arm.R, chain.arm.L].every(c => c.every(Boolean))) return;
+  const v = new THREE.Vector3(), q = new THREE.Vector3(), ab = new THREE.Vector3(), r = new THREE.Vector3(), u = new THREE.Vector3(), n = new THREE.Vector3(), dW = new THREE.Vector3(), dN = new THREE.Vector3();
+  for (const m of meshes) {
+    const g = m.geometry, P = g.attributes.position, N = g.attributes.normal, bind = m.bindMatrix, lin = new THREE.Matrix3().setFromMatrix4(bind.clone().invert()), isLeg = /legs/.test(m.name);
+    const p0 = P.array.slice(), n0 = N ? N.array.slice() : null, dp = new Float32Array(p0.length), dn = new Float32Array(p0.length);
+    for (let i = 0; i < P.count; i++) {
+      v.fromBufferAttribute(P, i).applyMatrix4(bind);
+      const c = (isLeg ? chain.leg : chain.arm)[v.x < 0 ? 'R' : 'L'], sgn = v.x < 0 ? -1 : 1; let best = null;
+      for (let si = 0; si < 2; si++) {
+        const A = c[si], B = c[si + 1]; ab.subVectors(B, A); const L2 = ab.lengthSq(), t = Math.max(0, Math.min(1, r.subVectors(v, A).dot(ab) / L2));
+        q.copy(A).addScaledVector(ab, t); r.subVectors(v, q); const dist = r.length();
+        if (!best || dist < best.dist) best = { dist, s: (si + t) / 2, axis: ab.clone().normalize(), len: Math.sqrt(L2), rad: r.clone() };
+      }
+      if (best.dist < 1e-4) continue; u.copy(best.rad).divideScalar(best.dist);
+      const D = s => isLeg ? legSculptD(s, u, u.x * -sgn) : armSculptD(s, u), d = D(best.s), e = 0.01, dds = (D(Math.min(1, best.s + e)) - D(Math.max(0, best.s - e))) / (Math.min(1, best.s + e) - Math.max(0, best.s - e));
+      if (!d && !dds) continue;
+      dW.copy(u).multiplyScalar(d); dW.applyMatrix3(lin); dp[3 * i] = dW.x; dp[3 * i + 1] = dW.y; dp[3 * i + 2] = dW.z;
+      if (n0) { n.set(n0[3 * i], n0[3 * i + 1], n0[3 * i + 2]); dN.copy(best.axis).multiplyScalar(-dds * 0.5 / best.len); n.add(dN).normalize(); dn[3 * i] = n.x - n0[3 * i]; dn[3 * i + 1] = n.y - n0[3 * i + 1]; dn[3 * i + 2] = n.z - n0[3 * i + 2]; }
+    }
+    m.userData.sculpt = { p0, n0, dp, dn };
+  }
 }
 
 /* ---- body shape: leg length, arm length and build ---------------------------------------------------------------
@@ -2286,6 +2349,9 @@ function computeShape() {
 function deformMesh(m) {
   const sk = m.skeleton, g = m.geometry, si = g.attributes.skinIndex, sw = g.attributes.skinWeight; if (!SHP || !si || !sk.bones.some(b => BONE0[b.name])) return;
   const P = g.attributes.position, N = g.attributes.normal, base = m.userData.shapeBase ||= { p: P.array.slice(), n: N ? N.array.slice() : null };
+  const sc = m.userData.sculpt; if (sc) { const k = STYLE.k * SCULPT.k, bp = base.p, bn = base.n; // the realistic limb sculpt, mixed in by the master style
+    for (let i = 0; i < bp.length; i++) bp[i] = sc.p0[i] + k * sc.dp[i];
+    if (bn && sc.n0) for (let i = 0; i < bn.length; i += 3) { const x = sc.n0[i] + k * sc.dn[i], y = sc.n0[i + 1] + k * sc.dn[i + 1], z = sc.n0[i + 2] + k * sc.dn[i + 2], l = Math.hypot(x, y, z) || 1; bn[i] = x / l; bn[i + 1] = y / l; bn[i + 2] = z / l; } }
   const bind = m.bindMatrix, bi = bind.clone().invert(), es = new Float32Array(sk.bones.length * 16), tmp = new THREE.Matrix4();
   sk.bones.forEach((b, i) => { tmp.copy(bi).multiply(SHP.D.get(b.name) || ID4).multiply(bind).toArray(es, i * 16); const iv = SHP.inv.get(b.name); if (iv) sk.boneInverses[i].copy(iv); });
   const hasN = !!(N && base.n);
@@ -2352,13 +2418,13 @@ async function buildBody(gen) {
   const file = SL.body[S.gender], root = await loadFbx(file); if (gen !== genToken) return false;
   B = {}; root.traverse(o => { if (o.isBone && !B[o.name]) B[o.name] = o; }); bodyObj = root; character.add(root);
   const mats = await applyMaterials(root, file, null, THREE.FrontSide);
-  shrinkBody(root); tagSkinAnatomy(root, 'body'); syncSkinUniforms();
+  shrinkBody(root); sculptBody(root); tagSkinAnatomy(root, 'body'); syncSkinUniforms();
   parts.body = { objs: [root], mats }; headBone = B.CC_Base_Head; handR = B.CC_BaseHandR; hipBone = B.CC_Base_Hip; HIP_REST.copy(hipBone.position);
   character.updateMatrixWorld(true); const hp = hipBone.getWorldPosition(new THREE.Vector3()); character.position.set(-hp.x, 0, -hp.z); character.updateMatrixWorld(true);
   REST.headInv = headBone.matrixWorld.clone().invert(); REST.fwd = new THREE.Vector3(0, 0, 1).transformDirection(REST.headInv); REST.up = new THREE.Vector3(0, 1, 0).transformDirection(REST.headInv); REST.dir = new THREE.Vector3(0, 0.5, -0.87).transformDirection(REST.headInv);
   propsRoot.position.set(character.position.x, 0, character.position.z); initShape(); applyShape(false); applyColours('body');
   // clips for this body
-  try { const gl = await new GLTFLoader().parseAsync(await fetchBuf('assets/clips_' + S.gender + '.glb'), ''); clips = {}; for (const c of gl.animations) clips[c.name] = c; } catch (e) { clips = {}; }
+  try { const gl = await new GLTFLoader().parseAsync(await fetchBuf('assets/clips_' + S.gender + '.glb'), ''); clips = {}; for (const c of gl.animations) if (!DROP_CLIPS.has(c.name)) clips[c.name] = c; } catch (e) { clips = {}; }
   if (gen !== genToken) return false;
   mixer = new THREE.AnimationMixer(root); buildClipUI(); if (clips[S.clip]) play(S.clip); else { const n = Object.keys(clips)[0]; if (n) play(n); }
   addMic(); buildPropUI(); setGameProp(S.hand || 'none'); syncShadows(); progress.step(); return true;
@@ -2424,8 +2490,9 @@ const EXPR = { neutral: [], happy: ['happy_01'], 'happy 2': ['happy_02'], angry:
 const VOWELS = ['phoneme_Ah', 'phoneme_Eh', 'phoneme_Ee', 'phoneme_Oo', 'phoneme_Ooh', 'phoneme_Ai'];
 function faceUpdate(dt, t) {
   if (!faceMesh) return; const d = faceMesh.morphTargetDictionary, inf = faceMesh.morphTargetInfluences, set = (n, v) => { const i = d[n]; if (i !== undefined) inf[i] = v; };
-  const k = 1 - Math.exp(-7 * dt), want = EXPR[S.expr] || [];
-  for (const n of ['happy_01', 'happy_02', 'angry_01', 'sad_01', 'surprised_01', 'extra_01']) { FACE.ex[n] = (FACE.ex[n] || 0) + ((want.includes(n) ? 0.85 : 0) - (FACE.ex[n] || 0)) * k; set(n, FACE.ex[n]); }
+  const k = 1 - Math.exp(-7 * dt), want = EXPR[S.expr] || [], poseFace = (S.expr === 'neutral' && CLIP_FACE[S.clip]) || {};
+  for (const n of ['happy_01', 'happy_02', 'angry_01', 'sad_01', 'surprised_01', 'extra_01']) { FACE.ex[n] = (FACE.ex[n] || 0) + ((want.includes(n) ? 0.85 : poseFace[n] || 0) - (FACE.ex[n] || 0)) * k; set(n, FACE.ex[n]); }
+  FACE.lid = (FACE.lid || 0) + ((poseFace['eyes_closed.01'] || 0) - (FACE.lid || 0)) * k;
   // blink: every 2 to 6 seconds, quick close, a hold, slower open; now and then a double blink
   let blink = 0;
   if (S.blink) {
@@ -2433,7 +2500,7 @@ function faceUpdate(dt, t) {
     if (FACE.blinkT >= 0) { FACE.blinkT += dt; const c = 0.07, h = 0.04, o = 0.15, x = FACE.blinkT; blink = x < c ? x / c : x < c + h ? 1 : x < c + h + o ? 1 - (x - c - h) / o : 0; blink = blink * blink * (3 - 2 * Math.min(1, blink));
       if (x > c + h + o) { FACE.blinkT = -1; FACE.blinkAt = FACE.blinkDouble ? t + 0.12 : t + 2 + Math.random() * 4; FACE.blinkDouble = false; } }
   }
-  set('eyes_closed.01', Math.max(blink, (FACE.ex.happy_01 || 0) * 0.15));
+  set('eyes_closed.01', Math.max(blink, (FACE.ex.happy_01 || 0) * 0.15, FACE.lid));
   // lip sync: a random syllable rhythm while the clip is singing or rapping
   const talking = S.lip && S.prop && /Singing|Rapping/.test(S.clip) && !FACE.mute;
   if (talking && t > FACE.next) { const rapping = S.clip === 'Rapping', gap = (rapping ? 0.09 : 0.17) + Math.random() * (rapping ? 0.1 : 0.2); FACE.next = t + gap; FACE.vowel = VOWELS[(Math.random() * VOWELS.length) | 0]; FACE.mouthT = Math.random() < 0.16 ? 0 : 0.25 + Math.random() * 0.6; FACE.mbp = FACE.mouthT === 0 ? 1 : 0; }
@@ -2515,6 +2582,11 @@ function poseCarryArm() {
     hr.quaternion.multiply(_paQ);
   }
 }
+/* A relaxed hand for the calm clips: the Mixamo hands arrive straight and splayed with the thumb out to the side. Fingers curl a little more toward the little finger (curl around local Z, as below),
+   and the thumb is brought in beside the index finger. Numbers are [curl, dx, dy] per joint, in radians. */
+const RELAX = { Index: [[0.12], [0.16], [0.06]], Mid: [[0.16], [0.20], [0.08]], Ring: [[0.20], [0.24], [0.10]], Pinky: [[0.24], [0.26], [0.12]], Thumb: [[0, -0.40, 0.20], [0.14], [0.10]] };
+const PINCH = { Index: [[0.32], [0.36], [0.24]], Mid: [[0.22], [0.26], [0.18]], Ring: [[0.22], [0.26], [0.18]], Pinky: [[0.22], [0.26], [0.18]], Thumb: [[0.10, 0.06], [0.18], [0.14]] }; // thumb and index pinching a rim or a key
+const gripActive = () => !!(gameProp && S.prop && S.clip !== 'Thinking_1_' && !/Singing|Rapping|Guitar|Piano|Drums|Waving|Pointing|Pick_Up/.test(S.clip));
 function poseHands(clipName) {
   if (!bodyObj || !clipName) return;
   const curl = (side, fName, j, dz, dx = 0, dy = 0) => {
@@ -2523,7 +2595,9 @@ function poseHands(clipName) {
     _phQ.setFromEuler(_phE.set(dx, dy * cs, dz * cs));
     b.quaternion.multiply(_phQ);
   };
-  if (clipName === 'Singing') {
+  const relax = side => { for (const f of ['Index', 'Mid', 'Ring', 'Pinky', 'Thumb']) RELAX[f].forEach((a, i) => curl(side, f, i + 1, a[0] || 0, a[1] || 0, a[2] || 0)); }; // dx is the same on both hands (curl mirrors only dy and dz); the thumb tucks in beside the index finger on each
+  if (CALM_ARM_CLIPS.has(clipName) && clipName === S.clip) { relax('L'); if (!gripActive()) relax('R'); }
+  else if (clipName === 'Singing') {
     curl('R', 'Index', 1, 0.16); curl('R', 'Index', 2, 0.14); curl('R', 'Index', 3, 0.10);
     for (const f of ['Mid', 'Ring', 'Pinky']) { curl('R', f, 1, 0.06); curl('R', f, 2, 0.08); curl('R', f, 3, 0.06); }
     curl('R', 'Thumb', 1, 0.06, 0.04); curl('R', 'Thumb', 2, 0.12); curl('R', 'Thumb', 3, 0.10);
@@ -2557,9 +2631,8 @@ function poseHands(clipName) {
     for (const f of ['Index', 'Mid', 'Ring', 'Pinky']) { curl('R', f, 1, 0.18); curl('R', f, 2, isBk ? 0.46 : 0.38); curl('R', f, 3, isBk ? 0.34 : 0.26); }
     curl('R', 'Thumb', 1, 0.04, 0.06); curl('R', 'Thumb', 2, isBk ? 0.10 : 0.12); curl('R', 'Thumb', 3, isBk ? 0.06 : 0.08);
   } else if (clipName === 'pinch') { // thumb + index pinching bow/planchette rim while trailing fingers relax clear
-    curl('R', 'Index', 1, 0.32); curl('R', 'Index', 2, 0.36); curl('R', 'Index', 3, 0.24);
-    for (const f of ['Mid', 'Ring', 'Pinky']) { curl('R', f, 1, 0.22); curl('R', f, 2, 0.26); curl('R', f, 3, 0.18); }
-    curl('R', 'Thumb', 1, 0.10, 0.06); curl('R', 'Thumb', 2, 0.18); curl('R', 'Thumb', 3, 0.14);
+    const tbl = (gameProp && S.prop && GAME_PROPS[S.hand] && GAME_PROPS[S.hand].pinch) || PINCH; // a prop can carry its own pinch, solved so the thumb tip and index tip close on its thin part
+    for (const f of Object.keys(PINCH)) tbl[f].forEach((a, i) => curl('R', f, i + 1, a[0] || 0, a[1] || 0, a[2] || 0));
   } else if (clipName === 'Piano_Seated') {
     for (const f of ['Index', 'Mid', 'Ring', 'Pinky']) {
       curl('R', f, 1, 0.30); curl('R', f, 2, 0.22); curl('R', f, 3, 0.14);
@@ -2644,7 +2717,7 @@ const GAME_PROPS = {
     }
   },
   key: {
-    label: 'Old key', grip: 'pinch',
+    label: 'Old key', grip: 'pinch', pinch: { ...PINCH, Index: [[-0.08], [0.47], [0.89]], Thumb: [[0.23, -0.10, 0.02], [0.24], [0.31]] }, // tips meet on the shaft just above the bow (solved by search, gap 1.5 cm)
     pos: [-2.35, 7.3, 2.95], rot: [0.38, 0.14, 0.12],
     arm: { abduct: 6.5, fwd: 13, elbow: 32, handRoll: 12 },
     make(g) {
@@ -2704,8 +2777,8 @@ const GAME_PROPS = {
     }
   },
   planchette: {
-    label: 'Planchette', grip: 'pinch',
-    pos: [-2.35, 8.2, 5.2], rot: [0, -Math.PI / 2, Math.PI / 2],
+    label: 'Planchette', grip: 'pinch', pinch: { ...PINCH, Index: [[-0.08], [0.47], [0.89]], Thumb: [[0.23, -0.10, 0.02], [0.24], [0.31]] }, // moved in to the fingertips (it hung 2 cm out of reach); the thumb and index close on its right edge
+    pos: [-2.71, 6.31, 3.7], rot: [0, -Math.PI / 2, Math.PI / 2],
     arm: { abduct: 8, fwd: 14, elbow: 34, handRoll: 18 },
     make(g) {
       const sh = new THREE.Shape(); sh.moveTo(0, 6); sh.quadraticCurveTo(4.6, 0.2, 2.8, -2.6); sh.lineTo(-2.8, -2.6); sh.quadraticCurveTo(-4.6, 0.2, 0, 6);
@@ -2853,7 +2926,24 @@ function fixMic(dt) {
 }
 
 /* ---- instruments: built from simple shapes and fitted to each clip by sampling where the hands, hips and feet go ---- */
-const KIND = { Singing: 'mic', Rapping: 'mic', Guitar_Playing: 'guitar', Guitar_Playing_2: 'electric', Piano_Seated: 'keys', Drums_Seated: 'drums' };
+const KIND = { Singing: 'mic', Rapping: 'mic', Guitar_Playing: 'guitar', Guitar_Playing_2: 'electric', Piano_Seated: 'keys', Drums_Seated: 'drums', Scared: 'chair' };
+const DROP_CLIPS = new Set(['Pick_Up_Item']); // clips in the GLB that are not offered (the user removed Pick up)
+/* A face for each pose, from the head's own blendshapes. Used while Disposition is Neutral; a chosen Disposition wins over it. */
+const CLIP_FACE = {
+  Happy_Idle: { happy_01: 0.6 }, Waving: { happy_01: 0.5 },
+  Bored: { sad_01: 0.3, 'eyes_closed.01': 0.22 }, Thinking_1_: { extra_01: 0.35, sad_01: 0.12 },
+  Nervously_Look_Around: { surprised_01: 0.3, sad_01: 0.35 }, Looking_Behind: { surprised_01: 0.45, sad_01: 0.15 },
+  Scared: { surprised_01: 0.55, sad_01: 0.4 }, Terrified: { surprised_01: 0.85, sad_01: 0.35 },
+  Pointing_Gesture: { angry_01: 0.2, surprised_01: 0.15 },
+};
+function makeChair(seatY) { // a high-backed manor side chair: dark wood, oxblood seat pad; the sitter faces +z
+  const g = new THREE.Group(), wood = PM(0x2a1c13, { roughness: 0.62 }), pad = PM(0x4a191e, { roughness: 0.8 }), W = 40, D = 38;
+  g.add(box(W, 3, D, wood, 0, seatY - 4, 0)); g.add(box(W - 3, 2.5, D - 3, pad, 0, seatY - 1.3, 0.5));
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) g.add(box(3, seatY - 5.5, 3, wood, sx * (W / 2 - 2), (seatY - 5.5) / 2, sz * (D / 2 - 2)));
+  for (const sx of [-1, 1]) g.add(box(3.2, 52, 3.2, wood, sx * (W / 2 - 2), seatY + 24, -D / 2 + 2));
+  for (const y of [18, 34, 48]) g.add(box(W - 4, y === 48 ? 5 : 3, 2.2, wood, 0, seatY + y, -D / 2 + 2));
+  return g;
+}
 const PM = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.5, metalness: 0.05, ...o });
 const box = (w, h, d, m, x = 0, y = 0, z = 0) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); return o; };
 const cyl = (rt, rb, h, m, seg = 24) => new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m);
@@ -2960,6 +3050,11 @@ function setProps(name) {
       const pick = box(1.6, 2.0, 0.16, PM(0xf4efe4, { roughness: 0.28 }), -0.78, 0.95, 0.72);
       pick.rotation.set(0.25, 0.35, -0.5); keep(pick, B.CC_BaseIndex3R);
     }
+    return;
+  }
+  if (kind === 'chair') { // the pose sits down part way through: put the chair where the hips are lowest
+    let low = smp[0]; for (const s of smp) if (s.hip.y < low.hip.y) low = s;
+    keep(makeChair(low.hip.y - 16.2), propsRoot).position.set(low.hip.x, 0, low.hip.z - 4);
     return;
   }
   const seatY = hips.y - 16.2;
@@ -3235,7 +3330,7 @@ function buildClipUI() { const seg = $('clipSeg'); seg.innerHTML = ''; const ORD
    [cx, cy, rx, ry]. Hand-marked for the two test portraits; an automatic detector (MediaPipe) would replace this for selfies. */
 const LAYOUT = { size: 1024, eyeL: [425, 476], eyeR: [614, 471], nose: [525, 598], mouth: [520, 676], chin: [520, 806], rows: { eye: [474, 316, 720], cheek: [620, 335, 708], jaw: [740, 388, 662] }, ell: [520, 530, 205, 285], noFit: true };
 const FACES = {
-  whisper: { ...LAYOUT, label: 'The Whisper',     url: 'assets/faces/cast-whisper.jpg', shoulders: 'assets/faces/cast-whisper.jpg', gender: 'F', hair: 'hair.medium.001', outfit: 'outfit.003', hem: 'floor', shoes: 'shoes.001',
+  whisper: { ...LAYOUT, label: 'The Whisper',     url: 'assets/faces/cast-whisper.jpg', shoulders: 'assets/faces/cast-whisper.jpg', gender: 'F', hair: 'hair.medium.001', hairCut: 0, outfit: 'outfit.003', hem: 'floor', shoes: 'shoes.001',
     shape: { legs: 0.84, arms: 0.86, build: 0.12, head: 0.68 },
     col: { outfit: { A: '#141519', B: '#ded6c6', C: '#8ebfb0' }, shoes: { A: '#141519', B: '#2c1f18', C: '#47525e' } } },
   ashby:   { ...LAYOUT, label: 'Mr. Ashby',       url: 'assets/faces/cast-ashby.jpg',   shoulders: 'assets/faces/cast-ashby.jpg',   gender: 'M', hair: 'hair.short.002',  top: 'top.005', bot: 'bot.001', hem: 'ankle', shoes: 'shoes.007',
@@ -3250,7 +3345,7 @@ const FACES = {
   pike:    { ...LAYOUT, label: 'Dr. Pike',        url: 'assets/faces/cast-pike.jpg',    shoulders: 'assets/faces/cast-pike.jpg',    gender: 'M', hair: 'hair.short.002',  glasses: 'glasses.01', top: 'top.010', bot: 'bot.001', hem: 'ankle', shoes: 'shoes.007',
     shape: { legs: 0.74, arms: 0.76, build: 0.30, head: 0.56 },
     col: { top: { A: '#141519', B: '#ded6c6', C: '#5e2429' }, bot: { A: '#141519', B: '#282b32', C: '#5c432e' }, glasses: { A: '#47525e', B: '#141519', C: '#9c9484' }, shoes: { A: '#141519', B: '#2c1f18', C: '#5c432e' } } },
-  percy:   { ...LAYOUT, label: 'Percy',           url: 'assets/faces/cast-percy.jpg',   shoulders: 'assets/faces/cast-percy.jpg',   gender: 'M', hair: 'hair.short.001',  top: 'top.010', bot: 'bot.002', hem: 'calf', shoes: 'shoes.001',
+  percy:   { ...LAYOUT, label: 'Percy',           url: 'assets/faces/cast-percy.jpg',   shoulders: 'assets/faces/cast-percy.jpg',   gender: 'M', hair: 'hair.short.001',  top: 'top.010', bot: 'bot.001', hem: 'ankle', shoes: 'shoes.001',
     shape: { legs: 0.34, arms: 0.38, build: 0.28, head: 0.74 },
     col: { top: { A: '#282b32', B: '#ded6c6', C: '#5e2429' }, bot: { A: '#2c1f18', B: '#141519', C: '#9c9484' }, shoes: { A: '#141519', B: '#2c1f18', C: '#9c9484' } } },
   dunmore: { ...LAYOUT, label: 'Mrs. Dunmore',    url: 'assets/faces/cast-dunmore.jpg', shoulders: 'assets/faces/cast-dunmore.jpg', gender: 'F', hair: 'hair.tied.001',   bangs: 'hair.tied.001_bun', outfit: 'outfit.002', hem: 'calf', shoes: 'shoes.001',
@@ -3787,7 +3882,7 @@ function resetCharacterAttrs() {
   CL.on.value = 0; CL.str.value = 0; CL.an = null; CL.mul = 1; CL.prev = null;
   FP.hem = null; FP.hairMask = null; FP.ears = null; FP.det = null; FP.cfg = null; FP.expr = {};
   FP.bodyMeas = null; FP.prevAcc = null; FP.prevHair = null; FP.prevHat = null; FP.prevShape = null; FP.prevShoes = null; FP.prevSkin = null;
-  HC.wave.value = 0; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; HP.mask.value = WHITE;
+  HC.wave.value = 0; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; HP.mask.value = WHITE; HP.cut.value = 1;
   HR.str.value = HR.want; HR.det.value = HR_DEFAULT; MO.on.value = 0;
   FP.bodyMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace); FP.hairMul.setRGB(1, 1, 1, THREE.LinearSRGBColorSpace);
 }
@@ -3796,7 +3891,7 @@ async function setFacePrint0(id, custom) {
   const tok = ++fpSeq, stale = () => tok !== fpSeq;
   if (!id) {
     FP.bodyMeas = null; FP.hem = null; if (FP.prevShoes) { const ps = FP.prevShoes; FP.prevShoes = null; await setSlot('shoes', ps.id); if (stale()) return null; S.col.shoes = ps.col; applyEverything(); } await fpClothesOff(); if (stale()) return null; if (FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; applyShape(); syncSlidersUI(); }
-    FP.on = false; FP.id = null; FP.expr = {}; FP.hairMask = null; HC.wave.value = 0; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; HP.mask.value = WHITE; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0; syncSlidersUI(); syncSkinUniforms(); HR.str.value = HR.want; HR.det.value = HR_DEFAULT; MO.on.value = 0; fpBase();
+    FP.on = false; FP.id = null; FP.expr = {}; FP.hairMask = null; HC.wave.value = 0; FP.u.uFpSkinMask.value = BLACK; HP.on.value = 0; HP.texE.value = WHITE; HP.face.value = BLACK; HP.mask.value = WHITE; HP.cut.value = 1; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0; syncSlidersUI(); syncSkinUniforms(); HR.str.value = HR.want; HR.det.value = HR_DEFAULT; MO.on.value = 0; fpBase();
     if (FP.prevSkin) { S.skin = FP.prevSkin; FP.prevSkin = null; }
     if (FP.prevHair) { const h = FP.prevHair; FP.prevHair = null; S.hair = h.hair; S.bangs = h.bangs; await sync(['hair', 'bangs', 'hat']); if (stale()) return null; }
     if (FP.prevHat) { const h = FP.prevHat; FP.prevHat = null; await setSlot('hat', h.hat); if (stale()) return null; S.col.hat = h.col; }
@@ -3850,6 +3945,7 @@ async function setFacePrint0(id, custom) {
   FP.u.uFpSkinMask.value = FP.skinMask ? FP.skinMask.tex : BLACK;
   // 3. the hair mask: print the photo's hair on the hair shell and bend the shell to the photo's hair outline
   let hairFit = null; FP.hairMask = null; HC.wave.value = 0; for (const m of HAIR_MORPHS) S.hairShape[m.id] = 0;
+  HP.cut.value = cfg.hairCut ?? 1; // a face can keep the pack's own hair outline (0) instead of carving it with the photo's mask
   if (FP.matchHair && parts.hair && !cfg.noHairPrint) { FP.hairMask = await fpHairMask(tex.image, cfg.size); if (stale()) return null; if (FP.hairMask) { HP.mask.value = FP.hairMask.tex; HP.texE.value = fpHairBleed(tex.image, FP.hairMask) || WHITE; FP.hairWave = fpHairWave(tex.image, FP.hairMask); HC.wave.value = FP.hairWave ? FP.hairWave.wave : 0; { const fm = await fpClassMask(tex.image, cfg.size, [3], 4); if (stale()) return null; HP.face.value = fm ? fm.tex : BLACK; } hairFit = fitHair(c, FP.hairMask); } }
   // 4. body shape from full-body picture or curated character build
   let bodyFit = null; if (FP.matchBody && cfg.full) { bodyFit = await fpBodyFit(cfg.full); if (stale()) return null; if (!bodyFit && FP.prevShape) { Object.assign(S.shape, FP.prevShape); FP.prevShape = null; } }
@@ -4161,6 +4257,19 @@ function buildUI() {
   };
   clearCastBtn.addEventListener('click', () => fpShow(null));
 
+  /* Story cast = the 8 characters already in the game (the two narrators and the six Suspects); Player characters = the 12 a player can choose. */
+  const STORY_CAST = ['whisper', 'ashby', 'vane', 'thorne', 'pike', 'percy', 'dunmore', 'cora'];
+  const castSeg = el('div', 'seg'); castSeg.id = 'castGroup'; castSeg.style.margin = '6px 0 0';
+  const castBtns = {};
+  for (const [g, lbl] of [['story', 'Story cast (8)'], ['player', 'Player characters (12)']]) {
+    const b = el('button', null, lbl); b.type = 'button'; b.dataset.group = g; castBtns[g] = b; castSeg.appendChild(b);
+  }
+  s.appendChild(castSeg);
+  const showCastGroup = g => {
+    for (const [k, b] of Object.entries(castBtns)) b.setAttribute('aria-pressed', String(k === g));
+    for (const c of castGrid.children) c.hidden = (STORY_CAST.includes(c.dataset.cast) ? 'story' : 'player') !== g;
+    castScroll.scrollTop = 0;
+  };
   const castScroll = el('div', 'cast-scroll');
   const castGrid = el('div', 'cast-grid');
   for (const [k, f] of Object.entries(FACES)) {
@@ -4171,6 +4280,8 @@ function buildUI() {
   }
   castScroll.appendChild(castGrid);
   s.appendChild(castScroll);
+  for (const [g, b] of Object.entries(castBtns)) b.addEventListener('click', () => showCastGroup(g));
+  showCastGroup('story');
 
   let stylizeSelfie = true, lastSelfie = null;
   const styliseSelfieBitmap = async (bmp, fileName) => {
@@ -4732,7 +4843,7 @@ buildUI();
 const bootSeed = /seed=(\d+)/.exec(location.hash);
 if (bootSeed) randomLook(+bootSeed[1], true, false);
 const ready = buildAll().catch(e => { console.error(e); status('failed: ' + e.message); const sp = $('splash'); if (sp) { sp.classList.add('err'); $('splashT').textContent = 'The lanterns would not light: ' + e.message; } });
-window.__cb = { setGameProp, GAME_PROPS, gameProp: () => gameProp, CLOTH_PALETTE, HAIR_PALETTE, snapToLimited, SL, SL_ALL, STAGE_BG, groundFeet, poseHands, updateArmTwist, applyHairCards, fixMic, micNode: () => micNode, syncSkinUniforms, SK_DEFAULT, fpHairWave, HC, EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, MANOR_PRESETS, applyManorPreset, setCreatorTab, setCameraView, setDaguerreotype, setPause, setPropsVisible, exportLook, randomLook, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
+window.__cb = { SCULPT, RELAX, PINCH, restoreProcPose, saveProcPose, SK, setGameProp, GAME_PROPS, gameProp: () => gameProp, CLOTH_PALETTE, HAIR_PALETTE, snapToLimited, SL, SL_ALL, STAGE_BG, groundFeet, poseHands, updateArmTwist, applyHairCards, fixMic, micNode: () => micNode, syncSkinUniforms, SK_DEFAULT, fpHairWave, HC, EYE_SINK, calibrateSkin, skinMatch, BEAUTY, applyBeauty, fitHem, fpShoes, STYLE, applyStyle, insetBody, CL, fpBodyFit, fpClothes, HR, HP, fitHair, hairVerts, FP, FACES, fitShape, setFacePrint, fpProject, meshLandmarks, propNodes: () => propNodes, updateHair, get hairBones() { return hairBones; }, fixShapeAnimation, headScale, applyShape, applySculptMorphs, HEAD_MORPHS, HEAD_PRESETS, MANOR_PRESETS, applyManorPreset, setCreatorTab, setCameraView, setDaguerreotype, setPause, setPropsVisible, exportLook, randomLook, shp: () => SHP, ready, scene, renderer, B: () => B, applyLook, sync, smoke, S, setSlot, applyColours, regionsOf, rebuild, play, parts, get drumPieces() { return drumPieces; }, get faceMesh() { return faceMesh; }, get mixer() { return mixer; }, get clips() { return clips; }, camera, controls, THREE, get bodyObj() { return bodyObj; }, get headBone() { return headBone; }, FACE, get MOUTH() { return MOUTH; } };
 /* BACKGROUND MUSIC: title theme loop (off in thumbnail mode) */
 if (!THUMBS) {
   const bgm = new Audio('media/dark-title.mp3'); bgm.loop = true; bgm.volume = 0.35; let musicOn = localStorage.getItem('cbMusic') !== 'off';
