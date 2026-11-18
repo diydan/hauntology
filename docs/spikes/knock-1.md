@@ -40,7 +40,7 @@ Say only: "The ghost knocks on a door once. Knock it back on the table to open i
 For each person, on one phone and one table (spread the five across the phones and tables):
 
 1. Open the puzzle with the clue: `https://mtest.hauntology.app/puzzles/?kind=knock&level=easy&seed=<1 to 9999>`. Use a new seed per person, so nobody learns a pattern.
-2. Let them hear the clue once (the faded memory card plays it), then knock. **Known gap:** a phone only plays sound after a tap on the page, and on this demo page the card appears before any tap, so the first clue may be silent (the dots, the words and the buzz still show it). Note whether they heard it. If it is silent on every phone, fix that before part B counts.
+2. Let them hear the clue once (the faded memory card plays it), then knock. A phone only plays sound after a tap, and the card appears before any tap, so the card shows **Tap to hear the knock** while sound is locked (fixed in PR #63, 2026-11-18, live on the lab; not yet tried on a real phone). Have each person tap it, and note whether they heard the knock. If a phone stays silent after the tap, that is a finding: write down which phone and browser, and fix it before part B counts.
 3. Note how many tries it took (1, 2, 3, or not opened), and whether they used the table or tapped the door.
 4. Repeat with `level=medium`, then `level=hard`.
 5. Ask: "Was it fun? Was anything unclear?" Write their words.
