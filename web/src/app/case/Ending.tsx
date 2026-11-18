@@ -1,6 +1,7 @@
 import type { PublicSnapshot } from "@hauntology/shared/party/engine";
 import { STOCK_SONGS } from "@hauntology/shared/songs/stock";
 import { useEffect, useRef, useState } from "react";
+import { ThemeSong } from "../ThemeSong";
 import { eventLine, type Names } from "./words";
 
 /**
@@ -96,6 +97,7 @@ export function Ending({ view, n, reducedMotion = false }: { view: PublicSnapsho
       ) : null}
 
       <EndingSong id={e.houseWins ? "fb-house" : "fb-detectives"} />
+      <ThemeSong kind="outro" heading="h3" />
 
       <section aria-label="What happened">
         <h3 className="ui-heading">What happened, in order</h3>

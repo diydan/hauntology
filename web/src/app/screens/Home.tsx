@@ -5,6 +5,7 @@ import { useBoot, useShell } from "../context";
 import { whenIdle } from "../idle";
 import { Link } from "../Link";
 import { ScreenHeading } from "../RouteFocus";
+import { ThemeSong } from "../ThemeSong";
 
 /**
  * Home (Requirements 1.1 to 1.3, 10.4): the premise, three actions and the plain facts. "Draw a
@@ -50,6 +51,8 @@ export default function Home() {
           <li key={fact}>{fact}</li>
         ))}
       </ul>
+
+      <ThemeSong kind="intro" />
     </main>
   );
 }
