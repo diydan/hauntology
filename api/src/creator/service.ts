@@ -94,12 +94,17 @@ export function createCreator(deps: CreatorDeps) {
     const cleanTraits: Traits = detail ? { ...traits, detail } : { ...traits, detail: undefined };
     const seed = newSeed();
     const prompt = buildPortraitPrompt(cleanTraits, seed);
-    const answers = await Promise.all(
-      [seed, seed + 1].map((s) =>
-        renderPortrait(portraitist, ticket, { prompt: prompt.text, negativePrompt: prompt.negativeText, seed: s, width: PORTRAIT_WIDTH, height: PORTRAIT_HEIGHT })
-          .catch((): { ok: false; kind: "failed" } => ({ ok: false, kind: "failed" })),
-      ),
-    );
+    const renderSeed = async (s: number) => {
+      const req = { prompt: prompt.text, negativePrompt: prompt.negativeText, seed: s, width: PORTRAIT_WIDTH, height: PORTRAIT_HEIGHT };
+      const first = await renderPortrait(portraitist, ticket, req).catch((): { ok: false; kind: "failed" } => ({ ok: false, kind: "failed" }));
+      // The model's own filter sometimes refuses an output over the negative prompt's words
+      // (seen in the checkpoint run, docs/spikes/3.1.md): once more without it, same seed.
+      if (!first.ok && first.kind === "flagged") {
+        return renderPortrait(portraitist, ticket, { ...req, negativePrompt: "" }).catch((): { ok: false; kind: "failed" } => ({ ok: false, kind: "failed" }));
+      }
+      return first;
+    };
+    const answers = await Promise.all([seed, seed + 1].map(renderSeed));
     if (!answers.some((a) => a.ok)) {
       await settle(ticket, "release");
       return { ok: false, code: "portrait_failed" };

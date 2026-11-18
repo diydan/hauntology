@@ -147,6 +147,20 @@ describe("Creator flow (ghost-creator task 3, Property 7)", () => {
     const unsafe = setup({ moderator: { check: async () => ({ ok: true, verdict: { kind: "unsafe", categories: ["hate"] } }) } });
     expect(await unsafe.creator.portraits({ traits, worldId: "w1" }, "sid", "ip")).toEqual({ ok: false, code: "detail_unsafe" });
 
+    // A flagged output is retried once per seed without the negative prompt (checkpoint finding).
+    const negatives: string[] = [];
+    const flaggy = setup({
+      portraitist: {
+        render: async (req) => {
+          negatives.push(req.negativePrompt);
+          return req.negativePrompt === "" ? { ok: true, image: pngWithSubject(520, 640, 0.1) } : { ok: false, kind: "flagged" };
+        },
+      },
+    });
+    expect((await flaggy.creator.portraits({ traits, worldId: "w1" }, "sid", "ip")).ok).toBe(true);
+    expect(negatives.some((n) => n !== "")).toBe(true);
+    expect(negatives).toContain("");
+
     // Field errors name the field; another Session's candidate is not theirs to cut.
     const { creator } = setup();
     expect(await creator.portraits({ traits: { ...traits, epoch: "roman" }, worldId: "w1" }, "sid", "ip"))

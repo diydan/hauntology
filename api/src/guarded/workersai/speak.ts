@@ -161,7 +161,8 @@ export class WorkersAiSpeaker implements SpeechMaker {
       const audio = await withTimeout(step === "inworld" ? this.inworld(req, abort.signal) : this.aura(req), ms);
       return audio === null ? { audio: null, outcome: "unusable" } : { audio, outcome: "ok" };
     } catch (e) {
-      return { audio: null, outcome: e instanceof Error && e.message === "timeout" ? "slow" : failureKind(e) };
+      const kind = failureKind(e);
+      return { audio: null, outcome: e instanceof Error && e.message === "timeout" ? "slow" : kind === "flagged" ? "failed" : kind };
     } finally {
       clearTimeout(timer);
     }

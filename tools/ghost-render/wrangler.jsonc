@@ -1,0 +1,11 @@
+// The local render Worker for tools/ghost-checkpoint.mjs (ghost-creator task 5 checkpoint). NEVER deployed: run it with
+//   RENDER_TOKEN=<random, 16+ characters> pnpm --filter api exec wrangler dev -c ../tools/ghost-render/wrangler.jsonc --ip 127.0.0.1 --port 8799 --var RENDER_TOKEN:$RENDER_TOKEN --remote
+// The AI and IMAGES bindings reach the real services, so every call is billed to the logged-in account. --remote is
+// needed for the Images segment transform, which the offline local binding does not support.
+{
+  "name": "hauntology-ghost-render",
+  "main": "worker.mjs",
+  "compatibility_date": "2025-06-01",
+  "ai": { "binding": "AI" },
+  "images": { "binding": "IMAGES" }
+}
