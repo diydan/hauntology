@@ -10,6 +10,7 @@ import { Link } from "../Link";
 import { useAnnounce } from "../LiveRegion";
 import { RetryButton } from "../RetryButton";
 import { ScreenHeading } from "../RouteFocus";
+import { ThemeSong } from "../ThemeSong";
 
 /**
  * The ending (Requirement 6.5): what the ghost said last, the memories that were found, "Save
@@ -124,6 +125,7 @@ export default function End() {
         </Link>
       </p>
       <DeletePlace worldId={worldId} leave={() => router.navigate({ screen: "home" })} />
+      <ThemeSong kind="outro" />
     </main>
   );
 }
