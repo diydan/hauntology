@@ -17,10 +17,11 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Compare WebRTC, a WebSocket to a Worker and Cloudflare Realtime for a live voice turn on Cloudflare, with end-of-speech detection in the browser. Record in `docs/spikes/ghost-voice-1.3.md`: which transport works, how end of speech is detected, the real delay from the end of a sentence to the first spoken word (the guess of 2 to 3 seconds is an estimate, not a result), battery and data use on a phone, and what happens on a page that is hidden or a connection that drops. If none works within the cap, say so; live mode is then cut.
     - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 2. Pure logic for speaking and listening (`shared/src/voice/`)
-  - [ ] 2.1 `limits.ts`, `config.ts` and the generators
+- [x] 2. Pure logic for speaking and listening (`shared/src/voice/`)
+  - [x] 2.1 `limits.ts`, `config.ts` and the generators
     - `limits.ts` names every number in the requirements (the 200-character cap and 1.5-second gap come from `shared/src/ghost/`). `config.ts` has `parseVoiceConfig(env)` with the `VOICE_*` defaults from the design, zod, a bad value falling back to its default, and the room line cap never above 20. `voice.arb.ts` generates texts with sentence ends, long runs, URLs, markup, control characters and banned phrases. Unit tests for the defaults and clamps.
     - _Requirements: 4.1, 2.3_
+    - Done (2026-11-19): `shared/src/voice/limits.ts`, `shared/src/voice/config.ts` (`DEFAULT_VOICE_CONFIG`, `parseVoiceConfig`), `shared/src/voice/config.test.ts`, and `shared/src/voice/voice.arb.ts`.
   - [x] 2.2 `voices.ts` and `speakable.ts`
     - `SPEAKERS` (the three-entry cast: Whisper is Pippa, Keeper is Ronald, Lodger is Mark by default, each with its tag, rate, temperature and Aura-2 fallback speaker), `LODGER_VOICES` (Mark, Conrad, Arjun, Chloe, Eleanor and Victoria, same tag, rate and temperature), `lodgerVoiceFor(profile)` (the Profile's `lodgerVoice`, else Mark, reading nothing else), `speakerForPersona` (soft is the Whisper, dry is the Keeper), `voiceFor(speaker, step, lodgerVoice?)` and `steeringTag`; `splitSentences`; `toVoiceLine` takes the Speaker and `playerText`, calls the engine's `validateGhostReply`, stops before the first sentence that contains any player text, cuts at the last sentence end within 240 characters, leaves `spoken` empty when none fits, and never puts a Steering Tag in `text` or `spoken`. No second banned-phrase list. The synthesis request type has no field for a reference voice.
     - _Requirements: 1.1, 1.5, 1.6, 1.7, 1.10, 1.11_
@@ -37,11 +38,13 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - **Property 2: The fallback chain always ends in a subtitle**
     - **Validates: Requirements 1.2, 1.3, 4.2, 4.3**
     - Done (2026-11-19): `shared/src/voice/fallback.prop.test.ts` with `propParams()` and `runWithVoice` comparing working voice vs zero meters.
-  - [ ] 2.6 `cache.ts`: `canonicalSpeechKey`, `speechCacheKey` (digest injected) and `cacheFresh`
+  - [x] 2.6 `cache.ts`: `canonicalSpeechKey`, `speechCacheKey` (digest injected) and `cacheFresh`
     - _Requirements: 1.4_
-  - [ ]* 2.7 Write property test for the cache key
+    - Done (2026-11-19): `canonicalSpeechKey` and `speechCacheKey` (`key.ts`, re-exported from `cache.ts`) and `cacheFresh` / `CACHE_MAX_AGE_MS` (`cache.ts`).
+  - [x]* 2.7 Write property test for the cache key
     - **Property 3: The audio cache key depends on voice and text and expires after 60 days**
     - **Validates: Requirements 1.4**
+    - Done (2026-11-19): `shared/src/voice/cache.prop.test.ts` (plus `key.prop.test.ts` and `cache.test.ts`).
   - [x] 2.8 `policy.ts`: `decideSpeak` and `canSwitchSpeaking`
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
     - Done (2026-11-19): `shared/src/voice/policy.ts` (`decideSpeak`, `canSwitchSpeaking`) using `VOICE_ROOM_LINE_CAP` and `VOICE_ROOM_LATE_AT` from `limits.ts`.
@@ -49,28 +52,34 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - **Property 4: The speaking policy**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
     - Done (2026-11-19): `shared/src/voice/policy.prop.test.ts` with `propParams()`.
-  - [ ] 2.10 `listen.ts`: `listeningAllowed`, `clipVerdict` and `withTransientClip`
+  - [x] 2.10 `listen.ts`: `listeningAllowed`, `clipVerdict` and `withTransientClip`
     - The holder zeroes the buffer and drops its reference exactly once on success, throw or timeout.
     - _Requirements: 3.1, 3.2, 3.3_
-  - [ ]* 2.11 Write property test for listening limits and deletion
+    - Done (2026-11-19): `shared/src/voice/listen.ts`.
+  - [x]* 2.11 Write property test for listening limits and deletion
     - **Property 5: Listening limits and immediate deletion**
     - **Validates: Requirements 3.1, 3.2, 3.3**
-  - [ ] 2.12 `transcript.ts`: `prepareTurnInput`
+    - Done (2026-11-19): `shared/src/voice/listen.prop.test.ts`.
+  - [x] 2.12 `transcript.ts`: `prepareTurnInput`
     - Reuses `parseAction` and `acceptTurn`; the source is carried for the UI and read by no rule.
     - _Requirements: 3.4_
-  - [ ]* 2.13 Write property test for the transcript path
+    - Done (2026-11-19): `shared/src/voice/transcript.ts`.
+  - [x]* 2.13 Write property test for the transcript path
     - **Property 6: A transcript takes the typed-text path**
     - **Validates: Requirements 3.4**
-  - [ ] 2.14 `gate.ts`: `withTicket` with injected ports
+    - Done (2026-11-19): `shared/src/voice/transcript.prop.test.ts`.
+  - [x] 2.14 `gate.ts`: `withTicket` with injected ports
     - Reserve, one call, commit on success, release on failure, no call after a denial or on the kill switch.
     - _Requirements: 4.1, 4.2, 4.3_
-    - Progress (2026-11-16): done in `shared/src/voice/gate.ts` (`withTicket`, `GatePorts`, `GateResult`), with 11 tests including a randomized run of Property 7 (200 runs of up to 30 requests with random kill switches, denials, caps, throwing calls and lost commits: no call without a granted Ticket, one call per Ticket, every granted Ticket settled exactly once, the cap never exceeded). It takes an optional `charged(value)` so a call that gave nothing and cost nothing releases its Ticket instead of committing it; a `charged` that throws counts as charged. A Ticket for another meter is released and the call is not made.
-  - [ ]* 2.15 Write property test for budgets
+    - Done (2026-11-16, verified 2026-11-19): `shared/src/voice/gate.ts` (`withTicket`, `GatePorts`, `GateResult`). It takes an optional `charged(value)` so a call that gave nothing and cost nothing releases its Ticket instead of committing it; a `charged` that throws counts as charged. A Ticket for another meter is released and the call is not made.
+  - [x]* 2.15 Write property test for budgets
     - **Property 7: Budgets are never exceeded and no call follows a denial**
     - **Validates: Requirements 4.1, 4.2**
-  - [ ] 2.16 `telemetry.ts`: the voice counter whitelist
+    - Done (2026-11-19): `shared/src/voice/gate.test.ts` (200 seeded runs with `propParams(200)` across random kill switches, denials, caps, throwing calls and lost commits).
+  - [x] 2.16 `telemetry.ts`: the voice counter whitelist
     - Counters for speech requests, cache hits, fallbacks by step, listen calls, Clips checked, accepted and rejected, stitches played, live slices and stop reasons, added to the ghost engine's whitelist. Unit test: no event carries audio, a transcript, a prompt, a word or text.
     - _Requirements: 3.3, 5.5_
+    - Done (2026-11-19): `shared/src/voice/telemetry.ts`, `shared/src/voice/telemetry.test.ts`, and `LOG_SCHEMA` voice counter entries in `shared/src/log.ts` (`log.test.ts`).
   - [x]* 2.17 Write property test for Speakers and Steering Tags
     - **Property 13: Every line has one Speaker, and a Steering Tag stays in the Inworld request**
     - **Validates: Requirements 1.6, 1.7, 1.11**

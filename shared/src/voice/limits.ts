@@ -19,8 +19,18 @@ export const CACHE_MAX_AGE_DAYS = 60;
 export const VOICE_ROOM_LINE_CAP = 20;
 export const VOICE_ROOM_LATE_AT = 15;
 
+/** Default cap values (overridable via `parseVoiceConfig(env)`). */
+export const VOICE_TTS_SESSION_CAP = 40;
+export const VOICE_TTS_DAY_CAP = 1_500;
+export const VOICE_STT_SESSION_CAP = 20;
+export const VOICE_STT_DAY_CAP = 750;
+export const VOICE_LIVE_SESSION_SECONDS = 300;
+export const VOICE_LIVE_DAY_SECONDS = 1_800;
+
 /** Single-player recording & Stitch limits. */
 export const LISTEN_MAX_MS = 8_000;
+/** Byte ceiling placeholder until Spike 1.1 measures 8s vs 16s across browser codecs (256 KiB). */
+export const LISTEN_MAX_BYTES = 262_144;
 export const WORD_BANK_MAX_WORDS = 12;
 export const CLIP_MAX_MS = 2_000;
 export const CLIP_MAX_RETRIES = 2;

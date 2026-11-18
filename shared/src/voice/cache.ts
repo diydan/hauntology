@@ -5,6 +5,10 @@
  * `speech/lib/v1/`, the Library), and the read path also checks `cacheFresh`, so a late lifecycle run never serves old audio.
  */
 
+import { canonicalSpeechKey, speechCacheKey } from "./key";
+
+export { canonicalSpeechKey, speechCacheKey };
+
 /** 60 days. */
 export const CACHE_MAX_AGE_MS = 60 * 24 * 60 * 60 * 1000;
 
