@@ -172,30 +172,38 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - _Requirements: 1.9_
 
 - [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
-  - [ ] 5.1 Word Bank, Templates and composition
+  - [x] 5.1 Word Bank, Templates and composition
     - `WORD_BANK` of the 12 default words, `validateWordBank`, the ten starter Templates, `validateTemplates` (no word outside the bank, every bank word used, subtitles pass `validateGhostReply`), `composeStitch`; `stitch.arb.ts` generators. The owner reviewed and kept the starter Template wording on 2026-11-14.
     - _Requirements: 5.1_
-  - [ ]* 5.2 Write property test for stitched lines
+    - Done (2026-11-19): `shared/src/voice/stitch/wordbank.ts`, `templates.ts`, `compose.ts`, and `stitch.arb.ts`.
+  - [x]* 5.2 Write property test for stitched lines
     - **Property 8: Stitched lines contain only template and Word Bank words**
     - **Validates: Requirements 5.1**
-  - [ ] 5.3 `consent.ts`
+    - Done (2026-11-19): `shared/src/voice/stitch/compose.prop.test.ts`.
+  - [x] 5.3 `consent.ts`
     - `StitchConsent {seat, yes, ageOrGuardianTick}`, `consentReduce`, `consentEffective`, and `STITCH_QUESTION` with the deletion statement, the aloud-and-revealed statement, the parent-or-guardian statement and the exact tick label. Unit test pins the phrases and that no age field exists.
     - _Requirements: 5.3_
-  - [ ]* 5.4 Write property test for consent
+    - Done (2026-11-19): `shared/src/voice/stitch/consent.ts`.
+  - [x]* 5.4 Write property test for consent
     - **Property 9: Stitch consent is each player's own**
     - **Validates: Requirements 5.3**
-  - [ ] 5.5 `check.ts`
+    - Done (2026-11-19): `shared/src/voice/stitch/consent.prop.test.ts`.
+  - [x] 5.5 `check.ts`
     - `heardWord`, `canCheck` and `recordCheck` with three attempts per word, 30 checks per player, 120 per room, and no use of a check on a denied ticket.
     - _Requirements: 5.2_
-  - [ ]* 5.6 Write property test for word checks
+    - Done (2026-11-19): `shared/src/voice/stitch/check.ts`.
+  - [x]* 5.6 Write property test for word checks
     - **Property 10: Word checks obey their limits**
     - **Validates: Requirements 5.2**
-  - [ ] 5.7 `play.ts` and `purge.ts`
+    - Done (2026-11-19): `shared/src/voice/stitch/check.prop.test.ts`.
+  - [x] 5.7 `play.ts` and `purge.ts`
     - `stitchEligible` (Haunt Event or midnight, 60 seconds, no Accusation, one a Round, two a game, not the same seat twice running, seeded choice), `stitchPublicEvent`, `stitchReveal`, `purgeClips` and `nextPurgeAt`.
     - _Requirements: 5.4, 5.5_
-  - [ ]* 5.8 Write property test for rarity and deletion
+    - Done (2026-11-19): `shared/src/voice/stitch/play.ts` and `purge.ts`.
+  - [x]* 5.8 Write property test for rarity and deletion
     - **Property 11: Stitch is rare and is deleted at the end or after 6 hours**
     - **Validates: Requirements 5.4, 5.5**
+    - Done (2026-11-19): `shared/src/voice/stitch/play-purge.prop.test.ts`.
   - [ ] 5.9 Word Check service
     - `api/src/voice/stitch.ts`, called by `PartyRoom`: `canCheck`, `withTicket('stt')`, `withTransientClip(transcribe)`, `heardWord`, `recordCheck`; the transcript is dropped; an accepted Clip goes to room storage and a rejected one is dropped; a refusal returns `stitch_check_limit` or `voice_unavailable`.
     - _Requirements: 5.2, 5.5_
