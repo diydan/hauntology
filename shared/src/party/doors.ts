@@ -301,6 +301,38 @@ export const markHeard = (d: DoorsState, doorId: string, seat: number): DoorsSta
 /** Why a door changed, told to every screen with the `door` message: a right knock, enough Players together, one more act toward it, its time, a Slam, or Skip in Wander. */
 export type DoorReason = "knock" | "together" | "act" | "timeout" | "slam" | "skip";
 
+// ---------------------------------------------------------------- the Haunt Slam (knock-door 5.2, 5.3)
+/**
+ * The doors a Slam may shut now. `at` is the Zone the active Player stands in, or null between Turns: Players are placed
+ * only on their own Turn (each starts at the Home Zone), so nobody counts as behind a door when `at` is null.
+ */
+export function slamTargetsAt(d: DoorsState, zoneIds: readonly string[], at: string | null, round: number): string[] {
+  const behind = Object.fromEntries(d.doors.map((door) => [door.id, at !== null && zonesBehind(door.id, zoneIds, d.doors, d.states, d.passages, d.home).includes(at) ? 1 : 0]));
+  return slamTargets(d.states, behind, round);
+}
+
+/** The ghost's knock at the TV after a Slam: heard by every Player (so it is public), first to knock it back gets Help. */
+export type TvKnock = Readonly<{ round: number; groups: readonly number[]; long: number | null; answeredBy: number | null }>;
+
+/** The pattern is easy level, from the Room seed and the Round only. */
+export function startTvKnock(roomSeed: number, round: number): TvKnock {
+  const lock = makeLock("knock", "easy", hash("tv-knock", roomSeed, round));
+  if (lock.kind !== "knock") throw new Error("knock lock expected");
+  return { round, groups: lock.secret.groups, long: lock.secret.long, answeredBy: null };
+}
+
+export type TvKnockOutcome = Readonly<{ ok: false; code: "no_tv_knock" | "tv_knock_answered" | "no_knocks" } | { ok: true; state: TvKnock; outcome: "help" | "wrong"; heard: string }>;
+
+/** A Player knocks back. Only in the Round of the Slam, and only the first right knock counts; wrong tries cost nothing and say what was heard. */
+export function knockBackAtTv(t: TvKnock | null | undefined, round: number, seat: number, times: readonly number[]): TvKnockOutcome {
+  if (t === null || t === undefined || t.round !== round) return { ok: false, code: "no_tv_knock" };
+  if (t.answeredBy !== null) return { ok: false, code: "tv_knock_answered" };
+  if (times.filter((x) => Number.isFinite(x)).length === 0) return { ok: false, code: "no_knocks" };
+  const j = judgeKnock(t, times);
+  const heard = `You knocked ${j.heard.groups.join(", ")}.`;
+  return j.ok ? { ok: true, state: { ...t, answeredBy: seat }, outcome: "help", heard } : { ok: true, state: t, outcome: "wrong", heard };
+}
+
 /** One door as every screen sees it: never the pattern. `need` and `have` show a heavy door's count ("2 of 3"). */
 export type PublicDoor = Readonly<{ id: string; at: Point; width: number; a: string; b: string; lock: DoorLock; open: boolean; need: number; have: number }>;
 export function publicDoors(d: DoorsState, seated: number, nowMs: number): PublicDoor[] {

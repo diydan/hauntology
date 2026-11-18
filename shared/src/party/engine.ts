@@ -4,15 +4,16 @@ import { botAct, newMind, observe, type Fact, type Mind, type MindCard } from ".
 import { bonusSeconds, clockStatus, deadlineOf, earned, expire, nextWake, pause, resume, turnBudget, type BaseSeconds, type ClockEvent, type TurnClock } from "./clock";
 import { dealCase, type Card, type Deal, type Solution } from "./deal";
 import {
-  actOnDoor, closedZones, knockOnDoor, knockSightFor, knocksHeardOnEntry, markHeard, newRoundDoors, newTurnDoors, parseDoorsState, publicDoors, setupDoors,
-  type DoorReason, type DoorSetup, type DoorsState, type PublicDoor,
+  actOnDoor, closedZones, knockBackAtTv, knockOnDoor, knockSightFor, knocksHeardOnEntry, markHeard, newRoundDoors, newTurnDoors, parseDoorsState, publicDoors, setupDoors,
+  shutDoor, slamTargetsAt, startTvKnock,
+  type DoorReason, type DoorSetup, type DoorsState, type PublicDoor, type TvKnock,
 } from "./doors";
 import { endingPayload, type EndingPayload, type RecapEvent, type Source } from "./ending";
 import { applyEvent, chooseOption, chooserFor, coldSpotIn, defaultOption, fireEvent, takeBlackout, type Haunt, type HauntOption } from "./haunt";
 import { buildPool, type Pool } from "./pool";
 import { inspectRefusal, placeResidue, settleInspect, startInspect, type Inspecting } from "./residue";
 import { EAVESDROP_MS, canEavesdrop, eavesdrop, gainResolve, spendResolve, type EavesdropWindow } from "./resolve";
-import { applyNudge, canNudge, type LastSpook, type NudgeKind } from "./nudge";
+import { NUDGE_CAP_MS, NUDGE_MS, applyNudge, canNudge, type LastSpook, type NudgeKind } from "./nudge";
 import { ghostName } from "./preset-ghosts";
 import { presetRow, type SoloPreset } from "./solo";
 import { capFor } from "../puzzles/settings";
@@ -104,6 +105,10 @@ export type EngineState = Readonly<{
   doorSetup?: DoorSetup | null;
   /** Why the world's doors were refused, for the Master (knock-door 1.4). */
   doorProblems?: readonly string[];
+  /** The ghost's knock at the TV after a Slam, or null (knock-door 5.3). */
+  tvKnock?: TvKnock | null;
+  /** Seats that knocked back first and have a Help (10 s) coming at the start of their next Turn (knock-door 5.3). */
+  helpOwed?: readonly number[];
 }>;
 
 // ---------------------------------------------------------------- actions and messages
@@ -131,6 +136,8 @@ export type ClientMsg =
   | Readonly<{ t: "plainInspect"; on: boolean }>
   /** A Player acts on a heavy door (knock-door 4.1). */
   | Readonly<{ t: "doorAct"; doorId: string }>
+  /** A Player knocks back at the TV after a Slam (knock-door 5.3). */
+  | Readonly<{ t: "tvKnock"; times: readonly number[] }>
   /** A Detective's try at a knock door: the times of their knocks, in ms (knock-door 3.3). */
   | Readonly<{ t: "doorKnock"; doorId: string; times: readonly number[] }>;
 export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> | Readonly<{ kind: "alarm" }> | Readonly<{ kind: "connect"; seat: number }> | Readonly<{ kind: "disconnect"; seat: number }>;
@@ -149,6 +156,8 @@ export type PublicSnapshot = Readonly<{
   doors: readonly PublicDoor[];
   /** The Zones nobody can reach now, behind a shut door. */
   closedZones: readonly string[];
+  /** The ghost's knock at the TV in this Round, public because every Player hears it; null when there is none (knock-door 5.3). */
+  tvKnock: Readonly<{ groups: readonly number[]; long: number | null; answeredBy: number | null }> | null;
   /** Why the world's doors were refused, as short codes (the game plays without them). */
   doorProblems: readonly string[];
 }>;
@@ -161,9 +170,11 @@ export type PrivateSnapshot = Readonly<{
   soundConsent: boolean;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
 }>;
-export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> | Readonly<{ t: "door"; id: string; open: boolean; reason: DoorReason; need: number; have: number }> }>
+export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> | Readonly<{ t: "door"; id: string; open: boolean; reason: DoorReason; need: number; have: number }>
+  | Readonly<{ t: "tvKnock"; groups: readonly number[]; long: number | null; answeredBy: number | null }> }>
   | Readonly<{ to: "seat"; seat: number; msg: Readonly<{ t: "private"; view: PrivateSnapshot }> | Readonly<{ t: "refused"; code: string }>
       | Readonly<{ t: "doorResult"; doorId: string; outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>
+      | Readonly<{ t: "tvKnockResult"; outcome: "help" | "wrong"; heard: string }>
       | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }>
       | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null }>
       | Readonly<{ t: "lockResult"; lockId: string; outcome: "solved" | "wrong" | "failed"; attemptsLeft?: number; zone?: string; card?: string | null }>
@@ -226,9 +237,12 @@ export function mindOf(s: EngineState, seat: number): Mind {
 function startTurn(s: EngineState, seat: number, now: number): EngineState {
   const { haunt, blackout } = takeBlackout(s.haunt);
   const bonus = bonusSeconds(earned(s.log as readonly ClockEvent[], seat));
-  const budget = turnBudget({ baseSeconds: s.settings.baseSeconds, bonusSeconds: bonus, blackout });
+  const budget0 = turnBudget({ baseSeconds: s.settings.baseSeconds, bonusSeconds: bonus, blackout });
+  // a Player who knocked back first after a Slam has a Help coming: 10 s more on this Turn, never past the cap (knock-door 5.3)
+  const helped = (s.helpOwed ?? []).includes(seat);
+  const budget = budget0 === null || !helped ? budget0 : Math.min(NUDGE_CAP_MS / 1000, budget0 + NUDGE_MS / 1000);
   const turnNo = s.turnNo + 1;
-  const base: EngineState = { ...s, haunt, turnNo, ...(s.doors ? { doors: newTurnDoors(s.doors) } : {}) };
+  const base: EngineState = { ...s, haunt, turnNo, ...(s.doors ? { doors: newTurnDoors(s.doors) } : {}), ...(helped ? { helpOwed: (s.helpOwed ?? []).filter((x) => x !== seat) } : {}) };
   const [s2] = addLog(base, { kind: "turn-start", seat });
   const turn: TurnRec = {
     seat, turnNo, startedMs: now, clock: { startedMs: now, budgetMs: budget === null ? null : budget * 1000, pausedMs: 0, pausedSinceMs: null, ended: false },
@@ -246,7 +260,7 @@ function fireHaunt(s: EngineState, now: number): EngineState {
   let st = s;
   for (let guard = 0; guard < 3; guard++) {
     const chooser = chooserFor(polts, st.eventsChosen);
-    const h = fireEvent(st.haunt, st.seed, chooser, now);
+    const h = fireEvent(st.haunt, st.seed, chooser, now, slamOffered(st));
     if (h === st.haunt || h.pending === null) break;
     st = { ...st, haunt: h };
     if (chooser !== null) break; // a Poltergeist chooses within 15 s; the alarm applies the first option otherwise
@@ -258,7 +272,38 @@ function fireHaunt(s: EngineState, now: number): EngineState {
 function applyChosen(s: EngineState, option: HauntOption, now: number): EngineState {
   const level = s.haunt.pending?.level ?? s.haunt.level;
   const [s2] = addLog({ ...s, haunt: applyEvent(s.haunt, option, s.pool.zones.map((z) => z.id), s.round, s.seed), eventsChosen: s.eventsChosen + 1 }, { kind: "haunt-event", option });
-  return fireHaunt(houseCue(s2, level, option === "restless", now), now);
+  return fireHaunt(houseCue(option === "slam" ? slam(s2) : s2, level, option === "restless", now), now);
+}
+
+/**
+ * Whether a Slam can be offered now (knock-door 5.1, 5.2, 5.5): puzzles are on, the Gentle preset is off, and some open
+ * door has nobody behind it. A door that cannot be shut is not offered, so the Event keeps its other options.
+ */
+function slamOffered(s: EngineState): boolean {
+  if (!s.doors || (s.settings.puzzles ?? "off") === "off" || s.settings.preset === "gentle") return false;
+  return slamTargetsAt(s.doors, s.pool.zones.map((z) => z.id), s.turn?.at ?? null, s.round).length > 0;
+}
+
+/** The Slam: shut the first door that may be shut and knock at the TV for every Player (knock-door 5.2, 5.3). Nothing happens if none can be shut by now. */
+function slam(s: EngineState): EngineState {
+  if (!s.doors) return s;
+  const [id] = slamTargetsAt(s.doors, s.pool.zones.map((z) => z.id), s.turn?.at ?? null, s.round);
+  if (id === undefined) return s;
+  const tv = startTvKnock(s.seed, s.round);
+  return {
+    ...s, doors: { ...s.doors, states: shutDoor(s.doors.states, id, s.round, true) }, tvKnock: tv,
+    outbox: [...s.outbox, doorMsg(id, false, "slam"), { to: "public", msg: { t: "tvKnock", groups: tv.groups, long: tv.long, answeredBy: null } }],
+  };
+}
+
+/** A Player knocks back at the TV; the first right knock gets a Help at the start of their next Turn (knock-door 5.3). */
+function tvKnockBack(s: EngineState, seat: number, times: readonly number[]): EngineState | string {
+  const r = knockBackAtTv(s.tvKnock, s.round, seat, times);
+  if (!r.ok) return r.code;
+  const out: Outbound[] = [{ to: "seat", seat, msg: { t: "tvKnockResult", outcome: r.outcome, heard: r.heard } }];
+  if (r.outcome === "wrong") return { ...s, outbox: [...s.outbox, ...out] };
+  out.push({ to: "public", msg: { t: "tvKnock", groups: r.state.groups, long: r.state.long, answeredBy: seat } });
+  return { ...s, tvKnock: r.state, helpOwed: [...(s.helpOwed ?? []), seat], outbox: [...s.outbox, ...out] };
 }
 
 const phoneOf = (s: EngineState, p: PlayerRec): PhoneSeat => ({ seat: p.seat, bot: isBot(s, p.seat), consent: p.soundConsent, hasAudio: p.hasAudio, soundsThisRound: p.soundsThisRound });
@@ -418,6 +463,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
   if (msg.t === "sound") return setPlayer(s, seat, (p) => ({ ...p, soundConsent: msg.consent, hasAudio: msg.audio ?? p.hasAudio }));
   if (s.pausedSinceMs !== null) return "paused";
   if (msg.t === "doorAct") return doorAct(s, seat, msg.doorId, now);
+  if (msg.t === "tvKnock") return tvKnockBack(s, seat, msg.times);
   if (msg.t === "cue") {
     if (!isCue(msg.cue)) return "cue_denied:unknown";
     const me = player(s, seat) as PlayerRec;
@@ -737,6 +783,7 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
     ending: s.phase === "ended" ? s.ending : null,
     doors: s.doors ? publicDoors(s.doors, seatedHumans(s), now) : [],
     closedZones: s.doors ? closedZones(s.doors, s.pool.zones.map((z) => z.id)) : [],
+    tvKnock: s.tvKnock && s.tvKnock.round === s.round ? { groups: [...s.tvKnock.groups], long: s.tvKnock.long, answeredBy: s.tvKnock.answeredBy } : null,
     doorProblems: [...(s.doorProblems ?? [])],
   };
 }

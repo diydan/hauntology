@@ -72,7 +72,7 @@ In `engine.ts`: `createEngine({ doors })`, `repairDoors(engine)` (used when a Ro
 - **Closed Zones**: `reachableZones` is the Zones a Player can reach from the Home Zone now. The Turn picker and the Lock placement use it, so a Zone behind a shut door is not offered. `zonesBehind` is what a Slam counts Players in.
 - **Knock door in a Turn**: the Detective's try goes to the same `judgeKnock` as any Secret knock. Three wrong tries call `failKnock` and end the Turn.
 - **Heavy door**: the Room keeps the recent acts of each heavy door; `doorAct` appends one; when `actsTogether(acts, now, heavyNeed(door, seated))` holds, `openDoor` runs and the acts are cleared.
-- **Slam**: an added `HauntOption`, `slam`, offered at threshold 6 only when `slamTargets` is not empty, puzzles are on and the Gentle preset is off. It picks the first target in list order, calls `shutDoor`, and the ghost's knock pattern for the TV comes from the same seeded stream as the Haunt options.
+- **Slam**: an added `HauntOption`, `slam` (`haunt.ts`), kept out of `HAUNT_OPTIONS` so the Voice Library's line groups do not change. At threshold 6 only, when the Engine says `slamOffered` (puzzles on, Gentle off, and `slamTargetsAt` not empty), `fireEvent(..., slam = true)` offers `slamOptions`: the ordinary first option and the Slam, in an order from their own seeded stream, so the Slam is sometimes the one that applies by default. The Engine's `slam` shuts the first target with `shutDoor` and starts a `TvKnock` (easy level, from the Room seed and the Round). Only the active Player has a place between Turns (each Turn starts at the Home Zone), so `slamTargetsAt(d, zoneIds, at, round)` counts that one Player, in `at`, as behind a door when `zonesBehind` says so, and nobody when `at` is null. A Player's `tvKnock` message is judged by `knockBackAtTv`; the first right one sets `answeredBy` and adds the seat to `helpOwed`, and `startTurn` gives that seat +10 s (capped at 120 s) once.
 - **TV and phones**: a `door` message carries `{id, open, reason}` where `reason` is `knock`, `together`, `skip`, `timeout` or `slam`. The TV swings the door slowly (never a flash); each phone runs `feel` from its own place and facing, so a near phone buzzes and a far one only sees the picture shake.
 - **Viewer**: a shut door is one box collider across the doorway, `width` wide, 0.2 m thick, up to 2.2 m, added or removed when the state changes. Whether this stops the walker cleanly is the spike of task 7.
 
@@ -95,7 +95,11 @@ A stored value that does not parse falls back to `initialDoors(doors, puzzlesOn)
 | `welcome` | server | one screen | `doors`: every door's state, joining late |
 | `doorResult` | server | the one Detective | `doorId`, `outcome` (`opened`, `wrong`, `failed`), `heard` ("You knocked 2, 3."), `triesLeft` |
 | Sight (knock) | server | the one Player | `sightId` `door-<id>`, the pattern, once; never in `door`; given to the first Detective into the door's near Zone |
-| `public` view | server | every screen | adds `doors` (each with `need` and `have`), `closedZones` and `doorProblems` |
+| `tvKnock` | a Player's phone | server | `times`: a knock-back after a Slam, any seat, any time in the Slam's Round |
+| `tvKnock` | server | every screen | `groups`, `long`, `answeredBy` (null until the first right knock-back); public by design |
+| `tvKnockResult` | server | the one Player | `outcome` (`help` or `wrong`), `heard` |
+| `choose` | a Poltergeist's phone | server | `option` may now be `slam` |
+| `public` view | server | every screen | adds `doors` (each with `need` and `have`), `closedZones`, `doorProblems` and `tvKnock` (this Round's, or null) |
 
 `welcome` also carries `doors` when the world has any. The Room gets a world's doors from the optional `doors()` port of `Ports` (`server.ts`); `createEngine` takes them as `doors` and `step` checks them with the pool's Zones at the start.
 

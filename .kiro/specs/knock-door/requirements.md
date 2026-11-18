@@ -76,7 +76,7 @@ This spec joins four others. `puzzles` owns the Secret knock Kind and the shared
 
 1. AT Haunt level 6 the Slam MAY be one of the two options of the Haunt Event, WHEN at least one door can be shut; the Poltergeists choose it as they choose any option (party-mode Requirement 11), and with none, or no choice in time, the first option applies.
 2. A Slam SHALL shut one open door only when no Player is behind it and it did not open by itself in the same Round (`canSlam`); a door that fails either rule SHALL NOT be shut, and WHEN no door can be shut THEN the Slam SHALL NOT be offered.
-3. THE Slam SHALL be shown to every screen: the TV shows the door close with a knock, and the ghost SHALL knock a pattern at the TV for every Player at once, the first to knock it back getting Help (puzzles Requirement 24.6).
+3. THE Slam SHALL be shown to every screen: the TV shows the door close with a knock, and the ghost SHALL knock a pattern at the TV for every Player at once, the first to knock it back getting Help (puzzles Requirement 24.6); the knock SHALL be easy level, from the Room seed and the Round only, and public because every Player hears it, a knock-back SHALL count only in the Round of the Slam, wrong tries SHALL cost nothing and say what was heard, and Help SHALL be 10 seconds more on that Player's next Turn (as a Nudge gives, never past 120 seconds).
 4. A slammed door SHALL open by itself at the start of the next Round (Requirement 2.6).
 5. WHERE puzzles are off or the Gentle preset is on THEN no Slam SHALL be offered.
 

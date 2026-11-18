@@ -72,12 +72,13 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
     - _Requirements: 4.4_
 
 - [ ] 5. Haunt Slam
-  - [ ] 5.1 Add the `slam` option at threshold 6: offered only when `slamTargets` is not empty, puzzles are on and the Gentle preset is off
+  - [x] 5.1 Add the `slam` option at threshold 6: offered only when `slamTargets` is not empty, puzzles are on and the Gentle preset is off
     - _Requirements: 5.1, 5.5_
-  - [ ] 5.2 Count the Players behind each door with `zonesBehind`; shut the first target with `shutDoor`
+  - [x] 5.2 Count the Players behind each door with `zonesBehind`; shut the first target with `shutDoor`
     - _Requirements: 5.2_
-  - [ ] 5.3 The ghost knocks a pattern at the TV for every Player; the first to knock it back gets Help
+  - [x] 5.3 The ghost knocks a pattern at the TV for every Player; the first to knock it back gets Help
     - _Requirements: 5.3_
+  - Progress (2026-11-18): 5.1 to 5.3 are in the Engine (`haunt.ts`, `doors.ts`, `engine.ts`, `protocol.ts`) with `doors-slam.test.ts` (15 tests). 5.4 (a slammed door opens by itself next Round) is covered by task 2.6 and tested. Not done: the Voice Library has no `haunt.slam` lines, so a Slam is silent until some are written; the TV and phone screens for the Slam (task 8); mutation checks on the Slam rules. "Help" is built as 10 seconds more on the knocker's next Turn: that is my reading of puzzles 24.6, to confirm.
 
 - [ ] 6. Wander door
   - [ ] 6.1 One door on the way to a memory, a Knock door or a Heavy door that asks for 1
