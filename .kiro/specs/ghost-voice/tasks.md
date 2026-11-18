@@ -93,17 +93,17 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Done (2026-11-18): `shared/src/voice/library.prop.test.ts` (`buildLibrary`, player-text-free `toVoiceLine`, secret-differing `EngineState` `prefetchPlan` equality), `shared/src/voice/prefetch.test.ts`, and `api/src/voice/speak.test.ts` (secret-differing `EngineState` pairs driven through the 3.12 `speakLine` / `speakFoundLine` service over fakes produce identical prefetch and upstream calls).
 
 - [ ] 3. API (`api/src/voice/` and `api/src/guarded/workersai/`)
-  - [ ] 3.1 Error codes
+  - [x] 3.1 Error codes
     - Add `voice_unavailable`, `clip_too_long`, `clip_not_heard`, `stitch_not_on`, `stitch_no_consent`, `stitch_check_limit` and `live_unavailable` to `shared/src/errors.ts`. Unit test: every value equals its key. None maps to an error screen in `errors-copy`.
     - _Requirements: 4.2_
-    - Observed (2026-11-16, not checked further): all seven codes are already in `shared/src/errors.ts`. Not checked: the "every value equals its key" test and the `errors-copy` rule.
+    - Done (2026-11-19): all seven codes verified in `shared/src/errors.ts`, `value === key` pinned in `shared/src/errors.test.ts`, and `shared/src/app/errors-copy.test.ts` asserts none maps to a fatal `home`/`gallery` error screen.
   - [ ] 3.2 Meters, caps and variables
     - Add `tts`, `stt` and `live` to `SpendGuard`'s `Meter` type and cap table (session and room scopes, global day), with the `VOICE_*` variables and kill-switch wiring; `GET /api/quota` returns the three remaining counts and the flags `voice`, `stitch` and `live`. The `live` Meter counts 10-second slices (30 a session, 180 a day by default). Coordinate with `world-pipeline` 4.1.
     - _Requirements: 4.1, 4.2, 6.2_
-  - [ ] 3.3 Guarded wrappers `speak` and `transcribe`
+  - [x] 3.3 Guarded wrappers `speak` and `transcribe`
     - In `api/src/guarded/workersai/`, typed by Meter: `speak(ticket: tts or live)` calls Inworld TTS 2 with the Speaker's `voice_id`, rate and temperature and the Steering Tag in front of the text (the only place a tag is added), downloads the returned MP3 file, then calls Aura-2 English with the same ticket and no tag if that fails, aborting at 5 seconds from the request; `transcribe(ticket: stt or live)` calls Whisper with `language: 'en'` and the clip passed straight in, never written anywhere. Fake Workers AI that returns good, slow, empty and failing results and counts calls.
     - _Requirements: 1.1, 1.3, 1.6, 3.3, 4.1_
-    - Progress (2026-11-16): `speak` is done in `api/src/guarded/workersai/speak.ts` (`generateSpeech`, `WorkersAiSpeaker`, `speechWasCharged`), with 49 tests against a fake Workers AI that gives good, slow, empty and failing answers and counts calls; the whole `api` suite and typecheck pass. It refuses a Ticket for any meter but `tts` or `live`, refuses a request with markup, a bracket or over 240 characters before any call, adds the Steering Tag in this one place (a test fails if another `api/src` file calls `steeringTag`), never fetches a link that is not https, and gives every step what is left of one 5 second deadline. The Inworld request is the one the render Worker used for the 527 Library files; the Aura-2 request and answer are from the design and **not yet run against the real service** (Spike 1.1). Not done: `transcribe` (Whisper's request shape is unverified; it goes with 3.7 and `withTransientClip`).
+    - Done (2026-11-19): `speak` in `api/src/guarded/workersai/speak.ts` (50 tests) plus `transcribeClip` / `WorkersAiTranscriber` in `api/src/guarded/workersai/transcribe.ts` (`transcribe.test.ts`, accepting `stt` or `live` Tickets, validating size/type/duration before calling `ai.run` with `{ audio, language: "en" }`). Note: real Aura-2 and Whisper payloads/timings on deployed Workers remain unverified until Spike 1.1.
   - [ ] 3.4 Speech cache in R2
     - R2 binding, a `SpeechCache` port, objects under `speech/v1/<hash>` with `storedAt` and `voice` metadata and no text, a 60-day lifecycle rule, a read-side `cacheFresh` check, lookup of the line's own Inworld voice key and then its Aura-2 key. Test with a fake R2 and an injected clock.
     - _Requirements: 1.4_
@@ -119,18 +119,21 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Accepts `{playId or roomCode, lineId}` only (a body with any text is refused); origin and cookie for Single player, host token for a room; finds the line, checks the cache, then `withTicket('tts')`, `speak`, cache put; answers audio, or `503 voice_unavailable` that the client treats as a quiet fallback; counters only in logs.
     - _Requirements: 1.1, 1.3, 1.5, 4.1, 4.2_
     - Progress (2026-11-16): the route and its service are done for Single player: `api/src/routes/voice.ts`, `api/src/voice/speak.ts` (`speakLine`), the strict body `SpeakRequestSchema` (`shared/src/voice/requests.ts`), the `VoiceLine` type and `speechVoices` (`shared/src/voice/line.ts`, so a line can never choose its own voice), the `VoiceLines` port (`api/src/voice/lines.ts`), the `voice.speak` log event (counters only; `log.test.ts` pins it), and `createApp({ voice })` serves it at `/api/voice/speak`. 69 new tests (37 in `api`: service 23 and route 14; 32 in `shared`: gate 11, line 16, requests 4 and 1 for the log event); the whole `shared` and `api` suites and the `shared`, `api` and `web` typechecks pass. What it does: a body with any text or any other field is `400`; another visitor's line, an unknown line, another game's line and a request with no Session are the same `404` (and no Session cookie is made); a spoken-part-less line, speech off (`VOICE_ENABLED`), a spent cap and a failed or slow voice are `503 voice_unavailable` with one body; audio is `200 audio/mpeg`, `no-store`. The cache is read before any Ticket is asked for, so a line already heard plays with every cap spent; a voice that gave nothing releases its Ticket, one that answered unusably is committed; the cache write is handed to `waitUntil` so the audio does not wait for R2. **(1) Served by the Worker since 3.5 (2026-11-16, see 3.5), when it has the games, the `AI` binding and speech model ids it accepts; the `AI` binding is not declared in `wrangler.jsonc`, so in production it is still not served until the owner adds it. Not done: (2) A room (`roomCode`, the Host's token) is refused by the schema until 3.9.**
-  - [ ] 3.7 `POST /api/voice/listen`
+  - [x] 3.7 `POST /api/voice/listen`
     - Origin and cookie checks, a content-type allow-list, `clipVerdict` and the byte ceiling from Spike 1.1, one clip per 1.5 seconds per Session, `withTicket('stt')`, `withTransientClip(transcribe)`, answers `{transcript}`; no audio, transcript or text in logs or storage; release on failure.
     - _Requirements: 3.1, 3.2, 3.3, 4.1, 4.2_
-  - [ ] 3.8 Transcript through the typed route
+    - Done (2026-11-19): `api/src/voice/listen.ts`, `/listen` in `api/src/routes/voice.ts`, wired in `api/src/app.ts` and `api/src/worker.ts`, verified in `api/src/routes/voice.listen.test.ts` (note: byte ceiling `LISTEN_MAX_BYTES = 262144` stays parameterized until Spike 1.1 measures 8s vs 16s).
+  - [x] 3.8 Transcript through the typed route
     - The turn route has no voice flag. Contract test: a transcript posted as `{text}` gets the same truncation, parse and rate-limit result as the same typed string.
     - _Requirements: 3.4_
+    - Done (2026-11-19): verified on `POST /api/play/:id/turn` in `api/src/routes/play.transcript.test.ts`.
   - [ ] 3.9 Speaking in a room
     - With `party-mode` task 8.9: `PartyRoom` keeps `voice.spoken`, applies `decideSpeak` (Master's `settings.speech`, off by default) to each narration, Haunt Event, midnight and ending line, counts only lines sent with `speak: true` and a non-empty `spoken`, and sends `voice {lineId, text, kind}` to the Host only. Phones get the public log text as before. Replaces the browser-voice-only path of party-mode Requirement 7.6.
     - _Requirements: 2.2, 2.3, 2.4_
-  - [ ] 3.10 Contract tests with fakes
+  - [x] 3.10 Contract tests with fakes
     - The listen handler writes no audio to any storage and logs no transcript; the speak route refuses text and a foreign `lineId`; logs hold only whitelisted counters; no module outside `api/src/guarded/` calls `env.AI.run` for speech or transcription; with the kill switch on and every Meter at zero every route answers quietly and the turn route still works.
     - _Requirements: 1.5, 3.3, 4.2, 4.3_
+    - Done (2026-11-19): `api/src/voice/contract.test.ts`.
   - [x] 3.11 Library tools and manifest
     - `shared/fixtures/voice-library.json` (keys and spoken texts, no audio, written from `buildLibrary`); `tools/check-voice-library.mjs` (offline; fails when a scripted spoken text has no entry, an entry has no line, or a text holds a Steering Tag or markup); `tools/prerender-voice.mjs` (run by the owner with a manual budget before a deploy: lists the keys missing in R2, prints the count and the estimated cost, renders only those with the Speaker's settings through the guarded `speak` wrapper, writes them under `speech/lib/v1/`, and never overwrites an existing key). Unit tests with a fake R2 and a fake wrapper. The audio files are not committed.
     - _Requirements: 1.8_
