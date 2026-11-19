@@ -139,6 +139,37 @@ describe("speaking", () => {
     expect(await t.voice.playLine("p", "l")).toBe(false);
     expect(t.api.speak).not.toHaveBeenCalled();
   });
+
+  it("drops late audio after the 5-second deadline, runs fallbackSpeak, and persists speak toggle in storage", async () => {
+    vi.useFakeTimers();
+    let resolveLate!: (v: ApiResult<{ audio: Blob }>) => void;
+    const fallbackSpeak = vi.fn(() => true);
+    const t = make({
+      api: { speak: vi.fn(() => new Promise<ApiResult<{ audio: Blob }>>((r) => { resolveLate = r; })) },
+      deadlineMs: 5_000,
+      fallbackSpeak,
+    });
+    t.voice.unlock();
+    const pending = t.voice.playLine("p", "l", "The air turns cold.");
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(await pending).toBe(false);
+    expect(fallbackSpeak).toHaveBeenCalledWith("The air turns cold.");
+    // Late resolution arrives after 5 s: audio player must never be started.
+    resolveLate({ ok: true, value: { audio: speech } });
+    await Promise.resolve();
+    expect(t.kit.made).toHaveLength(0);
+
+    const store = new Map<string, string>([["hauntology.speak", "false"]]);
+    const persisted = make({
+      storage: {
+        getItem: (k) => store.get(k) ?? null,
+        setItem: (k, v) => { store.set(k, v); },
+      },
+    });
+    expect(persisted.voice.getSnapshot().speak).toBe(false);
+    persisted.voice.setSpeak(true);
+    expect(store.get("hauntology.speak")).toBe("true");
+  });
 });
 
 describe("hold to talk", () => {

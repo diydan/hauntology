@@ -149,12 +149,15 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 4.1 Speak toggle
     - A button with `aria-pressed`, a 48 CSS pixel target and a text label; on by default in Single player, kept in `sessionStorage`; in Multiplayer it shows the room's switch and only the Master's phone can change it.
     - _Requirements: 2.1, 2.4_
-  - [ ] 4.2 Subtitle and audio player
+    - Progress (2026-11-19): single-player toggle (`Chat.tsx`, `voice.ts`) starts on and now persists in `sessionStorage` (`hauntology.speak`); multiplayer room switch waits on `3.9`.
+  - [x] 4.2 Subtitle and audio player
     - The line's full text goes into the Chat transcript's polite live region when it arrives and is marked while it plays; one `AudioContext` created on the content-notice acknowledgement; a 5-second timer from the request; refusal, timeout or autoplay block falls back to `speechSynthesis` and then the Subtitle alone with a quiet "voice off" mark and no error screen; late audio is dropped; the line stops when the switch goes off.
     - _Requirements: 1.2, 1.3, 2.4_
-  - [ ] 4.3 Talk Button, recorder and microphone indicator
+    - Done (2026-11-19): `web/src/app/play/voice.ts`, `web/src/app/play/Chat.tsx`, and `web/src/app/screens/Play.tsx` (enforces `5,000 ms` deadline, drops late audio, falls back to `speechSynthesis` then Subtitle, stops immediately when toggled off).
+  - [x] 4.3 Talk Button, recorder and microphone indicator
     - Hold with the pointer or hold Space or Enter; `MediaRecorder` for up to 8 seconds; a persistent "Microphone on" badge with a dot while the stream is open (no pulsing under reduced motion); tracks stopped the moment recording ends and the Blob cleared after sending; a denied permission or a missing `MediaRecorder` hides the button and leaves typing; the transcript is shown as the visitor's line and sent through the typed turn route; an empty result shows one quiet line. Not offered in Multiplayer.
     - _Requirements: 3.1, 3.2, 3.4_
+    - Done (2026-11-19): verified across `web/src/app/play/Chat.tsx`, `voice.ts`, `Play.tsx`, `Chat.test.tsx`, `Play.test.tsx`, and `voice.test.ts`.
   - [ ] 4.4 Quota-aware controls and the zero-quota path
     - Read the `tts`, `stt` and `live` remaining counts and flags from the quota snapshot and show a control as unavailable with one line of words instead of failing; with everything at zero or the kill switch on, the Play screen still plays to the Ending by reading and typing.
     - _Requirements: 4.2, 4.3_
@@ -170,6 +173,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 4.8 Prefetch and decode ahead
     - The Host (and Play) asks for each id in the room's prefetch list with `prefetch: true` and decodes the audio ahead into memory: at most 8 lines and 2 MB, cleared when the room ends, never written to disk, so a Library line starts at once. Nothing is prefetched that the server did not list.
     - _Requirements: 1.9_
+    - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) implements the 8-line / 2 MB in-memory buffer store and clear-on-end lifecycle; Host room wiring waits on `party-mode` `3.9`.
 
 - [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
   - [x] 5.1 Word Bank, Templates and composition
@@ -212,9 +216,10 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Clips under `clip:<seat>:<word>` in the `PartyRoom`'s own storage with `recordedAt`; the Durable Object alarm set from `nextPurgeAt`; purge on leave, withdraw, Master off, game end and room deletion; never R2, KV, a log, a prompt or a route. Test with an in-memory storage fake.
     - _Requirements: 5.5_
     - Done (2026-11-19): `api/src/voice/stitch-store.ts` (`RoomStitchClipStore`) and `api/src/voice/stitch-store.test.ts`.
-  - [ ] 5.11 Recorder and player helpers
+  - [x] 5.11 Recorder and player helpers
     - `recorder.ts` records one word of at most 2 seconds and rejects a longer one; `stitch-player.ts` decodes and schedules the Clips back to back with Web Audio on the Host with the Subtitle. Reused by party-mode's Controller and Host pages.
     - _Requirements: 5.1, 5.4_
+    - Done (2026-11-19): `web/src/app/voice/recorder.ts` (`recordStitchWord`), `web/src/app/voice/stitch-player.ts` (`playStitchSequence`), and `web/src/app/voice/voice-helpers.test.ts`.
   - [ ] 5.12 Room wiring with party-mode Requirement 18
     - Provide the pure functions and message names to party-mode: `settings {stitch}` (Master only, off by default), the question and tick at join, `stitchAnswer`, `stitchClip`, `stitchResult`, `stitch {eventId, subtitle, clips}` to the Host, the log line "a voice whispered", and the Reveal in the ending payload only. Model-based contract test with a fake `PartyRoom`: the Master's token cannot answer for another seat, no Clip leaves the room, the public log never names a seat, and a Stitch changes no rule state.
     - _Requirements: 5.3, 5.4_

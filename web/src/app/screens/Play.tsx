@@ -63,6 +63,12 @@ export default function Play() {
     const voice = createVoice({
       api, recorder: platform.voice.recorder, createAudio: platform.voice.createAudio, unlockAudio: platform.voice.unlockAudio,
       onTranscript: (text) => void controller.submit({ text }),
+      storage: typeof sessionStorage !== "undefined" ? sessionStorage : null,
+      fallbackSpeak: (text) => {
+        if (typeof speechSynthesis === "undefined" || typeof SpeechSynthesisUtterance === "undefined") return false;
+        speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+        return true;
+      },
     });
     return { controller, voice };
   });
@@ -91,7 +97,7 @@ export default function Play() {
     lastReply.current = reply.n;
     announce(reply.text);
     const playId = memory.get().playId;
-    if (voiceAvailable && reply.voice !== undefined && playId !== undefined) void voice.playLine(playId, reply.voice.lineId);
+    if (voiceAvailable && reply.voice !== undefined && playId !== undefined) void voice.playLine(playId, reply.voice.lineId, reply.text);
   }, [ui.reply, announce, voice, voiceAvailable, memory]);
 
   // A note in the Chat (a failed turn) is announced too; a new memory is announced as it is found.
