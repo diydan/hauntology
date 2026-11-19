@@ -36,9 +36,9 @@
     - Done (2026-11-19): `createRoomSongsController` (`web/src/app/songs/room-songs.ts`) and `SongControls` (`web/src/app/songs/SongControls.tsx`), verified in `SongControls.test.tsx`.
 
 - [ ] 4. Shared look (added 2026-11-15; satisfies Requirement 5 and the `design-system` spec)
-  - [ ] 4.1 Build the captions, the Songs setting with mute and skip, and the ending screen's song line from the elements in `design/catalogue.html`; their own style says only where things go
+  - [x] 4.1 Build the captions, the Songs setting with mute and skip, and the ending screen's song line from the elements in `design/catalogue.html`; their own style says only where things go
     - _Requirements: 5.1, 5.3_
-    - Progress (2026-11-19): `SongControls` (`web/src/app/songs/SongControls.tsx`, `SongControls.test.tsx`) builds captions, `ui-segments` setting, and Mute/Skip `ui-button`s from design-system classes with zero inline styles; ending screen song line awaits `party-mode` standalone ending screen wiring.
+    - Done (2026-11-19): `SongControls` (`web/src/app/songs/SongControls.tsx`, `SongControls.test.tsx`: captions in `ui-speech ui-hint`, setting in `ui-segments`, Mute/Skip in `ui-button`s) and `Ending` song line (`web/src/app/case/Ending.tsx`, `Ending.test.tsx`: `ui-speech ui-hint` inside `ui-panel`), both with zero inline styles.
   - [ ] 4.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 5.2_
   - [ ] 4.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button

@@ -200,7 +200,7 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
 
   if (view.phase === "ended" && view.ending) {
     const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    return <Ending view={view} n={n} reducedMotion={reduced} />;
+    return <Ending view={view} n={n} reducedMotion={reduced} songLine={snap.activeSong ?? null} />;
   }
 
   return (
