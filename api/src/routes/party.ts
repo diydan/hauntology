@@ -1,6 +1,8 @@
 import { Hono, type Context } from "hono";
 import { sanitizeNickname } from "@hauntology/shared/party/nickname";
 import { generateRoomCode, normalizeCode } from "@hauntology/shared/party/roomCode";
+import type { AppEnv } from "../http/env";
+import { flagsFrom } from "../http/flags";
 
 type Stub = { fetch(input: string, init?: RequestInit): Promise<Response> };
 type Namespace = { idFromName(name: string): unknown; get(id: unknown): Stub };
@@ -52,7 +54,12 @@ export function partyRoutes(deps: PartyDeps): Hono {
         continue;
       }
       if (claim.ok) {
-        const createPayload = body.doors && typeof body.doors === "object" ? { code, doors: body.doors } : { code };
+        const puzzlesEnabled = flagsFrom((c as Context<AppEnv>).env).puzzlesEnabled;
+        const createPayload = {
+          code,
+          ...(body.doors && typeof body.doors === "object" ? { doors: body.doors } : {}),
+          ...(puzzlesEnabled ? {} : { puzzlesEnabled: false }),
+        };
         const tokens = (await (await post(roomOf(code), "/create", createPayload)).json()) as { hostToken: string; displayToken: string };
         return c.json({ code, ...tokens });
       }

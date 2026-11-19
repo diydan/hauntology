@@ -54,6 +54,8 @@ export const LOG_SCHEMA = {
   "voice.stitch.play": { outcome: "word", count: "int" },
   /** Live mode slice or stop telemetry (ghost-voice 2.16, 6.3): stop reason and slice count. Never audio or transcript. */
   "voice.live": { outcome: "word", stop: "word", slices: "int" },
+  /** One Party Mode puzzle Lock attempt/close (puzzles 3.7, Requirement 14.2): kind, outcome, attempt count only. Never a Transcript, seat, time or Tilt. */
+  "puzzle.lock": { kind: "word", outcome: "word", attempts: "int" },
 } as const;
 
 export type LogEvent = keyof typeof LOG_SCHEMA;

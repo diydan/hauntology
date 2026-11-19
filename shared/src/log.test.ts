@@ -95,6 +95,7 @@ describe("formatLog", () => {
       "voice.stitch.check": { outcome: "word", accepted: "bool", rejected: "bool", checks: "int" },
       "voice.stitch.play": { outcome: "word", count: "int" },
       "voice.live": { outcome: "word", stop: "word", slices: "int" },
+      "puzzle.lock": { kind: "word", outcome: "word", attempts: "int" },
     });
   });
 
