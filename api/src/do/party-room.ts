@@ -1,4 +1,5 @@
 import { RoomCore, type Ports } from "@hauntology/shared/party/server";
+import { RoomSongStore, type SongBucket } from "../songs/store";
 import { RoomStitchClipStore, type RoomClipStorage } from "../voice/stitch-store";
 
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -21,8 +22,9 @@ export class PartyRoom {
   private readonly core: RoomCore;
   private readonly clips: RoomStitchClipStore;
 
-  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace } = {}, clock: () => number = Date.now) {
+  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace; BUCKET?: SongBucket } = {}, clock: () => number = Date.now) {
     this.clips = new RoomStitchClipStore(this.state.storage as unknown as RoomClipStorage);
+    const songs = env.BUCKET !== undefined ? new RoomSongStore(env.BUCKET) : null;
     const sockets = (): WebSocket[] => (this.state as unknown as { getWebSockets(): WebSocket[] }).getWebSockets();
     const byId = (id: string): WebSocket | undefined => sockets().find((ws) => (ws as unknown as { deserializeAttachment(): { id?: string } | null }).deserializeAttachment()?.id === id);
     const ports: Ports = {
@@ -37,6 +39,9 @@ export class PartyRoom {
       deleteStitchClips: async (forSeats) => {
         if (forSeats === "all") await this.clips.deleteAll();
         else for (const seat of forSeats) await this.clips.deleteForSeat(seat);
+      },
+      deleteSongs: async (code) => {
+        await songs?.deleteRoomSongs(code);
       },
       // Free the Room's place in the directory, so the cap counts only live Rooms.
       ended: async (code) => {

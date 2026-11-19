@@ -87,4 +87,13 @@ describe("the ending screen", () => {
     expect(document.querySelector(".ui-lyrics")).toBeTruthy();
     vi.unstubAllGlobals();
   });
+
+  it("renders the ending song line using design-system ui-speech ui-hint when provided (game-songs 4.1)", () => {
+    const view = ended({ houseWins: false, winners: [1] });
+    render(<Ending view={view} n={namesOf(view, 1)} reducedMotion songLine={{ title: "Ballad of the Case", captions: "The lanterns went out together." }} />);
+    const line = document.querySelector("[data-ending-song-line]")!;
+    expect(line.classList.contains("ui-speech")).toBe(true);
+    expect(line.classList.contains("ui-hint")).toBe(true);
+    expect(line.textContent).toBe("Ballad of the Case: The lanterns went out together.");
+  });
 });

@@ -1,11 +1,13 @@
 import { whoIs } from "./auth";
-import { createEngine, step, type EngineSettings, type EngineState, type Outbound } from "./engine";
+import { createEngine, step, type EngineSettings, type EngineState, type Outbound, type PublicSnapshot } from "./engine";
 import { handOver } from "./master";
 import { PRESET_GHOST_IDS } from "./preset-ghosts";
 import { parseClientMessage } from "./protocol";
 import { createRoomState, isRoomExpired, newToken, parseRoom, serializeRoom, type RoomState, type Seat } from "./room";
 import { humanCount, seatPlayer } from "./seats";
 import { BOT_NAMES } from "./solo";
+import type { NameConsent, SongsSetting } from "../songs/lyrics";
+import { initialSongPlan, songRequests, type SongPlanState, type SongRequest } from "../songs/plan";
 import type { LineKind, VoiceLine } from "../voice/line";
 import type { LodgerVoice, Speaker } from "../voice/voices";
 import type { PlayedStitch } from "../voice/stitch/play";
@@ -39,7 +41,23 @@ export type Ports = {
   ended?(code: string): Promise<void>;
   /** Deletes stored Stitch clips for specific seats or all seats on leave/withdraw/switch-off. */
   deleteStitchClips?(forSeats: number[] | "all"): Promise<void>;
+  /** Deletes stored generated songs for this Room when it ends (`game-songs` 3.1). */
+  deleteSongs?(code: string): Promise<void>;
 };
+
+export type RoomSongsState = Readonly<{
+  setting: SongsSetting;
+  muted: boolean;
+  consent: NameConsent;
+  plan: SongPlanState;
+}>;
+
+export const initialRoomSongsState = (): RoomSongsState => ({
+  setting: "off",
+  muted: false,
+  consent: {},
+  plan: initialSongPlan("off"),
+});
 
 /** At most this many messages per socket per second (party-mode 3.2: the Controller sends at most 30); the rest are refused unread. */
 export const MAX_MESSAGES_PER_SECOND = 40;
@@ -51,6 +69,7 @@ export type ServerState = Readonly<{
   lobbySettings: EngineSettings;
   sockets: Readonly<Record<string, SocketInfo>>;
   voice: RoomVoiceState;
+  songs: RoomSongsState;
 }>;
 
 export const DEFAULT_SETTINGS: EngineSettings = { baseSeconds: 60, hauntMax: 10, nudges: "all", frames: true, sounds: true, puzzles: "medium", preset: "classic" };
@@ -67,10 +86,10 @@ export class RoomCore {
     if (this.state !== null) return this.state;
     const text = await this.ports.load();
     if (text === undefined) return null;
-    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState };
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState };
     const room = parseRoom(raw.room);
     if (room === null) return null;
-    this.state = { room, engine: raw.engine, lobbySettings: raw.lobbySettings, sockets: raw.sockets, voice: raw.voice ?? initialRoomVoiceState() };
+    this.state = { room, engine: raw.engine, lobbySettings: raw.lobbySettings, sockets: raw.sockets, voice: raw.voice ?? initialRoomVoiceState(), songs: raw.songs ?? initialRoomSongsState() };
     return this.state;
   }
 
@@ -79,7 +98,7 @@ export class RoomCore {
     // the Engine may pass the Master role on (a Master away 60 s); the lobby's record follows it
     const next = next0.engine !== null && next0.engine.masterSeat !== next0.room.masterSeat ? { ...next0, room: { ...next0.room, masterSeat: next0.engine.masterSeat as Seat } } : next0;
     this.state = next;
-    await this.ports.save(JSON.stringify({ room: serializeRoom(next.room), engine: next.engine, lobbySettings: next.lobbySettings, sockets: next.sockets, voice: next.voice }));
+    await this.ports.save(JSON.stringify({ room: serializeRoom(next.room), engine: next.engine, lobbySettings: next.lobbySettings, sockets: next.sockets, voice: next.voice, songs: next.songs }));
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
     await this.ports.setAlarm(wakeAtMs === null ? ttlAt : Math.min(wakeAtMs, ttlAt));
     this.route(next, out);
@@ -117,7 +136,7 @@ export class RoomCore {
     const hostToken = newToken(fill);
     const displayToken = newToken(fill);
     const room = createRoomState(code, seedFrom(this.ports.randomBytes(4)), this.ports.now(), hostToken, displayToken);
-    await this.commit({ room, engine: null, lobbySettings: DEFAULT_SETTINGS, sockets: {}, voice: initialRoomVoiceState() });
+    await this.commit({ room, engine: null, lobbySettings: DEFAULT_SETTINGS, sockets: {}, voice: initialRoomVoiceState(), songs: initialRoomSongsState() });
     return { hostToken, displayToken };
   }
 
@@ -237,6 +256,49 @@ export class RoomCore {
           await this.ports.deleteStitchClips?.(answered.deleteClipsFor);
         }
         await this.commit({ ...s, voice: answered.state });
+        return;
+      }
+      if (m.t === "songsSetting") {
+        if (!isMaster) return refuse("not_master");
+        const nextSongs: RoomSongsState = {
+          ...s.songs,
+          setting: m.setting,
+          plan: { ...s.songs.plan, setting: m.setting },
+        };
+        await this.commit({ ...s, songs: nextSongs });
+        for (const [sid, info] of Object.entries(s.sockets)) {
+          if (info.role === "host" || info.seat === s.room.masterSeat) {
+            this.ports.send(sid, { t: "songsState", setting: nextSongs.setting, muted: nextSongs.muted });
+          }
+        }
+        return;
+      }
+      if (m.t === "songMute") {
+        if (!isMaster) return refuse("not_master");
+        const nextSongs: RoomSongsState = { ...s.songs, muted: m.muted };
+        await this.commit({ ...s, songs: nextSongs });
+        for (const [sid, info] of Object.entries(s.sockets)) {
+          if (info.role === "host" || info.seat === s.room.masterSeat) {
+            this.ports.send(sid, { t: "songsState", setting: nextSongs.setting, muted: nextSongs.muted });
+          }
+        }
+        return;
+      }
+      if (m.t === "songSkip") {
+        if (!isMaster) return refuse("not_master");
+        for (const [sid, info] of Object.entries(s.sockets)) {
+          if (info.role === "host") this.ports.send(sid, { t: "songSkip" });
+        }
+        return;
+      }
+      if (m.t === "singMyName") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        if (m.seat !== undefined && m.seat !== me.seat) return refuse("bad_token");
+        const nextSongs: RoomSongsState = {
+          ...s.songs,
+          consent: { ...s.songs.consent, [me.seat]: m.yes },
+        };
+        await this.commit({ ...s, songs: nextSongs });
         return;
       }
       return;
@@ -369,6 +431,34 @@ export class RoomCore {
     return { reveals: rec.reveals };
   }
 
+  /** Evaluates pending song requests for the current public snapshot and persists plan state (`game-songs` 3.2). */
+  async planRoomSongs(
+    view: PublicSnapshot,
+    options: { lastRound?: number } = {},
+  ): Promise<{ requests: readonly SongRequest[]; consent: NameConsent; setting: SongsSetting; muted: boolean }> {
+    const s = await this.loaded();
+    if (s === null) return { requests: [], consent: {}, setting: "off", muted: false };
+    const planned = songRequests(view, s.songs.plan, options);
+    await this.commit({ ...s, songs: { ...s.songs, plan: planned.state } });
+    return {
+      requests: planned.requests,
+      consent: s.songs.consent,
+      setting: s.songs.setting,
+      muted: s.songs.muted,
+    };
+  }
+
+  /** Sends a ready song or Stock fallback cue to Host sockets (and optional Clue hint log to all) without changing Engine state. */
+  async sendRoomSong(input: { key: string; title: string; captions: string; hintLogLine?: string }): Promise<boolean> {
+    const s = await this.loaded();
+    if (s === null || s.songs.setting === "off") return false;
+    for (const [sid, info] of Object.entries(s.sockets)) {
+      if (info.role === "host") this.ports.send(sid, { t: "song", key: input.key, title: input.title, captions: input.captions, ...(input.hintLogLine ? { hintLogLine: input.hintLogLine } : {}) });
+      if (input.hintLogLine !== undefined) this.ports.send(sid, { t: "songHint", line: input.hintLogLine });
+    }
+    return true;
+  }
+
   /** Ends the Room from outside (its maker started a new one). Nothing to do when it is already gone. */
   async endRoom(): Promise<void> {
     const s = await this.loaded();
@@ -378,6 +468,7 @@ export class RoomCore {
   /** End the Room: tell every socket, close them, and delete everything at once (party-mode 1.5). */
   private async end(s: ServerState): Promise<void> {
     for (const sid of Object.keys(s.sockets)) { this.ports.send(sid, { t: "ended" }); this.ports.close(sid, 4000, "room_ended"); }
+    await this.ports.deleteSongs?.(s.room.code);
     await this.ports.deleteAll();
     await this.ports.setAlarm(null);
     this.state = null;
