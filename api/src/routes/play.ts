@@ -1,3 +1,4 @@
+import { AnchorIdSchema } from "@hauntology/shared/app/events";
 import { WorldManifestSchema, type WorldManifest } from "@hauntology/shared/world/manifest";
 import { PLAY_ID, PlayStartRequestSchema } from "@hauntology/shared/ghost/requests";
 import { startSession, viewOf, type WorldFacts } from "@hauntology/shared/ghost/play";
@@ -10,7 +11,7 @@ import { setLastPlay, setLastWorld } from "../http/session";
 import type { ConditionsService } from "../conditions/snapshot-store";
 import { SILENT, type Logger } from "../log";
 import { narrateTurn, type Narration } from "../play/narrate";
-import type { PlayRefusal, PlaySessions, VoiceRef } from "../play/ports";
+import type { LockRefusal, PlaySessions, TurnDone, VoiceRef } from "../play/ports";
 import { accessOf, mayRead } from "../worlds/access";
 import type { WorldRecord, WorldStore } from "../worlds/store";
 import { ipHashOf, readBody } from "./world-create";
@@ -47,7 +48,16 @@ export function factsOf(world: WorldRecord): WorldFacts | null {
   };
 }
 
-const STATUS = { session_not_found: 404, session_expired: 410, rate_limited: 429, world_not_found: 404 } as const;
+const STATUS = {
+  session_not_found: 404,
+  session_expired: 410,
+  rate_limited: 429,
+  world_not_found: 404,
+  puzzle_disabled: 403,
+  puzzle_not_open: 409,
+  puzzle_rate_limited: 429,
+  anchor_not_found: 404,
+} as const;
 
 /**
  * `POST /api/play/start`, `POST /api/play/:id/turn`, `GET /api/play/:id` and `POST /api/play/:id/reset` (ghost-engine 5, Requirements 1.1, 1.4, 8.1 to 8.3, 9.1).
@@ -70,10 +80,10 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
   const refuse = (c: Context<AppEnv>, code: keyof typeof STATUS, retryAfterMs?: number) => {
     log.warn("play.refused", { code });
     c.header("Cache-Control", "no-store");
-    if (code === "rate_limited") c.header("Retry-After", String(Math.max(1, Math.ceil((retryAfterMs ?? 1500) / 1000))));
+    if (code === "rate_limited" || code === "puzzle_rate_limited") c.header("Retry-After", String(Math.max(1, Math.ceil((retryAfterMs ?? 1500) / 1000))));
     return c.json({ ok: false, code }, STATUS[code]);
   };
-  const refusal = (c: Context<AppEnv>, r: PlayRefusal) => refuse(c, r.code, r.retryAfterMs);
+  const refusal = (c: Context<AppEnv>, r: LockRefusal) => refuse(c, r.code, "retryAfterMs" in r ? r.retryAfterMs : undefined);
 
   /** The world of a game, if the visitor may still play in it. */
   const playable = async (c: Context<AppEnv>, worldId: string): Promise<{ world: WorldRecord; facts: WorldFacts; access: ReturnType<typeof accessOf> } | null> => {
@@ -95,9 +105,10 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
     const found = await playable(c, body.worldId);
     if (found === null) return refuse(c, "world_not_found");
 
+    const locks = flagsFrom(c.env).puzzlesEnabled && body.locks === true;
     // The one read of the real world for this game (a bounded wait: 3 seconds at the most, then the Default). It is kept with the game and never read again, not by a turn, the view or a reset.
     const conditions = deps.conditions === undefined ? null : await deps.conditions.read(body.conditions).catch(() => null);
-    let session = startSession({ id: `p-${randomId()}`, worldId: body.worldId, ownerSid: sid, world: found.facts, ghostPreset: body.ghostPreset, clientAnchors: body.anchors, conditions, seed: randomSeed(), now: now() });
+    let session = startSession({ id: `p-${randomId()}`, worldId: body.worldId, ownerSid: sid, world: found.facts, ghostPreset: body.ghostPreset, clientAnchors: body.anchors, conditions, locks, seed: randomSeed(), now: now() });
     if (!(await deps.sessions.start(session))) {
       // An id that is taken (a chance of about one in 2^128): try one more.
       session = { ...session, id: `p-${randomId()}` };
@@ -110,16 +121,7 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
     return c.json({ playId: session.id, view: viewOf(session) });
   });
 
-  routes.post("/:id/turn", async (c) => {
-    const id = c.req.param("id");
-    if (!PLAY_ID.test(id)) return refuse(c, "session_not_found");
-    const sid = c.get("session").sid;
-    const peek = await deps.sessions.get(id, sid);
-    if (!peek.ok) return refusal(c, peek);
-    const found = await playable(c, peek.worldId);
-    if (found === null) return refuse(c, "world_not_found");
-
-    // Any body is a turn: an input that is not a text or a button is an empty `say`, and a pose that is not one keeps the last (the engine is total).
+  const readJson = async (c: Context<AppEnv>): Promise<Record<string, unknown>> => {
     let json: unknown = {};
     const declared = Number(c.req.header("Content-Length") ?? 0);
     if (!(Number.isFinite(declared) && declared > MAX_BODY_BYTES)) {
@@ -132,10 +134,10 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
         }
       }
     }
-    const o = typeof json === "object" && json !== null ? (json as Record<string, unknown>) : {};
-    const r = await deps.sessions.turn(id, sid, { input: o["input"], pose: o["pose"], world: { bounds: found.facts.bounds, brief: found.facts.brief } });
-    if (!r.ok) return refusal(c, r);
+    return typeof json === "object" && json !== null ? (json as Record<string, unknown>) : {};
+  };
 
+  const deliverTurn = async (c: Context<AppEnv>, id: string, sid: string, r: TurnDone) => {
     let text: string = r.reply.text;
     let view = r.view;
     let scripted = true;
@@ -163,8 +165,69 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
     c.header("Cache-Control", "no-store");
     // The reply names its line only when the speech route is served here and speech is on, so a client is never handed an id it cannot use (`VOICE_ENABLED`).
     const speak = flagsFrom(c.env).voiceEnabled && (typeof deps.voice === "function" ? await deps.voice() : deps.voice === true);
-    return c.json({ reply: { text, scripted, ...(speak && voice !== null ? { voice } : {}) }, view });
+    return {
+      reply: { text, scripted, ...(speak && voice !== null ? { voice } : {}) },
+      view,
+      ...(r.lock !== undefined ? { lock: r.lock } : {}),
+      ...(r.sight !== undefined ? { sight: r.sight } : {}),
+    };
+  };
+
+  routes.post("/:id/turn", async (c) => {
+    const id = c.req.param("id");
+    if (!PLAY_ID.test(id)) return refuse(c, "session_not_found");
+    const sid = c.get("session").sid;
+    const peek = await deps.sessions.get(id, sid);
+    if (!peek.ok) return refusal(c, peek);
+    const found = await playable(c, peek.worldId);
+    if (found === null) return refuse(c, "world_not_found");
+
+    // Any body is a turn: an input that is not a text or a button is an empty `say`, and a pose that is not one keeps the last (the engine is total).
+    const o = await readJson(c);
+    const r = await deps.sessions.turn(id, sid, { input: o["input"], pose: o["pose"], world: { bounds: found.facts.bounds, brief: found.facts.brief } });
+    if (!r.ok) return refusal(c, r);
+    return c.json(await deliverTurn(c, id, sid, r));
   });
+
+  const handleLock = async (c: Context<AppEnv>, op: "open" | "attempt" | "skip") => {
+    if (!flagsFrom(c.env).puzzlesEnabled) return refuse(c, "puzzle_disabled");
+    const o = await readJson(c);
+    const id = c.req.param("id") ?? (typeof o["playId"] === "string" ? o["playId"] : "");
+    if (!PLAY_ID.test(id)) return refuse(c, "session_not_found");
+    const sid = c.get("session").sid;
+    const peek = await deps.sessions.get(id, sid);
+    if (!peek.ok) return refusal(c, peek);
+    const found = await playable(c, peek.worldId);
+    if (found === null) return refuse(c, "world_not_found");
+
+    if (op === "open") {
+      const aid = AnchorIdSchema.safeParse(o["anchorId"]);
+      if (!aid.success) return refuse(c, "anchor_not_found");
+      const r = await deps.sessions.lockOpen(id, sid, aid.data);
+      if (!r.ok) return refusal(c, r);
+      c.header("Cache-Control", "no-store");
+      return c.json({ view: r.view, lock: r.lock });
+    }
+    if (op === "attempt") {
+      const r = await deps.sessions.lockAttempt(id, sid, { transcript: o["transcript"], world: { bounds: found.facts.bounds, brief: found.facts.brief } });
+      if (!r.ok) return refusal(c, r);
+      if (r.outcome === "wrong") {
+        c.header("Cache-Control", "no-store");
+        return c.json({ outcome: "wrong", skipAvailable: r.skipAvailable, view: r.view });
+      }
+      return c.json({ outcome: "solved", ...(await deliverTurn(c, id, sid, r)) });
+    }
+    const r = await deps.sessions.lockSkip(id, sid, { bounds: found.facts.bounds, brief: found.facts.brief });
+    if (!r.ok) return refusal(c, r);
+    return c.json(await deliverTurn(c, id, sid, r));
+  };
+
+  routes.post("/lock/open", (c) => handleLock(c, "open"));
+  routes.post("/:id/lock/open", (c) => handleLock(c, "open"));
+  routes.post("/lock/attempt", (c) => handleLock(c, "attempt"));
+  routes.post("/:id/lock/attempt", (c) => handleLock(c, "attempt"));
+  routes.post("/lock/skip", (c) => handleLock(c, "skip"));
+  routes.post("/:id/lock/skip", (c) => handleLock(c, "skip"));
 
   routes.get("/:id", async (c) => {
     const id = c.req.param("id");

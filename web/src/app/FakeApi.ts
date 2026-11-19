@@ -51,5 +51,8 @@ export function createFakeApi(options: FakeApiOptions = {}): FakeApi {
     playStart: (req) => call((t) => backend.playStart(t, req)),
     playTurn: (playId, turn) => call((t) => backend.playTurn(t, playId, turn)),
     playGet: (playId) => call((t) => backend.playGet(t, playId)),
+    playLockOpen: (playId, anchorId) => call((t) => backend.playLockOpen!(t, playId, anchorId)),
+    playLockAttempt: (playId, transcript) => call((t) => backend.playLockAttempt!(t, playId, transcript)),
+    playLockSkip: (playId) => call((t) => backend.playLockSkip!(t, playId)),
   };
 }

@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { AtmosphereSchema, ConditionsSnapshotSchema, type ConditionsSnapshot } from "../conditions/types";
 import { AnchorIdSchema, AnchorSchema, Vec3Schema } from "../app/events";
+import { WanderLocksSchema } from "../puzzles/types";
+import type { WanderLocks } from "../puzzles/wander";
 import { VOICE_LINES_KEPT, VoiceLineSchema, type VoiceLine } from "../voice/line";
 import { ARCHETYPES, type Anchor, type GameState, type Pose, type Seed, type Voice } from "./types";
 
@@ -40,6 +42,10 @@ export const PlaySessionSchema = z.object({
   conditions: ConditionsSnapshotSchema.nullable().optional().catch(null),
   /** Narration-only marker tracking whether a star was already named this game (conditions 5.3; never enters GameState rules). */
   starNamed: z.boolean().optional().catch(false),
+  /** Wander puzzle lock state (puzzles 4.1); absent when Wander Locks are off so sessions are unchanged. */
+  gameSeed: z.number().int().min(0).max(0xffffffff).optional(),
+  lockState: WanderLocksSchema.optional(),
+  lastAttemptAt: z.number().finite().nullable().optional(),
   // The lines the ghost may be heard saying (ghost-voice 3.5): the last 8, each kept ten minutes. A game stored before there were any, or with a damaged list, plays on with none.
   voiceLines: z.array(VoiceLineSchema).max(VOICE_LINES_KEPT).optional().catch([]),
 });
@@ -63,6 +69,10 @@ export type PlaySession = {
   conditions?: ConditionsSnapshot | null | undefined;
   /** Narration-only marker recording whether a star has been named this game (kept out of GameState rules). */
   starNamed?: boolean | undefined;
+  /** Server-only seed & Wander Locks state (puzzles 4.1); absent when off. */
+  gameSeed?: number | undefined;
+  lockState?: WanderLocks | undefined;
+  lastAttemptAt?: number | null | undefined;
   /** The last lines the ghost said (at most 8, each live for ten minutes) that the speech route can find by id. Server only: the client is only ever given a line's id. Absent in an older game. */
   voiceLines?: VoiceLine[];
 };

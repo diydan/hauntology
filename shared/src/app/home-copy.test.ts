@@ -4,7 +4,7 @@ import { HOME_FACTS, HOME_PREMISE, REASON_COPY, reasonCopy } from "./home-copy";
 import type { CapabilityReason, QuotaSnapshot, ShellFlags } from "./types";
 
 const REASONS: CapabilityReason[] = ["kill_switch", "day_cap", "total_cap", "quota_image", "quota_world"];
-const open: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false };
+const open: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false };
 const quota = (world: number, image: number): QuotaSnapshot => ({ world, image, llm: 10, tts: 10, stt: 10, live: 10 });
 
 describe("Home copy", () => {

@@ -11,7 +11,7 @@ import { LIVE_SPEAK_REQUIRED, VOICE_STT_UNAVAILABLE, VOICE_TTS_UNAVAILABLE, type
 afterEach(cleanup);
 
 const ui = (over: Partial<PlayUi> = {}): PlayUi => ({
-  phase: "ready", failure: null, play: playStart(true).state, view: null, prompt: null, lines: [], busy: false, scripted: false, reply: null, turnFailure: null, journalOpen: false, ...over,
+  phase: "ready", failure: null, play: playStart(true).state, view: null, prompt: null, lines: [], busy: false, scripted: false, reply: null, turnFailure: null, journalOpen: false, activeLock: null, pendingSight: null, ...over,
 });
 const quiet: VoiceUi = { speak: false, speaking: false, mic: "idle", note: null };
 const whisper: GhostFace = { name: "Maren", sprite: "/demo/ghosts/preset-maren.svg", speaker: "whisper" };

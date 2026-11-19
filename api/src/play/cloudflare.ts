@@ -1,7 +1,8 @@
+import type { AnchorId } from "@hauntology/shared/app/events";
 import type { PlaySession } from "@hauntology/shared/ghost/session";
 import type { Settle, WorldFacts } from "@hauntology/shared/ghost/play";
 import { VoiceLineSchema, type VoiceLine } from "@hauntology/shared/voice/line";
-import type { Peek, PlayRefusal, PlaySessions, Settled, TurnDone } from "./ports";
+import type { LockAttemptDone, LockOpenDone, LockRefusal, LockSkipDone, Peek, PlayRefusal, PlaySessions, Settled, TurnDone } from "./ports";
 
 type Stub = { fetch(input: string, init?: RequestInit): Promise<Response> };
 type Namespace = { idFromName(name: string): unknown; get(id: unknown): Stub };
@@ -32,6 +33,15 @@ export class CloudflarePlaySessions implements PlaySessions {
 
   async turn(id: string, ownerSid: string, turn: { input: unknown; pose: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<TurnDone | PlayRefusal> {
     return (await (await post(this.game(id), "play-session", "/turn", { ownerSid, ...turn })).json()) as TurnDone | PlayRefusal;
+  }
+  async lockOpen(id: string, ownerSid: string, anchorId: AnchorId): Promise<LockOpenDone | LockRefusal> {
+    return (await (await post(this.game(id), "play-session", "/lock/open", { ownerSid, anchorId })).json()) as LockOpenDone | LockRefusal;
+  }
+  async lockAttempt(id: string, ownerSid: string, args: { transcript: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<LockAttemptDone | LockRefusal> {
+    return (await (await post(this.game(id), "play-session", "/lock/attempt", { ownerSid, ...args })).json()) as LockAttemptDone | LockRefusal;
+  }
+  async lockSkip(id: string, ownerSid: string, world: Pick<WorldFacts, "bounds" | "brief">): Promise<LockSkipDone | LockRefusal> {
+    return (await (await post(this.game(id), "play-session", "/lock/skip", { ownerSid, world })).json()) as LockSkipDone | LockRefusal;
   }
   async settle(id: string, ownerSid: string, settle: Settle): Promise<Settled | PlayRefusal> {
     return (await (await post(this.game(id), "play-session", "/settle", { ownerSid, settle })).json()) as Settled | PlayRefusal;

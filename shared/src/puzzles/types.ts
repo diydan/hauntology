@@ -122,3 +122,54 @@ export type Transcript = z.infer<typeof TranscriptSchema>;
 
 export type VerdictCode = "wrong" | "malformed" | "too_big" | "too_fast";
 export type Verdict = Readonly<{ ok: true }> | Readonly<{ ok: false; code: VerdictCode }>;
+
+const PictureShapeSchema = z.object({ t: z.enum(["circle", "rect", "tri"]), x: finite, y: finite, s: finite, c: z.string().max(40), a: finite });
+const PictureSchema = z.object({ top: z.string().max(40), bottom: z.string().max(40), shapes: z.array(PictureShapeSchema).max(32) });
+const WordLetterSchema = z.object({ ch: z.string().max(4), x: finite, y: finite });
+
+export const LockViewSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("lockpick"), pins: z.number().int().min(1).max(9), range: z.tuple([finite, finite]), windowDeg: finite, dwellMs: finite, centers: z.array(finite).max(9) }),
+  z.object({ kind: z.literal("wires"), n: z.number().int().min(1).max(12), leftOrder: z.array(z.number().int()).max(12) }),
+  z.object({ kind: z.literal("clock"), stepMin: z.union([z.literal(1), z.literal(5), z.literal(15)]) }),
+  z.object({ kind: z.literal("safe"), digits: z.number().int().min(1).max(9) }),
+  z.object({ kind: z.literal("musicbox"), n: z.number().int().min(1).max(12), plays: z.number().int().min(1), tune: z.array(z.number().int()).max(12) }),
+  z.object({ kind: z.literal("candles"), n: z.number().int().min(1).max(12), shows: z.number().int().min(1), order: z.array(z.number().int()).max(12) }),
+  z.object({ kind: z.literal("moved"), slots: z.number().int().min(1).max(16), darkMs: finite, after: z.array(z.number().int()).max(16) }),
+  z.object({ kind: z.literal("photo"), cols: z.number().int().min(1).max(8), rows: z.number().int().min(1).max(8), picture: PictureSchema, turns0: z.array(z.number().int()).max(16), turning: z.boolean() }),
+  z.object({ kind: z.literal("words"), n: z.number().int().min(1).max(12), letters: z.array(WordLetterSchema).max(16) }),
+  z.object({ kind: z.literal("board"), length: z.number().int().min(1).max(12), plays: z.number().int().min(1), dwellMs: finite, clue: z.string().max(120) }),
+  z.object({ kind: z.literal("maze"), grid: z.array(z.string().max(32)).max(32) }),
+  z.object({ kind: z.literal("knock"), groups: z.number().int().min(1).max(8), longPause: z.boolean() }),
+]);
+
+export const SightPayloadSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("wires"), order: z.array(z.number().int()).max(12) }),
+  z.object({ kind: z.literal("clock"), h: z.number().int(), m: z.number().int() }),
+  z.object({ kind: z.literal("safe"), code: z.array(z.number().int()).max(12) }),
+  z.object({ kind: z.literal("moved"), shelf: z.array(z.number().int()).max(16) }),
+  z.object({ kind: z.literal("photo"), picture: PictureSchema, cols: z.number().int().min(1).max(8), rows: z.number().int().min(1).max(8) }),
+  z.object({ kind: z.literal("knock"), groups: z.array(z.number().int()).max(12), long: z.number().int().nullable() }),
+]);
+
+export const SightSchema = z.object({
+  kind: z.enum(KINDS),
+  payload: SightPayloadSchema,
+  showMs: finite,
+});
+
+export const WanderOpenSchema = z.object({
+  anchorId: z.string().min(1).max(32),
+  index: z.number().int().min(0).max(16),
+  kind: z.enum(KINDS),
+  level: z.enum(LEVELS),
+  seed: z.number().int().nonnegative(),
+  openedAt: finite,
+  wrong: z.number().int().min(0),
+});
+
+export const WanderLocksSchema = z.object({
+  on: z.boolean(),
+  revealed: z.array(z.string().min(1).max(32)).max(16),
+  open: WanderOpenSchema.nullable(),
+  seen: z.array(z.string().min(1).max(32)).max(16),
+});

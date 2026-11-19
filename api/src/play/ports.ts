@@ -1,6 +1,8 @@
-import type { PlayView } from "@hauntology/shared/app/api";
+import type { PlayView, WanderLockView } from "@hauntology/shared/app/api";
+import type { AnchorId } from "@hauntology/shared/app/events";
 import type { PlaySession } from "@hauntology/shared/ghost/session";
-import type { NarrationJob, Settle, WorldFacts } from "@hauntology/shared/ghost/play";
+import type { LockActionFailure, NarrationJob, Settle, WorldFacts } from "@hauntology/shared/ghost/play";
+import type { Sight } from "@hauntology/shared/puzzles/types";
 import type { VoiceLine } from "@hauntology/shared/voice/line";
 
 /** The id of the line a reply is kept under for speech (ghost-voice 3.5), or `null` when the reply has nothing to say aloud. Only the id ever reaches the client. */
@@ -12,12 +14,30 @@ export type VoiceRef = { lineId: string } | null;
  * whoever owns the world. Someone else's game and a game that is not there are the same answer, `session_not_found`.
  */
 export type PlayRefusal = { ok: false; code: "session_not_found" | "session_expired" | "rate_limited"; retryAfterMs?: number };
+export type LockRefusal = PlayRefusal | LockActionFailure;
 export type Peek = { ok: true; worldId: string; view: PlayView; turns: number; ended: boolean };
 /**
  * A turn, played with scripted words and kept. `job` is what the narrator needs to word it with the model, or `null` when the engine's rules call for scripted
  * words; it never goes to the client. The reply is the scripted one until the route settles a better one.
  */
-export type TurnDone = { ok: true; reply: { text: string; scripted: true }; view: PlayView; directive: string; revealed: boolean; ended: boolean; turns: number; job: NarrationJob | null; voice: VoiceRef };
+export type TurnDone = {
+  ok: true;
+  reply: { text: string; scripted: true };
+  view: PlayView;
+  directive: string;
+  revealed: boolean;
+  ended: boolean;
+  turns: number;
+  job: NarrationJob | null;
+  voice: VoiceRef;
+  lock?: WanderLockView | undefined;
+  sight?: Sight | undefined;
+};
+export type LockOpenDone = { ok: true; view: PlayView; lock: WanderLockView };
+export type LockAttemptDone =
+  | { ok: true; outcome: "wrong"; skipAvailable: boolean; view: PlayView }
+  | ({ ok: true; outcome: "solved" } & TurnDone);
+export type LockSkipDone = TurnDone;
 /**
  * Whether the model's words were put in the game: `false` when the answer is for another game (a reset made a new one). `voice` is the line for the words the
  * visitor now sees (a new id: the scripted turn's line is gone), or `null` when those words have nothing to say aloud; absent when they were not applied.
@@ -28,6 +48,9 @@ export interface PlaySessions {
   /** Keeps a new game. `false` when a game with that id is there already (nothing changes). */
   start(session: PlaySession): Promise<boolean>;
   turn(id: string, ownerSid: string, turn: { input: unknown; pose: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<TurnDone | PlayRefusal>;
+  lockOpen(id: string, ownerSid: string, anchorId: AnchorId): Promise<LockOpenDone | LockRefusal>;
+  lockAttempt(id: string, ownerSid: string, args: { transcript: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<LockAttemptDone | LockRefusal>;
+  lockSkip(id: string, ownerSid: string, world: Pick<WorldFacts, "bounds" | "brief">): Promise<LockSkipDone | LockRefusal>;
   /** Puts the model's words where the scripted ones were (`settleNarration`): the memory in the journal, the last line of the history, the count of model turns. */
   settle(id: string, ownerSid: string, settle: Settle): Promise<Settled | PlayRefusal>;
   get(id: string, ownerSid: string): Promise<Peek | PlayRefusal>;

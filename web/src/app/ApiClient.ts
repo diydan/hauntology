@@ -212,5 +212,8 @@ export function createApiClient(options: ApiClientOptions = {}): ShellApi {
     playStart: (req) => json(API_SCHEMAS.playStart, "POST", "/api/play/start", req),
     playTurn: (playId, turn) => json(API_SCHEMAS.playTurn, "POST", `/api/play/${idPath(playId)}/turn`, turn),
     playGet: (playId) => json(API_SCHEMAS.playGet, "GET", `/api/play/${idPath(playId)}`),
+    playLockOpen: (playId, anchorId) => json(API_SCHEMAS.playLockOpen, "POST", "/api/play/lock/open", { playId, anchorId }),
+    playLockAttempt: (playId, transcript) => json(API_SCHEMAS.playLockAttempt, "POST", "/api/play/lock/attempt", { playId, transcript }),
+    playLockSkip: (playId) => json(API_SCHEMAS.playLockSkip, "POST", "/api/play/lock/skip", { playId }),
   };
 }

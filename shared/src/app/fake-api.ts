@@ -1,7 +1,9 @@
 import { ErrorCode, fail, ok } from "../errors";
 import type { Anchor, AnchorId } from "./events";
 import type { Atmosphere } from "../conditions/types";
-import type { ApiResult, Candidate, GalleryItem, GhostPreset, JournalEntry, PlaceMatch, PlayReply, PlayTurn, PlayView, QuoteResult, ShellApi, WorldStatus } from "./api";
+import type { Sight, Transcript } from "../puzzles/types";
+import { gateReveal, initWander, sightAfterReveal, skipAvailable, skipWanderLock, submitWanderAttempt, type WanderLocks } from "../puzzles/wander";
+import type { ApiResult, Candidate, GalleryItem, GhostPreset, JournalEntry, PlaceMatch, PlayReply, PlayTurn, PlayView, QuoteResult, ShellApi, WanderLockView, WorldStatus } from "./api";
 import type { JobState, QuotaSnapshot, SessionRecord, ShellFlags } from "./types";
 
 /**
@@ -30,7 +32,7 @@ export type FakeOptions = {
 };
 
 type ShellMethod = keyof ShellApi;
-type Sync<T> = { [K in keyof T]: T[K] extends (...args: infer A) => Promise<infer R> ? (now: number, ...args: A) => R : never };
+type Sync<T> = { [K in keyof T]: NonNullable<T[K]> extends (...args: infer A) => Promise<infer R> ? (now: number, ...args: A) => R : never };
 
 export type FakeBackend = Sync<ShellApi> & {
   /** The next call of `method` fails with `code`, once. */
@@ -83,7 +85,18 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const TOKEN_LIFETIME_MS = 30 * 60_000;
 
 type WorldRecord = { id: string; title: string; createdAt: number; outcome: "ready" | "failed"; refunded: boolean; shared: boolean };
-type PlayRecord = { id: string; worldId: string; found: AnchorId[]; journal: JournalEntry[]; turns: number; atmosphere: Atmosphere | null; lines: Set<string> };
+type PlayRecord = {
+  id: string;
+  worldId: string;
+  found: AnchorId[];
+  journal: JournalEntry[];
+  turns: number;
+  atmosphere: Atmosphere | null;
+  lines: Set<string>;
+  lockState?: WanderLocks;
+  seed?: number;
+  lastAttemptAt?: number;
+};
 
 /** A clip over this many bytes counts as longer than 8 seconds. */
 const MAX_CLIP_BYTES = 400_000;
@@ -106,7 +119,7 @@ const bucketOf = (hour: number): Atmosphere["timeOfDay"] => (hour >= 5 && hour <
 export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
   const stage = { queued: 1500, generating: 5000, ingesting: 3000, ...options.stageMs };
   const quota: QuotaSnapshot = { world: 2, image: 8, llm: 40, tts: 40, stt: 20, live: 30, ...options.quota };
-  const flags: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false, ...options.flags };
+  const flags: ShellFlags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false, ...options.flags };
   let ackNotice = options.ackNotice ?? false;
   let lastWorldId: string | undefined;
   let lastPlayId: string | undefined;
@@ -144,15 +157,59 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
     return w !== undefined && statusAt(w, now) === "ready";
   };
 
-  const viewOf = (p: PlayRecord): PlayView => ({
-    found: [...p.found],
-    anchors: ANCHORS.map((a) => ({ ...a, pos: [...a.pos] as Anchor["pos"] })),
-    hauntLevel: Math.round((0.15 + (0.85 * p.found.length) / 3) * 100) / 100,
-    ghostVisible: true,
-    ended: p.found.length === 3,
-    journal: p.journal.map((j) => ({ ...j })),
-    atmosphere: p.atmosphere === null ? null : { ...p.atmosphere },
-  });
+  const lockViewOf = (p: PlayRecord, now: number): WanderLockView | undefined => {
+    const ls = p.lockState;
+    if (!ls?.on || ls.open === null) return undefined;
+    const g = gateReveal(ls, { anchorId: ls.open.anchorId, sessionSeed: p.seed ?? 1 }, now);
+    if (g.gate !== "open") return undefined;
+    return {
+      anchorId: ls.open.anchorId as AnchorId,
+      kind: g.kind,
+      view: g.view,
+      faded: g.faded,
+      wrong: ls.open.wrong,
+      openedAt: ls.open.openedAt,
+      skipAvailable: skipAvailable(ls.open, now),
+    };
+  };
+
+  const viewOf = (p: PlayRecord, now = 0): PlayView => {
+    const lock = lockViewOf(p, now);
+    const locks = p.lockState?.on ? { on: true, seen: [...p.lockState.seen] } : undefined;
+    return {
+      found: [...p.found],
+      anchors: ANCHORS.map((a) => ({ ...a, pos: [...a.pos] as Anchor["pos"] })),
+      hauntLevel: Math.round((0.15 + (0.85 * p.found.length) / 3) * 100) / 100,
+      ghostVisible: true,
+      ended: p.found.length === 3,
+      journal: p.journal.map((j) => ({ ...j })),
+      atmosphere: p.atmosphere === null ? null : { ...p.atmosphere },
+      ...(lock !== undefined ? { lock } : {}),
+      ...(locks !== undefined ? { locks } : {}),
+    };
+  };
+
+  const revealInFake = (p: PlayRecord, anchorId: AnchorId): { reply: PlayReply; sight?: Sight } => {
+    if (!p.found.includes(anchorId)) {
+      p.found.push(anchorId);
+      const text = MEMORIES[anchorId];
+      p.journal.push({ anchorId, text });
+      let sight: Sight | undefined;
+      if (p.lockState?.on && p.found.length < 3) {
+        const after = sightAfterReveal(p.lockState, p.seed ?? 1);
+        p.lockState = after.state;
+        if (after.delivery !== null) sight = after.delivery.sight;
+      }
+      const reply: PlayReply = { text, scripted: true };
+      if (flags.voiceEnabled) {
+        const lineId = `line-${p.id}-${++p.turns}`;
+        p.lines.add(lineId);
+        reply.voice = { lineId };
+      }
+      return { reply, ...(sight !== undefined ? { sight } : {}) };
+    }
+    return { reply: { text: MEMORIES[anchorId], scripted: true } };
+  };
 
   const copyQuota = (): QuotaSnapshot => ({ ...quota });
 
@@ -330,16 +387,26 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
             tempBand: "mild", windBand: "calm", moon: "full moon",
           };
         }
-        const record: PlayRecord = { id: nextId("demo-play"), worldId: req.worldId, found: [], journal: [], turns: 0, atmosphere, lines: new Set() };
+        const lockOn = flags.puzzlesEnabled && req.locks === true;
+        const record: PlayRecord = {
+          id: nextId("demo-play"),
+          worldId: req.worldId,
+          found: [],
+          journal: [],
+          turns: 0,
+          atmosphere,
+          lines: new Set(),
+          ...(lockOn ? { lockState: initWander(true), seed: counter * 7919 + 1 } : {}),
+        };
         plays.set(record.id, record);
         lastPlayId = record.id;
         lastWorldId = req.worldId; // the real route calls setLastWorld and setLastPlay
-        return ok({ playId: record.id, view: viewOf(record) });
+        return ok({ playId: record.id, view: viewOf(record, now) });
       });
     },
 
-    playTurn(_now, playId, turn: PlayTurn) {
-      return guarded("playTurn", () => {
+    playTurn(now, playId, turn: PlayTurn) {
+      return guarded<{ reply: PlayReply; view: PlayView; lock?: WanderLockView; sight?: Sight }>("playTurn", () => {
         const p = plays.get(playId);
         if (p === undefined) return fail(ErrorCode.session_not_found);
         if (p.found.length === 3) return fail(ErrorCode.session_ended);
@@ -356,6 +423,14 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
 
         let text: string;
         if (nearestUnfound !== undefined && distance(nearestUnfound) <= nearestUnfound.radius) {
+          if (p.lockState?.on) {
+            const g = gateReveal(p.lockState, { anchorId: nearestUnfound.id, sessionSeed: p.seed ?? 1 }, now);
+            if (g.gate === "open") {
+              p.lockState = g.state;
+              const lock = lockViewOf(p, now)!;
+              return ok({ reply: { text: "Something holds this memory shut. Open the lock to hear it.", scripted: true }, view: viewOf(p, now), lock });
+            }
+          }
           p.found.push(nearestUnfound.id);
           text = MEMORIES[nearestUnfound.id];
           p.journal.push({ anchorId: nearestUnfound.id, text });
@@ -372,7 +447,53 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
           p.lines.add(lineId);
           reply.voice = { lineId };
         }
-        return ok({ reply, view: viewOf(p) });
+        return ok({ reply, view: viewOf(p, now) });
+      });
+    },
+
+    playLockOpen(now, playId, anchorId) {
+      return guarded("playLockOpen", () => {
+        if (!flags.puzzlesEnabled) return fail(ErrorCode.puzzle_disabled);
+        const p = plays.get(playId);
+        if (p === undefined) return fail(ErrorCode.session_not_found);
+        if (!p.lockState?.on) return fail(ErrorCode.puzzle_disabled);
+        const g = gateReveal(p.lockState, { anchorId, sessionSeed: p.seed ?? 1 }, now);
+        if (g.gate !== "open") return fail(ErrorCode.puzzle_not_open);
+        p.lockState = g.state;
+        return ok({ view: viewOf(p, now), lock: lockViewOf(p, now)! });
+      });
+    },
+
+    playLockAttempt(now, playId, transcript: Transcript) {
+      return guarded<{ outcome: "wrong"; skipAvailable: boolean; view: PlayView } | { outcome: "solved"; reply: PlayReply; view: PlayView; sight?: Sight }>("playLockAttempt", () => {
+        if (!flags.puzzlesEnabled) return fail(ErrorCode.puzzle_disabled);
+        const p = plays.get(playId);
+        if (p === undefined) return fail(ErrorCode.session_not_found);
+        if (!p.lockState?.on || p.lockState.open === null) return fail(ErrorCode.puzzle_not_open);
+        if (p.lastAttemptAt !== undefined && now - p.lastAttemptAt < 1000) return fail(ErrorCode.puzzle_rate_limited);
+        p.lastAttemptAt = now;
+        const r = submitWanderAttempt(p.lockState, transcript, now);
+        if (!r.ok) return fail(r.code);
+        p.lockState = r.value.state;
+        if (r.value.outcome === "wrong") {
+          return ok({ outcome: "wrong" as const, skipAvailable: r.value.skipAvailable, view: viewOf(p, now) });
+        }
+        const done = revealInFake(p, r.value.anchorId as AnchorId);
+        return ok({ outcome: "solved" as const, ...done, view: viewOf(p, now) });
+      });
+    },
+
+    playLockSkip(now, playId) {
+      return guarded("playLockSkip", () => {
+        if (!flags.puzzlesEnabled) return fail(ErrorCode.puzzle_disabled);
+        const p = plays.get(playId);
+        if (p === undefined) return fail(ErrorCode.session_not_found);
+        if (!p.lockState?.on || p.lockState.open === null) return fail(ErrorCode.puzzle_not_open);
+        const r = skipWanderLock(p.lockState, now);
+        if (!r.ok) return fail(r.code);
+        p.lockState = r.value.state;
+        const done = revealInFake(p, r.value.anchorId as AnchorId);
+        return ok({ ...done, view: viewOf(p, now) });
       });
     },
 
@@ -396,10 +517,10 @@ export function createFakeBackend(options: FakeOptions = {}): FakeBackend {
       });
     },
 
-    playGet(_now, playId) {
+    playGet(now, playId) {
       return guarded("playGet", () => {
         const p = plays.get(playId);
-        return p === undefined ? fail(ErrorCode.session_not_found) : ok({ worldId: p.worldId, view: viewOf(p) });
+        return p === undefined ? fail(ErrorCode.session_not_found) : ok({ worldId: p.worldId, view: viewOf(p, now) });
       });
     },
   };
