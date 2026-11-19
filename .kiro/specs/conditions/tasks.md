@@ -104,16 +104,16 @@ Order: the spike first, then pure logic with property tests, then the API module
   - [ ] 5.1 Pass `toPromptFields(snapshot)` into `buildNarrationPrompt` (ghost-engine 2.15): one fixed sentence built from the three enums, none when the source is the Default; add one weather case per persona to ghost-engine Spike 4.1
     - **Wired 2026-11-15** (ghost-engine 3.1): the narration job of a game started with a snapshot carries `sky` (`skyFor` in `shared/src/ghost/play.ts`: the three closed words, none when the weather was not read), and `buildNarrationPrompt` writes the one sentence. **Not done:** the weather case of ghost-engine Spike 4.1. Not ticked until it is.
     - _Requirements: 5.1_
-  - [ ] 5.2 `mentionsRealWorld` word-stem list (news, crime, death, real events) wired into `validateGhostReply` (ghost-engine 2.17): a matching reply is replaced by a scripted line
+  - [x] 5.2 `mentionsRealWorld` word-stem list (news, crime, death, real events) wired into `validateGhostReply` (ghost-engine 2.17): a matching reply is replaced by a scripted line
     - _Requirements: 5.2_
-  - [ ] 5.3 Scripted weather lines (per Weather Class and time bucket, at least five variants each) and star lines; `pickStarLine` names one star above 20 degrees at most once per game, with the flag kept in the narration record and not in game state
+  - [x] 5.3 Scripted weather lines (per Weather Class and time bucket, at least five variants each) and star lines; `pickStarLine` names one star above 20 degrees at most once per game, with the flag kept in the narration record and not in game state
     - _Requirements: 5.2, 5.3_
-  - [ ] 5.4 Red-team fixture for real events: 20 or more news, crime, death and real-event strings, and hostile place labels, through `validateGhostReply`, `buildNarrationPrompt` and the scripted library
+  - [x] 5.4 Red-team fixture for real events: 20 or more news, crime, death and real-event strings, and hostile place labels, through `validateGhostReply`, `buildNarrationPrompt` and the scripted library
     - _Requirements: 5.2_
   - [x] 5.5 Rules stay free of conditions: a source-level test that `shared/src/ghost/engine.ts` and the Party Mode reducers do not import `shared/src/conditions/`; a model-based run of `step` with and without a Snapshot
     - **Built 2026-11-15** (`rules-free.test.ts`: no module of the ghost engine's rules and none of Party Mode's that decides something imports the conditions code; and the conditions code imports no game). The run with and without a snapshot is of `playTurn` (which calls `step`) in `play-conditions.test.ts`; the Party Mode half waits for party-mode 15.4.
     - _Requirements: 4.1, 5.1_
-  - [ ]* 5.6 Write property test for the narrator prompt and scripted lines
+  - [x]* 5.6 Write property test for the narrator prompt and scripted lines
     - **Property 11: Scripted lines and the narrator prompt carry no news, crime, death or real events**
     - **Validates: Requirements 5.1, 5.2, 5.3**
   - [ ]* 5.7 Write property test for rules unchanged by the real world

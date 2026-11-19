@@ -38,6 +38,8 @@ export const PlaySessionSchema = z.object({
   atmosphere: AtmosphereSchema.nullable(),
   // The frozen conditions snapshot of this game (conditions 3.3). One that is corrupt is replaced by none (the normal look), as the design says, and does not end the game.
   conditions: ConditionsSnapshotSchema.nullable().optional().catch(null),
+  /** Narration-only marker tracking whether a star was already named this game (conditions 5.3; never enters GameState rules). */
+  starNamed: z.boolean().optional().catch(false),
   // The lines the ghost may be heard saying (ghost-voice 3.5): the last 8, each kept ten minutes. A game stored before there were any, or with a damaged list, plays on with none.
   voiceLines: z.array(VoiceLineSchema).max(VOICE_LINES_KEPT).optional().catch([]),
 });
@@ -58,7 +60,9 @@ export type PlaySession = {
   expiresAt: number;
   atmosphere: z.infer<typeof AtmosphereSchema> | null;
   /** The conditions read once at the start and kept frozen for this game: a rounded Place and its label, the Memory Day, the sky. Absent when none was chosen. Deleted with the game. */
-  conditions?: ConditionsSnapshot | null;
+  conditions?: ConditionsSnapshot | null | undefined;
+  /** Narration-only marker recording whether a star has been named this game (kept out of GameState rules). */
+  starNamed?: boolean | undefined;
   /** The last lines the ghost said (at most 8, each live for ten minutes) that the speech route can find by id. Server only: the client is only ever given a line's id. Absent in an older game. */
   voiceLines?: VoiceLine[];
 };
