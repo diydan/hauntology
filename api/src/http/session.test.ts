@@ -43,7 +43,7 @@ describe("GET /api/session", () => {
     const { call } = setup();
     const res = await call("/api/session");
     expect(res.status).toBe(200);
-    expect(await json(res)).toEqual({ ackNotice: false, flags: { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false } });
+    expect(await json(res)).toEqual({ ackNotice: false, flags: { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false } });
     const sc = setCookie(res) as string;
     expect(sc).toContain(`${SESSION_COOKIE}=`);
     expect(sc).toMatch(/HttpOnly/i);
@@ -218,7 +218,7 @@ describe("flags", () => {
 
   it("reports what SpendGuard says once it is wired in", async () => {
     const { call } = setup({ spend: () => ({ dayCapReached: true, totalCapReached: false, killed: true }) });
-    expect((await json(await call("/api/session"))).flags).toEqual({ worldGenEnabled: false, dayCapReached: true, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false });
+    expect((await json(await call("/api/session"))).flags).toEqual({ worldGenEnabled: false, dayCapReached: true, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false });
   });
 
   it("reports the voice switches: voice on unless VOICE_ENABLED says off, live off unless VOICE_LIVE_ENABLED says on", () => {
@@ -240,10 +240,11 @@ describe("flags", () => {
   });
 
   it("flagsFrom treats a missing environment as everything on", () => {
-    expect(flagsFrom(undefined)).toEqual({ worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false });
+    expect(flagsFrom(undefined)).toEqual({ worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false });
     expect(flagsFrom({ WORLD_GEN_ENABLED: "off" }, { dayCapReached: false, totalCapReached: true, killed: false })).toEqual({
-      worldGenEnabled: false, dayCapReached: false, totalCapReached: true, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false,
+      worldGenEnabled: false, dayCapReached: false, totalCapReached: true, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false,
     });
+    expect(flagsFrom({ PUZZLES_ENABLED: "false" }).puzzlesEnabled).toBe(false);
   });
 });
 

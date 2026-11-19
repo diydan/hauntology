@@ -8,7 +8,7 @@ import { createQuotaStore } from "./QuotaStore";
 import { createRouter } from "./router";
 import { fakeHistory } from "../test/fakeHistory";
 
-const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false };
+const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false };
 const W = "w-last";
 const own = (extra: Partial<SessionRecord> = {}): SessionRecord => ({ ackNotice: false, flags, lastWorldId: W, lastPlayId: "p-last", ...extra });
 const none: SessionRecord = { ackNotice: false, flags };

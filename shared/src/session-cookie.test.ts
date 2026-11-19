@@ -138,7 +138,7 @@ describe("Session updates", () => {
 });
 
 describe("toSessionRecord", () => {
-  const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: true, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false };
+  const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: true, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false };
 
   it("leaves absent ids out, never undefined", () => {
     const record = toSessionRecord(fresh(), flags);

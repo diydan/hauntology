@@ -22,6 +22,8 @@ export type PlayMemory = {
   /** The chosen Preset Ghost's picture (an address on this site), for the portrait in the Chat. */
   ghostSprite?: string | undefined;
   conditions?: ConditionsChoice | undefined;
+  /** Optional Wander Locks switch (puzzles Requirement 2.1, off by default). */
+  wanderLocks?: boolean | undefined;
   /** A Memory Day suggested by a photo's capture date (Requirement 12.2); the sky card offers it and the visitor can change or clear it. */
   suggestedDay?: MemoryDay | undefined;
   startFresh: boolean;

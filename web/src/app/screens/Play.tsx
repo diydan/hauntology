@@ -11,6 +11,10 @@ import { ghostFace } from "../play/ghost-face";
 import { Hud, TOTAL_MEMORIES } from "../play/Hud";
 import { Journal } from "../play/Journal";
 import { createVoice, voiceQuotaState } from "../play/voice";
+import { useDeviceSettings } from "../../device/device-settings";
+import { PuzzleHost } from "../../puzzles/PuzzleHost";
+import { SightCard } from "../../puzzles/SightCard";
+import { usePuzzleDevice } from "../../puzzles/usePuzzleDevice";
 import type { ViewerHandle } from "../viewer/types";
 import { errorCopy } from "@hauntology/shared/app/errors-copy";
 
@@ -73,6 +77,9 @@ export default function Play() {
     return { controller, voice };
   });
   const { controller, voice } = parts;
+  const [device, setDevice] = useDeviceSettings();
+  const puzzleDevice = usePuzzleDevice({ device, setDevice });
+  const reducedMotion = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)").matches : false;
 
   const ui = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const voiceUi = useSyncExternalStore(voice.subscribe, voice.getSnapshot, voice.getSnapshot);
@@ -254,6 +261,26 @@ export default function Play() {
         />
       ) : null}
       {ui.journalOpen ? <Journal entries={ui.view?.journal ?? []} onClose={() => controller.closeJournal()} /> : null}
+      {ui.activeLock !== null ? (
+        <PuzzleHost
+          kind={ui.activeLock.kind}
+          view={ui.activeLock.view}
+          faded={ui.activeLock.faded}
+          capMs={null}
+          attempts={3}
+          feel={puzzleDevice.feel}
+          assist={puzzleDevice.device.assist}
+          reducedMotion={reducedMotion}
+          onAttempt={(t) => controller.submitLockAttempt(t)}
+          onSkip={() => void controller.skipLock()}
+          onGiveUp={() => controller.closeLock()}
+          onFinish={() => controller.finishLock()}
+          onTiltChoice={puzzleDevice.onTiltChoice}
+        />
+      ) : null}
+      {ui.activeLock === null && ui.pendingSight !== null ? (
+        <SightCard sight={ui.pendingSight} title="Something to remember" feel={puzzleDevice.feel} onDone={() => controller.dismissSight()} />
+      ) : null}
     </div>
   );
 }

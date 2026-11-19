@@ -1,3 +1,4 @@
+import { AnchorIdSchema } from "@hauntology/shared/app/events";
 import { parseSession } from "@hauntology/shared/ghost/session";
 import { PlayCore, type Slot } from "../play/core";
 
@@ -42,6 +43,15 @@ export class PlaySession {
       }
       case "/turn":
         return json(await this.core.turn(owner, { input: body["input"], pose: body["pose"], world: body["world"] as never }));
+      case "/lock/open": {
+        const aid = AnchorIdSchema.safeParse(body["anchorId"]);
+        if (!aid.success) return json({ ok: false, code: "anchor_not_found" });
+        return json(await this.core.lockOpen(owner, aid.data));
+      }
+      case "/lock/attempt":
+        return json(await this.core.lockAttempt(owner, { transcript: body["transcript"], world: body["world"] as never }));
+      case "/lock/skip":
+        return json(await this.core.lockSkip(owner, body["world"] as never));
       case "/settle":
         return json(await this.core.settle(owner, body["settle"]));
       case "/get":
