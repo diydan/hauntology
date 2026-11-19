@@ -12,6 +12,8 @@ import { isMemoryKind, type Kind, type Lock, type SightPayload, type Transcript 
 
 export const SIGNS = ["moon", "key", "eye", "hand", "star", "bell"] as const;
 export type Sign = (typeof SIGNS)[number];
+/** Where Memory Kind clues live for a Room: on each Player's phone (default) or drawn in the TV world. */
+export type CluePlace = "phone" | "world";
 /** At most this many Locks use world clues in one game: one real clue and one Decoy each, six Signs in all. */
 export const MAX_WORLD_LOCKS = 3;
 /** The answer of a World Clue shows only while the shared camera is this close and facing it (2.1). */
@@ -19,7 +21,13 @@ export const CLUE_READ_METRES = 3;
 
 /** One clue drawn in the world. `lockZone` is the Zone of the Lock it belongs to, or null for a Decoy. */
 export type WorldClue = Readonly<{ lockZone: string | null; zone: string; sign: Sign; sight: SightPayload }>;
+/** Public View representation of a placed World Clue or Decoy: holds Zone, Sign, and Sight (no `lockZone` or non-world answer). */
+export type PublicWorldClue = Readonly<{ zone: string; sign: Sign; sight: SightPayload }>;
 export type PlacedLock = Readonly<{ zone: string; lock: Lock }>;
+
+export function toPublicWorldClues(clues: readonly WorldClue[]): PublicWorldClue[] {
+  return clues.map(({ zone, sign, sight }) => ({ zone, sign, sight }));
+}
 
 /** The plain answer a clue gives for a Lock, as the Transcript a Player would send, or null for the photo (its answer is the turns). */
 export function answerFromSight(lock: Lock, sight: SightPayload): Transcript | null {
