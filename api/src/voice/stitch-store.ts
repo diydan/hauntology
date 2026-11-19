@@ -37,15 +37,13 @@ export class RoomStitchClipStore {
 
   async deleteForSeat(seat: number): Promise<number | null> {
     const entries = await this.storage.list<StitchClip>({ prefix: `${CLIP_KEY_PREFIX}${seat}:` });
-    const keys = [...entries.keys()];
-    if (keys.length > 0) await this.storage.delete(keys);
+    for (const k of entries.keys()) await this.storage.delete(k);
     return this.rescheduleAlarm(await this.list());
   }
 
   async deleteAll(): Promise<void> {
     const entries = await this.storage.list<StitchClip>({ prefix: CLIP_KEY_PREFIX });
-    const keys = [...entries.keys()];
-    if (keys.length > 0) await this.storage.delete(keys);
+    for (const k of entries.keys()) await this.storage.delete(k);
     await this.storage.deleteAlarm();
   }
 
@@ -58,7 +56,7 @@ export class RoomStitchClipStore {
     const kept = purgeClips(all, ctx, now);
     const keepKeys = new Set(kept.map((c) => clipStorageKey(c.seat, c.word)));
     const removedKeys = [...entries.keys()].filter((k) => !keepKeys.has(k));
-    if (removedKeys.length > 0) await this.storage.delete(removedKeys);
+    for (const k of removedKeys) await this.storage.delete(k);
     const nextAlarmAt = await this.rescheduleAlarm(kept);
     return { kept, removedKeys, nextAlarmAt };
   }

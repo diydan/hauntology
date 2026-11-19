@@ -349,6 +349,13 @@ export class RoomCore {
     return findRoomVoiceLine(s.voice, lineId, this.ports.now());
   }
 
+  /** Looks up a live room VoiceLine by id only if `hostToken` matches this Room's Host token. */
+  async findVoiceLineForHost(lineId: string, hostToken: string): Promise<VoiceLine | null> {
+    const s = await this.loaded();
+    if (s === null || hostToken === "" || s.room.hostToken !== hostToken) return null;
+    return findRoomVoiceLine(s.voice, lineId, this.ports.now());
+  }
+
   /** Records and broadcasts a played Stitch event without changing any Engine rule state (`ghost-voice` 5.12). */
   async whisperStitch(event: PlayedStitch, clips: readonly unknown[]): Promise<{ reveals: PlayedStitch[] }> {
     const s = await this.loaded();

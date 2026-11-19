@@ -62,4 +62,29 @@ describe("PartyRoom Durable Object", () => {
     expect(host.closed?.code).toBe(4000);
     expect(await ask("/has", { code: "WXYZ" })).toEqual({ live: false });
   });
+
+  it("serves /voice-line only to hostToken and purges clip:* DO keys when Stitch is switched off", async () => {
+    const t = room();
+    const { hostToken } = (await t.post("/create", { code: "WXYZ" })) as { hostToken: string };
+    const ana = (await t.post("/join", { nickname: "Ana" })) as { token: string };
+    const host = t.socket("h");
+    const sa = t.socket("a");
+    await t.r.webSocketMessage(host as unknown as WebSocket, JSON.stringify({ t: "hello", token: hostToken }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "hello", token: ana.token }));
+
+    // Turn speech & stitch on, seed a clip:* entry in DO storage, then toggle stitch off -> clip:* purged, room state kept.
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "speech", action: "on" }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "stitchSetting", on: true }));
+    t.parts.data.set("clip:1:wait", { seat: 1, word: "wait", recordedAt: 1_000 });
+    expect(t.parts.data.has("clip:1:wait")).toBe(true);
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "stitchSetting", on: false }));
+    expect(t.parts.data.has("clip:1:wait")).toBe(false);
+    expect(t.parts.data.has("room")).toBe(true);
+
+    // /voice-line refuses non-host token and accepts hostToken.
+    const denied = await t.post("/voice-line", { lineId: "missing", token: ana.token });
+    expect(denied).toEqual({ line: null });
+    const allowed = await t.post("/voice-line", { lineId: "missing", token: hostToken });
+    expect(allowed).toEqual({ line: null });
+  });
 });

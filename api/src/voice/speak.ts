@@ -52,12 +52,25 @@ export type SpeakResult = { ok: true; audio: Uint8Array; via: SpeakVia; paid: bo
  * for R2. Without it the write is awaited before the answer.
  */
 export async function speakLine(deps: SpeakDeps, who: Who, req: SpeakRequest, defer?: (work: Promise<unknown>) => void): Promise<SpeakResult> {
+  const line = await deps.lines.find({ playId: req.playId, ownerSid: who.sessionId }, req.lineId).catch(() => null);
+  return speakResolvedLine(deps, who, line, req.prefetch === true, defer);
+}
+
+/** Shared execution & counter logging for both Single-player (`playId`) and Party Room (`roomCode`) lines. */
+export async function speakResolvedLine(
+  deps: SpeakDeps,
+  who: Who,
+  line: VoiceLine | null,
+  prefetch = false,
+  defer?: (work: Promise<unknown>) => void,
+): Promise<SpeakResult> {
   const now = deps.now ?? Date.now;
   const log = deps.log ?? SILENT;
   const began = now();
-  const prefetch = req.prefetch === true;
-  const line = await deps.lines.find({ playId: req.playId, ownerSid: who.sessionId }, req.lineId).catch(() => null);
-  const result: SpeakResult = line === null ? { ok: false, reason: "no_line", paid: false } : await speakFoundLine(deps, who, line, { prefetch, ...(defer !== undefined ? { defer } : {}) });
+  const result: SpeakResult =
+    line === null
+      ? { ok: false, reason: "no_line", paid: false }
+      : await speakFoundLine(deps, who, line, { prefetch, ...(defer !== undefined ? { defer } : {}) });
   log.info("voice.speak", { via: result.ok ? result.via : "none", outcome: result.ok ? "ok" : result.reason, paid: result.paid, prefetch, ms: Math.max(0, Math.round(now() - began)) });
   return result;
 }

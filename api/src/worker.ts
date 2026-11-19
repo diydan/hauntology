@@ -25,7 +25,7 @@ import { CloudflarePlaySessions } from "./play/cloudflare";
 import { SpendGuardClient } from "./spend/client";
 import { R2SpeechCache } from "./voice/cache";
 import { R2SpeechLibrary } from "./voice/library";
-import { PlayVoiceLines } from "./voice/lines";
+import { CloudflareRoomVoiceLines, PlayVoiceLines } from "./voice/lines";
 import { SpendGuardVoiceWindow, windowedSpend } from "./voice/window";
 import { cleanupExpired } from "./worlds/cleanup";
 import { CloudflareCandidateStore } from "./worlds/cloudflare-candidates";
@@ -79,6 +79,7 @@ export default {
         plays !== null && env.AI !== undefined && voiceModels !== null
           ? {
               speak: { lines: new PlayVoiceLines(plays), cache: new R2SpeechCache(env.BUCKET), library: new R2SpeechLibrary(env.BUCKET), maker: new WorkersAiSpeaker(env.AI, voiceModels), spend: windowedSpend(guard, voiceWindow), flights: singleFlight(), log: logger },
+              roomLines: new CloudflareRoomVoiceLines(env.PARTY_ROOM),
               ...(sttModel !== null ? { listen: { transcriber: new WorkersAiTranscriber(env.AI, { model: sttModel }), spend: guard, log: logger } } : {}),
               window: voiceWindow,
             }

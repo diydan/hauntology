@@ -28,6 +28,12 @@ function fakes(seed = 1) {
 
 const say = (core: RoomCore, sid: string, msg: unknown) => core.message(sid, JSON.stringify(msg));
 
+async function roomTokenCheck(_core: RoomCore, f: ReturnType<typeof fakes>) {
+  const raw = JSON.parse(f.disk.text!) as { room: string };
+  const room = JSON.parse(raw.room) as { hostToken: string };
+  return { hostToken: room.hostToken };
+}
+
 async function roomSetup() {
   const f = fakes(3);
   const core = new RoomCore(f.ports);
@@ -79,6 +85,10 @@ describe("PartyRoom room speaking (ghost-voice 3.9)", () => {
     expect(f.of("ana", "voice")).toEqual([]);
     expect(f.of("ben", "voice")).toEqual([]);
     expect(await core.findVoiceLine("n-14")).not.toBeNull();
+    const { hostToken } = await roomTokenCheck(core, f);
+    expect(await core.findVoiceLineForHost("n-14", "wrong-token")).toBeNull();
+    expect(await core.findVoiceLineForHost("n-14", "")).toBeNull();
+    expect((await core.findVoiceLineForHost("n-14", hostToken))?.id).toBe("n-14");
 
     // 16th ordinary narration line is refused (late_line); haunt_event/midnight/ending lines are allowed up to 20.
     const lateNarration = await core.speakRoomEvent({

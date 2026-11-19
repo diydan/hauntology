@@ -127,10 +127,10 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - The turn route has no voice flag. Contract test: a transcript posted as `{text}` gets the same truncation, parse and rate-limit result as the same typed string.
     - _Requirements: 3.4_
     - Done (2026-11-19): verified on `POST /api/play/:id/turn` in `api/src/routes/play.transcript.test.ts`.
-  - [ ] 3.9 Speaking in a room
+  - [x] 3.9 Speaking in a room
     - With `party-mode` task 8.9: `PartyRoom` keeps `voice.spoken`, applies `decideSpeak` (Master's `settings.speech`, off by default) to each narration, Haunt Event, midnight and ending line, counts only lines sent with `speak: true` and a non-empty `spoken`, and sends `voice {lineId, text, kind}` to the Host only. Phones get the public log text as before. Replaces the browser-voice-only path of party-mode Requirement 7.6.
     - _Requirements: 2.2, 2.3, 2.4_
-    - Progress (2026-11-19): `shared/src/voice/room-voice.ts`, `shared/src/party/protocol.ts`, `shared/src/party/server.ts` (`RoomCore.speakRoomEvent`, `findVoiceLine`), and `RoomSpeakRequestSchema` in `shared/src/voice/requests.ts` are built and verified in `shared/src/voice/room-voice.test.ts`; remaining work is the `PartyRoom` DO `/voice-line` HTTP adapter + host-token check for `{ roomCode, lineId }` in `api/src/routes/voice.ts` alongside `party-mode` 8.9.
+    - Done (2026-11-19): `shared/src/voice/room-voice.ts`, `shared/src/party/protocol.ts`, `shared/src/party/server.ts` (`RoomCore.speakRoomEvent`, `findVoiceLineForHost`), `api/src/do/party-room.ts` (`/voice-line` + `deleteStitchClips`), `api/src/voice/lines.ts` (`CloudflareRoomVoiceLines`), `api/src/routes/voice.ts` (`{ roomCode, lineId }` + `X-Host-Token`), `api/src/worker.ts`, verified in `shared/src/voice/room-voice.test.ts`, `api/src/do/party-room.test.ts`, and `api/src/routes/voice.room.test.ts`.
   - [x] 3.10 Contract tests with fakes
     - The listen handler writes no audio to any storage and logs no transcript; the speak route refuses text and a foreign `lineId`; logs hold only whitelisted counters; no module outside `api/src/guarded/` calls `env.AI.run` for speech or transcription; with the kill switch on and every Meter at zero every route answers quietly and the turn route still works.
     - _Requirements: 1.5, 3.3, 4.2, 4.3_
@@ -168,6 +168,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 4.6 Host audio
     - The Host page asks for audio with its host token for each `voice` message, plays it, shows the Subtitle in its polite live region, and offers one tap to unlock audio on the room-code screen; without the tap it shows Subtitles only.
     - _Requirements: 1.2, 1.3, 2.3_
+    - Progress (2026-11-19): `createHostAudio` in `web/src/app/case/host-voice.ts` (`host-voice.test.ts`) implements unlock gating, polite-live-region subtitles, `X-Host-Token` speech fetch, 5 s deadline drop, and optional browser fallback; mounting the unlock button on the standalone Party Mode room-code screen awaits `party-mode` 8.9.
   - [ ] 4.7 Accessibility and manual checks
     - Keyboard-only run of the speak toggle and Talk Button; a screen-reader pass that a spoken line is announced once; contrast of the indicator at least 4.5:1; a real iPhone and Android run of recording and playback.
     - _Requirements: 1.2, 3.2_
