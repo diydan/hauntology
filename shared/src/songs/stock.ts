@@ -11,13 +11,14 @@ export type StockSong = Readonly<{ id: string; kind: StockKind; title: string; s
 
 const SHORT = "short song, about 45 seconds";
 /** Every song: horror first: creeping dread, dissonant, slow and sparse; never bright, bouncy or upbeat (owner, 2026-11-16). */
-const MOOD = "horror, creeping dread, minor key, dissonant, very slow around 55 bpm, low drone, creaking wood, distant whispers, sparse, unsettling, not upbeat, not bouncy, no drums";
-const S = {
+export const MOOD = "horror, creeping dread, minor key, dissonant, very slow around 55 bpm, low drone, creaking wood, distant whispers, sparse, unsettling, not upbeat, not bouncy, no drums";
+export const HOUSE_STYLES = {
   waltz: `slow mournful gothic waltz in three, ${MOOD}, celesta, detuned music box, bowed cello, ${SHORT}`,
   lullaby: `haunted lullaby, ${MOOD}, music box slowing down, child choir humming ooh far away, ${SHORT}`,
   march: `slow funeral march, ${MOOD}, low tuba, muted toy piano, cracked baritone narrator, deadpan and sorrowful, ${SHORT}`,
   ballad: `sad gothic ballad, ${MOOD}, lonely soprano, cello, celesta, ${SHORT}`,
-};
+} as const;
+const S = HOUSE_STYLES;
 
 const TITLE: StockSong = {
   id: "title", kind: "title", title: "Welcome to the House", style: `${S.waltz}, distant child choir ooh`,
@@ -80,8 +81,10 @@ const GHOST_SONGS: StockSong[] = PRESET_GHOSTS.map((g) => ({
 }));
 
 /** Who sings each sung song (owner, 2026-11-16): set when a song is made, so it is part of the prompt. */
-const NARRATOR = "lead vocal: a low deadpan male baritone narrator, dry and sorrowful, half spoken";
-const HUSHED = "lead vocal: a hushed narrator voice, close and almost whispered";
+export const NARRATOR_VOICE = "lead vocal: a low deadpan male baritone narrator, dry and sorrowful, half spoken";
+const NARRATOR = NARRATOR_VOICE;
+export const HUSHED_VOICE = "lead vocal: a hushed narrator voice, close and almost whispered";
+const HUSHED = HUSHED_VOICE;
 const VOICES: Record<string, string> = {
   title: NARRATOR,
   "fb-joined": "lead vocal: a thin sad female voice, far away, with a child choir humming",
