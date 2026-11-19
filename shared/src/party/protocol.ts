@@ -50,6 +50,9 @@ export const RoomMsgSchema = z.discriminatedUnion("t", [
   /** The Master, after an ending: a new case with the same seats and settings, a new deal (party-mode 8.5). */
   z.object({ t: z.literal("playAgain") }).strict(),
   z.object({ t: z.literal("startBots"), bots: z.number().int().min(2).max(6).optional() }).strict(),
+  z.object({ t: z.literal("speech"), action: z.enum(["on", "off"]) }).strict(),
+  z.object({ t: z.literal("stitchSetting"), on: z.boolean() }).strict(),
+  z.object({ t: z.literal("stitchAnswer"), seat: z.number().int().min(1).max(6).optional(), yes: z.boolean(), tick: z.boolean() }).strict(),
 ]);
 export type RoomMsg = z.infer<typeof RoomMsgSchema>;
 

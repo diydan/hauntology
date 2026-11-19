@@ -4,7 +4,11 @@ import { SpeakRequestSchema } from "./requests";
 const ok = { playId: "p-abc_DEF-123", lineId: "Zm9vYmFyYmF6cXV4" };
 
 describe("SpeakRequestSchema", () => {
-  it("accepts a game id and a line id", () => expect(SpeakRequestSchema.safeParse(ok).success).toBe(true));
+  it("accepts a game id and a line id, or a roomCode and a line id", () => {
+    expect(SpeakRequestSchema.safeParse(ok).success).toBe(true);
+    expect(SpeakRequestSchema.safeParse({ roomCode: "ABCD", lineId: ok.lineId }).success).toBe(true);
+    expect(SpeakRequestSchema.safeParse({ roomCode: "ABCD", lineId: ok.lineId, prefetch: true }).success).toBe(true);
+  });
   it("accepts prefetch as a true or false and nothing else", () => {
     expect(SpeakRequestSchema.safeParse({ ...ok, prefetch: true }).success).toBe(true);
     expect(SpeakRequestSchema.safeParse({ ...ok, prefetch: false }).success).toBe(true);

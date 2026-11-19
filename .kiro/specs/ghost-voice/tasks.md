@@ -130,6 +130,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 3.9 Speaking in a room
     - With `party-mode` task 8.9: `PartyRoom` keeps `voice.spoken`, applies `decideSpeak` (Master's `settings.speech`, off by default) to each narration, Haunt Event, midnight and ending line, counts only lines sent with `speak: true` and a non-empty `spoken`, and sends `voice {lineId, text, kind}` to the Host only. Phones get the public log text as before. Replaces the browser-voice-only path of party-mode Requirement 7.6.
     - _Requirements: 2.2, 2.3, 2.4_
+    - Progress (2026-11-19): `shared/src/voice/room-voice.ts`, `shared/src/party/protocol.ts`, `shared/src/party/server.ts` (`RoomCore.speakRoomEvent`, `findVoiceLine`), and `RoomSpeakRequestSchema` in `shared/src/voice/requests.ts` are built and verified in `shared/src/voice/room-voice.test.ts`; remaining work is the `PartyRoom` DO `/voice-line` HTTP adapter + host-token check for `{ roomCode, lineId }` in `api/src/routes/voice.ts` alongside `party-mode` 8.9.
   - [x] 3.10 Contract tests with fakes
     - The listen handler writes no audio to any storage and logs no transcript; the speak route refuses text and a foreign `lineId`; logs hold only whitelisted counters; no module outside `api/src/guarded/` calls `env.AI.run` for speech or transcription; with the kill switch on and every Meter at zero every route answers quietly and the turn route still works.
     - _Requirements: 1.5, 3.3, 4.2, 4.3_
@@ -220,9 +221,10 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - `recorder.ts` records one word of at most 2 seconds and rejects a longer one; `stitch-player.ts` decodes and schedules the Clips back to back with Web Audio on the Host with the Subtitle. Reused by party-mode's Controller and Host pages.
     - _Requirements: 5.1, 5.4_
     - Done (2026-11-19): `web/src/app/voice/recorder.ts` (`recordStitchWord`), `web/src/app/voice/stitch-player.ts` (`playStitchSequence`), and `web/src/app/voice/voice-helpers.test.ts`.
-  - [ ] 5.12 Room wiring with party-mode Requirement 18
+  - [x] 5.12 Room wiring with party-mode Requirement 18
     - Provide the pure functions and message names to party-mode: `settings {stitch}` (Master only, off by default), the question and tick at join, `stitchAnswer`, `stitchClip`, `stitchResult`, `stitch {eventId, subtitle, clips}` to the Host, the log line "a voice whispered", and the Reveal in the ending payload only. Model-based contract test with a fake `PartyRoom`: the Master's token cannot answer for another seat, no Clip leaves the room, the public log never names a seat, and a Stitch changes no rule state.
     - _Requirements: 5.3, 5.4_
+    - Done (2026-11-19): `shared/src/voice/room-voice.ts`, `shared/src/party/protocol.ts` (`speech`, `stitchSetting`, `stitchAnswer`), `shared/src/party/server.ts` (`RoomCore` handlers + `whisperStitch`), and fake-`PartyRoom` contract test `shared/src/voice/room-voice.test.ts`.
 
 - [ ] 6. Live mode (stretch, first in the cut order, built last; `shared/src/voice/live.ts`)
   - [x] 6.1 `live.ts`: `liveReduce` and `live.arb.ts`

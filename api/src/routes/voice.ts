@@ -64,6 +64,9 @@ export function voiceRoutes(deps: VoiceRouteDeps): Hono<AppEnv> {
     }
 
     const who = { sessionId: c.get("session").sid, ipHash: await ipHashOf(c, c.env.HMAC_SECRET as string) };
+    if (!("playId" in body)) {
+      return refuse(c, 404, "no_line");
+    }
     const r = await speakLine(deps.speak, who, body, defer);
     if (!r.ok) {
       if (r.reason === "not_ready") return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
