@@ -24,13 +24,13 @@
     - **Validates: Requirements 1.3, 1.4, 4.3**
     - Done (2026-11-19): `shared/src/songs/songs.prop.test.ts`.
 
-- [ ] 3. Server and Host
+- [x] 3. Server and Host
   - [x] 3.1 The guarded Song Service adapter, the `song` spend meter and cap, the kill switch, and deletion with the Room
     - _Requirements: 3.2, 3.3_
     - Done (2026-11-19): `MurekaSongMaker` / `assertSongTicket` (`api/src/guarded/songs/mureka.ts`), `SongSpendGuard` (`api/src/songs/spend.ts`), and `RoomSongStore` (`api/src/songs/store.ts`), verified with `FakeR2`, `MapKv`, and fake `fetch` in `api/src/songs/songs-service.test.ts` (note: live Mureka endpoint payload/latency remains unverified until Spike 1.1).
-  - [ ] 3.2 The Room asks for songs and plays them at Song Slots; Stock Songs as the fallback
+  - [x] 3.2 The Room asks for songs and plays them at Song Slots; Stock Songs as the fallback
     - _Requirements: 1.1, 1.2, 1.4, 2.1_
-    - Progress (2026-11-19): `RoomSongCoordinator` (`api/src/songs/service.ts`, `songs-service.test.ts`) plans/generates songs for `PublicSnapshot` views, falls back immediately to Stock Songs, and purges stored audio on `purgeRoom`; mounting into live `PartyRoom` WS protocol awaits standalone Party Mode Host/Controller screens (`party-mode` 8.9).
+    - Done (2026-11-19): `RoomSongCoordinator` (`api/src/songs/service.ts`), `RoomCore.planRoomSongs`/`sendRoomSong`/`deleteSongs` (`shared/src/party/server.ts`, `songs.test.ts`), and `PartyRoom` DO R2 song cleanup (`api/src/do/party-room.ts`, `party-room.test.ts`); standalone Party Mode screens attach via `party-mode` 8.9.
   - [x] 3.3 Captions in a live region, the hint line in the public log, mute, skip, the Songs setting and "Sing my name"
     - _Requirements: 4.1, 4.2, 3.1_
     - Done (2026-11-19): `createRoomSongsController` (`web/src/app/songs/room-songs.ts`) and `SongControls` (`web/src/app/songs/SongControls.tsx`), verified in `SongControls.test.tsx`.

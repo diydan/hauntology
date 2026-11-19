@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEngine, publicSnapshot, step } from "../party/engine";
 import { PRESET_GHOST_IDS } from "../party/preset-ghosts";
+import { RoomCore } from "../party/server";
 import { clueHint } from "./clues";
 import { lyricFacts, writeLyrics } from "./lyrics";
 import { BALLAD_HAUNT_TRIGGER, initialSongPlan, MAX_MOMENTS_PER_GAME, MAX_MOMENTS_PER_ROUND, songRequests } from "./plan";
@@ -154,5 +155,65 @@ describe("songs/plan & slots (game-songs 2.5)", () => {
     const fb = resolveSlotPlayback({ setting: "on", slotInput: quiet, kind: "wrong_accuse", readyCustom: null });
     expect(fb).toEqual({ source: "stock", slot: "quiet_scene", song: fallbackStockFor("wrong_accuse") });
     expect(resolveSlotPlayback({ setting: "off", slotInput: quiet, kind: "wrong_accuse", readyCustom: { id: "x" } })).toBeNull();
+  });
+});
+
+describe("RoomCore song protocol & cleanup (game-songs 3.2, 3.3)", () => {
+  it("enforces Master-only songsSetting/songMute/songSkip, per-seat singMyName consent, plans songs, and deletes songs on end", async () => {
+    let saved: string | undefined;
+    const sent: Array<{ sid: string; msg: unknown }> = [];
+    const deletedRooms: string[] = [];
+    let rand = 1;
+    const core = new RoomCore({
+      load: async () => saved,
+      save: async (t) => { saved = t; },
+      deleteAll: async () => { saved = undefined; },
+      setAlarm: async () => {},
+      send: (sid, msg) => sent.push({ sid, msg }),
+      close: () => {},
+      now: () => 5_000,
+      randomBytes: (n) => new Uint8Array(n).fill(rand++),
+      deleteSongs: async (code) => { deletedRooms.push(code); },
+    });
+
+    const created = await core.create("ABCD");
+    const master = await core.join("Alice");
+    const guest = await core.join("Bob");
+    expect(master.ok && guest.ok).toBe(true);
+    if (!master.ok || !guest.ok) return;
+
+    await core.message("h", JSON.stringify({ t: "hello", token: created.hostToken }));
+    await core.message("p1", JSON.stringify({ t: "hello", token: master.token }));
+    await core.message("p2", JSON.stringify({ t: "hello", token: guest.token }));
+
+    // Non-Master cannot change Songs setting or mute/skip.
+    await core.message("p2", JSON.stringify({ t: "songsSetting", setting: "on" }));
+    expect(sent.filter((x) => (x.msg as { t?: string }).t === "refused" && x.sid === "p2").length).toBe(1);
+
+    // Master switches Songs on and mutes/unmutes; Host receives state.
+    await core.message("p1", JSON.stringify({ t: "songsSetting", setting: "on" }));
+    expect(sent.some((x) => x.sid === "h" && (x.msg as { t?: string; setting?: string }).t === "songsState" && (x.msg as { setting?: string }).setting === "on")).toBe(true);
+    await core.message("p1", JSON.stringify({ t: "songMute", muted: true }));
+    expect(sent.some((x) => x.sid === "h" && (x.msg as { muted?: boolean }).muted === true)).toBe(true);
+
+    // Guest cannot set another seat's singMyName consent; can set their own.
+    await core.message("p1", JSON.stringify({ t: "singMyName", seat: 2, yes: true }));
+    expect(sent.filter((x) => (x.msg as { t?: string }).t === "refused" && x.sid === "p1").length).toBe(1);
+    await core.message("p2", JSON.stringify({ t: "singMyName", yes: true }));
+
+    // planRoomSongs exposes consent={2:true} and requests opening once; sendRoomSong reaches Host & hint log reaches all.
+    const view = publicSnapshot(sampleGame(), 6_000);
+    const planned = await core.planRoomSongs(view);
+    expect(planned.setting).toBe("on");
+    expect(planned.consent).toEqual({ 2: true });
+    expect(planned.requests.map((r) => r.kind)).toEqual(["opening"]);
+
+    await core.sendRoomSong({ key: "clue-1", title: "Quiet", captions: "Dust.", hintLogLine: "A song drifted: Attic is clear." });
+    expect(sent.some((x) => x.sid === "h" && (x.msg as { t?: string }).t === "song")).toBe(true);
+    expect(sent.filter((x) => (x.msg as { t?: string }).t === "songHint").length).toBeGreaterThanOrEqual(2);
+
+    // Ending room deletes all room songs via ports.deleteSongs.
+    await core.endRoom();
+    expect(deletedRooms).toEqual(["ABCD"]);
   });
 });

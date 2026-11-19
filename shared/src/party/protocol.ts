@@ -53,6 +53,10 @@ export const RoomMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("speech"), action: z.enum(["on", "off"]) }).strict(),
   z.object({ t: z.literal("stitchSetting"), on: z.boolean() }).strict(),
   z.object({ t: z.literal("stitchAnswer"), seat: z.number().int().min(1).max(6).optional(), yes: z.boolean(), tick: z.boolean() }).strict(),
+  z.object({ t: z.literal("songsSetting"), setting: z.enum(["off", "stock", "on"]) }).strict(),
+  z.object({ t: z.literal("songMute"), muted: z.boolean() }).strict(),
+  z.object({ t: z.literal("songSkip") }).strict(),
+  z.object({ t: z.literal("singMyName"), seat: z.number().int().min(1).max(6).optional(), yes: z.boolean() }).strict(),
 ]);
 export type RoomMsg = z.infer<typeof RoomMsgSchema>;
 

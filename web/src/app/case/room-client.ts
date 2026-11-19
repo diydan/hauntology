@@ -3,6 +3,8 @@ import type { CaseSetup } from "@hauntology/shared/app/case-setup";
 import { walkRadiusOf } from "@hauntology/shared/ghost/anchors";
 import type { Bounds } from "@hauntology/shared/ghost/types";
 import { soloSetup } from "@hauntology/shared/party/solo";
+import type { SongsSetting } from "@hauntology/shared/songs/lyrics";
+import type { ActiveRoomSong } from "../songs/room-songs";
 import type { HostVoiceCue } from "./host-voice";
 
 /**
@@ -26,6 +28,14 @@ export type RoomSnapshot = Readonly<{
   voice?: (HostVoiceCue & { seq: number }) | null;
   /** Room-provided voice line ids approved for prefetching. */
   prefetch?: readonly string[];
+  /** Room Songs setting (`"off" | "stock" | "on"`). */
+  songsSetting?: SongsSetting;
+  /** Whether Room songs are muted. */
+  songMuted?: boolean;
+  /** Latest active song cue sent to the Host. */
+  activeSong?: (ActiveRoomSong & { seq: number }) | null;
+  /** Public log hint lines emitted by Clue Songs. */
+  songHints?: readonly string[];
 }>;
 
 export type SocketLike = {
@@ -95,8 +105,9 @@ export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "Yo
 
 /** Opens the socket for `code` with `token`. Messages sent before it opens wait, in order. */
 export function openRoom(deps: RoomDeps, code: string, token: string, opts: { hostToken?: string } = {}): RoomClient {
-  let snap: RoomSnapshot = { status: "connecting", code, seat: null, public: null, private: null, refused: null, hostToken: opts.hostToken ?? null, speechOn: false, voice: null, prefetch: [] };
+  let snap: RoomSnapshot = { status: "connecting", code, seat: null, public: null, private: null, refused: null, hostToken: opts.hostToken ?? null, speechOn: false, voice: null, prefetch: [], songsSetting: "off", songMuted: false, activeSong: null, songHints: [] };
   let voiceSeq = 0;
+  let songSeq = 0;
   const listeners = new Set<() => void>();
   const set = (patch: Partial<RoomSnapshot>): void => {
     snap = { ...snap, ...patch };
@@ -132,6 +143,31 @@ export function openRoom(deps: RoomDeps, code: string, token: string, opts: { ho
         return;
       case "prefetch":
         if (Array.isArray(m.lineIds)) set({ prefetch: m.lineIds.filter((id): id is string => typeof id === "string") });
+        return;
+      case "songsState":
+        set({
+          ...(m.setting === "off" || m.setting === "stock" || m.setting === "on" ? { songsSetting: m.setting } : {}),
+          ...(typeof m.muted === "boolean" ? { songMuted: m.muted } : {}),
+        });
+        return;
+      case "song":
+        if (typeof m.key === "string" && typeof m.title === "string" && typeof m.captions === "string") {
+          set({
+            activeSong: {
+              seq: ++songSeq,
+              key: m.key,
+              title: m.title,
+              captions: m.captions,
+              ...(typeof m.hintLogLine === "string" ? { hintLogLine: m.hintLogLine } : {}),
+            },
+          });
+        }
+        return;
+      case "songSkip":
+        set({ activeSong: null });
+        return;
+      case "songHint":
+        if (typeof m.line === "string") set({ songHints: [...(snap.songHints ?? []), m.line] });
         return;
       case "refused": set({ refused: typeof m.code === "string" ? m.code : "refused" }); return;
       case "ended": set({ status: "closed" }); return;

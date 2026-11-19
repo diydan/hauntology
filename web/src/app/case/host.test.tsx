@@ -141,6 +141,31 @@ describe("the solo table", () => {
     await act(async () => { f.set({ speechOn: false }); });
     expect(played[0]!.paused).toBe(true);
   });
+
+  it("wires SongControls into SoloTable for Master setting/mute/skip, Sing my name, captions, and hint log (game-songs 3.3)", async () => {
+    const { s, now } = game();
+    const f = fakeClient(s, now);
+    f.set({ hostToken: "host-tok-2" });
+    render(<SoloTable client={f.client} />);
+
+    fireEvent.click(screen.getByRole("radio", { name: "On" }));
+    expect(f.sent.at(-1)).toEqual({ t: "songsSetting", setting: "on" });
+    fireEvent.click(screen.getByLabelText("Sing my name"));
+    expect(f.sent.at(-1)).toEqual({ t: "singMyName", yes: true });
+
+    await act(async () => {
+      f.set({
+        songsSetting: "on",
+        activeSong: { seq: 1, key: "clue-1", title: "A Quiet Drift", captions: "Nothing stirs in the Attic.", hintLogLine: "A song drifted: Attic is clear." },
+      });
+    });
+    const cap = document.querySelector("[data-song-captions]")!;
+    expect(cap.textContent).toContain("A Quiet Drift: Nothing stirs in the Attic.");
+    expect(document.body.textContent).toContain("A song drifted: Attic is clear.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Skip song" }));
+    expect(f.sent.at(-1)).toEqual({ t: "songSkip" });
+  });
 });
 
 describe("words", () => {

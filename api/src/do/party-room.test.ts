@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { fakeState } from "../worlds/fake-cloudflare";
-import { FakeNamespace } from "../worlds/fake-cloudflare";
+import { FakeR2, FakeNamespace, fakeState } from "../worlds/fake-cloudflare";
 import { PartyDirectory } from "./party-directory";
 import { PartyRoom } from "./party-room";
+import { RoomSongStore, type SongBucket } from "../songs/store";
 
 /** A fake socket with an attachment, as the Hibernation API keeps one. */
 class FakeSocket {
@@ -86,5 +86,19 @@ describe("PartyRoom Durable Object", () => {
     expect(denied).toEqual({ line: null });
     const allowed = await t.post("/voice-line", { lineId: "missing", token: hostToken });
     expect(allowed).toEqual({ line: null });
+  });
+
+  it("deletes generated Room songs from R2 BUCKET on /end without touching other rooms", async () => {
+    const r2 = new FakeR2();
+    const store = new RoomSongStore(r2 as unknown as SongBucket);
+    await store.put("WXYZ", "opening", new Uint8Array([1, 2, 3, 4]));
+    await store.put("OTHR", "opening", new Uint8Array([5, 6, 7, 8]));
+
+    const t = room({ BUCKET: r2 as unknown as SongBucket });
+    await t.post("/create", { code: "WXYZ" });
+    await t.r.fetch(new Request("https://room/end", { method: "POST" }));
+
+    expect(await store.get("WXYZ", "opening")).toBeNull();
+    expect(await store.get("OTHR", "opening")).not.toBeNull();
   });
 });
