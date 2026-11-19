@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { fakeState } from "../worlds/fake-cloudflare";
-import { FakeNamespace } from "../worlds/fake-cloudflare";
+import { FakeR2, FakeNamespace, fakeState } from "../worlds/fake-cloudflare";
 import { PartyDirectory } from "./party-directory";
 import { PartyRoom } from "./party-room";
+import { RoomSongStore, type SongBucket } from "../songs/store";
 
 /** A fake socket with an attachment, as the Hibernation API keeps one. */
 class FakeSocket {
@@ -61,5 +61,44 @@ describe("PartyRoom Durable Object", () => {
     await t.r.webSocketMessage(host as unknown as WebSocket, JSON.stringify({ t: "end" }));
     expect(host.closed?.code).toBe(4000);
     expect(await ask("/has", { code: "WXYZ" })).toEqual({ live: false });
+  });
+
+  it("serves /voice-line only to hostToken and purges clip:* DO keys when Stitch is switched off", async () => {
+    const t = room();
+    const { hostToken } = (await t.post("/create", { code: "WXYZ" })) as { hostToken: string };
+    const ana = (await t.post("/join", { nickname: "Ana" })) as { token: string };
+    const host = t.socket("h");
+    const sa = t.socket("a");
+    await t.r.webSocketMessage(host as unknown as WebSocket, JSON.stringify({ t: "hello", token: hostToken }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "hello", token: ana.token }));
+
+    // Turn speech & stitch on, seed a clip:* entry in DO storage, then toggle stitch off -> clip:* purged, room state kept.
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "speech", action: "on" }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "stitchSetting", on: true }));
+    t.parts.data.set("clip:1:wait", { seat: 1, word: "wait", recordedAt: 1_000 });
+    expect(t.parts.data.has("clip:1:wait")).toBe(true);
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "stitchSetting", on: false }));
+    expect(t.parts.data.has("clip:1:wait")).toBe(false);
+    expect(t.parts.data.has("room")).toBe(true);
+
+    // /voice-line refuses non-host token and accepts hostToken.
+    const denied = await t.post("/voice-line", { lineId: "missing", token: ana.token });
+    expect(denied).toEqual({ line: null });
+    const allowed = await t.post("/voice-line", { lineId: "missing", token: hostToken });
+    expect(allowed).toEqual({ line: null });
+  });
+
+  it("deletes generated Room songs from R2 BUCKET on /end without touching other rooms", async () => {
+    const r2 = new FakeR2();
+    const store = new RoomSongStore(r2 as unknown as SongBucket);
+    await store.put("WXYZ", "opening", new Uint8Array([1, 2, 3, 4]));
+    await store.put("OTHR", "opening", new Uint8Array([5, 6, 7, 8]));
+
+    const t = room({ BUCKET: r2 as unknown as SongBucket });
+    await t.post("/create", { code: "WXYZ" });
+    await t.r.fetch(new Request("https://room/end", { method: "POST" }));
+
+    expect(await store.get("WXYZ", "opening")).toBeNull();
+    expect(await store.get("OTHR", "opening")).not.toBeNull();
   });
 });

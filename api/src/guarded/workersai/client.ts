@@ -2,7 +2,7 @@ import type { ImageMaker, PlaceBriefer } from "../../worlds/ports";
 import type { AiBinding } from "./call";
 import { ImagesForegroundCutter, type ForegroundCutter, type ImagesBinding } from "./cutout";
 import { LlamaGuardTextGuard, guardModelFromEnv, type TextGuard } from "./guard";
-import { DEFAULT_IMAGE_MODEL, FluxImageMaker } from "./image";
+import { DEFAULT_IMAGE_MODEL, FluxImageMaker, FluxPortraitMaker, type PortraitMaker } from "./image";
 import { catalogModelFromEnv } from "./model";
 import { HaikuNarrator, gatewayIdFromEnv, narratorModelFromEnv, type Narrator } from "./narrator";
 import { ScoutPlaceBriefer, scoutModelFromEnv } from "./scout";
@@ -28,6 +28,8 @@ export class WorkersAiClient {
   readonly guard: TextGuard | null;
   /** The sketch to a picture (5.3): `IMAGE_MODEL_ID`. */
   readonly imager: ImageMaker | null;
+  /** A ghost portrait from words alone (ghost-creator task 3): the same image model. */
+  readonly portraitist: PortraitMaker | null;
   /** The background of a portrait: Cloudflare Images. */
   readonly cutter: ForegroundCutter | null;
 
@@ -43,6 +45,7 @@ export class WorkersAiClient {
     this.narrator = ai !== undefined && narrator !== null && gateway !== null ? new HaikuNarrator(ai, narrator, gateway) : null;
     this.guard = ai !== undefined && guard !== null ? new LlamaGuardTextGuard(ai, guard) : null;
     this.imager = ai !== undefined && image !== null ? new FluxImageMaker(ai, image) : null;
+    this.portraitist = ai !== undefined && image !== null ? new FluxPortraitMaker(ai, image) : null;
     this.cutter = env.IMAGES !== undefined ? new ImagesForegroundCutter(env.IMAGES) : null;
   }
 }

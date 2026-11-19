@@ -10,6 +10,7 @@ import type { PlacedLock } from "./place";
 import { fadedFor, sightFor } from "./sight";
 import { ATTEMPTS, isMemoryKind, type LockView, type PuzzleSetting, type Sight } from "./types";
 import { verify } from "./verify";
+import { signForLock, toPublicWorldClues, worldCluePrompt, type PublicWorldClue, type Sign, type WorldClue } from "./world-clues";
 
 export type SeatId = string;
 export type OpenLock = Readonly<{ lockId: string; zone: string; openedAt: number; attemptsUsed: number; lastAttemptAt: number | null }>;
@@ -25,12 +26,25 @@ export type PartyLocks = Readonly<{
   sent: Readonly<Record<SeatId, readonly string[]>>;
   /** Plain Inspect on for a seat (an access setting). */
   plain: Readonly<Record<SeatId, boolean>>;
+  /** World Clues & Decoys placed when `cluePlace === "world"`. */
+  worldClues?: readonly WorldClue[];
+  /** World Clue Signs ever within view of the shared camera during the game. */
+  worldSeenAny?: readonly Sign[];
+  /** Per-seat World Clue Signs seen during that Player's own Turn (for Assist notebook). */
+  worldSeenTurn?: Readonly<Record<SeatId, readonly Sign[]>>;
 }>;
 
 export const MIN_ATTEMPT_GAP_MS = 1000;
 export type CloseReason = "attempts" | "cap" | "gave_up" | "turn_ended";
 
-export const initPartyLocks = (placed: readonly PlacedLock[]): PartyLocks => ({ placed, open: {}, seen: {}, sent: {}, plain: {} });
+export const initPartyLocks = (placed: readonly PlacedLock[], worldClues: readonly WorldClue[] = []): PartyLocks => ({
+  placed,
+  open: {},
+  seen: {},
+  sent: {},
+  plain: {},
+  ...(worldClues.length > 0 ? { worldClues, worldSeenAny: [], worldSeenTurn: {} } : {}),
+});
 const lockAt = (s: PartyLocks, zone: string): PlacedLock | undefined => s.placed.find((p) => p.zone === zone);
 const put = <T>(rec: Readonly<Record<string, T>>, key: string, value: T): Record<string, T> => ({ ...rec, [key]: value });
 
@@ -64,6 +78,8 @@ export type SightDelivery = Readonly<{ sightId: string; sight: Sight }>;
 export function sightsOnEntry(state: PartyLocks, seat: SeatId, zone: string, assist = false): Readonly<{ state: PartyLocks; delivery: SightDelivery | null }> {
   const placed = state.placed.find((p) => p.sightZone === zone && isMemoryKind(p.kind));
   if (placed === undefined) return { state, delivery: null };
+  // World Clue locks live in the TV world rather than pushing phone Sights (world-clues 1.1).
+  if (signForLock(state.worldClues ?? [], placed.zone) !== null) return { state, delivery: null };
   const sightId = sightIdOf(placed.lockId);
   if ((state.seen[seat] ?? []).includes(sightId)) return { state, delivery: null };
   const sight = sightFor(makeLock(placed.kind, placed.level, placed.seed), assist);
@@ -82,6 +98,25 @@ export function ackSight(state: PartyLocks, seat: SeatId, sightId: string): Resu
   return ok({ ...state, sent: put(state.sent, seat, sent.filter((s) => s !== sightId)), seen: put(state.seen, seat, [...seen, sightId]) });
 }
 
+/** Records a World Clue or Decoy Sign seen within camera reach (`world-clues` 4.2, Requirements 3.2, 3.3). */
+export function markWorldClueSeen(state: PartyLocks, seat: SeatId, sign: Sign, ownTurn: boolean): PartyLocks {
+  const clues = state.worldClues ?? [];
+  if (!clues.some((c) => c.sign === sign)) return state;
+  const any = state.worldSeenAny ?? [];
+  const nextAny = any.includes(sign) ? any : [...any, sign];
+  const prevTurnMap = state.worldSeenTurn ?? {};
+  const seatSeen = prevTurnMap[seat] ?? [];
+  const nextTurnMap = ownTurn && !seatSeen.includes(sign) ? put(prevTurnMap, seat, [...seatSeen, sign]) : prevTurnMap;
+  return { ...state, worldSeenAny: nextAny, worldSeenTurn: nextTurnMap };
+}
+
+/** World Clues & Decoys kept in a Player's Assist notebook (seen during their own Turn only). */
+export function worldClueNotebook(state: PartyLocks, seat: SeatId): PublicWorldClue[] {
+  const clues = state.worldClues ?? [];
+  const seen = new Set(state.worldSeenTurn?.[seat] ?? []);
+  return toPublicWorldClues(clues.filter((c) => seen.has(c.sign)));
+}
+
 // ---------------------------------------------------------------- opening a Lock
 export type OpenedLock = Readonly<{
   state: PartyLocks;
@@ -94,6 +129,12 @@ export type OpenedLock = Readonly<{
   faded: Sight | null;
   /** The one public log line: the Zone, exactly as a plain Inspect logs it. Nothing is logged when the Lock closes. */
   publicLine: Readonly<{ type: "inspect"; seat: SeatId; zone: string }>;
+  /** World Clue Sign needed for this Lock when its clue is in the shared world (`world-clues` 4.1). */
+  sign?: Sign;
+  /** World Clue Lock prompt naming only the Sign and never the answer. */
+  prompt?: string;
+  /** Whether Assist offers "See the clue again" (only when seen during this Player's own Turn). */
+  canSeeAgain?: boolean;
 }>;
 
 export type OpenContext = Readonly<{ setting: PuzzleSetting; capMs: number; isBot: boolean; assist?: boolean; turnDeadline?: number }>;
@@ -104,7 +145,10 @@ export function openLock(state: PartyLocks, seat: SeatId, zone: string, now: num
   const placed = lockAt(state, zone);
   if (placed === undefined) return fail(ErrorCode.puzzle_not_open);
   const lock = makeLock(placed.kind, placed.level, placed.seed);
-  const unseen = isMemoryKind(placed.kind) && !(state.seen[seat] ?? []).includes(sightIdOf(placed.lockId));
+  const worldSign = signForLock(state.worldClues ?? [], zone);
+  const unseen = worldSign !== null
+    ? !(state.worldSeenAny ?? []).includes(worldSign)
+    : isMemoryKind(placed.kind) && !(state.seen[seat] ?? []).includes(sightIdOf(placed.lockId));
   const opened: OpenLock = { lockId: placed.lockId, zone, openedAt: now, attemptsUsed: 0, lastAttemptAt: null };
   return ok({
     state: { ...state, open: put(state.open, seat, opened) },
@@ -115,18 +159,40 @@ export function openLock(state: PartyLocks, seat: SeatId, zone: string, now: num
     deadlineAt: Math.min(now + ctx.capMs, ctx.turnDeadline ?? Number.POSITIVE_INFINITY),
     faded: unseen ? fadedFor(lock, ctx.assist === true) : null,
     publicLine: { type: "inspect", seat, zone },
+    ...(worldSign !== null
+      ? {
+          sign: worldSign,
+          prompt: worldCluePrompt(placed.kind, worldSign),
+          canSeeAgain: (state.worldSeenTurn?.[seat] ?? []).includes(worldSign),
+        }
+      : {}),
   });
 }
 
 /** The same Lock again for a seat that reconnected: rebuilt from the seed, progress inside an Attempt lost. */
-export function restoreLock(state: PartyLocks, seat: SeatId, ctx: Pick<OpenContext, "assist">): Result<Readonly<{ lockId: string; view: LockView; faded: Sight | null; attemptsUsed: number }>> {
+export function restoreLock(state: PartyLocks, seat: SeatId, ctx: Pick<OpenContext, "assist">): Result<Readonly<{ lockId: string; view: LockView; faded: Sight | null; attemptsUsed: number; sign?: Sign; prompt?: string; canSeeAgain?: boolean }>> {
   const open = state.open[seat];
   if (!open) return fail(ErrorCode.puzzle_not_open);
   const placed = lockAt(state, open.zone);
   if (placed === undefined) return fail(ErrorCode.puzzle_not_open);
   const lock = makeLock(placed.kind, placed.level, placed.seed);
-  const unseen = isMemoryKind(placed.kind) && !(state.seen[seat] ?? []).includes(sightIdOf(placed.lockId));
-  return ok({ lockId: placed.lockId, view: lock.view, faded: unseen ? fadedFor(lock, ctx.assist === true) : null, attemptsUsed: open.attemptsUsed });
+  const worldSign = signForLock(state.worldClues ?? [], open.zone);
+  const unseen = worldSign !== null
+    ? !(state.worldSeenAny ?? []).includes(worldSign)
+    : isMemoryKind(placed.kind) && !(state.seen[seat] ?? []).includes(sightIdOf(placed.lockId));
+  return ok({
+    lockId: placed.lockId,
+    view: lock.view,
+    faded: unseen ? fadedFor(lock, ctx.assist === true) : null,
+    attemptsUsed: open.attemptsUsed,
+    ...(worldSign !== null
+      ? {
+          sign: worldSign,
+          prompt: worldCluePrompt(placed.kind, worldSign),
+          canSeeAgain: (state.worldSeenTurn?.[seat] ?? []).includes(worldSign),
+        }
+      : {}),
+  });
 }
 
 /** A Master pause freezes every open Lock's timer: its start moves later by the time paused. */

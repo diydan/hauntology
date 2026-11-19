@@ -17,77 +17,93 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Compare WebRTC, a WebSocket to a Worker and Cloudflare Realtime for a live voice turn on Cloudflare, with end-of-speech detection in the browser. Record in `docs/spikes/ghost-voice-1.3.md`: which transport works, how end of speech is detected, the real delay from the end of a sentence to the first spoken word (the guess of 2 to 3 seconds is an estimate, not a result), battery and data use on a phone, and what happens on a page that is hidden or a connection that drops. If none works within the cap, say so; live mode is then cut.
     - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ] 2. Pure logic for speaking and listening (`shared/src/voice/`)
-  - [ ] 2.1 `limits.ts`, `config.ts` and the generators
+- [x] 2. Pure logic for speaking and listening (`shared/src/voice/`)
+  - [x] 2.1 `limits.ts`, `config.ts` and the generators
     - `limits.ts` names every number in the requirements (the 200-character cap and 1.5-second gap come from `shared/src/ghost/`). `config.ts` has `parseVoiceConfig(env)` with the `VOICE_*` defaults from the design, zod, a bad value falling back to its default, and the room line cap never above 20. `voice.arb.ts` generates texts with sentence ends, long runs, URLs, markup, control characters and banned phrases. Unit tests for the defaults and clamps.
     - _Requirements: 4.1, 2.3_
-  - [ ] 2.2 `voices.ts` and `speakable.ts`
+    - Done (2026-11-19): `shared/src/voice/limits.ts`, `shared/src/voice/config.ts` (`DEFAULT_VOICE_CONFIG`, `parseVoiceConfig`), `shared/src/voice/config.test.ts`, and `shared/src/voice/voice.arb.ts`.
+  - [x] 2.2 `voices.ts` and `speakable.ts`
     - `SPEAKERS` (the three-entry cast: Whisper is Pippa, Keeper is Ronald, Lodger is Mark by default, each with its tag, rate, temperature and Aura-2 fallback speaker), `LODGER_VOICES` (Mark, Conrad, Arjun, Chloe, Eleanor and Victoria, same tag, rate and temperature), `lodgerVoiceFor(profile)` (the Profile's `lodgerVoice`, else Mark, reading nothing else), `speakerForPersona` (soft is the Whisper, dry is the Keeper), `voiceFor(speaker, step, lodgerVoice?)` and `steeringTag`; `splitSentences`; `toVoiceLine` takes the Speaker and `playerText`, calls the engine's `validateGhostReply`, stops before the first sentence that contains any player text, cuts at the last sentence end within 240 characters, leaves `spoken` empty when none fits, and never puts a Steering Tag in `text` or `spoken`. No second banned-phrase list. The synthesis request type has no field for a reference voice.
     - _Requirements: 1.1, 1.5, 1.6, 1.7, 1.10, 1.11_
-  - [ ]* 2.3 Write property test for spoken lines
+    - Done (2026-11-18): verified every clause across `shared/src/voice/{voices,speakable,to-line,line}.ts`, `shared/src/voice/requests.ts`, and `api/src/guarded/workersai/speak.ts` (`SpeechRequest` and upstream Inworld/Aura-2 payloads have no reference-voice field; `steeringTag` is added only in `api/src/guarded/workersai/speak.ts`).
+  - [x]* 2.3 Write property test for spoken lines
     - **Property 1: Spoken lines are short, safe and validated**
     - **Validates: Requirements 1.1, 1.5**
-  - [ ] 2.4 `fallback.ts`: `resolveSpeech`
+    - Done (2026-11-18): `shared/src/voice/to-line.test.ts` with generators in `shared/src/voice/voice.arb.ts` (empty, long runs without sentence ends, URLs, markup, control chars, banned phrases, non-English) and `propParams()`, checking `toVoiceLine` and `voiceFor`.
+  - [x] 2.4 `fallback.ts`: `resolveSpeech`
     - Library, cache, Inworld, Aura-2, browser, subtitle in order (the first two are free reads that ignore the kill switch, the ticket and the caps); paid steps skipped on the kill switch or no ticket; no step starts after 5000 ms; the result type has no error member and always reports the Subtitle shown. Includes a test helper that runs the engine's `step` with working and failed voice.
     - _Requirements: 1.2, 1.3, 4.2, 4.3_
-  - [ ]* 2.5 Write property test for the fallback chain
+    - Done (2026-11-19): `shared/src/voice/fallback.ts` (`resolveSpeech`, `runWithVoice`) using `SPEECH_DEADLINE_MS` from `shared/src/voice/limits.ts`.
+  - [x]* 2.5 Write property test for the fallback chain
     - **Property 2: The fallback chain always ends in a subtitle**
     - **Validates: Requirements 1.2, 1.3, 4.2, 4.3**
-  - [ ] 2.6 `cache.ts`: `canonicalSpeechKey`, `speechCacheKey` (digest injected) and `cacheFresh`
+    - Done (2026-11-19): `shared/src/voice/fallback.prop.test.ts` with `propParams()` and `runWithVoice` comparing working voice vs zero meters.
+  - [x] 2.6 `cache.ts`: `canonicalSpeechKey`, `speechCacheKey` (digest injected) and `cacheFresh`
     - _Requirements: 1.4_
-  - [ ]* 2.7 Write property test for the cache key
+    - Done (2026-11-19): `canonicalSpeechKey` and `speechCacheKey` (`key.ts`, re-exported from `cache.ts`) and `cacheFresh` / `CACHE_MAX_AGE_MS` (`cache.ts`).
+  - [x]* 2.7 Write property test for the cache key
     - **Property 3: The audio cache key depends on voice and text and expires after 60 days**
     - **Validates: Requirements 1.4**
-  - [ ] 2.8 `policy.ts`: `decideSpeak` and `canSwitchSpeaking`
+    - Done (2026-11-19): `shared/src/voice/cache.prop.test.ts` (plus `key.prop.test.ts` and `cache.test.ts`).
+  - [x] 2.8 `policy.ts`: `decideSpeak` and `canSwitchSpeaking`
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
-  - [ ]* 2.9 Write property test for the speaking policy
+    - Done (2026-11-19): `shared/src/voice/policy.ts` (`decideSpeak`, `canSwitchSpeaking`) using `VOICE_ROOM_LINE_CAP` and `VOICE_ROOM_LATE_AT` from `limits.ts`.
+  - [x]* 2.9 Write property test for the speaking policy
     - **Property 4: The speaking policy**
     - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
-  - [ ] 2.10 `listen.ts`: `listeningAllowed`, `clipVerdict` and `withTransientClip`
+    - Done (2026-11-19): `shared/src/voice/policy.prop.test.ts` with `propParams()`.
+  - [x] 2.10 `listen.ts`: `listeningAllowed`, `clipVerdict` and `withTransientClip`
     - The holder zeroes the buffer and drops its reference exactly once on success, throw or timeout.
     - _Requirements: 3.1, 3.2, 3.3_
-  - [ ]* 2.11 Write property test for listening limits and deletion
+    - Done (2026-11-19): `shared/src/voice/listen.ts`.
+  - [x]* 2.11 Write property test for listening limits and deletion
     - **Property 5: Listening limits and immediate deletion**
     - **Validates: Requirements 3.1, 3.2, 3.3**
-  - [ ] 2.12 `transcript.ts`: `prepareTurnInput`
+    - Done (2026-11-19): `shared/src/voice/listen.prop.test.ts`.
+  - [x] 2.12 `transcript.ts`: `prepareTurnInput`
     - Reuses `parseAction` and `acceptTurn`; the source is carried for the UI and read by no rule.
     - _Requirements: 3.4_
-  - [ ]* 2.13 Write property test for the transcript path
+    - Done (2026-11-19): `shared/src/voice/transcript.ts`.
+  - [x]* 2.13 Write property test for the transcript path
     - **Property 6: A transcript takes the typed-text path**
     - **Validates: Requirements 3.4**
-  - [ ] 2.14 `gate.ts`: `withTicket` with injected ports
+    - Done (2026-11-19): `shared/src/voice/transcript.prop.test.ts`.
+  - [x] 2.14 `gate.ts`: `withTicket` with injected ports
     - Reserve, one call, commit on success, release on failure, no call after a denial or on the kill switch.
     - _Requirements: 4.1, 4.2, 4.3_
-    - Progress (2026-11-16): done in `shared/src/voice/gate.ts` (`withTicket`, `GatePorts`, `GateResult`), with 11 tests including a randomized run of Property 7 (200 runs of up to 30 requests with random kill switches, denials, caps, throwing calls and lost commits: no call without a granted Ticket, one call per Ticket, every granted Ticket settled exactly once, the cap never exceeded). It takes an optional `charged(value)` so a call that gave nothing and cost nothing releases its Ticket instead of committing it; a `charged` that throws counts as charged. A Ticket for another meter is released and the call is not made.
-  - [ ]* 2.15 Write property test for budgets
+    - Done (2026-11-16, verified 2026-11-19): `shared/src/voice/gate.ts` (`withTicket`, `GatePorts`, `GateResult`). It takes an optional `charged(value)` so a call that gave nothing and cost nothing releases its Ticket instead of committing it; a `charged` that throws counts as charged. A Ticket for another meter is released and the call is not made.
+  - [x]* 2.15 Write property test for budgets
     - **Property 7: Budgets are never exceeded and no call follows a denial**
     - **Validates: Requirements 4.1, 4.2**
-  - [ ] 2.16 `telemetry.ts`: the voice counter whitelist
+    - Done (2026-11-19): `shared/src/voice/gate.test.ts` (200 seeded runs with `propParams(200)` across random kill switches, denials, caps, throwing calls and lost commits).
+  - [x] 2.16 `telemetry.ts`: the voice counter whitelist
     - Counters for speech requests, cache hits, fallbacks by step, listen calls, Clips checked, accepted and rejected, stitches played, live slices and stop reasons, added to the ghost engine's whitelist. Unit test: no event carries audio, a transcript, a prompt, a word or text.
     - _Requirements: 3.3, 5.5_
-  - [ ]* 2.17 Write property test for Speakers and Steering Tags
+    - Done (2026-11-19): `shared/src/voice/telemetry.ts`, `shared/src/voice/telemetry.test.ts`, and `LOG_SCHEMA` voice counter entries in `shared/src/log.ts` (`log.test.ts`).
+  - [x]* 2.17 Write property test for Speakers and Steering Tags
     - **Property 13: Every line has one Speaker, and a Steering Tag stays in the Inworld request**
     - **Validates: Requirements 1.6, 1.7, 1.11**
+    - Done (2026-11-18): `shared/src/voice/voices.prop.test.ts` (all cast, `speakerForPersona`, `lodgerVoiceFor` secret independence, `toVoiceLine` and cache-key tag absence) plus contract assertions in `api/src/guarded/workersai/speak.test.ts` (Steering Tag added only in `api/src/guarded/workersai/speak.ts`; no reference-voice field).
   - [x] 2.18 `library.ts`: `buildLibrary` (every scripted spoken text per Speaker, the shared Lodger bank once per Lodger Voice, the finite placeholders expanded, fixed order, no duplicate key) and `prefetchPlan(publicView)` (the next Turn's `turn-start`, the four Haunt Event lines one level below a threshold, the midnight line; takes no secret); the Library key is the speech key under `speech/lib/v1/`
     - _Requirements: 1.8, 1.9_
     - Done (2026-11-16): `buildLibrary`, the key functions (`key.ts`), the spoken-part rule (`speakable.ts`), the cast tables (`voices.ts`) and all three generated banks (`shared/src/voice/banks/`). `prefetchPlan(view, entries)` is in `library.ts` with tests in `shared/src/voice/prefetch.test.ts` over the real banks (3 deliberate breakages caught). One deviation from the design signature: the built Public View is the party engine's `PublicSnapshot`, so the plan takes a narrow `PrefetchView` (phase, Haunt level and maximum, minutes to the host's midnight) and the Library entries, and returns canonical speech keys; the type holds no field a secret could hide in.
-  - [ ]* 2.19 Write property test for the Library, player-text-free speech and secret-free prefetch (two states that differ only in the Solution, a Hand or whether an Accusation is right give the same plan and the same upstream calls)
+  - [x]* 2.19 Write property test for the Library, player-text-free speech and secret-free prefetch (two states that differ only in the Solution, a Hand or whether an Accusation is right give the same plan and the same upstream calls)
     - **Property 14: The Library is complete and free of player text, and nothing is prepared because of a secret**
     - **Validates: Requirements 1.8, 1.9, 1.10**
-    - Progress (2026-11-16): the Library half is `library.prop.test.ts` and the prefetch-plan half is `prefetch.test.ts` (the plan is a function of public facts only, so secret-differing states plan identically by construction; confession, reveal and ending lines are never warmed). Not done: "the same upstream calls", which needs the speak service of 3.12; player-text-free `spoken` in full, which needs `toVoiceLine` (2.2).
+    - Done (2026-11-18): `shared/src/voice/library.prop.test.ts` (`buildLibrary`, player-text-free `toVoiceLine`, secret-differing `EngineState` `prefetchPlan` equality), `shared/src/voice/prefetch.test.ts`, and `api/src/voice/speak.test.ts` (secret-differing `EngineState` pairs driven through the 3.12 `speakLine` / `speakFoundLine` service over fakes produce identical prefetch and upstream calls).
 
 - [ ] 3. API (`api/src/voice/` and `api/src/guarded/workersai/`)
-  - [ ] 3.1 Error codes
+  - [x] 3.1 Error codes
     - Add `voice_unavailable`, `clip_too_long`, `clip_not_heard`, `stitch_not_on`, `stitch_no_consent`, `stitch_check_limit` and `live_unavailable` to `shared/src/errors.ts`. Unit test: every value equals its key. None maps to an error screen in `errors-copy`.
     - _Requirements: 4.2_
-    - Observed (2026-11-16, not checked further): all seven codes are already in `shared/src/errors.ts`. Not checked: the "every value equals its key" test and the `errors-copy` rule.
+    - Done (2026-11-19): all seven codes verified in `shared/src/errors.ts`, `value === key` pinned in `shared/src/errors.test.ts`, and `shared/src/app/errors-copy.test.ts` asserts none maps to a fatal `home`/`gallery` error screen.
   - [ ] 3.2 Meters, caps and variables
     - Add `tts`, `stt` and `live` to `SpendGuard`'s `Meter` type and cap table (session and room scopes, global day), with the `VOICE_*` variables and kill-switch wiring; `GET /api/quota` returns the three remaining counts and the flags `voice`, `stitch` and `live`. The `live` Meter counts 10-second slices (30 a session, 180 a day by default). Coordinate with `world-pipeline` 4.1.
     - _Requirements: 4.1, 4.2, 6.2_
-  - [ ] 3.3 Guarded wrappers `speak` and `transcribe`
+  - [x] 3.3 Guarded wrappers `speak` and `transcribe`
     - In `api/src/guarded/workersai/`, typed by Meter: `speak(ticket: tts or live)` calls Inworld TTS 2 with the Speaker's `voice_id`, rate and temperature and the Steering Tag in front of the text (the only place a tag is added), downloads the returned MP3 file, then calls Aura-2 English with the same ticket and no tag if that fails, aborting at 5 seconds from the request; `transcribe(ticket: stt or live)` calls Whisper with `language: 'en'` and the clip passed straight in, never written anywhere. Fake Workers AI that returns good, slow, empty and failing results and counts calls.
     - _Requirements: 1.1, 1.3, 1.6, 3.3, 4.1_
-    - Progress (2026-11-16): `speak` is done in `api/src/guarded/workersai/speak.ts` (`generateSpeech`, `WorkersAiSpeaker`, `speechWasCharged`), with 49 tests against a fake Workers AI that gives good, slow, empty and failing answers and counts calls; the whole `api` suite and typecheck pass. It refuses a Ticket for any meter but `tts` or `live`, refuses a request with markup, a bracket or over 240 characters before any call, adds the Steering Tag in this one place (a test fails if another `api/src` file calls `steeringTag`), never fetches a link that is not https, and gives every step what is left of one 5 second deadline. The Inworld request is the one the render Worker used for the 527 Library files; the Aura-2 request and answer are from the design and **not yet run against the real service** (Spike 1.1). Not done: `transcribe` (Whisper's request shape is unverified; it goes with 3.7 and `withTransientClip`).
+    - Done (2026-11-19): `speak` in `api/src/guarded/workersai/speak.ts` (50 tests) plus `transcribeClip` / `WorkersAiTranscriber` in `api/src/guarded/workersai/transcribe.ts` (`transcribe.test.ts`, accepting `stt` or `live` Tickets, validating size/type/duration before calling `ai.run` with `{ audio, language: "en" }`). Note: real Aura-2 and Whisper payloads/timings on deployed Workers remain unverified until Spike 1.1.
   - [ ] 3.4 Speech cache in R2
     - R2 binding, a `SpeechCache` port, objects under `speech/v1/<hash>` with `storedAt` and `voice` metadata and no text, a 60-day lifecycle rule, a read-side `cacheFresh` check, lookup of the line's own Inworld voice key and then its Aura-2 key. Test with a fake R2 and an injected clock.
     - _Requirements: 1.4_
@@ -103,18 +119,22 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Accepts `{playId or roomCode, lineId}` only (a body with any text is refused); origin and cookie for Single player, host token for a room; finds the line, checks the cache, then `withTicket('tts')`, `speak`, cache put; answers audio, or `503 voice_unavailable` that the client treats as a quiet fallback; counters only in logs.
     - _Requirements: 1.1, 1.3, 1.5, 4.1, 4.2_
     - Progress (2026-11-16): the route and its service are done for Single player: `api/src/routes/voice.ts`, `api/src/voice/speak.ts` (`speakLine`), the strict body `SpeakRequestSchema` (`shared/src/voice/requests.ts`), the `VoiceLine` type and `speechVoices` (`shared/src/voice/line.ts`, so a line can never choose its own voice), the `VoiceLines` port (`api/src/voice/lines.ts`), the `voice.speak` log event (counters only; `log.test.ts` pins it), and `createApp({ voice })` serves it at `/api/voice/speak`. 69 new tests (37 in `api`: service 23 and route 14; 32 in `shared`: gate 11, line 16, requests 4 and 1 for the log event); the whole `shared` and `api` suites and the `shared`, `api` and `web` typechecks pass. What it does: a body with any text or any other field is `400`; another visitor's line, an unknown line, another game's line and a request with no Session are the same `404` (and no Session cookie is made); a spoken-part-less line, speech off (`VOICE_ENABLED`), a spent cap and a failed or slow voice are `503 voice_unavailable` with one body; audio is `200 audio/mpeg`, `no-store`. The cache is read before any Ticket is asked for, so a line already heard plays with every cap spent; a voice that gave nothing releases its Ticket, one that answered unusably is committed; the cache write is handed to `waitUntil` so the audio does not wait for R2. **(1) Served by the Worker since 3.5 (2026-11-16, see 3.5), when it has the games, the `AI` binding and speech model ids it accepts; the `AI` binding is not declared in `wrangler.jsonc`, so in production it is still not served until the owner adds it. Not done: (2) A room (`roomCode`, the Host's token) is refused by the schema until 3.9.**
-  - [ ] 3.7 `POST /api/voice/listen`
+  - [x] 3.7 `POST /api/voice/listen`
     - Origin and cookie checks, a content-type allow-list, `clipVerdict` and the byte ceiling from Spike 1.1, one clip per 1.5 seconds per Session, `withTicket('stt')`, `withTransientClip(transcribe)`, answers `{transcript}`; no audio, transcript or text in logs or storage; release on failure.
     - _Requirements: 3.1, 3.2, 3.3, 4.1, 4.2_
-  - [ ] 3.8 Transcript through the typed route
+    - Done (2026-11-19): `api/src/voice/listen.ts`, `/listen` in `api/src/routes/voice.ts`, wired in `api/src/app.ts` and `api/src/worker.ts`, verified in `api/src/routes/voice.listen.test.ts` (note: byte ceiling `LISTEN_MAX_BYTES = 262144` stays parameterized until Spike 1.1 measures 8s vs 16s).
+  - [x] 3.8 Transcript through the typed route
     - The turn route has no voice flag. Contract test: a transcript posted as `{text}` gets the same truncation, parse and rate-limit result as the same typed string.
     - _Requirements: 3.4_
-  - [ ] 3.9 Speaking in a room
+    - Done (2026-11-19): verified on `POST /api/play/:id/turn` in `api/src/routes/play.transcript.test.ts`.
+  - [x] 3.9 Speaking in a room
     - With `party-mode` task 8.9: `PartyRoom` keeps `voice.spoken`, applies `decideSpeak` (Master's `settings.speech`, off by default) to each narration, Haunt Event, midnight and ending line, counts only lines sent with `speak: true` and a non-empty `spoken`, and sends `voice {lineId, text, kind}` to the Host only. Phones get the public log text as before. Replaces the browser-voice-only path of party-mode Requirement 7.6.
     - _Requirements: 2.2, 2.3, 2.4_
-  - [ ] 3.10 Contract tests with fakes
+    - Done (2026-11-19): `shared/src/voice/room-voice.ts`, `shared/src/party/protocol.ts`, `shared/src/party/server.ts` (`RoomCore.speakRoomEvent`, `findVoiceLineForHost`), `api/src/do/party-room.ts` (`/voice-line` + `deleteStitchClips`), `api/src/voice/lines.ts` (`CloudflareRoomVoiceLines`), `api/src/routes/voice.ts` (`{ roomCode, lineId }` + `X-Host-Token`), `api/src/worker.ts`, verified in `shared/src/voice/room-voice.test.ts`, `api/src/do/party-room.test.ts`, and `api/src/routes/voice.room.test.ts`.
+  - [x] 3.10 Contract tests with fakes
     - The listen handler writes no audio to any storage and logs no transcript; the speak route refuses text and a foreign `lineId`; logs hold only whitelisted counters; no module outside `api/src/guarded/` calls `env.AI.run` for speech or transcription; with the kill switch on and every Meter at zero every route answers quietly and the turn route still works.
     - _Requirements: 1.5, 3.3, 4.2, 4.3_
+    - Done (2026-11-19): `api/src/voice/contract.test.ts`.
   - [x] 3.11 Library tools and manifest
     - `shared/fixtures/voice-library.json` (keys and spoken texts, no audio, written from `buildLibrary`); `tools/check-voice-library.mjs` (offline; fails when a scripted spoken text has no entry, an entry has no line, or a text holds a Steering Tag or markup); `tools/prerender-voice.mjs` (run by the owner with a manual budget before a deploy: lists the keys missing in R2, prints the count and the estimated cost, renders only those with the Speaker's settings through the guarded `speak` wrapper, writes them under `speech/lib/v1/`, and never overwrites an existing key). Unit tests with a fake R2 and a fake wrapper. The audio files are not committed.
     - _Requirements: 1.8_
@@ -130,86 +150,110 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 4.1 Speak toggle
     - A button with `aria-pressed`, a 48 CSS pixel target and a text label; on by default in Single player, kept in `sessionStorage`; in Multiplayer it shows the room's switch and only the Master's phone can change it.
     - _Requirements: 2.1, 2.4_
-  - [ ] 4.2 Subtitle and audio player
+    - Progress (2026-11-19): single-player toggle (`Chat.tsx`, `voice.ts`) starts on and now persists in `sessionStorage` (`hauntology.speak`); multiplayer room switch waits on `3.9`.
+  - [x] 4.2 Subtitle and audio player
     - The line's full text goes into the Chat transcript's polite live region when it arrives and is marked while it plays; one `AudioContext` created on the content-notice acknowledgement; a 5-second timer from the request; refusal, timeout or autoplay block falls back to `speechSynthesis` and then the Subtitle alone with a quiet "voice off" mark and no error screen; late audio is dropped; the line stops when the switch goes off.
     - _Requirements: 1.2, 1.3, 2.4_
-  - [ ] 4.3 Talk Button, recorder and microphone indicator
+    - Done (2026-11-19): `web/src/app/play/voice.ts`, `web/src/app/play/Chat.tsx`, and `web/src/app/screens/Play.tsx` (enforces `5,000 ms` deadline, drops late audio, falls back to `speechSynthesis` then Subtitle, stops immediately when toggled off).
+  - [x] 4.3 Talk Button, recorder and microphone indicator
     - Hold with the pointer or hold Space or Enter; `MediaRecorder` for up to 8 seconds; a persistent "Microphone on" badge with a dot while the stream is open (no pulsing under reduced motion); tracks stopped the moment recording ends and the Blob cleared after sending; a denied permission or a missing `MediaRecorder` hides the button and leaves typing; the transcript is shown as the visitor's line and sent through the typed turn route; an empty result shows one quiet line. Not offered in Multiplayer.
     - _Requirements: 3.1, 3.2, 3.4_
-  - [ ] 4.4 Quota-aware controls and the zero-quota path
+    - Done (2026-11-19): verified across `web/src/app/play/Chat.tsx`, `voice.ts`, `Play.tsx`, `Chat.test.tsx`, `Play.test.tsx`, and `voice.test.ts`.
+  - [x] 4.4 Quota-aware controls and the zero-quota path
     - Read the `tts`, `stt` and `live` remaining counts and flags from the quota snapshot and show a control as unavailable with one line of words instead of failing; with everything at zero or the kill switch on, the Play screen still plays to the Ending by reading and typing.
     - _Requirements: 4.2, 4.3_
-  - [ ] 4.5 Live mode controls (stretch, built with group 6)
+    - Done (2026-11-19): `voiceQuotaState` in `web/src/app/play/voice.ts`, per-control disabled state and one-line notices in `web/src/app/play/Chat.tsx` and `web/src/app/screens/Play.tsx`, verified in `Chat.test.tsx` and zero-quota Play-to-Ending test in `Play.test.tsx`.
+  - [x] 4.5 Live mode controls (stretch, built with group 6)
     - A Live button, a microphone indicator and a stop button that are visible whenever the microphone is open, disabled with a reason when speaking is off, and a return to the Talk Button on every stop.
     - _Requirements: 6.1, 6.2_
+    - Done (2026-11-19): `startLive`/`stopLive` and live state in `web/src/app/play/voice.ts`, controls + disabled reason + Talk Button fallback in `web/src/app/play/Chat.tsx` and `Play.tsx`, verified in `Chat.test.tsx` and `voice.test.ts` (`openLiveSession` transport stays gated on `6.3` after Spike 1.3).
   - [ ] 4.6 Host audio
     - The Host page asks for audio with its host token for each `voice` message, plays it, shows the Subtitle in its polite live region, and offers one tap to unlock audio on the room-code screen; without the tap it shows Subtitles only.
     - _Requirements: 1.2, 1.3, 2.3_
+    - Progress (2026-11-19): `createHostAudio`, `fetchHostSpeech`, and `browserHostAudioSupport` (`web/src/app/case/host-voice.ts`, `host-voice.test.ts`), `RoomSnapshot` voice/speech/prefetch/hostToken tracking (`web/src/app/case/room-client.ts`, `room-client.test.ts`), and `SoloTable` unlock + Master voice toggle + polite live-region subtitle wiring (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code screen awaits `party-mode` 8.9.
   - [ ] 4.7 Accessibility and manual checks
     - Keyboard-only run of the speak toggle and Talk Button; a screen-reader pass that a spoken line is announced once; contrast of the indicator at least 4.5:1; a real iPhone and Android run of recording and playback.
     - _Requirements: 1.2, 3.2_
   - [ ] 4.8 Prefetch and decode ahead
     - The Host (and Play) asks for each id in the room's prefetch list with `prefetch: true` and decodes the audio ahead into memory: at most 8 lines and 2 MB, cleared when the room ends, never written to disk, so a Library line starts at once. Nothing is prefetched that the server did not list.
     - _Requirements: 1.9_
+    - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) is wired through `createHostAudio` into `SoloTable` (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code Host screen awaits `party-mode` 8.9.
 
-- [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
-  - [ ] 5.1 Word Bank, Templates and composition
+- [x] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
+  - [x] 5.1 Word Bank, Templates and composition
     - `WORD_BANK` of the 12 default words, `validateWordBank`, the ten starter Templates, `validateTemplates` (no word outside the bank, every bank word used, subtitles pass `validateGhostReply`), `composeStitch`; `stitch.arb.ts` generators. The owner reviewed and kept the starter Template wording on 2026-11-14.
     - _Requirements: 5.1_
-  - [ ]* 5.2 Write property test for stitched lines
+    - Done (2026-11-19): `shared/src/voice/stitch/wordbank.ts`, `templates.ts`, `compose.ts`, and `stitch.arb.ts`.
+  - [x]* 5.2 Write property test for stitched lines
     - **Property 8: Stitched lines contain only template and Word Bank words**
     - **Validates: Requirements 5.1**
-  - [ ] 5.3 `consent.ts`
+    - Done (2026-11-19): `shared/src/voice/stitch/compose.prop.test.ts`.
+  - [x] 5.3 `consent.ts`
     - `StitchConsent {seat, yes, ageOrGuardianTick}`, `consentReduce`, `consentEffective`, and `STITCH_QUESTION` with the deletion statement, the aloud-and-revealed statement, the parent-or-guardian statement and the exact tick label. Unit test pins the phrases and that no age field exists.
     - _Requirements: 5.3_
-  - [ ]* 5.4 Write property test for consent
+    - Done (2026-11-19): `shared/src/voice/stitch/consent.ts`.
+  - [x]* 5.4 Write property test for consent
     - **Property 9: Stitch consent is each player's own**
     - **Validates: Requirements 5.3**
-  - [ ] 5.5 `check.ts`
+    - Done (2026-11-19): `shared/src/voice/stitch/consent.prop.test.ts`.
+  - [x] 5.5 `check.ts`
     - `heardWord`, `canCheck` and `recordCheck` with three attempts per word, 30 checks per player, 120 per room, and no use of a check on a denied ticket.
     - _Requirements: 5.2_
-  - [ ]* 5.6 Write property test for word checks
+    - Done (2026-11-19): `shared/src/voice/stitch/check.ts`.
+  - [x]* 5.6 Write property test for word checks
     - **Property 10: Word checks obey their limits**
     - **Validates: Requirements 5.2**
-  - [ ] 5.7 `play.ts` and `purge.ts`
+    - Done (2026-11-19): `shared/src/voice/stitch/check.prop.test.ts`.
+  - [x] 5.7 `play.ts` and `purge.ts`
     - `stitchEligible` (Haunt Event or midnight, 60 seconds, no Accusation, one a Round, two a game, not the same seat twice running, seeded choice), `stitchPublicEvent`, `stitchReveal`, `purgeClips` and `nextPurgeAt`.
     - _Requirements: 5.4, 5.5_
-  - [ ]* 5.8 Write property test for rarity and deletion
+    - Done (2026-11-19): `shared/src/voice/stitch/play.ts` and `purge.ts`.
+  - [x]* 5.8 Write property test for rarity and deletion
     - **Property 11: Stitch is rare and is deleted at the end or after 6 hours**
     - **Validates: Requirements 5.4, 5.5**
-  - [ ] 5.9 Word Check service
+    - Done (2026-11-19): `shared/src/voice/stitch/play-purge.prop.test.ts`.
+  - [x] 5.9 Word Check service
     - `api/src/voice/stitch.ts`, called by `PartyRoom`: `canCheck`, `withTicket('stt')`, `withTransientClip(transcribe)`, `heardWord`, `recordCheck`; the transcript is dropped; an accepted Clip goes to room storage and a rejected one is dropped; a refusal returns `stitch_check_limit` or `voice_unavailable`.
     - _Requirements: 5.2, 5.5_
-  - [ ] 5.10 Clip store in the room
+    - Done (2026-11-19): `api/src/voice/stitch.ts` (`runWordCheck`) and `api/src/voice/stitch.test.ts` (note: wiring into `PartyRoom` belongs to `5.12` / `party-mode` Requirement 18).
+  - [x] 5.10 Clip store in the room
     - Clips under `clip:<seat>:<word>` in the `PartyRoom`'s own storage with `recordedAt`; the Durable Object alarm set from `nextPurgeAt`; purge on leave, withdraw, Master off, game end and room deletion; never R2, KV, a log, a prompt or a route. Test with an in-memory storage fake.
     - _Requirements: 5.5_
-  - [ ] 5.11 Recorder and player helpers
+    - Done (2026-11-19): `api/src/voice/stitch-store.ts` (`RoomStitchClipStore`) and `api/src/voice/stitch-store.test.ts`.
+  - [x] 5.11 Recorder and player helpers
     - `recorder.ts` records one word of at most 2 seconds and rejects a longer one; `stitch-player.ts` decodes and schedules the Clips back to back with Web Audio on the Host with the Subtitle. Reused by party-mode's Controller and Host pages.
     - _Requirements: 5.1, 5.4_
-  - [ ] 5.12 Room wiring with party-mode Requirement 18
+    - Done (2026-11-19): `web/src/app/voice/recorder.ts` (`recordStitchWord`), `web/src/app/voice/stitch-player.ts` (`playStitchSequence`), and `web/src/app/voice/voice-helpers.test.ts`.
+  - [x] 5.12 Room wiring with party-mode Requirement 18
     - Provide the pure functions and message names to party-mode: `settings {stitch}` (Master only, off by default), the question and tick at join, `stitchAnswer`, `stitchClip`, `stitchResult`, `stitch {eventId, subtitle, clips}` to the Host, the log line "a voice whispered", and the Reveal in the ending payload only. Model-based contract test with a fake `PartyRoom`: the Master's token cannot answer for another seat, no Clip leaves the room, the public log never names a seat, and a Stitch changes no rule state.
     - _Requirements: 5.3, 5.4_
+    - Done (2026-11-19): `shared/src/voice/room-voice.ts`, `shared/src/party/protocol.ts` (`speech`, `stitchSetting`, `stitchAnswer`), `shared/src/party/server.ts` (`RoomCore` handlers + `whisperStitch`), and fake-`PartyRoom` contract test `shared/src/voice/room-voice.test.ts`.
 
 - [ ] 6. Live mode (stretch, first in the cut order, built last; `shared/src/voice/live.ts`)
-  - [ ] 6.1 `live.ts`: `liveReduce` and `live.arb.ts`
+  - [x] 6.1 `live.ts`: `liveReduce` and `live.arb.ts`
     - Phases idle, listening, thinking, speaking and stopped; 10 seconds of silence from the later of the start and the last voice; stop; page hidden; 10-second slices bought one at a time (30 a session, 180 a day); every problem ends in hold-to-talk; no effect that stores audio; never offered in Multiplayer.
     - _Requirements: 6.1, 6.2, 6.3_
-  - [ ]* 6.2 Write property test for live mode
+    - Done (2026-11-19): `shared/src/voice/live.ts` (`initialLiveState`, `liveReduce`, `checkLiveSentence`) and `shared/src/voice/live.arb.ts`.
+  - [x]* 6.2 Write property test for live mode
     - **Property 12: Live mode obeys its limits and checks every sentence**
     - **Validates: Requirements 6.1, 6.2, 6.3**
+    - Done (2026-11-19): `shared/src/voice/live.prop.test.ts`.
   - [ ] 6.3 Transport and slice service
     - After Spike 1.3 only. `POST /api/voice/live/slice` reserves a `live` ticket per slice; the chosen transport carries utterances to the same transcription path (typed-text rules) and replies back; the slice ticket pays for transcription, narration and speech; `VOICE_LIVE_ENABLED` stays false until this passes.
     - _Requirements: 6.2, 6.3_
-  - [ ] 6.4 Sentence-checked replies
+  - [x] 6.4 Sentence-checked replies
     - Stream the narrator's reply, run each completed sentence through `toVoiceLine` (the engine's `validateGhostReply`, at most 240 characters) before it is spoken, replace a failing sentence's remainder with one scripted line, validate the assembled reply as a whole for the Subtitle, and store no audio. Fake narrator tests with good, bad and slow streams.
     - _Requirements: 6.3_
+    - Done (2026-11-19): `checkLiveSentence` (`shared/src/voice/live.ts`, `live.prop.test.ts`) and `streamSentenceCheckedReply` (`api/src/voice/live-stream.ts`, `live-stream.test.ts`, tested with fake good, bad, player-text, long, and slow streams).
   - [ ] 6.5 Fallback wiring and delay measurement
     - Any transport, microphone, ticket, cap, silence or hidden-page event ends Live Mode and shows the Talk Button with no error screen; measure the real delay on a phone and a laptop and record it in `docs/spikes/ghost-voice-1.3.md`.
     - _Requirements: 6.1, 6.2_
+    - Progress (2026-11-19): client fallback wiring (`stopLive` on stop, silence, hidden page, or transport/ticket refusal -> `Hold to talk` with no error screen) is verified in `web/src/app/play/voice.ts` and `voice.test.ts`; real-device delay measurement awaits Spike 1.3.
 
 - [ ] 7. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; confirm no test calls a real model; play a full game once with voice on in Single player, once with `VOICE_ENABLED=false` and every Meter at zero (it must reach the Ending by reading and typing), and once in a Multiplayer room with speaking on and Stitch on using fake Clips; confirm which of Stitch (`VOICE_STITCH_ENABLED`) and live mode (`VOICE_LIVE_ENABLED`) ship, and that cutting either leaves the rest working; update `tech.md`, `ghost-safety.md`, `security-and-cost.md` and `structure.md` with what the spikes resolved; ask the user if questions arise.
   - _Requirements: 4.3_
+  - Progress (2026-11-19): automated Checkpoint 7 end-to-end tests (`api/src/voice/checkpoint7.test.ts` + zero-quota/`VOICE_ENABLED=false` Play-to-Ending in `web/src/app/screens/Play.test.tsx`) verify voice-on solo, `VOICE_ENABLED=false` + zero-meter solo to Ending, `PartyRoom` speaking-on + Stitch fake-clip play & end purge, and `VOICE_LIVE_ENABLED=false` cut isolation; live spike resolution docs (`tech.md`, `ghost-safety.md`, `security-and-cost.md`, `structure.md`) await operator approval of Spikes `1.1`–`1.3`.
 
 - [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
   - [ ] 8.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go

@@ -152,3 +152,12 @@ With puzzles on, `initialDoors` returns every door shut; with puzzles off, every
 ### Property 7: A Slam shuts only an open door that nobody stands behind
 `canSlam` holds only when the door is open, nobody is behind it and it did not open by itself this Round; `shutDoor` then sets it to open by itself next Round, and for any run of Slams and Round starts a door ends open.
 **Validates: Requirements 2.6, 5.2, 5.4**
+
+## Shared look (design system, 2026-11-19)
+
+The screens of this spec are built from `design/elements.css`, with the values of `design/tokens.json`; every element is shown, with its markup, on `design/catalogue.html` (run `pnpm voice-demo` and open `/design/`).
+
+| Part of this spec | Elements |
+|---|---|
+| Door prompts & Heavy/Skip/Tap controls | `ui-panel ui-prompt ui-button ui-hint ui-status` |
+| Diorama & Viewer doorway box | drawn from `shared/src/design/tokens.ts` |

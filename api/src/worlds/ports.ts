@@ -54,7 +54,7 @@ export interface ImageVerdictStore {
 }
 
 /** One picture from the image model: its bytes, or why there is none (`rate_limited` for a busy service, `failed` for anything else). */
-export type RenderAnswer = { ok: true; image: Uint8Array } | { ok: false; kind: "rate_limited" | "failed" };
+export type RenderAnswer = { ok: true; image: Uint8Array } | { ok: false; kind: "rate_limited" | "failed" | "flagged" };
 
 /**
  * Makes a photograph from a sketch (world-pipeline 5.3, Requirement 2.4): the sketch goes in as a reference image with a

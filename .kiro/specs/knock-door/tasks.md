@@ -110,3 +110,7 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
 
 - [ ] 10. Checkpoint
   - Run `pnpm check-traceability`, the `shared` tests and the types; do the manual pass on the lab with two phones and the TV.
+
+- [ ] 11. Shared look (satisfies Requirement 10 and the `design-system` spec)
+  - [ ] 11.1 Build each screen of this spec from the elements in `design/catalogue.html` and tokens in `shared/src/design/tokens.ts`; any missing piece goes in `design/elements.css` and `design/catalogue.html` first, keeping 4.5:1 contrast, 44 px targets, focus ring, reduced motion, and one solid yellow button
+    - _Requirements: 10.1, 10.2, 10.3, 10.4_

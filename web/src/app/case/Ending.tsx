@@ -1,6 +1,7 @@
 import type { PublicSnapshot } from "@hauntology/shared/party/engine";
 import { STOCK_SONGS } from "@hauntology/shared/songs/stock";
 import { useEffect, useRef, useState } from "react";
+import { ThemeSong } from "../ThemeSong";
 import { eventLine, type Names } from "./words";
 
 /**
@@ -42,7 +43,17 @@ export function EndingSong({ id }: { id: "fb-house" | "fb-detectives" }) {
   );
 }
 
-export function Ending({ view, n, reducedMotion = false }: { view: PublicSnapshot; n: Names; reducedMotion?: boolean }) {
+export function Ending({
+  view,
+  n,
+  reducedMotion = false,
+  songLine = null,
+}: {
+  view: PublicSnapshot;
+  n: Names;
+  reducedMotion?: boolean;
+  songLine?: { title: string; captions: string } | null;
+}) {
   const e = view.ending!;
   const lines = e.recap.entries
     .map((x) => {
@@ -95,7 +106,13 @@ export function Ending({ view, n, reducedMotion = false }: { view: PublicSnapsho
         </section>
       ) : null}
 
+      {songLine !== null ? (
+        <p className="ui-speech ui-hint" data-ending-song-line>
+          {songLine.title}: {songLine.captions}
+        </p>
+      ) : null}
       <EndingSong id={e.houseWins ? "fb-house" : "fb-detectives"} />
+      <ThemeSong kind="outro" heading="h3" />
 
       <section aria-label="What happened">
         <h3 className="ui-heading">What happened, in order</h3>

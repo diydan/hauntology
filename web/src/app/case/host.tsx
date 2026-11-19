@@ -1,5 +1,9 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { parseViewerMessage, type ShellToViewer } from "@hauntology/shared/app/events";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
+import { createRoomSongsController, type RoomSongsController } from "../songs/room-songs";
+import { SongControls } from "../songs/SongControls";
+import { browserHostAudioSupport, createHostAudio, fetchHostSpeech, type HostAudio, type HostAudioDeps } from "./host-voice";
 import { browserRoomDeps, checkWorld, RoomError, startSolo, type RoomClient, type RoomDeps } from "./room-client";
 import type { HostHandle, HostSetup } from "./types";
 import type { ViewerHandle } from "../viewer/types";
@@ -32,20 +36,36 @@ export async function mountHost(setup: HostSetup, deps: RoomDeps = browserRoomDe
   split.append(worldBox, tableBox);
   setup.container.append(split);
   const root = createRoot(tableBox);
-  root.render(<SoloTable client={client} />);
+  root.render(<SoloTable client={client} fetchSpeech={fetchHostSpeech(deps.fetch)} />);
   let viewer: ViewerHandle | null = null;
   if (setup.loadViewer) {
     try {
-      viewer = await (await setup.loadViewer()).mountViewer({ container: worldBox, worldId: setup.worldId, onMessage: () => {} });
+      viewer = await (await setup.loadViewer()).mountViewer({
+        container: worldBox,
+        worldId: setup.worldId,
+        onMessage: (raw) => {
+          const parsed = parseViewerMessage(raw);
+          if (parsed?.t === "clue_seen") client.send({ t: "clueSeen", sign: parsed.sign });
+        },
+      });
     } catch {
       viewer = null; // no world view: the case plays on the table alone
       worldBox.remove();
     }
   }
   let lastHaunt = -1;
+  let lastWorldClues: string | null = null;
   const showHaunt = (): void => {
     const v = client.getSnapshot().public;
     if (viewer === null || v === null) return;
+    if (v.worldClues !== undefined || lastWorldClues !== null) {
+      const nextClues = v.worldClues ?? [];
+      const encoded = JSON.stringify(nextClues);
+      if (encoded !== lastWorldClues) {
+        lastWorldClues = encoded;
+        viewer.send({ t: "set_world_clues", clues: nextClues as Extract<ShellToViewer, { t: "set_world_clues" }>["clues"] });
+      }
+    }
     const level = v.haunt.max > 0 ? Math.min(1, v.haunt.level / v.haunt.max) : 0;
     if (level === lastHaunt) return;
     lastHaunt = level;
@@ -92,13 +112,98 @@ const REFUSALS: Record<string, string> = {
   not_in_zone: "Go to a room first.",
 };
 
-export function SoloTable({ client }: { client: RoomClient }) {
+export type SoloAudioDeps = Partial<Pick<HostAudioDeps, "fetchSpeech" | "createAudio" | "unlockAudio" | "fallbackSpeak" | "deadlineMs">>;
+
+export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } & SoloAudioDeps) {
   const snap = useSyncExternalStore(client.subscribe, client.getSnapshot, client.getSnapshot);
   const [now, setNow] = useState(() => Date.now());
+  const [subtitle, setSubtitle] = useState<string | null>(null);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const audioRef = useRef<HostAudio | null>(null);
+  const lastVoiceSeq = useRef(0);
+  const [songHints, setSongHints] = useState<string[]>([]);
+  const [songsCtrl] = useState<RoomSongsController>(() =>
+    createRoomSongsController({
+      onPublicLog: (line) => setSongHints((prev) => [...prev, line]),
+    }),
+  );
+  const songUi = useSyncExternalStore(songsCtrl.subscribe, songsCtrl.getSnapshot, songsCtrl.getSnapshot);
+  const lastSongSeq = useRef(0);
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!snap.code || !snap.hostToken) {
+      audioRef.current = null;
+      return;
+    }
+    const browser = browserHostAudioSupport();
+    const ha = createHostAudio({
+      roomCode: snap.code,
+      hostToken: snap.hostToken,
+      fetchSpeech: audioOverrides.fetchSpeech ?? fetchHostSpeech(),
+      createAudio: audioOverrides.createAudio ?? browser.createAudio,
+      unlockAudio: audioOverrides.unlockAudio ?? browser.unlockAudio,
+      fallbackSpeak: audioOverrides.fallbackSpeak ?? browser.fallbackSpeak,
+      ...(audioOverrides.deadlineMs !== undefined ? { deadlineMs: audioOverrides.deadlineMs } : {}),
+      onSubtitle: setSubtitle,
+    });
+    audioRef.current = ha;
+    return () => {
+      ha.dispose();
+      if (audioRef.current === ha) audioRef.current = null;
+    };
+  }, [snap.code, snap.hostToken]);
+
+  useEffect(() => {
+    const ha = audioRef.current;
+    if (ha === null) return;
+    if (snap.speechOn === false) ha.stop();
+  }, [snap.speechOn]);
+
+  useEffect(() => {
+    const ha = audioRef.current;
+    if (ha === null || !snap.prefetch || snap.prefetch.length === 0) return;
+    void ha.prefetch(snap.prefetch);
+  }, [snap.prefetch]);
+
+  useEffect(() => {
+    const ha = audioRef.current;
+    const cue = snap.voice;
+    if (ha === null || cue === null || cue === undefined || cue.seq === lastVoiceSeq.current) return;
+    lastVoiceSeq.current = cue.seq;
+    void ha.onVoiceCue(cue);
+  }, [snap.voice]);
+
+  useEffect(() => {
+    if (snap.songsSetting !== undefined) songsCtrl.setSetting(true, snap.songsSetting);
+  }, [snap.songsSetting, songsCtrl]);
+
+  useEffect(() => {
+    if (snap.songMuted !== undefined) songsCtrl.setMuted(true, snap.songMuted);
+  }, [snap.songMuted, songsCtrl]);
+
+  useEffect(() => {
+    const song = snap.activeSong;
+    if (song === undefined) return;
+    if (song === null) {
+      songsCtrl.skip(true);
+      return;
+    }
+    if (song.seq === lastSongSeq.current) return;
+    lastSongSeq.current = song.seq;
+    songsCtrl.startSong(song, { soundConsent: audioUnlocked });
+  }, [snap.activeSong, audioUnlocked, songsCtrl]);
+
+  useEffect(() => {
+    if (snap.status === "ended" || snap.status === "closed" || snap.public?.phase === "ended") {
+      audioRef.current?.dispose();
+      songsCtrl.destroy();
+    }
+  }, [snap.status, snap.public?.phase, songsCtrl]);
   const [ask, setAsk] = useState({ suspect: "", relic: "" });
   const [seal, setSeal] = useState({ suspect: "", zone: "", relic: "", sure: false });
 
@@ -112,7 +217,7 @@ export function SoloTable({ client }: { client: RoomClient }) {
 
   if (view.phase === "ended" && view.ending) {
     const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    return <Ending view={view} n={n} reducedMotion={reduced} />;
+    return <Ending view={view} n={n} reducedMotion={reduced} songLine={snap.activeSong ?? null} />;
   }
 
   return (
@@ -121,6 +226,59 @@ export function SoloTable({ client }: { client: RoomClient }) {
         Round {view.round} · {mine ? "Your turn" : `${n.seat(view.active)}'s turn`}
         {left !== null ? ` · ${left} s` : view.paused ? " · clock paused" : ""} · Haunt {view.haunt.level} of {view.haunt.max}
       </p>
+      {snap.hostToken ? (
+        <div className="ui-row" role="group" aria-label="Host voice controls">
+          {!audioUnlocked ? (
+            <button
+              type="button" className="ui-button"
+              onClick={() => {
+                audioRef.current?.unlock();
+                setAudioUnlocked(true);
+              }}
+            >
+              Enable sound
+            </button>
+          ) : null}
+          {snap.seat === 1 ? (
+            <button
+              type="button" className="ui-button ui-button--quiet" aria-pressed={snap.speechOn === true}
+              onClick={() => {
+                const next = snap.speechOn !== true;
+                if (next) {
+                  audioRef.current?.unlock();
+                  setAudioUnlocked(true);
+                }
+                client.send({ t: "speech", action: next ? "on" : "off" });
+              }}
+            >
+              Ghost voice
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {snap.hostToken ? (
+        <SongControls
+          ui={songUi}
+          isMaster={snap.seat === 1}
+          onSetting={(setting) => {
+            songsCtrl.setSetting(true, setting);
+            client.send({ t: "songsSetting", setting });
+          }}
+          onMute={(muted) => {
+            songsCtrl.setMuted(true, muted);
+            client.send({ t: "songMute", muted });
+          }}
+          onSkip={() => {
+            songsCtrl.skip(true);
+            client.send({ t: "songSkip" });
+          }}
+          onSingMyName={(yes) => {
+            songsCtrl.setSingMyName(yes);
+            client.send({ t: "singMyName", yes });
+          }}
+        />
+      ) : null}
+      {subtitle !== null ? <p className="ui-note" aria-live="polite" data-host-subtitle>{subtitle}</p> : null}
       {snap.refused ? <p className="ui-notice" role="alert">{REFUSALS[snap.refused] ?? `Not now (${snap.refused}).`}</p> : null}
 
       {me?.answer ? (
@@ -221,6 +379,7 @@ export function SoloTable({ client }: { client: RoomClient }) {
       <section className="ui-stack" aria-label="What happened">
         <ol className="ui-log" aria-live="polite">
           {lines.map((l, i) => <li key={`${view.events.length}-${i}`} className="ui-log-row">{l}</li>)}
+          {[...(snap.songHints ?? []), ...songHints].map((h, i) => <li key={`sh-${i}`} className="ui-log-row">{h}</li>)}
         </ol>
       </section>
     </div>

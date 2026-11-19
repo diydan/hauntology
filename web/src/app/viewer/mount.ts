@@ -1,9 +1,11 @@
 import { color } from "@hauntology/shared/design/tokens";
 import { hashText } from "@hauntology/shared/ghost/rng";
 import { parseShellMessage, type Anchor, type ShellToViewer } from "@hauntology/shared/app/events";
+import type { PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
 import { atmosphereParams, tiltLook, type AtmosphereParams, type LookState, type TiltCalibration, type TiltReading } from "@hauntology/shared/viewer/atmosphere";
 import { flicker } from "@hauntology/shared/viewer/flicker";
 import { ghostPlacement, gradeParams, orbIntensity, orbPulse, promptFor, smoothHaunt, type PromptTarget } from "@hauntology/shared/viewer/haunt";
+import { clueClarity, clueGlowPulse, cluePropPositions, type PlacedWorldClueProp } from "@hauntology/shared/viewer/world-clues";
 import { inputReduce } from "@hauntology/shared/viewer/input";
 import { assetUrl, loadWorld, LOAD_STAGE_LABELS, type LoadStage, type LoadedWorld, type LoaderPorts } from "@hauntology/shared/viewer/loader";
 import { constrainToDisc, stepMovement } from "@hauntology/shared/viewer/movement";
@@ -18,6 +20,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { CAPSULE_RADIUS, collisionWorldFromGeometry, type CollisionWorld } from "./collision";
 import { applyLook, combineInput, stickAxes } from "./controls";
 import type { ViewerHandle, ViewerSetup } from "./types";
+import { buildAnswerTexture, buildSignTexture } from "./world-clue-props";
 
 /**
  * The real Viewer (world-viewer tasks 3 and 4): three + Spark behind the shell's seam.
@@ -81,6 +84,7 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
 
   void (async () => {
     let splatMesh: SplatMesh | null = null;
+    let ghostSpriteUrl: string | null = null;
     const ports: LoaderPorts = {
       fetchManifest: async (id) => {
         const r = await fetch(`/api/worlds/${encodeURIComponent(id)}`);
@@ -113,7 +117,16 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
     }
     const world: LoadedWorld = result.world;
     if (world.rung !== "splat") onMessage({ t: "degraded", rung: world.rung });
-    cleanup = startScene(container, world, splatMesh, caps, {
+    // The world's own ghost picture, when the Creator made one (best effort; the drawn ghost stands in).
+    try {
+      const r = await fetch(`/api/worlds/${encodeURIComponent(worldId)}/ghost`);
+      if (r.ok) {
+        const view = (await r.json()) as { spriteUrl?: string };
+        if (typeof view.spriteUrl === "string") ghostSpriteUrl = view.spriteUrl;
+      }
+    } catch { /* the drawn ghost stands in */ }
+    if (disposed) return;
+    cleanup = startScene(container, world, splatMesh, caps, ghostSpriteUrl, {
       onMessage,
       mode: () => mode,
       movementEnabled: () => inputMode.movementEnabled,
@@ -219,7 +232,7 @@ function grainDataUrl(): string {
   return c.toDataURL();
 }
 
-function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: SplatMesh | null, caps: DeviceCaps, hooks: SceneHooks): () => void {
+function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: SplatMesh | null, caps: DeviceCaps, ghostSpriteUrl: string | null, hooks: SceneHooks): () => void {
   const manifest = world.manifest;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   // Quality (7.1): start where this device's score puts it, then follow nextQuality's timing rules.
@@ -304,6 +317,47 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       orbGroup.add(s);
     }
   };
+  let worldClues: PublicWorldClue[] = [];
+  const clueSeenSent = new Set<Sign>();
+  const clueGroup = new THREE.Group();
+  scene.add(clueGroup);
+  const signGeo = new THREE.PlaneGeometry(0.5, 0.25);
+  const answerGeo = new THREE.PlaneGeometry(0.75, 0.45);
+  const glowGeo = new THREE.PlaneGeometry(0.95, 0.95);
+  const clearClueMeshes = () => {
+    for (const child of clueGroup.children) {
+      child.traverse((o) => {
+        if (o instanceof THREE.Mesh) {
+          const m = o.material as THREE.MeshBasicMaterial;
+          if (m.map && m.map !== orbTex) m.map.dispose();
+          m.dispose();
+        }
+      });
+    }
+    clueGroup.clear();
+  };
+  const rebuildClues = () => {
+    clearClueMeshes();
+    const rawEye = world.spawn.pos[1] - manifest.floorY;
+    const ey = rawEye >= 0.5 && rawEye <= 3 ? rawEye : 1.6;
+    const anchorSource = haunt.anchors.length > 0 ? haunt.anchors : manifest.anchors ?? [];
+    const placed = cluePropPositions(worldClues, anchorSource, manifest.bounds, manifest.floorY, ey);
+    for (const item of placed) {
+      const prop = new THREE.Group();
+      prop.position.set(item.pos[0], item.pos[1], item.pos[2]);
+      const glow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({ map: orbTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.22, side: THREE.DoubleSide }));
+      glow.renderOrder = 9;
+      const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({ map: buildSignTexture(item), transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+      signMesh.position.set(0, 0.26, 0.01);
+      signMesh.renderOrder = 10;
+      const answerMesh = new THREE.Mesh(answerGeo, new THREE.MeshBasicMaterial({ map: buildAnswerTexture(item), transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+      answerMesh.position.set(0, -0.14, 0.02);
+      answerMesh.renderOrder = 11;
+      prop.add(glow, signMesh, answerMesh);
+      prop.userData = { placed: item, glow, answerMesh } satisfies { placed: PlacedWorldClueProp; glow: THREE.Mesh; answerMesh: THREE.Mesh };
+      clueGroup.add(prop);
+    }
+  };
   const ghost = new THREE.Mesh(
     new THREE.PlaneGeometry(0.95, 1.45),
     new THREE.MeshBasicMaterial({ map: ghostTexture(), transparent: true, alphaTest: 0.05, depthWrite: false, opacity: 0, side: THREE.DoubleSide }),
@@ -311,6 +365,13 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   ghost.visible = false;
   ghost.renderOrder = 10;
   scene.add(ghost);
+  if (ghostSpriteUrl) {
+    new THREE.TextureLoader().load(ghostSpriteUrl, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      (ghost.material as THREE.MeshBasicMaterial).map = tex;
+      (ghost.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    });
+  }
 
   let precip: THREE.Points | null = null;
   let stars: THREE.Points | null = null;
@@ -507,9 +568,14 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       haunt.target = m.hauntLevel;
       haunt.ghostVisible = m.ghostVisible;
       rebuildOrbs();
+      if (worldClues.length > 0) rebuildClues();
     } else if (m.t === "set_atmosphere") {
       haunt.atmosphere = m.atmosphere;
       applyAtmosphere();
+    } else if (m.t === "set_world_clues") {
+      worldClues = [...m.clues];
+      clueSeenSent.clear();
+      rebuildClues();
     }
   });
   canvas.addEventListener("pointerdown", startDrone);
@@ -573,6 +639,21 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       orb.quaternion.copy(camera.quaternion);
       orb.visible = k > 0;
     }
+    for (const child of clueGroup.children) {
+      const prop = child as THREE.Group;
+      const { placed, glow, answerMesh } = prop.userData as { placed: PlacedWorldClueProp; glow: THREE.Mesh; answerMesh: THREE.Mesh };
+      const pulse = clueGlowPulse(frameNow, reducedMotion);
+      (glow.material as THREE.MeshBasicMaterial).opacity = 0.2 * pulse;
+      glow.scale.set(pulse, pulse, 1);
+      const clarity = clueClarity(player.pos, look.yaw, placed.pos);
+      (answerMesh.material as THREE.MeshBasicMaterial).opacity = clarity;
+      answerMesh.visible = clarity > 0.01;
+      prop.quaternion.copy(camera.quaternion);
+      if (clarity >= 0.15 && !clueSeenSent.has(placed.sign)) {
+        clueSeenSent.add(placed.sign);
+        hooks.onMessage({ t: "clue_seen", sign: placed.sign });
+      }
+    }
     haunt.ghostOpacity += ((haunt.ghostVisible ? 0.85 : 0) - haunt.ghostOpacity) * Math.min(1, dtMs / 350);
     let ghostAt: Vec3 | null = null;
     if (haunt.ghostOpacity > 0.01) {
@@ -620,6 +701,10 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     removeEventListener("resize", onResize);
     removeEventListener("deviceorientation", onOrient);
     if (document.pointerLockElement === canvas) document.exitPointerLock?.();
+    clearClueMeshes();
+    signGeo.dispose();
+    answerGeo.dispose();
+    glowGeo.dispose();
     splatMesh?.dispose?.();
     scene.traverse((o) => {
       if (o instanceof THREE.Mesh || o instanceof THREE.Points) {

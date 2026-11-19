@@ -2,7 +2,9 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { makeLock } from "../puzzles/make";
 import { referenceSolve } from "../puzzles/verify";
-import { createEngine, publicSnapshot, step, type EngineSeat, type EngineSettings, type EngineState, type Outbound } from "./engine";
+import { SIGNS } from "../puzzles/world-clues";
+import { createEngine, privateSnapshot, publicSnapshot, step, type EngineSeat, type EngineSettings, type EngineState, type Outbound } from "./engine";
+import { parseClientMessage } from "./protocol";
 import { presetRow, SOLO_PRESETS } from "./solo";
 
 const PRESETS = Array.from({ length: 8 }, (_, i) => `preset-${i + 1}`);
@@ -144,5 +146,132 @@ describe("Locks on Inspect in the Engine", () => {
       expect(JSON.stringify(publicSnapshot(again.state, g.now))).not.toMatch(/sightId|"sight"/);
     }
     expect(sent).toBeGreaterThan(0);
+  });
+});
+
+describe("World Clues in the Engine (Groups 2 & 4)", () => {
+  it("2.1 & 2.2: cluePlace defaults to phone, Master only switches to world in lobby, and Public View carries World Clues without non-world Lock secrets", () => {
+    const s0 = createEngine({ seed: 7, seats, settings: { baseSeconds: 90, hauntMax: 12, puzzles: "medium", preset: "classic" }, presetIds: PRESETS });
+    expect(publicSnapshot(s0, 0).worldClues).toBeUndefined();
+    expect(publicSnapshot(s0, 0).cluePlace).toBeUndefined();
+
+    // Non-Master refused; invalid protocol payloads rejected
+    expect(step(s0, { kind: "client", seat: 2, msg: { t: "settings", cluePlace: "world" } }, 0).refused).toBe("not_master");
+    expect(parseClientMessage(JSON.stringify({ t: "settings", cluePlace: "world" })).kind).toBe("game");
+    expect(parseClientMessage(JSON.stringify({ t: "clueSeen", sign: SIGNS[0] })).kind).toBe("game");
+    expect(parseClientMessage(JSON.stringify({ t: "clueSeen", sign: "Banana" })).kind).toBe("bad");
+
+    // Master switches to world in lobby; changing back mid-game is ignored
+    const sWorld = step(s0, { kind: "client", seat: 1, msg: { t: "settings", cluePlace: "world" } }, 0).state;
+    expect(sWorld.settings.cluePlace).toBe("world");
+    const started = step(sWorld, { kind: "client", seat: 1, msg: { t: "start" } }, 0).state;
+    const afterMidToggle = step(started, { kind: "client", seat: 1, msg: { t: "settings", cluePlace: "phone" } }, 10).state;
+    expect(afterMidToggle.settings.cluePlace).toBe("world");
+
+    const pub = publicSnapshot(started, 0);
+    expect(pub.cluePlace).toBe("world");
+    expect(pub.worldClues).toBeDefined();
+    const clues = pub.worldClues ?? [];
+    expect(clues.length).toBeGreaterThan(0);
+    expect(clues.length).toBeLessThanOrEqual(6);
+    for (const c of clues) expect(Object.keys(c).sort()).toEqual(["sight", "sign", "zone"]);
+
+    // Non-world Lock secrets never appear in Public View
+    const worldLockZones = new Set(started.locks.worldClues?.filter((c) => c.lockZone !== null).map((c) => c.lockZone as string) ?? []);
+    const pubJson = JSON.stringify(pub);
+    for (const p of started.locks.placed) {
+      if (worldLockZones.has(p.zone)) continue;
+      const secret = makeLock(p.kind, p.level, p.seed).secret;
+      expect(pubJson).not.toContain(JSON.stringify(secret));
+    }
+
+    // Default phone mode omits worldClues from both Public and Private views
+    const phoneStarted = step(s0, { kind: "client", seat: 1, msg: { t: "start" } }, 0).state;
+    expect(publicSnapshot(phoneStarted, 0).worldClues).toBeUndefined();
+    expect(privateSnapshot(phoneStarted, 1)?.worldClues).toBeUndefined();
+  });
+
+  it("2.3: Bots ignore World Clues, inspect plainly, and never record clueSeen", () => {
+    const botSeats: EngineSeat[] = [1, 2, 3].map((seat) => ({ seat, nickname: `B${seat}`, bot: true, botLevel: "standard" }));
+    let s = createEngine({ seed: 12, seats: botSeats, settings: { baseSeconds: 90, hauntMax: 12, puzzles: "medium", preset: "classic", cluePlace: "world" }, presetIds: PRESETS });
+    let r = step(s, { kind: "client", seat: 1, msg: { t: "start" } }, 0);
+    s = r.state;
+    const clueSign = s.locks.worldClues?.[0]?.sign ?? SIGNS[0];
+    expect(step(s, { kind: "client", seat: 1, msg: { t: "clueSeen", sign: clueSign } }, 5).state).toBe(s);
+    let now = 0;
+    let inspectedPlain = false;
+    for (let k = 0; k < 40 && s.phase === "playing"; k++) {
+      now = r.wakeAtMs ?? now + 1000;
+      r = step(s, { kind: "alarm" }, now);
+      s = r.state;
+      for (const o of r.out) if (o.to === "seat") expect(o.msg.t).not.toBe("lock");
+      if (s.turn?.inspecting) inspectedPlain = true;
+      expect(s.locks.worldSeenAny ?? []).toEqual([]);
+      expect(s.locks.worldSeenTurn ?? {}).toEqual({});
+    }
+    expect(inspectedPlain).toBe(true);
+  });
+
+  it("4.1 & 4.2: World Clue mode sends no phone Sight for world locks, shows Sign prompt, keeps only own-turn clues in Assist, and opens Faded if never seen", () => {
+    for (let seed = 0; seed < 80; seed++) {
+      const twoHumans: EngineSeat[] = [
+        { seat: 1, nickname: "H1", bot: false, botLevel: "standard" },
+        { seat: 2, nickname: "H2", bot: false, botLevel: "standard" },
+      ];
+      let s = createEngine({ seed, seats: twoHumans, settings: { baseSeconds: 90, hauntMax: 12, puzzles: "medium", preset: "classic", cluePlace: "world" }, presetIds: PRESETS });
+      s = step(s, { kind: "client", seat: 1, msg: { t: "start" } }, 0).state;
+      const real = s.locks.worldClues?.find((c) => c.lockZone !== null);
+      const decoy = s.locks.worldClues?.find((c) => c.lockZone === null);
+      const placed = real ? s.locks.placed.find((l) => l.zone === real.lockZone) : undefined;
+      if (!real || !decoy || !placed) continue;
+
+      const active = s.turn!.seat;
+      const offTurn = active === 1 ? 2 : 1;
+
+      // Walking into the world lock's sightZone does NOT send a phone Sight
+      if (placed.sightZone) {
+        const walked = step(s, { kind: "client", seat: active, msg: { t: "walk", zone: placed.sightZone } }, 10);
+        expect(toSeat(walked.out, active, "sight")).toEqual([]);
+        s = walked.state;
+      }
+
+      // Off-turn player sees the clue: does NOT enter off-turn Assist notebook, but clears Faded
+      s = step(s, { kind: "client", seat: offTurn, msg: { t: "clueSeen", sign: real.sign } }, 20).state;
+      expect(privateSnapshot(s, offTurn)?.worldClues).toEqual([]);
+
+      // Active player sees the decoy on their own turn: added to their Assist notebook
+      s = step(s, { kind: "client", seat: active, msg: { t: "clueSeen", sign: decoy.sign } }, 30).state;
+      expect(privateSnapshot(s, active)?.worldClues?.map((c) => c.sign)).toEqual([decoy.sign]);
+
+      // Active player walks to the Lock zone and inspects: Faded is null (seen by off-turn), Sign prompt shown, canSeeAgain is false (only decoy seen on own turn)
+      s = step(s, { kind: "client", seat: active, msg: { t: "walk", zone: placed.zone } }, 40).state;
+      const opened = step(s, { kind: "client", seat: active, msg: { t: "inspect" } }, 50);
+      const lockMsg = toSeat(opened.out, active, "lock")[0];
+      expect(lockMsg?.t).toBe("lock");
+      if (lockMsg?.t === "lock") {
+        expect(lockMsg.faded).toBeNull();
+        expect(lockMsg.sign).toBe(real.sign);
+        expect(lockMsg.prompt).toContain(real.sign);
+        expect(lockMsg.canSeeAgain).toBe(false);
+      }
+
+      // Now test Faded when NO ONE has seen another real clue (if a second real clue exists)
+      const second = s.locks.worldClues?.find((c) => c.lockZone !== null && c.sign !== real.sign);
+      if (!second) continue;
+      let sFresh = createEngine({ seed, seats: twoHumans, settings: { baseSeconds: 90, hauntMax: 12, puzzles: "medium", preset: "classic", cluePlace: "world" }, presetIds: PRESETS });
+      sFresh = step(sFresh, { kind: "client", seat: 1, msg: { t: "start" } }, 0).state;
+      const act2 = sFresh.turn!.seat;
+      sFresh = step(sFresh, { kind: "client", seat: act2, msg: { t: "walk", zone: second.lockZone as string } }, 10).state;
+      const fadedOpen = step(sFresh, { kind: "client", seat: act2, msg: { t: "inspect" } }, 20);
+      const fadedMsg = toSeat(fadedOpen.out, act2, "lock")[0];
+      expect(fadedMsg?.t).toBe("lock");
+      if (fadedMsg?.t === "lock") {
+        expect(fadedMsg.faded).not.toBeNull();
+        expect(fadedMsg.sign).toBe(second.sign);
+        expect(fadedMsg.canSeeAgain).toBe(false);
+      }
+      return;
+    }
+    throw new Error("Expected a seed with both real and decoy world clues");
   });
 });

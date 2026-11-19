@@ -19,8 +19,10 @@ import { presetRow, type SoloPreset } from "./solo";
 import { capFor } from "../puzzles/settings";
 import { lockLevel } from "../puzzles/level";
 import { placePuzzles } from "../puzzles/place";
-import { freezeFor, closeLock, initPartyLocks, openLock, sightsOnEntry, ackSight, submitAttempt, type PartyLocks } from "../puzzles/inspect";
+import { makeLock } from "../puzzles/make";
+import { freezeFor, closeLock, initPartyLocks, markWorldClueSeen, openLock, sightsOnEntry, ackSight, submitAttempt, worldClueNotebook, type PartyLocks } from "../puzzles/inspect";
 import type { Level, LockView, PuzzleSetting, Sight } from "../puzzles/types";
+import { placeWorldClues, toPublicWorldClues, type CluePlace, type PublicWorldClue, type Sign } from "../puzzles/world-clues";
 import { CUE_PLAY_MS, canCue, canFrame, houseCuePhones, isCue, restlessSchedule, soundPlan, type CueId, type FrameSeat, type PhoneSeat, type SoundPlan } from "./cues";
 import { canSuggest, defaultShown, isBluff, resolveSuggestion, validShow } from "./suggest";
 import { firstPlayer, nextPlayer, type Order } from "./turns";
@@ -45,7 +47,7 @@ export type EngineSeat = Readonly<{ seat: number; nickname: string; bot: boolean
 export type EngineSettings = Readonly<{
   baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off"; sounds?: boolean; frames?: boolean;
   /** The Puzzle setting: off, or the starting level of the Locks (puzzles 1.4). */
-  puzzles?: PuzzleSetting; preset?: SoloPreset; autoCross?: boolean;
+  puzzles?: PuzzleSetting; cluePlace?: CluePlace; preset?: SoloPreset; autoCross?: boolean;
 }>;
 export const DISCONNECT_GRACE_MS = 20_000;
 export const MASTER_AWAY_MS = 60_000;
@@ -129,10 +131,11 @@ export type ClientMsg =
   | Readonly<{ t: "cue"; cue: string; place?: "tv" | "phone" }>
   | Readonly<{ t: "frame"; target: number; cue: string }>
   | Readonly<{ t: "sound"; consent: boolean; audio?: boolean }>
-  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
+  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
   | Readonly<{ t: "attempt"; lockId: string; transcript: unknown }>
   | Readonly<{ t: "giveUp"; lockId: string }>
   | Readonly<{ t: "sightAck"; sightId: string }>
+  | Readonly<{ t: "clueSeen"; sign: Sign }>
   | Readonly<{ t: "plainInspect"; on: boolean }>
   /** A Player acts on a heavy door (knock-door 4.1). */
   | Readonly<{ t: "doorAct"; doorId: string }>
@@ -160,6 +163,8 @@ export type PublicSnapshot = Readonly<{
   tvKnock: Readonly<{ groups: readonly number[]; long: number | null; answeredBy: number | null }> | null;
   /** Why the world's doors were refused, as short codes (the game plays without them). */
   doorProblems: readonly string[];
+  cluePlace?: CluePlace;
+  worldClues?: readonly PublicWorldClue[];
 }>;
 export type PrivateSnapshot = Readonly<{
   seat: number; hand: readonly Card[]; shownToMe: readonly Readonly<{ card: string; by: number }>[]; found: readonly string[];
@@ -169,6 +174,7 @@ export type PrivateSnapshot = Readonly<{
   canEavesdrop: number | null;
   soundConsent: boolean;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
+  worldClues?: readonly PublicWorldClue[];
 }>;
 export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> | Readonly<{ t: "door"; id: string; open: boolean; reason: DoorReason; need: number; have: number }>
   | Readonly<{ t: "tvKnock"; groups: readonly number[]; long: number | null; answeredBy: number | null }> }>
@@ -176,7 +182,7 @@ export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; vie
       | Readonly<{ t: "doorResult"; doorId: string; outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>
       | Readonly<{ t: "tvKnockResult"; outcome: "help" | "wrong"; heard: string }>
       | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }>
-      | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null }>
+      | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null; sign?: Sign; prompt?: string; canSeeAgain?: boolean }>
       | Readonly<{ t: "lockResult"; lockId: string; outcome: "solved" | "wrong" | "failed"; attemptsLeft?: number; zone?: string; card?: string | null }>
       | Readonly<{ t: "sight"; sightId: string; sight: Sight }> }>;
 export type StepResult = Readonly<{ state: EngineState; out: readonly Outbound[]; wakeAtMs: number | null; refused?: string }>;
@@ -423,9 +429,13 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       connected: !s.seats.find((y) => y.seat === x)?.bot, missed: 0, lastCueMs: null, soundsThisRound: 0, frameSentRound: null, framedRound: null, soundConsent: false, hasAudio: true }));
     const zoneIds = s.pool.zones.map((z) => z.id);
     const placed = placePuzzles(s.seed, zoneIds, s.settings.puzzles ?? "off");
+    const placedList = placed.ok ? placed.value : [];
+    const worldClues = (s.settings.cluePlace ?? "phone") === "world"
+      ? placeWorldClues(s.seed, zoneIds, placedList.map((p) => ({ zone: p.zone, lock: makeLock(p.kind, p.level, p.seed) })))
+      : [];
     // doors start shut with puzzles on and open with puzzles off, and open when no human is seated to open them (knock-door 2.2, 2.6)
     const dr = setupDoors(s.doorSetup, zoneIds, (s.settings.puzzles ?? "off") !== "off" && seatedHumans(s) > 0);
-    const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(zoneIds, deal.residue, s.seed), players, round: 1, locks: initPartyLocks(placed.ok ? placed.value : []), doors: dr.state, doorProblems: dr.problems };
+    const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(zoneIds, deal.residue, s.seed), players, round: 1, locks: initPartyLocks(placedList, worldClues), doors: dr.state, doorProblems: dr.problems };
     const first = firstPlayer(order(st), null, s.seed) as number;
     return startTurn({ ...st, first }, first, now);
   }
@@ -439,6 +449,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       ...(row && timing ? { baseSeconds: row.baseSeconds, hauntMax: row.hauntMax } : {}),
       ...(msg.nudges !== undefined ? { nudges: msg.nudges } : {}), ...(msg.frames !== undefined ? { frames: msg.frames } : {}),
       ...(msg.sounds !== undefined ? { sounds: msg.sounds } : {}), ...(msg.puzzles !== undefined ? { puzzles: msg.puzzles } : {}),
+      ...(timing && msg.cluePlace !== undefined ? { cluePlace: msg.cluePlace } : {}),
       ...(timing && msg.baseSeconds !== undefined ? { baseSeconds: msg.baseSeconds } : {}), ...(timing && msg.hauntMax !== undefined ? { hauntMax: msg.hauntMax } : {}),
     };
     const seatBots = row ? s.seats.map((x) => (x.bot ? { ...x, botLevel: row.botLevel } : x)) : s.seats;
@@ -460,6 +471,12 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
   if (msg.t === "plainInspect") return { ...s, locks: { ...s.locks, plain: { ...s.locks.plain, [String(seat)]: msg.on } } };
   if (msg.t === "sightAck" && msg.sightId.startsWith("door-")) return s; // the ghost's knock at a door is heard once and is not kept in the Locks
   if (msg.t === "sightAck") { const r = ackSight(s.locks, String(seat), msg.sightId); return r.ok ? { ...s, locks: r.value } : "sight_unknown"; }
+  if (msg.t === "clueSeen") {
+    if (isBot(s, seat) || (s.settings.cluePlace ?? "phone") !== "world") return s;
+    if (!(s.locks.worldClues ?? []).some((c) => c.sign === msg.sign)) return "clue_unknown";
+    const t = s.turn;
+    return { ...s, locks: markWorldClueSeen(s.locks, String(seat), msg.sign, t !== null && t.seat === seat) };
+  }
   if (msg.t === "sound") return setPlayer(s, seat, (p) => ({ ...p, soundConsent: msg.consent, hasAudio: msg.audio ?? p.hasAudio }));
   if (s.pausedSinceMs !== null) return "paused";
   if (msg.t === "doorAct") return doorAct(s, seat, msg.doorId, now);
@@ -572,7 +589,21 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
         const opened = openLock(locks, String(seat), t.at as string, now, { setting, capMs, isBot: false, ...(dl === null ? {} : { turnDeadline: dl }) });
         if (!opened.ok) return "puzzle_not_open";
         const [st] = addLog({ ...s, locks: opened.value.state }, { kind: "inspect", seat, zone: t.at as string });
-        return { ...st, outbox: [...st.outbox, { to: "seat", seat, msg: { t: "lock", lockId: opened.value.lockId, view: opened.value.view, level, attempts: opened.value.attempts, deadlineAt: opened.value.deadlineAt, faded: opened.value.faded } }] };
+        return {
+          ...st,
+          outbox: [
+            ...st.outbox,
+            {
+              to: "seat",
+              seat,
+              msg: {
+                t: "lock", lockId: opened.value.lockId, view: opened.value.view, level,
+                attempts: opened.value.attempts, deadlineAt: opened.value.deadlineAt, faded: opened.value.faded,
+                ...(opened.value.sign !== undefined ? { sign: opened.value.sign, prompt: opened.value.prompt, canSeeAgain: opened.value.canSeeAgain } : {}),
+              },
+            },
+          ],
+        };
       }
       return { ...s, turn: { ...t, inspecting: startInspect(seat, t.at as string, now) } };
     }
@@ -785,6 +816,7 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
     closedZones: s.doors ? closedZones(s.doors, s.pool.zones.map((z) => z.id)) : [],
     tvKnock: s.tvKnock && s.tvKnock.round === s.round ? { groups: [...s.tvKnock.groups], long: s.tvKnock.long, answeredBy: s.tvKnock.answeredBy } : null,
     doorProblems: [...(s.doorProblems ?? [])],
+    ...((s.settings.cluePlace ?? "phone") === "world" ? { cluePlace: "world" as const, worldClues: toPublicWorldClues(s.locks.worldClues ?? []) } : {}),
   };
 }
 
@@ -800,6 +832,7 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
     heard: p.heard.map((h) => ({ ...h })),
     soundConsent: p.soundConsent,
     canEavesdrop: s.eavesdrop !== null && s.eavesdrop.suggester !== seat && s.eavesdrop.refuter !== seat && !p.poltergeist && p.resolve >= 1 && !p.heard.some((h) => h.eventId === s.eavesdrop?.eventId) ? s.eavesdrop.eventId : null,
+    ...((s.settings.cluePlace ?? "phone") === "world" ? { worldClues: worldClueNotebook(s.locks, String(seat)) } : {}),
   };
 }
 

@@ -193,6 +193,7 @@ export function createApiClient(options: ApiClientOptions = {}): ShellApi {
     shareWorld: (worldId, on) => json(API_SCHEMAS.shareWorld, on ? "POST" : "DELETE", `/api/worlds/${idPath(worldId)}/share`),
 
     ghostPresets: () => json(API_SCHEMAS.ghostPresets, "GET", "/api/ghosts/presets"),
+    ghostProfile: (worldId) => json(API_SCHEMAS.ghostProfile, "GET", `/api/worlds/${idPath(worldId)}/ghost`),
     searchPlaces: (q) => json(API_SCHEMAS.searchPlaces, "POST", "/api/conditions/search", { q }),
     speak: async (req) => {
       const raw = await send("POST", "/api/voice/speak", { body: JSON.stringify(req), headers: { "Content-Type": "application/json" } }, "audio");

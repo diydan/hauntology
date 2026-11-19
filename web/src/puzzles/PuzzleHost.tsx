@@ -1,6 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { KIND_INFO } from "@hauntology/shared/puzzles/kinds";
 import type { Kind, LockView, Sight, Transcript } from "@hauntology/shared/puzzles/types";
+import type { Sign } from "@hauntology/shared/puzzles/world-clues";
 import type { FeelEvent, PuzzleFeel } from "./feel/types";
 import { useFeelValue, useWakeLock } from "./hooks";
 import { KIND_SCREENS } from "./kinds/registry";
@@ -8,6 +9,7 @@ import type { KindProps } from "./kinds/types";
 import { HelpCard } from "./HelpCard";
 import { SightCard } from "./SightCard";
 import { SightClue } from "./SightClue";
+import { SignChip } from "./SignBadge";
 import "./puzzles.css";
 
 /** What the Room (or the local demo) answers to an Attempt. It says nothing about which part was wrong. */
@@ -23,6 +25,9 @@ export type PuzzleHostProps = Readonly<{
   faded: Sight | null;
   /** This Lock's clue, to look at again while playing. Offered only with Assist on: otherwise a clue is seen once, and remembering it is the puzzle. */
   clue?: Sight | null;
+  /** World Clue mark & prompt when clues live in the shared world (world-clues 3.1, 4.3). Shows no answer. */
+  sign?: Sign;
+  prompt?: string;
   /** The most Turn time this Lock may use, or null (Wander has no clock). */
   capMs: number | null;
   attempts: number;
@@ -59,7 +64,7 @@ const TWIST_KINDS: ReadonlySet<Kind> = new Set<Kind>(["safe", "clock"]);
  * draws and plays. Heavy screens load only when needed, and nothing here needs motion, sound or buzz.
  */
 export function PuzzleHost(props: PuzzleHostProps): ReactNode {
-  const { kind, view, faded, clue = null, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear, onTiltChoice, barExtra } = props;
+  const { kind, view, faded, clue = null, sign, prompt, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear, onTiltChoice, barExtra } = props;
   const now = props.now ?? (() => performance.now());
   const [phase, setPhase] = useState<"faded" | "play" | "done">(faded ? "faded" : "play");
   const [wrong, setWrong] = useState(0);
@@ -179,6 +184,15 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
         {barExtra ? <div className="pz-bar-right">{timer}<div className="pz-bar-extra">{barExtra}</div></div> : timer}
       </header>
       {helping ? <HelpCard kind={kind} clock={capMs !== null} onClose={closeHelp} /> : null}
+      {sign !== undefined || prompt !== undefined ? (
+        <div className="ui-stack--tight" role="note" aria-label="World clue mark">
+          <div className="ui-row">
+            {sign ? <SignChip sign={sign} active /> : null}
+            {prompt ? <p className="ui-prompt">{prompt}</p> : null}
+          </div>
+          <p className="ui-hint">Look for this mark in the house.</p>
+        </div>
+      ) : null}
       {peeking && clue ? (
         <div className="ui-panel pz-card pz-peek" role="dialog" aria-label="The clue">
           <h2 className="ui-heading">The clue</h2>

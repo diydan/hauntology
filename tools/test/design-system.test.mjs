@@ -359,7 +359,7 @@ test('the old look classes are gone from the screens: no className="button" (in 
 
 // ---- the specs and steering say: build from these ---------------------------------------------------------------------------------------------
 /** The specs that have a screen of their own: each one carries the shared look requirement, a design section and a task. */
-const SCREEN_SPECS = ['haunwallker', 'puzzles', 'party-mode', 'world-viewer', 'spirit-table', 'ghost-voice', 'integration', 'ghost-creator', 'world-pipeline', 'conditions', 'ghost-engine', 'errands', 'world-clues', 'game-songs'];
+const SCREEN_SPECS = ['haunwallker', 'puzzles', 'party-mode', 'world-viewer', 'spirit-table', 'ghost-voice', 'integration', 'ghost-creator', 'world-pipeline', 'conditions', 'ghost-engine', 'errands', 'world-clues', 'game-songs', 'knock-door'];
 /** The specs that have no screen, with the reason. A new folder under .kiro/specs/ goes in one of these two lists, or the test below fails. */
 const NO_SCREEN_SPECS = { 'design-system': 'it is the design system itself: the source of the look, not a user of it' };
 

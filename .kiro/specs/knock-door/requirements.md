@@ -120,3 +120,14 @@ This spec joins four others. `puzzles` owns the Secret knock Kind and the shared
 1. THE Viewer SHALL treat a shut door as a thin collider box across the doorway (the door's width, 0.2 m thick, from the floor to 2.2 m) and take it away when the door opens; a spike SHALL record whether the box stops a walker cleanly in a real Gallery world before the Viewer depends on it.
 2. THE TV SHALL show each door as a marker on the diorama (shut or open), and a Player SHALL count as standing at a door when within 1.5 m of its place on the plan; with one shared camera the TV SHALL NOT need to know which Player is nearest.
 3. WHERE a world has no doors THEN neither the Viewer nor the TV SHALL show or load anything for doors.
+
+### Requirement 10
+
+**User Story:** As a Player, I want the door prompts, markers, and touch controls to look and behave like the rest of the game, so that they feel like one place. (Shared look)
+
+#### Acceptance Criteria
+
+1. THE screens of this spec (the phone door Lock / Knock / Tap controls, Heavy door Act button, Wander Skip control, and the diorama door markers on the TV) SHALL be built from the design system: the colours, sizes, gaps, corners and times of `design/tokens.json` (through `web/src/styles/tokens.css`), the shared `ui-` elements of `design/elements.css` and the fonts of `design/fonts.css`, and SHALL write no colour, gap, corner, text size or time of their own.
+2. WHEN a screen of this spec needs a piece the elements do not have THEN the piece SHALL be added to `design/elements.css` and `design/catalogue.html` in the same change and then used, and the screen's own style SHALL say only where things go.
+3. THE phone door controls SHALL use `ui-panel`, `ui-prompt`, `ui-button`, and `ui-status` live-region announcements, and diorama/Viewer door visuals SHALL take their colours and glow from `shared/src/design/tokens.ts`.
+4. THE screens SHALL keep the rules of the `design-system` spec: text at least 4.5 to 1, every control at least 44 CSS pixels, a lantern focus ring, every fade one of the three fade tokens and none under reduced motion, yellow as the main colour, and green only for the Whisper and the tick box.
