@@ -63,7 +63,7 @@ describe("a game started with a place", () => {
     const t = setup();
     const { r, body } = await begin(t, choice());
     expect(r.status).toBe(200);
-    expect(body.view.atmosphere).toEqual({ ...SKY, moon: expect.any(String) });
+    expect(body.view.atmosphere).toMatchObject({ ...SKY, moon: expect.any(String), stars: expect.any(Array), moonSky: expect.any(Object) });
     expect(t.urls).toEqual(["https://api.open-meteo.com/v1/forecast?latitude=40.71&longitude=-74.01&current=weather_code,temperature_2m,wind_speed_10m&timezone=auto"]);
     expect(JSON.stringify(r.json)).not.toMatch(/New York|40\.7|74\.0|America|tz|label|lat|lon/);
   });

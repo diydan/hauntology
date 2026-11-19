@@ -4,7 +4,7 @@ import { WorldManifestSchema } from "@hauntology/shared/world/manifest";
 import { createApp } from "./app";
 import { createCreator } from "./creator/service";
 import { R2CreatorStore } from "./creator/store";
-import { conditionsFromEnv } from "./conditions/snapshot-store";
+import { conditionsFromEnv, geocoderFromEnv } from "./conditions/snapshot-store";
 import { PartyDirectory } from "./do/party-directory";
 import { PartyRoom } from "./do/party-room";
 import { PlayIndex } from "./do/play-index";
@@ -120,6 +120,7 @@ export default {
         ...(voice !== null ? { voice } : {}),
         // Party mode (integration 3.2): one `PartyRoom` per Room Code, one `PartyDirectory` for the caps.
         party: { rooms: env.PARTY_ROOM, directory: env.PARTY_DIRECTORY },
+        conditionsSearch: geocoderFromEnv(env),
         // The ghost's games (ghost-engine 3 and 5): one `PlaySession` for each, so a reader of a shared place can play it.
         ...(playsFor(env) !== null
           ? {

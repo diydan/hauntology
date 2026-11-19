@@ -33,6 +33,8 @@ export const LOG_SCHEMA = {
    * `no_place`, `timeout`, `error` or `empty`) and whether the answer came from the 15 minute cache. Counters of one word each: never a place, a coordinate, a label, a date or a query.
    */
   "conditions.read": { source: "word", reason: "word", cache: "bool" },
+  /** City search counters (conditions 3.5, 3.7): outcome (`ok`, `disabled`, `rate_limited`, `bad_place`, `unavailable`) and match count. Never the query or any place. */
+  "conditions.geocode": { outcome: "word", count: "int" },
   /** A game was finished or played again, with how many turns it took. */
   "play.end": { turns: "int" },
   "play.reset": { turns: "int" },
