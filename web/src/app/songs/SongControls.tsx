@@ -39,7 +39,7 @@ export function SongControls({
                 type="button"
                 role="radio"
                 aria-checked={ui.setting === opt.value}
-                className={`ui-segment${ui.setting === opt.value ? " is-active" : ""}`}
+                className="ui-button"
                 onClick={() => onSetting(opt.value)}
               >
                 {opt.label}

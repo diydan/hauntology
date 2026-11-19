@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mulberry32 } from "../puzzles/rng";
+import type { DoorSetup } from "./doors";
 import { BOT_THINK_MAX_MS, BOT_THINK_MIN_MS } from "./engine";
 import { MAX_MESSAGES_PER_SECOND, RoomCore, type Ports } from "./server";
 
@@ -234,5 +235,55 @@ describe("RoomCore: the Bot runner (integration 3.3, 3.4)", () => {
     for (const x of view.suspects) expect(x.name).not.toBe("A visitor's ghost");
     expect(new Set(view.suspects.map((x) => x.name)).size).toBe(6);
     expect(view.relics.map((x) => x.name)).toContain("locket");
+  });
+});
+
+describe("RoomCore: doors (knock-door 8.1, 8.4)", () => {
+  const setup: DoorSetup = {
+    home: "z1", passages: [["z3", "z4"], ["z4", "z5"], ["z5", "z6"]],
+    doors: [
+      { id: "cellar-door", at: { x: 1, z: 1 }, width: 1.2, a: "z1", b: "z2", lock: "knock" },
+      { id: "iron-door", at: { x: 3, z: 1 }, width: 1.4, a: "z2", b: "z3", lock: "heavy", need: 2 },
+    ],
+  };
+
+  it("tells a screen that joins late the state of every door in welcome, and adds nothing when the world has none", async () => {
+    const { f, core, hostToken } = await lobby(3);
+    f.ports.doors = () => setup;
+    await say(core, "ana", { t: "start" });
+    await say(core, "tv2", { t: "hello", token: hostToken });
+    const doors = f.of("tv2", "welcome")[0]?.["doors"] as { id: string; open: boolean; need: number }[];
+    expect(doors.map((d) => [d.id, d.open, d.need])).toEqual([["cellar-door", false, 1], ["iron-door", false, 2]]);
+    const plain = await lobby(4);
+    await say(plain.core, "ana", { t: "start" });
+    await say(plain.core, "tv2", { t: "hello", token: plain.hostToken });
+    expect(plain.f.of("tv2", "welcome")[0]).not.toHaveProperty("doors");
+  });
+
+  it("repairs a damaged saved door state when the Room wakes up, back to the start", async () => {
+    const { f, core, hostToken } = await lobby(5);
+    f.ports.doors = () => setup;
+    await say(core, "ana", { t: "start" });
+    const saved = JSON.parse(f.disk.text!);
+    saved.engine.doors.states = [];
+    f.disk.text = JSON.stringify(saved);
+    const fresh = new RoomCore(f.ports); // woke up knowing only storage
+    await say(fresh, "tv2", { t: "hello", token: hostToken });
+    const doors = JSON.parse(f.disk.text!).engine.doors as { states: { id: string; open: boolean }[] };
+    expect(doors.states.map((s) => [s.id, s.open])).toEqual([["cellar-door", false], ["iron-door", false]]);
+    expect((f.of("tv2", "welcome")[0]?.["doors"] as unknown[]).length).toBe(2);
+  });
+
+  it("carries a door act through the socket: two Players opening the heavy door tell every screen", async () => {
+    const { f, core } = await lobby(6);
+    f.ports.doors = () => setup;
+    await say(core, "ana", { t: "start" });
+    await say(core, "ana", { t: "doorAct", doorId: "iron-door" });
+    expect(f.of("host", "door").at(-1)).toMatchObject({ t: "door", id: "iron-door", open: false, reason: "act", need: 2, have: 1 });
+    await say(core, "ben", { t: "doorAct", doorId: "iron-door" });
+    expect(f.of("host", "door").at(-1)).toMatchObject({ id: "iron-door", open: true, reason: "together" });
+    expect(f.of("ana", "door").at(-1)).toMatchObject({ open: true });
+    expect(f.of("host", "public").at(-1)).toMatchObject({ view: { doors: [{ id: "cellar-door", open: false }, { id: "iron-door", open: true }] } });
+    expect(JSON.parse(f.disk.text!).engine.doors.states[1].open).toBe(true); // saved before it was sent
   });
 });

@@ -21,7 +21,7 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("seal"), suspect: id, zone: id, relic: id }).strict(),
   z.object({ t: z.literal("endTurn") }).strict(),
   z.object({ t: z.literal("pass") }).strict(),
-  z.object({ t: z.literal("choose"), option: z.enum(["cold-spot", "blackout", "restless", "lull"]) }).strict(),
+  z.object({ t: z.literal("choose"), option: z.enum(["cold-spot", "blackout", "restless", "lull", "slam"]) }).strict(),
   z.object({ t: z.literal("nudge"), kind: z.enum(["help", "spook"]) }).strict(),
   z.object({ t: z.literal("eavesdrop"), eventId: z.number().int().nonnegative() }).strict(),
   z.object({ t: z.literal("pause") }).strict(),
@@ -41,6 +41,12 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("sightAck"), sightId: id }).strict(),
   z.object({ t: z.literal("clueSeen"), sign: z.enum(SIGNS) }).strict(),
   z.object({ t: z.literal("plainInspect"), on: z.boolean() }).strict(),
+  /** A Player acts on a heavy door (knock-door 4.1). */
+  z.object({ t: z.literal("doorAct"), doorId: id }).strict(),
+  /** A Player knocks back at the TV after a Slam: the times of their knocks in ms (knock-door 5.3). At most 64, like every knock transcript. */
+  z.object({ t: z.literal("tvKnock"), times: z.array(z.number().finite().nonnegative()).max(64) }).strict(),
+  /** A Detective's try at a knock door: the times of their knocks in ms (knock-door 3.3). At most 64, like every knock transcript. */
+  z.object({ t: z.literal("doorKnock"), doorId: id, times: z.array(z.number().finite().nonnegative()).max(64) }).strict(),
 ]);
 
 /** Room controls handled by the server around the Engine (the lobby), not by the Engine itself. */
