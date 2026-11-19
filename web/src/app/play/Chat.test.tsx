@@ -6,7 +6,7 @@ import { Chat, MODEL_NOTE, STAGE_WAITING } from "./Chat";
 import { BUTTON_LABELS, QUICK_BUTTONS, type PlayUi } from "./controller";
 import type { GhostFace } from "./ghost-face";
 import { Journal, JOURNAL_EMPTY } from "./Journal";
-import { VOICE_STT_UNAVAILABLE, VOICE_TTS_UNAVAILABLE, type VoiceUi } from "./voice";
+import { LIVE_SPEAK_REQUIRED, VOICE_STT_UNAVAILABLE, VOICE_TTS_UNAVAILABLE, type VoiceUi } from "./voice";
 
 afterEach(cleanup);
 
@@ -16,15 +16,18 @@ const ui = (over: Partial<PlayUi> = {}): PlayUi => ({
 const quiet: VoiceUi = { speak: false, speaking: false, mic: "idle", note: null };
 const whisper: GhostFace = { name: "Maren", sprite: "/demo/ghosts/preset-maren.svg", speaker: "whisper" };
 
-function show(over: { ui?: Partial<PlayUi>; ghost?: GhostFace; voice?: Partial<VoiceUi>; voiceAvailable?: boolean; ttsAvailable?: boolean; sttAvailable?: boolean; modelOn?: boolean } = {}) {
-  const calls = { submit: vi.fn(), close: vi.fn(), speak: vi.fn(), press: vi.fn(), release: vi.fn() };
+function show(over: { ui?: Partial<PlayUi>; ghost?: GhostFace; voice?: Partial<VoiceUi>; voiceAvailable?: boolean; ttsAvailable?: boolean; sttAvailable?: boolean; liveEnabled?: boolean; liveAvailable?: boolean; modelOn?: boolean } = {}) {
+  const calls = { submit: vi.fn(), close: vi.fn(), speak: vi.fn(), press: vi.fn(), release: vi.fn(), startLive: vi.fn(), stopLive: vi.fn() };
   const r = render(
     <Chat
       ui={ui(over.ui)} voice={{ ...quiet, ...over.voice }} voiceAvailable={over.voiceAvailable ?? false}
       {...(over.ttsAvailable !== undefined ? { ttsAvailable: over.ttsAvailable } : {})}
       {...(over.sttAvailable !== undefined ? { sttAvailable: over.sttAvailable } : {})}
+      {...(over.liveEnabled !== undefined ? { liveEnabled: over.liveEnabled } : {})}
+      {...(over.liveAvailable !== undefined ? { liveAvailable: over.liveAvailable } : {})}
       modelOn={over.modelOn ?? false} ghost={over.ghost ?? whisper}
       onSubmit={calls.submit} onClose={calls.close} onSpeak={calls.speak} onPress={calls.press} onRelease={calls.release}
+      onStartLive={calls.startLive} onStopLive={calls.stopLive}
     />,
   );
   return { ...r, calls };
@@ -190,6 +193,22 @@ describe("Chat: the ghost on the stage", () => {
     fireEvent.pointerDown(talk);
     fireEvent.keyDown(talk, { key: " " });
     expect(calls.press).not.toHaveBeenCalled();
+  });
+
+  it("renders Live mode disabled with reason when speaking is off, and swaps to indicator + Stop live when active, returning to Hold to talk (ghost-voice 4.5)", () => {
+    const off = show({ voiceAvailable: true, liveEnabled: true, voice: { speak: false, live: "off" } });
+    const liveBtn = screen.getByRole("button", { name: "Live mode" }) as HTMLButtonElement;
+    expect(liveBtn.disabled).toBe(true);
+    expect(document.querySelector("[data-live-reason]")?.textContent).toBe(LIVE_SPEAK_REQUIRED);
+    expect(screen.getByRole("button", { name: "Hold to talk" })).toBeTruthy();
+    off.unmount();
+
+    const active = show({ voiceAvailable: true, liveEnabled: true, voice: { speak: true, live: "listening" } });
+    expect(screen.queryByRole("button", { name: "Hold to talk" })).toBeNull();
+    expect(document.querySelector("[data-mic-indicator]")?.textContent).toContain("Live listening");
+    const stopBtn = screen.getByRole("button", { name: "Stop live" });
+    fireEvent.click(stopBtn);
+    expect(active.calls.stopLive).toHaveBeenCalledTimes(1);
   });
 });
 

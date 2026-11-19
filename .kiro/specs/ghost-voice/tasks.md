@@ -163,9 +163,10 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Read the `tts`, `stt` and `live` remaining counts and flags from the quota snapshot and show a control as unavailable with one line of words instead of failing; with everything at zero or the kill switch on, the Play screen still plays to the Ending by reading and typing.
     - _Requirements: 4.2, 4.3_
     - Done (2026-11-19): `voiceQuotaState` in `web/src/app/play/voice.ts`, per-control disabled state and one-line notices in `web/src/app/play/Chat.tsx` and `web/src/app/screens/Play.tsx`, verified in `Chat.test.tsx` and zero-quota Play-to-Ending test in `Play.test.tsx`.
-  - [ ] 4.5 Live mode controls (stretch, built with group 6)
+  - [x] 4.5 Live mode controls (stretch, built with group 6)
     - A Live button, a microphone indicator and a stop button that are visible whenever the microphone is open, disabled with a reason when speaking is off, and a return to the Talk Button on every stop.
     - _Requirements: 6.1, 6.2_
+    - Done (2026-11-19): `startLive`/`stopLive` and live state in `web/src/app/play/voice.ts`, controls + disabled reason + Talk Button fallback in `web/src/app/play/Chat.tsx` and `Play.tsx`, verified in `Chat.test.tsx` and `voice.test.ts` (`openLiveSession` transport stays gated on `6.3` after Spike 1.3).
   - [ ] 4.6 Host audio
     - The Host page asks for audio with its host token for each `voice` message, plays it, shows the Subtitle in its polite live region, and offers one tap to unlock audio on the room-code screen; without the tap it shows Subtitles only.
     - _Requirements: 1.2, 1.3, 2.3_
@@ -178,7 +179,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - _Requirements: 1.9_
     - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) is wired through `createHostAudio` into `SoloTable` (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code Host screen awaits `party-mode` 8.9.
 
-- [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
+- [x] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
   - [x] 5.1 Word Bank, Templates and composition
     - `WORD_BANK` of the 12 default words, `validateWordBank`, the ten starter Templates, `validateTemplates` (no word outside the bank, every bank word used, subtitles pass `validateGhostReply`), `composeStitch`; `stitch.arb.ts` generators. The owner reviewed and kept the starter Template wording on 2026-11-14.
     - _Requirements: 5.1_
@@ -240,13 +241,14 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 6.3 Transport and slice service
     - After Spike 1.3 only. `POST /api/voice/live/slice` reserves a `live` ticket per slice; the chosen transport carries utterances to the same transcription path (typed-text rules) and replies back; the slice ticket pays for transcription, narration and speech; `VOICE_LIVE_ENABLED` stays false until this passes.
     - _Requirements: 6.2, 6.3_
-  - [ ] 6.4 Sentence-checked replies
+  - [x] 6.4 Sentence-checked replies
     - Stream the narrator's reply, run each completed sentence through `toVoiceLine` (the engine's `validateGhostReply`, at most 240 characters) before it is spoken, replace a failing sentence's remainder with one scripted line, validate the assembled reply as a whole for the Subtitle, and store no audio. Fake narrator tests with good, bad and slow streams.
     - _Requirements: 6.3_
-    - Progress (2026-11-19): pure sentence validation + scripted fallback helper `checkLiveSentence` is built and verified in `shared/src/voice/live.ts` / `live.prop.test.ts`; fake narrator streaming integration waits on Spike 1.3 transport (`6.3`).
+    - Done (2026-11-19): `checkLiveSentence` (`shared/src/voice/live.ts`, `live.prop.test.ts`) and `streamSentenceCheckedReply` (`api/src/voice/live-stream.ts`, `live-stream.test.ts`, tested with fake good, bad, player-text, long, and slow streams).
   - [ ] 6.5 Fallback wiring and delay measurement
     - Any transport, microphone, ticket, cap, silence or hidden-page event ends Live Mode and shows the Talk Button with no error screen; measure the real delay on a phone and a laptop and record it in `docs/spikes/ghost-voice-1.3.md`.
     - _Requirements: 6.1, 6.2_
+    - Progress (2026-11-19): client fallback wiring (`stopLive` on stop, silence, hidden page, or transport/ticket refusal -> `Hold to talk` with no error screen) is verified in `web/src/app/play/voice.ts` and `voice.test.ts`; real-device delay measurement awaits Spike 1.3.
 
 - [ ] 7. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; confirm no test calls a real model; play a full game once with voice on in Single player, once with `VOICE_ENABLED=false` and every Meter at zero (it must reach the Ending by reading and typing), and once in a Multiplayer room with speaking on and Stitch on using fake Clips; confirm which of Stitch (`VOICE_STITCH_ENABLED`) and live mode (`VOICE_LIVE_ENABLED`) ship, and that cutting either leaves the rest working; update `tech.md`, `ghost-safety.md`, `security-and-cost.md` and `structure.md` with what the spikes resolved; ask the user if questions arise.

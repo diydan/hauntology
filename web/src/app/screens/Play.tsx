@@ -233,7 +233,8 @@ export default function Play() {
       </main>
       {chatOpen ? (
         <Chat
-          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} ttsAvailable={voiceQuota.tts} sttAvailable={voiceQuota.stt} modelOn={modelOn} ghost={ghost}
+          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} ttsAvailable={voiceQuota.tts} sttAvailable={voiceQuota.stt}
+          liveEnabled={boot.status === "ready" && boot.session.flags.liveEnabled} liveAvailable={voiceQuota.live} modelOn={modelOn} ghost={ghost}
           onSubmit={(input) => {
             voice.unlock();
             void controller.submit(input);
@@ -245,6 +246,11 @@ export default function Play() {
           }}
           onPress={() => void voice.pressTalk()}
           onRelease={() => void voice.releaseTalk()}
+          onStartLive={() => {
+            voice.unlock();
+            void voice.startLive();
+          }}
+          onStopLive={() => voice.stopLive("stop")}
         />
       ) : null}
       {ui.journalOpen ? <Journal entries={ui.view?.journal ?? []} onClose={() => controller.closeJournal()} /> : null}

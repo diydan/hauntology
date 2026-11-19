@@ -1,6 +1,9 @@
 import type { ApiResult } from "@hauntology/shared/app/api";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MAX_CLIP_MS, NOTE_NOT_HEARD, NOTE_UNAVAILABLE, createVoice, type AudioLike, type Recorder, type VoiceDeps } from "./voice";
+import {
+  LIVE_ENDED_NOTE, LIVE_SPEAK_REQUIRED, MAX_CLIP_MS, NOTE_NOT_HEARD, NOTE_UNAVAILABLE, createVoice,
+  type AudioLike, type Recorder, type VoiceDeps,
+} from "./voice";
 
 afterEach(() => vi.useRealTimers());
 
@@ -293,5 +296,25 @@ describe("hold to talk", () => {
     t.voice.destroy();
     expect(t.rec.events).toEqual(["start", "cancel"]);
     expect(t.kit.made[0]!.released).toBe(true);
+  });
+
+  it("handles Live Mode lifecycle: refuses with speak off, opens when on, falls back cleanly on stop, silence, or transport refusal (4.5, 6.5)", async () => {
+    const tOff = make({ openLiveSession: async () => ({ ok: true, value: { close() {} } }) });
+    tOff.voice.setSpeak(false);
+    expect(await tOff.voice.startLive()).toBe(false);
+    expect(tOff.voice.getSnapshot()).toMatchObject({ live: "off", note: LIVE_SPEAK_REQUIRED });
+
+    vi.useFakeTimers();
+    let closed = 0;
+    const tOn = make({ openLiveSession: async () => ({ ok: true, value: { close: () => { closed++; } } }), liveSilenceMs: 200 });
+    expect(await tOn.voice.startLive()).toBe(true);
+    expect(tOn.voice.getSnapshot().live).toBe("listening");
+    await vi.advanceTimersByTimeAsync(200);
+    expect(closed).toBe(1);
+    expect(tOn.voice.getSnapshot()).toMatchObject({ live: "off", note: LIVE_ENDED_NOTE });
+
+    const tFail = make({ openLiveSession: async () => ({ ok: false, code: "live_unavailable" }) });
+    expect(await tFail.voice.startLive()).toBe(false);
+    expect(tFail.voice.getSnapshot()).toMatchObject({ live: "off", note: LIVE_ENDED_NOTE });
   });
 });

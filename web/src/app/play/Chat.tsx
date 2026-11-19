@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { useRetryGate } from "../useRetryGate";
 import { BUTTON_LABELS, MAX_INPUT_CHARS, QUICK_BUTTONS, type PlayUi, type QuickButton } from "./controller";
 import type { GhostFace } from "./ghost-face";
-import { VOICE_STT_UNAVAILABLE, VOICE_TTS_UNAVAILABLE, type VoiceUi } from "./voice";
+import { LIVE_QUOTA_UNAVAILABLE, LIVE_SPEAK_REQUIRED, VOICE_STT_UNAVAILABLE, VOICE_TTS_UNAVAILABLE, type VoiceUi } from "./voice";
 
 /**
  * The Chat with the ghost (ghost-engine 6.1, built from the design elements, Requirement 10.3): a
@@ -23,7 +23,7 @@ export const MODEL_NOTE = "What you type may be sent to an AI model (Claude Haik
 export const STAGE_WAITING = "Press a button, or say something.";
 
 export function Chat({
-  ui, voice, voiceAvailable, ttsAvailable = true, sttAvailable = true, modelOn, ghost, onSubmit, onClose, onSpeak, onPress, onRelease,
+  ui, voice, voiceAvailable, ttsAvailable = true, sttAvailable = true, liveEnabled = false, liveAvailable = true, modelOn, ghost, onSubmit, onClose, onSpeak, onPress, onRelease, onStartLive, onStopLive,
 }: {
   ui: PlayUi;
   voice: VoiceUi;
@@ -33,6 +33,10 @@ export function Chat({
   ttsAvailable?: boolean;
   /** Remaining STT quota (`stt > 0`): when false, Hold to talk is shown as unavailable with typing open. */
   sttAvailable?: boolean;
+  /** `flags.liveEnabled`: whether Live mode controls are shown (ghost-voice 4.5). */
+  liveEnabled?: boolean;
+  /** Remaining Live quota (`live > 0`). */
+  liveAvailable?: boolean;
   /** `flags.ghostModel`: the ghost's words may come from an AI model. Only then is the note about typed words shown. */
   modelOn: boolean;
   /** Who the visitor is talking to: a name, a portrait and the Speaker's colour. */
@@ -42,6 +46,8 @@ export function Chat({
   onSpeak: (on: boolean) => void;
   onPress: () => void;
   onRelease: () => void;
+  onStartLive?: () => void;
+  onStopLive?: () => void;
 }) {
   const [text, setText] = useState("");
   const input = useRef<HTMLInputElement>(null);
@@ -139,7 +145,7 @@ export function Chat({
             <label className="ui-field-label" htmlFor="chat-speak">Speak aloud</label>
           </div>
           {!ttsAvailable ? <p className="ui-note" data-tts-unavailable>{VOICE_TTS_UNAVAILABLE}</p> : null}
-          {voice.mic === "unsupported" ? null : (
+          {voice.mic === "unsupported" || (liveEnabled && voice.live !== undefined && voice.live !== "off") ? null : (
             <button
               className="ui-button" type="button" aria-pressed={voice.mic === "recording"}
               disabled={!sttAvailable || voice.mic === "unavailable" || waiting}
@@ -153,7 +159,32 @@ export function Chat({
               Hold to talk
             </button>
           )}
-          {!sttAvailable ? <p className="ui-note" data-stt-unavailable>{VOICE_STT_UNAVAILABLE}</p> : null}
+          {!sttAvailable && !(liveEnabled && voice.live !== undefined && voice.live !== "off") ? <p className="ui-note" data-stt-unavailable>{VOICE_STT_UNAVAILABLE}</p> : null}
+          {liveEnabled ? (
+            voice.live !== undefined && voice.live !== "off" ? (
+              <>
+                <span className="ui-hint" data-mic-indicator>● Live listening…</span>
+                <button className="ui-button" type="button" onClick={onStopLive}>
+                  Stop live
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="ui-button" type="button"
+                  disabled={!ttsAvailable || !voice.speak || !liveAvailable || waiting}
+                  onClick={onStartLive}
+                >
+                  Live mode
+                </button>
+                {!ttsAvailable || !voice.speak ? (
+                  <p className="ui-note" data-live-reason>{LIVE_SPEAK_REQUIRED}</p>
+                ) : !liveAvailable ? (
+                  <p className="ui-note" data-live-reason>{LIVE_QUOTA_UNAVAILABLE}</p>
+                ) : null}
+              </>
+            )
+          ) : null}
           {voice.mic === "starting" ? <span className="ui-hint">Waiting for the microphone…</span> : null}
           {voice.mic === "recording" ? <span className="ui-hint" data-mic-indicator>● Listening… let go to send</span> : null}
           {voice.mic === "sending" ? <span className="ui-hint">Sending…</span> : null}
