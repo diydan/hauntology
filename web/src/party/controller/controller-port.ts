@@ -1,4 +1,5 @@
 import type { JoinRefusal } from "@hauntology/shared/party/seats";
+import type { PublicDoor } from "@hauntology/shared/party/doors";
 import type { Errand, ErrandObject } from "@hauntology/shared/party/errands";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import type { Kind, LockView, PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
@@ -53,6 +54,13 @@ export type ControllerErrandsView = Readonly<{
   seatName: (seat: number) => string;
 }>;
 
+export type ControllerDoorLock = Readonly<{
+  doorId: string;
+  triesLeft: number;
+  faded: Sight | null;
+  lastResult?: Readonly<{ outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>;
+}>;
+
 /** What the Room last said to this seat. The shell draws from it and keeps nothing else about the game. */
 export type RoomView = Readonly<{
   connection: Connection;
@@ -68,6 +76,12 @@ export type RoomView = Readonly<{
   worldClues?: readonly PublicWorldClue[];
   /** Private Errands state for this phone (errands spec Groups 3 & 4). */
   errands?: ControllerErrandsView;
+  /** Public door states in this Room (knock-door 4.2, 8.2). */
+  doors?: readonly PublicDoor[];
+  /** Validation fault codes if the picked world's doors were disabled at start (knock-door 1.4). */
+  doorProblems?: readonly string[];
+  /** Active shut knock door at this Detective's feet on their Turn (knock-door 3.3). */
+  doorLock?: ControllerDoorLock | null;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -96,6 +110,10 @@ export interface ControllerPort {
   errandAnswer?(yes: boolean): void;
   /** Detective calls Caught once per Round. */
   errandCaught?(poltergeist: number, object: ErrandObject): void;
+  /** Player acts on a shut heavy door (knock-door 4.2). */
+  doorAct?(doorId: string): void;
+  /** Detective sends knock timestamps (ms) for a shut knock door (knock-door 3.3). */
+  doorKnock?(doorId: string, times: readonly number[]): void;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }

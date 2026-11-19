@@ -254,3 +254,32 @@ describe("mountHost", () => {
     await act(() => h.dispose());
   });
 });
+
+describe("SoloTable doors (knock-door 1.4, 2.8)", () => {
+  it("disables closed Zones in the Turn Room picker and shows doorProblems to the Master", () => {
+    const { s, now } = game();
+    const base = publicSnapshot(s, now);
+    const closedId = base.zones[1]!.id;
+    const snap = {
+      status: "playing" as const,
+      code: "ABCD",
+      seat: 1,
+      public: { ...base, active: 1, closedZones: [closedId], doorProblems: ["0:width"] },
+      private: privateSnapshot(s, 1),
+      refused: null,
+    };
+    const client = {
+      getSnapshot: () => snap,
+      subscribe: () => () => {},
+      send() {},
+      close() {},
+    };
+    const { container } = render(<SoloTable client={client} />);
+    const rooms = within(container).getByRole("group", { name: "Rooms" });
+    const closedBtn = within(rooms).getByRole("button", { name: base.zones[1]!.name });
+    const openBtn = within(rooms).getByRole("button", { name: base.zones[0]!.name });
+    expect(closedBtn.hasAttribute("disabled")).toBe(true);
+    expect(openBtn.hasAttribute("disabled")).toBe(false);
+    expect(within(container).getByText(/Door 1 width must be between/)).toBeTruthy();
+  });
+});

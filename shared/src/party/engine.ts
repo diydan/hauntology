@@ -4,7 +4,7 @@ import { botAct, newMind, observe, type Fact, type Mind, type MindCard } from ".
 import { bonusSeconds, clockStatus, deadlineOf, earned, expire, nextWake, pause, resume, turnBudget, type BaseSeconds, type ClockEvent, type TurnClock } from "./clock";
 import { dealCase, type Card, type Deal, type Solution } from "./deal";
 import {
-  actOnDoor, closedZones, knockBackAtTv, knockOnDoor, knockSightFor, knocksHeardOnEntry, markHeard, newRoundDoors, newTurnDoors, parseDoorsState, publicDoors, setupDoors,
+  KNOCK_TRIES, actOnDoor, closedZones, knockBackAtTv, knockOnDoor, knockSightFor, knocksHeardOnEntry, markHeard, newRoundDoors, newTurnDoors, parseDoorsState, publicDoors, reachableZones, setupDoors,
   shutDoor, slamTargetsAt, startTvKnock,
   type DoorReason, type DoorSetup, type DoorsState, type PublicDoor, type TvKnock,
 } from "./doors";
@@ -199,6 +199,8 @@ export type PrivateSnapshot = Readonly<{
   soundConsent: boolean;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
   worldClues?: readonly PublicWorldClue[];
+  /** Shut knock door in front of this Detective on their Turn, with its Faded clue if they missed the Sight (knock-door 3.3). */
+  doorLock?: Readonly<{ doorId: string; triesLeft: number; faded: Sight | null }>;
   errandsOn?: boolean;
   errand?: Errand;
   errandAsk?: Readonly<{ errandId: string; object: ErrandObject; deadlineMs: number }>;
@@ -507,13 +509,14 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     const players: PlayerRec[] = seatIds.map((x) => ({ seat: x, poltergeist: false, joinedRound: null, resolve: 1, inspected: [], shownToMe: [], found: [], sealed: null, hasSealed: false, suggestions: 0, turnMsUsed: 0, heard: [],
       connected: !s.seats.find((y) => y.seat === x)?.bot, missed: 0, lastCueMs: null, soundsThisRound: 0, frameSentRound: null, framedRound: null, soundConsent: false, hasAudio: true }));
     const zoneIds = s.pool.zones.map((z) => z.id);
-    const placed = placePuzzles(s.seed, zoneIds, s.settings.puzzles ?? "off");
+    // doors start shut with puzzles on and open with puzzles off, and open when no human is seated to open them (knock-door 2.2, 2.6)
+    const dr = setupDoors(s.doorSetup, zoneIds, (s.settings.puzzles ?? "off") !== "off" && seatedHumans(s) > 0);
+    const reach = dr.state ? reachableZones(zoneIds, dr.state.doors, dr.state.states, dr.state.passages, dr.state.home) : zoneIds;
+    const placed = placePuzzles(s.seed, zoneIds, s.settings.puzzles ?? "off", undefined, reach);
     const placedList = placed.ok ? placed.value : [];
     const worldClues = (s.settings.cluePlace ?? "phone") === "world"
       ? placeWorldClues(s.seed, zoneIds, placedList.map((p) => ({ zone: p.zone, lock: makeLock(p.kind, p.level, p.seed) })))
       : [];
-    // doors start shut with puzzles on and open with puzzles off, and open when no human is seated to open them (knock-door 2.2, 2.6)
-    const dr = setupDoors(s.doorSetup, zoneIds, (s.settings.puzzles ?? "off") !== "off" && seatedHumans(s) > 0);
     const st: EngineState = { ...s, phase: "playing", deal, residueAt: placeResidue(zoneIds, deal.residue, s.seed), players, round: 1, locks: initPartyLocks(placedList, worldClues), doors: dr.state, doorProblems: dr.problems };
     const first = firstPlayer(order(st), null, s.seed) as number;
     return startTurn({ ...st, first }, first, now);
@@ -693,6 +696,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       return r.outcome === "failed" ? endTurn(st, now) : st; // three wrong tries end the Turn; the door opens by itself next Round (knock-door 3.5)
     }
     case "inspect": {
+      if (s.doors && t.at !== null && closedZones(s.doors, s.pool.zones.map((z) => z.id)).includes(t.at)) return "zone_closed";
       const why = inspectRefusal({ seat, activeSeat: t.seat, poltergeist: me.poltergeist, inZone: t.at, inspected: me.inspected, inspecting: t.inspecting !== null });
       if (why !== null) return why;
       if (s.locks.open[String(seat)]) return "puzzle_already_open";
@@ -945,6 +949,22 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
   const t = s.turn;
   const pend = s.haunt.pending;
   const openErrand = (s.errands ?? []).find((e) => e.from === seat && e.status === "open") ?? null;
+  const knockDoor =
+    s.phase === "playing" && t !== null && t.seat === seat && !p.poltergeist && !isBot(s, seat) && t.at !== null && s.doors
+      ? s.doors.doors.find(
+          (d) =>
+            d.lock === "knock"
+            && (d.a === t.at || d.b === t.at)
+            && s.doors!.states.find((x) => x.id === d.id)?.open === false,
+        )
+      : undefined;
+  const doorLock = knockDoor
+    ? {
+        doorId: knockDoor.id,
+        triesLeft: Math.max(0, KNOCK_TRIES - (s.doors!.tries[knockDoor.id] ?? 0)),
+        faded: s.doors!.heardBy[knockDoor.id] === seat ? null : knockSightFor(s.seed, knockDoor.id, true),
+      }
+    : undefined;
   return {
     seat, hand: (s.deal.hands[seat] ?? []).map((c) => ({ ...c })), shownToMe: p.shownToMe.map((x) => ({ ...x })), found: [...p.found], resolve: p.resolve, sealed: p.sealed,
     answer: t?.answering && t.answering.refuter === seat ? { eventId: t.answering.eventId, options: [...t.answering.held], deadlineMs: t.answering.untilMs } : null,
@@ -953,6 +973,7 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
     soundConsent: p.soundConsent,
     canEavesdrop: s.eavesdrop !== null && s.eavesdrop.suggester !== seat && s.eavesdrop.refuter !== seat && !p.poltergeist && p.resolve >= 1 && !p.heard.some((h) => h.eventId === s.eavesdrop?.eventId) ? s.eavesdrop.eventId : null,
     ...((s.settings.cluePlace ?? "phone") === "world" ? { worldClues: worldClueNotebook(s.locks, String(seat)) } : {}),
+    ...(doorLock ? { doorLock } : {}),
     ...(s.settings.errands ? { errandsOn: true as const } : {}),
     ...(openErrand ? { errand: openErrand } : {}),
     ...(s.errandAsk && s.errandAsk.target === seat ? { errandAsk: { errandId: s.errandAsk.errandId, object: s.errandAsk.object, deadlineMs: s.errandAsk.untilMs } } : {}),
