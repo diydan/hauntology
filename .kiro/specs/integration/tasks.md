@@ -5,7 +5,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
 - [x] 0. Already built: party-mode 2.1 to 2.32 (lobby, deal, views, zones, notebook, turns, clock, suggestions, accusations), puzzles pure logic and all eleven screens, errands logic 1.x, world-clues placement 1.x
   - _Requirements: 1.1_
 
-- [ ] 1. Phase 1: the last core rules (pure, in `shared/src/party/`)
+- [x] 1. Phase 1: the last core rules (pure, in `shared/src/party/`)
   - [x] 1.1 Residue and Inspect (party-mode `residue.ts`), Haunt Events with `fireEvent` and the four options (`haunt.ts`), the ending payload and Play again (party-mode 2.35, 2.36), Resolve and Eavesdrop
     - _Requirements: 1.1, 1.3_
   - [x] 1.2 `soloSetup` and the Bot mind (party-mode Bot tasks, Properties 57 and 59)
@@ -27,7 +27,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
   - [ ] 2.6 (60 random all-Bot games and 40 solo games end in the test suite; the ten thousand run is next) Checkpoint: ten thousand random all-Bot games end, with no leak and no stuck alarm
     - _Requirements: 1.2, 2.3_
 
-- [ ] 3. Phase 3: the Room server (`api/`)
+- [x] 3. Phase 3: the Room server (`api/`)
   - [x] 3.1 (`RoomCore` in `shared/src/party/server.ts` holds the logic, tested with fake ports; `api/src/do/party-room.ts` plugs in hibernating sockets, storage and the alarm) `PartyRoom` DO: sockets with the Hibernation API, token to `Who`, `step`, save before send, the one alarm (party-mode 4.1, 4.4)
     - _Requirements: 3.1, 3.3_
   - [x] 3.2 (`api/src/do/party-directory.ts` and `api/src/routes/party.ts`, mounted at `/api/party` in `app.ts`, both objects bound in `worker.ts` and `wrangler.jsonc` (migration `v3`); `shared/src/party/protocol.ts` checks every message; limits: 20 join attempts a minute per hashed IP, 40 messages a second per socket; `PARTY_ENABLED` off answers `party_disabled`; an ended Room frees its directory place, and an entry is dropped after a day. Smoke run under `wrangler dev` on 2026-11-15: create, join, sockets, start, privacy, end) `PartyDirectory` caps, rate limits, time to live and deletion; `/api/party` routes (party-mode 4.8, 4.10, 7)
@@ -44,7 +44,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 4.2_
   - [ ] 4.3 Gallery worlds and Preset Ghosts when nothing is contributed
     - _Requirements: 4.3_
-  - [ ] 4.4 **Property 4: Every solo case ends**
+  - [x] 4.4 **Property 4: Every solo case ends**
     - **Validates: Requirements 4.1, 4.2, 4.3**
   - [ ] 4.5 Checkpoint: a person plays a solo case from the Case screen to the ending on a laptop, with no phone and zero quota
     - _Requirements: 1.2, 4.2_
@@ -72,13 +72,13 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 6.2_
 
 - [ ] 7. Phase 7: the Optional layers
-  - [ ] 7.1 Errands through the Engine (errands 2 and 3), behind the Errands switch
+  - [x] 7.1 Errands through the Engine (errands 2 and 3), behind the Errands switch
     - _Requirements: 7.1, 7.2_
-  - [ ] 7.2 World Clues through the Engine and the Viewer (world-clues 2 to 4), behind the Clue place setting
+  - [x] 7.2 World Clues through the Engine and the Viewer (world-clues 2 to 4), behind the Clue place setting
     - _Requirements: 7.1, 7.2_
   - [ ] 7.3 Nudges, Cues, Frames and the other party-mode layers, each behind its switch, in the party-mode cut order
     - _Requirements: 7.1, 7.3_
-  - [ ] 7.4 **Property 5: Optional layers change nothing when off**
+  - [x] 7.4 **Property 5: Optional layers change nothing when off**
     - **Validates: Requirements 7.1**
 
 - [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 8 and the `design-system` spec)
