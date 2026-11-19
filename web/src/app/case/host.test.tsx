@@ -2,7 +2,7 @@
 import { createEngine, privateSnapshot, publicSnapshot, step, type EngineState } from "@hauntology/shared/party/engine";
 import { PRESET_GHOST_IDS } from "@hauntology/shared/party/preset-ghosts";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountHost, SoloTable } from "./host";
 import type { RoomClient, RoomSnapshot } from "./room-client";
 import { eventLine, namesOf, notebook } from "./words";
@@ -90,6 +90,56 @@ describe("the solo table", () => {
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("The case is solved");
     expect(document.body.textContent).toContain(`It was ${n.card(sol.suspect)}, in the ${n.card(sol.zone)}, with the ${n.card(sol.relic)}.`);
     expect(document.body.textContent).toContain("First DetectiveYou");
+  });
+
+  it("shows subtitles before audio unlock, unlocks on tap, toggles Ghost voice as Master, and uses prefetched audio (4.6, 4.8)", async () => {
+    const { s, now } = game();
+    const f = fakeClient(s, now);
+    f.set({ hostToken: "host-tok-1", speechOn: false, prefetch: [] });
+    const fetchSpeech = vi.fn(async (req: { roomCode: string; lineId: string; prefetch?: boolean }) => ({
+      ok: true as const,
+      value: { audio: new Blob([req.lineId], { type: "audio/mpeg" }) },
+    }));
+    const played: Array<{ paused: boolean }> = [];
+    const createAudio = () => {
+      const a = { paused: false, onended: null as (() => void) | null, play: async () => {}, pause() { this.paused = true; } };
+      played.push(a);
+      return { audio: a, release: () => {} };
+    };
+
+    render(<SoloTable client={f.client} fetchSpeech={fetchSpeech} createAudio={createAudio} />);
+
+    // Before unlock: voice cue updates polite live-region subtitle without fetching audio.
+    await act(async () => {
+      f.set({ voice: { seq: 1, lineId: "l-1", text: "A cold draft passes.", kind: "haunt" } });
+    });
+    const sub = document.querySelector("[data-host-subtitle]")!;
+    expect(sub.getAttribute("aria-live")).toBe("polite");
+    expect(sub.textContent).toBe("A cold draft passes.");
+    expect(fetchSpeech).not.toHaveBeenCalled();
+
+    // Tapping Ghost voice as seat 1 Master sends speech on & unlocks Host audio.
+    const voiceBtn = screen.getByRole("button", { name: "Ghost voice" });
+    expect(voiceBtn.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(voiceBtn);
+    expect(f.sent.at(-1)).toEqual({ t: "speech", action: "on" });
+    await act(async () => {
+      f.set({ speechOn: true, prefetch: ["p-1"] });
+    });
+    expect(fetchSpeech).toHaveBeenCalledWith({ roomCode: "ABCD", lineId: "p-1", prefetch: true }, "host-tok-1");
+
+    // Subsequent voice cue for prefetched id plays immediately without a second fetch!
+    const callsAfterPrefetch = fetchSpeech.mock.calls.length;
+    await act(async () => {
+      f.set({ voice: { seq: 2, lineId: "p-1", text: "It whispers from the hall.", kind: "whisper" } });
+    });
+    expect(fetchSpeech).toHaveBeenCalledTimes(callsAfterPrefetch);
+    expect(played).toHaveLength(1);
+    expect(played[0]!.paused).toBe(false);
+
+    // Turning speech off stops the playing clip.
+    await act(async () => { f.set({ speechOn: false }); });
+    expect(played[0]!.paused).toBe(true);
   });
 });
 

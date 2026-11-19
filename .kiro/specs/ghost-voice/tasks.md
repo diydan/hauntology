@@ -127,10 +127,10 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - The turn route has no voice flag. Contract test: a transcript posted as `{text}` gets the same truncation, parse and rate-limit result as the same typed string.
     - _Requirements: 3.4_
     - Done (2026-11-19): verified on `POST /api/play/:id/turn` in `api/src/routes/play.transcript.test.ts`.
-  - [ ] 3.9 Speaking in a room
+  - [x] 3.9 Speaking in a room
     - With `party-mode` task 8.9: `PartyRoom` keeps `voice.spoken`, applies `decideSpeak` (Master's `settings.speech`, off by default) to each narration, Haunt Event, midnight and ending line, counts only lines sent with `speak: true` and a non-empty `spoken`, and sends `voice {lineId, text, kind}` to the Host only. Phones get the public log text as before. Replaces the browser-voice-only path of party-mode Requirement 7.6.
     - _Requirements: 2.2, 2.3, 2.4_
-    - Progress (2026-11-19): `shared/src/voice/room-voice.ts`, `shared/src/party/protocol.ts`, `shared/src/party/server.ts` (`RoomCore.speakRoomEvent`, `findVoiceLine`), and `RoomSpeakRequestSchema` in `shared/src/voice/requests.ts` are built and verified in `shared/src/voice/room-voice.test.ts`; remaining work is the `PartyRoom` DO `/voice-line` HTTP adapter + host-token check for `{ roomCode, lineId }` in `api/src/routes/voice.ts` alongside `party-mode` 8.9.
+    - Done (2026-11-19): `shared/src/voice/room-voice.ts`, `shared/src/party/protocol.ts`, `shared/src/party/server.ts` (`RoomCore.speakRoomEvent`, `findVoiceLineForHost`), `api/src/do/party-room.ts` (`/voice-line` + `deleteStitchClips`), `api/src/voice/lines.ts` (`CloudflareRoomVoiceLines`), `api/src/routes/voice.ts` (`{ roomCode, lineId }` + `X-Host-Token`), `api/src/worker.ts`, verified in `shared/src/voice/room-voice.test.ts`, `api/src/do/party-room.test.ts`, and `api/src/routes/voice.room.test.ts`.
   - [x] 3.10 Contract tests with fakes
     - The listen handler writes no audio to any storage and logs no transcript; the speak route refuses text and a foreign `lineId`; logs hold only whitelisted counters; no module outside `api/src/guarded/` calls `env.AI.run` for speech or transcription; with the kill switch on and every Meter at zero every route answers quietly and the turn route still works.
     - _Requirements: 1.5, 3.3, 4.2, 4.3_
@@ -159,24 +159,27 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Hold with the pointer or hold Space or Enter; `MediaRecorder` for up to 8 seconds; a persistent "Microphone on" badge with a dot while the stream is open (no pulsing under reduced motion); tracks stopped the moment recording ends and the Blob cleared after sending; a denied permission or a missing `MediaRecorder` hides the button and leaves typing; the transcript is shown as the visitor's line and sent through the typed turn route; an empty result shows one quiet line. Not offered in Multiplayer.
     - _Requirements: 3.1, 3.2, 3.4_
     - Done (2026-11-19): verified across `web/src/app/play/Chat.tsx`, `voice.ts`, `Play.tsx`, `Chat.test.tsx`, `Play.test.tsx`, and `voice.test.ts`.
-  - [ ] 4.4 Quota-aware controls and the zero-quota path
+  - [x] 4.4 Quota-aware controls and the zero-quota path
     - Read the `tts`, `stt` and `live` remaining counts and flags from the quota snapshot and show a control as unavailable with one line of words instead of failing; with everything at zero or the kill switch on, the Play screen still plays to the Ending by reading and typing.
     - _Requirements: 4.2, 4.3_
-  - [ ] 4.5 Live mode controls (stretch, built with group 6)
+    - Done (2026-11-19): `voiceQuotaState` in `web/src/app/play/voice.ts`, per-control disabled state and one-line notices in `web/src/app/play/Chat.tsx` and `web/src/app/screens/Play.tsx`, verified in `Chat.test.tsx` and zero-quota Play-to-Ending test in `Play.test.tsx`.
+  - [x] 4.5 Live mode controls (stretch, built with group 6)
     - A Live button, a microphone indicator and a stop button that are visible whenever the microphone is open, disabled with a reason when speaking is off, and a return to the Talk Button on every stop.
     - _Requirements: 6.1, 6.2_
+    - Done (2026-11-19): `startLive`/`stopLive` and live state in `web/src/app/play/voice.ts`, controls + disabled reason + Talk Button fallback in `web/src/app/play/Chat.tsx` and `Play.tsx`, verified in `Chat.test.tsx` and `voice.test.ts` (`openLiveSession` transport stays gated on `6.3` after Spike 1.3).
   - [ ] 4.6 Host audio
     - The Host page asks for audio with its host token for each `voice` message, plays it, shows the Subtitle in its polite live region, and offers one tap to unlock audio on the room-code screen; without the tap it shows Subtitles only.
     - _Requirements: 1.2, 1.3, 2.3_
+    - Progress (2026-11-19): `createHostAudio`, `fetchHostSpeech`, and `browserHostAudioSupport` (`web/src/app/case/host-voice.ts`, `host-voice.test.ts`), `RoomSnapshot` voice/speech/prefetch/hostToken tracking (`web/src/app/case/room-client.ts`, `room-client.test.ts`), and `SoloTable` unlock + Master voice toggle + polite live-region subtitle wiring (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code screen awaits `party-mode` 8.9.
   - [ ] 4.7 Accessibility and manual checks
     - Keyboard-only run of the speak toggle and Talk Button; a screen-reader pass that a spoken line is announced once; contrast of the indicator at least 4.5:1; a real iPhone and Android run of recording and playback.
     - _Requirements: 1.2, 3.2_
   - [ ] 4.8 Prefetch and decode ahead
     - The Host (and Play) asks for each id in the room's prefetch list with `prefetch: true` and decodes the audio ahead into memory: at most 8 lines and 2 MB, cleared when the room ends, never written to disk, so a Library line starts at once. Nothing is prefetched that the server did not list.
     - _Requirements: 1.9_
-    - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) implements the 8-line / 2 MB in-memory buffer store and clear-on-end lifecycle; Host room wiring waits on `party-mode` `3.9`.
+    - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) is wired through `createHostAudio` into `SoloTable` (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code Host screen awaits `party-mode` 8.9.
 
-- [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
+- [x] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
   - [x] 5.1 Word Bank, Templates and composition
     - `WORD_BANK` of the 12 default words, `validateWordBank`, the ten starter Templates, `validateTemplates` (no word outside the bank, every bank word used, subtitles pass `validateGhostReply`), `composeStitch`; `stitch.arb.ts` generators. The owner reviewed and kept the starter Template wording on 2026-11-14.
     - _Requirements: 5.1_
@@ -238,17 +241,19 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 6.3 Transport and slice service
     - After Spike 1.3 only. `POST /api/voice/live/slice` reserves a `live` ticket per slice; the chosen transport carries utterances to the same transcription path (typed-text rules) and replies back; the slice ticket pays for transcription, narration and speech; `VOICE_LIVE_ENABLED` stays false until this passes.
     - _Requirements: 6.2, 6.3_
-  - [ ] 6.4 Sentence-checked replies
+  - [x] 6.4 Sentence-checked replies
     - Stream the narrator's reply, run each completed sentence through `toVoiceLine` (the engine's `validateGhostReply`, at most 240 characters) before it is spoken, replace a failing sentence's remainder with one scripted line, validate the assembled reply as a whole for the Subtitle, and store no audio. Fake narrator tests with good, bad and slow streams.
     - _Requirements: 6.3_
-    - Progress (2026-11-19): pure sentence validation + scripted fallback helper `checkLiveSentence` is built and verified in `shared/src/voice/live.ts` / `live.prop.test.ts`; fake narrator streaming integration waits on Spike 1.3 transport (`6.3`).
+    - Done (2026-11-19): `checkLiveSentence` (`shared/src/voice/live.ts`, `live.prop.test.ts`) and `streamSentenceCheckedReply` (`api/src/voice/live-stream.ts`, `live-stream.test.ts`, tested with fake good, bad, player-text, long, and slow streams).
   - [ ] 6.5 Fallback wiring and delay measurement
     - Any transport, microphone, ticket, cap, silence or hidden-page event ends Live Mode and shows the Talk Button with no error screen; measure the real delay on a phone and a laptop and record it in `docs/spikes/ghost-voice-1.3.md`.
     - _Requirements: 6.1, 6.2_
+    - Progress (2026-11-19): client fallback wiring (`stopLive` on stop, silence, hidden page, or transport/ticket refusal -> `Hold to talk` with no error screen) is verified in `web/src/app/play/voice.ts` and `voice.test.ts`; real-device delay measurement awaits Spike 1.3.
 
 - [ ] 7. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; confirm no test calls a real model; play a full game once with voice on in Single player, once with `VOICE_ENABLED=false` and every Meter at zero (it must reach the Ending by reading and typing), and once in a Multiplayer room with speaking on and Stitch on using fake Clips; confirm which of Stitch (`VOICE_STITCH_ENABLED`) and live mode (`VOICE_LIVE_ENABLED`) ship, and that cutting either leaves the rest working; update `tech.md`, `ghost-safety.md`, `security-and-cost.md` and `structure.md` with what the spikes resolved; ask the user if questions arise.
   - _Requirements: 4.3_
+  - Progress (2026-11-19): automated Checkpoint 7 end-to-end tests (`api/src/voice/checkpoint7.test.ts` + zero-quota/`VOICE_ENABLED=false` Play-to-Ending in `web/src/app/screens/Play.test.tsx`) verify voice-on solo, `VOICE_ENABLED=false` + zero-meter solo to Ending, `PartyRoom` speaking-on + Stitch fake-clip play & end purge, and `VOICE_LIVE_ENABLED=false` cut isolation; live spike resolution docs (`tech.md`, `ghost-safety.md`, `security-and-cost.md`, `structure.md`) await operator approval of Spikes `1.1`–`1.3`.
 
 - [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
   - [ ] 8.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go

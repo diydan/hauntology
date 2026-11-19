@@ -4,12 +4,14 @@ import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
 import { SILENT } from "../log";
 import { listenClip, memoryListenLimiter, type ListenDeps } from "../voice/listen";
-import { speakLine, type SpeakDeps } from "../voice/speak";
+import type { RoomVoiceLineStore } from "../voice/lines";
+import { speakLine, speakResolvedLine, type SpeakDeps } from "../voice/speak";
 import { readLimited } from "./uploads";
 import { ipHashOf, readBody } from "./world-create";
 
 export type VoiceRouteDeps = {
   speak: SpeakDeps;
+  roomLines?: RoomVoiceLineStore | undefined;
   listen?: ListenDeps | undefined;
   /** Whether speech is on at all (`VOICE_ENABLED`). When it is off the route answers `voice_unavailable` and reads nothing, not even the cache. */
   enabled: (c: Context<AppEnv>) => boolean | Promise<boolean>;
@@ -49,10 +51,6 @@ export function voiceRoutes(deps: VoiceRouteDeps): Hono<AppEnv> {
     if (!(await deps.enabled(c))) return refuse(c, 503, "off");
     const body = await readBody(c, SpeakRequestSchema);
     if (body === null) return refuse(c, 400, "bad_body");
-    if (c.get("sessionFresh")) {
-      c.set("sessionNoCookie", true); // a visitor with no Session owns no game and no line: do not make one for them
-      return refuse(c, 404, "no_line");
-    }
 
     // The cache write can finish after the answer is sent; without an execution context (a test) it is awaited.
     let defer: ((work: Promise<unknown>) => void) | undefined;
@@ -64,10 +62,19 @@ export function voiceRoutes(deps: VoiceRouteDeps): Hono<AppEnv> {
     }
 
     const who = { sessionId: c.get("session").sid, ipHash: await ipHashOf(c, c.env.HMAC_SECRET as string) };
-    if (!("playId" in body)) {
-      return refuse(c, 404, "no_line");
+    let r: Awaited<ReturnType<typeof speakLine>>;
+    if ("roomCode" in body) {
+      if (c.get("sessionFresh")) c.set("sessionNoCookie", true);
+      const hostToken = c.req.header("X-Host-Token") ?? "";
+      const line = hostToken === "" || deps.roomLines === undefined ? null : await deps.roomLines.findRoomLine(body.roomCode, body.lineId, hostToken).catch(() => null);
+      r = await speakResolvedLine(deps.speak, { sessionId: `room-${body.roomCode}`, ipHash: who.ipHash }, line, body.prefetch === true, defer);
+    } else {
+      if (c.get("sessionFresh")) {
+        c.set("sessionNoCookie", true); // a visitor with no Session owns no game and no line: do not make one for them
+        return refuse(c, 404, "no_line");
+      }
+      r = await speakLine(deps.speak, who, body, defer);
     }
-    const r = await speakLine(deps.speak, who, body, defer);
     if (!r.ok) {
       if (r.reason === "not_ready") return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
       return c.json(UNAVAILABLE, r.reason === "no_line" ? 404 : 503);

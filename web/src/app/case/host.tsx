@@ -1,5 +1,6 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
+import { browserHostAudioSupport, createHostAudio, fetchHostSpeech, type HostAudio, type HostAudioDeps } from "./host-voice";
 import { browserRoomDeps, checkWorld, RoomError, startSolo, type RoomClient, type RoomDeps } from "./room-client";
 import type { HostHandle, HostSetup } from "./types";
 import type { ViewerHandle } from "../viewer/types";
@@ -32,7 +33,7 @@ export async function mountHost(setup: HostSetup, deps: RoomDeps = browserRoomDe
   split.append(worldBox, tableBox);
   setup.container.append(split);
   const root = createRoot(tableBox);
-  root.render(<SoloTable client={client} />);
+  root.render(<SoloTable client={client} fetchSpeech={fetchHostSpeech(deps.fetch)} />);
   let viewer: ViewerHandle | null = null;
   if (setup.loadViewer) {
     try {
@@ -92,13 +93,67 @@ const REFUSALS: Record<string, string> = {
   not_in_zone: "Go to a room first.",
 };
 
-export function SoloTable({ client }: { client: RoomClient }) {
+export type SoloAudioDeps = Partial<Pick<HostAudioDeps, "fetchSpeech" | "createAudio" | "unlockAudio" | "fallbackSpeak" | "deadlineMs">>;
+
+export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } & SoloAudioDeps) {
   const snap = useSyncExternalStore(client.subscribe, client.getSnapshot, client.getSnapshot);
   const [now, setNow] = useState(() => Date.now());
+  const [subtitle, setSubtitle] = useState<string | null>(null);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const audioRef = useRef<HostAudio | null>(null);
+  const lastVoiceSeq = useRef(0);
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (!snap.code || !snap.hostToken) {
+      audioRef.current = null;
+      return;
+    }
+    const browser = browserHostAudioSupport();
+    const ha = createHostAudio({
+      roomCode: snap.code,
+      hostToken: snap.hostToken,
+      fetchSpeech: audioOverrides.fetchSpeech ?? fetchHostSpeech(),
+      createAudio: audioOverrides.createAudio ?? browser.createAudio,
+      unlockAudio: audioOverrides.unlockAudio ?? browser.unlockAudio,
+      fallbackSpeak: audioOverrides.fallbackSpeak ?? browser.fallbackSpeak,
+      ...(audioOverrides.deadlineMs !== undefined ? { deadlineMs: audioOverrides.deadlineMs } : {}),
+      onSubtitle: setSubtitle,
+    });
+    audioRef.current = ha;
+    return () => {
+      ha.dispose();
+      if (audioRef.current === ha) audioRef.current = null;
+    };
+  }, [snap.code, snap.hostToken]);
+
+  useEffect(() => {
+    const ha = audioRef.current;
+    if (ha === null) return;
+    if (snap.speechOn === false) ha.stop();
+  }, [snap.speechOn]);
+
+  useEffect(() => {
+    const ha = audioRef.current;
+    if (ha === null || !snap.prefetch || snap.prefetch.length === 0) return;
+    void ha.prefetch(snap.prefetch);
+  }, [snap.prefetch]);
+
+  useEffect(() => {
+    const ha = audioRef.current;
+    const cue = snap.voice;
+    if (ha === null || cue === null || cue === undefined || cue.seq === lastVoiceSeq.current) return;
+    lastVoiceSeq.current = cue.seq;
+    void ha.onVoiceCue(cue);
+  }, [snap.voice]);
+
+  useEffect(() => {
+    if (snap.status === "ended" || snap.status === "closed" || snap.public?.phase === "ended") audioRef.current?.dispose();
+  }, [snap.status, snap.public?.phase]);
   const [ask, setAsk] = useState({ suspect: "", relic: "" });
   const [seal, setSeal] = useState({ suspect: "", zone: "", relic: "", sure: false });
 
@@ -121,6 +176,37 @@ export function SoloTable({ client }: { client: RoomClient }) {
         Round {view.round} · {mine ? "Your turn" : `${n.seat(view.active)}'s turn`}
         {left !== null ? ` · ${left} s` : view.paused ? " · clock paused" : ""} · Haunt {view.haunt.level} of {view.haunt.max}
       </p>
+      {snap.hostToken ? (
+        <div className="ui-row" role="group" aria-label="Host voice controls">
+          {!audioUnlocked ? (
+            <button
+              type="button" className="ui-button"
+              onClick={() => {
+                audioRef.current?.unlock();
+                setAudioUnlocked(true);
+              }}
+            >
+              Enable sound
+            </button>
+          ) : null}
+          {snap.seat === 1 ? (
+            <button
+              type="button" className="ui-button ui-button--quiet" aria-pressed={snap.speechOn === true}
+              onClick={() => {
+                const next = snap.speechOn !== true;
+                if (next) {
+                  audioRef.current?.unlock();
+                  setAudioUnlocked(true);
+                }
+                client.send({ t: "speech", action: next ? "on" : "off" });
+              }}
+            >
+              Ghost voice
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {subtitle !== null ? <p className="ui-note" aria-live="polite" data-host-subtitle>{subtitle}</p> : null}
       {snap.refused ? <p className="ui-notice" role="alert">{REFUSALS[snap.refused] ?? `Not now (${snap.refused}).`}</p> : null}
 
       {me?.answer ? (

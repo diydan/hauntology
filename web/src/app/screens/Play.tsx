@@ -10,7 +10,7 @@ import { createPlayController, type PlayController, type ViewerPort } from "../p
 import { ghostFace } from "../play/ghost-face";
 import { Hud, TOTAL_MEMORIES } from "../play/Hud";
 import { Journal } from "../play/Journal";
-import { createVoice } from "../play/voice";
+import { createVoice, voiceQuotaState } from "../play/voice";
 import type { ViewerHandle } from "../viewer/types";
 import { errorCopy } from "@hauntology/shared/app/errors-copy";
 
@@ -77,7 +77,10 @@ export default function Play() {
   const ui = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const voiceUi = useSyncExternalStore(voice.subscribe, voice.getSnapshot, voice.getSnapshot);
   const announce = useAnnounce();
-  const voiceAvailable = boot.status === "ready" && boot.session.flags.voiceEnabled;
+  const voiceQuota = boot.status === "ready"
+    ? voiceQuotaState(boot.session.flags, boot.quota)
+    : { enabled: false, tts: false, stt: false, live: false };
+  const voiceAvailable = voiceQuota.enabled;
   // The note that typed words may go to a model is shown only when the server says one is on.
   const modelOn = boot.status === "ready" && boot.session.flags.ghostModel;
 
@@ -97,8 +100,8 @@ export default function Play() {
     lastReply.current = reply.n;
     announce(reply.text);
     const playId = memory.get().playId;
-    if (voiceAvailable && reply.voice !== undefined && playId !== undefined) void voice.playLine(playId, reply.voice.lineId, reply.text);
-  }, [ui.reply, announce, voice, voiceAvailable, memory]);
+    if (voiceQuota.tts && reply.voice !== undefined && playId !== undefined) void voice.playLine(playId, reply.voice.lineId, reply.text);
+  }, [ui.reply, announce, voice, voiceQuota.tts, memory]);
 
   // A note in the Chat (a failed turn) is announced too; a new memory is announced as it is found.
   const lastLines = useRef(0);
@@ -230,7 +233,8 @@ export default function Play() {
       </main>
       {chatOpen ? (
         <Chat
-          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} modelOn={modelOn} ghost={ghost}
+          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} ttsAvailable={voiceQuota.tts} sttAvailable={voiceQuota.stt}
+          liveEnabled={boot.status === "ready" && boot.session.flags.liveEnabled} liveAvailable={voiceQuota.live} modelOn={modelOn} ghost={ghost}
           onSubmit={(input) => {
             voice.unlock();
             void controller.submit(input);
@@ -242,6 +246,11 @@ export default function Play() {
           }}
           onPress={() => void voice.pressTalk()}
           onRelease={() => void voice.releaseTalk()}
+          onStartLive={() => {
+            voice.unlock();
+            void voice.startLive();
+          }}
+          onStopLive={() => voice.stopLive("stop")}
         />
       ) : null}
       {ui.journalOpen ? <Journal entries={ui.view?.journal ?? []} onClose={() => controller.closeJournal()} /> : null}
