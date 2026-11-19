@@ -291,3 +291,68 @@ describe("a Lock in front of the seat", () => {
     await waitFor(() => expect(sw(/Tilt/).getAttribute("aria-checked")).toBe("true"), { timeout: 3000 }); // ... and on in the menu
   });
 });
+
+describe("World Clues UI and shared look (Group 5)", () => {
+  it("shows Master-only Clue place setting in MenuSheet", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    const cluePlace = screen.getByRole("radiogroup", { name: "Clue place" });
+    expect(within(cluePlace).getByRole("radio", { name: "Phone" }).getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(within(cluePlace).getByRole("radio", { name: "World" }));
+    expect(port.calls).toContain("setCluePlace world");
+    expect(within(screen.getByRole("radiogroup", { name: "Clue place" })).getByRole("radio", { name: "World" }).getAttribute("aria-checked")).toBe("true");
+    cleanup();
+
+    const guest = new StandInPort({ master: false });
+    render(<Controller port={guest} />);
+    await seat(guest);
+    openMenu();
+    expect(screen.queryByRole("radiogroup", { name: "Clue place" })).toBeNull();
+  });
+
+  it("shows World Clue Sign chip and prompt with no answer, and gates See the clue again on Assist + canSeeAgain", async () => {
+    stubCanvas();
+    stubGeometry();
+    const port = new StandInPort();
+    localStorage.setItem(DEVICE_SETTINGS_KEY, JSON.stringify({ assist: true }));
+    render(<Controller port={port} />);
+    await seat(port);
+    // Lock whose clue was NOT seen on the player's own turn (canSeeAgain: false)
+    act(() => port.offerLock("clock", "easy", 1, false, { sign: "moon", canSeeAgain: false }));
+    const note = screen.getByRole("note", { name: "World clue mark" });
+    expect(note.querySelector(".ui-chip")?.textContent).toContain("Moon");
+    expect(note.querySelector(".ui-prompt")?.textContent).toContain("moon");
+    expect(note.querySelector(".ui-hint")?.textContent).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "See the clue again" })).toBeNull();
+
+    // Lock whose clue WAS seen on own turn (canSeeAgain: true) offers See the clue again when Assist is on
+    act(() => port.offerLock("clock", "easy", 2, false, { sign: "star", canSeeAgain: true }));
+    expect(screen.getByRole("note", { name: "World clue mark" }).querySelector(".ui-chip")?.textContent).toContain("Star");
+    expect(screen.getByRole("button", { name: "See the clue again" })).toBeTruthy();
+  });
+
+  it("lists own-turn World Clues in Assist's ui-panel / ui-log notebook and leaves the empty slot when Assist is off", async () => {
+    stubCanvas();
+    stubGeometry();
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    act(() => port.setWorldClues([{ zone: "Hall", sign: "bell", sight: { kind: "clock", h: 3, m: 15 } }]));
+    // Assist off: empty notebook slot remains
+    const nbOff = document.querySelector('[data-slot="notebook"]') as HTMLElement;
+    expect(nbOff.querySelector(".ui-log")).toBeNull();
+
+    // Turn Assist on in Menu: notebook renders ui-panel with ui-log / ui-log-row and clue picture
+    openMenu();
+    fireEvent.click(sw(/Assist/));
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    const nbOn = document.querySelector('[data-slot="notebook"]') as HTMLElement;
+    expect(nbOn.className).toContain("ui-panel");
+    expect(nbOn.querySelector(".ui-log .ui-log-row")).not.toBeNull();
+    expect(within(nbOn).getByText("Bell")).toBeTruthy();
+    expect(within(nbOn).getByText("Hall")).toBeTruthy();
+    expect(within(nbOn).getByText("3:15")).toBeTruthy();
+  });
+});

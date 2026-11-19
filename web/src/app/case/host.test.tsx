@@ -221,4 +221,36 @@ describe("mountHost", () => {
     expect(disposed).toBe(1);
     expect(container.querySelector(".case-split")).toBeNull();
   });
+
+  it("forwards Public View worldClues to the Viewer and forwards viewer clue_seen back to the Room", async () => {
+    const sentToViewer: unknown[] = [];
+    const sentToSocket: string[] = [];
+    let emitViewerMessage: ((m: unknown) => void) | null = null;
+    const sockets: { onopen: (() => void) | null; onmessage: ((e: { data: string }) => void) | null; send(t: string): void; close(): void; onclose: null }[] = [];
+    const deps = {
+      fetch: async (url: string) => new Response(JSON.stringify(url.startsWith("/api/worlds") ? { manifest: { bounds: { min: [-9, 0, -9], max: [9, 3, 9] } } } : url.endsWith("/join") ? { ok: true, seat: 1, token: "t".repeat(32) } : { code: "ABCD" }), { status: 200 }),
+      openSocket: () => { const ws = { onopen: null, onmessage: null, onclose: null, send(t: string) { sentToSocket.push(t); }, close() {} }; sockets.push(ws); return ws as never; },
+      socketOrigin: "ws://x",
+    };
+    const container = document.createElement("div");
+    document.body.append(container);
+    const h = await act(() => mountHost({
+      container, worldId: "w1", setup: { preset: "classic", bots: 2 }, sky: undefined, onMessage: () => {},
+      loadViewer: async () => ({
+        mountViewer: ({ container: c, onMessage }) => {
+          emitViewerMessage = onMessage;
+          c.append(Object.assign(document.createElement("canvas"), { id: "world" }));
+          return { send: (m) => void sentToViewer.push(m), dispose: async () => {} };
+        },
+      }),
+    }, deps));
+    const { s, now } = game();
+    sockets[0]!.onopen?.();
+    const clues = [{ zone: "z2", sign: "moon" as const, sight: { kind: "clock" as const, h: 4, m: 20 } }];
+    act(() => sockets[0]!.onmessage?.({ data: JSON.stringify({ t: "public", view: { ...publicSnapshot(s, now), cluePlace: "world", worldClues: clues } }) }));
+    expect(sentToViewer).toContainEqual({ t: "set_world_clues", clues });
+    act(() => emitViewerMessage?.({ t: "clue_seen", sign: "moon" }));
+    expect(sentToSocket).toContain(JSON.stringify({ t: "clueSeen", sign: "moon" }));
+    await act(() => h.dispose());
+  });
 });

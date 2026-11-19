@@ -5,6 +5,7 @@ import type { Connection, ControllerPort, RoomPhase, RoomView } from "./controll
 import { LockArea } from "./LockArea";
 import { MenuSheet } from "./MenuSheet";
 import { Slot } from "./Slot";
+import { WorldClueNotebook } from "./WorldClueNotebook";
 
 export type Layout = "pad" | "panel";
 
@@ -87,7 +88,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
           ) : (
             <section className="pc-panel" aria-label="Panel">
               <Slot name="hand" label="Your hand" />
-              <Slot name="notebook" label="Notebook" />
+              {device.device.assist && view.worldClues && view.worldClues.length > 0 ? <WorldClueNotebook clues={view.worldClues} /> : <Slot name="notebook" label="Notebook" />}
               <Slot name="contributions" label="Contributions" />
             </section>
           )}
@@ -102,6 +103,15 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
                 {...(view.master ? { master: { value: view.master.puzzles, preset: view.master.preset, onChange: (s) => port.setPuzzles(s) } } : {})}
                 device={device.device} onDevice={device.changeDevice} tiltState={device.tilt} canVibrate={device.canVibrate}
               />
+              {view.master && port.setCluePlace ? (
+                <div className="ui-stack--tight" role="radiogroup" aria-label="Clue place">
+                  <p className="ui-hint">Clue place</p>
+                  <div className="ui-segments">
+                    <button type="button" role="radio" aria-checked={(view.master.cluePlace ?? "phone") === "phone"} className="ui-button" onClick={() => port.setCluePlace?.("phone")}>Phone</button>
+                    <button type="button" role="radio" aria-checked={view.master.cluePlace === "world"} className="ui-button" onClick={() => port.setCluePlace?.("world")}>World</button>
+                  </div>
+                </div>
+              ) : null}
               <button type="button" className="ui-button ui-button--danger ui-button--block" onClick={() => void port.leave()}>Leave room</button>
             </div>
           </MenuSheet>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SIGNS } from "../puzzles/world-clues";
 import type { ClientMsg } from "./engine";
 
 /**
@@ -33,10 +34,12 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
     frames: z.boolean().optional(), sounds: z.boolean().optional(), puzzles: level.optional(),
     baseSeconds: z.union([z.literal(30), z.literal(45), z.literal(60), z.literal(90), z.null()]).optional(),
     hauntMax: z.union([z.literal(8), z.literal(10), z.literal(12)]).optional(),
+    cluePlace: z.enum(["phone", "world"]).optional(),
   }).strict(),
   z.object({ t: z.literal("attempt"), lockId: id, transcript: z.unknown() }).strict(),
   z.object({ t: z.literal("giveUp"), lockId: id }).strict(),
   z.object({ t: z.literal("sightAck"), sightId: id }).strict(),
+  z.object({ t: z.literal("clueSeen"), sign: z.enum(SIGNS) }).strict(),
   z.object({ t: z.literal("plainInspect"), on: z.boolean() }).strict(),
 ]);
 

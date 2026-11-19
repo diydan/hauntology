@@ -333,6 +333,8 @@ export function createPlayController(deps: PlayDeps): PlayController {
         case "fps":
           deps.onFps?.(message.fps);
           return;
+        case "clue_seen":
+          return;
       }
     },
     async destroy() {
