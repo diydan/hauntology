@@ -90,14 +90,15 @@ Order: the spike first, then pure logic with property tests, then the API module
     - **Built 2026-11-15 & 2026-11-19** (`shared/src/conditions/telemetry.ts`, `shared/src/log.ts`): `conditions.read` (`source`, `reason`, `cache`) and `conditions.geocode` (`outcome`, `count`).
     - _Requirements: 2.4_
 
-- [ ] 4. Atmosphere in the viewer (`web/src/viewer/atmosphere/`)
-  - [ ] 4.1 Tint and fog: `setAtmosphere` applies `atmosphereLook` to the grade overlay uniforms (idempotent; `null` restores the normal look; storms add no flashes of their own)
+- [ ] 4. Atmosphere in the viewer (`web/src/app/viewer/atmosphere.ts`, `web/src/viewer/atmosphere/` in design)
+  - [x] 4.1 Tint and fog: `setAtmosphere` applies `atmosphereLook` to the grade overlay uniforms (idempotent; `null` restores the normal look; storms add no flashes of their own)
     - _Requirements: 4.1, 4.2_
-  - [ ] 4.2 Precipitation: instanced rain and snow capped by `particleBudget`; lower cap at quality level 1 or lower and under reduced motion (quarter speed)
+  - [x] 4.2 Precipitation: instanced rain and snow capped by `particleBudget`; lower cap at quality level 1 or lower and under reduced motion (quarter speed)
     - _Requirements: 4.3_
   - [ ] 4.3 Optional ambient loops: up to 12 files `web/public/sounds/ambient/<weather>-<day|night>.m4a`, gain at most 0.3, started only after a user gesture, mute and chat ducking, a missing or undecodable file is skipped silently, every file credited in `docs/sounds/CREDITS.md`
+    - **Player wired 2026-11-19** (`web/src/app/viewer/atmosphere.ts`: `ambientLoopPath`, `ambientGain <= 0.3`, gesture unlock, mute/chat ducking, and silent skip on missing/undecodable files). **Optional assets not added:** `.m4a` loops in `web/public/sounds/ambient/` and credits in `docs/sounds/CREDITS.md`.
     - _Requirements: 4.4_
-  - [ ] 4.4 Sky dome using the Star Texture: a dome mesh behind the world; call `rasterizeSky` once per Atmosphere (never per frame); `DataTexture`; not added when visibility is zero; dispose on unmount; test that a thousand frames call it zero times
+  - [x] 4.4 Sky dome using the Star Texture: a dome mesh behind the world; call `rasterizeSky` once per Atmosphere (never per frame); `DataTexture`; not added when visibility is zero; dispose on unmount; test that a thousand frames call it zero times
     - _Requirements: 6.2, 6.3_
 
 - [ ] 5. Narrator and scripted lines
