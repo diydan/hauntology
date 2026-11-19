@@ -3,6 +3,7 @@ import type { CaseSetup } from "@hauntology/shared/app/case-setup";
 import { walkRadiusOf } from "@hauntology/shared/ghost/anchors";
 import type { Bounds } from "@hauntology/shared/ghost/types";
 import { soloSetup } from "@hauntology/shared/party/solo";
+import type { HostVoiceCue } from "./host-voice";
 
 /**
  * The browser's side of a party Room (integration 4.1), with no React in it: it makes the Room, takes seat 1 as the
@@ -17,6 +18,14 @@ export type RoomSnapshot = Readonly<{
   private: PrivateSnapshot | null;
   /** The last thing the Room refused, for one line on screen. */
   refused: string | null;
+  /** Host token captured on Room creation (`POST /api/party`), used for `/api/voice/speak`. */
+  hostToken?: string | null;
+  /** Whether Room speech is currently switched on by the Master. */
+  speechOn?: boolean;
+  /** Latest ghost voice cue sent to the Host (`seq` disambiguates repeated cues). */
+  voice?: (HostVoiceCue & { seq: number }) | null;
+  /** Room-provided voice line ids approved for prefetching. */
+  prefetch?: readonly string[];
 }>;
 
 export type SocketLike = {
@@ -76,7 +85,7 @@ export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "Yo
   if (!made.ok || typeof room.code !== "string") throw new RoomError(typeof room.code === "string" ? room.code : "case_failed");
   const joined = await json(await post(`/${room.code}/join`, { nickname }));
   if (joined.ok !== true || typeof joined.token !== "string") throw new RoomError(typeof joined.code === "string" ? joined.code : "case_failed");
-  const client = openRoom(deps, room.code, joined.token);
+  const client = openRoom(deps, room.code, joined.token, { ...(typeof room.hostToken === "string" ? { hostToken: room.hostToken } : {}) });
   client.send({ t: "settings", preset: setup.preset });
   client.send({ t: "settings", puzzles: "off" });
   for (let i = 0; i < setup.bots; i++) client.send({ t: "addBot" });
@@ -85,8 +94,9 @@ export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "Yo
 }
 
 /** Opens the socket for `code` with `token`. Messages sent before it opens wait, in order. */
-export function openRoom(deps: RoomDeps, code: string, token: string): RoomClient {
-  let snap: RoomSnapshot = { status: "connecting", code, seat: null, public: null, private: null, refused: null };
+export function openRoom(deps: RoomDeps, code: string, token: string, opts: { hostToken?: string } = {}): RoomClient {
+  let snap: RoomSnapshot = { status: "connecting", code, seat: null, public: null, private: null, refused: null, hostToken: opts.hostToken ?? null, speechOn: false, voice: null, prefetch: [] };
+  let voiceSeq = 0;
   const listeners = new Set<() => void>();
   const set = (patch: Partial<RoomSnapshot>): void => {
     snap = { ...snap, ...patch };
@@ -114,6 +124,15 @@ export function openRoom(deps: RoomDeps, code: string, token: string): RoomClien
         return;
       }
       case "private": set({ private: m.view as PrivateSnapshot }); return;
+      case "speech": if (typeof m.on === "boolean") set({ speechOn: m.on }); return;
+      case "voice":
+        if (typeof m.lineId === "string" && typeof m.text === "string" && typeof m.kind === "string") {
+          set({ voice: { seq: ++voiceSeq, lineId: m.lineId, text: m.text, kind: m.kind } });
+        }
+        return;
+      case "prefetch":
+        if (Array.isArray(m.lineIds)) set({ prefetch: m.lineIds.filter((id): id is string => typeof id === "string") });
+        return;
       case "refused": set({ refused: typeof m.code === "string" ? m.code : "refused" }); return;
       case "ended": set({ status: "closed" }); return;
     }

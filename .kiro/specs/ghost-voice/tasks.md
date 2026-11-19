@@ -159,23 +159,24 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Hold with the pointer or hold Space or Enter; `MediaRecorder` for up to 8 seconds; a persistent "Microphone on" badge with a dot while the stream is open (no pulsing under reduced motion); tracks stopped the moment recording ends and the Blob cleared after sending; a denied permission or a missing `MediaRecorder` hides the button and leaves typing; the transcript is shown as the visitor's line and sent through the typed turn route; an empty result shows one quiet line. Not offered in Multiplayer.
     - _Requirements: 3.1, 3.2, 3.4_
     - Done (2026-11-19): verified across `web/src/app/play/Chat.tsx`, `voice.ts`, `Play.tsx`, `Chat.test.tsx`, `Play.test.tsx`, and `voice.test.ts`.
-  - [ ] 4.4 Quota-aware controls and the zero-quota path
+  - [x] 4.4 Quota-aware controls and the zero-quota path
     - Read the `tts`, `stt` and `live` remaining counts and flags from the quota snapshot and show a control as unavailable with one line of words instead of failing; with everything at zero or the kill switch on, the Play screen still plays to the Ending by reading and typing.
     - _Requirements: 4.2, 4.3_
+    - Done (2026-11-19): `voiceQuotaState` in `web/src/app/play/voice.ts`, per-control disabled state and one-line notices in `web/src/app/play/Chat.tsx` and `web/src/app/screens/Play.tsx`, verified in `Chat.test.tsx` and zero-quota Play-to-Ending test in `Play.test.tsx`.
   - [ ] 4.5 Live mode controls (stretch, built with group 6)
     - A Live button, a microphone indicator and a stop button that are visible whenever the microphone is open, disabled with a reason when speaking is off, and a return to the Talk Button on every stop.
     - _Requirements: 6.1, 6.2_
   - [ ] 4.6 Host audio
     - The Host page asks for audio with its host token for each `voice` message, plays it, shows the Subtitle in its polite live region, and offers one tap to unlock audio on the room-code screen; without the tap it shows Subtitles only.
     - _Requirements: 1.2, 1.3, 2.3_
-    - Progress (2026-11-19): `createHostAudio` in `web/src/app/case/host-voice.ts` (`host-voice.test.ts`) implements unlock gating, polite-live-region subtitles, `X-Host-Token` speech fetch, 5 s deadline drop, and optional browser fallback; mounting the unlock button on the standalone Party Mode room-code screen awaits `party-mode` 8.9.
+    - Progress (2026-11-19): `createHostAudio`, `fetchHostSpeech`, and `browserHostAudioSupport` (`web/src/app/case/host-voice.ts`, `host-voice.test.ts`), `RoomSnapshot` voice/speech/prefetch/hostToken tracking (`web/src/app/case/room-client.ts`, `room-client.test.ts`), and `SoloTable` unlock + Master voice toggle + polite live-region subtitle wiring (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code screen awaits `party-mode` 8.9.
   - [ ] 4.7 Accessibility and manual checks
     - Keyboard-only run of the speak toggle and Talk Button; a screen-reader pass that a spoken line is announced once; contrast of the indicator at least 4.5:1; a real iPhone and Android run of recording and playback.
     - _Requirements: 1.2, 3.2_
   - [ ] 4.8 Prefetch and decode ahead
     - The Host (and Play) asks for each id in the room's prefetch list with `prefetch: true` and decodes the audio ahead into memory: at most 8 lines and 2 MB, cleared when the room ends, never written to disk, so a Library line starts at once. Nothing is prefetched that the server did not list.
     - _Requirements: 1.9_
-    - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) implements the 8-line / 2 MB in-memory buffer store and clear-on-end lifecycle; Host room wiring waits on `party-mode` `3.9`.
+    - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) is wired through `createHostAudio` into `SoloTable` (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code Host screen awaits `party-mode` 8.9.
 
 - [ ] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
   - [x] 5.1 Word Bank, Templates and composition

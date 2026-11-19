@@ -1,4 +1,5 @@
 import type { ApiResult } from "@hauntology/shared/app/api";
+import { ErrorCode } from "@hauntology/shared/errors";
 import { SPEECH_DEADLINE_MS } from "@hauntology/shared/voice/limits";
 import { createAudioPrefetcher, type AudioPrefetcher } from "../voice/prefetch";
 import type { AudioLike } from "../play/voice";
@@ -123,6 +124,65 @@ export function createHostAudio(deps: HostAudioDeps): HostAudio {
       active = false;
       stop();
       prefetcher.clear();
+    },
+  };
+}
+
+/** Fetches Host speech or prefetch audio with `X-Host-Token`; quiet `voice_unavailable` on 204/refusal/network error. */
+export function fetchHostSpeech(
+  fetchFn: (url: string, init?: RequestInit) => Promise<Response> = fetch,
+): HostAudioDeps["fetchSpeech"] {
+  return async (req, hostToken) => {
+    try {
+      const res = await fetchFn("/api/voice/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Host-Token": hostToken },
+        credentials: "same-origin",
+        body: JSON.stringify(req),
+      });
+      if (res.status === 200) {
+        return { ok: true, value: { audio: await res.blob() } };
+      }
+      return { ok: false, code: ErrorCode.voice_unavailable };
+    } catch {
+      return { ok: false, code: ErrorCode.voice_unavailable };
+    }
+  };
+}
+
+/** Default browser audio element, AudioContext unlock, and speechSynthesis fallback for the Host table. */
+export function browserHostAudioSupport(): {
+  createAudio: HostAudioDeps["createAudio"];
+  unlockAudio: NonNullable<HostAudioDeps["unlockAudio"]>;
+  fallbackSpeak: NonNullable<HostAudioDeps["fallbackSpeak"]>;
+} {
+  return {
+    createAudio(blob) {
+      if (typeof URL === "undefined" || typeof URL.createObjectURL !== "function" || typeof Audio === "undefined") {
+        return { audio: { play: async () => { throw new Error("no_audio"); }, pause: () => {}, onended: null }, release: () => {} };
+      }
+      const url = URL.createObjectURL(blob);
+      const el = new Audio(url);
+      return {
+        audio: {
+          play: () => el.play(),
+          pause: () => el.pause(),
+          get onended() { return el.onended as (() => void) | null; },
+          set onended(fn) { el.onended = fn; },
+        },
+        release: () => URL.revokeObjectURL(url),
+      };
+    },
+    async unlockAudio() {
+      const Ctx = (globalThis as { AudioContext?: new () => { state: string; resume(): Promise<void> } }).AudioContext;
+      if (Ctx === undefined) return;
+      const ctx = new Ctx();
+      if (ctx.state === "suspended") await ctx.resume();
+    },
+    fallbackSpeak(text) {
+      if (typeof speechSynthesis === "undefined" || typeof SpeechSynthesisUtterance === "undefined") return false;
+      speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+      return true;
     },
   };
 }

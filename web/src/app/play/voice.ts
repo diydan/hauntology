@@ -1,4 +1,5 @@
 import type { ShellApi } from "@hauntology/shared/app/api";
+import type { QuotaSnapshot, ShellFlags } from "@hauntology/shared/app/types";
 import { SPEECH_DEADLINE_MS } from "@hauntology/shared/voice/limits";
 
 /**
@@ -63,6 +64,33 @@ export type Voice = {
 
 export const NOTE_UNAVAILABLE = "Talking is not available right now. You can type instead.";
 export const NOTE_NOT_HEARD = "I did not catch that. Try again, or type.";
+export const VOICE_TTS_UNAVAILABLE = "Ghost voice is out right now — subtitles stay on.";
+export const VOICE_STT_UNAVAILABLE = "Talking out loud is unavailable right now. You can type instead.";
+
+export type VoiceQuota = {
+  /** Whether the server switch allows voice controls to appear at all. */
+  enabled: boolean;
+  /** Whether text-to-speech quota remains (`tts > 0`). */
+  tts: boolean;
+  /** Whether speech-to-text quota remains (`stt > 0`). */
+  stt: boolean;
+  /** Whether live voice mode is enabled and quota remains (`live > 0`). */
+  live: boolean;
+};
+
+/** Derives per-control voice availability from boot flags and quota snapshot (ghost-voice 4.4). */
+export function voiceQuotaState(
+  flags: Pick<ShellFlags, "voiceEnabled" | "liveEnabled">,
+  quota: Pick<QuotaSnapshot, "tts" | "stt" | "live">,
+): VoiceQuota {
+  const enabled = flags.voiceEnabled;
+  return {
+    enabled,
+    tts: enabled && quota.tts > 0,
+    stt: enabled && quota.stt > 0,
+    live: enabled && flags.liveEnabled && quota.live > 0,
+  };
+}
 
 export function createVoice(deps: VoiceDeps): Voice {
   const maxClipMs = deps.maxClipMs ?? MAX_CLIP_MS;

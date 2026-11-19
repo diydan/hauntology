@@ -6,7 +6,7 @@ import { Chat, MODEL_NOTE, STAGE_WAITING } from "./Chat";
 import { BUTTON_LABELS, QUICK_BUTTONS, type PlayUi } from "./controller";
 import type { GhostFace } from "./ghost-face";
 import { Journal, JOURNAL_EMPTY } from "./Journal";
-import type { VoiceUi } from "./voice";
+import { VOICE_STT_UNAVAILABLE, VOICE_TTS_UNAVAILABLE, type VoiceUi } from "./voice";
 
 afterEach(cleanup);
 
@@ -16,11 +16,14 @@ const ui = (over: Partial<PlayUi> = {}): PlayUi => ({
 const quiet: VoiceUi = { speak: false, speaking: false, mic: "idle", note: null };
 const whisper: GhostFace = { name: "Maren", sprite: "/demo/ghosts/preset-maren.svg", speaker: "whisper" };
 
-function show(over: { ui?: Partial<PlayUi>; ghost?: GhostFace; voice?: Partial<VoiceUi>; voiceAvailable?: boolean; modelOn?: boolean } = {}) {
+function show(over: { ui?: Partial<PlayUi>; ghost?: GhostFace; voice?: Partial<VoiceUi>; voiceAvailable?: boolean; ttsAvailable?: boolean; sttAvailable?: boolean; modelOn?: boolean } = {}) {
   const calls = { submit: vi.fn(), close: vi.fn(), speak: vi.fn(), press: vi.fn(), release: vi.fn() };
   const r = render(
     <Chat
-      ui={ui(over.ui)} voice={{ ...quiet, ...over.voice }} voiceAvailable={over.voiceAvailable ?? false} modelOn={over.modelOn ?? false} ghost={over.ghost ?? whisper}
+      ui={ui(over.ui)} voice={{ ...quiet, ...over.voice }} voiceAvailable={over.voiceAvailable ?? false}
+      {...(over.ttsAvailable !== undefined ? { ttsAvailable: over.ttsAvailable } : {})}
+      {...(over.sttAvailable !== undefined ? { sttAvailable: over.sttAvailable } : {})}
+      modelOn={over.modelOn ?? false} ghost={over.ghost ?? whisper}
       onSubmit={calls.submit} onClose={calls.close} onSpeak={calls.speak} onPress={calls.press} onRelease={calls.release}
     />,
   );
@@ -173,6 +176,20 @@ describe("Chat: the ghost on the stage", () => {
     cleanup();
     show({ voice: { speaking: true } });
     expect(document.querySelector("[data-portrait]")!.classList.contains("is-speaking")).toBe(true);
+  });
+
+  it("shows each voice control as unavailable with one line of words when its quota is empty (ghost-voice 4.4)", () => {
+    const { calls } = show({ voiceAvailable: true, ttsAvailable: false, sttAvailable: false, voice: { speak: true } });
+    const speak = screen.getByLabelText("Speak aloud") as HTMLInputElement;
+    const talk = screen.getByRole("button", { name: "Hold to talk" }) as HTMLButtonElement;
+    expect(speak.disabled).toBe(true);
+    expect(speak.checked).toBe(false);
+    expect(talk.disabled).toBe(true);
+    expect(document.querySelector("[data-tts-unavailable]")?.textContent).toBe(VOICE_TTS_UNAVAILABLE);
+    expect(document.querySelector("[data-stt-unavailable]")?.textContent).toBe(VOICE_STT_UNAVAILABLE);
+    fireEvent.pointerDown(talk);
+    fireEvent.keyDown(talk, { key: " " });
+    expect(calls.press).not.toHaveBeenCalled();
   });
 });
 
