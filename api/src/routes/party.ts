@@ -39,7 +39,7 @@ export function partyRoutes(deps: PartyDeps): Hono {
 
   app.post("/", async (c) => {
     const sessionId = deps.sessionOf(c);
-    const body = (await c.req.json().catch(() => ({}))) as { replace?: unknown };
+    const body = (await c.req.json().catch(() => ({}))) as { replace?: unknown; doors?: unknown };
     let replaced = false;
     for (let tries = 0; tries < 8; tries++) {
       const code = generateRoomCode(deps.random ?? Math.random);
@@ -52,7 +52,8 @@ export function partyRoutes(deps: PartyDeps): Hono {
         continue;
       }
       if (claim.ok) {
-        const tokens = (await (await post(roomOf(code), "/create", { code })).json()) as { hostToken: string; displayToken: string };
+        const createPayload = body.doors && typeof body.doors === "object" ? { code, doors: body.doors } : { code };
+        const tokens = (await (await post(roomOf(code), "/create", createPayload)).json()) as { hostToken: string; displayToken: string };
         return c.json({ code, ...tokens });
       }
       if (claim.code !== "code_taken") return c.json({ code: claim.code ?? "rooms_full" }, 429);

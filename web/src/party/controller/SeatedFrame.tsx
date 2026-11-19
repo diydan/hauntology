@@ -2,6 +2,7 @@ import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { PuzzleSettings, type DeviceSettingsControl } from "../../puzzles/PuzzleSettings";
 import { usePuzzleDevice } from "../../puzzles/usePuzzleDevice";
 import type { Connection, ControllerPort, RoomPhase, RoomView } from "./controller-port";
+import { DoorControls } from "./DoorControls";
 import { ErrandOptOut, ErrandsPanel } from "./ErrandsControls";
 import { LockArea } from "./LockArea";
 import { MenuSheet } from "./MenuSheet";
@@ -94,6 +95,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
             </section>
           )}
           {view.phase === "playing" && view.errands ? <ErrandsPanel errands={view.errands} port={port} /> : null}
+          {view.phase === "playing" ? <DoorControls port={port} view={view} /> : null}
         </main>
       )}
 

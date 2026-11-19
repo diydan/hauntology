@@ -456,3 +456,39 @@ describe("Errands Controller UI and Shared look (errands Groups 3 & 4)", () => {
     expect(port.calls).toContain("errandAnswer true");
   });
 });
+
+describe("Doors Controller UI (knock-door 1.4, 3.3, 4.2, 11.1)", () => {
+  it("shows Heavy door 'n of need' in a live region with Push together, Knock touch taps with Faded clue, and Master door problems", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+
+    act(() => port.setDoorsView({
+      doors: [
+        { id: "iron-door", at: { x: 1, z: 1 }, width: 1.4, a: "z0", b: "z1", lock: "heavy", open: false, need: 2, have: 1 },
+      ],
+      doorProblems: ["0:width"],
+      doorLock: {
+        doorId: "cellar-door",
+        triesLeft: 3,
+        faded: { kind: "knock", payload: { kind: "knock", groups: [2, 1], long: null }, showMs: 8000 },
+      },
+    }));
+
+    expect(screen.getByRole("region", { name: "Door notice" }).textContent).toContain("Door 1 width must be between");
+    const heavy = screen.getByRole("region", { name: "Heavy door iron-door" });
+    expect(within(heavy).getByRole("status").textContent).toContain("1 of 2");
+    fireEvent.click(within(heavy).getByRole("button", { name: "Push together" }));
+    expect(port.calls).toContain("doorAct iron-door");
+    // Live announcement after iron-door opens
+    expect(screen.getByText("The door iron-door opens.")).toBeTruthy();
+
+    const knock = screen.getByRole("region", { name: "Knock door cellar-door" });
+    expect(knock.querySelector(".ui-hint")?.textContent).toContain("2, 1 knocks");
+    const tap = within(knock).getByRole("button", { name: /^Tap/ });
+    fireEvent.click(tap);
+    fireEvent.click(tap);
+    fireEvent.click(within(knock).getByRole("button", { name: "Send knock" }));
+    expect(port.calls).toContain("doorKnock cellar-door 2");
+  });
+});

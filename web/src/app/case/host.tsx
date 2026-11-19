@@ -1,3 +1,4 @@
+import { doorProblemLines } from "@hauntology/shared/party/doors";
 import { parseViewerMessage, type ShellToViewer } from "@hauntology/shared/app/events";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
@@ -110,6 +111,7 @@ const REFUSALS: Record<string, string> = {
   already_inspected: "You have searched this room already.",
   already_suggested: "You have asked once this turn.",
   not_in_zone: "Go to a room first.",
+  zone_closed: "A shut door blocks the way to that room.",
 };
 
 export type SoloAudioDeps = Partial<Pick<HostAudioDeps, "fetchSpeech" | "createAudio" | "unlockAudio" | "fallbackSpeak" | "deadlineMs">>;
@@ -279,6 +281,11 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
         />
       ) : null}
       {subtitle !== null ? <p className="ui-note" aria-live="polite" data-host-subtitle>{subtitle}</p> : null}
+      {snap.seat === 1 && view.doorProblems.length > 0 ? (
+        <p className="ui-notice" role="status">
+          Playing without doors: {doorProblemLines(view.doorProblems, n.card).join(" ")}
+        </p>
+      ) : null}
       {snap.refused ? <p className="ui-notice" role="alert">{REFUSALS[snap.refused] ?? `Not now (${snap.refused}).`}</p> : null}
 
       {me?.answer ? (
@@ -307,7 +314,7 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
         <p>{view.at ? `${mine ? "You are" : `${n.seat(view.active)} is`} in the ${n.card(view.at)}.` : mine ? "Choose a room to go to." : "Waiting…"}</p>
         <div className="ui-row" role="group" aria-label="Rooms">
           {view.zones.map((z) => (
-            <button key={z.id} type="button" className="ui-button" disabled={!mine || view.at === z.id} onClick={() => client.send({ t: "walk", zone: z.id })}>
+            <button key={z.id} type="button" className="ui-button" disabled={!mine || view.at === z.id || view.closedZones.includes(z.id)} onClick={() => client.send({ t: "walk", zone: z.id })}>
               {z.name}
             </button>
           ))}

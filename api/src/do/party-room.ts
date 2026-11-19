@@ -65,7 +65,10 @@ export class PartyRoom {
     }
     if (request.method !== "POST") return new Response(null, { status: 405 });
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-    if (pathname === "/create" && typeof body?.code === "string") return json(await this.core.create(body.code));
+    if (pathname === "/create" && typeof body?.code === "string") {
+      const doors = body.doors && typeof body.doors === "object" ? (body.doors as Parameters<RoomCore["create"]>[1] extends infer T ? T extends { doors?: infer D } ? D : never : never) : undefined;
+      return json(await this.core.create(body.code, doors !== undefined ? { doors } : undefined));
+    }
     if (pathname === "/join" && typeof body?.nickname === "string") return json(await this.core.join(body.nickname));
     if (pathname === "/voice-line" && typeof body?.lineId === "string" && typeof body?.token === "string") {
       return json({ line: await this.core.findVoiceLineForHost(body.lineId, body.token) });

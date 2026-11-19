@@ -87,10 +87,10 @@ export async function checkWorld(deps: RoomDeps, worldId: string, setup: CaseSet
  * The solo case (party-mode 8.15): make a Room, sit as the Master, set the preset, add the Bots and start.
  * Puzzles stay off here until Locks open on the shared screen (integration 5.3): every Inspect is the plain one.
  */
-export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "You"): Promise<RoomClient> {
+export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "You", doors?: unknown): Promise<RoomClient> {
   const post = (path: string, body?: unknown) => deps.fetch(`/api/party${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   // `replace`: a case this visitor left open (a reload, a closed tab) is ended first, so one Room per visitor never blocks a new case.
-  const made = await post("", { replace: true });
+  const made = await post("", doors !== undefined && doors !== null ? { replace: true, doors } : { replace: true });
   const room = await json(made);
   if (!made.ok || typeof room.code !== "string") throw new RoomError(typeof room.code === "string" ? room.code : "case_failed");
   const joined = await json(await post(`/${room.code}/join`, { nickname }));

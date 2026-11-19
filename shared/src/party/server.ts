@@ -71,6 +71,7 @@ export type ServerState = Readonly<{
   engine: EngineState | null;
   lobbySettings: EngineSettings;
   lobbyErrandOptOut?: Readonly<Record<number, boolean>>;
+  doors?: DoorSetup | null;
   sockets: Readonly<Record<string, SocketInfo>>;
   voice: RoomVoiceState;
   songs: RoomSongsState;
@@ -90,11 +91,20 @@ export class RoomCore {
     if (this.state !== null) return this.state;
     const text = await this.ports.load();
     if (text === undefined) return null;
-    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState };
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState };
     const room = parseRoom(raw.room);
     if (room === null) return null;
     // a saved door state that does not parse falls back to the start (knock-door 8.1)
-    this.state = { room, engine: raw.engine === null ? null : repairDoors(raw.engine), lobbySettings: raw.lobbySettings, sockets: raw.sockets, voice: raw.voice ?? initialRoomVoiceState(), songs: raw.songs ?? initialRoomSongsState() };
+    this.state = {
+      room,
+      engine: raw.engine === null ? null : repairDoors(raw.engine),
+      lobbySettings: raw.lobbySettings,
+      ...(raw.lobbyErrandOptOut ? { lobbyErrandOptOut: raw.lobbyErrandOptOut } : {}),
+      ...(raw.doors !== undefined ? { doors: raw.doors } : {}),
+      sockets: raw.sockets,
+      voice: raw.voice ?? initialRoomVoiceState(),
+      songs: raw.songs ?? initialRoomSongsState(),
+    };
     return this.state;
   }
 
@@ -103,7 +113,16 @@ export class RoomCore {
     // the Engine may pass the Master role on (a Master away 60 s); the lobby's record follows it
     const next = next0.engine !== null && next0.engine.masterSeat !== next0.room.masterSeat ? { ...next0, room: { ...next0.room, masterSeat: next0.engine.masterSeat as Seat } } : next0;
     this.state = next;
-    await this.ports.save(JSON.stringify({ room: serializeRoom(next.room), engine: next.engine, lobbySettings: next.lobbySettings, sockets: next.sockets, voice: next.voice, songs: next.songs }));
+    await this.ports.save(JSON.stringify({
+      room: serializeRoom(next.room),
+      engine: next.engine,
+      lobbySettings: next.lobbySettings,
+      ...(next.lobbyErrandOptOut ? { lobbyErrandOptOut: next.lobbyErrandOptOut } : {}),
+      ...(next.doors !== undefined ? { doors: next.doors } : {}),
+      sockets: next.sockets,
+      voice: next.voice,
+      songs: next.songs,
+    }));
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
     await this.ports.setAlarm(wakeAtMs === null ? ttlAt : Math.min(wakeAtMs, ttlAt));
     this.route(next, out);
@@ -137,18 +156,26 @@ export class RoomCore {
       seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })),
       settings: s.lobbySettings,
       presetIds: PRESET_GHOST_IDS,
-      doors: this.ports.doors?.() ?? null,
+      doors: s.doors ?? this.ports.doors?.() ?? null,
       ...(s.lobbyErrandOptOut ? { errandOptOut: s.lobbyErrandOptOut } : {}),
     });
   }
 
   // ------------------------------------------------------------ HTTP-side calls (from the routes)
-  async create(code: string): Promise<{ hostToken: string; displayToken: string }> {
+  async create(code: string, opts?: Readonly<{ doors?: DoorSetup | null }>): Promise<{ hostToken: string; displayToken: string }> {
     const fill = (b: Uint8Array): Uint8Array => { b.set(this.ports.randomBytes(b.length)); return b; };
     const hostToken = newToken(fill);
     const displayToken = newToken(fill);
     const room = createRoomState(code, seedFrom(this.ports.randomBytes(4)), this.ports.now(), hostToken, displayToken);
-    await this.commit({ room, engine: null, lobbySettings: DEFAULT_SETTINGS, sockets: {}, voice: initialRoomVoiceState(), songs: initialRoomSongsState() });
+    await this.commit({
+      room,
+      engine: null,
+      lobbySettings: DEFAULT_SETTINGS,
+      ...(opts?.doors !== undefined ? { doors: opts.doors } : {}),
+      sockets: {},
+      voice: initialRoomVoiceState(),
+      songs: initialRoomSongsState(),
+    });
     return { hostToken, displayToken };
   }
 

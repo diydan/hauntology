@@ -79,6 +79,29 @@ export function doorProblems(doors: readonly Door[], zoneIds: readonly string[],
 export const validateDoors = (doors: readonly Door[], zoneIds: readonly string[], passages: readonly Passage[], home: string): boolean =>
   doorProblems(doors, zoneIds, passages, home).length === 0;
 
+/** Turn `doorProblems` codes into plain sentences for the Master when a world plays without its doors (Requirement 1.4). */
+export function doorProblemLines(problems: readonly string[], zoneName: (id: string) => string = (id) => id): string[] {
+  const FAULT: Record<string, string> = {
+    id: "has an invalid id",
+    id_dup: "uses a duplicate id",
+    at: "is missing a valid position",
+    width: `width must be between ${DOOR_WIDTH_MIN} and ${DOOR_WIDTH_MAX} m`,
+    zone: "names an unknown room",
+    same_zone: "joins a room to itself",
+    lock: "must be a knock or heavy door",
+    need: "has an invalid player count",
+  };
+  return problems.map((code) => {
+    if (code === "count") return `The world lists more than ${MAX_DOORS} doors.`;
+    if (code === "home") return "The starting room is unknown.";
+    if (code.startsWith("cut_off:")) return `No passage or door reaches ${zoneName(code.slice("cut_off:".length))}.`;
+    const [idx, fault] = code.split(":");
+    const n = Number(idx);
+    if (Number.isInteger(n) && fault && FAULT[fault]) return `Door ${n + 1} ${FAULT[fault]}.`;
+    return `Door issue (${code}).`;
+  });
+}
+
 /**
  * What the Room remembers about one door. `opensAtRound` is the Round at whose start a shut door opens by itself (after a
  * failed knock, or a Slam), so a door never stays shut for good; `autoOpenedRound` is the Round it last did.

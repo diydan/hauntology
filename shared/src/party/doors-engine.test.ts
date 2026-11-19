@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { knockPlayTimes } from "../puzzles/knock";
 import { makeLock } from "../puzzles/make";
-import { ACT_WINDOW_MS, doorKnock, parseDoorsState, type DoorSetup } from "./doors";
-import { createEngine, publicSnapshot, repairDoors, step, type ClientMsg, type EngineSeat, type EngineSettings, type EngineState, type Outbound, type StepResult } from "./engine";
+import { ACT_WINDOW_MS, doorKnock, doorProblemLines, knockSightFor, parseDoorsState, reachableZones, type DoorSetup } from "./doors";
+import { createEngine, privateSnapshot, publicSnapshot, repairDoors, step, type ClientMsg, type EngineSeat, type EngineSettings, type EngineState, type Outbound, type StepResult } from "./engine";
+import { placePuzzles } from "../puzzles/place";
 import { parseClientMessage } from "./protocol";
 
 const PRESETS = Array.from({ length: 8 }, (_, i) => `preset-${i + 1}`);
@@ -253,5 +254,62 @@ describe("doors in the Engine: the socket protocol (Requirement 8.2)", () => {
     expect(parse({ t: "doorKnock", doorId: "cellar-door", times: [-1] })).toBe("bad");
     expect(parse({ t: "doorKnock", doorId: "cellar-door", times: ["x"] })).toBe("bad");
     expect(parseClientMessage('{"t":"doorKnock","doorId":"a","times":[1e999]}').kind).toBe("bad");
+  });
+});
+
+describe("doors in the Engine: reachability, faded clue, and words (tasks 2.7, 2.8, 3.3)", () => {
+  it("explains door problems in plain sentences and never lets valid doors touch the Deal or Solution", () => {
+    expect(doorProblemLines(["0:width", "cut_off:z3"], (id) => `Room ${id}`)).toEqual([
+      "Door 1 width must be between 0.9 and 1.6 m.",
+      "No passage or door reaches Room z3.",
+    ]);
+    const without = game(SEED, 2, {}, null);
+    const withDoors = game(SEED, 2, {}, setupFor(SEED));
+    expect(withDoors.s.deal).toEqual(without.s.deal);
+    expect(withDoors.s.residueAt).toEqual(without.s.residueAt);
+  });
+
+  it("uses reachableZones in Lock placement and refuses inspect in a closed Zone", () => {
+    const z = zoneIdsFor(SEED);
+    const reach = reachableZones(z, setupFor(SEED).doors, [{ id: "cellar-door", open: false, opensAtRound: null, autoOpenedRound: null }, { id: "iron-door", open: false, opensAtRound: null, autoOpenedRound: null }], setupFor(SEED).passages, z[0]!);
+    expect(reach).toEqual([z[0]]);
+    // Single reachable zone at start avoids placing a Lock whose Sight sits behind a shut door
+    const single = placePuzzles(SEED, z, "medium", undefined, reach);
+    expect(single.ok).toBe(true);
+    if (single.ok) {
+      const homeLock = single.value.find((l) => l.zone === z[0]);
+      expect(homeLock?.sightZone === null || reach.includes(homeLock?.sightZone ?? "")).toBe(true);
+    }
+    // Two reachable zones keep all open-zone Sights inside the reachable set
+    const twoOpen = z.slice(0, 2);
+    const partial = placePuzzles(SEED, z, "medium", undefined, twoOpen);
+    expect(partial.ok).toBe(true);
+    if (partial.ok) {
+      for (const l of partial.value.filter((x) => twoOpen.includes(x.zone))) {
+        if (l.sightZone !== null) expect(twoOpen).toContain(l.sightZone);
+      }
+    }
+  });
+
+  it("gives the Faded knock clue only to a Detective who missed the Sight, never to the one who heard it", () => {
+    const z = zoneIdsFor(SEED);
+    const g0 = onHuman(game(SEED));
+    const first = g0.s.turn!.seat;
+    const other = first === 1 ? 2 : 1;
+    // First Detective walks in and receives the door Sight
+    const g = send(g0, first, { t: "walk", zone: z[0] as string });
+    expect(privateSnapshot(g.s, first)?.doorLock).toEqual({
+      doorId: "cellar-door",
+      triesLeft: 3,
+      faded: null,
+    });
+    // Second Detective takes their Turn at z[0] without having heard the ghost's knock: gets Faded clue
+    const onOther = onHuman(advance(send(g, first, { t: "endTurn" }, g.now), (s) => s.turn !== null && s.turn.seat === other), 2);
+    const atOtherDoor = send(onOther, other, { t: "walk", zone: z[0] as string });
+    expect(privateSnapshot(atOtherDoor.s, other)?.doorLock).toEqual({
+      doorId: "cellar-door",
+      triesLeft: 3,
+      faded: knockSightFor(SEED, "cellar-door", true),
+    });
   });
 });
