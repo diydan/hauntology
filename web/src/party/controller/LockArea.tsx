@@ -14,7 +14,11 @@ export function LockArea({ port, offer, device, barExtra }: { port: ControllerPo
     <div className="pc-lock">
       <PuzzleHost
         key={offer.id}
-        kind={offer.kind} view={offer.view} faded={offer.faded} clue={offer.clue} capMs={offer.capMs} attempts={offer.attempts}
+        kind={offer.kind} view={offer.view} faded={offer.faded}
+        clue={offer.sign !== undefined ? (offer.canSeeAgain ? offer.clue : null) : offer.clue}
+        {...(offer.sign !== undefined ? { sign: offer.sign } : {})}
+        {...(offer.prompt !== undefined ? { prompt: offer.prompt } : {})}
+        capMs={offer.capMs} attempts={offer.attempts}
         feel={device.feel} assist={device.device.assist} reducedMotion={reduced}
         onAttempt={(t) => port.attempt(offer.id, t)}
         onGiveUp={() => port.closeLock(offer.id, "gave_up")}

@@ -16,8 +16,8 @@
   - [x] 2.3 Bots ignore World Clues
     - _Requirements: 3.4_
 
-- [ ] 3. Viewer
-  - [ ] 3.1 Draw clue props near Zone anchors with their Sign; show the answer within 3 metres and in view; slow glow only; labels as well as colour
+- [x] 3. Viewer
+  - [x] 3.1 Draw clue props near Zone anchors with their Sign; show the answer within 3 metres and in view; slow glow only; labels as well as colour
     - _Requirements: 2.1, 2.3_
 
 - [x] 4. Lock and notebook
@@ -26,10 +26,10 @@
   - [x] 4.2 Assist keeps clues seen on the Player's own Turn; Faded when a clue was never in view
     - _Requirements: 3.2, 3.3_
 
-- [ ] 5. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 4 and the `design-system` spec)
-  - [ ] 5.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+- [x] 5. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 4 and the `design-system` spec)
+  - [x] 5.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
     - _Requirements: 4.1, 4.3_
-  - [ ] 5.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 5.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 4.2_
-  - [ ] 5.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 5.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 4.4_

@@ -12,6 +12,15 @@ import { isMemoryKind, type Kind, type Lock, type SightPayload, type Transcript 
 
 export const SIGNS = ["moon", "key", "eye", "hand", "star", "bell"] as const;
 export type Sign = (typeof SIGNS)[number];
+/** Human-readable Sign label in words so a Sign is never shown by mark or colour alone (4.3). */
+export const SIGN_LABELS: Readonly<Record<Sign, string>> = {
+  moon: "Moon",
+  key: "Key",
+  eye: "Eye",
+  hand: "Hand",
+  star: "Star",
+  bell: "Bell",
+};
 /** Where Memory Kind clues live for a Room: on each Player's phone (default) or drawn in the TV world. */
 export type CluePlace = "phone" | "world";
 /** At most this many Locks use world clues in one game: one real clue and one Decoy each, six Signs in all. */

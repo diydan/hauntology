@@ -1,6 +1,7 @@
 import type { JoinRefusal } from "@hauntology/shared/party/seats";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import type { Kind, LockView, PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
+import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
 
 /**
@@ -30,6 +31,10 @@ export type LockOffer = Readonly<{
   faded: Sight | null;
   /** The Lock's clue, to look at again while playing (offered only with Assist on). */
   clue: Sight | null;
+  /** World Clue mark & prompt when the Lock's clue lives in the shared world (world-clues 3.1, 3.2). */
+  sign?: Sign;
+  prompt?: string;
+  canSeeAgain?: boolean;
   attempts: number;
   /** The most Turn time this Lock may use, or null. */
   capMs: number | null;
@@ -44,8 +49,10 @@ export type RoomView = Readonly<{
   seat: number | null;
   nickname: string | null;
   /** Set only for the Master seat: the room controls are the Master's alone (Requirement 1.7). */
-  master: Readonly<{ puzzles: PuzzleSetting; preset: Preset }> | null;
+  master: Readonly<{ puzzles: PuzzleSetting; preset: Preset; cluePlace?: CluePlace }> | null;
   lock: LockOffer | null;
+  /** World Clues and Decoys kept on this seat's own Turn (shown when Assist is on). */
+  worldClues?: readonly PublicWorldClue[];
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -62,6 +69,8 @@ export interface ControllerPort {
   closeLock(lockId: string, why: "finished" | "gave_up" | "time_up"): void;
   /** The Master chose another Puzzle setting. A seat that is not the Master is refused by the Room. */
   setPuzzles(setting: PuzzleSetting): void;
+  /** The Master chose where Memory clues live (`phone` or `world`). */
+  setCluePlace?(place: CluePlace): void;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }

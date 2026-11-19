@@ -1,3 +1,4 @@
+import { parseViewerMessage, type ShellToViewer } from "@hauntology/shared/app/events";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createRoot } from "react-dom/client";
 import { browserHostAudioSupport, createHostAudio, fetchHostSpeech, type HostAudio, type HostAudioDeps } from "./host-voice";
@@ -37,16 +38,32 @@ export async function mountHost(setup: HostSetup, deps: RoomDeps = browserRoomDe
   let viewer: ViewerHandle | null = null;
   if (setup.loadViewer) {
     try {
-      viewer = await (await setup.loadViewer()).mountViewer({ container: worldBox, worldId: setup.worldId, onMessage: () => {} });
+      viewer = await (await setup.loadViewer()).mountViewer({
+        container: worldBox,
+        worldId: setup.worldId,
+        onMessage: (raw) => {
+          const parsed = parseViewerMessage(raw);
+          if (parsed?.t === "clue_seen") client.send({ t: "clueSeen", sign: parsed.sign });
+        },
+      });
     } catch {
       viewer = null; // no world view: the case plays on the table alone
       worldBox.remove();
     }
   }
   let lastHaunt = -1;
+  let lastWorldClues: string | null = null;
   const showHaunt = (): void => {
     const v = client.getSnapshot().public;
     if (viewer === null || v === null) return;
+    if (v.worldClues !== undefined || lastWorldClues !== null) {
+      const nextClues = v.worldClues ?? [];
+      const encoded = JSON.stringify(nextClues);
+      if (encoded !== lastWorldClues) {
+        lastWorldClues = encoded;
+        viewer.send({ t: "set_world_clues", clues: nextClues as Extract<ShellToViewer, { t: "set_world_clues" }>["clues"] });
+      }
+    }
     const level = v.haunt.max > 0 ? Math.min(1, v.haunt.level / v.haunt.max) : 0;
     if (level === lastHaunt) return;
     lastHaunt = level;
