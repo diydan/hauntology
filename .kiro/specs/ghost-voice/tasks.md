@@ -204,12 +204,14 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - **Property 11: Stitch is rare and is deleted at the end or after 6 hours**
     - **Validates: Requirements 5.4, 5.5**
     - Done (2026-11-19): `shared/src/voice/stitch/play-purge.prop.test.ts`.
-  - [ ] 5.9 Word Check service
+  - [x] 5.9 Word Check service
     - `api/src/voice/stitch.ts`, called by `PartyRoom`: `canCheck`, `withTicket('stt')`, `withTransientClip(transcribe)`, `heardWord`, `recordCheck`; the transcript is dropped; an accepted Clip goes to room storage and a rejected one is dropped; a refusal returns `stitch_check_limit` or `voice_unavailable`.
     - _Requirements: 5.2, 5.5_
-  - [ ] 5.10 Clip store in the room
+    - Done (2026-11-19): `api/src/voice/stitch.ts` (`runWordCheck`) and `api/src/voice/stitch.test.ts` (note: wiring into `PartyRoom` belongs to `5.12` / `party-mode` Requirement 18).
+  - [x] 5.10 Clip store in the room
     - Clips under `clip:<seat>:<word>` in the `PartyRoom`'s own storage with `recordedAt`; the Durable Object alarm set from `nextPurgeAt`; purge on leave, withdraw, Master off, game end and room deletion; never R2, KV, a log, a prompt or a route. Test with an in-memory storage fake.
     - _Requirements: 5.5_
+    - Done (2026-11-19): `api/src/voice/stitch-store.ts` (`RoomStitchClipStore`) and `api/src/voice/stitch-store.test.ts`.
   - [ ] 5.11 Recorder and player helpers
     - `recorder.ts` records one word of at most 2 seconds and rejects a longer one; `stitch-player.ts` decodes and schedules the Clips back to back with Web Audio on the Host with the Subtitle. Reused by party-mode's Controller and Host pages.
     - _Requirements: 5.1, 5.4_
@@ -218,18 +220,21 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - _Requirements: 5.3, 5.4_
 
 - [ ] 6. Live mode (stretch, first in the cut order, built last; `shared/src/voice/live.ts`)
-  - [ ] 6.1 `live.ts`: `liveReduce` and `live.arb.ts`
+  - [x] 6.1 `live.ts`: `liveReduce` and `live.arb.ts`
     - Phases idle, listening, thinking, speaking and stopped; 10 seconds of silence from the later of the start and the last voice; stop; page hidden; 10-second slices bought one at a time (30 a session, 180 a day); every problem ends in hold-to-talk; no effect that stores audio; never offered in Multiplayer.
     - _Requirements: 6.1, 6.2, 6.3_
-  - [ ]* 6.2 Write property test for live mode
+    - Done (2026-11-19): `shared/src/voice/live.ts` (`initialLiveState`, `liveReduce`, `checkLiveSentence`) and `shared/src/voice/live.arb.ts`.
+  - [x]* 6.2 Write property test for live mode
     - **Property 12: Live mode obeys its limits and checks every sentence**
     - **Validates: Requirements 6.1, 6.2, 6.3**
+    - Done (2026-11-19): `shared/src/voice/live.prop.test.ts`.
   - [ ] 6.3 Transport and slice service
     - After Spike 1.3 only. `POST /api/voice/live/slice` reserves a `live` ticket per slice; the chosen transport carries utterances to the same transcription path (typed-text rules) and replies back; the slice ticket pays for transcription, narration and speech; `VOICE_LIVE_ENABLED` stays false until this passes.
     - _Requirements: 6.2, 6.3_
   - [ ] 6.4 Sentence-checked replies
     - Stream the narrator's reply, run each completed sentence through `toVoiceLine` (the engine's `validateGhostReply`, at most 240 characters) before it is spoken, replace a failing sentence's remainder with one scripted line, validate the assembled reply as a whole for the Subtitle, and store no audio. Fake narrator tests with good, bad and slow streams.
     - _Requirements: 6.3_
+    - Progress (2026-11-19): pure sentence validation + scripted fallback helper `checkLiveSentence` is built and verified in `shared/src/voice/live.ts` / `live.prop.test.ts`; fake narrator streaming integration waits on Spike 1.3 transport (`6.3`).
   - [ ] 6.5 Fallback wiring and delay measurement
     - Any transport, microphone, ticket, cap, silence or hidden-page event ends Live Mode and shows the Talk Button with no error screen; measure the real delay on a phone and a laptop and record it in `docs/spikes/ghost-voice-1.3.md`.
     - _Requirements: 6.1, 6.2_
