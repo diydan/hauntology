@@ -479,6 +479,24 @@ describe("Play: the ghost's voice", () => {
     expect(speak).not.toHaveBeenCalled();
     expect(listen).not.toHaveBeenCalled();
   });
+
+  it("reaches the Ending cleanly when VOICE_ENABLED is false and every quota meter is at zero (Checkpoint 7)", async () => {
+    const api = createFakeApi({ latencyMs: 0, quota: { world: 0, image: 0, llm: 0, tts: 0, stt: 0, live: 0 }, flags: { voiceEnabled: false } });
+    const h = await enterPlay({ api });
+    await goIn();
+    await press("Talk");
+    expect(screen.queryByLabelText("Speak aloud")).toBeNull();
+    const box = screen.getByLabelText("Say something") as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "still listening" } });
+    await act(async () => { fireEvent.submit(box.closest("form")!); });
+    await waitFor(() => expect(document.querySelectorAll("[data-who=ghost]")).toHaveLength(1));
+    await press("Close chat");
+    await lookHere(1);
+    await lookHere(2);
+    await lookHere(3);
+    await screen.findByRole("heading", { name: "You remembered" });
+    expect(h.history.stack.at(-1)).toBe("/end/attic-room");
+  });
 });
 
 describe("Play: one game per visit to the Screen", () => {

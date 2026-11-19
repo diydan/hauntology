@@ -253,6 +253,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
 - [ ] 7. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; confirm no test calls a real model; play a full game once with voice on in Single player, once with `VOICE_ENABLED=false` and every Meter at zero (it must reach the Ending by reading and typing), and once in a Multiplayer room with speaking on and Stitch on using fake Clips; confirm which of Stitch (`VOICE_STITCH_ENABLED`) and live mode (`VOICE_LIVE_ENABLED`) ship, and that cutting either leaves the rest working; update `tech.md`, `ghost-safety.md`, `security-and-cost.md` and `structure.md` with what the spikes resolved; ask the user if questions arise.
   - _Requirements: 4.3_
+  - Progress (2026-11-19): automated Checkpoint 7 end-to-end tests (`api/src/voice/checkpoint7.test.ts` + zero-quota/`VOICE_ENABLED=false` Play-to-Ending in `web/src/app/screens/Play.test.tsx`) verify voice-on solo, `VOICE_ENABLED=false` + zero-meter solo to Ending, `PartyRoom` speaking-on + Stitch fake-clip play & end purge, and `VOICE_LIVE_ENABLED=false` cut isolation; live spike resolution docs (`tech.md`, `ghost-safety.md`, `security-and-cost.md`, `structure.md`) await operator approval of Spikes `1.1`–`1.3`.
 
 - [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
   - [ ] 8.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go

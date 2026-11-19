@@ -67,7 +67,7 @@ export async function runWordCheck(
   const ports: GatePorts = {
     kill: () => deps.kill?.() === true,
     reserve: async (meter) => {
-      const r = await deps.spend.reserve({ meter, sessionId: `room:${input.roomId}`, ipHash: input.ipHash, now: now() });
+      const r = await deps.spend.reserve({ meter, sessionId: `room-${input.roomId}`, ipHash: input.ipHash, now: now() });
       if (r.ok) {
         ticketGranted = true;
         return r.ticket;

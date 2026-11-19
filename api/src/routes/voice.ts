@@ -67,7 +67,7 @@ export function voiceRoutes(deps: VoiceRouteDeps): Hono<AppEnv> {
       if (c.get("sessionFresh")) c.set("sessionNoCookie", true);
       const hostToken = c.req.header("X-Host-Token") ?? "";
       const line = hostToken === "" || deps.roomLines === undefined ? null : await deps.roomLines.findRoomLine(body.roomCode, body.lineId, hostToken).catch(() => null);
-      r = await speakResolvedLine(deps.speak, { sessionId: `room:${body.roomCode}`, ipHash: who.ipHash }, line, body.prefetch === true, defer);
+      r = await speakResolvedLine(deps.speak, { sessionId: `room-${body.roomCode}`, ipHash: who.ipHash }, line, body.prefetch === true, defer);
     } else {
       if (c.get("sessionFresh")) {
         c.set("sessionNoCookie", true); // a visitor with no Session owns no game and no line: do not make one for them
