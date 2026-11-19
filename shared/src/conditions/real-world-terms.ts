@@ -1,0 +1,107 @@
+/**
+ * Word-stem screen for real-world news, crime, death, and current/historical public events (`conditions` 5.2; Requirement 5.2).
+ * A real place may be someone's home, so any ghost reply matching this list is rejected and replaced with a scripted line.
+ * Every pattern is bounded cleanly so ordinary atmospheric words (`warm`, `warning`, `forward`, `shadow`) are never flagged.
+ */
+export const REAL_WORLD_STEMS: readonly string[] = Object.freeze([
+  "news",
+  "headline",
+  "newspaper",
+  "journalis",
+  "reporter",
+  "broadcast",
+  "police",
+  "cop",
+  "arrest",
+  "murder",
+  "homicide",
+  "kill",
+  "suicid",
+  "shoot",
+  "stab",
+  "assault",
+  "crime",
+  "criminal",
+  "burglar",
+  "robber",
+  "theft",
+  "steal",
+  "arson",
+  "funeral",
+  "corpse",
+  "died",
+  "death",
+  "deadly",
+  "fatal",
+  "election",
+  "president",
+  "prime minister",
+  "parliament",
+  "senator",
+  "pandemic",
+  "outbreak",
+  "lockdown",
+  "war",
+  "warfare",
+  "invasion",
+  "attack",
+  "terror",
+  "bomb",
+  "accident",
+  "crash",
+  "disaster",
+  "earthquake",
+  "wildfire",
+  "blood",
+  "courthouse",
+  "verdict",
+  "convict",
+  "prison",
+  "jail",
+  "inmate",
+  "tragedy",
+  "obituary",
+]);
+
+const REAL_WORLD_PATTERNS: readonly RegExp[] = Object.freeze([
+  /\b(?:news|newspapers?|headlines?|journalis(?:t|m)s?|reporters?|broadcast(?:s|ing)?)\b/iu,
+  /\b(?:police|cops?|arrest(?:ed|s|ing)?|courthouse|verdicts?|convict(?:ed|s|ion)?|prison(?:s|er|ers)?|jail(?:ed|s)?|inmates?)\b/iu,
+  /\b(?:murder(?:ed|er|ers|ing|s)?|homicides?|kill(?:ed|er|ers|ing|s)?|suicid(?:e|es|al)|shoot(?:ing|ings|s)?|shot|stab(?:bed|bing|s)?|assault(?:ed|s|ing)?)\b/iu,
+  /\b(?:crimes?|criminals?|burglar(?:s|y|ies)?|robber(?:s|y|ies)?|theft|steal(?:ing|s)?|arson(?:ist)?s?|blood(?:y|shed)?)\b/iu,
+  /\b(?:funerals?|corpses?|died|death(?:s)?|deadly|fatal(?:ity|ities)?|obituar(?:y|ies)|traged(?:y|ies))\b/iu,
+  /\b(?:elections?|presidents?|prime ministers?|parliament|senators?|pandemics?|outbreaks?|lockdowns?|wars?|warfare|invasions?|attack(?:ed|s|ing)?|terror(?:ism|ist|ists)?|bomb(?:ed|ing|s)?|accidents?|crash(?:ed|es|ing)?|disasters?|earthquakes?|wildfires?)\b/iu,
+]);
+
+/** Returns true if `text` contains any stemmed mention of news, crime, death, or real-world public events. */
+export function mentionsRealWorld(text: string): boolean {
+  const normalized = text.replace(/\u2019/gu, "'");
+  return REAL_WORLD_PATTERNS.some((re) => re.test(normalized));
+}
+
+/** Red-team fixture for conditions 5.4: 24 news, crime, death, and real-event strings. */
+export const REAL_WORLD_ATTACKS: readonly string[] = Object.freeze([
+  "Breaking news: a reporter stands outside this house tonight.",
+  "Yesterday's headline spoke of this very street.",
+  "The local newspaper printed a photograph of the front porch.",
+  "Police cars blocked the avenue last Friday evening.",
+  "Three arrests were made near the corner shop.",
+  "A murder happened in the upstairs bedroom years ago.",
+  "Someone was killed beside the garden gate.",
+  "The detective solved the homicide before winter.",
+  "It was ruled a suicide in the autumn of ninety-four.",
+  "There was a shooting on the corner last summer.",
+  "The crime rate on this block keeps rising.",
+  "A criminal hid beneath those stairs.",
+  "Everyone attended the funeral down the lane.",
+  "A former tenant died here of an illness.",
+  "Nobody speaks of that tragic death in the kitchen.",
+  "The election results were read out on the radio.",
+  "The president visited this town in spring.",
+  "During the pandemic lockdown nobody walked past.",
+  "In the war, windows along this row were shattered.",
+  "After the bombing, the roof was patched in haste.",
+  "There was a car accident right outside the hedge.",
+  "The wildfire last August reached the ridge behind us.",
+  "They found bloody footprints beside the courthouse.",
+  "An obituary appeared in Monday's paper.",
+]);
