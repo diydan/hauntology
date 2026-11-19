@@ -15,6 +15,7 @@ import type { AiBinding } from "./guarded/workersai/call";
 import { WorkersAiClient } from "./guarded/workersai/client";
 import type { ImagesBinding } from "./guarded/workersai/cutout";
 import { WorkersAiSpeaker, voiceModelsFromEnv } from "./guarded/workersai/speak";
+import { sttModelFromEnv, WorkersAiTranscriber } from "./guarded/workersai/transcribe";
 import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
 import type { AssetsPort } from "./http/assets";
 import type { Bindings } from "./http/env";
@@ -72,10 +73,15 @@ export default {
       // a line of the window first, and the speech route, the replies and the Home flag all say "off" while it is closed (`voice/window.ts`).
       const plays = playsFor(env);
       const voiceModels = voiceModelsFromEnv(env);
+      const sttModel = sttModelFromEnv(env.VOICE_STT_MODEL_ID);
       const voiceWindow = new SpendGuardVoiceWindow(env.SPEND_GUARD);
       const voice =
         plays !== null && env.AI !== undefined && voiceModels !== null
-          ? { speak: { lines: new PlayVoiceLines(plays), cache: new R2SpeechCache(env.BUCKET), library: new R2SpeechLibrary(env.BUCKET), maker: new WorkersAiSpeaker(env.AI, voiceModels), spend: windowedSpend(guard, voiceWindow), flights: singleFlight(), log: logger }, window: voiceWindow }
+          ? {
+              speak: { lines: new PlayVoiceLines(plays), cache: new R2SpeechCache(env.BUCKET), library: new R2SpeechLibrary(env.BUCKET), maker: new WorkersAiSpeaker(env.AI, voiceModels), spend: windowedSpend(guard, voiceWindow), flights: singleFlight(), log: logger },
+              ...(sttModel !== null ? { listen: { transcriber: new WorkersAiTranscriber(env.AI, { model: sttModel }), spend: guard, log: logger } } : {}),
+              window: voiceWindow,
+            }
           : null;
       app = createApp({
         log: logger,

@@ -1,4 +1,5 @@
 import type { ShellApi } from "@hauntology/shared/app/api";
+import { SPEECH_DEADLINE_MS } from "@hauntology/shared/voice/limits";
 
 /**
  * The ghost's voice in Single player (Requirement 12.3): speaking the line the server holds, and
@@ -9,6 +10,7 @@ import type { ShellApi } from "@hauntology/shared/app/api";
  */
 
 export const MAX_CLIP_MS = 8000;
+export const SPEAK_STORAGE_KEY = "hauntology.speak";
 
 export type AudioLike = { play(): Promise<void>; pause(): void; onended: (() => void) | null };
 export type Recorder = { start(): void; stop(): Promise<Blob>; cancel(): void };
@@ -24,6 +26,12 @@ export type VoiceDeps = {
   /** The visitor said something: treat it exactly like typed text. */
   onTranscript: (text: string) => void;
   maxClipMs?: number;
+  /** Maximum wait for fetched line audio before falling back quietly (default 5000 ms). */
+  deadlineMs?: number;
+  /** Optional browser fallback (e.g. speechSynthesis) when fetched audio fails or times out. */
+  fallbackSpeak?: (text: string) => boolean;
+  /** Optional `sessionStorage` to persist the visitor's speak switch. */
+  storage?: Pick<Storage, "getItem" | "setItem"> | null;
 };
 
 export type MicState = "unsupported" | "idle" | "starting" | "recording" | "sending" | "unavailable";
@@ -44,7 +52,7 @@ export type Voice = {
   /** Call from a click or key press. */
   unlock(): void;
   /** Speaks a line if the switch is on and audio is unlocked. Returns whether it started. */
-  playLine(playId: string, lineId: string): Promise<boolean>;
+  playLine(playId: string, lineId: string, subtitleText?: string): Promise<boolean>;
   stopSpeaking(): void;
   /** The talk button went down. */
   pressTalk(): Promise<void>;
@@ -58,8 +66,15 @@ export const NOTE_NOT_HEARD = "I did not catch that. Try again, or type.";
 
 export function createVoice(deps: VoiceDeps): Voice {
   const maxClipMs = deps.maxClipMs ?? MAX_CLIP_MS;
+  const deadlineMs = deps.deadlineMs ?? SPEECH_DEADLINE_MS;
   const recorderFactory = deps.recorder === undefined ? null : deps.recorder;
-  let ui: VoiceUi = { speak: true, speaking: false, mic: recorderFactory === null ? "unsupported" : "idle", note: null };
+  let storedSpeak = true;
+  try {
+    if (deps.storage) storedSpeak = deps.storage.getItem(SPEAK_STORAGE_KEY) !== "false";
+  } catch {
+    storedSpeak = true;
+  }
+  let ui: VoiceUi = { speak: storedSpeak, speaking: false, mic: recorderFactory === null ? "unsupported" : "idle", note: null };
   const listeners = new Set<() => void>();
   const set = (patch: Partial<VoiceUi>) => {
     ui = { ...ui, ...patch };
@@ -126,6 +141,11 @@ export function createVoice(deps: VoiceDeps): Voice {
     },
     setSpeak(on) {
       if (!on) stopSpeaking();
+      try {
+        deps.storage?.setItem(SPEAK_STORAGE_KEY, on ? "true" : "false");
+      } catch {
+        // storage disabled
+      }
       set({ speak: on });
     },
     unlock() {
@@ -135,12 +155,28 @@ export function createVoice(deps: VoiceDeps): Voice {
         unlocked = false;
       });
     },
-    async playLine(playId, lineId) {
+    async playLine(playId, lineId, subtitleText) {
       if (!ui.speak || !unlocked || speechRefused || deps.createAudio === undefined) return false;
-      const got = await deps.api.speak({ playId, lineId });
+      let timedOut = false;
+      let deadlineTimer: ReturnType<typeof setTimeout> | null = null;
+      const got = await Promise.race([
+        deps.api.speak({ playId, lineId }),
+        new Promise<null>((resolve) => {
+          deadlineTimer = setTimeout(() => {
+            timedOut = true;
+            resolve(null);
+          }, deadlineMs);
+        }),
+      ]);
+      if (deadlineTimer !== null) clearTimeout(deadlineTimer);
+      if (timedOut || got === null) {
+        if (subtitleText !== undefined) deps.fallbackSpeak?.(subtitleText);
+        return false;
+      }
       if (!got.ok) {
         // A spent meter or a switch that is off will not change this game: stop asking.
         if (got.code === "voice_unavailable") speechRefused = true;
+        if (subtitleText !== undefined) deps.fallbackSpeak?.(subtitleText);
         return false;
       }
       if (!ui.speak) return false;
@@ -162,6 +198,7 @@ export function createVoice(deps: VoiceDeps): Voice {
           current = null;
           made.release();
         }
+        if (subtitleText !== undefined) deps.fallbackSpeak?.(subtitleText);
         return false;
       }
       set({ speaking: true });

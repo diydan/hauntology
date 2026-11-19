@@ -25,6 +25,7 @@ import { worldRoutes, type WorldsDeps } from "./routes/worlds";
 import { partyRoutes, type PartyDeps } from "./routes/party";
 import { ipHashOf } from "./routes/world-create";
 import { voiceRoutes } from "./routes/voice";
+import type { ListenDeps } from "./voice/listen";
 import type { SpeakDeps } from "./voice/speak";
 import type { VoiceWindow } from "./voice/window";
 
@@ -66,7 +67,7 @@ export type AppOptions = SessionOptions & {
    * With a `window` the voice is also off until the operator opens a window (`POST /admin/voice`), and off again when it closes: while it is closed the speech
    * route is quiet, no reply names a line and Home says `voiceEnabled: false`, so the client hides its speak control. Without a `window` only `VOICE_ENABLED` decides.
    */
-  voice?: { speak: SpeakDeps; window?: Pick<VoiceWindow, "isOpen"> };
+  voice?: { speak: SpeakDeps; listen?: ListenDeps; window?: Pick<VoiceWindow, "isOpen"> };
   /** The Ghost Creator (ghost-creator task 3). When given, the paid creator steps and the world's ghost are served. */
   creator?: Creator;
 };
@@ -174,6 +175,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
       "/api/voice",
       voiceRoutes({
         speak: { log, ...options.voice.speak },
+        ...(options.voice.listen !== undefined ? { listen: { log, ...options.voice.listen } } : {}),
         // Off while `VOICE_ENABLED` is off or the window is closed (or cannot be read): nothing is looked up and nothing is called.
         enabled: async (c) => flagsFrom((c as Context<AppEnv>).env).voiceEnabled && (window === undefined || (await window.isOpen())),
       }),

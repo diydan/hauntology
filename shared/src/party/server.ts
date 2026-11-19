@@ -6,6 +6,19 @@ import { parseClientMessage } from "./protocol";
 import { createRoomState, isRoomExpired, newToken, parseRoom, serializeRoom, type RoomState, type Seat } from "./room";
 import { humanCount, seatPlayer } from "./seats";
 import { BOT_NAMES } from "./solo";
+import type { LineKind, VoiceLine } from "../voice/line";
+import type { LodgerVoice, Speaker } from "../voice/voices";
+import type { PlayedStitch } from "../voice/stitch/play";
+import {
+  applyRoomSpeechToggle,
+  applyStitchAnswer,
+  applyStitchMasterSwitch,
+  findRoomVoiceLine,
+  initialRoomVoiceState,
+  prepareRoomNarration,
+  recordStitchPlayed,
+  type RoomVoiceState,
+} from "../voice/room-voice";
 
 /**
  * The Room server's whole logic (integration Requirement 3), with no Cloudflare in it: the `PartyRoom` Durable Object
@@ -24,6 +37,8 @@ export type Ports = {
   randomBytes(n: number): Uint8Array;
   /** Told once when the Room ends (by the Master, the host or its time to live), so the directory can free its place. */
   ended?(code: string): Promise<void>;
+  /** Deletes stored Stitch clips for specific seats or all seats on leave/withdraw/switch-off. */
+  deleteStitchClips?(forSeats: number[] | "all"): Promise<void>;
 };
 
 /** At most this many messages per socket per second (party-mode 3.2: the Controller sends at most 30); the rest are refused unread. */
@@ -35,6 +50,7 @@ export type ServerState = Readonly<{
   engine: EngineState | null;
   lobbySettings: EngineSettings;
   sockets: Readonly<Record<string, SocketInfo>>;
+  voice: RoomVoiceState;
 }>;
 
 export const DEFAULT_SETTINGS: EngineSettings = { baseSeconds: 60, hauntMax: 10, nudges: "all", frames: true, sounds: true, puzzles: "medium", preset: "classic" };
@@ -51,10 +67,10 @@ export class RoomCore {
     if (this.state !== null) return this.state;
     const text = await this.ports.load();
     if (text === undefined) return null;
-    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; sockets: Record<string, SocketInfo> };
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState };
     const room = parseRoom(raw.room);
     if (room === null) return null;
-    this.state = { room, engine: raw.engine, lobbySettings: raw.lobbySettings, sockets: raw.sockets };
+    this.state = { room, engine: raw.engine, lobbySettings: raw.lobbySettings, sockets: raw.sockets, voice: raw.voice ?? initialRoomVoiceState() };
     return this.state;
   }
 
@@ -63,7 +79,7 @@ export class RoomCore {
     // the Engine may pass the Master role on (a Master away 60 s); the lobby's record follows it
     const next = next0.engine !== null && next0.engine.masterSeat !== next0.room.masterSeat ? { ...next0, room: { ...next0.room, masterSeat: next0.engine.masterSeat as Seat } } : next0;
     this.state = next;
-    await this.ports.save(JSON.stringify({ room: serializeRoom(next.room), engine: next.engine, lobbySettings: next.lobbySettings, sockets: next.sockets }));
+    await this.ports.save(JSON.stringify({ room: serializeRoom(next.room), engine: next.engine, lobbySettings: next.lobbySettings, sockets: next.sockets, voice: next.voice }));
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
     await this.ports.setAlarm(wakeAtMs === null ? ttlAt : Math.min(wakeAtMs, ttlAt));
     this.route(next, out);
@@ -101,7 +117,7 @@ export class RoomCore {
     const hostToken = newToken(fill);
     const displayToken = newToken(fill);
     const room = createRoomState(code, seedFrom(this.ports.randomBytes(4)), this.ports.now(), hostToken, displayToken);
-    await this.commit({ room, engine: null, lobbySettings: DEFAULT_SETTINGS, sockets: {} });
+    await this.commit({ room, engine: null, lobbySettings: DEFAULT_SETTINGS, sockets: {}, voice: initialRoomVoiceState() });
     return { hostToken, displayToken };
   }
 
@@ -186,6 +202,43 @@ export class RoomCore {
         await this.commit(next);
         return this.broadcastLobby(next);
       }
+      if (m.t === "speech") {
+        const toggled = applyRoomSpeechToggle(s.voice, isMaster, m.action === "on");
+        if (!toggled.ok) return refuse(toggled.code);
+        const next = { ...s, voice: toggled.state };
+        await this.commit(next);
+        for (const [sid, info] of Object.entries(next.sockets)) {
+          if (info.role === "host") this.ports.send(sid, { t: "speech", on: next.voice.speechOn });
+        }
+        return;
+      }
+      if (m.t === "stitchSetting") {
+        const toggled = applyStitchMasterSwitch(s.voice, isMaster, m.on);
+        if (toggled.refused) return refuse("not_master");
+        if (toggled.deleteClipsFor === "all" || toggled.deleteClipsFor.length > 0) {
+          await this.ports.deleteStitchClips?.(toggled.deleteClipsFor);
+        }
+        await this.commit({ ...s, voice: toggled.state });
+        return;
+      }
+      if (m.t === "stitchAnswer") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const seatRec = s.room.seats.find((x) => x.seat === me.seat);
+        const targetSeat = m.seat ?? me.seat;
+        const answered = applyStitchAnswer(s.voice, {
+          actorSeat: me.seat,
+          seat: targetSeat,
+          isBot: seatRec?.bot === true,
+          yes: m.yes,
+          tick: m.tick,
+        });
+        if (answered.refused) return refuse("bad_token");
+        if (answered.deleteClipsFor === "all" || answered.deleteClipsFor.length > 0) {
+          await this.ports.deleteStitchClips?.(answered.deleteClipsFor);
+        }
+        await this.commit({ ...s, voice: answered.state });
+        return;
+      }
       return;
     }
 
@@ -258,6 +311,55 @@ export class RoomCore {
     if (s.engine === null) { await this.ports.setAlarm(s.room.lastActiveMs + s.room.ttlMs); return; }
     const r = step(s.engine, { kind: "alarm" }, now);
     await this.commit({ ...s, engine: r.state }, r.out, r.wakeAtMs);
+  }
+
+  /** Sends a validated voice cue to Host sockets only, respecting `decideSpeak` and keeping the line for `speakLine` (ghost-voice 3.9). */
+  async speakRoomEvent(input: {
+    id: string;
+    kind: LineKind;
+    speaker: Speaker;
+    lodgerVoice?: LodgerVoice;
+    text: string;
+    playerText?: readonly string[];
+  }): Promise<{ spoke: boolean; lineId: string | null }> {
+    const s = await this.loaded();
+    if (s === null) return { spoke: false, lineId: null };
+    const now = this.ports.now();
+    const prepared = prepareRoomNarration(s.voice, {
+      id: input.id,
+      kind: input.kind,
+      speaker: input.speaker,
+      ...(input.lodgerVoice !== undefined ? { lodgerVoice: input.lodgerVoice } : {}),
+      text: input.text,
+      playerText: input.playerText ?? s.room.seats.map((x) => x.nickname),
+      now,
+    });
+    if (prepared.hostMsg === null) return { spoke: false, lineId: null };
+    await this.commit({ ...s, voice: prepared.state });
+    for (const [sid, info] of Object.entries(s.sockets)) {
+      if (info.role === "host") this.ports.send(sid, prepared.hostMsg);
+    }
+    return { spoke: true, lineId: prepared.hostMsg.lineId };
+  }
+
+  /** Looks up a live room VoiceLine by id for Host playback (`ghost-voice` 3.9). */
+  async findVoiceLine(lineId: string): Promise<VoiceLine | null> {
+    const s = await this.loaded();
+    if (s === null) return null;
+    return findRoomVoiceLine(s.voice, lineId, this.ports.now());
+  }
+
+  /** Records and broadcasts a played Stitch event without changing any Engine rule state (`ghost-voice` 5.12). */
+  async whisperStitch(event: PlayedStitch, clips: readonly unknown[]): Promise<{ reveals: PlayedStitch[] }> {
+    const s = await this.loaded();
+    if (s === null) return { reveals: [] };
+    const rec = recordStitchPlayed(s.voice, event, clips);
+    await this.commit({ ...s, voice: rec.state });
+    for (const [sid, info] of Object.entries(s.sockets)) {
+      if (info.role === "host") this.ports.send(sid, rec.hostMsg);
+      this.ports.send(sid, rec.publicLog);
+    }
+    return { reveals: rec.reveals };
   }
 
   /** Ends the Room from outside (its maker started a new one). Nothing to do when it is already gone. */

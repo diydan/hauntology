@@ -32,6 +32,14 @@ describe("errorCopy", () => {
       expect(errorCopy(code).next, code).toBe("gallery");
     }
   });
+
+  it("never maps any ghost-voice error code to a fatal home or gallery screen", () => {
+    for (const code of [
+      "voice_unavailable", "clip_too_long", "clip_not_heard", "stitch_not_on", "stitch_no_consent", "stitch_check_limit", "live_unavailable",
+    ] as const) {
+      expect(["retry", "wait"], code).toContain(errorCopy(code).next);
+    }
+  });
 });
 
 describe("retryGate", () => {
