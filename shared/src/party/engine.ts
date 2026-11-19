@@ -815,7 +815,12 @@ function connection(s: EngineState, seat: number, up: boolean, now: number): Eng
     const free = t.clock.pausedSinceMs === null;
     return { ...st, turn: { ...t, clock: free ? pause(t.clock, now) : t.clock, disconnectPausedClock: free, disconnectEndsMs: now + DISCONNECT_GRACE_MS } };
   }
-  return { ...st, turn: { ...t, clock: t.disconnectPausedClock ? resume(t.clock, now) : t.clock, disconnectPausedClock: false, disconnectEndsMs: null } };
+  const resumed: EngineState = { ...st, turn: { ...t, clock: t.disconnectPausedClock ? resume(t.clock, now) : t.clock, disconnectPausedClock: false, disconnectEndsMs: null } };
+  if (t.at === null) return resumed;
+  const sight = sightsOnEntry(resumed.locks, String(seat), t.at);
+  return sight.delivery === null
+    ? { ...resumed, locks: sight.state }
+    : { ...resumed, locks: sight.state, outbox: [...resumed.outbox, { to: "seat", seat, msg: { t: "sight", sightId: sight.delivery.sightId, sight: sight.delivery.sight } }] };
 }
 
 /** The Master resumes: every deadline moves on by the length of the pause, so nothing ran while it was paused. */

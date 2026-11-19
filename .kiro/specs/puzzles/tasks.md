@@ -127,23 +127,23 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - **Property 9: A memory is always reachable**
     - **Validates: Requirements 2.2, 2.3**
 
-- [ ] 3. Party integration (`PartyRoom`)
-  - [ ] 3.1 Add `PartyLocks` to the Room state, the messages `sight`, `sight_ack`, `puzzle_open`, `puzzle_view`, `puzzle_attempt`, `puzzle_cancel` and `puzzle_result` to the protocol schema, place the Locks at the start of a game, and rebuild an open Lock from the seed after a reconnect
+- [x] 3. Party integration (`PartyRoom`)
+  - [x] 3.1 Add `PartyLocks` to the Room state, the messages `sight`, `sight_ack`, `puzzle_open`, `puzzle_view`, `puzzle_attempt`, `puzzle_cancel` and `puzzle_result` to the protocol schema, place the Locks at the start of a game, and rebuild an open Lock from the seed after a reconnect
     - _Requirements: 1.5, 7.1, 13.2_
-  - [ ] 3.2 Sights: send on entering a Zone or starting a Turn there, record on the ack, resend on reconnect if there was no ack, keep them out of every view, log, recap and prompt
+  - [x] 3.2 Sights: send on entering a Zone or starting a Turn there, record on the ack, resend on reconnect if there was no ack, keep them out of every view, log, recap and prompt
     - _Requirements: 6.1, 6.5, 6.6_
-  - [ ]* 3.3 Write property test for private Sights across a reconnect
+  - [x]* 3.3 Write property test for private Sights across a reconnect
     - **Property 10: Sights stay private and survive a reconnect**
     - **Validates: Requirements 6.1, 6.5, 6.6, 13.2**
-  - [ ] 3.4 Wire Inspect to the Lock: the Turn Clock keeps running, the Cap and a Master pause, a Nudge, the end of the Turn, Bots on a plain Inspect, a solo case as any Room
+  - [x] 3.4 Wire Inspect to the Lock: the Turn Clock keeps running, the Cap and a Master pause, a Nudge, the end of the Turn, Bots on a plain Inspect, a solo case as any Room
     - _Requirements: 1.1, 1.2, 1.3, 1.6, 13.1, 13.3_
-  - [ ] 3.5 The Puzzle setting in the Master panel and presets, applied from the next Inspect, and `puzzleSetting` in the Public View
+  - [x] 3.5 The Puzzle setting in the Master panel and presets, applied from the next Inspect, and `puzzleSetting` in the Public View
     - _Requirements: 1.4_
-  - [ ] 3.6 Plain Inspect as a seat setting that survives a reconnect and is visible to nobody else
+  - [x] 3.6 Plain Inspect as a seat setting that survives a reconnect and is visible to nobody else
     - _Requirements: 1.7_
-  - [ ] 3.7 Telemetry counters (Kind, outcome, Attempts), and deletion of Transcripts, open Locks and `seen` with the Room
+  - [x] 3.7 Telemetry counters (Kind, outcome, Attempts), and deletion of Transcripts, open Locks and `seen` with the Room
     - _Requirements: 14.2_
-  - [ ]* 3.8 Write a model-based test of `PartyRoom` with fast-check command sequences (move, open, attempt, wrong, give up, reconnect, pause, Turn end) against a model that carries `seen` and checks every view
+  - [x]* 3.8 Write a model-based test of `PartyRoom` with fast-check command sequences (move, open, attempt, wrong, give up, reconnect, pause, Turn end) against a model that carries `seen` and checks every view
     - _Requirements: 1.3, 6.5, 13.1, 13.2_
 
 - [x] 4. Wander integration (`PlaySession`)

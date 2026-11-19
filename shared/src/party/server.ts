@@ -7,6 +7,7 @@ import { parseClientMessage } from "./protocol";
 import { createRoomState, isRoomExpired, newToken, parseRoom, serializeRoom, type RoomState, type Seat } from "./room";
 import { humanCount, seatPlayer } from "./seats";
 import { BOT_NAMES } from "./solo";
+import type { LogEvent, LogFields } from "../log";
 import type { NameConsent, SongsSetting } from "../songs/lyrics";
 import { initialSongPlan, songRequests, type SongPlanState, type SongRequest } from "../songs/plan";
 import type { LineKind, VoiceLine } from "../voice/line";
@@ -46,6 +47,8 @@ export type Ports = {
   deleteStitchClips?(forSeats: number[] | "all"): Promise<void>;
   /** Deletes stored generated songs for this Room when it ends (`game-songs` 3.1). */
   deleteSongs?(code: string): Promise<void>;
+  /** Safe telemetry counter sink (`shared/src/log.ts`). */
+  log?<E extends LogEvent>(event: E, fields?: LogFields<E>): void;
 };
 
 export type RoomSongsState = Readonly<{
@@ -70,6 +73,7 @@ export type ServerState = Readonly<{
   room: RoomState;
   engine: EngineState | null;
   lobbySettings: EngineSettings;
+  puzzlesEnabled?: boolean;
   lobbyErrandOptOut?: Readonly<Record<number, boolean>>;
   doors?: DoorSetup | null;
   sockets: Readonly<Record<string, SocketInfo>>;
@@ -91,7 +95,7 @@ export class RoomCore {
     if (this.state !== null) return this.state;
     const text = await this.ports.load();
     if (text === undefined) return null;
-    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState };
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; puzzlesEnabled?: boolean; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState };
     const room = parseRoom(raw.room);
     if (room === null) return null;
     // a saved door state that does not parse falls back to the start (knock-door 8.1)
@@ -99,6 +103,7 @@ export class RoomCore {
       room,
       engine: raw.engine === null ? null : repairDoors(raw.engine),
       lobbySettings: raw.lobbySettings,
+      ...(raw.puzzlesEnabled !== undefined ? { puzzlesEnabled: raw.puzzlesEnabled } : {}),
       ...(raw.lobbyErrandOptOut ? { lobbyErrandOptOut: raw.lobbyErrandOptOut } : {}),
       ...(raw.doors !== undefined ? { doors: raw.doors } : {}),
       sockets: raw.sockets,
@@ -117,6 +122,7 @@ export class RoomCore {
       room: serializeRoom(next.room),
       engine: next.engine,
       lobbySettings: next.lobbySettings,
+      ...(next.puzzlesEnabled !== undefined ? { puzzlesEnabled: next.puzzlesEnabled } : {}),
       ...(next.lobbyErrandOptOut ? { lobbyErrandOptOut: next.lobbyErrandOptOut } : {}),
       ...(next.doors !== undefined ? { doors: next.doors } : {}),
       sockets: next.sockets,
@@ -126,6 +132,17 @@ export class RoomCore {
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
     await this.ports.setAlarm(wakeAtMs === null ? ttlAt : Math.min(wakeAtMs, ttlAt));
     this.route(next, out);
+  }
+
+  private emitLockTelemetry(prevEngine: EngineState | null, out: readonly Outbound[], isAttempt: boolean): void {
+    if (!this.ports.log || prevEngine === null) return;
+    for (const o of out) {
+      if (o.to !== "seat" || o.msg.t !== "lockResult") continue;
+      const open = prevEngine.locks.open[String(o.seat)];
+      const placed = open ? prevEngine.locks.placed.find((l) => l.zone === open.zone) : undefined;
+      const attempts = o.msg.outcome === "wrong" ? 3 - (o.msg.attemptsLeft ?? 0) : (open?.attemptsUsed ?? 0) + (isAttempt ? 1 : 0);
+      this.ports.log("puzzle.lock", { kind: placed?.kind ?? "unknown", outcome: o.msg.outcome, attempts });
+    }
   }
 
   private route(s: ServerState, out: readonly Outbound[]): void {
@@ -162,15 +179,17 @@ export class RoomCore {
   }
 
   // ------------------------------------------------------------ HTTP-side calls (from the routes)
-  async create(code: string, opts?: Readonly<{ doors?: DoorSetup | null }>): Promise<{ hostToken: string; displayToken: string }> {
+  async create(code: string, opts?: Readonly<{ doors?: DoorSetup | null; puzzlesEnabled?: boolean }>): Promise<{ hostToken: string; displayToken: string }> {
     const fill = (b: Uint8Array): Uint8Array => { b.set(this.ports.randomBytes(b.length)); return b; };
     const hostToken = newToken(fill);
     const displayToken = newToken(fill);
     const room = createRoomState(code, seedFrom(this.ports.randomBytes(4)), this.ports.now(), hostToken, displayToken);
+    const puzzlesOn = opts?.puzzlesEnabled !== false;
     await this.commit({
       room,
       engine: null,
-      lobbySettings: DEFAULT_SETTINGS,
+      lobbySettings: puzzlesOn ? DEFAULT_SETTINGS : { ...DEFAULT_SETTINGS, puzzles: "off" },
+      ...(puzzlesOn ? {} : { puzzlesEnabled: false }),
       ...(opts?.doors !== undefined ? { doors: opts.doors } : {}),
       sockets: {},
       voice: initialRoomVoiceState(),
@@ -358,7 +377,7 @@ export class RoomCore {
       if (parsed.msg.t === "settings") {
         const r = step(draft, { kind: "client", seat: me.seat, msg: parsed.msg }, now);
         if (r.refused) return refuse(r.refused);
-        lobbySettings = r.state.settings;
+        lobbySettings = s.puzzlesEnabled === false ? { ...r.state.settings, puzzles: "off" } : r.state.settings;
         const next = { ...s, lobbySettings };
         await this.commit(next);
         return this.broadcastLobby(next);
@@ -369,7 +388,11 @@ export class RoomCore {
     }
     const r = step(engine, { kind: "client", seat: me.seat, msg: parsed.msg }, now);
     if (r.refused) return refuse(r.refused);
-    let next: ServerState = { ...s, engine: r.state, lobbySettings, room: { ...s.room, lastActiveMs: now, started: true } };
+    this.emitLockTelemetry(engine, r.out, parsed.msg.t === "attempt");
+    const nextEngine = s.puzzlesEnabled === false && r.state.settings.puzzles !== "off"
+      ? { ...r.state, settings: { ...r.state.settings, puzzles: "off" as const } }
+      : r.state;
+    let next: ServerState = { ...s, engine: nextEngine, lobbySettings, room: { ...s.room, lastActiveMs: now, started: true } };
     // connect every seat that is on a socket now, so the Engine knows who is here
     if (s.engine === null) for (const info of Object.values(next.sockets)) if (info.role === "controller" && info.seat !== null) next = { ...next, engine: step(next.engine as EngineState, { kind: "connect", seat: info.seat }, now).state };
     await this.commit(next, r.out, r.wakeAtMs);
@@ -418,6 +441,7 @@ export class RoomCore {
     if (isRoomExpired(s.room, now)) return this.end(s);
     if (s.engine === null) { await this.ports.setAlarm(s.room.lastActiveMs + s.room.ttlMs); return; }
     const r = step(s.engine, { kind: "alarm" }, now);
+    this.emitLockTelemetry(s.engine, r.out, false);
     await this.commit({ ...s, engine: r.state }, r.out, r.wakeAtMs);
   }
 
