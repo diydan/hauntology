@@ -120,6 +120,7 @@ export type Deadlines = Readonly<{
   hauntChoiceMs?: number | null;
   eavesdropUntilMs?: number | null;
   answeringUntilMs?: number | null;
+  errandAskUntilMs?: number | null;
   windowUntilMs?: number | null;
   masterTimeoutMs?: number | null;
   botThinkUntilMs?: number | null;
@@ -139,7 +140,7 @@ export function nextWake(d: Deadlines, nowMs: number): number | null {
       if (end - WARNING_MS > nowMs) times.push(end - WARNING_MS);
     }
   }
-  for (const v of [d.disconnectEndsMs, d.inspectUntilMs, d.hauntChoiceMs, d.eavesdropUntilMs, d.answeringUntilMs, d.windowUntilMs, d.masterTimeoutMs, d.botThinkUntilMs, d.roomExpiresMs]) {
+  for (const v of [d.disconnectEndsMs, d.inspectUntilMs, d.hauntChoiceMs, d.eavesdropUntilMs, d.answeringUntilMs, d.errandAskUntilMs, d.windowUntilMs, d.masterTimeoutMs, d.botThinkUntilMs, d.roomExpiresMs]) {
     if (typeof v === "number" && Number.isFinite(v)) times.push(v);
   }
   return times.length === 0 ? null : Math.min(...times);

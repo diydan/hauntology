@@ -70,6 +70,7 @@ export type ServerState = Readonly<{
   room: RoomState;
   engine: EngineState | null;
   lobbySettings: EngineSettings;
+  lobbyErrandOptOut?: Readonly<Record<number, boolean>>;
   sockets: Readonly<Record<string, SocketInfo>>;
   voice: RoomVoiceState;
   songs: RoomSongsState;
@@ -131,7 +132,14 @@ export class RoomCore {
 
   private draftEngine(s: ServerState): EngineState {
     const botLevel = s.lobbySettings.preset === "gentle" ? ("gentle" as const) : ("standard" as const);
-    return createEngine({ seed: s.room.seed, seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })), settings: s.lobbySettings, presetIds: PRESET_GHOST_IDS, doors: this.ports.doors?.() ?? null });
+    return createEngine({
+      seed: s.room.seed,
+      seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })),
+      settings: s.lobbySettings,
+      presetIds: PRESET_GHOST_IDS,
+      doors: this.ports.doors?.() ?? null,
+      ...(s.lobbyErrandOptOut ? { errandOptOut: s.lobbyErrandOptOut } : {}),
+    });
   }
 
   // ------------------------------------------------------------ HTTP-side calls (from the routes)
@@ -313,7 +321,12 @@ export class RoomCore {
     let lobbySettings = s.lobbySettings;
     if (engine === null) {
       // The lobby: settings and start, by the Master only. The Engine is made at the start, from the seats then.
-      if (parsed.msg.t !== "settings" && parsed.msg.t !== "start" && parsed.msg.t !== "sound") return refuse("not_started");
+      if (parsed.msg.t !== "settings" && parsed.msg.t !== "start" && parsed.msg.t !== "sound" && parsed.msg.t !== "errandOptOut") return refuse("not_started");
+      if (parsed.msg.t === "errandOptOut") {
+        const lobbyErrandOptOut = { ...(s.lobbyErrandOptOut ?? {}), [me.seat]: parsed.msg.on };
+        await this.commit({ ...s, lobbyErrandOptOut });
+        return;
+      }
       const draft = this.draftEngine(s);
       if (parsed.msg.t === "settings") {
         const r = step(draft, { kind: "client", seat: me.seat, msg: parsed.msg }, now);

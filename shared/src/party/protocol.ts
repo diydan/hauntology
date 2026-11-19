@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ERRAND_OBJECTS } from "./errands";
 import { SIGNS } from "../puzzles/world-clues";
 import type { ClientMsg } from "./engine";
 
@@ -35,7 +36,12 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
     baseSeconds: z.union([z.literal(30), z.literal(45), z.literal(60), z.literal(90), z.null()]).optional(),
     hauntMax: z.union([z.literal(8), z.literal(10), z.literal(12)]).optional(),
     cluePlace: z.enum(["phone", "world"]).optional(),
+    errands: z.boolean().optional(),
   }).strict(),
+  z.object({ t: z.literal("errandOptOut"), on: z.boolean() }).strict(),
+  z.object({ t: z.literal("errandDone") }).strict(),
+  z.object({ t: z.literal("errandAnswer"), yes: z.boolean() }).strict(),
+  z.object({ t: z.literal("errandCaught"), poltergeist: z.number().int().min(1).max(6), object: z.enum(ERRAND_OBJECTS) }).strict(),
   z.object({ t: z.literal("attempt"), lockId: id, transcript: z.unknown() }).strict(),
   z.object({ t: z.literal("giveUp"), lockId: id }).strict(),
   z.object({ t: z.literal("sightAck"), sightId: id }).strict(),
