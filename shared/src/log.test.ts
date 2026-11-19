@@ -86,6 +86,7 @@ describe("formatLog", () => {
       "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
       "play.narrate": { outcome: "word", attempts: "int" },
       "conditions.read": { source: "word", reason: "word", cache: "bool" },
+      "conditions.geocode": { outcome: "word", count: "int" },
       "play.end": { turns: "int" },
       "play.reset": { turns: "int" },
       "play.refused": { code: "word" },

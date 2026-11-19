@@ -7,7 +7,8 @@ import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
 import { playRoutes } from "./routes/play";
-import type { ConditionsService } from "./conditions/snapshot-store";
+import type { ConditionsService, GeocoderService } from "./conditions/snapshot-store";
+import { conditionsRoutes } from "./routes/conditions";
 import type { Narration } from "./play/narrate";
 import type { PlaySessions } from "./play/ports";
 import { quotaRoutes } from "./routes/quota";
@@ -71,6 +72,8 @@ export type AppOptions = SessionOptions & {
   voice?: { speak: SpeakDeps; roomLines?: RoomVoiceLineStore; listen?: ListenDeps; window?: Pick<VoiceWindow, "isOpen"> };
   /** The Ghost Creator (ghost-creator task 3). When given, the paid creator steps and the world's ghost are served. */
   creator?: Creator;
+  /** City search (`POST /api/conditions/search`, conditions 3.5); answers `conditions_disabled` while off. */
+  conditionsSearch?: GeocoderService;
 };
 
 /**
@@ -180,6 +183,18 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
         ...(options.voice.listen !== undefined ? { listen: { log, ...options.voice.listen } } : {}),
         // Off while `VOICE_ENABLED` is off or the window is closed (or cannot be read): nothing is looked up and nothing is called.
         enabled: async (c) => flagsFrom((c as Context<AppEnv>).env).voiceEnabled && (window === undefined || (await window.isOpen())),
+      }),
+    );
+  }
+  if (options.conditionsSearch !== undefined) {
+    const gc = options.conditionsSearch;
+    app.route(
+      "/api/conditions",
+      conditionsRoutes({
+        enabled: (c) => gc.enabled && (c as Context<AppEnv>).env.CONDITIONS_ENABLED !== "false",
+        search: gc.search,
+        log,
+        ...(options.now ? { now: options.now } : {}),
       }),
     );
   }
