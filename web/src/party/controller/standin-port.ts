@@ -1,10 +1,11 @@
+import type { ErrandObject } from "@hauntology/shared/party/errands";
 import { makeLock } from "@hauntology/shared/puzzles/make";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import { ATTEMPTS, type Kind, type Level, type Lock, type PuzzleSetting, type Transcript } from "@hauntology/shared/puzzles/types";
 import { verify } from "@hauntology/shared/puzzles/verify";
 import { worldCluePrompt, type CluePlace, type PublicWorldClue, type Sign } from "@hauntology/shared/puzzles/world-clues";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
-import { NOT_SEATED, type ControllerPort, type JoinResult, type LockOffer, type RoomView } from "./controller-port";
+import { NOT_SEATED, type ControllerErrandsView, type ControllerPort, type JoinResult, type LockOffer, type RoomView } from "./controller-port";
 
 /** The codes this Room answers to. Anything else is an unknown Room: the answer never says what exists. */
 export const STANDIN_CODES = { open: "K7M2", full: "MAX6", started: "STR4" } as const;
@@ -100,6 +101,35 @@ export class StandInPort implements ControllerPort {
   setCluePlace(place: CluePlace): void {
     this.calls.push(`setCluePlace ${place}`);
     if (this.view.master !== null) this.set({ master: { ...this.view.master, cluePlace: place } });
+  }
+
+  setErrands(on: boolean): void {
+    this.calls.push(`setErrands ${on}`);
+    if (this.view.master !== null) this.set({ master: { ...this.view.master, errands: on } });
+  }
+
+  setErrandsView(errands: ControllerErrandsView): void {
+    this.set({ phase: "playing", errands });
+  }
+
+  setErrandOptOut(on: boolean): void {
+    this.calls.push(`errandOptOut ${on}`);
+    if (this.view.errands) this.set({ errands: { ...this.view.errands, optOut: on } });
+  }
+
+  errandDone(): void {
+    this.calls.push("errandDone");
+    if (this.view.errands) this.set({ errands: { ...this.view.errands, doneTriedThisRound: true } });
+  }
+
+  errandAnswer(yes: boolean): void {
+    this.calls.push(`errandAnswer ${yes}`);
+    if (this.view.errands) this.set({ errands: { ...this.view.errands, ask: null } });
+  }
+
+  errandCaught(poltergeist: number, object: ErrandObject): void {
+    this.calls.push(`errandCaught ${poltergeist} ${object}`);
+    if (this.view.errands) this.set({ errands: { ...this.view.errands, caughtUsed: true } });
   }
 
   async leave(): Promise<void> {

@@ -9,6 +9,10 @@ import {
   type DoorReason, type DoorSetup, type DoorsState, type PublicDoor, type TvKnock,
 } from "./doors";
 import { endingPayload, type EndingPayload, type RecapEvent, type Source } from "./ending";
+import {
+  CAUGHT_BONUS_MS, DONE_ANSWER_MS, isExpired, mayCallCaught, mayTryDone, nextErrand, settleCaught, settleDone,
+  type Errand, type ErrandObject, type SeatInfo,
+} from "./errands";
 import { applyEvent, chooseOption, chooserFor, coldSpotIn, defaultOption, fireEvent, takeBlackout, type Haunt, type HauntOption } from "./haunt";
 import { buildPool, type Pool } from "./pool";
 import { inspectRefusal, placeResidue, settleInspect, startInspect, type Inspecting } from "./residue";
@@ -47,7 +51,7 @@ export type EngineSeat = Readonly<{ seat: number; nickname: string; bot: boolean
 export type EngineSettings = Readonly<{
   baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off"; sounds?: boolean; frames?: boolean;
   /** The Puzzle setting: off, or the starting level of the Locks (puzzles 1.4). */
-  puzzles?: PuzzleSetting; cluePlace?: CluePlace; preset?: SoloPreset; autoCross?: boolean;
+  puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; preset?: SoloPreset; autoCross?: boolean;
 }>;
 export const DISCONNECT_GRACE_MS = 20_000;
 export const MASTER_AWAY_MS = 60_000;
@@ -111,6 +115,18 @@ export type EngineState = Readonly<{
   tvKnock?: TvKnock | null;
   /** Seats that knocked back first and have a Help (10 s) coming at the start of their next Turn (knock-door 5.3). */
   helpOwed?: readonly number[];
+  /** Preferred Errand Object from a lobby photo prompt, used only for the first Errand of the game (errands 1.4). */
+  preferredErrand?: ErrandObject | null;
+  /** Human Players who opted out of being chosen as an Errand Target (errands 4.3). */
+  errandOptOut?: Readonly<Record<number, boolean>>;
+  /** All Errands given in this game; open ones are kept strictly out of the Public View (errands 1.1, 2.4, 4.4). */
+  errands?: readonly Errand[];
+  /** Private Yes/No prompt while waiting on a Target's answer to "Are you holding …?" (errands 2.1, 2.3). */
+  errandAsk?: Readonly<{ errandId: string; from: number; target: number; object: ErrandObject; untilMs: number }> | null;
+  /** Last Round each Detective called Caught (at most once per Round, errands 3.1). */
+  errandCaughtRound?: Readonly<Record<number, number>>;
+  /** Seats owed +10 Bonus Seconds on their next Turn from a right Caught call (errands 3.2). */
+  errandBonus?: readonly number[];
 }>;
 
 // ---------------------------------------------------------------- actions and messages
@@ -131,7 +147,7 @@ export type ClientMsg =
   | Readonly<{ t: "cue"; cue: string; place?: "tv" | "phone" }>
   | Readonly<{ t: "frame"; target: number; cue: string }>
   | Readonly<{ t: "sound"; consent: boolean; audio?: boolean }>
-  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
+  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
   | Readonly<{ t: "attempt"; lockId: string; transcript: unknown }>
   | Readonly<{ t: "giveUp"; lockId: string }>
   | Readonly<{ t: "sightAck"; sightId: string }>
@@ -142,7 +158,15 @@ export type ClientMsg =
   /** A Player knocks back at the TV after a Slam (knock-door 5.3). */
   | Readonly<{ t: "tvKnock"; times: readonly number[] }>
   /** A Detective's try at a knock door: the times of their knocks, in ms (knock-door 3.3). */
-  | Readonly<{ t: "doorKnock"; doorId: string; times: readonly number[] }>;
+  | Readonly<{ t: "doorKnock"; doorId: string; times: readonly number[] }>
+  /** A Player opts out of being an Errand Target (errands 4.3). */
+  | Readonly<{ t: "errandOptOut"; on: boolean }>
+  /** A Poltergeist taps Done on their open Errand (errands 2.1). */
+  | Readonly<{ t: "errandDone" }>
+  /** A Target answers the private "Are you holding a <object>?" prompt (errands 2.1). */
+  | Readonly<{ t: "errandAnswer"; yes: boolean }>
+  /** A Detective calls Caught against a Poltergeist and an Errand Object (errands 3.1). */
+  | Readonly<{ t: "errandCaught"; poltergeist: number; object: ErrandObject }>;
 export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> | Readonly<{ kind: "alarm" }> | Readonly<{ kind: "connect"; seat: number }> | Readonly<{ kind: "disconnect"; seat: number }>;
 
 export type PublicSnapshot = Readonly<{
@@ -175,6 +199,11 @@ export type PrivateSnapshot = Readonly<{
   soundConsent: boolean;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
   worldClues?: readonly PublicWorldClue[];
+  errandsOn?: boolean;
+  errand?: Errand;
+  errandAsk?: Readonly<{ errandId: string; object: ErrandObject; deadlineMs: number }>;
+  errandOptOut?: boolean;
+  errandCaughtUsed?: boolean;
 }>;
 export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> | Readonly<{ t: "door"; id: string; open: boolean; reason: DoorReason; need: number; have: number }>
   | Readonly<{ t: "tvKnock"; groups: readonly number[]; long: number | null; answeredBy: number | null }> }>
@@ -184,11 +213,15 @@ export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; vie
       | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }>
       | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null; sign?: Sign; prompt?: string; canSeeAgain?: boolean }>
       | Readonly<{ t: "lockResult"; lockId: string; outcome: "solved" | "wrong" | "failed"; attemptsLeft?: number; zone?: string; card?: string | null }>
-      | Readonly<{ t: "sight"; sightId: string; sight: Sight }> }>;
+      | Readonly<{ t: "sight"; sightId: string; sight: Sight }>
+      | Readonly<{ t: "errandDone"; object: ErrandObject }> }>;
 export type StepResult = Readonly<{ state: EngineState; out: readonly Outbound[]; wakeAtMs: number | null; refused?: string }>;
 
 // ---------------------------------------------------------------- creating a game
-export function createEngine(o: Readonly<{ seed: number; seats: readonly EngineSeat[]; settings: EngineSettings; presetIds: readonly string[]; pool?: Pool; doors?: DoorSetup | null }>): EngineState {
+export function createEngine(o: Readonly<{
+  seed: number; seats: readonly EngineSeat[]; settings: EngineSettings; presetIds: readonly string[];
+  pool?: Pool; doors?: DoorSetup | null; preferredErrand?: ErrandObject | null; errandOptOut?: Readonly<Record<number, boolean>>;
+}>): EngineState {
   const master = o.seats.find((s) => !s.bot)?.seat ?? (o.seats[0]?.seat as number);
   return {
     v: 1, seed: o.seed, phase: "lobby", settings: o.settings, seats: [...o.seats].sort((a, b) => a.seat - b.seat), masterSeat: master,
@@ -199,6 +232,8 @@ export function createEngine(o: Readonly<{ seed: number; seats: readonly EngineS
     pausedSinceMs: null, lastSpook: null, nudgeCounts: { haunting: 0, others: 0 }, eavesdrop: null,
     playing: [], masterAwaySinceMs: null, outbox: [], locks: initPartyLocks([]),
     doors: null, doorSetup: o.doors ?? null, doorProblems: [],
+    ...(o.preferredErrand ? { preferredErrand: o.preferredErrand } : {}),
+    ...(o.errandOptOut ? { errandOptOut: o.errandOptOut } : {}),
   };
 }
 
@@ -243,12 +278,18 @@ export function mindOf(s: EngineState, seat: number): Mind {
 function startTurn(s: EngineState, seat: number, now: number): EngineState {
   const { haunt, blackout } = takeBlackout(s.haunt);
   const bonus = bonusSeconds(earned(s.log as readonly ClockEvent[], seat));
-  const budget0 = turnBudget({ baseSeconds: s.settings.baseSeconds, bonusSeconds: bonus, blackout });
+  const caughtCount = (s.errandBonus ?? []).filter((x) => x === seat).length;
+  const budget0 = turnBudget({ baseSeconds: s.settings.baseSeconds, bonusSeconds: bonus + caughtCount * (CAUGHT_BONUS_MS / 1000), blackout });
   // a Player who knocked back first after a Slam has a Help coming: 10 s more on this Turn, never past the cap (knock-door 5.3)
   const helped = (s.helpOwed ?? []).includes(seat);
   const budget = budget0 === null || !helped ? budget0 : Math.min(NUDGE_CAP_MS / 1000, budget0 + NUDGE_MS / 1000);
   const turnNo = s.turnNo + 1;
-  const base: EngineState = { ...s, haunt, turnNo, ...(s.doors ? { doors: newTurnDoors(s.doors) } : {}), ...(helped ? { helpOwed: (s.helpOwed ?? []).filter((x) => x !== seat) } : {}) };
+  const base: EngineState = {
+    ...s, haunt, turnNo,
+    ...(s.doors ? { doors: newTurnDoors(s.doors) } : {}),
+    ...(helped ? { helpOwed: (s.helpOwed ?? []).filter((x) => x !== seat) } : {}),
+    ...(caughtCount > 0 ? { errandBonus: (s.errandBonus ?? []).filter((x) => x !== seat) } : {}),
+  };
   const [s2] = addLog(base, { kind: "turn-start", seat });
   const turn: TurnRec = {
     seat, turnNo, startedMs: now, clock: { startedMs: now, budgetMs: budget === null ? null : budget * 1000, pausedMs: 0, pausedSinceMs: null, ended: false },
@@ -355,6 +396,7 @@ function endTurn(s0: EngineState, now: number): EngineState {
   st = tickDoors(st);
   st = fireHaunt(st, now);
   st = { ...st, players: st.players.map((p) => ({ ...p, resolve: gainResolve(p.resolve), soundsThisRound: 0 })) };
+  st = assignErrands(st);
   const first = firstPlayer(order(st), st.first, st.seed);
   if (first === null) return finish({ ...st, houseWins: true }, now);
   return startTurn({ ...st, first }, first, now);
@@ -390,6 +432,42 @@ function tickDoors(s: EngineState): EngineState {
   return r.opened.length === 0 ? s : { ...s, doors: r.state, outbox: [...s.outbox, ...r.opened.map((id) => doorMsg(id, true, "timeout"))] };
 }
 
+function assignErrands(s: EngineState): EngineState {
+  if (!s.settings.errands || s.phase !== "playing") return s;
+  let list = (s.errands ?? []).map((e) => (isExpired(e, s.round) ? { ...e, status: "expired" as const } : e));
+  const seatInfo: SeatInfo[] = s.players.map((p) => ({
+    seat: p.seat, human: !isBot(s, p.seat), detective: !p.poltergeist, optedOut: Boolean(s.errandOptOut?.[p.seat]),
+  }));
+  for (const p of s.players) {
+    if (!p.poltergeist || isBot(s, p.seat)) continue;
+    if (list.some((e) => e.from === p.seat && e.status === "open")) continue;
+    const given = list.filter((e) => e.from === p.seat).length;
+    const preferred = list.length === 0 ? (s.preferredErrand ?? null) : null;
+    const next = nextErrand(s.seed, p.seat, given, seatInfo, list, s.round, preferred);
+    if (next) list = [...list, next];
+  }
+  const askValid = s.errandAsk && list.some((e) => e.id === s.errandAsk?.errandId && e.status === "open");
+  return { ...s, errands: list, ...(s.errandAsk && !askValid ? { errandAsk: null } : {}) };
+}
+
+function settleErrandAsk(s: EngineState, answer: "yes" | "no" | "timeout"): EngineState {
+  const ask = s.errandAsk;
+  if (!ask) return s;
+  const open = (s.errands ?? []).find((e) => e.id === ask.errandId);
+  if (!open) return { ...s, errandAsk: null };
+  const res = settleDone(open, answer, s.round);
+  const errands = (s.errands ?? []).map((e) => (e.id === res.errand.id ? res.errand : e));
+  let st: EngineState = { ...s, errands, errandAsk: null };
+  if (!res.scare) return st;
+  const [st2, eventId] = addLog(st, { kind: "errand-done", target: open.target, object: open.object });
+  const st3: EngineState = {
+    ...st2,
+    sources: [...st2.sources, { eventId, kind: "errand", from: open.from }],
+    outbox: [...st2.outbox, { to: "seat", seat: open.target, msg: { t: "errandDone", object: open.object } }],
+  };
+  return assignErrands(st3);
+}
+
 /** How many Players are seated: a door never asks for more than this (knock-door 4.2). */
 export const seatedHumans = (s: EngineState): number => s.seats.filter((x) => !x.bot).length;
 
@@ -399,8 +477,9 @@ function finish(s: EngineState, _now: number): EngineState {
     solution: deal.solution, residueAt: s.residueAt, winners: s.winners, houseWins: s.houseWins,
     players: s.players.map((p) => ({ seat: p.seat, nickname: s.seats.find((x) => x.seat === p.seat)?.nickname ?? "", bot: isBot(s, p.seat), poltergeist: p.poltergeist, suggestions: p.suggestions, turnMsUsed: p.turnMsUsed })),
     log: s.log.filter((e): e is RecapEvent => e.kind !== "visit" && e.kind !== "haunt-event"), sources: s.sources, bluffs: new Set(s.bluffs),
+    ...(s.errands && s.errands.length > 0 ? { errands: s.errands } : {}),
   });
-  return { ...s, phase: "ended", turn: null, ending };
+  return { ...s, phase: "ended", turn: null, errandAsk: null, ending };
 }
 
 /** Show a card to the suggester, privately, and open the 15 s window. */
@@ -450,10 +529,17 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       ...(msg.nudges !== undefined ? { nudges: msg.nudges } : {}), ...(msg.frames !== undefined ? { frames: msg.frames } : {}),
       ...(msg.sounds !== undefined ? { sounds: msg.sounds } : {}), ...(msg.puzzles !== undefined ? { puzzles: msg.puzzles } : {}),
       ...(timing && msg.cluePlace !== undefined ? { cluePlace: msg.cluePlace } : {}),
+      ...(msg.errands !== undefined ? { errands: msg.errands } : {}),
       ...(timing && msg.baseSeconds !== undefined ? { baseSeconds: msg.baseSeconds } : {}), ...(timing && msg.hauntMax !== undefined ? { hauntMax: msg.hauntMax } : {}),
     };
     const seatBots = row ? s.seats.map((x) => (x.bot ? { ...x, botLevel: row.botLevel } : x)) : s.seats;
-    return { ...s, settings: next, seats: seatBots, haunt: timing ? { ...s.haunt, max: next.hauntMax } : s.haunt };
+    const updated: EngineState = { ...s, settings: next, seats: seatBots, haunt: timing ? { ...s.haunt, max: next.hauntMax } : s.haunt };
+    return next.errands && updated.phase === "playing" ? assignErrands(updated) : updated;
+  }
+  if (msg.t === "errandOptOut") {
+    if (s.phase === "ended") return "game_over";
+    if (isBot(s, seat)) return s;
+    return { ...s, errandOptOut: { ...(s.errandOptOut ?? {}), [seat]: msg.on } };
   }
   if (s.phase !== "playing") return "game_over";
   if (msg.t === "pause") {
@@ -479,6 +565,37 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
   }
   if (msg.t === "sound") return setPlayer(s, seat, (p) => ({ ...p, soundConsent: msg.consent, hasAudio: msg.audio ?? p.hasAudio }));
   if (s.pausedSinceMs !== null) return "paused";
+  if (msg.t === "errandDone") {
+    const open = (s.errands ?? []).find((e) => e.from === seat && e.status === "open");
+    if (!open || isBot(s, seat)) return "no_errand";
+    if (!mayTryDone(open, s.round)) return "errand_already_tried";
+    if (s.errandAsk) return "errand_asking";
+    return { ...s, errandAsk: { errandId: open.id, from: open.from, target: open.target, object: open.object, untilMs: now + DONE_ANSWER_MS } };
+  }
+  if (msg.t === "errandAnswer") {
+    if (!s.errandAsk || s.errandAsk.target !== seat) return "not_asked";
+    return settleErrandAsk(s, msg.yes ? "yes" : "no");
+  }
+  if (msg.t === "errandCaught") {
+    if (!s.settings.errands) return "errands_off";
+    const me = player(s, seat) as PlayerRec;
+    if (me.poltergeist || isBot(s, seat)) return "not_a_detective";
+    if (!mayCallCaught(s.errandCaughtRound?.[seat] ?? null, s.round)) return "errand_caught_used";
+    const r = settleCaught(s.errands ?? [], seat, msg.poltergeist, msg.object);
+    const caughtRound = { ...(s.errandCaughtRound ?? {}), [seat]: s.round };
+    if (r.closed === null) return { ...s, errandCaughtRound: caughtRound };
+    const [st] = addLog(
+      {
+        ...s,
+        errands: r.errands,
+        errandCaughtRound: caughtRound,
+        errandBonus: [...(s.errandBonus ?? []), seat],
+        ...(s.errandAsk?.errandId === r.closed.id ? { errandAsk: null } : {}),
+      },
+      { kind: "errand-caught", seat },
+    );
+    return assignErrands(st);
+  }
   if (msg.t === "doorAct") return doorAct(s, seat, msg.doorId, now);
   if (msg.t === "tvKnock") return tvKnockBack(s, seat, msg.times);
   if (msg.t === "cue") {
@@ -713,6 +830,7 @@ function resumeAll(s: EngineState, now: number): EngineState {
     ...s, pausedSinceMs: null, turn, locks: freezeFor(s.locks, d),
     haunt: p === null ? s.haunt : { ...s.haunt, pending: { ...p, deadlineMs: p.deadlineMs + d } },
     eavesdrop: s.eavesdrop === null ? null : { ...s.eavesdrop, untilMs: s.eavesdrop.untilMs + d },
+    ...(s.errandAsk ? { errandAsk: { ...s.errandAsk, untilMs: s.errandAsk.untilMs + d } } : {}),
   };
 }
 
@@ -729,6 +847,7 @@ function onAlarm(s: EngineState, now: number): EngineState {
 /** Everything that is due at `now`, one thing at a time. */
 function tick(s: EngineState, now: number): EngineState {
   if (s.pausedSinceMs !== null) return s;
+  if (s.errandAsk && now >= s.errandAsk.untilMs) return settleErrandAsk(s, "timeout");
   const p = s.haunt.pending;
   if (p !== null && p.chooser !== null && now >= p.deadlineMs) return applyChosen(s, defaultOption(p), now);
   if (s.masterAwaySinceMs !== null && now - s.masterAwaySinceMs >= MASTER_AWAY_MS) {
@@ -825,6 +944,7 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
   if (!p || s.deal === null) return null;
   const t = s.turn;
   const pend = s.haunt.pending;
+  const openErrand = (s.errands ?? []).find((e) => e.from === seat && e.status === "open") ?? null;
   return {
     seat, hand: (s.deal.hands[seat] ?? []).map((c) => ({ ...c })), shownToMe: p.shownToMe.map((x) => ({ ...x })), found: [...p.found], resolve: p.resolve, sealed: p.sealed,
     answer: t?.answering && t.answering.refuter === seat ? { eventId: t.answering.eventId, options: [...t.answering.held], deadlineMs: t.answering.untilMs } : null,
@@ -833,6 +953,11 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
     soundConsent: p.soundConsent,
     canEavesdrop: s.eavesdrop !== null && s.eavesdrop.suggester !== seat && s.eavesdrop.refuter !== seat && !p.poltergeist && p.resolve >= 1 && !p.heard.some((h) => h.eventId === s.eavesdrop?.eventId) ? s.eavesdrop.eventId : null,
     ...((s.settings.cluePlace ?? "phone") === "world" ? { worldClues: worldClueNotebook(s.locks, String(seat)) } : {}),
+    ...(s.settings.errands ? { errandsOn: true as const } : {}),
+    ...(openErrand ? { errand: openErrand } : {}),
+    ...(s.errandAsk && s.errandAsk.target === seat ? { errandAsk: { errandId: s.errandAsk.errandId, object: s.errandAsk.object, deadlineMs: s.errandAsk.untilMs } } : {}),
+    ...(s.errandOptOut?.[seat] ? { errandOptOut: true as const } : {}),
+    ...((s.errandCaughtRound?.[seat] ?? null) === s.round ? { errandCaughtUsed: true as const } : {}),
   };
 }
 
@@ -843,6 +968,7 @@ function wakeOf(s: EngineState, now: number): number | null {
     turn: t?.clock ?? null,
     inspectUntilMs: Math.min(t?.inspecting?.untilMs ?? Infinity, ...Object.values(s.locks.open).flatMap((o) => (o ? [o.openedAt + capFor(s.settings.preset ?? "classic")] : []))) === Infinity ? null
       : Math.min(t?.inspecting?.untilMs ?? Infinity, ...Object.values(s.locks.open).flatMap((o) => (o ? [o.openedAt + capFor(s.settings.preset ?? "classic")] : []))), answeringUntilMs: t?.answering?.untilMs ?? null,
+    errandAskUntilMs: s.errandAsk?.untilMs ?? null,
     windowUntilMs: t?.windowUntilMs ?? null, hauntChoiceMs: s.haunt.pending?.chooser != null ? s.haunt.pending.deadlineMs : null,
     botThinkUntilMs: t === null || t.inspecting !== null || t.answering !== null ? null : t.botDueMs, // a Bot waits for its Inspect or an answer
     disconnectEndsMs: t?.disconnectEndsMs ?? null,

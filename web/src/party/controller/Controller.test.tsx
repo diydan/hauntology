@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEVICE_SETTINGS_KEY } from "../../device/device-settings";
+import { ERRAND_RULE_LINE } from "@hauntology/shared/party/errands";
 import { stubCanvas, stubGeometry } from "../../puzzles/test-utils";
 import { Controller } from "./Controller";
 import { StandInPort, STANDIN_CODES } from "./standin-port";
@@ -354,5 +355,104 @@ describe("World Clues UI and shared look (Group 5)", () => {
     expect(within(nbOn).getByText("Bell")).toBeTruthy();
     expect(within(nbOn).getByText("Hall")).toBeTruthy();
     expect(within(nbOn).getByText("3:15")).toBeTruthy();
+  });
+});
+
+describe("Errands Controller UI and Shared look (errands Groups 3 & 4)", () => {
+  it("gives Master an Errands switch in MenuSheet (off by default) and any Player an opt-out checkbox", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    const errSwitch = sw(/^Errands/);
+    expect(errSwitch.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(errSwitch);
+    expect(port.calls).toContain("setErrands true");
+    expect(sw(/^Errands/).getAttribute("aria-checked")).toBe("true");
+
+    const optOut = screen.getByRole("checkbox", { name: "Do not pick me for errands" });
+    expect(optOut.className).toContain("ui-check");
+    fireEvent.click(optOut);
+    expect(port.calls).toContain("errandOptOut true");
+    cleanup();
+
+    const guest = new StandInPort({ master: false });
+    render(<Controller port={guest} />);
+    await seat(guest);
+    openMenu();
+    expect(screen.queryByRole("switch", { name: /^Errands/ })).toBeNull();
+    expect(screen.getByRole("checkbox", { name: "Do not pick me for errands" })).toBeTruthy();
+  });
+
+  it("shows Poltergeist's ui-card Errand card with Done button and safety line in ui-hint", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    act(() => port.setErrandsView({
+      on: true,
+      optOut: false,
+      poltergeist: true,
+      errand: { id: "1:0", from: 1, target: 2, object: "mug", givenRound: 1, doneTriedRound: null, status: "open" },
+      doneTriedThisRound: false,
+      ask: null,
+      poltergeists: [{ seat: 1, nickname: "Ann" }],
+      caughtUsed: false,
+      seatName: (s) => (s === 2 ? "Bob" : `P${s}`),
+    }));
+    const card = screen.getByRole("region", { name: "Errand" });
+    expect(card.className).toContain("ui-card");
+    expect(card.querySelector(".ui-hint")?.textContent).toBe(ERRAND_RULE_LINE);
+    expect(within(card).getByText(/Bob/)).toBeTruthy();
+    expect(within(card).getByText(/mug/)).toBeTruthy();
+    const doneBtn = within(card).getByRole("button", { name: "Done" });
+    expect(doneBtn.className).toContain("ui-button");
+    fireEvent.click(doneBtn);
+    expect(port.calls).toContain("errandDone");
+    expect(doneBtn.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("shows Detective's Caught picker with two ui-selects and one ui-button--primary, and Target Yes/No prompt", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    act(() => port.setErrandsView({
+      on: true,
+      optOut: false,
+      poltergeist: false,
+      errand: null,
+      doneTriedThisRound: false,
+      ask: null,
+      poltergeists: [{ seat: 2, nickname: "Bob" }],
+      caughtUsed: false,
+      seatName: (s) => `P${s}`,
+    }));
+    const caught = screen.getByRole("region", { name: "Call caught" });
+    const poltSel = within(caught).getByLabelText("Poltergeist") as HTMLSelectElement;
+    const objSel = within(caught).getByLabelText("Object") as HTMLSelectElement;
+    expect(poltSel.className).toContain("ui-select");
+    expect(objSel.className).toContain("ui-select");
+    expect(document.querySelectorAll(".ui-button--primary").length).toBe(1);
+
+    fireEvent.change(objSel, { target: { value: "spoon" } });
+    fireEvent.click(within(caught).getByRole("button", { name: "Caught" }));
+    expect(port.calls).toContain("errandCaught 2 spoon");
+
+    // Target Yes/No prompt keeps at most one primary button on screen
+    act(() => port.setErrandsView({
+      on: true,
+      optOut: false,
+      poltergeist: false,
+      errand: null,
+      doneTriedThisRound: false,
+      ask: { errandId: "2:0", object: "spoon", deadlineMs: 25_000 },
+      poltergeists: [{ seat: 2, nickname: "Bob" }],
+      caughtUsed: false,
+      seatName: (s) => `P${s}`,
+    }));
+    const ask = screen.getByRole("region", { name: "Errand check" });
+    expect(ask.textContent).toContain("Are you holding a spoon right now?");
+    expect(document.querySelectorAll(".ui-button--primary").length).toBeLessThanOrEqual(1);
+    fireEvent.click(within(ask).getByRole("button", { name: "Yes" }));
+    expect(port.calls).toContain("errandAnswer true");
   });
 });

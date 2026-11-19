@@ -1,4 +1,5 @@
 import type { PublicSnapshot } from "@hauntology/shared/party/engine";
+import { recapLine } from "@hauntology/shared/party/errands";
 import { STOCK_SONGS } from "@hauntology/shared/songs/stock";
 import { useEffect, useRef, useState } from "react";
 import { ThemeSong } from "../ThemeSong";
@@ -123,6 +124,15 @@ export function Ending({
           <button type="button" className="ui-button ui-button--quiet" onClick={() => setShown(lines.length)}>Skip to the end</button>
         ) : null}
       </section>
+
+      {e.recap.errands && e.recap.errands.length > 0 ? (
+        <section aria-label="Haunting errands">
+          <h3 className="ui-heading">Haunting errands</h3>
+          <ul className="ui-facts">
+            {e.recap.errands.map((er) => <li key={er.id}>{recapLine(er, n.seat)}.</li>)}
+          </ul>
+        </section>
+      ) : null}
     </section>
   );
 }

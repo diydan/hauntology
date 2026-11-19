@@ -1,4 +1,5 @@
 import type { EngineEvent, PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/engine";
+import { caughtLogLine, doneLogLine } from "@hauntology/shared/party/errands";
 
 /**
  * Plain words for the solo table (integration 4.2): names for seats and cards, one log line per public event, and the
@@ -32,6 +33,8 @@ export function eventLine(e: EngineEvent, n: Names): string | null {
     case "haunt-event": return `The house stirs: ${e.option.replace("-", " ")}.`;
     case "eavesdrop": return `${n.seat(e.seat)} listened in.`;
     case "nudge": return `${n.seat(e.seat)} nudged ${n.seat(e.target)}.`;
+    case "errand-done": return doneLogLine(n.seat(e.target), e.object);
+    case "errand-caught": return caughtLogLine(n.seat(e.seat));
     default: return null;
   }
 }

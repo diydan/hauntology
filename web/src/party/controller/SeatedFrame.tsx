@@ -2,6 +2,7 @@ import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { PuzzleSettings, type DeviceSettingsControl } from "../../puzzles/PuzzleSettings";
 import { usePuzzleDevice } from "../../puzzles/usePuzzleDevice";
 import type { Connection, ControllerPort, RoomPhase, RoomView } from "./controller-port";
+import { ErrandOptOut, ErrandsPanel } from "./ErrandsControls";
 import { LockArea } from "./LockArea";
 import { MenuSheet } from "./MenuSheet";
 import { Slot } from "./Slot";
@@ -92,6 +93,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
               <Slot name="contributions" label="Contributions" />
             </section>
           )}
+          {view.phase === "playing" && view.errands ? <ErrandsPanel errands={view.errands} port={port} /> : null}
         </main>
       )}
 
@@ -111,6 +113,21 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
                     <button type="button" role="radio" aria-checked={view.master.cluePlace === "world"} className="ui-button" onClick={() => port.setCluePlace?.("world")}>World</button>
                   </div>
                 </div>
+              ) : null}
+              {view.master && port.setErrands ? (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={Boolean(view.master.errands)}
+                  className="ui-button ui-switch"
+                  onClick={() => port.setErrands?.(!view.master?.errands)}
+                >
+                  <span className="ui-switch-name">Errands</span>
+                  <span className="ui-switch-state">{view.master.errands ? "On" : "Off"}</span>
+                </button>
+              ) : null}
+              {port.setErrandOptOut ? (
+                <ErrandOptOut checked={Boolean(view.errands?.optOut)} onChange={(on) => port.setErrandOptOut?.(on)} />
               ) : null}
               <button type="button" className="ui-button ui-button--danger ui-button--block" onClick={() => void port.leave()}>Leave room</button>
             </div>
