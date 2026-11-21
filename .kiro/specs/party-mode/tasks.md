@@ -470,15 +470,18 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 3.3_
   - [ ] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement, and a Llama Guard 3 check through the guarded WorkersAiClient (`llm` meter, charged to the Room budget), failing closed with `moderation_unavailable`
     - _Requirements: 3.1, 10.3_
-  - [ ] 5.4 Room budget wiring: Room-scoped caps through SpendGuard on top of global caps
+  - [x] 5.4 Room budget wiring: Room-scoped caps through SpendGuard on top of global caps
+    - **Built 2026-11-21** (`api/src/party/budget.ts`): `RoomBudget implements SpendGuard` with the Room as the scope. A unit comes from the Room's caps (12 images, 60 model calls, `shared/src/party/spend.ts`) before the guard is asked, a Room refusal never reaches the guard, a global refusal takes nothing from the Room, and a released unit comes back. Handing it to `createCreator` or the narrator charges them to the Room. Tested over a fake guard (`budget.test.ts`). Wiring it into the Room's Durable Object storage is 4.x.
     - _Requirements: 10.1_
   - [ ] 5.5 Selfie ghost service (optional): `POST /api/party/:code/contribute/selfie` checks the `selfies` switch and the seat's yes, runs `selfieQuality` and the vision verdict (fail closed), calls the guarded `editPortrait` wrapper (`google/nano-banana-2.1`, selfie plus a narrator style reference, a fixed prompt with no Player text), cuts out the Sprite with the 8% to 85% alpha rule and one retry, holds the selfie only inside `withTransientSelfie`, charges the Room's image budget, and falls back to a Preset Ghost on any failure
     - _Requirements: 3.10, 3.12, 3.13, 10.1_
 
 - [ ] 6. Party narrator
-  - [ ] 6.1 `narratePartyEvent`: one guarded model call per public event at most, validate with `validateGhostReply`, scripted fallback on cap, kill switch or failure
+  - [x] 6.1 `narratePartyEvent`: one guarded model call per public event at most, validate with `validateGhostReply`, scripted fallback on cap, kill switch or failure
+    - **Built 2026-11-21** (`api/src/party/narrate.ts`): `narratePartyEvent` makes at most one guarded call per event id, validates with `validateGhostReply` (no digits, 40-word cap, rules never read back, a reply cut by the token cap is refused), and falls back to `partyScripted` on the cap, the kill switch, a missing narrator, a refusal, a failure or an invalid reply. Tested over a fake narrator and a fake guard, no paid call (`narrate.test.ts`).
     - _Requirements: 10.2_
-  - [ ] 6.2 Prompt assembly from the Public View only, with contributed text inside delimited data blocks
+  - [x] 6.2 Prompt assembly from the Public View only, with contributed text inside delimited data blocks
+    - **Built 2026-11-21** (`shared/src/party/narrate-prompt.ts`): `buildPartyNarration(view, kind, speaker)` takes a Public View only, puts every nickname and Zone name inside `<data>` blocks (cleaned, cut to 16 and 40 characters, no angle brackets), names cards in words, and is never built for the Lodger or the scripted-only kinds. The manner is the shared horror-told-calmly text.
     - _Requirements: 4.3, 10.3_
 
 - [ ] 7. Routes
