@@ -10,6 +10,7 @@ import { Pad } from "./Pad";
 import { PhoneEffects } from "./PhoneEffects";
 import { AnswerPrompt, HauntChoice, RattlePrompt } from "./Prompts";
 import { Recap } from "./Recap";
+import { SpiritLens } from "./SpiritLens";
 import { TableControls } from "./TableControls";
 import { turnOf } from "./play-logic";
 import { useNow } from "./useNow";
@@ -74,6 +75,7 @@ export function PlayPanel({ port, view, layout, now = Date.now, storage, soundDe
           )}
           {layout === "panel" && peek && !turn.poltergeist && view.code !== null ? <Notebook game={game} me={me} code={view.code} autoCross={autoCross} storage={storage} /> : null}
           <TableControls game={game} me={me} send={send} offersNudges={!solo} offersFrames={!solo} />
+          {layout === "panel" && !solo && !embedded && !turn.poltergeist ? <SpiritLens game={game} me={me} sensors={sensors} reducedMotion={soundDeps.reducedMotion} /> : null}
         </>
       )}
       {game.log.length > 0 ? (

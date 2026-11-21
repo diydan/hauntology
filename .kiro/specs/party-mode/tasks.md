@@ -613,9 +613,9 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x] 9.16 Cue, Nudge and Frame controls in the menu: the Cue picker with TV or this phone, Help and Spook with their Resolve cost, the Frame picker (a Player and a Cue), 48 px targets, and the reason in words whenever one is unavailable
     - **Built 2026-11-21** (`play/TableControls.tsx`): the Cue picker with the screen or this phone, Help and Spook with their cost, the Frame picker (another human and a Cue), 48 px targets, and the Room's refusal reason in words; not offered to a solo Player.
     - _Requirements: 13.1, 14.2, 14.4_
-  - [ ] 9.17 Spirit lens: off by default, a calibration tap, motion permission from a tap, a fixed view without sensors, simple sprites at 30 fps at most, paused face down or hidden, a re-tap to calibrate again
-    - **Not built.** `lensData` takes the older `PrivateView` and `PublicView` types, not the Engine's snapshots the phone now receives, so the lens needs an adapter first, and its gyro drift and frame rate can only be judged on a real phone (Spike 1.7).
-    - _Requirements: 16.1, 16.2, 16.3, 16.4_
+  - [x] 9.17 Spirit lens: off by default, a calibration tap, motion permission from a tap, a fixed view without sensors, simple sprites at 30 fps at most, paused face down or hidden, a re-tap to calibrate again
+    - **Built 2026-11-21** (`web/src/party/controller/play/SpiritLens.tsx`, `phone/sensors.ts`, `lens.test.tsx`): off by default; a tap turns it on and asks for motion from that tap; it draws simple sprites for what this Player already knows (`lensData` from the Engine views: Hand, shown cards, found Residue, their own inspected Zones, the latest ripples), at 30 frames a second at most (a quarter under reduced motion), a fixed view without sensors, paused face down or hidden, and a tap on the picture lines it up again; no camera and no markers; not offered in a solo case. Gyro drift and battery on real phones (Spike 1.7) are blocked.
+      - _Requirements: 16.1, 16.2, 16.3, 16.4_
   - [x] 9.18 Light bar on the phone: the consent in the join question, light cues played at their scheduled start within the limits, nothing under reduced motion
     - **Built 2026-11-21** (`play/PlayerSettings.tsx`, `play/PhoneEffects.tsx`, `play/phone-sound.ts`): the light bar has its own yes (sent with the reduced-motion preference), plays the Room's grey steps at their start on the Room's clock, never above 0.9, and is dark under reduced motion. OLED and LCD checks are blocked.
     - _Requirements: 17.1, 17.3_

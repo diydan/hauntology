@@ -61,3 +61,20 @@ export function useGyroAim(on: boolean, onAim: (dx: number, dy: number) => void,
     return () => target.removeEventListener("deviceorientation", h);
   }, [on, target]);
 }
+
+/** The phone's angles for the Spirit lens (party-mode 9.17): the newest reading in a ref, so the lens can draw on its own timer without a render for each one. */
+export type Angles = { alpha: number; beta: number; gamma: number };
+export function useDeviceAngles(on: boolean, target: Target = window): { current: Angles | null } {
+  const ref = useRef<Angles | null>(null);
+  useEffect(() => {
+    if (!on) { ref.current = null; return; }
+    const h = (e: Event): void => {
+      const o = e as unknown as { alpha?: number | null; beta?: number | null; gamma?: number | null };
+      if (typeof o.beta !== "number" || typeof o.gamma !== "number") return;
+      ref.current = { alpha: typeof o.alpha === "number" ? o.alpha : 0, beta: o.beta, gamma: o.gamma };
+    };
+    target.addEventListener("deviceorientation", h);
+    return () => target.removeEventListener("deviceorientation", h);
+  }, [on, target]);
+  return ref;
+}
