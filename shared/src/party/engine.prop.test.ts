@@ -161,3 +161,39 @@ describe("Property 3: One alarm is enough", () => {
     }), { numRuns: 40 });
   });
 });
+
+// Integration 2.6: ten thousand all-Bot games end, with no leak and no stuck alarm. Opt-in (slow): HAUNT_CHECKPOINT_10K=1.
+describe.skipIf(process.env.HAUNT_CHECKPOINT_10K !== "1")("Engine checkpoint: ten thousand all-Bot games (integration 2.6)", () => {
+  it("every game ends, no public message leaks a secret, and the alarm is never stuck", () => {
+    const maxes = [8, 10, 12] as const;
+    let leaks = 0;
+    let stuck = 0;
+    let unended = 0;
+    for (let seed = 1; seed <= 10_000; seed++) {
+      const n = 2 + (seed % 5);
+      const max = maxes[seed % 3] as 8 | 10 | 12;
+      let s = createEngine({ seed, seats: botSeats(n, false), settings: { baseSeconds: 60, hauntMax: max }, presetIds: PRESETS });
+      let now = 1_000;
+      const check = (res: StepResult): void => {
+        for (const o of res.out) {
+          if (o.to !== "public" || o.msg.t !== "public") continue;
+          const v = o.msg.view;
+          if (v.phase === "ended") continue;
+          const text = JSON.stringify(v);
+          if (/"(hand|shownToMe|found|residueAt|shown|held|botFacts|bluffs|shownLog|heard)"|"sealed":\{/.test(text) || v.ending !== null || text.includes("solution")) leaks++;
+        }
+        s = res.state;
+        if (res.state.phase === "playing" && res.wakeAtMs === null) stuck++;
+      };
+      const first = step(s, { kind: "client", seat: 1, msg: { t: "start" } }, now);
+      check(first);
+      for (let i = 0; i < 6000 && s.phase === "playing"; i++) {
+        const wake = step(s, { kind: "alarm" }, now).wakeAtMs;
+        now = Math.max(now + 1, wake ?? now + 1000);
+        check(step(s, { kind: "alarm" }, now));
+      }
+      if (s.phase !== "ended") unended++;
+    }
+    expect({ leaks, stuck, unended }).toEqual({ leaks: 0, stuck: 0, unended: 0 });
+  }, 3_600_000);
+});
