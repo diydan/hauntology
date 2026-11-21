@@ -40,7 +40,7 @@ function useLandscape(): boolean {
  * the game. The settings come in as a `DeviceSettingsControl` and are kept by `useDeviceSettings` in the caller, so they outlive the page.
  */
 export function SeatedFrame({ port, view, control }: { port: ControllerPort; view: RoomView; control: DeviceSettingsControl }): ReactNode {
-  const device = usePuzzleDevice(control);
+  const device = usePuzzleDevice(control, undefined, { soundAllowed: view.soundConsent !== false });
   const landscape = useLandscape();
   const [chosen, setChosen] = useState<Layout | null>(null);
   const layout: Layout = chosen ?? (landscape ? "pad" : "panel");
@@ -105,7 +105,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
             <div className="ui-stack">
               <PuzzleSettings
                 {...(view.master ? { master: { value: view.master.puzzles, preset: view.master.preset, onChange: (s) => port.setPuzzles(s) } } : {})}
-                device={device.device} onDevice={device.changeDevice} tiltState={device.tilt} canVibrate={device.canVibrate}
+                device={device.device} onDevice={(next) => { if (next.soundConsent !== device.device.soundConsent) port.setSound?.(next.soundConsent); if (next.assist !== device.device.assist) port.setAssist?.(next.assist); device.changeDevice(next); }} tiltState={device.tilt} canVibrate={device.canVibrate}
               />
               {view.master && port.setCluePlace ? (
                 <div className="ui-stack--tight" role="radiogroup" aria-label="Clue place">

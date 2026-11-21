@@ -22,7 +22,7 @@ const clamp = (v: number, lo: number, hi: number): number => Math.min(hi, Math.m
  * It is drawn as the object it is (../art/spirit-board.ts): a wooden talking board, painted once into a layer, and a planchette with a
  * glass lens that magnifies the letter under it, drawn each frame.
  */
-export default function Board({ view, feel, submit, announce, resetKey, hear, tiltButtons }: KindProps<"board">) {
+export default function Board({ view, feel, assist, submit, announce, resetKey, hear, tiltButtons, assistText }: KindProps<"board">) {
   const [spelled, setSpelled] = useState<string[]>([]);
   const [heard, setHeard] = useState(0);
   const [under, setUnder] = useState<string | null>(null);
@@ -217,6 +217,7 @@ export default function Board({ view, feel, submit, announce, resetKey, hear, ti
   return (
     <div className="pz-board-kind">
       <p className="pz-hint pz-clue-line">Clue: {view.clue}<span className="pz-n"> · {view.length} letters</span></p>
+      {assist && assistText ? <p className="pz-readout pz-board-text">The whisper says: {assistText}</p> : null}
       <canvas
         ref={canvas} className="pz-canvas pz-spirit pz-visual" width={BOARD_W * Math.min(2, window.devicePixelRatio || 1)} height={BOARD_H * Math.min(2, window.devicePixelRatio || 1)}
         role="application" tabIndex={0} aria-label="Spirit board. Arrow keys jump between letters. Enter picks the letter."

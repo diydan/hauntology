@@ -5,6 +5,8 @@ import { browserScheduler, type Scheduler } from "./haunt/controller";
 import { loadTurnstileScript, type LoadTurnstile } from "./confirm/turnstile";
 import { defaultLoadCreator, type LoadCreator } from "./haunt/creator";
 import { defaultLoadViewer, type LoadViewer } from "./viewer/types";
+import { createBrowserFeel } from "../puzzles/feel/create";
+import type { FeelSettings, PuzzleFeel } from "../puzzles/feel/types";
 import { browserAudio, browserRecorderFactory, browserUnlock, type RecorderFactory, type VoiceDeps } from "./play/voice";
 
 /**
@@ -29,6 +31,8 @@ export type PlatformKit = {
   photo: PhotoKit;
   /** Paints the Sketch Pad's strokes on a canvas (Create). */
   surface: SurfaceFactory;
+  /** The puzzle feel layer (tilt, buzz, sound, breath), made for one screen; `settings` is read each time so the device switches act at once. */
+  puzzleFeel: (settings: () => FeelSettings) => PuzzleFeel;
   voice: {
     recorder: RecorderFactory | null;
     createAudio: NonNullable<VoiceDeps["createAudio"]>;
@@ -87,6 +91,7 @@ export function defaultPlatform(): PlatformKit {
     loadTurnstile: () => loadTurnstileScript(),
     photo: browserPhotoKit,
     surface: canvasSurface,
+    puzzleFeel: (settings) => createBrowserFeel(settings),
     voice: { recorder: browserRecorderFactory(), createAudio: browserAudio, unlockAudio: browserUnlock },
     saveFile: browserSaveFile,
     origin: () => location.origin,

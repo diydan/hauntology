@@ -18,6 +18,7 @@ export function LockArea({ port, offer, device, barExtra }: { port: ControllerPo
         clue={offer.sign !== undefined ? (offer.canSeeAgain ? offer.clue : null) : offer.clue}
         {...(offer.sign !== undefined ? { sign: offer.sign } : {})}
         {...(offer.prompt !== undefined ? { prompt: offer.prompt } : {})}
+        {...(offer.assistText !== undefined ? { assistText: offer.assistText } : {})}
         capMs={offer.capMs} attempts={offer.attempts}
         feel={device.feel} assist={device.device.assist} reducedMotion={reduced}
         onAttempt={(t) => port.attempt(offer.id, t)}

@@ -8,6 +8,7 @@ hauntology/
   .kiro/               specs, steering, hooks, settings/mcp.json (all committed)
   shared/src/          pure logic + zod schemas + fixtures loaders. No I/O. Property tests live here.
     party/             Party Mode rules: rooms, deal, turns, suggestions, bots, views, nudges, cues, light, rattle, stitch
+    puzzles/           the Kinds and their rules: `make`, `verify`, `place`, `inspect` (a Lock on Inspect), `haunting`, `wander`, `level`, `charge`, `settings`, and the feel maths (`motion`, `tilt-ball`, `haptics`, `sound`, `dim`, `blow`). Pure; a Lock is made from a seed and the answer never leaves the Room
     conditions/        the real world: place, weather class, time of day, moon, Memory Day, stars (pure)
     voice/             the ghost's voice: speakable lines, speaking policy, Word Bank and Stitch templates, budgets (pure)
     print/             STL writer, mesh checks, QR plates, pyramid geometry
@@ -26,6 +27,7 @@ hauntology/
     sketch/ viewer/ ghost/ creator/   feature folders
     party/             host/ controller/ display/ (three pages of Party Mode)
                        controller/ is built as a shell so far: join page, seated frame, menu, Lock; the Room is behind controller-port.ts; the phone's settings come from device/
+    puzzles/           the phone screens: `PuzzleHost` (the frame), `kinds/` (one screen per Kind), `art/` (the drawn objects), `feel/` (tilt, buzz, sound and breath behind interfaces with fakes), `PuzzleSettings`, `SightCard`, `SightsPage`; stores nothing of its own
     device/            what a phone remembers about its Player (the puzzle settings, in localStorage): the Controller's side; the puzzle screens in puzzles/ store nothing
   print/               optional 3D-print kit: scad/ (relics, pyramid holder), generated STL, README
   design/              the design system: tokens.json (every value, written once), elements.css (the reusable ui- elements), fonts.css and fonts/ (self-hosted), catalogue.html (every element on one page; open /design/ in `pnpm voice-demo`). See steering/design-system.md
