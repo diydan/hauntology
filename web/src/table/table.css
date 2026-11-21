@@ -15,7 +15,7 @@
 .st-card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .st-card-text { margin: 0; }
 .st-close { min-height: 48px; min-width: 48px; }
-.st-arrow { position: absolute; left: 50%; top: 50%; display: grid; justify-items: center; gap: 0; pointer-events: none; transform: translate(calc(var(--st-dx) * 42cqw - 50%), calc(var(--st-dy) * 42cqh - 50%)); color: var(--accent); }
+.st-arrow { --st-dx: 0; --st-dy: 0; --st-angle: 0rad; position: absolute; left: 50%; top: 50%; display: grid; justify-items: center; gap: 0; pointer-events: none; transform: translate(calc(var(--st-dx) * 42cqw - 50%), calc(var(--st-dy) * 42cqh - 50%)); color: var(--accent); }
 .st-arrow-head { display: inline-block; transform: rotate(var(--st-angle)); }
 .st-arrow-label { font-size: var(--text-small); }
 .st-list { display: grid; gap: var(--space-3); }
