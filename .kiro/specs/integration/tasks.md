@@ -66,9 +66,9 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 1.2_
 
 - [ ] 6. Phase 6: Wander puzzles
-  - [ ] 6.1 `PlaySession` Locks before memories with Skip, clues after earlier memories (puzzles 4)
+  - [x] 6.1 (Built by puzzles group 4: `gateReveal` and `skipAvailable` in `shared/src/puzzles/wander.ts` (Skip after 20 s or two wrong Attempts; the first Lock is a Kind with no Sight, later Locks get the Sight of an earlier memory), the routes `POST /api/play/lock/open`, `/attempt`, `/skip` in `api/src/routes/play.ts`, the Wander screen in `web/src/app/screens/Play.tsx`; tests `shared/src/puzzles/wander.prop.test.ts` and `api/src/routes/play.wander-locks.test.ts`) `PlaySession` Locks before memories with Skip, clues after earlier memories (puzzles 4)
     - _Requirements: 6.1_
-  - [ ] 6.2 Wander with puzzles off is unchanged and makes no new paid call
+  - [x] 6.2 (Off is the identity: `gateReveal` returns the same state (`wander.prop.test.ts`), and `PUZZLES_ENABLED=false` answers `puzzle_disabled` (`play.wander-locks.test.ts`); no new paid call: `api/src/routes/play.wander-locks-spend.test.ts` counts the narrator's calls, 0 for the turn that opens a Lock, a wrong Attempt and a reload, and exactly 1 for the reveal by Skip, the same 1 as a Wander without puzzles) Wander with puzzles off is unchanged and makes no new paid call
     - _Requirements: 6.2_
 
 - [ ] 7. Phase 7: the Optional layers
