@@ -199,6 +199,32 @@
     </div>
   </section>
 
+  <section class="ui-stack ui-stack--tight" aria-labelledby="ft-l">
+    <h2 id="ft-l" class="ui-eyebrow">12 · A clue written on the scene (a stand-in Place: the plate on the door of the hand shot)</h2>
+    <div class="ft-tv">
+      <div class="ft-film ft-sclue" aria-hidden="true">
+        <video class="ft-video" id="ft-sc-video" muted playsinline preload="metadata" poster="media/ai-hand-door-take2.jpg"><source src="media/ai-hand-door-take2.webm" type="video/webm"><source src="media/ai-hand-door-take2.mp4" type="video/mp4"></video>
+        <canvas id="ft-sc-canvas" class="ft-sc-canvas" width="1" height="1"></canvas>
+        <div id="ft-sc-film" class="ft-sc-film"></div>
+      </div>
+      <section class="ui-panel ui-stack ui-stack--tight" aria-label="The clue">
+        <div class="ui-segments" role="radiogroup" aria-label="Kind of answer">
+          <button class="ui-button" type="button" role="radio" aria-checked="true" data-clue="moon">A code</button>
+          <button class="ui-button" type="button" role="radio" aria-checked="false" data-clue="key">A time</button>
+          <button class="ui-button" type="button" role="radio" aria-checked="false" data-clue="eye">A knock</button>
+        </div>
+        <p class="ui-hint">The clue is written by the page, over the film, on a blank plate: fitted to its four corners, blended into it, with one grain layer over both. The clip itself is blank at the plate. With footage off, or on a shot with no Place, the words below carry it.</p>
+        <p id="ft-sc-panel" class="ui-lead" hidden></p>
+        <p id="ft-sc-live" class="ui-hint" role="status"></p>
+        <ul id="ft-sc-list" class="ui-stack ui-stack--tight" aria-label="Clue list"></ul>
+        <div class="ui-row">
+          <button id="ft-sc-show" class="ui-button ui-button--primary" type="button">Show the clue</button>
+          <button id="ft-sc-other" class="ui-button" type="button">A shot with no Place</button>
+        </div>
+      </section>
+    </div>
+  </section>
+
   <p class="ui-hint">Clips: Nosferatu (1922), public domain.</p> Picture only: the original music and every title card are left out; the cards are ours. See media/PROVENANCE.md.</p>
 </main>
 <script type="module" src="js/footage.js"></script>

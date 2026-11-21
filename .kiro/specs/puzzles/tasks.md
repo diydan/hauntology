@@ -395,6 +395,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - **Validates: Requirements 22.3, 22.10**
     - Built: `check-places` in the root `package.json` (says so and passes while no shot has a Place); Property 31 in `tools/playtest/test/place-check.test.js` (`placeRecordProblems`: a clip with a Place needs its entry, and a model's clip names its model, take, date and prompt)
   - [ ] 15.7 The demo: section 8 of `footage.html`, "A clue written on the scene", on a stand-in Place (a flat patch of a wall in a clip we already have, until a model clip has a real one): the clue on the picture, the film layer over both, the panel and the Clue list, and the footage-off state. Check it in jsdom and in desktop Chrome
+    - Built, not ticked: section 12 of `footage.html` with `js/scene-clue-page.js` and `css/footage.css` (the clue laid on a stand-in plate of the hand shot, one film layer over both, the panel, the Clue list, the footage-off state, a shot with no Place); 8 jsdom tests in `test/scene-clue-demo.test.js`, 13 of 15 hand mutants caught (the other two are equivalent branches). Still to do: a look in desktop Chrome, which I could not open here (the Place is also not measured on the clip).
     - _Requirements: 22.4, 22.5, 22.7_
   - [x]* 15.8 Write property test for the fallbacks
     - **Property 29: Nothing is lost when the picture is not shown**
