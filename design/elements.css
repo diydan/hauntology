@@ -249,6 +249,17 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-log-id { color: var(--text-quiet); font: 400 var(--text-micro) var(--font-ui); }
 .ui-log-who { color: var(--accent); font: 500 var(--text-small) var(--font-ui); }
 
+/* ---- a small table of counts: one row for each player --------------------------------------------------------------------------------------- */
+.ui-table { width: 100%; border-collapse: collapse; font: 400 var(--text-small) var(--font-ui); }
+.ui-table th, .ui-table td { padding: var(--space-2) var(--space-3); border-bottom: var(--stroke-thin) solid var(--line); text-align: right; }
+.ui-table th:first-child { text-align: left; }
+.ui-table thead th { color: var(--text-quiet); font-weight: 400; }
+.ui-table tbody th { color: var(--text); font-weight: 500; }
+
+/* ---- a code to scan (the Room's join address): dark modules on the light text colour, so any phone camera reads it on the dark page ------------- */
+.ui-qr { display: block; inline-size: min(100%, calc(var(--target) * 5)); block-size: auto; border-radius: var(--radius-md); background: var(--text); }
+.ui-qr-modules { fill: var(--surface-page); }
+
 @media (prefers-reduced-motion: reduce) {
   .ui-orb.is-speaking { animation: none; }
   .ui-page { scroll-behavior: auto; }

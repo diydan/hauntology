@@ -1,6 +1,9 @@
 import { AnchorIdSchema } from "@hauntology/shared/app/events";
 import { parseSession } from "@hauntology/shared/ghost/session";
 import { PlayCore, type Slot } from "../play/core";
+import { SpendGuardClient } from "../spend/client";
+import { SpendGuardVoiceWindow, windowedSpend } from "../voice/window";
+import { speakDepsForDo, speculateLine, type SpeculativeEnv } from "../voice/room-speak";
 
 const SESSION = "session";
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -19,7 +22,7 @@ type IndexLike = { idFromName(name: string): unknown; get(id: unknown): { fetch(
  */
 export class PlaySession {
   private readonly core: PlayCore;
-  constructor(private readonly state: DurableObjectState, private readonly env?: { PLAY_INDEX?: IndexLike }, clock: () => number = Date.now) {
+  constructor(private readonly state: DurableObjectState, private readonly env?: { PLAY_INDEX?: IndexLike; SPEND_GUARD?: ConstructorParameters<typeof SpendGuardClient>[0] } & SpeculativeEnv, clock: () => number = Date.now) {
     const slot: Slot = {
       load: async () => (await state.storage.get<string>(SESSION)) ?? null,
       save: async (text) => void (await state.storage.put(SESSION, text)),
@@ -41,8 +44,13 @@ export class PlaySession {
         await this.state.storage.setAlarm(game.expiresAt);
         return json({ ok: true });
       }
-      case "/turn":
-        return json(await this.core.turn(owner, { input: body["input"], pose: body["pose"], world: body["world"] as never }));
+      case "/turn": {
+        const turned = await this.core.turn(owner, { input: body["input"], pose: body["pose"], world: body["world"] as never });
+        // Speculative synthesis (ghost-voice 3.12): the line was just validated. A Single player game has no speak signal of its own (the turn route has no voice flag by
+        // design, 3.8), so this starts a call only when the Worker says `speak: true`; today it does not, and the visitor's later `speak` request pays for itself.
+        if (body["speak"] === true) await this.speculate(owner, turned);
+        return json(turned);
+      }
       case "/lock/open": {
         const aid = AnchorIdSchema.safeParse(body["anchorId"]);
         if (!aid.success) return json({ ok: false, code: "anchor_not_found" });
@@ -75,6 +83,17 @@ export class PlaySession {
       default:
         return json({ ok: false, code: "session_not_found" }, 404);
     }
+  }
+
+  private async speculate(owner: string, turned: unknown): Promise<void> {
+    const env = this.env;
+    const ref = (turned as { ok?: boolean; voice?: { id?: unknown } | null } | null);
+    if (env?.SPEND_GUARD === undefined || ref?.ok !== true || typeof ref.voice?.id !== "string") return;
+    const line = await this.core.voiceLine(owner, ref.voice.id);
+    if (line === null) return;
+    const guard = new SpendGuardClient(env.SPEND_GUARD);
+    const deps = speakDepsForDo(env, windowedSpend(guard, new SpendGuardVoiceWindow(env.SPEND_GUARD as never)));
+    speculateLine(deps, { sessionId: owner, ipHash: "play-session" }, line, { speaking: true, defer: (w) => this.state.waitUntil(w) });
   }
 
   /** The game ran out: it is deleted, and the world's index forgets it. */

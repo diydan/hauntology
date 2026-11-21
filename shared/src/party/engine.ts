@@ -8,7 +8,7 @@ import {
   shutDoor, slamTargetsAt, startTvKnock,
   type DoorReason, type DoorSetup, type DoorsState, type PublicDoor, type TvKnock,
 } from "./doors";
-import { endingPayload, type EndingPayload, type RecapEvent, type Source } from "./ending";
+import { endingPayload, scarePoints, type EndingPayload, type RecapEvent, type Source } from "./ending";
 import {
   CAUGHT_BONUS_MS, DONE_ANSWER_MS, isExpired, mayCallCaught, mayTryDone, nextErrand, settleCaught, settleDone,
   type Errand, type ErrandObject, type SeatInfo,
@@ -24,10 +24,12 @@ import { capFor } from "../puzzles/settings";
 import { lockLevel } from "../puzzles/level";
 import { placePuzzles } from "../puzzles/place";
 import { makeLock } from "../puzzles/make";
-import { freezeFor, closeLock, initPartyLocks, markWorldClueSeen, openLock, sightsOnEntry, ackSight, submitAttempt, worldClueNotebook, type PartyLocks } from "../puzzles/inspect";
-import type { Level, LockView, PuzzleSetting, Sight } from "../puzzles/types";
+import { attemptHaunting, closeHaunting, EMPTY_HAUNTING, openHaunting, hauntingKind } from "../puzzles/haunting";
+import { freezeFor, closeLock, initPartyLocks, tally, markWorldClueSeen, openLock, pendingSights, restoreLock, sightsOnEntry, ackSight, submitAttempt, worldClueNotebook, type PartyLocks } from "../puzzles/inspect";
+import { ATTEMPTS, type Level, type LockView, type PuzzleSetting, type Sight } from "../puzzles/types";
 import { placeWorldClues, toPublicWorldClues, type CluePlace, type PublicWorldClue, type Sign } from "../puzzles/world-clues";
 import { CUE_PLAY_MS, canCue, canFrame, houseCuePhones, isCue, restlessSchedule, soundPlan, type CueId, type FrameSeat, type PhoneSeat, type SoundPlan } from "./cues";
+import { NO_PROMPTS, RATTLE_MAX_VOLUME, becoming, canRattle, rattleDenied, rattleIntensity, rattlePrompts, type Intensity, type PromptState, type RattlePrompt } from "./rattle";
 import { canSuggest, defaultShown, isBluff, resolveSuggestion, validShow } from "./suggest";
 import { firstPlayer, nextPlayer, type Order } from "./turns";
 
@@ -51,7 +53,11 @@ export type EngineSeat = Readonly<{ seat: number; nickname: string; bot: boolean
 export type EngineSettings = Readonly<{
   baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off"; sounds?: boolean; frames?: boolean;
   /** The Puzzle setting: off, or the starting level of the Locks (puzzles 1.4). */
-  puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; preset?: SoloPreset; autoCross?: boolean;
+  puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; preset?: SoloPreset; autoCross?: boolean; botLevel?: "standard" | "gentle";
+  /** The Master's Rattle switch (party-mode 19.3): on unless set to false. */
+  rattle?: boolean;
+  /** Selfie ghosts (party-mode 3.10): off unless the Master turns them on in the lobby; a missing value means off. */
+  selfies?: boolean;
 }>;
 export const DISCONNECT_GRACE_MS = 20_000;
 export const MASTER_AWAY_MS = 60_000;
@@ -65,6 +71,8 @@ export type PlayerRec = Readonly<{
   /** Seat-owned, so a reconnect changes none of them (party-mode 12.4, 14.4). */
   connected: boolean; missed: number; lastCueMs: number | null; soundsThisRound: number;
   frameSentRound: number | null; framedRound: number | null; soundConsent: boolean; hasAudio: boolean;
+  /** A Poltergeist's own opt-in to Rattle (off by default, iOS asks for motion permission), and whether their Becoming sting already played (party-mode 19). */
+  rattleOn?: boolean; becomingPlayed?: boolean;
 }>;
 
 export type TurnRec = Readonly<{
@@ -80,6 +88,8 @@ export type TurnRec = Readonly<{
   /** The active Player's phone dropped: the clock is paused and the Turn ends at this time unless they come back. */
   disconnectEndsMs: number | null;
   disconnectPausedClock: boolean;
+  /** Rattles this Turn, who sent how many, and the Rattle prompts each Poltergeist was shown this Turn (party-mode 19.2, 19.7). */
+  rattles?: number; rattleBy?: Readonly<Record<number, number>>; prompted?: Readonly<Record<number, PromptState>>;
 }>;
 
 export type EngineEvent = RecapEvent | Readonly<{ id: number; kind: "visit"; seat: number; zone: string; sinceTurnMs: number }> | Readonly<{ id: number; kind: "haunt-event"; option: HauntOption }>;
@@ -146,13 +156,17 @@ export type ClientMsg =
   | Readonly<{ t: "resume" }>
   | Readonly<{ t: "cue"; cue: string; place?: "tv" | "phone" }>
   | Readonly<{ t: "frame"; target: number; cue: string }>
+  | Readonly<{ t: "rattleOn"; on: boolean }>
+  | Readonly<{ t: "rattle"; via: "shake" | "button" }>
   | Readonly<{ t: "sound"; consent: boolean; audio?: boolean }>
-  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
+  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; selfies?: boolean; autoCross?: boolean; botLevel?: "standard" | "gentle"; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
   | Readonly<{ t: "attempt"; lockId: string; transcript: unknown }>
   | Readonly<{ t: "giveUp"; lockId: string }>
   | Readonly<{ t: "sightAck"; sightId: string }>
   | Readonly<{ t: "clueSeen"; sign: Sign }>
   | Readonly<{ t: "plainInspect"; on: boolean }>
+  | Readonly<{ t: "assist"; on: boolean }>
+  | Readonly<{ t: "hauntPuzzle" }>
   /** A Player acts on a heavy door (knock-door 4.1). */
   | Readonly<{ t: "doorAct"; doorId: string }>
   /** A Player knocks back at the TV after a Slam (knock-door 5.3). */
@@ -171,6 +185,8 @@ export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> 
 
 export type PublicSnapshot = Readonly<{
   phase: EngineState["phase"]; round: number; active: number | null; at: string | null;
+  /** The Zone the active Detective is searching now, or null; never the result. */
+  inspecting: string | null;
   deadlineMs: number | null; paused: boolean;
   seats: readonly Readonly<{ seat: number; nickname: string; bot: boolean; poltergeist: boolean; handSize: number; sealed: boolean }>[];
   haunt: Readonly<{ level: number; max: number; coldSpot: string | null; choosing: Readonly<{ options: readonly HauntOption[]; chooser: number | null; deadlineMs: number }> | null }>;
@@ -183,6 +199,8 @@ export type PublicSnapshot = Readonly<{
   doors: readonly PublicDoor[];
   /** The Zones nobody can reach now, behind a shut door. */
   closedZones: readonly string[];
+  /** The Puzzle setting, the one thing the Public View says about puzzles (puzzles 3.5, requirement 1.4). */
+  puzzleSetting: PuzzleSetting;
   /** The ghost's knock at the TV in this Round, public because every Player hears it; null when there is none (knock-door 5.3). */
   tvKnock: Readonly<{ groups: readonly number[]; long: number | null; answeredBy: number | null }> | null;
   /** Why the world's doors were refused, as short codes (the game plays without them). */
@@ -197,6 +215,10 @@ export type PrivateSnapshot = Readonly<{
   heard: readonly Readonly<{ eventId: number; card: string }>[];
   canEavesdrop: number | null;
   soundConsent: boolean;
+  /** Only for a human who is haunting: whether Rattle is allowed by the Master and whether this Player turned it on. */
+  rattle?: Readonly<{ allowed: boolean; on: boolean }>;
+  /** Only for a human who is haunting: their own Scare points so far, private until the ending (party-mode 9.12). */
+  scare?: number;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
   worldClues?: readonly PublicWorldClue[];
   /** Shut knock door in front of this Detective on their Turn, with its Faded clue if they missed the Sight (knock-door 3.3). */
@@ -208,13 +230,21 @@ export type PrivateSnapshot = Readonly<{
   errandCaughtUsed?: boolean;
 }>;
 export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> | Readonly<{ t: "door"; id: string; open: boolean; reason: DoorReason; need: number; have: number }>
-  | Readonly<{ t: "tvKnock"; groups: readonly number[]; long: number | null; answeredBy: number | null }> }>
+  | Readonly<{ t: "tvKnock"; groups: readonly number[]; long: number | null; answeredBy: number | null }>
+  /** A Cue played on the TV: the Host plays it at `playAtMs` on the server clock; everyone reads the same log line (party-mode 4.14). */
+  | Readonly<{ t: "tvCue"; eventId: number; cue: CueId; playAtMs: number }> }>
+  /** To the Host sockets only: what it plays or shows (a Rattle's sound, a Becoming's sting). */
+  | Readonly<{ to: "host"; msg: Readonly<{ t: "rattleSound"; eventId: number; level: number; sound: string; volume: number; playAtMs: number; line: string }>
+      | Readonly<{ t: "becoming"; seat: number; atMs: number; durationMs: number; fadeOrder: readonly number[] }> }>
   | Readonly<{ to: "seat"; seat: number; msg: Readonly<{ t: "private"; view: PrivateSnapshot }> | Readonly<{ t: "refused"; code: string }>
       | Readonly<{ t: "doorResult"; doorId: string; outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>
       | Readonly<{ t: "tvKnockResult"; outcome: "help" | "wrong"; heard: string }>
       | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }>
-      | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null; sign?: Sign; prompt?: string; canSeeAgain?: boolean }>
+      | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null; sign?: Sign; prompt?: string; canSeeAgain?: boolean; assistText?: string }>
       | Readonly<{ t: "lockResult"; lockId: string; outcome: "solved" | "wrong" | "failed"; attemptsLeft?: number; zone?: string; card?: string | null }>
+      | Readonly<{ t: "rattleSound"; eventId: number; level: number; sound: string; volume: number; playAtMs: number; plan: SoundPlan }>
+      | Readonly<{ t: "becoming"; atMs: number; durationMs: number; offerRattle: true }>
+      | Readonly<{ t: "prompt"; kind: RattlePrompt["kind"]; text: string; button: RattlePrompt["button"] }>
       | Readonly<{ t: "sight"; sightId: string; sight: Sight }>
       | Readonly<{ t: "errandDone"; object: ErrandObject }> }>;
 export type StepResult = Readonly<{ state: EngineState; out: readonly Outbound[]; wakeAtMs: number | null; refused?: string }>;
@@ -277,6 +307,65 @@ export function mindOf(s: EngineState, seat: number): Mind {
   return m;
 }
 
+/**
+ * The Rattle prompts a human Poltergeist with Rattle off is owed now: `rattle-first` once a Turn while no Rattle has landed,
+ * `rattle-join` once a Turn after someone else's lands. Private, naming no sender (party-mode 19.7).
+ */
+function promptRattle(s: EngineState): EngineState {
+  const t = s.turn;
+  if (t === null) return s;
+  let turn = t;
+  const out: Outbound[] = [];
+  for (const p of s.players) {
+    if (!p.poltergeist || isBot(s, p.seat)) continue;
+    const r = rattlePrompts({ bot: false, poltergeist: true, rattleOn: p.rattleOn === true }, s.settings.rattle ?? true, { rattlesThisTurn: turn.rattles ?? 0, ownRattlesThisTurn: turn.rattleBy?.[p.seat] ?? 0 }, turn.prompted?.[p.seat] ?? NO_PROMPTS);
+    if (r.prompt === null) continue;
+    turn = { ...turn, prompted: { ...(turn.prompted ?? {}), [p.seat]: r.shown } };
+    out.push({ to: "seat", seat: p.seat, msg: { t: "prompt", kind: r.prompt.kind, text: r.prompt.text, button: r.prompt.button } });
+  }
+  return out.length === 0 ? s : { ...s, turn, outbox: [...s.outbox, ...out] };
+}
+
+/** The Becoming: the first step after a Player joins the haunting plays their sting once, on their phone and the Host (party-mode 19.6). */
+function playBecomings(prev: EngineState, s: EngineState, now: number): EngineState {
+  const fresh = s.players.filter((p) => p.poltergeist && p.becomingPlayed !== true && prev.players.find((q) => q.seat === p.seat)?.poltergeist !== true);
+  if (fresh.length === 0) return s;
+  const seats = s.seats.map((x) => x.seat);
+  const out: Outbound[] = [];
+  for (const p of fresh) {
+    const b = becoming({ seat: p.seat, becomingPlayed: false }, seats, now);
+    if (b === null) continue;
+    out.push({ to: "host", msg: { t: "becoming", seat: p.seat, atMs: b.atMs, durationMs: b.durationMs, fadeOrder: b.fadeOrder } });
+    if (!isBot(s, p.seat)) out.push({ to: "seat", seat: p.seat, msg: { t: "becoming", atMs: b.atMs, durationMs: b.durationMs, offerRattle: true } });
+  }
+  const marked = new Set(fresh.map((p) => p.seat));
+  return { ...s, players: s.players.map((p) => (marked.has(p.seat) ? { ...p, becomingPlayed: true } : p)), outbox: [...s.outbox, ...out] };
+}
+
+/** A Rattle (party-mode 19.1 to 19.5): a Cue by a haunting Player, three anonymous log lines by intensity, the sender secret until the ending. */
+function rattle(s: EngineState, seat: number, now: number): EngineState | string {
+  const me = player(s, seat) as PlayerRec;
+  const t = s.turn;
+  const ok = canRattle({ seat, bot: isBot(s, seat), poltergeist: me.poltergeist, rattleOn: me.rattleOn === true, lastCueMs: me.lastCueMs }, { settingOn: s.settings.rattle ?? true, playingEnds: s.playing, turnCueCount: t?.cueCount ?? 0, now });
+  if (!ok.ok) return rattleDenied(ok.reason);
+  if (t === null) return rattleDenied("rattle_off");
+  const rattles = (t.rattles ?? 0) + 1;
+  const inten = rattleIntensity(rattles) as Intensity;
+  let st: EngineState = setPlayer(s, seat, (p) => ({ ...p, lastCueMs: now }));
+  st = { ...st, playing: [...st.playing.filter((e) => e > now), now + CUE_PLAY_MS], turn: { ...t, cueCount: t.cueCount + 1, rattles, rattleBy: { ...(t.rattleBy ?? {}), [seat]: (t.rattleBy?.[seat] ?? 0) + 1 } } };
+  const [st2, id] = addLog(st, { kind: "rattle", target: t.seat, turn: t.turnNo, level: inten.level });
+  const out: Outbound[] = [{ to: "host", msg: { t: "rattleSound", eventId: id, level: inten.level, sound: inten.sound, volume: inten.volume, playAtMs: now, line: inten.logLine } }];
+  let st3: EngineState = { ...st2, sources: [...st2.sources, { eventId: id, kind: "rattle", from: seat, turn: t.turnNo }] };
+  for (const p of st3.players) {
+    if (isBot(st3, p.seat)) continue;
+    const plan = soundPlan(phoneOf(st3, p), st3.settings.sounds ?? true);
+    if (plan === "none") continue;
+    st3 = setPlayer(st3, p.seat, (q) => ({ ...q, soundsThisRound: q.soundsThisRound + 1 }));
+    out.push({ to: "seat", seat: p.seat, msg: { t: "rattleSound", eventId: id, level: inten.level, sound: inten.sound, volume: Math.min(inten.volume, RATTLE_MAX_VOLUME), playAtMs: now, plan } });
+  }
+  return promptRattle({ ...st3, outbox: [...st3.outbox, ...out] });
+}
+
 function startTurn(s: EngineState, seat: number, now: number): EngineState {
   const { haunt, blackout } = takeBlackout(s.haunt);
   const bonus = bonusSeconds(earned(s.log as readonly ClockEvent[], seat));
@@ -301,7 +390,7 @@ function startTurn(s: EngineState, seat: number, now: number): EngineState {
   const away = !isBot(s2, seat) && (player(s2, seat)?.connected === false);
   const t1: TurnRec = away ? { ...turn, clock: pause(turn.clock, now), disconnectEndsMs: now + DISCONNECT_GRACE_MS, disconnectPausedClock: true } : turn;
   const t2 = isBot(s2, seat) ? { ...t1, botDueMs: now + thinkMs(s2, 0) } : t1;
-  return { ...s2, turn: t2 };
+  return promptRattle({ ...s2, turn: t2 });
 }
 
 function fireHaunt(s: EngineState, now: number): EngineState {
@@ -383,6 +472,7 @@ function endTurn(s0: EngineState, now: number): EngineState {
   const nxt = nextPlayer(order(st), st.first as number, t.seat);
   if (nxt !== null) return startTurn(st, nxt, now);
   // the Round is over (party-mode 6.5)
+  st = closeHauntings(st);
   const deal = st.deal as Deal;
   const acc: AccuseState = {
     round: st.round, phase: "playing", haunt: { level: st.haunt.level, max: st.haunt.max }, winners: [], houseWins: false,
@@ -473,7 +563,8 @@ function settleErrandAsk(s: EngineState, answer: "yes" | "no" | "timeout"): Engi
 /** How many Players are seated: a door never asks for more than this (knock-door 4.2). */
 export const seatedHumans = (s: EngineState): number => s.seats.filter((x) => !x.bot).length;
 
-function finish(s: EngineState, _now: number): EngineState {
+function finish(s0: EngineState, _now: number): EngineState {
+  const s = closeHauntings(s0);
   const deal = s.deal as Deal;
   const ending = endingPayload({
     solution: deal.solution, residueAt: s.residueAt, winners: s.winners, houseWins: s.houseWins,
@@ -484,6 +575,28 @@ function finish(s: EngineState, _now: number): EngineState {
   return { ...s, phase: "ended", turn: null, errandAsk: null, ending };
 }
 
+/**
+ * Every Bot that may Eavesdrop on the open window does, at once (party-mode 9.2): it has Resolve, is a Detective, is neither the
+ * suggester nor the one who showed, and its own notes do not yet place a named card with the Player who showed. It pays one Resolve,
+ * hears one named card that was not shown, and keeps the clue in its own facts only. The log says who listened, as for a human.
+ */
+function botsEavesdrop(s: EngineState, now: number): EngineState {
+  const w = s.eavesdrop;
+  if (w === null) return s;
+  let st = s;
+  for (const b of s.seats.filter((x) => x.bot)) {
+    const me = player(st, b.seat);
+    if (!me || !canEavesdrop(w, b.seat, me.poltergeist, me.resolve, now, me.heard.some((h) => h.eventId === w.eventId))) continue;
+    const mind = mindOf(st, b.seat);
+    if (w.named.some((c) => mind.place.get(c) === w.refuter)) continue; // already resolved in its notes
+    const card = eavesdrop(w, b.seat, st.seed);
+    st = setPlayer(st, b.seat, (p) => ({ ...p, resolve: spendResolve(p.resolve, 1) as number, heard: [...p.heard, { eventId: w.eventId, card }] }));
+    st = addFact(st, b.seat, { kind: "heard", seat: w.refuter, cards: w.named, heard: card });
+    st = addLog(st, { kind: "eavesdrop", seat: b.seat })[0];
+  }
+  return st;
+}
+
 /** Show a card to the suggester, privately, and open the 15 s window. */
 function deliverShown(s: EngineState, eventId: number, card: string, now: number): EngineState {
   const t = s.turn as TurnRec;
@@ -492,6 +605,7 @@ function deliverShown(s: EngineState, eventId: number, card: string, now: number
   st = addFact(st, t.seat, { kind: "shown", card, by: refuter });
   const sug = st.log.find((e) => e.id === eventId) as Extract<EngineEvent, { kind: "suggest" }>;
   st = { ...st, eavesdrop: { eventId, suggester: t.seat, refuter, named: [sug.suspect, sug.zone, sug.relic], shown: card, untilMs: now + EAVESDROP_MS } };
+  st = botsEavesdrop(st, now);
   return { ...st, shownLog: { ...st.shownLog, [eventId]: card }, turn: { ...t, answering: null, windowUntilMs: now + WINDOW_MS, botDueMs: isBot(st, t.seat) ? now + thinkMs(st, eventId) : null } };
 }
 
@@ -527,15 +641,20 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     const timing = s.phase === "lobby"; // the clock and the Haunt maximum change only before the start
     const next: EngineSettings = {
       ...s.settings,
-      ...(row ? { nudges: row.nudges, frames: row.frames, autoCross: row.autoCross, puzzles: row.puzzles, preset: msg.preset } : {}),
+      ...(row ? { nudges: row.nudges, frames: row.frames, autoCross: row.autoCross, botLevel: row.botLevel, puzzles: row.puzzles, preset: msg.preset } : {}),
       ...(row && timing ? { baseSeconds: row.baseSeconds, hauntMax: row.hauntMax } : {}),
       ...(msg.nudges !== undefined ? { nudges: msg.nudges } : {}), ...(msg.frames !== undefined ? { frames: msg.frames } : {}),
       ...(msg.sounds !== undefined ? { sounds: msg.sounds } : {}), ...(msg.puzzles !== undefined ? { puzzles: msg.puzzles } : {}),
       ...(timing && msg.cluePlace !== undefined ? { cluePlace: msg.cluePlace } : {}),
       ...(msg.errands !== undefined ? { errands: msg.errands } : {}),
+      ...(msg.autoCross !== undefined ? { autoCross: msg.autoCross } : {}),
+      ...(msg.botLevel !== undefined ? { botLevel: msg.botLevel } : {}),
+      ...(timing && msg.selfies !== undefined ? { selfies: msg.selfies } : {}),
       ...(timing && msg.baseSeconds !== undefined ? { baseSeconds: msg.baseSeconds } : {}), ...(timing && msg.hauntMax !== undefined ? { hauntMax: msg.hauntMax } : {}),
     };
-    const seatBots = row ? s.seats.map((x) => (x.bot ? { ...x, botLevel: row.botLevel } : x)) : s.seats;
+    // a preset sets every Bot's level; a separate botLevel switch (sent after it) wins
+    const level = next.botLevel;
+    const seatBots = level !== undefined && (row || msg.botLevel !== undefined) ? s.seats.map((x) => (x.bot ? { ...x, botLevel: level } : x)) : s.seats;
     const updated: EngineState = { ...s, settings: next, seats: seatBots, haunt: timing ? { ...s.haunt, max: next.hauntMax } : s.haunt };
     return next.errands && updated.phase === "playing" ? assignErrands(updated) : updated;
   }
@@ -557,6 +676,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     if (s.pausedSinceMs === null) return "not_paused";
     return resumeAll(s, now);
   }
+  if (msg.t === "assist") return { ...s, locks: { ...s.locks, assist: { ...(s.locks.assist ?? {}), [String(seat)]: msg.on } } };
   if (msg.t === "plainInspect") return { ...s, locks: { ...s.locks, plain: { ...s.locks.plain, [String(seat)]: msg.on } } };
   if (msg.t === "sightAck" && msg.sightId.startsWith("door-")) return s; // the ghost's knock at a door is heard once and is not kept in the Locks
   if (msg.t === "sightAck") { const r = ackSight(s.locks, String(seat), msg.sightId); return r.ok ? { ...s, locks: r.value } : "sight_unknown"; }
@@ -611,7 +731,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     let st = setPlayer(s, seat, (p) => ({ ...p, lastCueMs: now }));
     st = { ...st, playing: [...st.playing.filter((e) => e > now), now + CUE_PLAY_MS], turn: t === null ? null : { ...t, cueCount: t.cueCount + 1 } };
     const [st2, id] = addLog(st, { kind: "cue", seat, cue: msg.cue, place });
-    if (place === "tv") return st2;
+    if (place === "tv") return { ...st2, outbox: [...st2.outbox, { to: "public", msg: { t: "tvCue", eventId: id, cue: msg.cue, playAtMs: now } }] };
     const plan = soundPlan(phoneOf(st2, player(st2, seat) as PlayerRec), st2.settings.sounds ?? true);
     const st3 = setPlayer(st2, seat, (p) => ({ ...p, soundsThisRound: plan === "none" ? p.soundsThisRound : p.soundsThisRound + 1 }));
     return { ...st3, outbox: [...st3.outbox, { to: "seat", seat, msg: { t: "cue", eventId: id, cue: msg.cue, playAtMs: now, plan } }] };
@@ -639,7 +759,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       clockRunning: t !== null && t.clock.budgetMs !== null && t.clock.pausedSinceMs === null, budgetMs: t?.clock.budgetMs ?? 0, leftMs: left,
       usedThisTurn: t?.nudges ?? { help: false, spook: false }, round: s.round, turnIndex: s.turnNo, lastSpook: s.lastSpook,
     }, msg.kind);
-    if (!ok.ok) return ok.reason;
+    if (!ok.ok) return `nudge_denied:${ok.reason}`;
     const tt = t as TurnRec;
     const n = applyNudge(tt.clock.budgetMs as number, me.resolve, msg.kind);
     let st = setPlayer(s, seat, (p) => ({ ...p, resolve: n.resolve }));
@@ -656,6 +776,14 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     const st = setPlayer(s, seat, (p) => ({ ...p, resolve: spendResolve(p.resolve, 1) as number, heard: [...p.heard, { eventId: w.eventId, card }] }));
     return addLog(st, { kind: "eavesdrop", seat })[0];
   }
+  if (msg.t === "rattleOn") {
+    const me = player(s, seat) as PlayerRec;
+    if (isBot(s, seat) || !me.poltergeist) return rattleDenied("not_poltergeist");
+    return setPlayer(s, seat, (p) => ({ ...p, rattleOn: msg.on }));
+  }
+  if (msg.t === "rattle") return rattle(s, seat, now);
+  if (msg.t === "hauntPuzzle") return startHauntingPuzzle(s, seat, now);
+  if ((msg.t === "attempt" || msg.t === "giveUp") && s.locks.haunting?.open[String(seat)]?.lockId === msg.lockId) return hauntingAction(s, seat, msg, now);
   if (msg.t === "attempt" || msg.t === "giveUp") return lockAction(s, seat, msg, now);
   if (msg.t === "choose") {
     const pend = s.haunt.pending;
@@ -707,7 +835,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
         const locks: PartyLocks = { ...s.locks, placed: s.locks.placed.map((l) => (l.zone === t.at ? { ...l, level } : l)) };
         const capMs = capFor(s.settings.preset ?? "classic");
         const dl = deadlineOf(t.clock, now);
-        const opened = openLock(locks, String(seat), t.at as string, now, { setting, capMs, isBot: false, ...(dl === null ? {} : { turnDeadline: dl }) });
+        const opened = openLock(locks, String(seat), t.at as string, now, { setting, capMs, isBot: false, assist: s.locks.assist?.[String(seat)] === true, ...(dl === null ? {} : { turnDeadline: dl }) });
         if (!opened.ok) return "puzzle_not_open";
         const [st] = addLog({ ...s, locks: opened.value.state }, { kind: "inspect", seat, zone: t.at as string });
         return {
@@ -721,6 +849,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
                 t: "lock", lockId: opened.value.lockId, view: opened.value.view, level,
                 attempts: opened.value.attempts, deadlineAt: opened.value.deadlineAt, faded: opened.value.faded,
                 ...(opened.value.sign !== undefined ? { sign: opened.value.sign, prompt: opened.value.prompt, canSeeAgain: opened.value.canSeeAgain } : {}),
+                ...(opened.value.assistText !== undefined ? { assistText: opened.value.assistText } : {}),
               },
             },
           ],
@@ -788,6 +917,54 @@ function lockAction(s: EngineState, seat: number, msg: Extract<ClientMsg, { t: "
   return send(st, { t: "lockResult", lockId: msg.lockId, outcome: "solved", zone, card });
 }
 
+/** A human Poltergeist starts their Haunting puzzle of the Round (puzzles 12.3): a Kind with no Sight, never a Detective, a Bot or a Zone's Lock. */
+function startHauntingPuzzle(s: EngineState, seat: number, now: number): EngineState | string {
+  const setting = s.settings.puzzles ?? "off";
+  if (setting === "off") return "puzzle_disabled";
+  const me = player(s, seat);
+  if (!me || !me.poltergeist || isBot(s, seat)) return "not_a_poltergeist";
+  if (s.haunt.pending?.chooser === seat) return "answering_choice";
+  const id = String(seat);
+  const kind = hauntingKind(s.seed, id, s.round);
+  const level = lockLevel(setting, s.settings.preset === "gentle", s.haunt.level, kind, setting) as Level;
+  const r = openHaunting(s.locks.haunting ?? EMPTY_HAUNTING, id, s.round, s.seed, level, now, capFor(s.settings.preset ?? "classic"));
+  if (!r.ok) return r.code;
+  const v = r.value;
+  return { ...s, locks: { ...s.locks, haunting: v.state }, outbox: [...s.outbox, { to: "seat", seat, msg: { t: "lock", lockId: v.lockId, view: v.view, level: v.level, attempts: v.attempts, deadlineAt: v.deadlineAt, faded: null } }] };
+}
+
+/** An Attempt or a give-up on a Haunting puzzle. Solved is one Scare point (a secret source) and nothing else changes. */
+function hauntingAction(s: EngineState, seat: number, msg: Extract<ClientMsg, { t: "attempt" } | { t: "giveUp" }>, now: number): EngineState | string {
+  const id = String(seat);
+  const state = s.locks.haunting ?? EMPTY_HAUNTING;
+  const send = (st: EngineState, m: Extract<Outbound, { to: "seat" }>["msg"]): EngineState => ({ ...st, outbox: [...st.outbox, { to: "seat", seat, msg: m }] });
+  if (msg.t === "giveUp") {
+    const c = closeHaunting(state, id);
+    if (!c.ok) return c.code;
+    return send({ ...s, locks: tally({ ...s.locks, haunting: c.value.state }, c.value.kind, "failed", c.value.attempts) }, { t: "lockResult", lockId: msg.lockId, outcome: "failed" });
+  }
+  const r = attemptHaunting(state, id, msg.lockId, msg.transcript, now, capFor(s.settings.preset ?? "classic"));
+  if (!r.ok) return r.code;
+  const out = r.value;
+  if (out.outcome === "wrong") return send({ ...s, locks: { ...s.locks, haunting: out.state } }, { t: "lockResult", lockId: msg.lockId, outcome: "wrong", attemptsLeft: out.attemptsLeft });
+  const locks = tally({ ...s.locks, haunting: out.state }, out.kind, out.outcome, out.attempts);
+  if (out.outcome === "failed") return send({ ...s, locks }, { t: "lockResult", lockId: msg.lockId, outcome: "failed" });
+  // one Scare point: a secret source with no public log line, which the ending counts
+  const st: EngineState = { ...s, locks, nextId: s.nextId + 1, sources: [...s.sources, { eventId: s.nextId, kind: "haunting-puzzle", from: seat }] };
+  return send(st, { t: "lockResult", lockId: msg.lockId, outcome: "solved" });
+}
+
+/** The Round or the game ended: every open Haunting puzzle closes with no point. */
+function closeHauntings(s: EngineState): EngineState {
+  let st = s;
+  for (const [seatId, o] of Object.entries(s.locks.haunting?.open ?? {})) {
+    if (!o) continue;
+    const c = closeHaunting(st.locks.haunting ?? EMPTY_HAUNTING, seatId);
+    if (c.ok) st = { ...st, locks: tally({ ...st.locks, haunting: c.value.state }, c.value.kind, "failed", c.value.attempts), outbox: [...st.outbox, { to: "seat", seat: Number(seatId), msg: { t: "lockResult", lockId: o.lockId, outcome: "failed" } }] };
+  }
+  return st;
+}
+
 /** Close every open Lock at the end of a Turn: no Zone result, the Zone not inspected. */
 function closeLocks(s: EngineState, now: number): EngineState {
   let st = s;
@@ -804,6 +981,10 @@ function closeLocks(s: EngineState, now: number): EngineState {
  * Player's clock pauses for up to 20 s; a Master away for 60 s hands the role to the next human.
  */
 function connection(s: EngineState, seat: number, up: boolean, now: number): EngineState | string {
+  const r = connectionCore(s, seat, up, now);
+  return up && typeof r !== "string" && r !== s ? resendOnReconnect(r, seat, now) : r;
+}
+function connectionCore(s: EngineState, seat: number, up: boolean, now: number): EngineState | string {
   const p = player(s, seat);
   if (!p || isBot(s, seat)) return "bad_token";
   if (p.connected === up) return s;
@@ -816,6 +997,29 @@ function connection(s: EngineState, seat: number, up: boolean, now: number): Eng
     return { ...st, turn: { ...t, clock: free ? pause(t.clock, now) : t.clock, disconnectPausedClock: free, disconnectEndsMs: now + DISCONNECT_GRACE_MS } };
   }
   return { ...st, turn: { ...t, clock: t.disconnectPausedClock ? resume(t.clock, now) : t.clock, disconnectPausedClock: false, disconnectEndsMs: null } };
+}
+
+/**
+ * A phone came back (puzzles 3.1, 3.2): the Lock it had open is rebuilt from the seed with the Attempts already used, and a
+ * Sight it was sent but never acknowledged is sent again. Both go to that seat only; nothing is added to a public view.
+ */
+function resendOnReconnect(s: EngineState, seat: number, now: number): EngineState {
+  const id = String(seat);
+  const out: Outbound[] = [];
+  const restored = s.locks.open[id] ? restoreLock(s.locks, id, { assist: s.locks.assist?.[id] === true }) : null;
+  if (restored !== null && restored.ok) {
+    const v = restored.value;
+    const placed = s.locks.placed.find((l) => l.lockId === v.lockId);
+    const open = s.locks.open[id];
+    if (placed !== undefined && open) {
+      const level = placed.level;
+      const dl = s.turn === null ? null : deadlineOf(s.turn.clock, now);
+      const deadlineAt = Math.min(open.openedAt + capFor(s.settings.preset ?? "classic"), dl ?? Number.POSITIVE_INFINITY);
+      out.push({ to: "seat", seat, msg: { t: "lock", lockId: v.lockId, view: v.view, level, attempts: ATTEMPTS - v.attemptsUsed, deadlineAt, faded: v.faded, ...(v.sign !== undefined ? { sign: v.sign, prompt: v.prompt, canSeeAgain: v.canSeeAgain } : {}), ...(v.assistText !== undefined ? { assistText: v.assistText } : {}) } });
+    }
+  }
+  for (const d of pendingSights(s.locks, id)) out.push({ to: "seat", seat, msg: { t: "sight", sightId: d.sightId, sight: d.sight } });
+  return out.length === 0 ? s : { ...s, outbox: [...s.outbox, ...out] };
 }
 
 /** The Master resumes: every deadline moves on by the length of the pause, so nothing ran while it was paused. */
@@ -927,6 +1131,8 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
   const p = s.haunt.pending;
   return {
     phase: s.phase, round: s.round, active: t?.seat ?? null, at: t?.at ?? null,
+    // the Zone being searched, never what is found there (party-mode 8.10)
+    inspecting: t?.inspecting?.zone ?? null,
     deadlineMs: t === null ? null : deadlineOf(t.clock, now), paused: t !== null && t.clock.pausedSinceMs !== null,
     seats: s.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, poltergeist: player(s, x.seat)?.poltergeist ?? false, handSize: s.deal?.hands[x.seat]?.length ?? 0, sealed: player(s, x.seat)?.sealed != null })),
     haunt: { level: s.haunt.level, max: s.haunt.max, coldSpot: coldSpotIn(s.haunt, s.round), choosing: p === null ? null : { options: [...p.options], chooser: p.chooser, deadlineMs: p.deadlineMs } },
@@ -937,6 +1143,7 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
     ending: s.phase === "ended" ? s.ending : null,
     doors: s.doors ? publicDoors(s.doors, seatedHumans(s), now) : [],
     closedZones: s.doors ? closedZones(s.doors, s.pool.zones.map((z) => z.id)) : [],
+    puzzleSetting: s.settings.puzzles ?? "off",
     tvKnock: s.tvKnock && s.tvKnock.round === s.round ? { groups: [...s.tvKnock.groups], long: s.tvKnock.long, answeredBy: s.tvKnock.answeredBy } : null,
     doorProblems: [...(s.doorProblems ?? [])],
     ...((s.settings.cluePlace ?? "phone") === "world" ? { cluePlace: "world" as const, worldClues: toPublicWorldClues(s.locks.worldClues ?? []) } : {}),
@@ -971,6 +1178,7 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
     choose: pend !== null && pend.chooser === seat ? { options: [...pend.options], deadlineMs: pend.deadlineMs } : null,
     heard: p.heard.map((h) => ({ ...h })),
     soundConsent: p.soundConsent,
+    ...(p.poltergeist && !isBot(s, seat) ? { rattle: { allowed: s.settings.rattle ?? true, on: p.rattleOn === true }, scare: scarePoints(s.log as readonly RecapEvent[], s.sources, s.players.filter((q) => q.poltergeist).map((q) => q.seat))[seat] ?? 0 } : {}),
     canEavesdrop: s.eavesdrop !== null && s.eavesdrop.suggester !== seat && s.eavesdrop.refuter !== seat && !p.poltergeist && p.resolve >= 1 && !p.heard.some((h) => h.eventId === s.eavesdrop?.eventId) ? s.eavesdrop.eventId : null,
     ...((s.settings.cluePlace ?? "phone") === "world" ? { worldClues: worldClueNotebook(s.locks, String(seat)) } : {}),
     ...(doorLock ? { doorLock } : {}),
@@ -1006,7 +1214,10 @@ export function step(state: EngineState, action: Action, now: number): StepResul
     const seat = action.kind === "client" ? action.seat : null;
     return { state, out: seat === null ? [] : [{ to: "seat", seat, msg: { t: "refused", code: res } }], wakeAtMs: wakeOf(state, now), refused: res };
   }
-  const out: Outbound[] = [{ to: "public", msg: { t: "public", view: publicSnapshot(res, now) } }, ...extra];
-  for (const x of res.seats) if (!x.bot) { const v = privateSnapshot(res, x.seat); if (v) out.push({ to: "seat", seat: x.seat, msg: { t: "private", view: v } }); }
-  return { state: res, out, wakeAtMs: wakeOf(res, now) };
+  const played = playBecomings(state, res, now);
+  const extra2 = [...extra, ...played.outbox];
+  const done: EngineState = played.outbox.length === 0 ? played : { ...played, outbox: [] };
+  const out: Outbound[] = [{ to: "public", msg: { t: "public", view: publicSnapshot(done, now) } }, ...extra2];
+  for (const x of done.seats) if (!x.bot) { const v = privateSnapshot(done, x.seat); if (v) out.push({ to: "seat", seat: x.seat, msg: { t: "private", view: v } }); }
+  return { state: done, out, wakeAtMs: wakeOf(done, now) };
 }

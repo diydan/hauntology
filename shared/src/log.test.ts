@@ -94,6 +94,7 @@ describe("formatLog", () => {
       "voice.listen": { outcome: "word", reason: "word", paid: "bool", ms: "int" },
       "voice.stitch.check": { outcome: "word", accepted: "bool", rejected: "bool", checks: "int" },
       "voice.stitch.play": { outcome: "word", count: "int" },
+      "party.request": { route: "route", status: "int", code: "word" },
       "voice.live": { outcome: "word", stop: "word", slices: "int" },
     });
   });

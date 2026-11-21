@@ -576,6 +576,10 @@ The screens of this spec are built from `design/elements.css`, with the values o
 
 A screen's own style says only where things go. A piece that is missing is added to the elements and the catalogue first. A screen built before this section moves onto the elements when it is next changed.
 
+## Doors between Zones and the Haunt Event knock (handed over, 2026-11-21)
+
+Decided for puzzles task 16.6 (Requirement 24.6): **the `knock-door` spec takes both** the door between Zones that opens to a secret knock (and, in the same spec, the heavy door that opens when Players act together) and the Haunt Event in which the ghost knocks a pattern on the TV (the Slam). It already holds the rules, the server-owned door state and the Engine hooks, so Party Mode adds nothing of its own for them. What Party Mode keeps and `knock-door` only reads: the Room, the Zones and their order, the Turn and who may walk where (a shut door closes the Zone behind it for everyone), the Haunt and its thresholds, and the public view. A door or a Slam never changes a card, the Solution, the Turn order or a winner, and with the Puzzle setting `off` every door is open for good. The knock itself stays the `knock` Kind of the `puzzles` spec, so there is one pattern reader and one judge (`shared/src/puzzles/knock.ts`).
+
 ## Idea: knocking (2026-11-15, not yet a requirement)
 
 A phone lying on the table can feel a knock on that table (a short jolt on the motion sensor) and hear it (a sharp click on the microphone, loudness only, nothing recorded). Knocking is the oldest way a ghost talks, so it fits the game. Candidate uses, best first:

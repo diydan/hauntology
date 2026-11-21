@@ -1,0 +1,44 @@
+/* The Host and Display pages (party-mode groups 8 and 10): layout only, from tokens. The look is the design system. */
+.ph-page { min-height: 100vh; min-height: 100dvh; padding: var(--space-5); display: grid; align-content: start; gap: var(--space-4); }
+.ph-start, .ph-lobby, .ph-ending { max-width: 56rem; margin: 0 auto; }
+.ph-code-letters { margin: 0; font-size: var(--text-display); font-weight: 600; letter-spacing: 0.3em; line-height: 1; }
+.ph-stage { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.ph-world { min-height: 24rem; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunk); overflow: hidden; }
+.ph-hud, .ph-side { min-width: 0; }
+.ph-shadow-picture, .ph-reel-picture, .ph-film-picture { aspect-ratio: 4 / 3; max-height: 16rem; }
+.ph-shadow-picture video, .ph-reel-picture video, .ph-film-picture video, .ph-shadow-picture img, .ph-reel-picture img, .ph-film-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ph-skip { justify-self: start; }
+.ph-clock { min-width: 5rem; justify-content: center; font-size: var(--text-lead); }
+.ph-zones { flex-wrap: wrap; }
+.ph-conn { position: sticky; top: 0; z-index: var(--z-sticky); }
+.ph-flash { position: fixed; inset: 0; z-index: var(--z-modal); pointer-events: none; background: var(--text); opacity: 0.15; }
+.ph-dim { position: fixed; inset: 0; z-index: var(--z-modal); pointer-events: none; background: var(--surface-page); }
+.ph-caption { position: fixed; left: 50%; bottom: var(--space-6); transform: translateX(-50%); z-index: var(--z-modal); max-width: 40rem; text-align: center; }
+.ph-pad { max-width: 28rem; }
+@media (max-width: 52rem) { .ph-stage { grid-template-columns: minmax(0, 1fr); } }
+
+.pd-page { position: fixed; inset: 0; background: var(--surface-page); overflow: hidden; }
+.pd-pyramid { position: absolute; inset: 0; }
+.pd-tile { position: absolute; display: grid; place-items: center; transform-origin: center; }
+.pd-single { position: absolute; inset: 0; display: grid; place-items: center; }
+.pd-stage { display: grid; gap: var(--space-2); text-align: center; padding: var(--space-3); }
+.pd-who { margin: 0; font-size: var(--text-title); }
+.pd-clock { margin: 0; font-size: var(--text-display); font-weight: 600; }
+.pd-haunt, .pd-line, .pd-wait { margin: 0; font-size: var(--text-body); color: var(--text-quiet); }
+.pd-note { position: absolute; top: var(--space-3); left: 0; right: 0; text-align: center; }
+.pd-toggle { position: absolute; right: var(--space-3); bottom: var(--space-3); opacity: 0.4; }
+.pd-cal { position: absolute; right: var(--space-3); bottom: calc(var(--space-3) + 3.5rem); width: min(24rem, calc(100% - var(--space-5))); }
+.pd-page[data-flash="on"] { background: var(--surface-raised); }
+.pd-page[data-dim="on"] .pd-pyramid, .pd-page[data-dim="on"] .pd-single { opacity: 0.6; }
+
+/* The doors on the Display (knock-door 8.2): a marker for each door on the diorama, swung slowly with the one slow fade, none under reduced motion */
+.pd-doors { display: grid; gap: var(--space-2); justify-items: center; }
+.pd-diorama { position: relative; width: 100%; min-width: 8rem; aspect-ratio: 2 / 1; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunk); }
+.pd-door { position: absolute; width: 1.5rem; height: 1.5rem; transform: translate(-50%, -50%); }
+.pd-door-leaf { position: absolute; inset: 0 auto 0 0; width: 0.25rem; border-radius: var(--radius-sm); background: var(--accent); transform-origin: top left; transition: transform var(--fade-slow) var(--ease); }
+.pd-door[data-open="no"] .pd-door-leaf { transform: rotate(0deg); }
+.pd-door[data-open="yes"] .pd-door-leaf { transform: rotate(-70deg); background: var(--text-quiet); }
+.pd-door[data-at-door="yes"] { outline: var(--stroke-thin) solid var(--accent); border-radius: var(--radius-lg); }
+.pd-door[data-motion="none"] .pd-door-leaf { transition: none; }
+.pd-door-words { margin: 0; padding: 0; list-style: none; text-align: center; }
+.pd-knock { margin: 0; font-size: var(--text-body); color: var(--text-quiet); }

@@ -2,7 +2,27 @@ import { whoIs } from "./auth";
 import { publicDoors, type DoorSetup } from "./doors";
 import { createEngine, repairDoors, seatedHumans, step, type EngineSettings, type EngineState, type Outbound, type PublicSnapshot } from "./engine";
 import { handOver } from "./master";
+import { seatProfile } from "./seat-portraits";
+import { acceptMovement, maySend, sanitizeInput } from "./input";
+import { addClockSample, applySwitches, type SkyPlace, chooseWorld, cleanPose, initialExtras, ORIGIN_POSE, poseDue, scheduleStrike, type RoomExtras, type Sky } from "./room-extras";
+import { lightMessages, lightTriggers, strikeLine, strikeMessages } from "./room-time";
+import { MIDNIGHT_LINE } from "./hour";
+import { audioBase, clipLengthOk, decodeB64, hostClips, isBankWord } from "./room-stitch";
+import { mulberry32, hash } from "../puzzles/rng";
+import { canCheck, type ChecksState } from "../voice/stitch/check";
+import { composeStitch } from "../voice/stitch/compose";
+import { consentEffective, type StitchConsent } from "../voice/stitch/consent";
+import { nextPurgeAt } from "../voice/stitch/purge";
+import { stitchReveal } from "../voice/stitch/play";
+import type { StitchClip } from "../voice/stitch/compose";
+import { stitchSchedule } from "./stitch";
+import { roomConditions } from "./conditions";
+import type { Pose } from "../ghost/types";
+import { applyPatch, emptyContrib, toContributions, type ContribPatch, type LobbyContrib } from "./lobby-contrib";
+import { offerFor, skipFor, type PromptOffer } from "./photoPrompts";
+import { buildPool } from "./pool";
 import { PRESET_GHOST_IDS } from "./preset-ghosts";
+import { NO_SPEND, type RoomSpend } from "./spend";
 import { parseClientMessage } from "./protocol";
 import { createRoomState, isRoomExpired, newToken, parseRoom, serializeRoom, type RoomState, type Seat } from "./room";
 import { humanCount, seatPlayer } from "./seats";
@@ -10,14 +30,23 @@ import { BOT_NAMES } from "./solo";
 import type { NameConsent, SongsSetting } from "../songs/lyrics";
 import { initialSongPlan, songRequests, type SongPlanState, type SongRequest } from "../songs/plan";
 import type { LineKind, VoiceLine } from "../voice/line";
-import type { LodgerVoice, Speaker } from "../voice/voices";
+import { LODGER_VOICE_ORDER, type LodgerVoice, type Speaker } from "../voice/voices";
+import { confessionLine } from "./lodger";
+import { SCRIPTED_BANKS } from "../voice/banks";
+import { FINITE_VALUES } from "../voice/placeholders";
+import { buildLibrary, type LibraryEntry } from "../voice/library";
+import { lineKindOf, lodgerVoiceOfProfile, narratableLog, viewOfEngine } from "./narrate-events";
+import type { PublicView } from "./views";
+import { partyScripted, speakerFor, type PartyDirective } from "./narrate";
 import type { PlayedStitch } from "../voice/stitch/play";
 import {
   applyRoomSpeechToggle,
   applyStitchAnswer,
+  applyStitchLeave,
   applyStitchMasterSwitch,
   findRoomVoiceLine,
   initialRoomVoiceState,
+  planRoomPrefetch,
   prepareRoomNarration,
   recordStitchPlayed,
   type RoomVoiceState,
@@ -44,8 +73,37 @@ export type Ports = {
   doors?(): DoorSetup | null;
   /** Deletes stored Stitch clips for specific seats or all seats on leave/withdraw/switch-off. */
   deleteStitchClips?(forSeats: number[] | "all"): Promise<void>;
+  /** Deletes the Room's contributed photos and ghosts when it ends (party-mode 10.4). */
+  deleteContributions?(code: string): Promise<void>;
   /** Deletes stored generated songs for this Room when it ends (`game-songs` 3.1). */
   deleteSongs?(code: string): Promise<void>;
+  /** True when a game may start only after the Master chose a world (`world_not_set`, party-mode 4.11). The Worker says yes; a bare test Room does not. */
+  requireWorld?(): boolean;
+  /**
+   * The real world at the start (party-mode 4.18): called once, with the Master's choice (and place), for the sky. It may take its time
+   * and may fail; the Room keeps only the three cosmetic fields and falls back to the default sky on a `null`, a throw or a refusal.
+   */
+  /**
+   * The word check for one recorded word (party-mode 4.20, ghost-voice 5.9): transcribes the clip once, keeps it in the Room's own
+   * storage only when the word was heard, and returns the new check counters. Absent without a speech binding: the Player is told it is unavailable.
+   */
+  wordCheck?(i: Readonly<{ code: string; seat: number; word: string; audio: Uint8Array; contentType: string; durationMs: number; state: Readonly<{ enabled: boolean; consents: readonly StitchConsent[]; checks: ChecksState }> }>):
+    Promise<{ ok: true; accepted: boolean; checks: ChecksState } | { ok: false; code: string; checks: ChecksState }>;
+  /** The clips the Room holds, for the whisper and the purge. */
+  listStitchClips?(): Promise<StitchClip[]>;
+  /** Drops clips that no longer qualify (game over, switch off, left, six hours) and returns when the next one expires. */
+  purgeStitchClips?(ctx: Readonly<{ gameOver: boolean; enabled: boolean; activeSeats: ReadonlySet<number>; consents: readonly StitchConsent[] }>, now: number): Promise<number | null>;
+  conditions?(choice: "place" | "table", place: SkyPlace | null, hostHour: number): Promise<Sky | null>;
+  /**
+   * The words for one public event (party-mode 6.1): a guarded model line, or the scripted one. It gets the Public View only and
+   * never throws; absent, the Room narrates from the scripted banks. Asked only while the Master has speaking on.
+   */
+  /**
+   * A line was validated, kept for the Host and is about to be asked for (ghost-voice 3.12): the place to start its synthesis early so the
+   * Host's `speak` joins the running call. Never throws into the Room, and is not awaited.
+   */
+  spoke?(line: VoiceLine, code: string): void;
+  narrate?(view: PublicView, event: Readonly<{ id: number; kind: PartyDirective; code: string }>, rng: () => number): Promise<{ text: string; speaker: Speaker } | null>;
 };
 
 export type RoomSongsState = Readonly<{
@@ -75,23 +133,47 @@ export type ServerState = Readonly<{
   sockets: Readonly<Record<string, SocketInfo>>;
   voice: RoomVoiceState;
   songs: RoomSongsState;
+  /** What the lobby collected: Suspects, photos, Zone names, prompt skips and selfie yes answers (party-mode 4.2). */
+  contrib?: LobbyContrib;
+  /** What the Room has spent on paid calls, against its own caps (party-mode 10.1). */
+  spend?: RoomSpend;
+  /** The world, the Master's room switches, light consent, clock samples and the last hour strike (party-mode 4.11, 4.17 to 4.19). Optional, so a Room saved before it still loads. */
+  extras?: RoomExtras;
+  /** Sockets that are open but have not said `hello` yet, by the time they must (party-mode 4.1: within 5 s, else closed). Saved, so a Room that hibernated still closes them. */
+  helloBy?: Readonly<Record<string, number>>;
 }>;
+
+/** A socket must say `hello` within this long of opening (party-mode 4.1). */
+export const HELLO_MS = 5_000;
+/** Contribution requests one seat may make in a minute (a photo, a Zone name, the Suspect steps and a selfie are a handful; this stops a loop). */
+export const CONTRIBUTIONS_PER_MINUTE = 12;
+
+let libraryCache: LibraryEntry[] | null = null;
+/** The Library entries a Room may list for prefetch: built once from the scripted banks. */
+const roomLibrary = (): LibraryEntry[] => (libraryCache ??= buildLibrary(SCRIPTED_BANKS, FINITE_VALUES));
 
 export const DEFAULT_SETTINGS: EngineSettings = { baseSeconds: 60, hauntMax: 10, nudges: "all", frames: true, sounds: true, puzzles: "medium", preset: "classic" };
 
-const seedFrom = (b: Uint8Array): number => ((b[0] ?? 0) | ((b[1] ?? 0) << 8) | ((b[2] ?? 0) << 16) | ((b[3] ?? 0) << 24)) >>> 0;
+/** Bytes of crypto randomness behind a Room's seed (party-mode 4.1: 128 bits). */
+export const SEED_BYTES = 16;
+/** The Room's seed: all 128 bits are drawn from the platform's `crypto.getRandomValues` and folded into the 32-bit state the Engine's generators take. */
+const seedFrom = (b: Uint8Array): number => hash("seed", ...Array.from(b.subarray(0, SEED_BYTES)));
 
 export class RoomCore {
   private state: ServerState | null = null;
   /** Per socket: the start of its current one-second window and the messages in it. Memory only: an eviction resets it, which is harmless. */
   private readonly rate = new Map<string, { startMs: number; n: number }>();
+  /** Per socket, memory only (input and pose are never stored): when its last input was taken and when the Host's last pose was relayed. */
+  private readonly lastInputMs = new Map<string, number>();
+  private lastPoseMs: number | null = null;
+  private lastPose: Pose = ORIGIN_POSE;
   constructor(private readonly ports: Ports) {}
 
   private async loaded(): Promise<ServerState | null> {
     if (this.state !== null) return this.state;
     const text = await this.ports.load();
     if (text === undefined) return null;
-    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState };
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState; contrib?: LobbyContrib; spend?: RoomSpend; extras?: RoomExtras; helloBy?: Record<string, number> };
     const room = parseRoom(raw.room);
     if (room === null) return null;
     // a saved door state that does not parse falls back to the start (knock-door 8.1)
@@ -104,15 +186,15 @@ export class RoomCore {
       sockets: raw.sockets,
       voice: raw.voice ?? initialRoomVoiceState(),
       songs: raw.songs ?? initialRoomSongsState(),
+      ...(raw.contrib !== undefined ? { contrib: raw.contrib } : {}),
+      ...(raw.spend !== undefined ? { spend: raw.spend } : {}),
+      ...(raw.extras !== undefined ? { extras: raw.extras } : {}),
+      ...(raw.helloBy !== undefined ? { helloBy: raw.helloBy } : {}),
     };
     return this.state;
   }
 
-  /** Save first, then set the alarm, then send: a crash after a send never loses what was sent. */
-  private async commit(next0: ServerState, out: readonly Outbound[] = [], wakeAtMs: number | null = null): Promise<void> {
-    // the Engine may pass the Master role on (a Master away 60 s); the lobby's record follows it
-    const next = next0.engine !== null && next0.engine.masterSeat !== next0.room.masterSeat ? { ...next0, room: { ...next0.room, masterSeat: next0.engine.masterSeat as Seat } } : next0;
-    this.state = next;
+  private async persist(next: ServerState): Promise<void> {
     await this.ports.save(JSON.stringify({
       room: serializeRoom(next.room),
       engine: next.engine,
@@ -122,23 +204,185 @@ export class RoomCore {
       sockets: next.sockets,
       voice: next.voice,
       songs: next.songs,
+      ...(next.contrib !== undefined ? { contrib: next.contrib } : {}),
+      ...(next.spend !== undefined ? { spend: next.spend } : {}),
+      ...(next.extras !== undefined ? { extras: next.extras } : {}),
+      ...(next.helloBy !== undefined && Object.keys(next.helloBy).length > 0 ? { helloBy: next.helloBy } : {}),
     }));
+  }
+
+  /** Save first, then set the alarm, then send: a crash after a send never loses what was sent. */
+  private async commit(next0: ServerState, out: readonly Outbound[] = [], wakeAtMs: number | null = null): Promise<void> {
+    // the Engine may pass the Master role on (a Master away 60 s); the lobby's record follows it
+    const merged = next0.engine !== null && next0.engine.masterSeat !== next0.room.masterSeat ? { ...next0, room: { ...next0.room, masterSeat: next0.engine.masterSeat as Seat } } : next0;
+    const prevEngine = this.state?.engine ?? null;
+    // the hour strike the alarm waits for next (party-mode 4.17): derived here, so every change keeps it right
+    const x0 = merged.extras;
+    const pending = x0 === undefined ? null : scheduleStrike(x0, merged.engine?.phase === "playing", this.ports.now());
+    const next: ServerState = x0 === undefined || (x0.pendingStrike ?? null) === pending ? merged : { ...merged, extras: { ...x0, pendingStrike: pending } };
+    this.state = next;
+    await this.persist(next);
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
-    await this.ports.setAlarm(wakeAtMs === null ? ttlAt : Math.min(wakeAtMs, ttlAt));
+    const strikeAt = next.extras?.pendingStrike?.atMs ?? null;
+    const purgeAt = next.extras?.purgeAtMs ?? null;
+    const wakes = [ttlAt, ...Object.values(next.helloBy ?? {}), ...(wakeAtMs === null ? [] : [wakeAtMs]), ...(strikeAt === null ? [] : [strikeAt]), ...(purgeAt === null ? [] : [purgeAt])];
+    await this.ports.setAlarm(Math.min(...wakes));
     this.route(next, out);
+    this.playLights(next, lightTriggers(prevEngine, next.engine));
+    const from = prevEngine?.nextId ?? 0;
+    if (next.engine !== null && next.engine.log.some((e) => e.id >= from && e.kind === "haunt-event")) this.stitchDue = "haunt_event";
+    await this.narrateNew(prevEngine, next);
+    await this.prefetchNew(next);
+    // the game is over: no clip stays (party-mode 18.5)
+    if (prevEngine !== null && prevEngine.phase !== "ended" && next.engine?.phase === "ended") await this.ports.deleteStitchClips?.("all");
+  }
+
+  /**
+   * Narrates the public events this change added, while speaking is on (party-mode 6): the Speaker's line from `ports.narrate` (or the
+   * scripted bank), then, once the Solution is public, the Suspect's own confession in that Suspect's Lodger Voice. Every line goes
+   * through `speakRoomEvent`, so the 20-line cap and the Master's switch apply, and nothing here changes a rule.
+   */
+  private narrating = false;
+  private async narrateNew(prev: EngineState | null, next: ServerState): Promise<void> {
+    if (this.narrating || next.engine === null || !next.voice.speechOn) return;
+    const from = prev?.nextId ?? 0;
+    const events = narratableLog(next.engine.log, from);
+    const view = viewOfEngine(next.engine);
+    if (events.length === 0 && !(prev !== null && prev.phase !== "ended" && next.engine.phase === "ended")) return;
+    this.narrating = true;
+    try {
+      for (const ev of events) {
+        const rng = mulberry32(hash(next.room.code, ev.id));
+        const spoken = this.ports.narrate === undefined ? null : await this.ports.narrate(view, { ...ev, code: next.room.code }, rng).catch(() => null);
+        const text = spoken?.text ?? partyScripted(ev.kind, speakerFor(ev.kind), rng);
+        const speaker = spoken?.speaker ?? speakerFor(ev.kind);
+        await this.speakRoomEvent({ id: `ev-${ev.id}`, kind: lineKindOf(ev.kind), speaker, text });
+        if (ev.kind === "accuse-right") await this.confess(view, ev.id, "accuse-right");
+      }
+      if (prev !== null && prev.phase !== "ended" && next.engine.phase === "ended" && view.ending !== null && !events.some((e) => e.kind === "accuse-right")) {
+        await this.confess(view, -1, "ended-solved");
+      }
+    } finally { this.narrating = false; }
+  }
+
+  /** Lists the Library lines worth warming on the Host while speaking is on (ghost-voice 3.12, 4.8). Sent to the Host only, and only when the list changes. */
+  private async prefetchNew(committed: ServerState): Promise<void> {
+    // The narration just before may have committed a newer state (the spoken lines): plan from that one, never from the stale one.
+    const next = this.state ?? committed;
+    if (this.narrating || next.engine === null || !next.voice.speechOn) return;
+    const now = this.ports.now();
+    const plan = planRoomPrefetch(next.voice, { phase: next.engine.phase, haunt: { level: next.engine.haunt.level, max: next.engine.haunt.max }, minutesToMidnight: null }, roomLibrary(), now);
+    if (plan.state === next.voice) return;
+    const kept: ServerState = { ...next, voice: plan.state };
+    this.state = kept;
+    await this.persist(kept);
+    if (plan.hostMsg === null) return;
+    for (const [sid, info] of Object.entries(next.sockets)) if (info.role === "host") this.ports.send(sid, plan.hostMsg);
+  }
+
+  /** The Suspect in the Solution speaks its confession, in its own Lodger Voice, only once the Solution is public. */
+  private async confess(view: PublicView, eventId: number, kind: "accuse-right" | "ended-solved"): Promise<void> {
+    const s = this.state;
+    if (s === null || view.ending === null) return;
+    const suspect = view.suspects.find((x) => x.id === view.ending?.solution.suspect);
+    if (suspect === undefined) return;
+    const text = confessionLine(view, suspect.id, kind, mulberry32(hash(s.room.code, "confess", eventId)));
+    if (text === null || text === "") return;
+    await this.speakRoomEvent({ id: `lodger-${kind}-${eventId}`, kind: "ending", speaker: "lodger", lodgerVoice: lodgerVoiceOfProfile(s.contrib, suspect.profileId), text });
+  }
+
+  /** What the next `flushStitch` may whisper at: a Haunt Event or midnight. Memory only; a missed moment is simply missed. */
+  private stitchDue: "haunt_event" | "midnight" | null = null;
+
+  /**
+   * Stitch at a Haunt Event or midnight (party-mode 4.20): when `stitchSchedule` allows (rare, never early, never during an
+   * Accusation, never the same Player twice running, only a Player with a yes and the clips), the Host plays the composed
+   * line with its subtitle and every screen reads "a voice whispered". The clips never leave the Room except to the Host.
+   */
+  private async flushStitch(): Promise<void> {
+    const kind = this.stitchDue;
+    this.stitchDue = null;
+    if (kind === null || this.ports.listStitchClips === undefined) return;
+    const s = await this.loaded();
+    if (s === null || s.engine === null || s.engine.phase !== "playing" || !s.voice.stitch.enabled) return;
+    const now = this.ports.now();
+    const x = s.extras ?? initialExtras();
+    const stitch = s.voice.stitch;
+    const clips = await this.ports.listStitchClips();
+    const rounds = x.stitchRounds ?? [];
+    const eng = s.engine;
+    const input = {
+      kind, gameElapsedMs: now - (x.gameStartMs ?? now), accusationActive: eng.players.some((p) => p.hasSealed),
+      roundStitches: rounds.filter((r) => r === eng.round).length, gameStitches: stitch.played.game, lastSeat: stitch.played.lastSeat, enabled: true,
+      seats: s.room.seats.filter((q) => !q.bot).map((q) => ({ seat: q.seat as number, consent: stitch.consents.find((c) => c.seat === q.seat) ?? null, clips: clips.filter((c) => c.seat === q.seat) })),
+    };
+    const pick = stitchSchedule(input, mulberry32(hash("stitch", s.room.seed, stitch.played.game)));
+    if (!pick.ok) return;
+    const line = composeStitch(pick.seat, pick.template, clips);
+    if (line === null) return;
+    const event = { eventId: `stitch-${stitch.played.game + 1}`, seat: pick.seat, templateId: pick.template.id, subtitle: line.subtitle, at: now };
+    const rec = recordStitchPlayed(s.voice, event, hostClips(line.clips));
+    await this.commit({ ...s, voice: rec.state, extras: { ...x, stitchRounds: [...rounds, eng.round] } });
+    for (const [sid, info] of Object.entries(s.sockets)) {
+      if (info.role === "host") this.ports.send(sid, rec.hostMsg);
+      this.ports.send(sid, rec.publicLog);
+    }
+  }
+
+  /** The light bar for the Haunt Events and House Cues the last step logged (party-mode 4.19). */
+  private playLights(s: ServerState, triggers: ReturnType<typeof lightTriggers>): void {
+    if (triggers.length === 0 || s.extras === undefined) return;
+    const humans = s.room.seats.filter((x) => !x.bot).map((x) => x.seat as number);
+    for (const t of triggers) for (const { seat, msg } of lightMessages(t, this.ports.now(), humans, s.extras)) {
+      for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "controller" && info.seat === seat) this.ports.send(sid, msg);
+    }
   }
 
   private route(s: ServerState, out: readonly Outbound[]): void {
+    const sky = roomConditions(s.extras?.sky);
     for (const o of out) {
+      // only the three cosmetic fields of the frozen sky ride on the Public View (party-mode 4.18)
+      let msg: typeof o.msg = o.msg;
+      if (o.to === "public" && o.msg.t === "public") {
+        let view = o.msg.view as PublicSnapshot & Record<string, unknown>;
+        if (sky !== undefined) view = { ...view, atmosphere: sky };
+        // the ending names each whispered line and whose words it used (party-mode 18.5)
+        const played = s.voice.stitch.played.list;
+        if (view.ending !== null && played.length > 0) view = { ...view, ending: { ...view.ending, stitch: stitchReveal(played) } as PublicSnapshot["ending"] };
+        msg = { ...o.msg, view };
+      }
       for (const [sid, info] of Object.entries(s.sockets)) {
-        if (o.to === "public" || (info.role === "controller" && info.seat === o.seat)) this.ports.send(sid, o.msg);
+        if (o.to === "public" || (o.to === "host" && info.role === "host") || (o.to === "seat" && info.role === "controller" && info.seat === o.seat)) this.ports.send(sid, msg);
       }
     }
   }
 
+  /** The real world, once, at the start: the Master's choice, or nothing. Never blocks and never throws (party-mode 4.18). */
+  private async skyAtStart(s0: ServerState): Promise<ServerState> {
+    const s: ServerState = { ...s0, extras: { ...(s0.extras ?? initialExtras()), gameStartMs: this.ports.now(), stitchRounds: [] } };
+    const x = s.extras as RoomExtras;
+    if (x.switches.conditions === "off" || this.ports.conditions === undefined) return s;
+    let sky: Sky | null = null;
+    const hostHour = Math.floor((((this.ports.now() + (x.hostOffsetMin ?? 0) * 60_000) % 86_400_000) + 86_400_000) % 86_400_000 / 3_600_000);
+    try { sky = await this.ports.conditions(x.switches.conditions, x.switches.place, hostHour); } catch { sky = null; }
+    const clean = sky !== null && [sky.weather, sky.timeOfDay, sky.moon].every((v) => typeof v === "string" && v.length > 0 && v.length <= 32) ? { weather: sky.weather, timeOfDay: sky.timeOfDay, moon: sky.moon } : null;
+    // the position is dropped the moment it has been used: the Room keeps only the three cosmetic fields
+    return { ...s, extras: { ...x, sky: clean, switches: { ...x.switches, place: null } } };
+  }
+  private sendSky(s: ServerState): void {
+    const sky = roomConditions(s.extras?.sky);
+    if (sky === undefined) return;
+    for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "host") this.ports.send(sid, { t: "setAtmosphere", ...sky });
+  }
+
   private lobbyView(s: ServerState) {
     return { t: "lobby" as const, code: s.room.code, masterSeat: s.room.masterSeat, started: s.room.started, settings: s.lobbySettings,
-      seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, connected: x.connected })) };
+      worldId: s.extras?.world?.id ?? null, switches: (s.extras ?? initialExtras()).switches,
+      seats: s.room.seats.map((x) => {
+        // each Player's picture, if they contributed a ghost (a chip is drawn for the rest and for every Bot)
+        const portrait = x.bot ? null : seatProfile(s.room.code, x.seat, s.contrib);
+        return { seat: x.seat, nickname: x.nickname, bot: x.bot, connected: x.connected, ...(portrait !== null ? { portrait } : {}) };
+      }) };
   }
   private broadcastLobby(s: ServerState): void { for (const sid of Object.keys(s.sockets)) this.ports.send(sid, this.lobbyView(s)); }
 
@@ -150,12 +394,13 @@ export class RoomCore {
   }
 
   private draftEngine(s: ServerState): EngineState {
-    const botLevel = s.lobbySettings.preset === "gentle" ? ("gentle" as const) : ("standard" as const);
+    const botLevel = s.lobbySettings.botLevel ?? (s.lobbySettings.preset === "gentle" ? ("gentle" as const) : ("standard" as const));
     return createEngine({
       seed: s.room.seed,
       seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })),
       settings: s.lobbySettings,
       presetIds: PRESET_GHOST_IDS,
+      pool: buildPool(toContributions(s.contrib ?? emptyContrib()), PRESET_GHOST_IDS, s.room.seed),
       doors: s.doors ?? this.ports.doors?.() ?? null,
       ...(s.lobbyErrandOptOut ? { errandOptOut: s.lobbyErrandOptOut } : {}),
     });
@@ -166,7 +411,7 @@ export class RoomCore {
     const fill = (b: Uint8Array): Uint8Array => { b.set(this.ports.randomBytes(b.length)); return b; };
     const hostToken = newToken(fill);
     const displayToken = newToken(fill);
-    const room = createRoomState(code, seedFrom(this.ports.randomBytes(4)), this.ports.now(), hostToken, displayToken);
+    const room = createRoomState(code, seedFrom(this.ports.randomBytes(SEED_BYTES)), this.ports.now(), hostToken, displayToken);
     await this.commit({
       room,
       engine: null,
@@ -191,8 +436,75 @@ export class RoomCore {
     return { ok: true, seat: res.seat, token };
   }
 
+  // ------------------------------------------------------------ the lobby's contributions (party-mode 4.2, 5, 7)
+  /** Which device holds this token, for the routes: its role, seat, whether it is the Master, and whether the game has started. `null` for a token this Room never gave. */
+  async identify(token: string): Promise<{ role: "host" | "display" | "controller"; seat: number | null; master: boolean; started: boolean } | null> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return null;
+    const who = whoIs(s.room, token);
+    if (who === null) return null;
+    return { role: who.role, seat: who.seat, master: who.seat !== null && who.seat === s.room.masterSeat, started: s.room.started || s.engine !== null };
+  }
+
+  /** What a seat needs to contribute: its prompt offer, the selfie switch and its own yes. Only a Player's own token, and only in the lobby. */
+  async lobbyContext(token: string): Promise<{ ok: true; seat: number; offer: PromptOffer; selfies: boolean; selfieYes: boolean; selfieMade: boolean } | { ok: false; code: string }> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return { ok: false, code: "room_unknown" };
+    const who = whoIs(s.room, token);
+    if (who === null || who.role !== "controller" || who.seat === null) return { ok: false, code: "bad_token" };
+    if (s.room.started || s.engine !== null) return { ok: false, code: "game_started" };
+    const c = s.contrib ?? emptyContrib();
+    const offer = offerFor(s.room.seed, who.seat, c.promptRound[who.seat] ?? 0) as PromptOffer;
+    return { ok: true, seat: who.seat, offer, selfies: s.lobbySettings.selfies === true, selfieYes: c.selfieYes[who.seat] === true, selfieMade: c.selfieMade[who.seat] === true };
+  }
+
+  /** Records one contribution for the token's own seat. The Room keeps only ids and verdicts; the photo and the Ghost's files are stored elsewhere. */
+  async recordContribution(token: string, patch: ContribPatch): Promise<{ ok: true } | { ok: false; code: string }> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return { ok: false, code: "room_unknown" };
+    const who = whoIs(s.room, token);
+    if (who === null || who.role !== "controller" || who.seat === null) return { ok: false, code: "bad_token" };
+    if (s.room.started || s.engine !== null) return { ok: false, code: "game_started" };
+    if (patch.kind === "ghost" && patch.lodgerVoice !== undefined && !(LODGER_VOICE_ORDER as readonly string[]).includes(patch.lodgerVoice)) return { ok: false, code: "bad_request" };
+    if (patch.kind === "promptRound" && (!Number.isInteger(patch.round) || patch.round < 0 || patch.round > 3)) return { ok: false, code: "bad_request" };
+    const next = { ...s, contrib: applyPatch(s.contrib ?? emptyContrib(), who.seat, patch), room: { ...s.room, lastActiveMs: this.ports.now() } };
+    await this.commit(next);
+    return { ok: true };
+  }
+
+  /** One Photo Prompt skip for the token's own seat: the next three prompts, or `prompt_skips_used` after the third. */
+  async skipPrompt(token: string): Promise<{ ok: true; offer: PromptOffer } | { ok: false; code: string }> {
+    const ctx = await this.lobbyContext(token);
+    if (!ctx.ok) return ctx;
+    const s = (await this.loaded()) as ServerState;
+    const next = skipFor(s.room.seed, ctx.seat, ctx.offer.round);
+    if (next === null) return { ok: false, code: "prompt_skips_used" };
+    const r = await this.recordContribution(token, { kind: "promptRound", round: next.round });
+    return r.ok ? { ok: true, offer: next } : r;
+  }
+
+  /** What the Room has spent on paid calls. Zero for a Room that has spent nothing. */
+  async loadSpend(): Promise<RoomSpend> {
+    const s = await this.loaded();
+    return s?.spend ?? NO_SPEND;
+  }
+
+  /** Saves the Room's spend. Whole non-negative numbers only; anything else is ignored. */
+  async saveSpend(spend: RoomSpend): Promise<boolean> {
+    const s = await this.loaded();
+    const ok = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 1_000_000;
+    if (s === null || !ok(spend?.images) || !ok(spend?.models)) return false;
+    await this.commit({ ...s, spend: { images: spend.images, models: spend.models } });
+    return true;
+  }
+
   // ------------------------------------------------------------ sockets
   async message(socketId: string, raw: string): Promise<void> {
+    await this.messageInner(socketId, raw);
+    await this.flushStitch();
+  }
+
+  private async messageInner(socketId: string, raw: string): Promise<void> {
     const s = await this.loaded();
     if (s === null) { this.ports.close(socketId, 4004, "room_unknown"); return; }
     const t = this.ports.now();
@@ -210,6 +522,65 @@ export class RoomCore {
     if (parsed.kind === "room") {
       const m = parsed.msg;
       const isMaster = me.role === "controller" && me.seat === s.room.masterSeat;
+      if (m.t === "world") {
+        // the Master chooses; in an all-Bot Room (no human seated) the Host does
+        if (!isMaster && !(me.role === "host" && humanCount(s.room) === 0)) return refuse("not_master");
+        if (s.engine !== null) return refuse("game_started");
+        const w = chooseWorld(m);
+        if (!w.ok) return refuse(w.code);
+        const next = { ...s, extras: { ...(s.extras ?? initialExtras()), world: w.world } };
+        await this.commit(next);
+        return this.broadcastLobby(next);
+      }
+      if (m.t === "roomSettings") {
+        if (!isMaster) return refuse("not_master");
+        const x = s.extras ?? initialExtras();
+        const switches = applySwitches(x.switches, m);
+        // the Engine reads the Rattle switch from its settings; the lobby keeps it for the Engine made at the start
+        const lobbySettings = { ...s.lobbySettings, rattle: switches.rattle };
+        const next = { ...s, lobbySettings, ...(s.engine === null ? {} : { engine: { ...s.engine, settings: { ...s.engine.settings, rattle: switches.rattle } } }), extras: { ...x, switches } };
+        await this.commit(next);
+        return this.broadcastLobby(next);
+      }
+      if (m.t === "hostClock") {
+        if (me.role !== "host") return refuse("not_host");
+        await this.commit({ ...s, extras: { ...(s.extras ?? initialExtras()), hostOffsetMin: m.offsetMin } });
+        return;
+      }
+      if (m.t === "ping") { this.ports.send(socketId, { t: "pong", id: m.id, serverMs: now }); return; }
+      if (m.t === "clockSample") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const x = s.extras ?? initialExtras();
+        const clock = addClockSample(x.clock, me.seat, m);
+        if (clock !== x.clock) await this.commit({ ...s, extras: { ...x, clock } });
+        return;
+      }
+      if (m.t === "light") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const x = s.extras ?? initialExtras();
+        await this.commit({ ...s, extras: { ...x, light: { ...x.light, [me.seat]: { consent: m.consent, reducedMotion: m.reducedMotion === true } } } });
+        return;
+      }
+      if (m.t === "input") {
+        // Not stored and not answered: a phone's stick reaches the Host only while it is the active Detective's, at most 30 a second.
+        if (me.role !== "controller" || me.seat === null || s.engine === null || s.engine.phase !== "playing" || s.engine.pausedSinceMs !== null) return;
+        const last = this.lastInputMs.get(socketId) ?? null;
+        if (!maySend(last, now)) return;
+        const eng = s.engine;
+        const ok = acceptMovement(sanitizeInput(m), me.seat, eng.turn?.seat ?? null, eng.players.filter((p) => p.poltergeist).map((p) => p.seat));
+        if (ok === null) return;
+        this.lastInputMs.set(socketId, now);
+        for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "host") this.ports.send(sid, { t: "input", seat: me.seat, input: ok });
+        return;
+      }
+      if (m.t === "pose") {
+        if (me.role !== "host") return refuse("not_host");
+        if (!poseDue(this.lastPoseMs, now)) return;
+        this.lastPoseMs = now;
+        this.lastPose = cleanPose(m, s.extras?.world ?? null, this.lastPose);
+        for (const [sid, info] of Object.entries(s.sockets)) if (info.role !== "host") this.ports.send(sid, { t: "pose", pos: this.lastPose.pos, yaw: this.lastPose.yaw });
+        return;
+      }
       if (m.t === "end") {
         if (!isMaster && me.role !== "host") return refuse("not_master");
         return this.end(s);
@@ -225,7 +596,7 @@ export class RoomCore {
       if (m.t === "playAgain") {
         if (!isMaster && !(me.role === "host" && s.room.seats.every((x) => x.bot))) return refuse("not_master");
         if (s.engine === null || s.engine.phase !== "ended") return refuse("not_ended");
-        const room = { ...s.room, seed: seedFrom(this.ports.randomBytes(4)), lastActiveMs: now };
+        const room = { ...s.room, seed: seedFrom(this.ports.randomBytes(SEED_BYTES)), lastActiveMs: now };
         const fresh = this.draftEngine({ ...s, room });
         const master = s.engine.masterSeat;
         let r = step({ ...fresh, masterSeat: master }, { kind: "client", seat: master, msg: { t: "start" } }, now);
@@ -234,12 +605,14 @@ export class RoomCore {
         let out = [...r.out];
         // everyone still on a socket is here in the new game too
         for (const info of Object.values(s.sockets)) if (info.role === "controller" && info.seat !== null) { r = step(engine, { kind: "connect", seat: info.seat }, now); engine = r.state; out = [...out, ...r.out]; }
-        return this.commit({ ...s, room, engine }, out, r.wakeAtMs);
+        const again: ServerState = { ...s, room, engine, voice: { ...s.voice, stitch: { ...s.voice.stitch, played: { round: 0, game: 0, lastSeat: null, list: [] } } }, extras: { ...(s.extras ?? initialExtras()), gameStartMs: now, stitchRounds: [] } };
+        return this.commit(again, out, r.wakeAtMs);
       }
       if (m.t === "startBots") {
         if (me.role !== "host") return refuse("not_host");
         if (s.engine !== null) return refuse("already_started");
         if (humanCount(s.room) > 0) return refuse("players_seated");
+        if (this.ports.requireWorld?.() === true && s.extras?.world == null) return refuse("world_not_set");
         let room = s.room;
         while (room.seats.length < (m.bots ?? 4)) {
           const res = seatPlayer(room, this.botName(room), null, now);
@@ -249,7 +622,9 @@ export class RoomCore {
         const draft = this.draftEngine({ ...s, room });
         const r = step(draft, { kind: "client", seat: draft.masterSeat, msg: { t: "start" } }, now);
         if (r.refused) return refuse(r.refused);
-        return this.commit({ ...s, room: { ...room, lastActiveMs: now, started: true }, engine: r.state }, r.out, r.wakeAtMs);
+        const started = await this.skyAtStart({ ...s, room: { ...room, lastActiveMs: now, started: true }, engine: r.state });
+        await this.commit(started, r.out, r.wakeAtMs);
+        return this.sendSky(started);
       }
       if (m.t === "handOver") {
         const token = s.room.seats.find((x) => x.seat === me.seat)?.token ?? "";
@@ -260,13 +635,25 @@ export class RoomCore {
         await this.commit(next);
         return this.broadcastLobby(next);
       }
+      if (m.t === "recapSkip") {
+        if (!isMaster) return refuse("not_master");
+        for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "host") this.ports.send(sid, { t: "recapSkip" });
+        return;
+      }
+      if (m.t === "speech" && m.action !== "on" && m.action !== "off") {
+        // mute, unmute, replay and skip go straight to the Host's speaker (party-mode 8.8); only the Master may
+        if (!isMaster) return refuse("not_master");
+        for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "host") this.ports.send(sid, { t: "speechControl", action: m.action });
+        return;
+      }
       if (m.t === "speech") {
         const toggled = applyRoomSpeechToggle(s.voice, isMaster, m.action === "on");
         if (!toggled.ok) return refuse(toggled.code);
         const next = { ...s, voice: toggled.state };
         await this.commit(next);
+        // the Host plays it, and the Master's phone shows the switch as it really is
         for (const [sid, info] of Object.entries(next.sockets)) {
-          if (info.role === "host") this.ports.send(sid, { t: "speech", on: next.voice.speechOn });
+          if (info.role === "host" || (info.role === "controller" && info.seat === next.room.masterSeat)) this.ports.send(sid, { t: "speech", on: next.voice.speechOn });
         }
         return;
       }
@@ -295,6 +682,36 @@ export class RoomCore {
           await this.ports.deleteStitchClips?.(answered.deleteClipsFor);
         }
         await this.commit({ ...s, voice: answered.state });
+        return;
+      }
+      if (m.t === "stitchClip") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const stitch = s.voice.stitch;
+        const consent = stitch.consents.find((c) => c.seat === me.seat);
+        if (!stitch.enabled) return refuse("stitch_denied:off");
+        if (!consentEffective(consent)) return refuse("stitch_denied:no_consent");
+        if (!isBankWord(m.word)) return refuse("stitch_denied:bad_word");
+        const type = audioBase(m.contentType);
+        const audio = decodeB64(m.audio);
+        if (type === null || audio === null || audio.length === 0 || !clipLengthOk(m.durationMs)) return refuse("stitch_denied:bad_clip");
+        const state = { enabled: stitch.enabled, consents: stitch.consents, checks: stitch.checks };
+        if (!canCheck(state, me.seat, m.word)) { audio.fill(0); this.ports.send(socketId, { t: "stitchResult", word: m.word, ok: false, reason: "limit" }); return; }
+        if (this.ports.wordCheck === undefined) { audio.fill(0); this.ports.send(socketId, { t: "stitchResult", word: m.word, ok: false, reason: "check_unavailable" }); return; }
+        let res: Awaited<ReturnType<NonNullable<Ports["wordCheck"]>>>;
+        try { res = await this.ports.wordCheck({ code: s.room.code, seat: me.seat, word: m.word, audio, contentType: type, durationMs: m.durationMs, state }); }
+        catch { audio.fill(0); this.ports.send(socketId, { t: "stitchResult", word: m.word, ok: false, reason: "check_unavailable" }); return; }
+        audio.fill(0);
+        const fresh = (await this.loaded()) ?? s;
+        const purgeAtMs = res.ok && res.accepted && this.ports.listStitchClips !== undefined ? nextPurgeAt(await this.ports.listStitchClips()) : fresh.extras?.purgeAtMs ?? null;
+        await this.commit({ ...fresh, voice: { ...fresh.voice, stitch: { ...fresh.voice.stitch, checks: res.checks } }, extras: { ...(fresh.extras ?? initialExtras()), purgeAtMs } });
+        this.ports.send(socketId, res.ok ? { t: "stitchResult", word: m.word, ok: res.accepted, ...(res.accepted ? {} : { reason: "not_heard" }) } : { t: "stitchResult", word: m.word, ok: false, reason: res.code });
+        return;
+      }
+      if (m.t === "stitchLeave") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const left = applyStitchLeave(s.voice, me.seat);
+        if (left.deleteClipsFor === "all" || left.deleteClipsFor.length > 0) await this.ports.deleteStitchClips?.(left.deleteClipsFor);
+        await this.commit({ ...s, voice: left.state });
         return;
       }
       if (m.t === "songsSetting") {
@@ -365,21 +782,25 @@ export class RoomCore {
       }
       if (parsed.msg.t === "sound") return refuse("not_started");
       if (s.room.seats.length < 2) return refuse("too_few_players");
+      if (this.ports.requireWorld?.() === true && s.extras?.world == null) return refuse("world_not_set");
       engine = draft;
     }
     const r = step(engine, { kind: "client", seat: me.seat, msg: parsed.msg }, now);
     if (r.refused) return refuse(r.refused);
     let next: ServerState = { ...s, engine: r.state, lobbySettings, room: { ...s.room, lastActiveMs: now, started: true } };
+    if (s.engine === null) next = await this.skyAtStart(next);
     // connect every seat that is on a socket now, so the Engine knows who is here
     if (s.engine === null) for (const info of Object.values(next.sockets)) if (info.role === "controller" && info.seat !== null) next = { ...next, engine: step(next.engine as EngineState, { kind: "connect", seat: info.seat }, now).state };
     await this.commit(next, r.out, r.wakeAtMs);
+    if (s.engine === null) this.sendSky(next);
   }
 
   private async hello(s: ServerState, socketId: string, token: string): Promise<void> {
     const who = whoIs(s.room, token);
     if (who === null) { this.ports.close(socketId, 4403, "bad_token"); return; }
     const now = this.ports.now();
-    let next: ServerState = { ...s, sockets: { ...s.sockets, [socketId]: { role: who.role, seat: who.seat } } };
+    const stillWaiting = Object.fromEntries(Object.entries(s.helloBy ?? {}).filter(([sid]) => sid !== socketId));
+    let next: ServerState = { ...s, sockets: { ...s.sockets, [socketId]: { role: who.role, seat: who.seat } }, helloBy: stillWaiting };
     let out: readonly Outbound[] = [];
     let wake: number | null = null;
     if (who.role === "controller" && who.seat !== null) {
@@ -390,17 +811,46 @@ export class RoomCore {
     // a phone or a TV that joins late is told the state of every door (knock-door 8.4); nothing is added when the world has none
     const doors = next.engine?.doors ? publicDoors(next.engine.doors, seatedHumans(next.engine), now) : null;
     this.ports.send(socketId, { t: "welcome", role: who.role, seat: who.seat, ...(doors ? { doors } : {}) });
+    if (who.role === "host") this.sendSky(next);
     this.ports.send(socketId, this.lobbyView(next));
+  }
+
+  /** Per seat, memory only: when the seat's current minute of contribution requests began and how many it made. An eviction resets it, which is harmless. */
+  private readonly contribRate = new Map<number, { startMs: number; n: number }>();
+
+  /**
+   * The rate limit of the contribution routes (party-mode 7): at most `CONTRIBUTIONS_PER_MINUTE` requests from one seat in a minute, on top of the Room's own
+   * caps on images and model calls. The token must belong to a seat in this Room's lobby; the answer is `{ok: true}` or `rate_limited`.
+   */
+  async contributionGate(token: string): Promise<{ ok: true } | { ok: false; code: string }> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return { ok: false, code: "room_unknown" };
+    const who = whoIs(s.room, token);
+    if (who === null || who.role !== "controller" || who.seat === null) return { ok: false, code: "bad_token" };
+    const now = this.ports.now();
+    const w = this.contribRate.get(who.seat);
+    if (w === undefined || now - w.startMs >= 60_000) { this.contribRate.set(who.seat, { startMs: now, n: 1 }); return { ok: true }; }
+    if (w.n >= CONTRIBUTIONS_PER_MINUTE) return { ok: false, code: "rate_limited" };
+    w.n += 1;
+    return { ok: true };
+  }
+
+  /** A socket was accepted: it has `HELLO_MS` to say `hello` with a token, or the alarm closes it (party-mode 4.1). */
+  async socketOpened(socketId: string): Promise<void> {
+    const s = await this.loaded();
+    if (s === null) { this.ports.close(socketId, 4404, "room_unknown"); return; }
+    await this.commit({ ...s, helloBy: { ...(s.helloBy ?? {}), [socketId]: this.ports.now() + HELLO_MS } });
   }
 
   async socketClosed(socketId: string): Promise<void> {
     const s = await this.loaded();
     if (s === null) return;
     this.rate.delete(socketId);
+    this.lastInputMs.delete(socketId);
     const me = s.sockets[socketId];
     const sockets = { ...s.sockets };
     delete sockets[socketId];
-    let next: ServerState = { ...s, sockets };
+    let next: ServerState = { ...s, sockets, helloBy: Object.fromEntries(Object.entries(s.helloBy ?? {}).filter(([sid]) => sid !== socketId)) };
     let out: readonly Outbound[] = [];
     let wake: number | null = null;
     const stillHere = me?.seat != null && Object.values(sockets).some((x) => x.seat === me.seat);
@@ -412,13 +862,68 @@ export class RoomCore {
   }
 
   async alarm(): Promise<void> {
-    const s = await this.loaded();
+    await this.alarmInner();
+    await this.flushStitch();
+  }
+
+  private async alarmInner(): Promise<void> {
+    let s = await this.loaded();
     if (s === null) return;
     const now = this.ports.now();
     if (isRoomExpired(s.room, now)) return this.end(s);
-    if (s.engine === null) { await this.ports.setAlarm(s.room.lastActiveMs + s.room.ttlMs); return; }
+    // clips that no longer qualify go (six hours, a Player who left, Stitch off), and the next expiry rejoins the one alarm
+    if (this.ports.purgeStitchClips !== undefined && s.extras?.purgeAtMs != null && now >= s.extras.purgeAtMs) {
+      const stitch = s.voice.stitch;
+      const next = await this.ports.purgeStitchClips({ gameOver: s.engine?.phase === "ended", enabled: stitch.enabled, activeSeats: new Set(s.room.seats.filter((q) => !q.bot).map((q) => q.seat as number)), consents: stitch.consents }, now);
+      s = { ...s, extras: { ...(s.extras ?? initialExtras()), purgeAtMs: next } };
+    }
+    // a socket that has not said `hello` in 5 s is closed (party-mode 4.1)
+    const late = Object.entries(s.helloBy ?? {}).filter(([, by]) => now >= by).map(([sid]) => sid);
+    if (late.length > 0) {
+      for (const sid of late) { this.ports.close(sid, 4408, "hello_timeout"); this.rate.delete(sid); this.lastInputMs.delete(sid); }
+      s = { ...s, helloBy: Object.fromEntries(Object.entries(s.helloBy ?? {}).filter(([sid]) => !late.includes(sid))) };
+    }
+    if (s.engine === null) { await this.commit(s); return; }
     const r = step(s.engine, { kind: "alarm" }, now);
-    await this.commit({ ...s, engine: r.state }, r.out, r.wakeAtMs);
+    const struck = this.strikeIfDue({ ...s, engine: r.state }, now);
+    await this.commit(struck.state, [...r.out, ...struck.out], r.wakeAtMs);
+    for (const m of struck.direct) this.ports.send(m.sid, m.msg);
+    if (struck.midnight !== null) { await this.midnight(struck.midnight); this.stitchDue = "midnight"; }
+  }
+
+  /**
+   * The hour strike, when it is due (party-mode 4.17): the Host and every phone get it at the same server time (a phone with
+   * no consent, no free sound slot or sounds off gets a flash or nothing), the strike counts toward each playing phone's
+   * three sounds, and every screen reads one line. The strike changes no rule.
+   */
+  private strikeIfDue(s: ServerState, now: number): { state: ServerState; out: readonly Outbound[]; direct: readonly { sid: string; msg: unknown }[]; midnight: number | null } {
+    const x = s.extras;
+    const due = x?.pendingStrike;
+    if (x === undefined || due == null || now < due.atMs || s.engine === null || s.engine.phase !== "playing") return { state: s, out: [], direct: [], midnight: null };
+    const eng = s.engine;
+    const phones = eng.players.map((p) => ({ seat: p.seat, bot: eng.seats.find((q) => q.seat === p.seat)?.bot ?? false, consent: p.soundConsent, hasAudio: p.hasAudio, soundsThisRound: p.soundsThisRound }));
+    const msgs = strikeMessages(due, phones, eng.settings.sounds ?? true);
+    const direct: { sid: string; msg: unknown }[] = [];
+    for (const m of msgs) {
+      for (const [sid, info] of Object.entries(s.sockets)) {
+        if (m.target === "host" ? info.role === "host" : info.role === "controller" && info.seat === m.target) direct.push({ sid, msg: m.msg });
+      }
+    }
+    const played = new Set(msgs.filter((m) => m.target !== "host" && m.msg.plan === "play").map((m) => m.target as number));
+    const engine: EngineState = { ...eng, players: eng.players.map((p) => (played.has(p.seat) ? { ...p, soundsThisRound: p.soundsThisRound + 1 } : p)) };
+    for (const [sid, info] of Object.entries(s.sockets)) direct.push({ sid, msg: { t: "scripted", kind: due.midnight ? "midnight" : "strike", line: strikeLine(due, MIDNIGHT_LINE) } });
+    const next: ServerState = { ...s, engine, extras: { ...x, lastStrike: due, pendingStrike: null } };
+    // the light bar: a strike plays the failing bulb to every phone that agreed
+    const humans = s.room.seats.filter((q) => !q.bot).map((q) => q.seat as number);
+    for (const { seat, msg } of lightMessages({ kind: "failing-bulb", seats: null }, now, humans, x)) {
+      for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "controller" && info.seat === seat) direct.push({ sid, msg });
+    }
+    return { state: next, out: [], direct, midnight: due.midnight ? due.atMs : null };
+  }
+
+  /** The ghost's one scripted midnight line, spoken through the ghost voice when it is on (the Host asks for the audio with its token). */
+  private async midnight(atMs: number): Promise<void> {
+    await this.speakRoomEvent({ id: `midnight-${atMs}`, kind: "midnight", speaker: "whisper", text: MIDNIGHT_LINE });
   }
 
   /** Sends a validated voice cue to Host sockets only, respecting `decideSpeak` and keeping the line for `speakLine` (ghost-voice 3.9). */
@@ -447,6 +952,8 @@ export class RoomCore {
     for (const [sid, info] of Object.entries(s.sockets)) {
       if (info.role === "host") this.ports.send(sid, prepared.hostMsg);
     }
+    const kept = prepared.state.voiceLines.find((l) => l.id === prepared.hostMsg?.lineId);
+    if (kept !== undefined) { try { this.ports.spoke?.(kept, s.room.code); } catch { /* a synthesis that cannot start only means the Host's request pays for itself */ } }
     return { spoke: true, lineId: prepared.hostMsg.lineId };
   }
 
@@ -511,10 +1018,26 @@ export class RoomCore {
     if (s !== null) await this.end(s);
   }
 
+  /**
+   * Ends the Room for its Master (the controller in the Master's seat) or its host token, and nobody else (party-mode 7,
+   * `DELETE /api/party/:code`). A display token, another Player or a wrong token is refused and the Room stays.
+   */
+  async endAs(token: string): Promise<"ended" | "forbidden" | "room_unknown"> {
+    const s = await this.loaded();
+    if (s === null) return "room_unknown";
+    const who = token === "" ? null : whoIs(s.room, token);
+    const allowed = who !== null && (who.role === "host" || (who.role === "controller" && who.seat === s.room.masterSeat));
+    if (!allowed) return "forbidden";
+    await this.end(s);
+    return "ended";
+  }
+
   /** End the Room: tell every socket, close them, and delete everything at once (party-mode 1.5). */
   private async end(s: ServerState): Promise<void> {
     for (const sid of Object.keys(s.sockets)) { this.ports.send(sid, { t: "ended" }); this.ports.close(sid, 4000, "room_ended"); }
+    await this.ports.deleteStitchClips?.("all");
     await this.ports.deleteSongs?.(s.room.code);
+    await this.ports.deleteContributions?.(s.room.code);
     await this.ports.deleteAll();
     await this.ports.setAlarm(null);
     this.state = null;

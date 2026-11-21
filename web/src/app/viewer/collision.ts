@@ -16,6 +16,15 @@ export type CollisionWorld = {
   floorYAt(x: number, z: number, fromY: number): number | null;
 };
 
+/** The collider's answer to "where is the floor under this point", far below as well as near (ghost-engine 6.3); kept apart from `CollisionWorld` so the door wrapper is untouched. */
+export type FloorProbe = {
+  /**
+   * The first surface straight below (x, fromY, z), up to `maxDrop` down, where the slope allows standing, else null (nothing there, or a
+   * steep face first). Unlike `floorYAt` it looks a long way down: it is what places the ghost's three anchors.
+   */
+  floorBelow(x: number, z: number, fromY: number, maxDrop: number): number | null;
+};
+
 export const CAPSULE_RADIUS = 0.35;
 export const SLOPE_LIMIT_DEG = 35;
 const SLOPE_MIN_NORMAL_Y = Math.cos((SLOPE_LIMIT_DEG * Math.PI) / 180);
@@ -24,7 +33,7 @@ const SNAP_DOWN = 0.6;
 const SNAP_UP = 0.4;
 const PASSES = 5;
 
-export function collisionWorldFromGeometry(geometry: THREE.BufferGeometry): CollisionWorld {
+export function collisionWorldFromGeometry(geometry: THREE.BufferGeometry): CollisionWorld & FloorProbe {
   const bvh = new MeshBVH(geometry);
   const seg = new THREE.Line3();
   const sphere = new THREE.Sphere();
@@ -35,6 +44,14 @@ export function collisionWorldFromGeometry(geometry: THREE.BufferGeometry): Coll
   const floorYAt = (x: number, z: number, fromY: number): number | null => {
     const ray = new THREE.Ray(new THREE.Vector3(x, fromY + SNAP_UP, z), new THREE.Vector3(0, -1, 0));
     const hit = bvh.raycastFirst(ray, THREE.DoubleSide, 0, SNAP_UP + SNAP_DOWN);
+    if (!hit || !hit.face) return null;
+    return hit.face.normal.y >= SLOPE_MIN_NORMAL_Y ? hit.point.y : null;
+  };
+
+  const floorBelow = (x: number, z: number, fromY: number, maxDrop: number): number | null => {
+    if (![x, z, fromY, maxDrop].every(Number.isFinite) || !(maxDrop > 0)) return null;
+    const ray = new THREE.Ray(new THREE.Vector3(x, fromY, z), new THREE.Vector3(0, -1, 0));
+    const hit = bvh.raycastFirst(ray, THREE.DoubleSide, 0, maxDrop);
     if (!hit || !hit.face) return null;
     return hit.face.normal.y >= SLOPE_MIN_NORMAL_Y ? hit.point.y : null;
   };
@@ -75,5 +92,5 @@ export function collisionWorldFromGeometry(geometry: THREE.BufferGeometry): Coll
     return [feet[0], groundedFeetY + eyeHeight, feet[2]];
   };
 
-  return { resolve, floorYAt };
+  return { resolve, floorYAt, floorBelow };
 }

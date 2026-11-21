@@ -13,7 +13,7 @@ const reachesConditions = (spec: string): boolean => /(^|\/)conditions(\/|$)/.te
 
 /** The rules of a game: the ghost engine and the modules it is made of, and every Party Mode module that decides something (the views, the narrator prompt, the server and the wire format only show it). */
 const GHOST_RULES = ["engine.ts", "anchors.ts", "pose.ts", "rate.ts", "rng.ts", "seeds.ts", "parse.ts", "types.ts"].map((f) => `ghost/${f}`);
-const PARTY_WORDS = new Set(["views.ts", "prompt.ts", "server.ts", "protocol.ts"]);
+const PARTY_WORDS = new Set(["views.ts", "prompt.ts", "server.ts", "protocol.ts", "conditions.ts"]);
 const partyRules = fs.readdirSync(`${src}party`).filter((f) => f.endsWith(".ts") && !/\.(test|prop\.test|arb)\.ts$/.test(f) && !PARTY_WORDS.has(f)).map((f) => `party/${f}`);
 
 describe("rules stay free of conditions", () => {

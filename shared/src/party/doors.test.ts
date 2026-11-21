@@ -162,6 +162,9 @@ describe("doors: the knock lock (Property 4: The lock comes from the Room seed a
     expect(new Set(seeds.map((s) => doorKnock(s, "one").seed)).size).toBeGreaterThan(30);
     expect(new Set(["one", "two", "three", "cellar-door"].map((id) => doorKnock(5, id).seed)).size).toBe(4);
     expect(new Set(seeds.map((s) => doorKnock(s, "one").level)).size).toBe(3);
+    // the level comes from the door id as well as the seed: across ids, one seed gives more than one level
+    const ids = Array.from({ length: 40 }, (_, i) => `door-${i}`);
+    expect(new Set(ids.map((id) => doorKnock(5, id).level)).size).toBeGreaterThan(1);
   });
 });
 

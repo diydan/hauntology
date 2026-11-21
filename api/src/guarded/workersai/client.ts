@@ -5,6 +5,7 @@ import { LlamaGuardTextGuard, guardModelFromEnv, type TextGuard } from "./guard"
 import { DEFAULT_IMAGE_MODEL, FluxImageMaker, FluxPortraitMaker, type PortraitMaker } from "./image";
 import { catalogModelFromEnv } from "./model";
 import { HaikuNarrator, gatewayIdFromEnv, narratorModelFromEnv, type Narrator } from "./narrator";
+import { ImagesPhotoShrinker, ScoutPhotoVetter, type PhotoShrinker, type PhotoVetter } from "./photo-vet";
 import { ScoutPlaceBriefer, scoutModelFromEnv } from "./scout";
 import { ScoutTextMaker, type TextMaker } from "./text";
 
@@ -32,6 +33,10 @@ export class WorkersAiClient {
   readonly portraitist: PortraitMaker | null;
   /** The background of a portrait: Cloudflare Images. */
   readonly cutter: ForegroundCutter | null;
+  /** The picture check for a contributed photo or selfie (party-mode 5.1, 5.5): Llama 4 Scout, `GHOST_MODEL_ID`. */
+  readonly vetter: PhotoVetter | null;
+  /** Shrinks a contributed photo to 512 px: Cloudflare Images. */
+  readonly shrinker: PhotoShrinker | null;
 
   constructor(env: WorkersAiEnv) {
     const ai = env.AI;
@@ -47,5 +52,7 @@ export class WorkersAiClient {
     this.imager = ai !== undefined && image !== null ? new FluxImageMaker(ai, image) : null;
     this.portraitist = ai !== undefined && image !== null ? new FluxPortraitMaker(ai, image) : null;
     this.cutter = env.IMAGES !== undefined ? new ImagesForegroundCutter(env.IMAGES) : null;
+    this.vetter = ai !== undefined && scout !== null ? new ScoutPhotoVetter(ai, scout) : null;
+    this.shrinker = env.IMAGES !== undefined ? new ImagesPhotoShrinker(env.IMAGES) : null;
   }
 }

@@ -65,6 +65,18 @@ export const ERROR_COPY: Record<ErrorCode, ErrorCopy> = {
   already_suggested: c("Already asked", "That suggestion has been made.", "wait"),
   bad_relic_token: c("We couldn't read that relic", "Try another relic, or pick from the list.", "retry"),
   moderation_unavailable: c("We can't check that picture right now", "Try again soon, or use the gallery.", "retry"),
+  photo_rejected: c("We can't use that photo", "Pick another one with no people or faces in it.", "retry"),
+  not_master: c("Only the Master can do that", "Ask the Master of the room.", "wait"),
+  world_not_set: c("No place chosen yet", "The Master picks a place before the game starts.", "wait"),
+  poltergeist: c("The haunting can't do that", "You joined the haunting, so you can't take that turn.", "wait"),
+  cold_spot: c("That room is cold", "Nothing can be asked here for now. Try another room.", "retry"),
+  already_inspected: c("You searched here already", "Try another room.", "retry"),
+  eavesdrop_denied: c("You couldn't listen in", "You need Resolve, and the moment has to still be open.", "wait"),
+  nudge_denied: c("The clock won't move", "That nudge isn't allowed right now.", "wait"),
+  cue_denied: c("Not yet", "Wait a moment before another sound.", "wait"),
+  frame_denied: c("That one stays quiet", "A sound can't go to that phone right now.", "wait"),
+  rattle_denied: c("The house stays still", "Rattle isn't available right now.", "wait"),
+  stitch_denied: c("No whisper for now", "Stitch isn't available at this moment.", "wait"),
   puzzle_disabled: c("Puzzles are off", "The game plays without them.", "home"),
   puzzle_not_open: c("That lock isn't open", "Go back to the room and try the lock again.", "retry"),
   puzzle_already_open: c("A lock is already open", "Finish it or leave it first.", "retry"),
@@ -84,6 +96,38 @@ const COPY_BY_CODE: ReadonlyMap<string, ErrorCopy> = new Map(Object.entries(ERRO
 
 export function errorCopy(code: string): ErrorCopy {
   return COPY_BY_CODE.get(code) ?? GENERIC_COPY;
+}
+
+/**
+ * The reasons that go with a denial (`nudge_denied:spook_round_limit`). A denial arrives as `code:reason`; the code has
+ * its copy above and the reason a short plain line here, so the table can say why. Nothing is spent on a refusal.
+ */
+export const DENIAL_REASONS = {
+  // nudge_denied
+  no_clock: "There is no running clock to change.", own_turn: "You can't do that on your own turn.", bot: "A Bot can't do that.",
+  spook_off: "The Master turned Spook off.", nudges_off: "The Master turned nudges off.", no_resolve: "You need more Resolve.",
+  help_turn_limit: "This turn already had a Help.", spook_turn_limit: "This turn already had a Spook.", clock_at_cap: "The clock is already as long as it goes.",
+  spook_time_left: "Too little time is left to Spook.", spook_turn_too_short: "That would leave the turn too short.",
+  spook_round_limit: "A Spook was already used this round.", spook_gap: "A Spook was used too recently.", spook_repeat: "You Spooked on the last turn.",
+  // cue_denied and rattle_denied
+  cue_gap: "Wait a few seconds between sounds.", too_many_playing: "Three sounds are already playing.", turn_cue_limit: "That is all the sounds for this turn.",
+  // frame_denied
+  frames_off: "The Master turned Frames off.", self: "You can't pick yourself.", no_consent: "That phone hasn't said yes to sound.", phone_busy: "That phone has had its sounds this round.",
+  sender_round_limit: "You already sent one this round.", target_round_limit: "That phone already had one this round.", cue_limit: "Wait a few seconds between sounds.",
+  // rattle_denied
+  rattle_off: "The Master turned Rattle off.", not_poltergeist: "Only the haunting can rattle.", rattle_not_on: "Turn Rattle on first.",
+  // stitch_denied
+  disabled: "Stitch is off.", wrong_moment: "Not at this moment.", too_early: "It is too early in the game.", accusation_active: "Not while accusations are read.",
+  round_cap: "One whisper a round is enough.", game_cap: "That is all the whispers for this game.", no_eligible_seat: "Nobody has recorded enough words.",
+} as const satisfies Record<string, string>;
+export type DenialReason = keyof typeof DENIAL_REASONS;
+
+/** The copy for `code:reason`: the code's own copy, with the reason's line as the body when the reason is known. */
+export function denialCopy(raw: string): ErrorCopy {
+  const [code, reason] = raw.split(":") as [string, string | undefined];
+  const base = errorCopy(code);
+  const line = reason !== undefined && Object.prototype.hasOwnProperty.call(DENIAL_REASONS, reason) ? DENIAL_REASONS[reason as DenialReason] : undefined;
+  return line === undefined ? base : { ...base, body: line };
 }
 
 export const RETRY_MIN_SEC = 1;

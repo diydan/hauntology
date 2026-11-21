@@ -4,7 +4,11 @@ import type { Errand, ErrandObject } from "@hauntology/shared/party/errands";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import type { Kind, LockView, PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
 import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
+import type { TablePrivateInput, TablePublicInput } from "@hauntology/shared/table/data";
+import type { TableNotebook } from "@hauntology/shared/table/notebook";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
+import type { ContributionApi } from "./contribute-api";
+import type { GameView } from "./game-view";
 
 /**
  * The Controller's side of a party Room (party-mode group 9), with nothing of the network in it. The shell talks only to this, so it is
@@ -37,6 +41,8 @@ export type LockOffer = Readonly<{
   sign?: Sign;
   prompt?: string;
   canSeeAgain?: boolean;
+  /** Spirit board under Assist: the word as text, from the Room, for this seat alone (puzzles 8.3). */
+  assistText?: string;
   attempts: number;
   /** The most Turn time this Lock may use, or null. */
   capMs: number | null;
@@ -61,6 +67,26 @@ export type ControllerDoorLock = Readonly<{
   lastResult?: Readonly<{ outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>;
 }>;
 
+/**
+ * What the Spirit table may draw (spirit-table 3.1): the Public View as the table reads it, the Player's own seat, the Player's own notebook
+ * and, where the Room has any, how many Spirit clues are read. Nothing else reaches the Table, so a hidden fact cannot, by type. A port that
+ * has no such view leaves `table` out, and the Controller then has no Spirit table switch. `solo` is the solo-case rule that removes it.
+ */
+export type TableFeed = Readonly<{
+  pub: TablePublicInput;
+  priv: TablePrivateInput | null;
+  solo: boolean;
+  notebook?: TableNotebook;
+  clueCount?: number | null;
+}>;
+
+/** The ghost's knock at the TV after a Slam, as a phone sees it: the pattern is heard at the TV, never sent here (knock-door 5.3). */
+export type ControllerTvKnock = Readonly<{
+  /** The seat that knocked it back first, or null while nobody has. */
+  answeredBy: number | null;
+  lastResult?: Readonly<{ outcome: "help" | "wrong"; heard: string }>;
+}>;
+
 /** What the Room last said to this seat. The shell draws from it and keeps nothing else about the game. */
 export type RoomView = Readonly<{
   connection: Connection;
@@ -72,6 +98,8 @@ export type RoomView = Readonly<{
   /** Set only for the Master seat: the room controls are the Master's alone (Requirement 1.7). */
   master: Readonly<{ puzzles: PuzzleSetting; preset: Preset; cluePlace?: CluePlace; errands?: boolean }> | null;
   lock: LockOffer | null;
+  /** This seat's sound consent as the Room has it; absent means yes. */
+  soundConsent?: boolean;
   /** World Clues and Decoys kept on this seat's own Turn (shown when Assist is on). */
   worldClues?: readonly PublicWorldClue[];
   /** Private Errands state for this phone (errands spec Groups 3 & 4). */
@@ -82,6 +110,18 @@ export type RoomView = Readonly<{
   doorProblems?: readonly string[];
   /** Active shut knock door at this Detective's feet on their Turn (knock-door 3.3). */
   doorLock?: ControllerDoorLock | null;
+  /** What the Spirit table may draw (spirit-table 1.1, 3.1). Absent: no Spirit table switch. */
+  table?: TableFeed;
+  /** The ghost's knock at the TV after a Slam, or none (knock-door 5.3). */
+  tvKnock?: ControllerTvKnock | null;
+  /** The last thing the Room refused, until its next public view. */
+  refused?: string;
+  /** A clue the Room showed this seat once (a Sight, on entering a Zone), waiting to be seen. Later ones wait behind it. */
+  sight?: Readonly<{ id: string; sight: Sight }>;
+  /** The game as this phone knows it, built only from the Room's messages (party-mode 9). Absent in the scripted stand-in. */
+  game?: GameView;
+  /** This phone's clock against the Room's (`server = phone + offsetMs`), measured with ping and pong; 0 until measured. */
+  clock?: Readonly<{ offsetMs: number; errorMs: number }>;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -96,6 +136,10 @@ export interface ControllerPort {
   attempt(lockId: string, transcript: Transcript): AttemptReply | Promise<AttemptReply>;
   /** The Player is done with a Lock: they tapped Done on the result, gave up, or the Turn time ran out. The Room decides what comes next. */
   closeLock(lockId: string, why: "finished" | "gave_up" | "time_up"): void;
+  /** This seat's sound consent changed (the Sound switch): the Room keeps it with the seat, and the Synth plays only while it is yes (puzzles 5.6). */
+  setSound?(consent: boolean): void;
+  /** This seat's Assist setting changed: under Assist the Room also sends the Spirit board's word as text (puzzles 8.3). */
+  setAssist?(on: boolean): void;
   /** The Master chose another Puzzle setting. A seat that is not the Master is refused by the Room. */
   setPuzzles(setting: PuzzleSetting): void;
   /** The Master chose where Memory clues live (`phone` or `world`). */
@@ -114,6 +158,20 @@ export interface ControllerPort {
   doorAct?(doorId: string): void;
   /** Detective sends knock timestamps (ms) for a shut knock door (knock-door 3.3). */
   doorKnock?(doorId: string, times: readonly number[]): void;
+  /** Any Player: knock the ghost's pattern back at the TV after a Slam; the first right knock gets a Help (knock-door 5.3). */
+  tvKnock?(times: readonly number[]): void;
+  /** The Sight on screen has been seen, or its time ran out. */
+  ackSight?(sightId: string): void;
+  /** Send the Room one game message (walk, inspect, suggest, show, seal, choose, hauntPuzzle...). The Room checks it and refuses what is not allowed. Absent in the scripted stand-in. */
+  act?(msg: Readonly<{ t: string }> & Record<string, unknown>): void;
+  /** Send one message to the Room (a Suggestion, a Cue, a setting...). The Room checks it; the page never does. Absent in the scripted stand-in. */
+  send?(msg: Readonly<{ t: string } & Record<string, unknown>>): void;
+  /** This seat's contributions to the lobby (a photo, a Zone name, a Suspect); absent in the scripted stand-in. */
+  contributions?(): ContributionApi | null;
+  /** The Player answered or dismissed the Room's Rattle prompt; it is not shown again until the Room sends another. */
+  dismissPrompt?(): void;
+  /** After a reload: take the seat this device already holds, from its stored token. Resolves to the join result, or `null` when there is none. */
+  restore?(code?: string): Promise<JoinResult | null>;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }

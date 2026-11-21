@@ -8,7 +8,7 @@ import type { ControllerPort, LockOffer } from "./controller-port";
  * what the Controller keeps in reach (the Menu, a connection that is not fine) goes in the puzzle's bar as `barExtra`. The Room made the Lock
  * and checks the answer; this only draws it, sends the Attempt and says when the Player is done. A tap on Tilt in here is the same saved setting as the switch in the menu.
  */
-export function LockArea({ port, offer, device, barExtra }: { port: ControllerPort; offer: LockOffer; device: PuzzleDevice; barExtra?: ReactNode }): ReactNode {
+export function LockArea({ port, offer, device, barExtra }: { port: Pick<ControllerPort, "attempt" | "closeLock">; offer: LockOffer; device: PuzzleDevice; barExtra?: ReactNode }): ReactNode {
   const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <div className="pc-lock">
@@ -18,6 +18,7 @@ export function LockArea({ port, offer, device, barExtra }: { port: ControllerPo
         clue={offer.sign !== undefined ? (offer.canSeeAgain ? offer.clue : null) : offer.clue}
         {...(offer.sign !== undefined ? { sign: offer.sign } : {})}
         {...(offer.prompt !== undefined ? { prompt: offer.prompt } : {})}
+        {...(offer.assistText !== undefined ? { assistText: offer.assistText } : {})}
         capMs={offer.capMs} attempts={offer.attempts}
         feel={device.feel} assist={device.device.assist} reducedMotion={reduced}
         onAttempt={(t) => port.attempt(offer.id, t)}

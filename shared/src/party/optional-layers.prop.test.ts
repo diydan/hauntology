@@ -22,6 +22,8 @@ function runScriptedGame(opts: {
   human: boolean;
   settings: EngineSettings;
   preStart?: ClientMsg[];
+  /** Messages of a layer that is off, sent from seat 1 before every step from a random stream of its own (so the game's own choices stay the same). */
+  sprinkle?: (r: () => number) => ClientMsg[];
 }) {
   const r = mulberry32(opts.seed ^ 0x9e3779b9);
   let s = createEngine({
@@ -42,7 +44,9 @@ function runScriptedGame(opts: {
   expect(startRes.refused).toBeUndefined();
   s = startRes.state;
 
+  const sr = mulberry32(opts.seed ^ 0x51ed270b);
   for (let steps = 0; steps < 6000 && s.phase === "playing"; steps++) {
+    if (opts.sprinkle) for (const msg of opts.sprinkle(sr)) s = step(s, { kind: "client", seat: 1, msg }, now).state;
     if (opts.human && s.turn?.seat === 1 && r() < 0.65) {
       const zones = s.pool.zones.map((z) => z.id);
       const pick = <T,>(xs: readonly T[]): T => xs[randInt(r, xs.length)] as T;
@@ -207,4 +211,43 @@ describe("Property 5: Optional layers change nothing when off (integration 7.4)"
       { numRuns: 20 },
     );
   });
+
+  // Requirement 7.3: a layer that is off is not a dead switch with side effects. Every message of the layer, sent all through a whole game, leaves the case,
+  // the winners, the ending and what every screen is told exactly as if it had never been sent.
+  // Sounds off keeps every line in the log as text (party-mode 12.6), so the log and the recap may list the cue; the case itself may not move.
+  const TEXT_STAYS = new Set(["Sounds off"]);
+  const LAYERS: readonly (readonly [string, EngineSettings, (r: () => number) => ClientMsg[]])[] = [
+    ["Nudges off", { baseSeconds: 60, hauntMax: 10, nudges: "off" }, (r) => [{ t: "nudge", kind: r() < 0.5 ? "help" : "spook" }]],
+    ["Frames off", { baseSeconds: 60, hauntMax: 10, frames: false }, (r) => [{ t: "frame", target: 2 + Math.floor(r() * 3), cue: "creak" }]],
+    ["Sounds off", { baseSeconds: 60, hauntMax: 10, sounds: false }, (r) => [{ t: "cue", cue: "creak", place: r() < 0.5 ? "phone" : "tv" }, { t: "cue", cue: "knock" }]],
+    // the Player's own `rattleOn` is kept on the seat by design (the Master's switch only says whether it may fire), so it is not sent here
+    ["Rattle off", { baseSeconds: 60, hauntMax: 10, rattle: false }, (r) => [{ t: "rattle", via: r() < 0.5 ? "shake" : "button" }]],
+    ["Errands off", { baseSeconds: 60, hauntMax: 10, errands: false }, () => [{ t: "errandDone" }, { t: "errandAnswer", yes: true }, { t: "errandCaught", poltergeist: 2, object: "spoon" }]],
+    ["Puzzles off", { baseSeconds: 60, hauntMax: 10, puzzles: "off" }, () => [{ t: "attempt", lockId: "z1", transcript: {} }, { t: "giveUp", lockId: "z1" }]],
+  ];
+  for (const [name, settings, sprinkle] of LAYERS) {
+    it(`${name}: its messages through a whole game change nothing the case, the winners or any view shows`, () => {
+      fc.assert(
+        fc.property(fc.integer(), fc.integer({ min: 3, max: 5 }), (seed, n) => {
+          const never = runScriptedGame({ seed, n, max: 10, human: true, settings });
+          const spammed = runScriptedGame({ seed, n, max: 10, human: true, settings, sprinkle });
+          expect(never.state.phase).toBe("ended");
+          expect(spammed.state.deal).toEqual(never.state.deal);
+          if (TEXT_STAYS.has(name)) {
+            // a Cue still takes its short cooldown window (a wake time of its own), so who wins can move with the clock; the case and the sound count may not
+            expect(spammed.state.ending?.solution).toEqual(never.state.ending?.solution);
+            expect(spammed.state.players.map((p) => p.soundsThisRound)).toEqual(never.state.players.map((p) => p.soundsThisRound));
+            expect(spammed.state.players.every((p) => p.soundsThisRound === 0)).toBe(true);
+            return;
+          }
+          expect(spammed.state.winners).toEqual(never.state.winners);
+          expect(spammed.state.houseWins).toBe(never.state.houseWins);
+          expect(spammed.state.ending).toEqual(never.state.ending);
+          expect(spammed.publicView).toEqual(never.publicView);
+          expect(spammed.privateViews).toEqual(never.privateViews);
+        }),
+        { numRuns: 12 },
+      );
+    });
+  }
 });

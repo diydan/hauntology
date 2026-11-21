@@ -1,5 +1,8 @@
 import { decideSpeak, canSwitchSpeaking } from "./policy";
 import { findLine, keepLine, type LineKind, type VoiceLine } from "./line";
+import { hash } from "../puzzles/rng";
+import { canonicalSpeechKey } from "./key";
+import { prefetchPlan, type LibraryEntry, type PrefetchView } from "./library";
 import { toVoiceLine } from "./to-line";
 import type { LodgerVoice, Speaker } from "./voices";
 import { emptyChecksState, type ChecksState } from "./stitch/check";
@@ -38,6 +41,8 @@ export type RoomVoiceState = {
   speechOn: boolean;
   spokenCount: number;
   voiceLines: VoiceLine[];
+  /** The Library lines the Room listed for the Host to warm (ghost-voice 4.8), kept apart from the spoken ones so they never push a spoken line out of its 8 slots. */
+  prefetchLines?: VoiceLine[];
   stitch: RoomStitchState;
 };
 
@@ -112,7 +117,39 @@ export function prepareRoomNarration(
 }
 
 export function findRoomVoiceLine(state: RoomVoiceState, lineId: string, now: number): VoiceLine | null {
-  return findLine(state.voiceLines, lineId, now);
+  return findLine(state.voiceLines, lineId, now) ?? findLine(state.prefetchLines, lineId, now);
+}
+
+/** At most this many lines are listed at once, the Host's own cap (ghost-voice 4.8). */
+export const ROOM_PREFETCH_MAX = 8;
+
+/**
+ * The lines the Host may warm ahead (ghost-voice 3.12, 4.8): while speaking is on, the Library lines `prefetchPlan` names for this public state (the
+ * turn-start lines, the Haunt Event lines one level below a threshold, the midnight lines within the hour), each kept as a line of its own so the Host's
+ * `speak {prefetch: true}` finds it, Library or cached audio only, never a paid call. Not the Lodger (six voices, and its lines are spoken only at the
+ * reveal). The ids are derived from the speech key, so the same line keeps the same id and the message goes out only when the list changes.
+ */
+export function planRoomPrefetch(
+  state: RoomVoiceState,
+  view: PrefetchView,
+  entries: readonly LibraryEntry[],
+  now: number,
+): { state: RoomVoiceState; hostMsg: { t: "prefetch"; lineIds: string[] } | null } {
+  if (!state.speechOn) return { state, hostMsg: null };
+  const wanted = new Set(prefetchPlan(view, entries.filter((e) => e.speaker !== "lodger")));
+  const picked: VoiceLine[] = [];
+  for (const e of entries) {
+    if (picked.length >= ROOM_PREFETCH_MAX) break;
+    if (e.speaker === "lodger") continue;
+    const key = canonicalSpeechKey(e.voice, e.spoken);
+    if (!wanted.has(key)) continue;
+    wanted.delete(key);
+    picked.push({ id: `pf-${hash(key).toString(36)}${hash(key, "2").toString(36)}`, kind: "narration", speaker: e.speaker, text: e.spoken, spoken: e.spoken, voice: e.voice, createdAt: now });
+  }
+  const ids = picked.map((l) => l.id);
+  const had = (state.prefetchLines ?? []).map((l) => l.id);
+  if (ids.length === had.length && ids.every((id, i) => id === had[i])) return { state, hostMsg: null };
+  return { state: { ...state, prefetchLines: picked }, hostMsg: ids.length === 0 ? null : { t: "prefetch", lineIds: ids } };
 }
 
 export function applyStitchMasterSwitch(

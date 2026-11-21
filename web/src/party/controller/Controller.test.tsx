@@ -492,3 +492,78 @@ describe("Doors Controller UI (knock-door 1.4, 3.3, 4.2, 11.1)", () => {
     expect(port.calls).toContain("doorKnock cellar-door 2");
   });
 });
+
+describe("the Sound switch and the Room's sound consent (puzzles 5.6)", () => {
+  it("turning the Sound switch tells the Room this seat's consent, and the Room's answer comes back in the view", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    fireEvent.click(sw(/^Sound/));
+    expect(port.calls).toContain("setSound false");
+    expect(port.getView().soundConsent).toBe(false);
+    fireEvent.click(sw(/^Sound/));
+    expect(port.calls).toContain("setSound true");
+    expect(port.getView().soundConsent).toBe(true);
+  });
+});
+
+describe("the Assist switch and the Room (puzzles 8.3)", () => {
+  it("turning Assist on or off tells the Room this seat's setting", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    fireEvent.click(sw(/^Assist/));
+    expect(port.calls).toContain("setAssist true");
+    fireEvent.click(sw(/^Assist/));
+    expect(port.calls).toContain("setAssist false");
+  });
+});
+
+describe("Knocking back at the TV after a Slam (knock-door 5.3, 9.2, 9.3)", () => {
+  it("offers touch-only taps while the ghost's knock is unanswered, sends them, and says the result in a live region", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+
+    act(() => port.setDoorsView({ tvKnock: { answeredBy: null } }));
+    const region = screen.getByRole("region", { name: "Knock back at the TV" });
+    expect(region.textContent).toContain("The ghost is knocking at the TV");
+    const tap = within(region).getByRole("button", { name: /^Tap/ });
+    expect(within(region).getByRole("button", { name: "Send knock" }).hasAttribute("disabled")).toBe(true); // nothing to send yet
+    fireEvent.click(tap);
+    fireEvent.click(tap);
+    fireEvent.click(tap);
+    fireEvent.click(within(region).getByRole("button", { name: "Send knock" }));
+    expect(port.calls).toContain("tvKnock 3");
+    expect(within(region).getByRole("button", { name: "Tap (0)" })).toBeTruthy(); // the taps start again after a send
+
+    act(() => port.setDoorsView({ tvKnock: { answeredBy: null, lastResult: { outcome: "wrong", heard: "You knocked 1, 1." } } }));
+    expect(within(screen.getByRole("region", { name: "Knock back at the TV" })).getByRole("status").textContent).toContain("You knocked 1, 1.");
+  });
+
+  it("says who won in words: you get the Help, or somebody else did, and the taps go away", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    const me = port.getView().seat as number;
+
+    act(() => port.setDoorsView({ tvKnock: { answeredBy: me } }));
+    expect(screen.getByRole("status", { name: "Knock back result" }).textContent).toContain("You knocked it back");
+    expect(screen.queryByRole("button", { name: /^Tap/ })).toBeNull();
+
+    act(() => port.setDoorsView({ tvKnock: { answeredBy: me + 1 } }));
+    expect(screen.getByRole("status", { name: "Knock back result" }).textContent).toContain("Someone else knocked it back");
+    expect(screen.queryByRole("button", { name: /^Tap/ })).toBeNull();
+  });
+
+  it("shows nothing when there has been no Slam", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    act(() => port.setDoorsView({}));
+    expect(screen.queryByRole("region", { name: "Knock back at the TV" })).toBeNull();
+    expect(screen.queryByRole("status", { name: "Knock back result" })).toBeNull();
+  });
+});

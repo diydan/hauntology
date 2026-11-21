@@ -20,7 +20,7 @@ export type RecapEvent =
   | Readonly<{ id: number; kind: "phone-cue"; target: number; cue?: string }>
   /** A Cue a Player played on the TV or their own phone, under their own name. */
   | Readonly<{ id: number; kind: "cue"; seat: number; cue: string; place: "tv" | "phone" }>
-  | Readonly<{ id: number; kind: "rattle"; target: number; turn: number }>
+  | Readonly<{ id: number; kind: "rattle"; target: number; turn: number; level?: 1 | 2 | 3 }>
   | Readonly<{ id: number; kind: "haunt"; level: number }>
   /** Only that someone Eavesdropped, never what they heard. */
   | Readonly<{ id: number; kind: "eavesdrop"; seat: number }>

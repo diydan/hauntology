@@ -220,6 +220,15 @@ describe("knocking back at the TV (Requirement 5.3)", () => {
     };
     expect(budgetOfNext(true) - budgetOfNext(false)).toBe(10_000);
   });
+
+  it("never lifts a Help's Turn past the 2 minute cap", () => {
+    const g = slammed();
+    const t0 = g.s.turnNo;
+    // Errand bonuses already put seat 2's next Turn at the cap, so the Help has nothing left to add
+    const capped: G = { ...g, s: { ...g.s, helpOwed: [2], errandBonus: [2, 2, 2, 2, 2, 2] } };
+    const next = advance(capped, (s) => s.turn?.seat === 2 && s.turnNo > t0);
+    expect(next.s.turn!.clock.budgetMs).toBe(120_000);
+  });
 });
 
 describe("the Slam messages on the socket (Requirement 5.3)", () => {

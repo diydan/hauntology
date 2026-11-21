@@ -2,6 +2,7 @@
 // The clip files (and two sound files) are the only thing this page loads. Rules: .kiro/specs/puzzles (Requirements 18 to 21).
 import { initScenes } from './scenes-page.js';
 import { initLipsync } from './lipsync-page.js';
+import { initSceneClue } from './scene-clue-page.js';
 import { WANDER } from './scenes.js';
 
 const REVEAL_ID = WANDER.revealId;
@@ -59,6 +60,7 @@ function playVoice(id) {
 const scenes = initScenes({ isOn: () => wanted && !document.hidden, say, playSound, playVoice, stopVoice });
 
 initLipsync({ say });
+const sceneClue = initSceneClue({ isOn: () => wanted && !document.hidden, say });
 
 function paint() {
   playBtn.textContent = wanted ? 'Pause footage' : 'Play footage';
@@ -73,6 +75,7 @@ function sync() {
   }
   if (!wanted) { once.pause(); onceSolved.pause(); }
   scenes.sync();
+  sceneClue.sync();
   paint();
 }
 

@@ -7,7 +7,7 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { NAMES, SCENE_NAMES, checkSounds, readCredits } from '../check-sounds.mjs';
+import { AMBIENT_WEATHER, NAMES, SCENE_NAMES, checkSounds, readCredits } from '../check-sounds.mjs';
 import { encode } from '../sounds/encode-sounds.mjs';
 
 const repo = resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
@@ -35,7 +35,8 @@ const mentions = (r, re) => r.errors.some((e) => re.test(e));
 test('the real sound files of the repo pass', () => {
   const r = checkSounds({ dir: resolve(repo, 'web/public/sounds'), credits: resolve(repo, 'docs/sounds/CREDITS.md') });
   assert.deepEqual(r.errors, []);
-  assert.deepEqual(r.files, [...NAMES, ...SCENE_NAMES].map((n) => `${n}.m4a`).sort(), 'the seven and the two of the footage scenes');
+  assert.deepEqual(r.files.filter((f) => !f.startsWith('ambient/')), [...NAMES, ...SCENE_NAMES].map((n) => `${n}.m4a`).sort(), 'the seven and the two of the footage scenes');
+  assert.deepEqual(r.files.filter((f) => f.startsWith('ambient/')), AMBIENT_WEATHER.flatMap((w) => [`ambient/${w}-day.m4a`, `ambient/${w}-night.m4a`]).sort(), 'the twelve ambient loops of the conditions spec');
 });
 
 test('readCredits reads one row a file and ignores the header and the divider', () => {
@@ -143,4 +144,52 @@ test('a missing credits file is an error, and a missing sounds folder is no file
   assert.deepEqual(r.files, []);
   assert.ok(r.errors.some((e) => /CREDITS\.md does not exist/.test(e)));
   assert.equal(readFileSync(resolve(repo, 'docs/sounds/CREDITS.md'), 'utf8').includes('creak.m4a'), true);
+});
+
+// The ambient loops (conditions task 4.3): optional, in `<dir>/ambient/`, credited as `ambient/<name>.m4a`.
+const AROW = (n) => `| \`ambient/${n}.m4a\` | "${n}", the Hauntology project | tools/sounds/make-ambient.py | CC0 1.0 | levelled and encoded |`;
+function withAmbient(s, names, { seconds = 8 } = {}) {
+  const amb = resolve(s.dir, 'ambient');
+  mkdirSync(amb, { recursive: true });
+  sh(['-f', 'lavfi', '-i', `sine=frequency=300:duration=${seconds}`, resolve(s.root, 'loop.wav')]);
+  for (const n of names) encode(resolve(s.root, 'loop.wav'), resolve(amb, `${n}.m4a`));
+  writeFileSync(s.credits, CREDITS(NAMES) + names.map(AROW).join('\n') + '\n');
+}
+
+test('no ambient folder is fine, and good loops with a credit each pass', { skip }, () => {
+  const s = setup();
+  try {
+    assert.deepEqual(check(s).errors, []);
+    withAmbient(s, ['rain-day', 'storm-night']);
+    const r = check(s);
+    assert.deepEqual(r.errors, []);
+    assert.deepEqual(r.warnings, []);
+    assert.deepEqual(r.files.filter((f) => f.startsWith('ambient/')), ['ambient/rain-day.m4a', 'ambient/storm-night.m4a']);
+  } finally { s.done(); }
+});
+
+test('an ambient loop with no credit row, a wrong name, a clip-length or too-long file, or a thirteenth file fails', { skip }, () => {
+  const s = setup();
+  try {
+    withAmbient(s, ['rain-day']);
+    writeFileSync(s.credits, CREDITS(NAMES));
+    assert.ok(mentions(check(s), /ambient\/rain-day\.m4a: no row/));
+    withAmbient(s, ['rain-day', 'hail-day']);
+    assert.ok(mentions(check(s), /ambient\/hail-day\.m4a: not one of/));
+    withAmbient(s, ['fog-day'], { seconds: 2 });
+    assert.ok(mentions(check(s), /not a loop length/));
+    withAmbient(s, ['fog-day'], { seconds: 30 });
+    assert.ok(mentions(check(s), /not a loop length|over the limit/));
+  } finally { s.done(); }
+});
+
+test('a stale ambient credit row only warns, and the ambient files do not count against the clips\' total', { skip }, () => {
+  const s = setup();
+  try {
+    withAmbient(s, ['snow-night']);
+    writeFileSync(s.credits, CREDITS(NAMES) + AROW('snow-night') + '\n' + AROW('snow-day') + '\n');
+    const r = check(s, { limits: { total: 350 * 1024 } });
+    assert.deepEqual(r.errors, []);
+    assert.ok(r.warnings.some((w) => /ambient\/snow-day\.m4a, which is not in/.test(w)));
+  } finally { s.done(); }
 });

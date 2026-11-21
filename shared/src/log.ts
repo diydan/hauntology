@@ -52,6 +52,8 @@ export const LOG_SCHEMA = {
   "voice.stitch.check": { outcome: "word", accepted: "bool", rejected: "bool", checks: "int" },
   /** Stitches played (ghost-voice 2.16, 5.12): outcome and total stitches played in the room. Never a seat, word, clip or subtitle. */
   "voice.stitch.play": { outcome: "word", count: "int" },
+  /** One party route answered (party-mode 7, 10.5): the route pattern (never the Room code), the status given and, for a refusal, its code from the party error list. Counters only: never a nickname, photo, Zone name or token. */
+  "party.request": { route: "route", status: "int", code: "word" },
   /** Live mode slice or stop telemetry (ghost-voice 2.16, 6.3): stop reason and slice count. Never audio or transcript. */
   "voice.live": { outcome: "word", stop: "word", slices: "int" },
 } as const;

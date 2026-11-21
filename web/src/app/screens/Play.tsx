@@ -6,6 +6,7 @@ import { ScreenHeading } from "../RouteFocus";
 import { DeletePlace } from "../haunt/DeletePlace";
 import { Chat } from "../play/Chat";
 import { ContentNotice } from "../play/ContentNotice";
+import { planAnchorsFromViewer } from "../play/anchors";
 import { createPlayController, type PlayController, type ViewerPort } from "../play/controller";
 import { ghostFace } from "../play/ghost-face";
 import { Hud, TOTAL_MEMORIES } from "../play/Hud";
@@ -59,6 +60,7 @@ export default function Play() {
     const session = boot.status === "ready" ? boot.session : { ackNotice: false };
     controller = createPlayController({
       api, worldId, memory, session, port,
+      clientAnchors: () => planAnchorsFromViewer({ worldId, ground: () => (handle?.anchorGround === undefined ? null : handle.anchorGround()) }),
       navigate: (route) => router.navigate(route),
       setFlow: (patch) => router.setFlow(patch),
       onNoticeAcked: () => quota.setNoticeAcked(),
@@ -78,7 +80,7 @@ export default function Play() {
   });
   const { controller, voice } = parts;
   const [device, setDevice] = useDeviceSettings();
-  const puzzleDevice = usePuzzleDevice({ device, setDevice });
+  const puzzleDevice = usePuzzleDevice({ device, setDevice }, platform.puzzleFeel);
   const reducedMotion = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)").matches : false;
 
   const ui = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);

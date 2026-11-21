@@ -28,6 +28,7 @@
   - [x] 3.1 The guarded Song Service adapter, the `song` spend meter and cap, the kill switch, and deletion with the Room
     - _Requirements: 3.2, 3.3_
     - Done (2026-11-19): `MurekaSongMaker` / `assertSongTicket` (`api/src/guarded/songs/mureka.ts`), `SongSpendGuard` (`api/src/songs/spend.ts`), and `RoomSongStore` (`api/src/songs/store.ts`), verified with `FakeR2`, `MapKv`, and fake `fetch` in `api/src/songs/songs-service.test.ts` (note: live Mureka endpoint payload/latency remains unverified until Spike 1.1).
+    - Updated (2026-11-21): `MurekaSongMaker` now follows the async flow recorded in `docs/spikes/songs-1.md` (submit, task id, poll every 5 s, 120 s overall wait, shorter of two versions), tested over a fake in `api/src/guarded/songs/mureka-async.test.ts`. UNVERIFIED against the live API: the JSON field names (`prompt`, `id`, `status`, `choices[].url`, `duration`) are not in the spike notes.
   - [x] 3.2 The Room asks for songs and plays them at Song Slots; Stock Songs as the fallback
     - _Requirements: 1.1, 1.2, 1.4, 2.1_
     - Done (2026-11-19): `RoomSongCoordinator` (`api/src/songs/service.ts`), `RoomCore.planRoomSongs`/`sendRoomSong`/`deleteSongs` (`shared/src/party/server.ts`, `songs.test.ts`), and `PartyRoom` DO R2 song cleanup (`api/src/do/party-room.ts`, `party-room.test.ts`); standalone Party Mode screens attach via `party-mode` 8.9.
@@ -39,9 +40,11 @@
   - [x] 4.1 Build the captions, the Songs setting with mute and skip, and the ending screen's song line from the elements in `design/catalogue.html`; their own style says only where things go
     - _Requirements: 5.1, 5.3_
     - Done (2026-11-19): `SongControls` (`web/src/app/songs/SongControls.tsx`, `SongControls.test.tsx`: captions in `ui-speech ui-hint`, setting in `ui-segments`, Mute/Skip in `ui-button`s) and `Ending` song line (`web/src/app/case/Ending.tsx`, `Ending.test.tsx`: `ui-speech ui-hint` inside `ui-panel`), both with zero inline styles.
-  - [ ] 4.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 4.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - Verified (2026-11-21): the song screens (`SongControls.tsx`, `Ending.tsx`) use only `ui-` elements that exist in `design/elements.css`, none missing, so nothing was added; `tools/test/design-system.test.mjs` fails on any undefined `ui-` class in `web/src`.
     - _Requirements: 5.2_
-  - [ ] 4.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 4.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Done (2026-11-21): the Master's and a Player's `SongControls` (the Songs mode, Mute, Skip, Sing my name, a caption in `ui-speech ui-hint`) were checked in headless Chrome at 390 and 1280 px, with and without reduced motion, by `tools/ui-check.mjs` on the new dev page `web/songs-demo.html` (fixed state, not in the build): nothing found. The tool first found a real problem, in the demo and not the app: two controls on one page share the checkbox's fixed id, so the second's label pointed at the first; the demo now shows one view at a time. Not checked: the Ending's song line (it needs a finished case with a song; `Ending.test.tsx` pins its elements) and the live Room's controls, which show only with a Host token.
     - _Requirements: 5.4_
 
 - [ ] 5. Song catalogue and house style (added 2026-11-16; satisfies Requirement 6)
@@ -49,6 +52,7 @@
     - _Requirements: 6.1, 6.3, 6.4_
     - Done (2026-11-19): all 39 Stock Songs defined and verified against `FORBIDDEN_WORDS` and `BOT_NAMES` in `shared/src/songs/stock.ts` and `stock.test.ts`.
   - [ ] 5.2 Make the Stock Songs with the Song Service (short songs first; the account has about 2 hours of credit), keep one version of each with its captions and a record of its prompt, and commit them under `web/public/sounds/songs/`
+    - Progress (2026-11-21): the render tool is built and tested over a fake Song Service, no real call made: `tools/songs-render.mjs` and `tools/lib/songs-render.mjs` (`tools/test/songs-render.test.mjs`, mutation-checked). Dry run by default; `--render` needs `MUREKA_API_KEY` in the environment and `--max-songs N` (a hard stop), makes one song at a time with no retry, stops at the first problem, keeps the shorter version, skips songs already made, and writes `<id>.mp3` plus `<id>.json` (prompt, captions, task id) under `web/public/sounds/songs/`. NOT done: the 39 songs themselves (they cost credit and need a person's key), listening to them, and committing the files. UNVERIFIED against the live API: the JSON field names, and the instrumental route (`/instrumental/generate`; the spike made sung songs only). Try `--render --max-songs 1 --only lobby` first.
     - _Requirements: 6.1, 6.3_
   - [x] 5.3 Play rules: the Haunt loops follow the Haunt level, the stings at Round end, a Relic or Zone Clue Song only when the public log already rules it out, a ghost's theme under its appearances
     - _Requirements: 6.4, 6.5_

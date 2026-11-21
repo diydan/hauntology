@@ -41,6 +41,17 @@ describe("/api/party routes", () => {
     expect(res.status).toBe(426);
   });
 
+  it("refuses a websocket upgrade from another site, and lets a same-site one reach the Room (party-mode 4.1)", async () => {
+    const { routes } = app();
+    const evil = await routes.request("/ABCD/ws", { headers: { Upgrade: "websocket", Origin: "https://evil.example" } });
+    expect(evil.status).toBe(403);
+    expect(await evil.json()).toEqual({ ok: false, code: "bad_origin" });
+    // a same-site upgrade is not refused for its origin: it goes on to the Room (the fake Room has no WebSocketPair, so it stops there)
+    let status = 0;
+    try { status = (await routes.request("/ABCD/ws", { headers: { Upgrade: "websocket", Origin: "http://localhost" } })).status; } catch { status = -1; }
+    expect(status).not.toBe(403);
+  });
+
   it("answers party_disabled on every route when the kill switch is off", async () => {
     const { routes, directory } = app("s1", { enabled: false });
     for (const [path, method] of [["/", "POST"], ["/ABCD/join", "POST"], ["/ABCD/ws", "GET"]] as const) {
@@ -72,5 +83,32 @@ describe("/api/party routes", () => {
     expect((await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "A" }) })).status).toBe(200);
     const third = await routes.request("/", { method: "POST" });
     expect(await third.json()).toEqual({ code: "session_has_room" });
+  });
+
+  it("DELETE ends a Room for its Master or host token; a Player's token, a wrong token or no token is refused and the Room stays", async () => {
+    const { routes, rooms } = app("s1");
+    const room = (await (await routes.request("/", { method: "POST" })).json()) as { code: string; hostToken: string };
+    const master = (await (await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Ana" }) })).json()) as { token: string };
+    const player = (await (await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Ben" }) })).json()) as { token: string };
+    const del = (token?: string) => routes.request(`/${room.code}`, { method: "DELETE", headers: token === undefined ? {} : { Authorization: `Bearer ${token}` } });
+    const refused = await del(player.token);
+    expect(refused.status).toBe(403);
+    expect(await refused.json()).toEqual({ ok: false, code: "not_master" });
+    for (const unknown of ["nope", undefined]) expect((await del(unknown)).status).toBe(401); // a malformed or missing token: no identity at all
+    expect(rooms.data.get(room.code)?.has("room")).toBe(true);
+    expect((await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Cy" }) })).status).toBe(200);
+    expect((await del(room.hostToken)).status).toBe(204);
+    expect(rooms.data.get(room.code)?.has("room")).toBe(false);
+    expect((await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Dee" }) })).status).toBe(404);
+    expect((await del(master.token)).status).toBe(404); // already gone: says so, once
+    expect((await routes.request("/", { method: "POST" })).status).toBe(200); // the session's place is free again
+  });
+
+  it("DELETE by the Master's token ends the Room too", async () => {
+    const { routes } = app("s1");
+    const room = (await (await routes.request("/", { method: "POST" })).json()) as { code: string };
+    const master = (await (await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Ana" }) })).json()) as { token: string };
+    const res = await routes.request(`/${room.code}`, { method: "DELETE", headers: { Authorization: `Bearer ${master.token}` } });
+    expect(res.status).toBe(204);
   });
 });

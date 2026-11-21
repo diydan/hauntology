@@ -318,4 +318,17 @@ describe("Board", () => {
     m.unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it("shows the word as text only with Assist on AND the Room's text, and never otherwise (puzzles 8.3, requirement 10.3)", () => {
+    const lock = lockOf("easy", 5);
+    const text = () => document.querySelector(".pz-board-text")?.textContent ?? null;
+    mountKind(Board, lock.view, { assist: true, assistText: lock.secret.word });
+    expect(text()).toBe(`The whisper says: ${lock.secret.word}`);
+    cleanup();
+    mountKind(Board, lock.view, { assist: false, assistText: lock.secret.word });
+    expect(text()).toBeNull();
+    cleanup();
+    mountKind(Board, lock.view, { assist: true });
+    expect(text()).toBeNull();
+  });
 });

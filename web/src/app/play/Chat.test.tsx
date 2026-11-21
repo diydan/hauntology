@@ -183,10 +183,10 @@ describe("Chat: the ghost on the stage", () => {
 
   it("shows each voice control as unavailable with one line of words when its quota is empty (ghost-voice 4.4)", () => {
     const { calls } = show({ voiceAvailable: true, ttsAvailable: false, sttAvailable: false, voice: { speak: true } });
-    const speak = screen.getByLabelText("Speak aloud") as HTMLInputElement;
+    const speak = screen.getByRole("button", { name: "Speak aloud" }) as HTMLButtonElement;
     const talk = screen.getByRole("button", { name: "Hold to talk" }) as HTMLButtonElement;
     expect(speak.disabled).toBe(true);
-    expect(speak.checked).toBe(false);
+    expect(speak.getAttribute("aria-pressed")).toBe("false");
     expect(talk.disabled).toBe(true);
     expect(document.querySelector("[data-tts-unavailable]")?.textContent).toBe(VOICE_TTS_UNAVAILABLE);
     expect(document.querySelector("[data-stt-unavailable]")?.textContent).toBe(VOICE_STT_UNAVAILABLE);
@@ -209,6 +209,67 @@ describe("Chat: the ghost on the stage", () => {
     const stopBtn = screen.getByRole("button", { name: "Stop live" });
     fireEvent.click(stopBtn);
     expect(active.calls.stopLive).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Chat: the voice controls by keyboard alone, and the microphone indicator (ghost-voice 4.7, the parts a test can check)", () => {
+  it("holds Hold to talk with Space or Enter, once per press (a held key's repeats do not press again), and lets go on key up", () => {
+    const { calls } = show({ voiceAvailable: true });
+    const talk = screen.getByRole("button", { name: "Hold to talk" });
+    for (const key of [" ", "Enter"]) {
+      fireEvent.keyDown(talk, { key });
+      fireEvent.keyDown(talk, { key, repeat: true });
+      fireEvent.keyDown(talk, { key, repeat: true });
+      fireEvent.keyUp(talk, { key });
+    }
+    expect(calls.press).toHaveBeenCalledTimes(2);
+    expect(calls.release).toHaveBeenCalledTimes(2);
+    fireEvent.keyDown(talk, { key: "a" });
+    fireEvent.keyUp(talk, { key: "a" });
+    expect(calls.press).toHaveBeenCalledTimes(2);
+  });
+
+  it("reaches Speak aloud and Hold to talk as real controls with a text label, in that order, and switches speech with a pressed button (48 px or more, ghost-voice 4.1)", () => {
+    const { calls } = show({ voiceAvailable: true });
+    const group = screen.getByRole("group", { name: "Voice" });
+    const controls = [...group.querySelectorAll("input, button")];
+    expect(controls.map((c) => c.tagName)).toEqual(["BUTTON", "BUTTON"]);
+    expect(controls.every((c) => (c as HTMLInputElement | HTMLButtonElement).tabIndex >= 0 && !(c as HTMLInputElement | HTMLButtonElement).disabled)).toBe(true);
+    expect(screen.getByRole("button", { name: "Speak aloud" })).toBeTruthy();
+    const toggle = screen.getByRole("button", { name: "Speak aloud" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    expect(toggle.classList.contains("ui-button--main")).toBe(true); // --target-main, 52 px, above the 48 px the spec asks for
+    fireEvent.click(toggle);
+    expect(calls.speak).toHaveBeenCalledWith(true);
+  });
+
+  it("shows the speak switch as pressed when speech is on, and a press turns it off (ghost-voice 4.1)", () => {
+    const { calls } = show({ voiceAvailable: true, voice: { speak: true } });
+    const toggle = screen.getByRole("button", { name: "Speak aloud" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(toggle);
+    expect(calls.speak).toHaveBeenCalledWith(false);
+  });
+
+  it("shows the microphone indicator, with its dot and words, only while the stream is open, as a hint whose colour is the checked quiet-text token", () => {
+    show({ voiceAvailable: true, voice: { mic: "recording" } });
+    const badge = document.querySelector("[data-mic-indicator]")!;
+    expect(badge.textContent).toContain("●");
+    expect(badge.textContent).toContain("Listening");
+    expect(badge.classList.contains("ui-hint")).toBe(true); // text-quiet on the sheet, 4.5:1 or more, enforced by `build-tokens --check`
+    expect(badge.getAttribute("style")).toBeNull(); // no colour of its own
+    cleanup();
+    show({ voiceAvailable: true, voice: { mic: "idle" } });
+    expect(document.querySelector("[data-mic-indicator]")).toBeNull();
+    cleanup();
+    show({ voiceAvailable: true, voice: { mic: "sending" } });
+    expect(document.querySelector("[data-mic-indicator]")).toBeNull();
+  });
+
+  it("keeps the transcript out of a second live region, so a spoken line is announced once (by the app's one polite region)", () => {
+    show({ ui: { lines: [{ id: 1, who: "ghost", text: "Something moved." }], reply: { text: "Something moved." } as never }, voiceAvailable: true, voice: { speak: true } });
+    expect(screen.getByRole("log", { name: "Conversation" }).getAttribute("aria-live")).toBe("off");
+    expect(document.querySelectorAll("[aria-live='polite'], [role='status'], [role='alert']")).toHaveLength(0);
   });
 });
 

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AtmosphereSchema } from "../conditions/types";
 import { ErrorCode } from "../errors";
+import { DOOR_ID_PATTERN, MAX_DOORS } from "../party/doors";
 import { SIGNS } from "../puzzles/world-clues";
 import { VIEWER_RUNGS } from "./types";
 
@@ -56,12 +57,39 @@ export const ViewerToShellSchema = z.discriminatedUnion("t", [
 ]);
 export type ViewerToShell = z.infer<typeof ViewerToShellSchema>;
 
+const ViewerDoorSchema = z.object({
+  id: z.string().regex(DOOR_ID_PATTERN),
+  x: z.number().finite(),
+  z: z.number().finite(),
+  width: z.number().finite().positive(),
+  yaw: z.number().finite(),
+  open: z.boolean(),
+}).strict();
+
+/** A free-standing photo frame (party-mode 8.4): where it stands, which way it faces, and the Room's own photo address (or none, an empty frame). */
+const ViewerFrameSchema = z.object({
+  zone: z.string().regex(/^[a-z][a-z0-9-]{0,15}$/),
+  pos: Vec3Schema,
+  yaw: z.number().finite(),
+  url: z.string().regex(/^\/api\/party\/[A-Za-z0-9]{4}\/photo\/[A-Za-z0-9_-]{1,64}$/).nullable(),
+}).strict();
+export const MAX_FRAMES = 6;
+
 /** Shell to Viewer. `hauntLevel` is 0 to 1 (world-viewer glossary). */
 export const ShellToViewerSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("set_input_mode"), mode: z.enum(["play", "chat"]) }).strict(),
   // The frozen conditions of the place, or null to restore the normal look. Idempotent.
   z.object({ t: z.literal("set_atmosphere"), atmosphere: AtmosphereSchema.nullable() }).strict(),
+  // The doors of the world (knock-door 8.1): where each stands, how wide, the wall's angle and whether it is open. Never the lock or a pattern. Empty for a world with no doors.
+  z.object({ t: z.literal("set_doors"), doors: z.array(ViewerDoorSchema).max(MAX_DOORS) }).strict(),
   z.object({ t: z.literal("set_world_clues"), clues: z.array(PublicWorldClueSchema).max(6) }).strict(),
+  // The active Detective's walk, from their phone through the Host (party-mode 8.3): one frame of the same stick and look for everyone. Axes are -1 to 1; the look
+  // is a turn in radians for this message. The Viewer holds the axes for a quarter of a second, so a Host that stops sending stops the walk.
+  z.object({ t: z.literal("remote_input"), forward: z.number().finite().min(-1).max(1), strafe: z.number().finite().min(-1).max(1), yawDelta: z.number().finite().min(-0.5).max(0.5), pitchDelta: z.number().finite().min(-0.5).max(0.5) }).strict(),
+  // The photo frames near the Zones (party-mode 8.4): pictures on stands, never walls, no collision. Idempotent: the whole set each time.
+  z.object({ t: z.literal("set_frames"), frames: z.array(ViewerFrameSchema).max(MAX_FRAMES) }).strict(),
+  // The Restless ghost's Sprite moves to this spot (party-mode 8.9), or back to its usual place with null.
+  z.object({ t: z.literal("ghost_to"), pos: Vec3Schema.nullable() }).strict(),
   z
     .object({
       t: z.literal("apply_view"),

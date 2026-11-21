@@ -56,13 +56,13 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
     - **Property 12: Atmosphere and tilt are bounded and never touch movement**
     - **Validates: Requirements 3.6, 8.1**
 
-- [ ] 3. Loader and fallbacks
+- [x] 3. Loader and fallbacks
   - [x] 3.1 `WorldLoader`: manifest fetch, LOD choice, progress stages, retry ×2 with backoff, orientation applied, spawn placed
     - _Requirements: 1.1, 1.3, 1.4_
     - Done (2026-11-16): `loadWorld` in `shared/src/viewer/loader.ts` over injected ports (`fetchManifest`, `fetchAsset`, `initSplat`, `sleep`), so the whole ladder is tested over fakes in `loader.test.ts` (6 tests, 4 deliberate breakages caught): the manifest is validated with `WorldManifestSchema`, the LOD comes from `chooseLod`, stages are labelled (`LOAD_STAGE_LABELS`), a failed collider is a warning, not a stop.
-  - [ ] 3.2 WebGL2 / Spark capability check and `PanoFallback` (pano → thumbnail ladder), chat still mounted
+  - [x] 3.2 WebGL2 / Spark capability check and `PanoFallback` (pano → thumbnail ladder), chat still mounted
     - _Requirements: 1.2_
-    - Progress (2026-11-16): the decision half is in `loadWorld`: no WebGL2, or the splat start failing, gives the pano rung, then the thumbnail, then a fatal code; the shell keeps the Chat at every rung (it only receives a `degraded` message). Not done: reading real device capabilities in the browser and drawing the panorama — both wait on task 1, which picks the Spark and three versions.
+    - Progress (2026-11-16): the decision half is in `loadWorld`: no WebGL2, or the splat start failing, gives the pano rung, then the thumbnail, then a fatal code; the shell keeps the Chat at every rung (it only receives a `degraded` message). Built 2026-11-22: reading the device (`web/src/app/viewer/capabilities.ts` `readDeviceCaps`: a WebGL2 context and a texture of at least 4096, the check the splat renderer needs; every source is a port, so it is tested with no GPU) and `PanoFallback` (`web/src/app/viewer/pano-fallback.ts`: for a device with no WebGL2 at all, the three renderer cannot start either, so the place is a flat picture in plain DOM that pans by drag or by the arrow keys, labelled for a screen reader, the panorama first and the thumbnail when it does not open, a plain "would not load" note with the Gallery link when neither does; `mount.ts` uses it whenever `caps.webgl2` is false, and a device that has WebGL2 but whose splat failed keeps the textured sphere, now with the same pano-then-thumb ladder). Tests: `capabilities.test.ts`, `pano-fallback.test.ts` (jsdom). A real browser with WebGL2 turned off is a manual check under 10.
 
 - [x] 4. Player controls and collision
   - [x] 4.1 Desktop controls: pointer lock, WASD/arrows, Shift, Esc
@@ -124,6 +124,7 @@ Depends on `world-pipeline` task 1.1 (real fixtures) and task 3.14 (manifest). P
 - [ ] 10. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs`; complete the manual perf checklist; ask the user if questions arise.
   - Progress (2026-11-17): shared 1419, web 1033 and api 1081 tests green; shared and web typecheck, lint, tokens and traceability green. Two pre-existing reds from the merged main are recorded, not fixed here: `api` typecheck fails in two merged test files on missing Node types, and two tools tests fail on merged dev/config state (`api/dev/playthrough-calls.ts`, the declared AI binding). Manual perf checklist: every LOD on phone and laptop recorded except phone `full` (`docs/spikes/2.1.md`).
+  - Progress (2026-11-22): after task 3 closed, `web` 1483 tests, `shared` and `api` suites green, `web` typecheck clean, `node tools/check-traceability.mjs` and `node tools/build-tokens.mjs --check` green. **Left open:** the manual perf checklist (phone `full` LOD, and a browser with WebGL2 off for the PanoFallback), which needs a person and a device.
 
 - [x] 11. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 9 and the `design-system` spec)
   - [x] 11.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go

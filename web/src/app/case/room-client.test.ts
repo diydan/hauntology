@@ -25,12 +25,13 @@ function deps(answers: Record<string, { status?: number; body: unknown }>) {
     },
     openSocket: (url) => { const s = new FakeSocket(url); sockets.push(s); return s; },
     socketOrigin: "ws://here",
+    now: () => 10_000,
   };
   return { d, sockets, calls };
 }
 
 describe("startSolo", () => {
-  it("makes a Room (replacing the visitor's old one), sits as seat 1, then sends hello, the preset, puzzles off, the Bots and start, in order", async () => {
+  it("makes a Room (replacing the visitor's old one), sits as seat 1, then sends hello, the preset (which carries the puzzle level), the Bots and start, in order", async () => {
     const { d, sockets, calls } = deps({ "/api/party": { body: { code: "ABCD", hostToken: "h" } }, "/api/party/ABCD/join": { body: { ok: true, seat: 1, token: "t".repeat(32) } } });
     const c = await startSolo(d, { preset: "gentle", bots: 3 });
     expect(calls[0]).toEqual({ url: "/api/party", body: { replace: true } });
@@ -39,10 +40,9 @@ describe("startSolo", () => {
     expect(ws.url).toBe("ws://here/api/party/ABCD/ws");
     expect(ws.sent).toEqual([]); // nothing goes before the socket opens
     ws.open();
-    expect(ws.sent.map((m) => m.t)).toEqual(["hello", "settings", "settings", "addBot", "addBot", "addBot", "start"]);
+    expect(ws.sent.map((m) => m.t)).toEqual(["hello", "settings", "addBot", "addBot", "addBot", "start"]);
     expect(ws.sent[0]).toEqual({ t: "hello", token: "t".repeat(32) });
     expect(ws.sent[1]).toEqual({ t: "settings", preset: "gentle" });
-    expect(ws.sent[2]).toEqual({ t: "settings", puzzles: "off" });
     expect(c.getSnapshot().status).toBe("connecting");
     expect(c.getSnapshot().hostToken).toBe("h");
   });
@@ -120,3 +120,109 @@ describe("openRoom voice protocol", () => {
     expect(c.getSnapshot().hostToken).toBe("host-sec");
   });
 });
+
+describe("Locks and Sights in the solo case (integration 5.3)", () => {
+  const lockMsg = { t: "lock", lockId: "L1", level: 2, attempts: 3, deadlineAt: 70_000, faded: null, view: { kind: "safe", level: 2 } };
+  const open = () => {
+    const { d, sockets } = deps({});
+    const c = openRoom(d, "ABCD", "t");
+    const ws = sockets[0]!;
+    ws.open();
+    return { c, ws };
+  };
+
+  it("a lock the Room gives becomes the open Lock, with its Cap counted from now, and nothing is sent back", () => {
+    const { c, ws } = open();
+    ws.say(lockMsg);
+    expect(c.getSnapshot().lock).toMatchObject({ id: "L1", kind: "safe", attempts: 3, capMs: 60_000, faded: null });
+    expect(ws.sent.map((m) => m.t)).toEqual(["hello"]);
+  });
+
+  it("an Attempt is sent with its transcript and answered by the Room's next result: wrong, then solved", async () => {
+    const { c, ws } = open();
+    ws.say(lockMsg);
+    const first = c.attempt("L1", { kind: "safe", moves: [] } as never);
+    expect(ws.sent.at(-1)).toEqual({ t: "attempt", lockId: "L1", transcript: { kind: "safe", moves: [] } });
+    ws.say({ t: "lockResult", lockId: "L1", outcome: "wrong", attemptsLeft: 2 });
+    await expect(first).resolves.toEqual({ outcome: "wrong", attemptsLeft: 2 });
+    expect(c.getSnapshot().lock?.attempts).toBe(2);
+    const second = c.attempt("L1", { kind: "safe", moves: [] } as never);
+    ws.say({ t: "lockResult", lockId: "L1", outcome: "solved", zone: "z1", card: null });
+    await expect(second).resolves.toEqual({ outcome: "solved" });
+    expect(c.getSnapshot().lock).not.toBeNull(); // stays up until the Player taps Done
+  });
+
+  it("failed after an Attempt is answered as failed; Done (finished) clears the Lock and sends nothing", async () => {
+    const { c, ws } = open();
+    ws.say(lockMsg);
+    const r = c.attempt("L1", { kind: "safe", moves: [] } as never);
+    ws.say({ t: "lockResult", lockId: "L1", outcome: "failed" });
+    await expect(r).resolves.toMatchObject({ outcome: "failed" });
+    const before = ws.sent.length;
+    c.closeLock("L1", "finished");
+    expect(c.getSnapshot().lock).toBeNull();
+    expect(ws.sent).toHaveLength(before);
+  });
+
+  it("giving up or running out of time tells the Room (giveUp) and clears the Lock", () => {
+    for (const why of ["gave_up", "time_up"] as const) {
+      const { c, ws } = open();
+      ws.say(lockMsg);
+      c.closeLock("L1", why);
+      expect(ws.sent.at(-1)).toEqual({ t: "giveUp", lockId: "L1" });
+      expect(c.getSnapshot().lock).toBeNull();
+    }
+  });
+
+  it("a result nobody asked for (the Turn ended) clears the Lock, and a result for another Lock changes nothing", () => {
+    const { c, ws } = open();
+    ws.say(lockMsg);
+    ws.say({ t: "lockResult", lockId: "OTHER", outcome: "failed" });
+    expect(c.getSnapshot().lock?.id).toBe("L1");
+    ws.say({ t: "lockResult", lockId: "L1", outcome: "failed" });
+    expect(c.getSnapshot().lock).toBeNull();
+  });
+
+  it("a Sight is shown once and acknowledged by id; the next waits its turn", () => {
+    const { c, ws } = open();
+    ws.say({ t: "sight", sightId: "S1", sight: { showMs: 4000 } });
+    ws.say({ t: "sight", sightId: "S2", sight: { showMs: 3000 } });
+    expect(c.getSnapshot().sight).toMatchObject({ id: "S1" });
+    c.ackSight("S1");
+    expect(ws.sent.at(-1)).toEqual({ t: "sightAck", sightId: "S1" });
+    expect(c.getSnapshot().sight).toMatchObject({ id: "S2" });
+    c.ackSight("S2");
+    expect(c.getSnapshot().sight).toBeNull();
+  });
+});
+
+describe("a phone's connection (integration 5.1)", () => {
+  it("takes the Master's seat from the lobby word and keeps it across later lobby words", () => {
+    const { d, sockets } = deps({});
+    const c = openRoom(d, "ABCD", "t");
+    sockets[0]!.open();
+    expect(c.getSnapshot().masterSeat).toBeNull();
+    sockets[0]!.say({ t: "lobby", masterSeat: 3 });
+    expect(c.getSnapshot()).toMatchObject({ masterSeat: 3, status: "lobby" });
+    sockets[0]!.say({ t: "public", view: { phase: "playing" } });
+    sockets[0]!.say({ t: "lobby", masterSeat: 2 });
+    expect(c.getSnapshot()).toMatchObject({ masterSeat: 2, status: "playing" });
+  });
+
+  it("disconnect closes the socket and ends nothing; close still ends the Room", () => {
+    const a = deps({});
+    const phone = openRoom(a.d, "ABCD", "t");
+    a.sockets[0]!.open();
+    phone.disconnect();
+    expect(a.sockets[0]!.sent.some((m) => m.t === "end")).toBe(false);
+    expect(a.sockets[0]!.closedWith).toBe(1000);
+    expect(phone.getSnapshot().status).toBe("closed");
+    phone.disconnect();
+    const b = deps({});
+    const master = openRoom(b.d, "ABCD", "t");
+    b.sockets[0]!.open();
+    master.close();
+    expect(b.sockets[0]!.sent.at(-1)).toEqual({ t: "end" });
+  });
+});
+

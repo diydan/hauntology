@@ -14,6 +14,10 @@ The game plays seven short clips. **It works without any of them**: a phone flas
 | `rumble` | Rattle level 3 | 3 s | a low tremble with energy from 150 to 800 Hz, because phone speakers have no bass |
 | `becoming` | when a player joins the haunting | 4 s | a swell, one hit, a fade. Drama from shape, not volume |
 
+## Puzzle sounds need no file
+
+The puzzle sounds (clicks, notes, the thunk, the creak of a door) are synthesised on the phone by `web/src/puzzles/feel/synth.ts` from the recipes in `shared/src/puzzles/sound.ts`, so none is a file here. Each has a visual twin, and sound plays only where the Player has sound on (puzzles Requirement 10). The one spoken exception is the Spirit board word, which is a line of the Whisper in the Voice Library (puzzles task 8.3).
+
 ## Two more, for the footage scenes
 
 The footage has no sound of its own (puzzles Requirement 18.4), so two scene shots get a sound from us (puzzles Requirement 20.6). Same rules, same folder, and the game works without them.

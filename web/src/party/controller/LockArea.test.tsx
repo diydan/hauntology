@@ -42,6 +42,18 @@ describe("LockArea gives the Lock to the puzzle screen and the answers to the Ro
     expect(setup({ assist: false }).host.assist).toBe(false);
   });
 
+  it("passes the Room's text of the Spirit board word on to the puzzle, and nothing when the Room sent none (puzzles 8.3)", () => {
+    const base = setup({ assist: true });
+    expect(base.host.assistText).toBeUndefined();
+    cleanup();
+    const port = new StandInPort();
+    port.offerLock("board", "easy", 3, false);
+    const offer = { ...(port.getView().lock as LockOffer), assistText: "ELM" };
+    const device = { feel: createFakeFeel(), device: { ...DEFAULT_DEVICE_SETTINGS, assist: true }, tilt: "off", canVibrate: false, changeDevice: () => undefined, onTiltChoice: () => undefined, setDevice: () => undefined } as unknown as PuzzleDevice;
+    render(<LockArea port={port as ControllerPort} offer={offer} device={device} />);
+    expect((props as unknown as PuzzleHostProps).assistText).toBe("ELM");
+  });
+
   it("gives what the Controller keeps in reach to the puzzle's bar, and nothing when there is nothing", () => {
     const extra = <button type="button">Menu</button>;
     expect(setup({}, extra).host.barExtra).toBe(extra);

@@ -1,4 +1,4 @@
-import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { lazy, Suspense, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { PuzzleSettings, type DeviceSettingsControl } from "../../puzzles/PuzzleSettings";
 import { usePuzzleDevice } from "../../puzzles/usePuzzleDevice";
 import type { Connection, ControllerPort, RoomPhase, RoomView } from "./controller-port";
@@ -7,9 +7,32 @@ import { ErrandOptOut, ErrandsPanel } from "./ErrandsControls";
 import { LockArea } from "./LockArea";
 import { MenuSheet } from "./MenuSheet";
 import { Slot } from "./Slot";
+import type { Theory } from "@hauntology/shared/party/theory";
+import { SpiritTableSection, SpiritTableSwitch, useSpiritTable } from "../../table/SpiritTableSwitch";
 import { WorldClueNotebook } from "./WorldClueNotebook";
+import { GameSections } from "../GameSections";
+import { SightCard } from "../../puzzles/SightCard";
+import { SpiritCluesSwitch, useSpiritClues } from "../../puzzles/clues/SpiritCluesSwitch";
+import { ClueList } from "../../puzzles/clues/ClueList";
+import { showAllRead, startRing, readSet } from "@hauntology/shared/puzzles/ring";
+import { ringForSight } from "@hauntology/shared/puzzles/ring";
+import { LobbyPanel } from "./play/LobbyPanel";
+import { SeatPortrait } from "./play/SeatPortrait";
+import { MasterMenu, type WorldChoice } from "./play/MasterMenu";
+import { SpeechRoomSwitch } from "./play/SpeechRoomSwitch";
+import { SoundLightSettings } from "./play/PlayerSettings";
+import { PlayPanel } from "./play/PlayPanel";
+import type { SoundDeps } from "./play/phone-sound";
+import type { StorageLike } from "./play/notebook-store";
+import type { Recorder } from "../phone/recorder";
+
+// the Clue ring is a lazy chunk (with three.js): a phone that never turns "Spirit clues" on downloads none of it (puzzles 15.1)
+const SpiritSight = lazy(() => import("../../puzzles/clues/SpiritSight"));
 
 export type Layout = "pad" | "panel";
+
+/** What the real game screens need from the page around them: the places to choose from, the phone's storage, sound and microphone. A page without them (the scripted demo) still works. */
+export type PlayExtras = Readonly<{ embedded?: boolean; worlds: readonly WorldChoice[]; storage: StorageLike; soundDeps: SoundDeps; unlock: () => Promise<boolean>; record?: Recorder; now?: () => number }>;
 
 const CONNECTION_WORDS: Readonly<Record<Connection, string>> = { connecting: "Connecting…", online: "Connected", reconnecting: "Reconnecting…", offline: "Offline" };
 const PHASE_WORDS: Readonly<Record<RoomPhase, string>> = {
@@ -39,13 +62,20 @@ function useLandscape(): boolean {
  * Room gives one, and the menu with this phone's settings. The pad and the panel are named regions waiting for their parts; nothing here plays
  * the game. The settings come in as a `DeviceSettingsControl` and are kept by `useDeviceSettings` in the caller, so they outlive the page.
  */
-export function SeatedFrame({ port, view, control }: { port: ControllerPort; view: RoomView; control: DeviceSettingsControl }): ReactNode {
-  const device = usePuzzleDevice(control);
+export function SeatedFrame({ port, view, control, extras }: { port: ControllerPort; view: RoomView; control: DeviceSettingsControl; extras?: PlayExtras }): ReactNode {
+  const device = usePuzzleDevice(control, undefined, { soundAllowed: view.soundConsent !== false });
   const landscape = useLandscape();
   const [chosen, setChosen] = useState<Layout | null>(null);
   const layout: Layout = chosen ?? (landscape ? "pad" : "panel");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  // The Spirit table (spirit-table 1.1 to 1.4): the Player's own device switch and the Player's own Theory marks, both in this page only.
+  // the lobby's contribution client belongs to this seat: a new seat has a new token, so it is made again
+  const contributions = useMemo(() => port.contributions?.() ?? null, [port, view.seat, view.code]);
+  const spirit = useSpiritTable(view.table);
+  const spiritClues = useSpiritClues();
+  const [cluesOpen, setCluesOpen] = useState(false);
+  const [theory, setTheory] = useState<Theory>({});
 
   const connection = <span className={`ui-chip${view.connection === "online" ? " is-active" : ""}`} role="status">{CONNECTION_WORDS[view.connection]}</span>;
   const menuButton = (
@@ -57,10 +87,11 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
 
   return (
     <div className="pc-seated" data-layout={layout}>
-      {view.lock ? null : (
+      {view.lock || view.sight ? null : (
         <header className="pc-bar">
           <div className="pc-who">
             <span className="ui-chip is-active" aria-label={`Room Code ${view.code ?? ""}`}>{view.code}</span>
+            {view.game !== undefined && view.seat !== null ? <SeatPortrait seat={view.seat} nickname={view.nickname ?? ""} profile={view.game.lobby?.seats.find((x) => x.seat === view.seat)?.portrait ?? null} look={view.game.pub?.seats.find((x) => x.seat === view.seat)?.poltergeist ? "mono" : "colour"} reducedMotion={typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches} /> : null}
             <span className="pc-name">{view.nickname}</span>
             {view.master ? <span className="ui-chip">Master</span> : null}
           </div>
@@ -71,7 +102,21 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
         </header>
       )}
 
-      {view.lock ? (
+      {view.sight && !view.lock ? (
+        // a clue the Room shows once, in place of the page until it is seen
+        <div className="pc-lock">
+          {(() => {
+            // the layer, when the Player turned it on, shows a Safe code as clues in the air in place of the 5 seconds; any other Kind is the plain Sight
+            const ring = spiritClues.on ? ringForSight(view.sight.id, view.sight.sight) : null;
+            return ring !== null ? (
+              <Suspense fallback={<p className="ui-status" role="status">Loading the clues…</p>}>
+                <SpiritSight key={view.sight.id} clues={ring} assist={device.device.assist} orientation={spiritClues.motion ? spiritClues.source : null} buzz={() => device.feel.haptics.buzz("click")}
+                  onRead={(read) => spiritClues.setLast({ clues: ring, read })} onDone={() => port.ackSight?.(view.sight!.id)} />
+              </Suspense>
+            ) : <SightCard key={view.sight.id} sight={view.sight.sight} title="Something to remember" feel={device.feel} onDone={() => port.ackSight?.(view.sight!.id)} />;
+          })()}
+        </div>
+      ) : view.lock ? (
         // the Controller's bar is not drawn above a Lock: the Menu (and a connection that is not fine) go in the puzzle's own bar
         <LockArea port={port} offer={view.lock} device={device} barExtra={<>{view.connection === "online" ? null : connection}{menuButton}</>} />
       ) : (
@@ -81,7 +126,11 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
             <button type="button" role="radio" aria-checked={layout === "panel"} className="ui-button" onClick={() => setChosen("panel")}>Panel</button>
           </div>
           <p className="ui-hint pc-phase" role="status">{PHASE_WORDS[view.phase]}</p>
-          {layout === "pad" ? (
+          {view.game !== undefined && extras !== undefined ? (
+            view.game.pub !== null
+              ? <PlayPanel port={port} view={view} layout={layout} storage={extras.storage} soundDeps={extras.soundDeps} embedded={extras.embedded === true} {...(extras.now ? { now: extras.now } : {})} />
+              : <LobbyPanel view={view} send={(m) => port.send?.(m)} worlds={extras.worlds} contributions={contributions} {...(extras.record ? { record: extras.record } : {})} />
+          ) : layout === "pad" ? (
             <section className="pc-pad" aria-label="Pad">
               <Slot name="stick" label="Movement stick" />
               <Slot name="look" label="Look area" />
@@ -89,13 +138,27 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
             </section>
           ) : (
             <section className="pc-panel" aria-label="Panel">
-              <Slot name="hand" label="Your hand" />
-              {device.device.assist && view.worldClues && view.worldClues.length > 0 ? <WorldClueNotebook clues={view.worldClues} /> : <Slot name="notebook" label="Notebook" />}
+              {view.game?.pub && view.seat !== null && (view.phase === "playing" || view.phase === "paused") ? (
+                // the game itself: the hand, the notebook, the turn, the question and the accusation, from the Room's two views
+                <section className="pc-slot pc-slot--game" data-slot="game" aria-label="The game">
+                  <GameSections view={view.game.pub} me={view.game.priv} seat={view.seat} send={(m) => port.act?.(m)} refused={view.refused ?? null} />
+                </section>
+              ) : (
+                <>
+                  <Slot name="hand" label="Your hand" />
+                  {device.device.assist && view.worldClues && view.worldClues.length > 0 ? <WorldClueNotebook clues={view.worldClues} /> : <Slot name="notebook" label="Notebook" />}
+                </>
+              )}
               <Slot name="contributions" label="Contributions" />
             </section>
           )}
           {view.phase === "playing" && view.errands ? <ErrandsPanel errands={view.errands} port={port} /> : null}
           {view.phase === "playing" ? <DoorControls port={port} view={view} /> : null}
+          {spirit.on && view.table ? <SpiritTableSection device={spirit} feed={view.table} roomCode={view.code ?? ""} theory={theory} onTheory={setTheory} clueRing={spiritClues.last} onClues={() => setCluesOpen((o) => !o)} /> : null}
+          {cluesOpen && spiritClues.last !== null ? (
+            <ClueList clues={spiritClues.last.clues} read={spiritClues.last.read} onClose={() => setCluesOpen(false)}
+              onShowAll={() => { const last = spiritClues.last!; spiritClues.setLast({ clues: last.clues, read: readSet(showAllRead(startRing(last.clues))) }); }} />
+          ) : null}
         </main>
       )}
 
@@ -105,8 +168,10 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
             <div className="ui-stack">
               <PuzzleSettings
                 {...(view.master ? { master: { value: view.master.puzzles, preset: view.master.preset, onChange: (s) => port.setPuzzles(s) } } : {})}
-                device={device.device} onDevice={device.changeDevice} tiltState={device.tilt} canVibrate={device.canVibrate}
+                device={device.device} onDevice={(next) => { if (next.soundConsent !== device.device.soundConsent) port.setSound?.(next.soundConsent); if (next.assist !== device.device.assist) port.setAssist?.(next.assist); device.changeDevice(next); }} tiltState={device.tilt} canVibrate={device.canVibrate}
               />
+              {spirit.offered ? <SpiritTableSwitch device={spirit} /> : null}
+              <SpiritCluesSwitch device={spiritClues} />
               {view.master && port.setCluePlace ? (
                 <div className="ui-stack--tight" role="radiogroup" aria-label="Clue place">
                   <p className="ui-hint">Clue place</p>
@@ -130,6 +195,13 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
               ) : null}
               {port.setErrandOptOut ? (
                 <ErrandOptOut checked={Boolean(view.errands?.optOut)} onChange={(on) => port.setErrandOptOut?.(on)} />
+              ) : null}
+              {view.game !== undefined && extras !== undefined ? (
+                <>
+                  <SoundLightSettings send={(m) => port.send?.(m)} unlock={extras.unlock} />
+                  {view.seat !== null ? <SpeechRoomSwitch game={view.game} me={view.seat} /> : null}
+                  {view.game.pub !== null && view.seat !== null ? <MasterMenu game={view.game} me={view.seat} send={(m) => port.send?.(m)} worlds={extras.worlds} /> : null}
+                </>
               ) : null}
               <button type="button" className="ui-button ui-button--danger ui-button--block" onClick={() => void port.leave()}>Leave room</button>
             </div>

@@ -23,6 +23,7 @@
     "./party/*": "./src/party/*.ts",
     "./songs/*": "./src/songs/*.ts",
     "./print/*": "./src/print/*.ts",
+    "./qr/*": "./src/qr/*.ts",
     "./voice/stitch/*": "./src/voice/stitch/*.ts",
     "./voice/*": "./src/voice/*.ts"
   },

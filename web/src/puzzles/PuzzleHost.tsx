@@ -44,6 +44,8 @@ export type PuzzleHostProps = Readonly<{
   onSkip?: () => void;
   /** Spirit board only: say the word (the Whisper's line, or a voice). */
   onHear?: () => boolean | void | Promise<boolean | void>;
+  /** Spirit board only, with Assist on: the word as text, sent by the Room to this seat alone. */
+  assistText?: string;
   /** The Player pressed the Tilt button: on (true) or off (false). The device's settings keep that wish, so tilt stays off once they turned it off. */
   onTiltChoice?: (on: boolean) => void;
   /** What the page that hosts the puzzle puts in the puzzle's own bar, after the time (the Controller's Menu button), so it needs no bar of its own above the puzzle. */
@@ -64,7 +66,7 @@ const TWIST_KINDS: ReadonlySet<Kind> = new Set<Kind>(["safe", "clock"]);
  * draws and plays. Heavy screens load only when needed, and nothing here needs motion, sound or buzz.
  */
 export function PuzzleHost(props: PuzzleHostProps): ReactNode {
-  const { kind, view, faded, clue = null, sign, prompt, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear, onTiltChoice, barExtra } = props;
+  const { kind, view, faded, clue = null, sign, prompt, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear, assistText, onTiltChoice, barExtra } = props;
   const now = props.now ?? (() => performance.now());
   const [phase, setPhase] = useState<"faded" | "play" | "done">(faded ? "faded" : "play");
   const [wrong, setWrong] = useState(0);
@@ -201,9 +203,9 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
           <button type="button" className="ui-button ui-button--primary" onClick={() => setPeeking(false)}>Back to the puzzle</button>
         </div>
       ) : null}
-      <div className="ui-panel pz-stage" hidden={peeking || helping}>
+      <div className="ui-panel pz-stage" hidden={peeking || helping} {...(phase === "done" && reply ? { "data-done": "true" } : {})}>
         <Suspense fallback={<div className="pz-skeleton" aria-busy="true" aria-label="Loading the puzzle" />}>
-          <Screen view={view as never} feel={feel} assist={assist} reducedMotion={reducedMotion} elapsed={elapsed} submit={submit as never} resetKey={wrong} announce={announce} hear={onHear} tiltButtons={tiltButtons} />
+          <Screen view={view as never} feel={feel} assist={assist} reducedMotion={reducedMotion} elapsed={elapsed} submit={submit as never} resetKey={wrong} announce={announce} hear={onHear} assistText={assistText} tiltButtons={tiltButtons} />
         </Suspense>
       </div>
       <div className="pz-feedback">
@@ -227,7 +229,7 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
             <div className="pz-give">
               <p className="ui-hint">Give up on this lock? Nothing will open.{capMs !== null ? " The time you used still counts." : ""}</p>
               <div className="pz-grid2 pz-confirm">
-                <button type="button" className="ui-button ui-button--primary" onClick={() => setConfirmGive(false)}>Keep playing</button>
+                <button type="button" className="ui-button" onClick={() => setConfirmGive(false)}>Keep playing</button>
                 <button type="button" className="ui-button ui-button--quiet" onClick={onGiveUp}>Yes, give up</button>
               </div>
             </div>

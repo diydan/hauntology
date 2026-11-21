@@ -1,5 +1,5 @@
 import type { PlayReply, PlayView, ShellApi, WanderLockView } from "@hauntology/shared/app/api";
-import { parseViewerMessage, type ShellToViewer, type Vec3 } from "@hauntology/shared/app/events";
+import { parseViewerMessage, type Anchor, type ShellToViewer, type Vec3 } from "@hauntology/shared/app/events";
 import { errorCopy } from "@hauntology/shared/app/errors-copy";
 import { playReduce, playStart } from "@hauntology/shared/app/play";
 import { routeForApiError } from "@hauntology/shared/app/routes";
@@ -59,6 +59,8 @@ export type PlayUi = {
 export type PlayDeps = {
   api: Pick<ShellApi, "playStart" | "playTurn" | "playGet" | "ackNotice" | "playLockOpen" | "playLockAttempt" | "playLockSkip">;
   worldId: string;
+  /** Three anchors placed on the Viewer's floor (`planClientAnchors`), asked when a new game starts; none means the server places them (ghost-engine 6.3). */
+  clientAnchors?: () => Anchor[] | undefined | Promise<Anchor[] | undefined>;
   memory: PlayMemoryStore;
   session: Pick<SessionRecord, "ackNotice" | "lastPlayId" | "lastWorldId">;
   port: ViewerPort;
@@ -102,6 +104,15 @@ export const viewMessage = (view: PlayView): ShellToViewer => ({
   hauntLevel: view.hauntLevel,
   ghostVisible: view.ghostVisible,
 });
+
+/** A planner that throws or gives nothing leaves the placing to the server. */
+async function safeAnchors(plan: (() => Anchor[] | undefined | Promise<Anchor[] | undefined>) | undefined): Promise<Anchor[] | undefined> {
+  try {
+    return await plan?.();
+  } catch {
+    return undefined;
+  }
+}
 
 export function createPlayController(deps: PlayDeps): PlayController {
   const { api, worldId, memory, port } = deps;
@@ -223,8 +234,12 @@ export function createPlayController(deps: PlayDeps): PlayController {
 
   const startNew = async (): Promise<void> => {
     const m = memory.get();
+    // The floor the anchors stand on is the Viewer's, so the Viewer comes up first when the notice is already acknowledged (ghost-engine 6.3); with no Viewer, the server places them.
+    if (deps.clientAnchors !== undefined && !viewerUp && first.effects.length > 0) await enqueue(() => runEffect({ e: "start_viewer" }));
+    const anchors = viewerUp ? await safeAnchors(deps.clientAnchors) : undefined;
     const result = await api.playStart({
       worldId,
+      ...(anchors === undefined ? {} : { anchors }),
       ...(m.ghostPreset === undefined ? {} : { ghostPreset: m.ghostPreset }),
       ...(m.conditions === undefined ? {} : { conditions: m.conditions }),
       ...(m.wanderLocks === true ? { locks: true } : {}),

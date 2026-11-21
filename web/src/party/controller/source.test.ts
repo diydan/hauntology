@@ -33,9 +33,9 @@ describe("web/src/party/controller source rules", () => {
     for (const p of all) expect(/navigator\.vibrate|\bAudioContext\b|getUserMedia|deviceorientation|devicemotion/i.test(code(p)), rel(p)).toBe(false);
   });
 
-  it("has one main button per view: Join on JoinPage and Caught on seated ErrandsControls (the frame and menu have none)", () => {
+  it("has one main button per view: Join on JoinPage, Caught on seated ErrandsControls, and in the game screens one per screen (Suggest or Review in Actions, Hold to rattle, the Rattle prompt, Start or Play again in the Master menu); the frame and menu shell have none", () => {
     const primaries = shell.map((p) => [rel(p), (code(p).match(/ui-button--primary/g) ?? []).length] as const).filter(([, n]) => n > 0);
-    expect(primaries).toEqual([["ErrandsControls.tsx", 1], ["JoinPage.tsx", 1]]);
+    expect(primaries).toEqual([["ErrandsControls.tsx", 1], ["JoinPage.tsx", 1], ["play/Actions.tsx", 3], ["play/Haunting.tsx", 1], ["play/MasterMenu.tsx", 2], ["play/Prompts.tsx", 1]]);
   });
 
   it("makes every button and box on its page at least 48 px (--pc-target), in layout-only CSS", () => {

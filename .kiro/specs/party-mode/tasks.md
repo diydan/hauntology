@@ -126,14 +126,18 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.36 Write property test for endings and replays, with the recap checked in the token-planting fuzz game (no planted Hand, shown card, unfound Residue, Inspect, Eavesdrop or Stitch token), counts equal to the matching public events, Bluff marks on exactly the Suggestions whose Suspect or Relic was in the suggester's Hand (Bots included), and no recap before the game ends
     - **Property 17: Endings and replays preserve what they should**
     - **Validates: Requirements 6.6, 6.8, 11.6**
-  - [ ] 2.37 `pyramidLayout` and `fitTile`
+  - [x] 2.37 `pyramidLayout` and `fitTile`
+    - **Built 2026-11-21** (`shared/src/party/display.ts`): `fitTile` caps a tile at the space to the screen edge and at twice the inner gap, so no tile leaves the screen or meets a neighbour; `pyramidLayout` gives four equal tiles at 0, 90, 180 and 270 degrees, flipped 180 for tops pointing outward.
     - _Requirements: 7.3_
-  - [ ]* 2.38 Write property test for the pyramid layout
+  - [x]* 2.38 Write property test for the pyramid layout
+    - **Built 2026-11-21** (`shared/src/party/display.prop.test.ts`).
     - **Property 18: The pyramid layout is symmetric and in bounds**
     - **Validates: Requirements 7.3**
-  - [ ] 2.39 `effectLimits` (including Haunt Event reactions and Blackout dimming)
+  - [x] 2.39 `effectLimits` (including Haunt Event reactions and Blackout dimming)
+    - **Built 2026-11-21** (`display.ts`): `effectLimits` spaces flashes at least 334 ms apart across every reaction, keeps every step to 20% or less, ramps a Blackout down in 20% steps to 40%, delays rather than drops, and returns none under reduced motion.
     - _Requirements: 7.4_
-  - [ ]* 2.40 Write property test for display effects
+  - [x]* 2.40 Write property test for display effects
+    - **Built 2026-11-21** (`display.prop.test.ts`).
     - **Property 19: Display effects respect photosensitivity limits**
     - **Validates: Requirements 7.4**
   - [x] 2.41 `botAct` on `botMind` (walk to and Inspect, Suggest from the candidates, seal when Standard certain or Gentle at 50%, the default answer and Eavesdrop; never a Cue, Nudge, Frame, Rattle or Haunt Event choice) and `peekAllowed`
@@ -141,14 +145,18 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.42 Write property test for bots
     - **Property 22: Bots are legal and blind to other hands**
     - **Validates: Requirements 9.2, 9.3**
-  - [ ] 2.43 `roomCaps`, `narrationRequests`, spend accounting, and a scripted line library with at least five variants per party directive kind in its Speaker's voice (`partyScripted(kind, speaker, rng)`)
+  - [x] 2.43 `roomCaps`, `narrationRequests`, spend accounting, and a scripted line library with at least five variants per party directive kind in its Speaker's voice (`partyScripted(kind, speaker, rng)`)
+    - **Built 2026-11-21** (`spend.ts`, `narrate.ts`): `roomCaps` (12 images, 60 model calls), `reserve` (kill switch, then Room cap, then global answer), `planNarration` and `narrationRequests` (at most one model call per event id, none for `cue`, `nudge` or `phone-cue`), and `partyScripted` with at least five variants per kind and Speaker, 30 banks in all.
     - _Requirements: 10.1, 10.2, 7.8_
-  - [ ]* 2.44 Write property test for spend and narration independence
+  - [x]* 2.44 Write property test for spend and narration independence
+    - **Built 2026-11-21** (`spend-narrate.prop.test.ts`).
     - **Property 23: Spend is bounded and narration never changes the game**
     - **Validates: Requirements 10.1, 10.2**
-  - [ ] 2.45 Telemetry whitelist, `acceptJoin` and `acceptRoom`
+  - [x] 2.45 Telemetry whitelist, `acceptJoin` and `acceptRoom`
+    - **Built 2026-11-21** (`telemetry.ts`, `limits.ts`): counters and error codes only, `acceptJoin` (20 a minute per hashed IP) and `acceptRoom` (switch, one Room per session, 20 in total).
     - _Requirements: 10.5, 10.6_
-  - [ ]* 2.46 Write property test for telemetry and abuse caps
+  - [x]* 2.46 Write property test for telemetry and abuse caps
+    - **Built 2026-11-21** (`telemetry-limits.prop.test.ts`).
     - **Property 24: Telemetry carries no content and abuse is capped**
     - **Validates: Requirements 10.5, 10.6**
   - [x] 2.47 `canControl`, `nextMaster` and `handOver` (Master-only room controls, host token may only end, never a Bot as Master)
@@ -176,9 +184,11 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.56 Write property test for Resolve and Eavesdrop
     - **Property 29: Resolve is bounded and Eavesdrop reveals one card that was not shown**
     - **Validates: Requirements 11.4, 11.5, 12.2**
-  - [ ] 2.57 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
+  - [x] 2.57 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
+    - **Built 2026-11-21** (`photoPrompts.ts`): 12 prompts, `offerPrompts` from the stream `photo:<seat>`, `skipOffer`.
     - _Requirements: 3.6, 3.7, 3.8_
-  - [ ]* 2.58 Write property test for Photo Prompts
+  - [x]* 2.58 Write property test for Photo Prompts
+    - **Built 2026-11-21** (`photoPrompts.prop.test.ts`).
     - **Property 30: Photo Prompt offers are deterministic, complete and bounded**
     - **Validates: Requirements 3.6, 3.7, 3.8**
   - [x] 2.59 `nudgeCost`, `canNudge` (with every named reason) and `nudge`: Help +10 s up to 120 s, Spook -10 s with 20 s left, a 30 s floor, one of each per Turn, one Spook per Round, never the same Player on consecutive Turns, none from the active Player or a Bot (a Poltergeist may Help and Spook), and no Spook within three Turns of the last; each accepted Nudge counted for haunting Players or for everyone else
@@ -211,94 +221,130 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.70 Write property test for House Cues and Frames
     - **Property 36: A House Cue and a Frame look the same until the end**
     - **Validates: Requirements 14.3, 14.4, 14.5**
-  - [ ] 2.71 Reconcile `shared/src/errors.ts` and `shared/src/app/errors-copy.ts` with every party code in the design (the codes missing today, and `nudge_denied`, `cue_denied` and `frame_denied` with their reasons such as `spook_round_limit`); the copy table is a `Record<ErrorCode, …>`, so the compiler lists what is missing
+  - [x] 2.71 Reconcile `shared/src/errors.ts` and `shared/src/app/errors-copy.ts` with every party code in the design (the codes missing today, and `nudge_denied`, `cue_denied` and `frame_denied` with their reasons such as `spook_round_limit`); the copy table is a `Record<ErrorCode, …>`, so the compiler lists what is missing
+    - **Built 2026-11-21** (`shared/src/errors.ts`, `shared/src/app/errors-copy.ts`, `shared/src/party/denials.test.ts`): 12 codes added (`photo_rejected`, `not_master`, `world_not_set`, `poltergeist`, `cold_spot`, `already_inspected`, `eavesdrop_denied`, `nudge_denied`, `cue_denied`, `frame_denied`, `rattle_denied`, `stitch_denied`), copy for each, and `DENIAL_REASONS` with `denialCopy('code:reason')`; the reason lists are typed against the real refusal unions.
     - _Requirements: 12.3, 14.4_
-  - [ ] 2.72 `hourStrike` and the midnight strike (the hour on a 12-hour dial, twelve at midnight, one server time for every target, the Master's off switch)
+  - [x] 2.72 `hourStrike` and the midnight strike (the hour on a 12-hour dial, twelve at midnight, one server time for every target, the Master's off switch)
+    - **Built 2026-11-21** (`shared/src/party/hour.ts`): `hourStrike(nowMs, offsetMin, prev, enabled)` (next boundary of the host's clock, half-hour zones included, 12-hour dial, twelve at midnight, null when off), `strikeTargets` (one server time for the Host and every phone, Bell by `soundPlan`) and `MIDNIGHT_LINE`. The first argument is the server time in ms, not a host-local time, and the offset is passed apart.
     - _Requirements: 15.1, 15.2, 15.3_
-  - [ ]* 2.73 Write property test for the hour strike
+  - [x]* 2.73 Write property test for the hour strike
+    - **Built 2026-11-21** (`hour-conditions.prop.test.ts`, Property 37).
     - **Property 37: The hour strike is exact, shared and rule-free**
     - **Validates: Requirements 15.1, 15.2, 15.3**
-  - [ ] 2.74 `roomConditions` (cosmetic Public View fields only), the frozen snapshot on `PartyState`, and no rule function taking it as an input
+  - [x] 2.74 `roomConditions` (cosmetic Public View fields only), the frozen snapshot on `PartyState`, and no rule function taking it as an input
+    - **Built 2026-11-21** (`conditions.ts`): `roomConditions` (weather, time of day, moon only) and `freezeConditions` (deep-frozen copy). The snapshot lives with the Room's state, not in the Engine, so no rule function can take it (`conditions/rules-free.test.ts`, which now lists `conditions.ts` with the view-only modules). The Room's call at start is 4.18.
     - _Requirements: 15.4_
-  - [ ]* 2.75 Write property test that the real world changes no rule
+  - [x]* 2.75 Write property test that the real world changes no rule
+    - **Built 2026-11-21** (`hour-conditions.prop.test.ts`, Property 38, with the existing `conditions/rules-free.test.ts`).
     - **Property 38: The real world never changes a rule**
     - **Validates: Requirements 15.4**
-  - [ ] 2.76 `lensData` from the Player's own Private View and the Public View only
+  - [x] 2.76 `lensData` from the Player's own Private View and the Public View only
+    - **Built 2026-11-21** (`lens.ts`): `lensData`.
     - _Requirements: 16.2_
-  - [ ]* 2.77 Write property test for the lens data
+  - [x]* 2.77 Write property test for the lens data
+    - **Built 2026-11-21** (`lens-light.prop.test.ts`, Property 39).
     - **Property 39: The Spirit lens draws only from what the phone may already see**
     - **Validates: Requirements 16.2**
-  - [ ] 2.78 `lensPlan` (at most 30 fps, paused face down or hidden, a fixed view without sensors, re-calibration, no camera)
+  - [x] 2.78 `lensPlan` (at most 30 fps, paused face down or hidden, a fixed view without sensors, re-calibration, no camera)
+    - **Built 2026-11-21** (`lens.ts`): `lensPlan`.
     - _Requirements: 16.1, 16.3, 16.4_
-  - [ ]* 2.79 Write property test for the lens limits
+  - [x]* 2.79 Write property test for the lens limits
+    - **Built 2026-11-21** (`lens-light.prop.test.ts`, Property 40).
     - **Property 40: The Spirit lens obeys its limits**
     - **Validates: Requirements 16.1, 16.3, 16.4**
-  - [ ] 2.80 `lightCue` (wave, heartbeat, failing bulb, creeping dark, glow; greys only, fades, at most two changes a second, a peak below full white, at most 6 s, none under reduced motion or without consent, seat order)
+  - [x] 2.80 `lightCue` (wave, heartbeat, failing bulb, creeping dark, glow; greys only, fades, at most two changes a second, a peak below full white, at most 6 s, none under reduced motion or without consent, seat order)
+    - **Built 2026-11-21** (`light.ts`): `lightCue` (five kinds, greys up to 0.9, steps at least 600 ms apart so at most two a second, a wave across seats, at most 6 s, none under reduced motion or without consent) and `levelAt`.
     - _Requirements: 17.1, 17.2, 17.3_
-  - [ ]* 2.81 Write property test for light cues
+  - [x]* 2.81 Write property test for light cues
+    - **Built 2026-11-21** (`lens-light.prop.test.ts`, Property 41).
     - **Property 41: Light cues stay inside the limits**
     - **Validates: Requirements 17.1, 17.2, 17.3**
-  - [ ] 2.82 `lightSync` and the clock offset estimate (median of `ping` and `pong`, the error, a start at least 500 ms ahead, phones over 150 ms dropped)
+  - [x] 2.82 `lightSync` and the clock offset estimate (median of `ping` and `pong`, the error, a start at least 500 ms ahead, phones over 150 ms dropped)
+    - **Built 2026-11-21** (`light.ts`): `estimateOffset` (median of the last five `ping`/`pong` exchanges, error as the spread) and `lightSync` (start at least 500 ms ahead, phones over 150 ms of error or with no estimate dropped, each start minus its own offset).
     - _Requirements: 17.4_
-  - [ ]* 2.83 Write property test for cue timing
+  - [x]* 2.83 Write property test for cue timing
+    - **Built 2026-11-21** (`lens-light.prop.test.ts`, Property 42).
     - **Property 42: Cue starts are ahead of now and late phones are dropped**
     - **Validates: Requirements 17.4**
-  - [ ] 2.84 Stitch room rules: `stitchEnabled`, `recordConsent` (a Player's own yes, the tick kept as a yes or no, the Master cannot say yes for anyone, leaving deletes at once)
+  - [x] 2.84 Stitch room rules: `stitchEnabled`, `recordConsent` (a Player's own yes, the tick kept as a yes or no, the Master cannot say yes for anyone, leaving deletes at once)
+    - **Built 2026-11-21** (`party/stitch.ts`): names the rules of `voice/stitch/consent.ts` (ghost-voice) for the Room: `stitchEnabled`, `recordConsent`.
     - _Requirements: 18.1, 18.2_
-  - [ ]* 2.85 Write property test for Stitch consent
+  - [x]* 2.85 Write property test for Stitch consent
+    - **Built 2026-11-21** (`party/stitch.test.ts`, Property 43; the ghost-voice Property 9 test covers the same module).
     - **Property 43: Stitch is off, then each Player's own yes**
     - **Validates: Requirements 18.1, 18.2**
-  - [ ] 2.86 `stitchSchedule` (only at a Haunt Event or midnight, one a Round, two a game, never in the first 60 s or during the end-of-Round reveal, never the same Player twice running)
+  - [x] 2.86 `stitchSchedule` (only at a Haunt Event or midnight, one a Round, two a game, never in the first 60 s or during the end-of-Round reveal, never the same Player twice running)
+    - **Built 2026-11-21** (`party/stitch.ts`): `stitchSchedule` is `voice/stitch/play.ts` `stitchEligible`.
     - _Requirements: 18.4_
-  - [ ]* 2.87 Write property test for Stitch scheduling
+  - [x]* 2.87 Write property test for Stitch scheduling
+    - **Built 2026-11-21** (`party/stitch.test.ts`, Property 44).
     - **Property 44: Stitched lines are rare and never at the wrong moment**
     - **Validates: Requirements 18.4**
-  - [ ] 2.88 `stitchLifecycle` (clips only in the Room, never blocking the lobby or the start, deleted at the end or after 6 hours, the reveal)
+  - [x] 2.88 `stitchLifecycle` (clips only in the Room, never blocking the lobby or the start, deleted at the end or after 6 hours, the reveal)
+    - **Built 2026-11-21** (`party/stitch.ts`): `stitchLifecycle` over `purgeClips`, `nextPurgeAt` and `stitchReveal`, and `stitchBlocksStart` (always false).
     - _Requirements: 18.3, 18.5_
-  - [ ]* 2.89 Write property test for Stitch clips
+  - [x]* 2.89 Write property test for Stitch clips
+    - **Built 2026-11-21** (`party/stitch.test.ts`, Property 45).
     - **Property 45: Stitch clips stay in the room and are revealed at the end**
     - **Validates: Requirements 18.3, 18.5**
-  - [ ] 2.90 `shakeDetect` (three swings above the strength within 1.5 s, single bumps ignored) and the Rattle opt-in rules (a Poltergeist with Rattle on, hold-to-rattle without sensors)
+  - [x] 2.90 `shakeDetect` (three swings above the strength within 1.5 s, single bumps ignored) and the Rattle opt-in rules (a Poltergeist with Rattle on, hold-to-rattle without sensors)
+    - **Built 2026-11-21** (`shared/src/party/rattle.ts`): `shakeDetect` (three alternating swings above the strength inside 1.5 s, bumps and non-numbers ignored) and `rattleOffer` (a Poltergeist with the switch on, asked first, shake plus button or the button alone).
     - _Requirements: 19.1, 19.3_
-  - [ ]* 2.91 Write property test for shake detection
+  - [x]* 2.91 Write property test for shake detection
+    - **Built 2026-11-21** (`rattle.prop.test.ts`, Property 46, with a brute-force check).
     - **Property 46: A deliberate shake is three swings in 1.5 seconds**
     - **Validates: Requirements 19.1, 19.3**
-  - [ ] 2.92 `canRattle` sharing the Cue limits (4 s, six per Turn, three sounds per phone per Round)
+  - [x] 2.92 `canRattle` sharing the Cue limits (4 s, six per Turn, three sounds per phone per Round)
+    - **Built 2026-11-21** (`rattle.ts`): `canRattle` is `canCue` for the gesture, with `rattle_off`, `bot`, `not_poltergeist` and `rattle_not_on` first.
     - _Requirements: 19.2_
-  - [ ]* 2.93 Write property test for the shared limits
+  - [x]* 2.93 Write property test for the shared limits
+    - **Built 2026-11-21** (`rattle.prop.test.ts`, Property 47).
     - **Property 47: Rattle shares every Cue limit**
     - **Validates: Requirements 19.2**
-  - [ ] 2.94 `rattleIntensity` (levels 1 to 3 from the count this Turn, at most 80% volume, light only for a phone with no sounds left, reset each Turn)
+  - [x] 2.94 `rattleIntensity` (levels 1 to 3 from the count this Turn, at most 80% volume, light only for a phone with no sounds left, reset each Turn)
+    - **Built 2026-11-21** (`rattle.ts`): `rattleIntensity` (levels 1 to 3, volume 0.8), `rattleDelivery` (light only for a phone with no sounds left), `countRattle` and `resetRattles`.
     - _Requirements: 19.4_
-  - [ ]* 2.95 Write property test for Rattle intensity
+  - [x]* 2.95 Write property test for Rattle intensity
+    - **Built 2026-11-21** (`rattle.prop.test.ts`, Property 48).
     - **Property 48: Rattle intensity follows the count and resets each Turn**
     - **Validates: Requirements 19.4**
-  - [ ] 2.96 Anonymous Rattle events (three log lines), the senders only in the ending payload, no rule touched
+  - [x] 2.96 Anonymous Rattle events (three log lines), the senders only in the ending payload, no rule touched
+    - **Built 2026-11-21** (`rattle.ts`): `RATTLE_LINES` (three public lines), `rattleSource` (the secret record). Nothing in the file takes a clock, Resolve, Haunt level, Hand or Solution.
     - _Requirements: 19.5_
-  - [ ]* 2.97 Write property test for Rattle anonymity
+  - [x]* 2.97 Write property test for Rattle anonymity
+    - **Built 2026-11-21** (`rattle.prop.test.ts`, Property 49).
     - **Property 49: Rattles are anonymous until the ending**
     - **Validates: Requirements 19.5**
-  - [ ] 2.98 `becoming` (once per Player, at most 4 s, not counted toward the three sounds, then Rattle is offered)
+  - [x] 2.98 `becoming` (once per Player, at most 4 s, not counted toward the three sounds, then Rattle is offered)
+    - **Built 2026-11-21** (`rattle.ts`): `becoming` (once per Player, 4 s, not a counted sound, grey fade outward from the seat, Rattle offered after).
     - _Requirements: 19.6_
-  - [ ]* 2.99 Write property test for the Becoming
+  - [x]* 2.99 Write property test for the Becoming
+    - **Built 2026-11-21** (`rattle.prop.test.ts`, Property 50).
     - **Property 50: The Becoming plays once per Player**
     - **Validates: Requirements 19.6**
-  - [ ] 2.100 `rattlePrompts` (the first prompt and the stronger prompt, each at most once per Turn, private, no sender)
+  - [x] 2.100 `rattlePrompts` (the first prompt and the stronger prompt, each at most once per Turn, private, no sender)
+    - **Built 2026-11-21** (`rattle.ts`): `rattlePrompts`.
     - _Requirements: 19.7_
-  - [ ]* 2.101 Write property test for Rattle prompts
+  - [x]* 2.101 Write property test for Rattle prompts
+    - **Built 2026-11-21** (`rattle.prop.test.ts`, Property 51).
     - **Property 51: Rattle prompts appear at most once per Turn each**
     - **Validates: Requirements 19.7**
-  - [ ] 2.102 `SOUND_FILES` and `tools/check-sounds.mjs` (mono `.m4a`, 50 KB each, 350 KB in all, 3 s and 4 s, every file credited in `docs/sounds/CREDITS.md`; passes when there are no files)
+  - [x] 2.102 `SOUND_FILES` and `tools/check-sounds.mjs` (mono `.m4a`, 50 KB each, 350 KB in all, 3 s and 4 s, every file credited in `docs/sounds/CREDITS.md`; passes when there are no files)
+    - **Built 2026-11-21** (`shared/src/party/sounds.ts`: `SOUND_FILES`; `tools/check-sounds.mjs` and `docs/sounds/CREDITS.md` were already in main and pass on the nine files in `web/public/sounds`).
     - _Requirements: 20.1, 20.3_
-  - [ ]* 2.103 Write property test for the sound file check
+  - [x]* 2.103 Write property test for the sound file check
+    - **Built 2026-11-21** (`tools/test/check-sounds.test.mjs`, 12 tests, already in main; `shared/src/party/sounds.prop.test.ts` keeps the TypeScript list and limits in step with the tool).
     - **Property 52: Sound files are checked**
     - **Validates: Requirements 20.1, 20.3**
-  - [ ] 2.104 `soundAvailability` and the flash and vibrate fallback when a file is missing
+  - [x] 2.104 `soundAvailability` and the flash and vibrate fallback when a file is missing
+    - **Built 2026-11-21** (`sounds.ts`): `soundAvailability` and `phoneAction` (play, else flash and vibrate; vibration only under reduced motion).
     - _Requirements: 20.2_
-  - [ ]* 2.105 Write property test for absent sound files
+  - [x]* 2.105 Write property test for absent sound files
+    - **Built 2026-11-21** (`sounds.prop.test.ts`, Property 53).
     - **Property 53: Absent sound files change nothing**
     - **Validates: Requirements 20.2**
-  - [ ]* 2.106 Write property test for a wrong guess never winning
+  - [x]* 2.106 Write property test for a wrong guess never winning
+    - **Built 2026-11-21** (`win-rules.prop.test.ts`, Property 54, mutation-checked against `accuse.ts`).
     - **Property 54: A wrong guess never wins**
     - **Validates: Requirements 6.5, 11.3**
   - [x] 2.107 `botMind`: `observe`, `propagate`, `candidates` and `chance`, from a Bot's own Hand, the cards shown to it, its found Residue, every pass, every showing, the public Hand sizes and its own Eavesdrop hints
@@ -306,16 +352,19 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.108 Write property test for Bot inference soundness, by brute force over small cases
     - **Property 57: Bot inference is sound**
     - **Validates: Requirements 9.2**
-  - [ ] 2.109 `awards`: `scarePoints(log, reveal)` (one per Frame sent, one per Rattle accepted, two per Spook applied, three for each Turn that ended by the clock while the Poltergeist had Spooked or Rattled during it) and `firstDetective` (fewest Suggestions, then least Turn time; a tie shares the title)
+  - [x] 2.109 `awards`: `scarePoints(log, reveal)` (one per Frame sent, one per Rattle accepted, two per Spook applied, three for each Turn that ended by the clock while the Poltergeist had Spooked or Rattled during it) and `firstDetective` (fewest Suggestions, then least Turn time; a tie shares the title)
+    - **Already built** (`shared/src/party/ending.ts`): `scarePoints(log, sources, poltergeists)` (the 2.109 numbers plus 1 per solved Haunting puzzle and the Errand points of the errands spec) and `rankWinners` (the `firstDetective` ranking: fewest Suggestions, then least Turn time, then seat; the task's 'a tie shares the title' is the caller's reading of equal keys).
     - _Requirements: 6.6, 11.6_
-  - [ ]* 2.110 Write property tests for order-independent reveals, a fair first player and scare points that change nothing
+  - [x]* 2.110 Write property tests for order-independent reveals, a fair first player and scare points that change nothing
+    - **Built 2026-11-21** (`win-rules.prop.test.ts`: Property 55 reveals in any order, Property 56 the first player rotates fairly, Property 58 scare points are a pure count; the existing `suggest-accuse.prop.test.ts` also covers 55).
     - **Property 55: Reveals do not depend on order**
     - **Validates: Requirements 6.3, 6.5**
     - **Property 56: The first player rotates fairly**
     - **Validates: Requirements 5.1**
     - **Property 58: Scare points change nothing**
     - **Validates: Requirements 11.6**
-  - [ ] 2.111 `tools/balance.mjs`: the statistical balance regression (500 seeded games each at 3 to 6 Players, all Standard Bots: at least 95% solved, mean Rounds between 4 and 7, every seat's win share within 8 points of its fair share), run in CI; a failing run blocks merges that touch `shared/src/party/`
+  - [x] 2.111 `tools/balance.mjs`: the statistical balance regression (500 seeded games each at 3 to 6 Players, all Standard Bots: at least 95% solved, mean Rounds between 4 and 7, every seat's win share within 8 points of its fair share), run in CI; a failing run blocks merges that touch `shared/src/party/`
+    - **Built 2026-11-21** (`shared/src/party/balance.ts`, `balance.test.ts`, `tools/balance.mjs`, `pnpm check-balance`): the real Engine plays 500 seeded all-Standard-Bot games at each of 3 to 6 Players and the report is checked against the limits. Measured today: 100% solved at every size, mean Rounds 5.22, 4.90, 4.50 and 4.34, largest win-share gap from fair 2.2, 2.2, 2.0 and 1.6 points, so every limit holds. `tools/balance.mjs` exits 1 when a limit fails (checked by tightening a limit). The repository has no CI workflow, so nothing runs it on merge yet: run it before merging changes under `shared/src/party/`. Bots here are perfect note-takers (the design's own caveat), so real tables will be slower.
     - _Requirements: 9.2, 5.1_
   - [x] 2.112 `solo.ts`: `soloSetup` (the visitor as Master at seat 1, the Room's first seat; seats run 1 to 6, two to five Bots at the level the preset gives, fixed Bot names, `speech` off, every name from the Preset Ghosts and the curated Zone names, and `{error}` for a bad Bot count or a world that is too small)
     - _Requirements: 9.5_
@@ -323,18 +372,24 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - **Property 59: A solo case is an ordinary Room**
     - **Validates: Requirements 9.5**
   - [ ] 2.114 `speakerFor(kind)` and the Lodger bank: the first split of kinds to the Keeper, the Whisper and the Lodger, a Lodger bank shared by all six Suspects whose lines take no Solution, Hand or guilt flag, the text-only aside, the stall, and the confession built only after `solution` is public and only for the Suspect in it; `PartyRoom` passes `lodgerVoiceFor(profile)` to `toVoiceLine` so each Suspect speaks in the Lodger Voice of its profile; lines written from `docs/story/CHARACTERS.md` (the story-writer agent drafts them in `docs/story/`)
+    - **Partly built 2026-11-21** (`shared/src/party/narrate.ts`, `lodger.ts`): `speakerFor`, the first split of kinds to the Keeper, the Whisper and the Lodger, 30 scripted banks of five lines each, `lodgerLine` (from the kind and the seed only, so no Solution, Hand or guilt flag), `confessionLine` (only once `ending` is public and only for the Suspect in it) and `lodgerVoiceOf`. **Built 2026-11-22:** the wiring: the Room speaks the confession of the Suspect in the Solution, only once the Solution is public, in that Suspect's Lodger Voice (`shared/src/party/narrate-events.ts` `lodgerVoiceOfProfile`, `server.ts` `confess`; the maker's pick is kept with the lobby's ghost record, a Preset Ghost has a stable voice of its own; `narrate-wiring.test.ts`, a mutant that dropped the voice was caught). **Left, needs a person:** a read of the lines against `docs/story/CHARACTERS.md` by the story-writer; the lines here were written without it and need that review, so the box stays open.
     - _Requirements: 7.8, 7.9, 3.14_
-  - [ ]* 2.115 Write property test for Speakers and the Lodger's no-tell rule (two states that differ only in the Solution give the same Lodger line and the same voice before the reveal; a picked voice changes no card, turn or line text)
+  - [x]* 2.115 Write property test for Speakers and the Lodger's no-tell rule (two states that differ only in the Solution give the same Lodger line and the same voice before the reveal; a picked voice changes no card, turn or line text)
+    - **Built 2026-11-21 for what exists** (`selfie-look-lodger.prop.test.ts`, Property 60: fixed Speakers, a Lodger line from `(kind, seed)` alone, the confession only after the Solution is public and only for that Suspect, the voice from the profile). The `PartyRoom` wiring of `lodgerVoiceFor` into `toVoiceLine` is not built (see 2.114).
     - **Property 60: Speakers are fixed by kind and the Lodger gives no tell**
     - **Validates: Requirements 3.14, 7.8, 7.9**
-  - [ ] 2.116 `selfie.ts`: `selfieAllowed(settings, player)`, `selfieQuality(report)` (`no_face`, `many_faces`, `too_small`, `blurry`, `dark`) and `withTransientSelfie(fn)` (zeroes the buffer and drops the reference exactly once on success, throw or timeout); `settings.selfies` defaults to false and only the Master's token can change it
+  - [x] 2.116 `selfie.ts`: `selfieAllowed(settings, player)`, `selfieQuality(report)` (`no_face`, `many_faces`, `too_small`, `blurry`, `dark`) and `withTransientSelfie(fn)` (zeroes the buffer and drops the reference exactly once on success, throw or timeout); `settings.selfies` defaults to false and only the Master's token can change it
+    - **Built 2026-11-21** (`selfie.ts`, `engine.ts`, `protocol.ts`): `selfieAllowed`, `selfieQuality`, `withTransientSelfie` (zeroes the buffer and drops the reference once on success, throw or timeout), and `settings.selfies` (off by default, changed only by the Master's token and only in the lobby).
     - _Requirements: 3.10, 3.11, 3.12_
-  - [ ]* 2.117 Write property test for selfies (opt-in, transient, rule-neutral)
+  - [x]* 2.117 Write property test for selfies (opt-in, transient, rule-neutral)
+    - **Built 2026-11-21** (`selfie-look-lodger.prop.test.ts` and `selfie-settings.test.ts`, Property 61).
     - **Property 61: Selfies are opt-in, transient and never change a rule**
     - **Validates: Requirements 3.10, 3.11, 3.12, 3.13**
-  - [ ] 2.118 `seatLook(publicView, seat)` (`'mono'` exactly when the seat's public `poltergeist` flag is set, never back to `'colour'`, reads nothing else) and `seatPortrait(player, look)` (the Seat Portrait or a nickname chip; for `'mono'` the Preset's `monoUrl`, else the same picture with `grayscale(1)`); no rule, view field or message is added
+  - [x] 2.118 `seatLook(publicView, seat)` (`'mono'` exactly when the seat's public `poltergeist` flag is set, never back to `'colour'`, reads nothing else) and `seatPortrait(player, look)` (the Seat Portrait or a nickname chip; for `'mono'` the Preset's `monoUrl`, else the same picture with `grayscale(1)`); no rule, view field or message is added
+    - **Built 2026-11-21** (`seatLook.ts`): `seatLook`, `seatPortrait`, `seatFadeMs`. `GhostProfile.monoUrl` already exists; no rule, view field or message was added.
     - _Requirements: 19.8, 19.9_
-  - [ ]* 2.119 Write property test for the Seat Portrait look (mono only after joining the haunting, public data only, no Suspect card, speaker badge or narrator ever mono)
+  - [x]* 2.119 Write property test for the Seat Portrait look (mono only after joining the haunting, public data only, no Suspect card, speaker badge or narrator ever mono)
+    - **Built 2026-11-21** (`selfie-look-lodger.prop.test.ts`, Property 62; the Suspect card, speaker badge, narrator and Display are not inputs to `seatLook` or `seatPortrait` at all).
     - **Property 62: A Seat Portrait is black and white exactly when its Player has joined the haunting**
     - **Validates: Requirements 19.8, 19.9**
   - [x] 2.120 `theory.ts`: `setTheory(theory, suspect, zone | null, zones)` and `theoryOf(notebook)`, kept apart from `autoMarks`, with a source-level check that nothing outside the notebook reads a Theory mark and that no message, view or prompt carries one
@@ -362,19 +417,26 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 8.4_
 
 - [ ] 4. PartyRoom Durable Object
-  - [ ] 4.1 Create a Room with no world, join, seat (the first Player is the Master) and token issue; socket `hello` within 5 s; Hibernation API; origin check; zod validation of every message; seed is 128-bit crypto.getRandomValues; register with PartyDirectory on create, unregister on delete
+  - [x] 4.1 Create a Room with no world, join, seat (the first Player is the Master) and token issue; socket `hello` within 5 s; Hibernation API; origin check; zod validation of every message; seed is 128-bit crypto.getRandomValues; register with PartyDirectory on create, unregister on delete
+    - **Built 2026-11-22** (`shared/src/party/server.ts`, `api/src/do/party-room.ts`, `api/src/routes/party.ts`): what was missing is now there. A socket must say `hello` within 5 s or the alarm closes it with 4408 `hello_timeout` (`socketOpened`, saved as `helloBy` so a Room that hibernated still closes it; `room-41.test.ts`, a mutant that never forgot a greeted socket was caught); the upgrade checks its own `Origin` (another site gets 403 `bad_origin`, `party.test.ts`); the seed is drawn as 128 bits (`SEED_BYTES`, `crypto.getRandomValues` through `randomBytes(16)`) and folded into the Engine's 32-bit generator state. The rest was already built and tested: a Room with no world, join, the first seat is the Master, token issue, the Hibernation API, zod on every message, directory register and unregister. **Decision for review:** the Engine's generators (`mulberry32`) hold 32 bits, so the seed's real strength is still 2^32 however many bits are drawn; a wider Engine generator would be a separate change.
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.6_
-  - [ ] 4.2 Lobby: contribution intake and pool build when the lobby closes
+  - [x] 4.2 Lobby: contribution intake and pool build when the lobby closes
+    - **Built 2026-11-21** (`shared/src/party/lobby-contrib.ts`, `server.ts`, `api/src/do/party-room.ts`): the Room keeps each seat's Suspect, photo verdict, Zone name, prompt round and selfie yes (ids and verdicts only), `identify`, `lobbyContext`, `recordContribution` and `skipPrompt` answer the routes, and `draftEngine` builds the pool with `buildPool(toContributions(...))` at the start, so contributed Suspects and Zone names come first and Presets fill the rest. Contributions and ghost files are deleted when the Room ends (`deleteContributions`, `R2PhotoStore`).
     - _Requirements: 3.1, 3.4_
-  - [ ] 4.3 Game start (Master only, a valid world required): choose the Solution, set aside and place the Residue, deal 12 cards, place Zones (authored, placed or ring), fan out Public and Private Views
+  - [x] 4.3 Game start (Master only, a valid world required): choose the Solution, set aside and place the Residue, deal 12 cards, place Zones (authored, placed or ring), fan out Public and Private Views
+    - **Built 2026-11-21** (`shared/src/party/engine.ts` start, `server.ts` world gate, `server-room-extras.test.ts`): only the Master starts, a world must be chosen first (`world_not_set`), the Solution, three Residue cards and the 12-card deal are made by the Engine, and the public and private views fan out after the start. Zone points are placed by `placeZones` when the Host loads the world (task 8).
     - _Requirements: 4.1, 4.2, 4.5, 4.6_
-  - [ ] 4.4 Turn engine: `nextWake(state, now)` and a single DO alarm always set to it; 10-second warning, disconnect pause and skip, Master pause and resume, no-clock mode, Poltergeists skipped, Haunt rise at Round end and on a lost Turn
+  - [x] 4.4 Turn engine: `nextWake(state, now)` and a single DO alarm always set to it; 10-second warning, disconnect pause and skip, Master pause and resume, no-clock mode, Poltergeists skipped, Haunt rise at Round end and on a lost Turn
+    - **Built 2026-11-21** (`engine.ts` `wakeOf`, `clock.ts` `nextWake`, `server.ts` `commit`): one alarm always at the next wake; the 10-second warning, disconnect pause and skip, Master pause and resume, no-clock mode, Poltergeists skipped and the Haunt rise at Round end and on a lost Turn are covered by the Property 13, 26 and 34 tests. The hour boundary joins `nextWake` in 4.17.
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7, 11.1_
-  - [ ] 4.5 Pose and input pipeline: sanitise host pose at ≤ 4 Hz, relay the active Player's input only, rate limit every token
+  - [x] 4.5 Pose and input pipeline: sanitise host pose at ≤ 4 Hz, relay the active Player's input only, rate limit every token
+    - **Built 2026-11-21** (`server.ts` `input` and `pose` messages, `room-extras.ts`, `server-room-extras.test.ts`): only the active Detective's input reaches the Host, clamped, at most 30 a second, never stored; the Host pose is cleaned by `sanitizePose` inside the world bounds, relayed at 4 Hz at most and never stored; every socket keeps the 40 a second limit.
     - _Requirements: 2.2, 7.2_
-  - [ ] 4.6 Suggestion, `show`, `seal` and `endTurn` handlers, the round-end reveal with the shared win, the event log, achievement awards and end conditions; the handler records a Bluff only in `state.bluffs` and never in an event, log line or view, and a sealed Accusation only in its owner's view until the Round ends
+  - [x] 4.6 Suggestion, `show`, `seal` and `endTurn` handlers, the round-end reveal with the shared win, the event log, achievement awards and end conditions; the handler records a Bluff only in `state.bluffs` and never in an event, log line or view, and a sealed Accusation only in its owner's view until the Round ends
+    - **Built 2026-11-21** (`engine.ts` suggest, show, seal, endTurn; `ending.ts`): covered by the Property 14, 15, 17, 54 and 55 tests. A Bluff is kept only in `state.bluffs`; a sealed Accusation shows only in its owner's private view until the Round ends.
     - _Requirements: 5.4, 6.1, 6.2, 6.3, 6.5, 6.7_
-  - [ ] 4.7 Ending payload with the winners, the Residue placements, the Most Haunting award and the recap, built once when the game ends, and Play again
+  - [x] 4.7 Ending payload with the winners, the Residue placements, the Most Haunting award and the recap, built once when the game ends, and Play again
+    - **Built 2026-11-21** (`ending.ts` `buildEnding`, `server.ts` `playAgain`): the ending payload is built once when the game ends (winners, Residue placements, Most Haunting, recap, sources); Play again keeps the world, Players and pool and deals anew (Property 17 and the `server.test.ts` Play again test).
     - _Requirements: 6.6, 6.8, 11.6_
   - [x] 4.8 (`shared/src/party/server.ts`, `api/src/do/party-room.ts`, `api/src/routes/party.ts`; a new solo case ends the same visitor's old Room first) Time-to-live alarm, Master or host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
     - _Requirements: 1.5, 10.4, 10.6, 10.7_
@@ -382,148 +444,216 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 9.1, 9.2_
   - [x] 4.10 (`api/src/do/party-directory.ts`) PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
     - _Requirements: 10.6_
-  - [ ] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings (including the Classic, Gentle and Quick presets and the Nudge, Frame, sound, auto-cross and Bot switches), hand-over, 60 s Master timeout, host token limited to `end`
+  - [x] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings (including the Classic, Gentle and Quick presets and the Nudge, Frame, sound, auto-cross and Bot switches), hand-over, 60 s Master timeout, host token limited to `end`
+    - **Built 2026-11-21** (`server.ts`, `protocol.ts`, `engine.ts` settings): every control message checks the Master (`not_master`), the world choice answers `world_too_small` and start answers `world_not_set`, the settings include the Classic, Gentle and Quick presets and separate switches for Nudges, Frames, sound, auto-cross and the Bot level, hand-over and the 60 s Master timeout work, and the host and display tokens can only end the Room (or, in an all-Bot Room, choose the world and start Bots).
     - _Requirements: 1.7, 1.5, 12.5, 14.6_
-  - [ ] 4.12 Residue, Inspect and Haunt handlers: place the Residue, run the 10 s Inspect timer, private results, Haunt Event choice with the 15 s default, Cold Spot and Blackout effects, Poltergeist transition
+  - [x] 4.12 Residue, Inspect and Haunt handlers: place the Residue, run the 10 s Inspect timer, private results, Haunt Event choice with the 15 s default, Cold Spot and Blackout effects, Poltergeist transition
+    - **Built 2026-11-21** (`engine.ts` inspect, choose, fireHaunt; `haunt.ts`, `residue.ts`): Residue is placed, the 10 s Inspect runs on the Room alarm, results are private, the Haunt Event choice has a 15 s default, Cold Spot and Blackout take effect and a sealed wrong Accusation moves a Player into the haunting (Property 26 and 28).
     - _Requirements: 4.6, 11.1, 11.2, 11.3_
-  - [ ] 4.13 Resolve and Eavesdrop handlers: gain at Round end, the 10 s window after a resolved Suggestion, private `heard` message, speech relay from the Master to the Host
+  - [x] 4.13 Resolve and Eavesdrop handlers: gain at Round end, the 10 s window after a resolved Suggestion, private `heard` message, speech relay from the Master to the Host
+    - **Built 2026-11-21** (`engine.ts` eavesdrop, `resolve.ts`, `server.ts` speech): Resolve is gained at Round end, the 10 s Eavesdrop window follows a resolved Suggestion, `heard` is private, and the Master's speech toggle is relayed to the Host (Property 29).
     - _Requirements: 11.4, 11.5, 7.6_
-  - [ ] 4.14 Cue handler: `cue` messages through `canCue` and `playCue`, delivery to the Host or the sender's phone with `playAtMs`, public log line (scripted text), pruning of `playing`
+  - [x] 4.14 Cue handler: `cue` messages through `canCue` and `playCue`, delivery to the Host or the sender's phone with `playAtMs`, public log line (scripted text), pruning of `playing`
+    - **Built 2026-11-21** (`engine.ts` cue, `cues.ts`): `cue` goes through `canCue` and `playCue`; a TV Cue tells every screen with `tvCue {eventId, cue, playAtMs}` and a phone Cue goes to the sender's phone with `playAtMs`; the log line is scripted text and `playing` is pruned (Property 32 and `server-room-extras.test.ts`).
     - _Requirements: 12.1, 14.2_
-  - [ ] 4.15 Nudge handlers: `nudge` messages through `canNudge` and `nudge`, `clock` sent to every screen at once, `nextWake` and the single alarm recomputed after every Nudge, no Haunt rise for a timeout after a Spook, refusals as `nudge_denied` with a reason
+  - [x] 4.15 Nudge handlers: `nudge` messages through `canNudge` and `nudge`, `clock` sent to every screen at once, `nextWake` and the single alarm recomputed after every Nudge, no Haunt rise for a timeout after a Spook, refusals as `nudge_denied` with a reason
+    - **Built 2026-11-21** (`engine.ts` nudge): Nudges go through `canNudge`; the new deadline reaches every screen in the same public view, the single alarm is recomputed after each, a timeout after a Spook raises no Haunt, and refusals are `nudge_denied:<reason>` (a change made in this task; two older tests now expect the prefixed code).
     - _Requirements: 12.2, 12.3, 12.4, 11.1, 13.1_
-  - [ ] 4.16 Sound consent, House Cues at every Haunt Event (Restless on every consenting phone), Frames, the private `notYou`, the secret `cueSources` kept out of every view and prompt, and the reveal in the ending payload
+  - [x] 4.16 Sound consent, House Cues at every Haunt Event (Restless on every consenting phone), Frames, the private `notYou`, the secret `cueSources` kept out of every view and prompt, and the reveal in the ending payload
+    - **Built 2026-11-21** (`engine.ts` houseCue, frame, cueOnPhone; `cues.ts`, `sounds.ts`): sound consent, House Cues at every Haunt Event (Restless on every consenting phone), Frames, the private `notYou` and the secret `sources` kept out of every view and prompt, with the reveal in the ending payload (Property 2, 35 and 36).
     - _Requirements: 14.1, 14.3, 14.4, 14.5_
-  - [ ] 4.17 Hour strike and midnight: `nextWake` includes the next hour boundary, `strike` to the Host and the consenting phones at one server time, the scripted midnight line (through the ghost voice when it is on)
+  - [x] 4.17 Hour strike and midnight: `nextWake` includes the next hour boundary, `strike` to the Host and the consenting phones at one server time, the scripted midnight line (through the ghost voice when it is on)
+    - **Built 2026-11-21** (`shared/src/party/server.ts` `commit` and `strikeIfDue`, `room-extras.ts` `scheduleStrike`, `room-time.ts`, `server-room-time.test.ts`): the Room alarm always includes the next hour boundary of the Host's own clock (`hostClock {offsetMin}`); at the strike the Host and every phone get `strike` at one server time (a phone with no consent or no free sound slot gets a flash or nothing, a played strike counts toward the three sounds), every screen reads one scripted line, midnight strikes twelve and the scripted line goes through the ghost voice when speech is on. Off by the Master's switch, before a game and with no Host offset: nothing strikes.
     - _Requirements: 15.1, 15.2, 15.3_
-  - [ ] 4.18 Conditions at start: call the `conditions` service once, freeze the snapshot, send `setAtmosphere` to the Host, put only the cosmetic fields in the Public View, fall back to the default on any failure
+  - [x] 4.18 Conditions at start: call the `conditions` service once, freeze the snapshot, send `setAtmosphere` to the Host, put only the cosmetic fields in the Public View, fall back to the default on any failure
+    - **Built 2026-11-21** (`server.ts` `skyAtStart`, `api/src/do/party-room.ts`, `server-room-time.test.ts`): the `conditions` service is called once at the start (also for the all-Bot start), only the three cosmetic fields are kept and sent to the Host as `setAtmosphere` and on the Public View as `atmosphere`; the position, temperature and wind are never stored and the Master's place is dropped after use; any failure, a throw or nonsense falls back to the default sky and the start never waits on it. Decision: Play again keeps the frozen sky of the first start.
     - _Requirements: 15.4_
-  - [ ] 4.19 Clock offset (`ping` and `pong`) and light cues for Haunt Events, the hour strike and House Cues, started at a common server time with late phones dropped
+  - [x] 4.19 Clock offset (`ping` and `pong`) and light cues for Haunt Events, the hour strike and House Cues, started at a common server time with late phones dropped
+    - **Built 2026-11-21** (`server.ts` ping, pong, clockSample, light; `room-time.ts`; `light.ts`): `ping` is answered with `pong`, a phone reports finished exchanges as `clockSample` and the Room keeps the last five; light cues for a Haunt Event, a House Cue or Frame (on the one phone it lands on) and the hour strike start at a common server time 500 ms ahead, translated to each phone's own clock, with a phone whose clock error is over 150 ms, a phone that did not agree, a phone that prefers reduced motion and a Master's light-bar switch off all dropped. Rattle and the Becoming light cues follow in 4.21.
     - _Requirements: 17.1, 17.2, 17.3, 17.4_
-  - [ ] 4.20 Stitch in the room: the Master switch, the join question and tick, the `stitchClip` and `stitchResult` messages (no route), storage in the Room only, `stitchSchedule` at Haunt Events and midnight, deletion at leave, end or 6 hours, the reveal in the ending payload
+  - [x] 4.20 Stitch in the room: the Master switch, the join question and tick, the `stitchClip` and `stitchResult` messages (no route), storage in the Room only, `stitchSchedule` at Haunt Events and midnight, deletion at leave, end or 6 hours, the reveal in the ending payload
+    - **Built 2026-11-21** (`shared/src/party/server.ts` stitchClip, stitchLeave, flushStitch; `room-stitch.ts`; `api/src/do/party-room.ts`; `server-stitch.test.ts`): the Master switch, the join question and tick (`stitchSetting`, `stitchAnswer`, a Player's own yes only) were already in the Room; `stitchClip` (base64, at most 2 s, from the Word Bank, checked in the Room by the `wordCheck` port with the 3-attempt, 30 and 120 limits) answers only that phone with `stitchResult`, clips live in the Room's own storage only, `stitchSchedule` runs at Haunt Events and midnight (rare, not in the first minute, not during a sealed Accusation, not the same Player twice running), the Host plays the line with its subtitle and every screen reads only "a voice whispered", clips are deleted on a no, on `stitchLeave`, when the Master switches off, when the game ends or the Room ends, and the six-hour expiry joins the one alarm; the ending view carries the reveal. The Durable Object wires the word check only with the speech binding and the spend guard; without them a Player is told it is unavailable. Not run against real Workers AI (no paid call).
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5_
-  - [ ] 4.21 Rattle, the Becoming and prompts: handlers through `canRattle`, intensity by count, the three anonymous log lines, the secret senders, `becoming` once per Player, prompts
+  - [x] 4.21 Rattle, the Becoming and prompts: handlers through `canRattle`, intensity by count, the three anonymous log lines, the secret senders, `becoming` once per Player, prompts
+    - **Built 2026-11-21** (`shared/src/party/engine.ts` rattle, rattleOn, promptRattle, playBecomings; `room-time.ts`; `rattle-engine.test.ts`, `server-rattle.test.ts`): `rattle {via}` and `rattleOn {on}` go through `canRattle` (Poltergeist with Rattle on, 4 s gap, three sounding, six a Turn, the Master's switch); intensity follows the count within a Turn (creak and glow, wind and wave, rumble and creeping dark, at most 80 percent volume); the three anonymous log lines are public events with no sender; the sender is kept only in `sources` for the ending; the Becoming plays once per Player on the Host and their own phone (not counted as a sound) with a creeping dark on every phone that agreed to light; `rattle-first` and `rattle-join` prompts are private, once a Turn each. New `to: "host"` outbound messages go to Host sockets only.
     - _Requirements: 19.1, 19.2, 19.4, 19.5, 19.6, 19.7_
-  - [ ] 4.22 Answer-choice window: the private `answer` prompt, 10 s to `show`, the default card on timeout (and at once for a Bot or a Poltergeist), the Turn Clock paused throughout, and the 15 s window after the answer
+  - [x] 4.22 Answer-choice window: the private `answer` prompt, 10 s to `show`, the default card on timeout (and at once for a Bot or a Poltergeist), the Turn Clock paused throughout, and the 15 s window after the answer
+    - **Built 2026-11-21** (`engine.ts` suggest, show, tick): the private answer prompt holds for 10 s, the default card is shown on timeout and at once for a Bot or a Poltergeist, the Turn Clock stays paused, and the 15 s window follows the answer (Property 14).
     - _Requirements: 6.1, 6.2_
 
 - [ ] 5. Contribution services
-  - [ ] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded WorkersAiClient (Llama 4 Scout), fail closed, store privately for the Room
+  - [x] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded WorkersAiClient (Llama 4 Scout), fail closed, store privately for the Room
+    - **Built 2026-11-21** (`api/src/party/contribute.ts` `intakePhoto`, `api/src/guarded/workersai/photo-vet.ts`, `shared/src/party/photo-verdict.ts`): the world-pipeline upload rules (`prepareUpload`), a 512 px shrink (`ImagesPhotoShrinker`), the vision check on Scout (`ScoutPhotoVetter`, `safe` and `personVisible`, fail closed) behind a guarded door that needs an `llm` Ticket, and private storage under an opaque id through a `PhotoStore` port (`deleteRoom` for the Room's end). Tested over fakes. Not confirmed by a real call: the Images binding's `fit: scale-down` and Scout's accuracy on 'a person is visible'. The Room's R2 `PhotoStore` is not written.
     - _Requirements: 3.2_
-  - [ ] 5.1a Vision verdict returns `{safe, personVisible}`; `personVisible` rejects with `photo_rejected:person_visible`; `POST /api/party/:code/prompt/skip` with up to three skips per Player
+  - [x] 5.1a Vision verdict returns `{safe, personVisible}`; `personVisible` rejects with `photo_rejected:person_visible`; `POST /api/party/:code/prompt/skip` with up to three skips per Player
+    - **Built 2026-11-21** (`shared/src/party/photo-verdict.ts`, `api/src/routes/party.ts`): the vision verdict is `{safe, personVisible}`, `personVisible` answers `photo_rejected` with reason `person_visible`, and `POST /api/party/:code/prompt/skip` allows three skips (the Room keeps only the seat's round).
     - _Requirements: 3.8, 3.9_
-  - [ ] 5.2 Suspect flow reusing the Ghost Creator, charged to the Room budget, Preset fallback on any failure
+  - [x] 5.2 Suspect flow reusing the Ghost Creator, charged to the Room budget, Preset fallback on any failure
+    - **Built 2026-11-21** (`contribute.ts` `suspectPortraits`, `suspectSprite`): the Ghost Creator is reused as it is, handed the Room's `RoomBudget` as its `guard`, so portraits and cut-outs are charged to the Room. Any failure (bad traits, a failed portrait, the Room's cap, a refused cut-out, a missing candidate or creator) gives the seat's stable Preset with the reason. The Lodger Voice the Player picked (lower is Mark, lighter is Chloe, Mark when none) is saved with the profile.
     - _Requirements: 3.3_
-  - [ ] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement, and a Llama Guard 3 check through the guarded WorkersAiClient (`llm` meter, charged to the Room budget), failing closed with `moderation_unavailable`
+  - [x] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement, and a Llama Guard 3 check through the guarded WorkersAiClient (`llm` meter, charged to the Room budget), failing closed with `moderation_unavailable`
+    - **Built 2026-11-21** (`contribute.ts` `contributeZoneName`, `contributeDetail`): the existing `cleanZoneName` (3 to 24 characters, no markup) and `sanitizeDetail` (140 characters, no markup or URLs), then Llama Guard 3 on the Room's `llm` meter, failing closed with `moderation_unavailable` (and `quota_model` at the Room's cap). The data-block placement of a detail is the Ghost Creator's own.
     - _Requirements: 3.1, 10.3_
-  - [ ] 5.4 Room budget wiring: Room-scoped caps through SpendGuard on top of global caps
+  - [x] 5.4 Room budget wiring: Room-scoped caps through SpendGuard on top of global caps
+    - **Built 2026-11-21** (`api/src/party/budget.ts`): `RoomBudget implements SpendGuard` with the Room as the scope. A unit comes from the Room's caps (12 images, 60 model calls, `shared/src/party/spend.ts`) before the guard is asked, a Room refusal never reaches the guard, a global refusal takes nothing from the Room, and a released unit comes back. Handing it to `createCreator` or the narrator charges them to the Room. Tested over a fake guard (`budget.test.ts`). Wiring it into the Room's Durable Object storage is 4.x.
     - _Requirements: 10.1_
   - [ ] 5.5 Selfie ghost service (optional): `POST /api/party/:code/contribute/selfie` checks the `selfies` switch and the seat's yes, runs `selfieQuality` and the vision verdict (fail closed), calls the guarded `editPortrait` wrapper (`google/nano-banana-2.1`, selfie plus a narrator style reference, a fixed prompt with no Player text), cuts out the Sprite with the 8% to 85% alpha rule and one retry, holds the selfie only inside `withTransientSelfie`, charges the Room's image budget, and falls back to a Preset Ghost on any failure
+    - **Partly built 2026-11-21** (`api/src/party/contribute.ts` `contributeSelfie`, `api/src/routes/party.ts` `POST /:code/contribute/selfie` and `PUT /:code/contribute/selfie/consent`, `api/src/guarded/workersai/selfie-edit.ts`, `shared/src/party/selfie.ts`): the switch and the seat's yes are checked before the picture is read, the browser report and the vision verdict (one face, in frame, safe, fail closed) next, then, with the selfie held only inside `withTransientSelfie`, one edit through the guarded `editPortrait` door (fixed prompt, 1:1, 1K, PNG), a cut-out with the 8% to 85% alpha rule and one retry, one image unit per edit from the Room, and a Preset on any failure. Tested over fakes only. **Left, needs the owner:** the real `PortraitEditor` for `google/nano-banana-2.1` (its data retention is unconfirmed and a spike must run, which spends money), and the narrator style-reference image. `WorkersAiClient` has no `editor`, so on the real Worker the route answers with a Preset.
+    - **2026-11-22, not built, blocked:** the real `PortraitEditor` for `google/nano-banana-2.1` is not written. Its request shape through the AI Gateway has never been confirmed by a call and its data retention is unconfirmed; a guessed adapter would be untestable here, and the spike that settles both spends money, so none ran. With no editor the route answers a Preset Ghost, as it does today. Needs the owner: the retention answer, a spike budget, and the narrator style-reference image.
     - _Requirements: 3.10, 3.12, 3.13, 10.1_
 
 - [ ] 6. Party narrator
-  - [ ] 6.1 `narratePartyEvent`: one guarded model call per public event at most, validate with `validateGhostReply`, scripted fallback on cap, kill switch or failure
+  - [x] 6.1 `narratePartyEvent`: one guarded model call per public event at most, validate with `validateGhostReply`, scripted fallback on cap, kill switch or failure
+    - **Built 2026-11-21** (`api/src/party/narrate.ts`): `narratePartyEvent` makes at most one guarded call per event id, validates with `validateGhostReply` (no digits, 40-word cap, rules never read back, a reply cut by the token cap is refused), and falls back to `partyScripted` on the cap, the kill switch, a missing narrator, a refusal, a failure or an invalid reply. Tested over a fake narrator and a fake guard, no paid call (`narrate.test.ts`).
+    - **Wired 2026-11-22** (`shared/src/party/server.ts` `narrateNew`, `narrate-events.ts`, `api/src/party/narrate-port.ts`, `api/src/do/party-room.ts`): while the Master has speaking on, the Room narrates the key public moments (a sealed accusation, an Accusation right or wrong, a Haunt Event) through the `narrate` port (`narratePartyEvent` on the Room's `RoomBudget`, one call per event) or the scripted bank, and speaks them through `speakRoomEvent`, so the 20-line cap and the Host-only delivery apply. Tests: `narrate-wiring.test.ts` (shared), `narrate-port.test.ts` (api); none calls a model. Not narrated on purpose: turn starts, suggestions and inspections (they would use the 20-line cap in two rounds). Not yet: the Whisper's `ended-haunted` line (the Engine's ending carries no flag the narrator may read yet).
     - _Requirements: 10.2_
-  - [ ] 6.2 Prompt assembly from the Public View only, with contributed text inside delimited data blocks
+  - [x] 6.2 Prompt assembly from the Public View only, with contributed text inside delimited data blocks
+    - **Built 2026-11-21** (`shared/src/party/narrate-prompt.ts`): `buildPartyNarration(view, kind, speaker)` takes a Public View only, puts every nickname and Zone name inside `<data>` blocks (cleaned, cut to 16 and 40 characters, no angle brackets), names cards in words, and is never built for the Lodger or the scripted-only kinds. The manner is the shared horror-told-calmly text.
     - _Requirements: 4.3, 10.3_
 
-- [ ] 7. Routes
+- [x] 7. Routes
+  - **Partly built 2026-11-21** (`api/src/routes/party.ts`, `api/src/party/wiring.ts`, `api/src/worker.ts`): `DELETE /api/party/:code` (Master or host token, everything deleted, directory freed), `GET /:code/prompts`, `POST /:code/prompt/skip`, `POST /:code/contribute/photo`, `PUT /:code/contribute/zone`, `POST /:code/contribute/suspect` (portraits, then sprite), the selfie routes, a Bearer token read only from the header, reason codes with fixed statuses, no-store on refusals. `POST /api/party`, `/join` and `/ws` already existed; the origin guard already covers every state-changing `/api/*` route; the `cue`, `nudge`, `frame` and `sound` socket messages are already in `protocol.ts`. **Built 2026-11-22:** counters-only logging (`party.request` in `shared/src/log.ts`: the route pattern, the status and a code from the party error list, never a Room code, token or name; `party.contribute.test.ts`), a rate limit per seat on the contribution routes (12 a minute, `RoomCore.contributionGate`, `POST /gate` on the Room, 429 `rate_limited`, the other seat unaffected), and the audit that the `cue`, `nudge`, `frame` and `sound` messages are validated like the rest (`socket-messages.test.ts`: wrong shapes, stray fields, out-of-range values and oversize messages are refused and the socket is closed with 4400).
   - `POST /api/party/rooms` (no body, no world), `POST /api/party/:code/join`, `GET /api/party/:code/ws`, contribution routes, `DELETE /api/party/:code` (Master or host token); origin and cookie checks for host routes; reason codes; counters only in logs. The `cue`, `nudge`, `frame` and `sound` socket messages are validated like every other message.
   - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.7, 10.5, 10.6, 10.7_
+  - Progress (2026-11-21): built and tested: `POST /api/party` (create, with `replace`), `POST /:code/join`, `GET /:code/ws` (`api/src/routes/party.ts`), and `DELETE /:code {token}` (`endAs` in `shared/src/party/server.ts`, `/end-as` in `api/src/do/party-room.ts`; 204 for the Master or host token, 403 `forbidden` otherwise, the directory place freed; `api/src/routes/party.test.ts`, 8 pass). Both left items are closed 2026-11-22 (see the note above): the contribution routes exist and the four socket messages are audited.
 
 - [ ] 8. Web: Host (`web/src/party/host/`), display-only
   - [ ] 8.1 Party page: create a Room, show the Room Code and QR until the game starts, request a screen wake lock, show a reconnect state when the socket drops
+    - **Built so far 2026-11-21** (`web/src/party/host/HostPage.tsx`, `web/src/party/phone/host-port.ts`, `web/host.html`): makes the Room (replacing the visitor's own earlier one), shows the Room Code and the join address, asks for a screen wake lock, and says "Connection lost" while the socket retries. Still to do: the QR picture, which needs the QR encoder chosen in Spike 1.2 (nothing in the repo encodes a general QR; `shared/src/print/qr-plate.ts` has only the six Relic matrices).
     - _Requirements: 1.1, 7.1_
-  - [ ] 8.2 Public HUD: active Player, clock, round, Haunt level, public log, Achievements, Poltergeists, narrator text in a polite live region
+  - [x] 8.2 Public HUD: active Player, clock, round, Haunt level, public log, Achievements, Poltergeists, narrator text in a polite live region
+    - **Built 2026-11-21** (`web/src/party/host/Hud.tsx`, `host.test.tsx`): the active Player, clock with the 10 s warning, round, Haunt level meter, rooms with the Cold Spot and a searching marker, the sealed count, who joined the haunting, the Achievements, the narrator line and the public log, in polite live regions.
     - _Requirements: 7.1_
-  - [ ] 8.3 Remote movement and look input through the ViewerBridge, the same limits for every Player; the Host takes no other input
+  - [x] 8.3 Remote movement and look input through the ViewerBridge, the same limits for every Player; the Host takes no other input
+    - **Built so far 2026-11-21** (`host/host-viewer.ts`): the active Detective's `input` reaches the Host (30 a second at most, same stick for everyone) and `remoteMove` turns it into one frame of Viewer movement; the Host reports its pose at 4 Hz. **Built 2026-11-22:** the Viewer's message `remote_input` (`shared/src/app/events.ts`, strict, axes -1 to 1, a turn of at most 0.5 rad), the Viewer's fold (`web/src/app/viewer/remote.ts`: axes held 250 ms so a quiet Host stops the walk, a turn counted once, the remote stick wins over keys and is never a sprint; `mount.ts` glue) and the Host's `move` (`host/host-viewer.ts` `remoteInputMessage`, `entry/host-main.tsx`). Tests: `remote.test.ts`, `host-viewer.test.ts`, `events.test.ts`. A walk on a real TV with a real phone is a manual check under 14.
     - _Requirements: 7.2, 5.1_
   - [ ] 8.4 Free-standing photo frames near each Zone, facing the spawn, no collision
+    - **Built so far 2026-11-21** (`host/frames.ts`): where each frame stands (1.2 m from the Zone on the spawn side, eye height) and which way it faces, with no frame for a Zone without a photo. **Viewer half built 2026-11-22:** the message `set_frames` (`events.ts`: at most 6, each a Zone id, a position, a yaw and the Room's own photo address or none) and `mount.ts` draws each as a picture on a stand, never added to the collider. **Still to do, so the box stays open:** the Host feed. The Host has no Zone points (`placeZones` has no caller on the Host; its inputs are the world's spawn and walk radius, which only the Viewer reads) and no route serves a Room photo to the Host (`GET /api/party/:code/photo/:id` with the Host token, and the accepted photo ids in the Host's view).
     - _Requirements: 3.5_
-  - [ ] 8.5 Ending screen and Play again (Master): the winners ranked for the First Detective title, or "The haunting continues" when the house wins, who joined the haunting, the Solution, the Residue placements, the Most Haunting award and the two Nudge counters, and the recap played entry by entry within the `effectLimits` (still under reduced motion), with each Bluff called out in words, and a Skip control for the Master
+  - [x] 8.5 Ending screen and Play again (Master): the winners ranked for the First Detective title, or "The haunting continues" when the house wins, who joined the haunting, the Solution, the Residue placements, the Most Haunting award and the two Nudge counters, and the recap played entry by entry within the `effectLimits` (still under reduced motion), with each Bluff called out in words, and a Skip control for the Master
+    - **Built 2026-11-21** (`host/Ending.tsx`, `controller/play/MasterMenu.tsx`): winners ranked with the First Detective title or "The haunting continues", who joined the haunting, the Solution, the Residue placements, Most Haunting with its scare points, the two Nudge counters, and the recap played entry by entry within `effectLimits` (all at once under reduced motion) with each Bluff in words, then who sent each Frame, House Cue and Rattle; the Master skips from their phone (`recapSkip`) and plays again there.
     - _Requirements: 6.6, 6.8, 11.6, 13.2_
-  - [ ] 8.6 "Play on this screen": the page joins as the first Player and Master and embeds that Player's pad beside the world; the Master adds Bots; the Private View shows only when every other seat is a Bot
+  - [x] 8.6 "Play on this screen": the page joins as the first Player and Master and embeds that Player's pad beside the world; the Master adds Bots; the Private View shows only when every other seat is a Bot
+    - **Built 2026-11-21** (`host/PlayHere.tsx`, `host/HostPage.tsx`, `controller/play/PlayPanel.tsx`): the Host page joins as an ordinary Player through the normal join with a socket and token of its own, shows that Player's Controller, and draws the Private View (hand, notebook, the card to show, what was overheard) only while every other seat is a Bot.
     - _Requirements: 9.1, 9.3_
-  - [ ] 8.7 Regression: Wander (the memory walk) is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
+  - [x] 8.7 Regression: Wander (the memory walk) is unchanged; a full party game completes in scripted mode with a Gallery World and Preset Ghosts at zero spend
+    - **Built 2026-11-21** (no change to Wander; `shared/src/party/engine.prop.test.ts`, `server.test.ts`): nothing under `web/src/app/play` or the Wander code was edited and the whole web suite passes; an all-Bot game started by the Host ends in scripted mode on Preset Ghosts with no model call.
     - _Requirements: 9.4_
-  - [ ] 8.8 Spoken narration through the Speaker's voice (`ghost-voice`: the Whisper, the Keeper or the Lodger of each line, at most 20 lines per Room, the Lodger only for an Accusation and the reveal), with `speechSynthesis` and then the subtitle as fallbacks; off by default, one tap on the Host to unlock audio, text always shown, mute, replay and skip from the Master
+  - [x] 8.8 Spoken narration through the Speaker's voice (`ghost-voice`: the Whisper, the Keeper or the Lodger of each line, at most 20 lines per Room, the Lodger only for an Accusation and the reveal), with `speechSynthesis` and then the subtitle as fallbacks; off by default, one tap on the Host to unlock audio, text always shown, mute, replay and skip from the Master
+    - **Built 2026-11-21** (`host/narration.ts`, `app/case/host-voice.ts`, `controller/play/MasterMenu.tsx`): the Room names a line, the Host asks for its audio with the Host token after one tap to unlock, falls back to the browser voice and the subtitle (always shown), is off unless the Master turned it on, and the Master's mute, unmute, replay and skip reach the Host as `speechControl`.
     - _Requirements: 7.6, 7.8_
   - [ ] 8.9 Haunt visuals: Haunt level meter, Cold Spot marker on its Zone, Blackout dimming within the photosensitivity limits, Restless ghost Sprite move
+    - **Built so far 2026-11-21** (`host/Hud.tsx`, `host/HostEffects.tsx`): the Haunt level meter, the Cold Spot marker on its room, and the Blackout dimming in steps of at most 20 percent (none under reduced motion). **Viewer half built 2026-11-22:** the message `ghost_to` (a position, or null for the usual place) moves the ghost Sprite (`mount.ts`). **Still to do, so the box stays open:** the Host has to send it for a Restless event, which needs the Zone points named under 8.4 and the Restless option in the public log (today the log holds `haunt-event` with the option only on the Engine side).
     - _Requirements: 7.1, 7.4, 11.2_
-  - [ ] 8.10 Inspect visuals: a public marker on the Zone being inspected, never what was found
+  - [x] 8.10 Inspect visuals: a public marker on the Zone being inspected, never what was found
+    - **Built 2026-11-21** (`shared/src/party/engine.ts` `inspecting`, `host/Hud.tsx`): the public view names only the Zone being searched while it runs, never what was found.
     - _Requirements: 4.6, 7.1_
-  - [ ] 8.11 Cues, Nudges and phone sound on the Host: every Cue, Nudge, Frame and House Cue as a text line in the public log and in a polite live region, a Cue on the TV that lasts at most 3 s with its caption, the new clock deadline within a second of a Nudge, and the Frame and House Cue reveal on the ending screen
+  - [x] 8.11 Cues, Nudges and phone sound on the Host: every Cue, Nudge, Frame and House Cue as a text line in the public log and in a polite live region, a Cue on the TV that lasts at most 3 s with its caption, the new clock deadline within a second of a Nudge, and the Frame and House Cue reveal on the ending screen
+    - **Built 2026-11-21** (`host/HostEffects.tsx`, `host/Hud.tsx`, `shared/src/party/engine.ts` tvCue): every Cue, Nudge, Frame and House Cue is a log line in a polite live region, a Cue on the TV shows its caption for at most 3 s, the new clock deadline arrives in the next public view, and the Frame and House Cue senders show on the ending screen.
     - _Requirements: 13.1, 14.5_
-  - [ ] 8.12 Atmosphere on the Host from the frozen snapshot through `setAtmosphere` (the sky dome first), the hour strike with twelve Bell strikes at midnight
+  - [x] 8.12 Atmosphere on the Host from the frozen snapshot through `setAtmosphere` (the sky dome first), the hour strike with twelve Bell strikes at midnight
+    - **Built 2026-11-21** (`host/host-viewer.ts`, `host/HostEffects.tsx`): `setAtmosphere` becomes the Viewer's `set_atmosphere` (once per change; the three cosmetic fields only) and the hour strike rings the Bell once for each hour on the dial, twelve at midnight, with the scripted line in the log.
     - _Requirements: 15.1, 15.2, 15.4_
-  - [ ] 8.13 Rattle and the Becoming on the Host (the three levels, at most 80% volume, the sting), and the Stitch whisper with its subtitle and the log line "a voice whispered"
+  - [x] 8.13 Rattle and the Becoming on the Host (the three levels, at most 80% volume, the sting), and the Stitch whisper with its subtitle and the log line "a voice whispered"
+    - **Built 2026-11-21** (`host/HostEffects.tsx`, `host/whisper.ts`): a Rattle plays its level's sound at most 80 percent loud with its line, the Becoming plays its sting, and a Stitch whisper shows its subtitle and plays the Player's recorded words in order; the log says only "a voice whispered".
     - _Requirements: 18.4, 19.4, 19.6_
-  - [ ] 8.14 Host: the number of Accusations sealed this Round, the end-of-Round reveal sequence, the shared-win ending, "joined the haunting" wording in every player-facing string (never "Poltergeist") and the Most Haunting award
+  - [x] 8.14 Host: the number of Accusations sealed this Round, the end-of-Round reveal sequence, the shared-win ending, "joined the haunting" wording in every player-facing string (never "Poltergeist") and the Most Haunting award
+    - **Built 2026-11-21** (`host/Hud.tsx`, `host/Ending.tsx`): the number of Accusations sealed this Round, the end-of-Round reveal lines in the log, the shared-win ending, "joined the haunting" wording everywhere (never "Poltergeist") and the Most Haunting award.
     - _Requirements: 6.5, 11.5, 11.6, 13.2_
-  - [ ] 8.15 Solo case on the Host page: run `soloSetup`, create the Room, join as Master, add the Bots and start with no Room Code or QR; hide Nudge, Frame, Rattle, the light bar, Stitch and the Spirit lens; keep spoken narration off unless turned on; end the Room on Exit, on leaving and on reload (satisfies shell task 12.4)
+  - [x] 8.15 Solo case on the Host page: run `soloSetup`, create the Room, join as Master, add the Bots and start with no Room Code or QR; hide Nudge, Frame, Rattle, the light bar, Stitch and the Spirit lens; keep spoken narration off unless turned on; end the Room on Exit, on leaving and on reload (satisfies shell task 12.4)
+    - **Built 2026-11-21** (audited: `web/src/app/case/host.tsx`, `room-client.ts`, `controller.ts`, built under integration 4.1, 4.2 and 4.8): the solo case runs `soloSetup`, makes the Room (replacing the visitor's own earlier one), joins as Master, adds the Bots and starts with no Room Code or QR; Exit ends the Room; the solo table offers no Nudge, Frame, Rattle, light bar, Stitch or Spirit lens and spoken narration stays off until turned on.
     - _Requirements: 9.1, 9.5, 9.6_
 
 - [ ] 9. Web: Controller (`web/src/party/controller/`), installable web app
-  - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
+  - [x] 9.1 Join page with Room Code and nickname; reconnect with the stored token
+    - **Built 2026-11-21** (`web/src/party/phone/socket-port.ts`, `web/src/party/controller/Controller.tsx`): `RoomSocketPort` joins with `POST /api/party/:code/join`, opens the Room socket, sends the token only in the first `hello` message, keeps it in session storage under the seat, takes the same seat after a reload (`restore`) and reconnects with a 0.5 to 8 s back-off; a token or Room the server does not know ends the seat. Tested with a fake fetch, socket, storage and timers; a real phone and a real Room are not run here.
     - Built so far (2026-11-15): the join page `web/src/party/controller/JoinPage.tsx` against a port (`controller-port.ts`, with a scripted stand-in `standin-port.ts` for the dev page `web/controller-demo.html` and the tests): the Room Code and nickname rules of `shared/src/party`, plain-word refusals that reveal nothing about any Room, one main button. Still to do: the real port over the Room socket, and reconnect with the stored token.
     - _Requirements: 1.2, 1.4_
-  - [ ] 9.2 Pad and panel layouts with switching; 48 px targets, focus, contrast, tap-to-walk pad
+  - [x] 9.2 Pad and panel layouts with switching; 48 px targets, focus, contrast, tap-to-walk pad
+    - **Built 2026-11-21** (`SeatedFrame.tsx`, `play/PlayPanel.tsx`, `play/Pad.tsx`): the pad (stick, look area, tilt switch) and the panel (clock, actions, hand, notebook, cue controls, log) switch as before; a Player can walk by tapping a room button; targets are 48 px.
     - Built so far (2026-11-15): the seated frame `SeatedFrame.tsx` (header with Room Code, nickname, Master and the connection in words; a Pad / Panel switch that follows the phone's turn and lets the Player's choice win; named regions for the stick, look area, face buttons, hand, notebook and contributions; a Menu sheet with this phone's settings from `PuzzleSettings`; the Lock in `LockArea.tsx`). The settings are the phone's remembered ones (`web/src/device/`, `useDeviceSettings()`): a tilt choice made in a Lock and in the Menu is one saved setting. While a Lock is open the header and the page's padding are not drawn: the Menu (and a connection that is not fine) go in the puzzle's own bar (`PuzzleHost`'s `barExtra`), so a Lock fits a phone as it does on its own page. Still to do: the contents of the pad and the panel (stick, look, face buttons, tap-to-walk pad, hand, notebook).
     - _Requirements: 2.1, 2.6_
-  - [ ] 9.3 Multitouch stick and look, input at ≤ 30 Hz, release on blur and disconnect
+  - [x] 9.3 Multitouch stick and look, input at ≤ 30 Hz, release on blur and disconnect
+    - **Built 2026-11-21** (`play/Pad.tsx` `usePadInput`, `play.test.tsx`): a multitouch stick and look area send `input` at most 30 a second, clamped and with looks folded together; the stick and look are released on blur, on a hidden page, on a dropped connection and when the turn passes, and nothing is sent when the Player is not the active Detective.
     - _Requirements: 2.2, 2.3_
-  - [ ] 9.4 Gyro aim opt-in with permission from a tap and touch fallback
+  - [x] 9.4 Gyro aim opt-in with permission from a tap and touch fallback
+    - **Built 2026-11-21** (`play/Pad.tsx`, `phone/sensors.ts`): gyro aim is off until a tap, the permission is asked from the tap, a refusal or a missing sensor is said in words, and touch look stays. A real iPhone and Android check is blocked.
     - _Requirements: 2.4_
-  - [ ] 9.5 Vibration where supported, with visual and optional sound cues otherwise
+  - [x] 9.5 Vibration where supported, with visual and optional sound cues otherwise
+    - **Built 2026-11-21** (`phone/haptics.ts`, `play/PlayPanel.tsx`): a short buzz when the turn comes round or a question is put, and a visual pulse of the page on a phone that cannot buzz.
     - _Requirements: 2.5_
-  - [ ] 9.6 Hand view and the notebook grid (18 cards against every Player and the Residue, the Residue counter, auto-cross when the Master turned it on) stored on the device
+  - [x] 9.6 Hand view and the notebook grid (18 cards against every Player and the Residue, the Residue counter, auto-cross when the Master turned it on) stored on the device
+    - **Built 2026-11-21** (`play/Notebook.tsx`, `play/notebook-store.ts`): the Hand and the 18-card notebook grid against every Player and the Residue, filled only with what the Player knows for certain (Hand, shown, found, and passes with auto-cross), own marks cycling on a tap, the Residue counter, stored on the device under the Room Code and seat.
     - _Requirements: 4.2, 4.4_
-  - [ ] 9.7 Suggest and seal screens (a two-step "This is final" confirm, and the 15 s window after a Suggestion), relic selection by list or by camera scan; the Suggest list offers every Suspect and Relic, including cards in the Hand and cards marked no
+  - [x] 9.7 Suggest and seal screens (a two-step "This is final" confirm, and the 15 s window after a Suggestion), relic selection by list or by camera scan; the Suggest list offers every Suspect and Relic, including cards in the Hand and cards marked no
+    - **Built 2026-11-21** (`play/Actions.tsx`, `play/RelicScanner.tsx`): Suggest offers every Suspect and Relic (including cards in the Hand), the seal has a second step that says it is final, the 15 s window shows after a Suggestion, and a Relic can be scanned (built-in detector; fake detector in tests) or chosen from the list.
     - _Requirements: 6.1, 6.3, 6.4, 6.7_
-  - [ ] 9.8 Contribution screens for Suspect, photo and Zone name; the photo step shows three Photo Prompts with tips to choose from, opens the camera for `take_now` and the picker for `camera_roll`, offers "Show me three more" (up to three times, with the remaining count shown) and "Use my own photo"
+  - [x] 9.8 Contribution screens for Suspect, photo and Zone name; the photo step shows three Photo Prompts with tips to choose from, opens the camera for `take_now` and the picker for `camera_roll`, offers "Show me three more" (up to three times, with the remaining count shown) and "Use my own photo"
+    - **Built 2026-11-21** (`controller/play/ContributionPanel.tsx`, `controller/contribute-api.ts`, `phone/contribution-client.ts`): three optional, skippable steps in the lobby: a photo (three Photo Prompts with tips, the camera for `take_now` and the picker for `camera_roll`, "Show me three more" up to three times with the count left, "Use my own photo", and the Room's refusal in words), a Zone name, and the Suspect (a ready-made ghost, or the Ghost Creator's two steps with a plain voice pick). The token goes only in the Authorization header. Not run against the real routes or a real camera.
+    - **Not built.** The contribution screens need the lobby routes (`/prompts`, `/contribute/photo`, `/contribute/suspect`, `/contribute/zone`) wired through a phone-side client with camera capture; the routes exist (`api/src/routes/party.ts`), the screens do not.
     - _Requirements: 3.1_
-  - [ ] 9.9 Clock, warning and Achievement display
+  - [x] 9.9 Clock, warning and Achievement display
+    - **Built 2026-11-21** (`play/ClockBar.tsx`): the Turn Clock on the Room's clock (the phone measures its offset with ping and pong), a once-only 10 s warning in a polite live region, paused and no-clock in words, and the Achievements earned with their seconds.
     - _Requirements: 5.3, 5.4_
-  - [ ] 9.10 Master menu: choose the world, settings (clock, Haunt maximum, speech), Bots, start, pause, end, Play again, hand-over; non-Masters never see it
+  - [x] 9.10 Master menu: choose the world, settings (clock, Haunt maximum, speech), Bots, start, pause, end, Play again, hand-over; non-Masters never see it
+    - **Built 2026-11-21** (`play/MasterMenu.tsx`, `play/LobbyPanel.tsx`): the world, settings, Bots, start, pause or resume, end, Play again and hand-over, for the Master only. The list of worlds comes from the page (`PlayExtras.worlds`); the Gallery source for it is not wired here.
     - _Requirements: 1.7, 2.1_
-  - [ ] 9.11 Inspect button with a 10 s progress bar and the private result, found Residue in the notebook, Resolve count and the Eavesdrop reaction after another Player's Suggestion
+  - [x] 9.11 Inspect button with a 10 s progress bar and the private result, found Residue in the notebook, Resolve count and the Eavesdrop reaction after another Player's Suggestion
+    - **Built 2026-11-21** (`play/Actions.tsx`, `play/TableControls.tsx`): Inspect sends the message and shows a 10 s bar then what was found (the Residue shows in the notebook), the Resolve count shows beside the Nudges, and Listen in appears after another Player's Suggestion with what was heard.
     - _Requirements: 2.1, 4.4, 4.6, 11.4, 11.5_
-  - [ ] 9.12 Poltergeist view: a clear "you are haunting now" state, spectating the world, the Haunt Event choice with a 15 s countdown, and the scare points shown privately
+  - [x] 9.12 Poltergeist view: a clear "you are haunting now" state, spectating the world, the Haunt Event choice with a 15 s countdown, and the scare points shown privately
+    - **Built 2026-11-21** (`play/Haunting.tsx`, `play/Prompts.tsx`): a clear "you are haunting now" screen, the Haunt Event choice with a 15 s countdown and effect text, the private scare points (new `scare` field in the private view), and Rattle. Spectating the world uses the Host pose (`pose` messages, kept in the game view); drawing it needs the 3D viewer and is part of task 8.
     - _Requirements: 11.2, 11.3, 11.6_
-  - [ ] 9.13 Installable web app: manifest, service worker with an offline shell that explains how to rejoin, screen wake lock while a game is running
+  - [x] 9.13 Installable web app: manifest, service worker with an offline shell that explains how to rejoin, screen wake lock while a game is running
+    - **Built 2026-11-21** (`web/public/party.webmanifest`, `web/public/party-sw.js`, `web/src/party/entry/`, `phone/wake-lock.ts`): the manifest opens `/play` standalone from the home screen, the service worker keeps the page shell and, offline, shows a plain page that says how to rejoin (it never touches `/api`, stores no token and answers nothing but the page), and the phone asks for a screen wake lock while a game is running. Installing on a real iPhone and Android phone is blocked.
     - _Requirements: 7.7_
-  - [ ] 9.14 Phone sound: the one-time consent question with a tap that unlocks Web Audio, changeable from the menu; the four Cue sound files (at most 3 s each, absent files mean flash, vibration and the log line); playback at the scheduled start on the server clock; the flash (at most three per second, none under reduced motion) and vibration fallback; the private "that was not you" message
+  - [x] 9.14 Phone sound: the one-time consent question with a tap that unlocks Web Audio, changeable from the menu; the four Cue sound files (at most 3 s each, absent files mean flash, vibration and the log line); playback at the scheduled start on the server clock; the flash (at most three per second, none under reduced motion) and vibration fallback; the private "that was not you" message
+    - **Built 2026-11-21** (`play/PlayerSettings.tsx`, `play/phone-sound.ts`, `phone/browser-audio.ts`): the sound yes unlocks Web Audio from the tap and tells the Room whether audio works, sounds start at the Room's time (a cue more than 1.5 s late is dropped), at most 80 percent volume, a missing file or a phone with no audio flashes (at most three a second, none under reduced motion) and buzzes, and the private "not you" line is kept. Loudness on real phones is blocked.
     - _Requirements: 14.1, 14.3, 14.4_
-  - [ ] 9.15 Master presets: Classic, Gentle and Quick in the Master menu, with separate switches for Nudges (all, help-only or off), Frames, sounds, auto-cross and the Bot level; non-Masters never see them
+  - [x] 9.15 Master presets: Classic, Gentle and Quick in the Master menu, with separate switches for Nudges (all, help-only or off), Frames, sounds, auto-cross and the Bot level; non-Masters never see them
+    - **Built 2026-11-21** (`play/MasterMenu.tsx`): Classic, Gentle and Quick with separate switches for Nudges, Frames, sounds, auto-cross and the Bot level, for the Master only.
     - _Requirements: 12.5, 14.6_
-  - [ ] 9.16 Cue, Nudge and Frame controls in the menu: the Cue picker with TV or this phone, Help and Spook with their Resolve cost, the Frame picker (a Player and a Cue), 48 px targets, and the reason in words whenever one is unavailable
+  - [x] 9.16 Cue, Nudge and Frame controls in the menu: the Cue picker with TV or this phone, Help and Spook with their Resolve cost, the Frame picker (a Player and a Cue), 48 px targets, and the reason in words whenever one is unavailable
+    - **Built 2026-11-21** (`play/TableControls.tsx`): the Cue picker with the screen or this phone, Help and Spook with their cost, the Frame picker (another human and a Cue), 48 px targets, and the Room's refusal reason in words; not offered to a solo Player.
     - _Requirements: 13.1, 14.2, 14.4_
-  - [ ] 9.17 Spirit lens: off by default, a calibration tap, motion permission from a tap, a fixed view without sensors, simple sprites at 30 fps at most, paused face down or hidden, a re-tap to calibrate again
-    - _Requirements: 16.1, 16.2, 16.3, 16.4_
-  - [ ] 9.18 Light bar on the phone: the consent in the join question, light cues played at their scheduled start within the limits, nothing under reduced motion
+  - [x] 9.17 Spirit lens: off by default, a calibration tap, motion permission from a tap, a fixed view without sensors, simple sprites at 30 fps at most, paused face down or hidden, a re-tap to calibrate again
+    - **Built 2026-11-21** (`web/src/party/controller/play/SpiritLens.tsx`, `phone/sensors.ts`, `lens.test.tsx`): off by default; a tap turns it on and asks for motion from that tap; it draws simple sprites for what this Player already knows (`lensData` from the Engine views: Hand, shown cards, found Residue, their own inspected Zones, the latest ripples), at 30 frames a second at most (a quarter under reduced motion), a fixed view without sensors, paused face down or hidden, and a tap on the picture lines it up again; no camera and no markers; not offered in a solo case. Gyro drift and battery on real phones (Spike 1.7) are blocked.
+      - _Requirements: 16.1, 16.2, 16.3, 16.4_
+  - [x] 9.18 Light bar on the phone: the consent in the join question, light cues played at their scheduled start within the limits, nothing under reduced motion
+    - **Built 2026-11-21** (`play/PlayerSettings.tsx`, `play/PhoneEffects.tsx`, `play/phone-sound.ts`): the light bar has its own yes (sent with the reduced-motion preference), plays the Room's grey steps at their start on the Room's clock, never above 0.9, and is dark under reduced motion. OLED and LCD checks are blocked.
     - _Requirements: 17.1, 17.3_
-  - [ ] 9.19 Rattle: the opt-in with the motion permission, shake detection and the hold-to-rattle button, the prompts, the Becoming sting, and Rattle offered afterwards
+  - [x] 9.19 Rattle: the opt-in with the motion permission, shake detection and the hold-to-rattle button, the prompts, the Becoming sting, and Rattle offered afterwards
+    - **Built 2026-11-21** (`play/Haunting.tsx`, `play/Prompts.tsx`, `phone/sensors.ts`, `game-view.ts`): the Rattle opt-in with the motion permission from a tap, shake detection (three swings in 1.5 s) and the hold-to-rattle button, the two prompts, the Becoming sting on this phone with its own yes to sound, and Rattle offered afterwards. Real-phone shake checks are blocked.
     - _Requirements: 19.1, 19.3, 19.6, 19.7_
-  - [ ] 9.20 Stitch on the phone: the join question with the tick and the plain words, recording the Word Bank with the word check, leaving deletes the clips
+  - [x] 9.20 Stitch on the phone: the join question with the tick and the plain words, recording the Word Bank with the word check, leaving deletes the clips
+    - **Built 2026-11-21** (`play/StitchPanel.tsx`, `phone/recorder.ts`): the join question in plain words with the tick, the Player's own yes, recording the twelve words (at most 2 s, base64 to the Room), the word check answer in words, and Delete my recordings (also sent on leaving).
     - _Requirements: 18.2, 18.3_
-  - [ ] 9.21 Master switches: the conditions choice (place, table's location or off), the hour strike, the light bar, Rattle and Stitch, alongside the presets of 9.15
+  - [x] 9.21 Master switches: the conditions choice (place, table's location or off), the hour strike, the light bar, Rattle and Stitch, alongside the presets of 9.15
+    - **Built 2026-11-21** (`play/MasterMenu.tsx`): the sky (off, a place, this table), the hour strike, the light bar, Rattle and Stitch switches beside the presets.
     - _Requirements: 15.3, 15.4, 17.1, 18.1, 19.3_
-  - [ ] 9.22 Ending recap on the phone: the entries as a plain list with a text line each, each Bluff marked in words, the Solution and the Frame and House Cue senders at the end, usable with no Display and no sound
+  - [x] 9.22 Ending recap on the phone: the entries as a plain list with a text line each, each Bluff marked in words, the Solution and the Frame and House Cue senders at the end, usable with no Display and no sound
+    - **Built 2026-11-21** (`play/Recap.tsx`): the ending as a plain list with a line each, each Bluff marked in words, the Solution, the winners or "The haunting continues", Most Haunting, and who sent every Frame, House Cue and Rattle, usable with no Display and no sound.
     - _Requirements: 6.8_
-  - [ ] 9.23 Controller: the card-choice prompt when holding several named cards, with a 10 s countdown and the default shown in words
+  - [x] 9.23 Controller: the card-choice prompt when holding several named cards, with a 10 s countdown and the default shown in words
+    - **Built 2026-11-21** (`play/Prompts.tsx` `AnswerPrompt`): the card-choice prompt for a Player holding several named cards, with the 10 s countdown and, in words, that the Room chooses if they do not.
     - _Requirements: 6.2_
   - [ ] 9.24 Controller: the Suspect step offers Preset, designed or (only when the Master's `selfies` switch is on) selfie, with no push towards the selfie; the consent in plain words with a tick; live front camera only with a guide and a retake; the quality check in the browser; a Preset Ghost on any failure; a Master `selfies` switch in the menu, off by default; for a designed or selfie Suspect, the voice pick in plain words ("a lower voice" or "a lighter voice", lower when nothing is picked, no free text, never guessed from a face)
+    - **Built so far 2026-11-21** (`controller/play/ContributionPanel.tsx`): the Suspect step offers a ready-made ghost or a designed one with a plain lower or lighter voice pick, with no push towards either. Still to do: the selfie ghost (the Master's `selfies` switch in the menu, the consent tick, the live front camera with a guide and retake, and the quality check in the browser), which needs a real camera to judge.
     - _Requirements: 3.10, 3.11, 3.12, 3.13, 3.14_
-  - [ ] 9.25 Controller, Host HUD and ending screen: draw each Player's Seat Portrait (their contributed Ghost Profile in full colour, or a nickname chip) and cross-fade it to black and white, 0.6 s at most and a cut under reduced motion, when `seatLook` turns `'mono'` after the Becoming; the nickname row says "joined the haunting" in words; Suspect cards, the Lodger badge and the narrators never change colour
-    - _Requirements: 19.8, 19.9_
-  - [ ] 9.26 Controller notebook: Theory marks, a choice of the six Zones or "No mark" for each Suspect (48 pixel targets), stored on the device with the grid, shared with the Spirit table through `setTheory`, nothing sent
+  - [x] 9.25 Controller, Host HUD and ending screen: draw each Player's Seat Portrait (their contributed Ghost Profile in full colour, or a nickname chip) and cross-fade it to black and white, 0.6 s at most and a cut under reduced motion, when `seatLook` turns `'mono'` after the Becoming; the nickname row says "joined the haunting" in words; Suspect cards, the Lodger badge and the narrators never change colour
+    - **Built 2026-11-21** (`shared/src/party/seat-portraits.ts`, `web/src/party/controller/play/SeatPortrait.tsx`): each Player is drawn with the ghost they contributed (a Preset Ghost's picture and its black and white twin, or the Room's sprite for that seat) or a nickname chip, on the Controller header, the Host HUD, the ending screen and the phone recap; the lobby view carries each portrait address (no token), the picture fades to black and white in at most 0.6 s (a cut under reduced motion) when the public haunting flag turns, a non-Preset ghost goes under a greyscale filter so no second image is made, and the nickname row says "joined the haunting". Suspect cards and the narrators are not touched.
+      - _Requirements: 19.8, 19.9_
+  - [x] 9.26 Controller notebook: Theory marks, a choice of the six Zones or "No mark" for each Suspect (48 pixel targets), stored on the device with the grid, shared with the Spirit table through `setTheory`, nothing sent
+    - **Built 2026-11-21** (`play/Notebook.tsx`): the Theory marks (six Zones or No mark for each Suspect, via `TheoryChoice` and `setTheory`) are kept on the device with the grid and sent nowhere.
     - Built so far: the room choice, `web/src/table/TheoryChoice.tsx` (six Zones or "No mark" for each Suspect, 48 pixel targets, `setTheory`, a note that the marks are the Player's own). Still to do: keeping the marks on the device with the notebook grid, and the Controller wiring (the Controller does not exist yet).
     - _Requirements: 4.7, 4.8_
 
 - [ ] 10. Web: Display (`web/src/party/display/`)
-  - [ ] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected
+  - [x] 10.1 Display page: pyramid layout, footprint calibration, single-view mode, orientation and mirror toggles, works with no Display connected
+    - **Built 2026-11-21** (`web/src/party/display/DisplayPage.tsx`, `display-model.ts`, `phone/host-port.ts` attach): the pyramid layout from the shared `pyramidLayout`, footprint calibration on the screen (the middle gap and the picture size, remembered), orientation and mirror toggles, and a one-picture mode; the Display is a second socket with its own token and the game never waits for it. Hardware checks (Spike 1.3) are blocked.
     - _Requirements: 7.3, 7.5_
-  - [ ] 10.2 Event reactions within photosensitivity limits, reduced-motion handling, culprit reveal
+  - [x] 10.2 Event reactions within photosensitivity limits, reduced-motion handling, culprit reveal
+    - **Built 2026-11-21** (`display/DisplayPage.tsx`, `display-model.ts`): Suggestions, Accusations, Haunt Events, Blackouts and the 10 s warning react inside `effectLimits` (at most three flashes a second, steps of at most 20 percent, none under reduced motion) and the culprit is named on every picture when the game ends.
     - _Requirements: 7.4_
 
 - [x] 11. Print Kit (`print/`, `tools/build-print.mjs`)
@@ -550,6 +680,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
 
 - [ ] 14. Checkpoint
   - Run tests, typecheck, `node tools/check-traceability.mjs` and `node tools/build-print.mjs --check`. Play one full party game with three Bots and one embedded-pad player in scripted mode, one with real phones and the model, and one with a Display and printed relics. Record a short clip of each for the write-up. Playtest the design numbers (Haunt maximum, thresholds, Resolve cap, Inspect time, choice window, Master timeout, Spook cost and limits, Cue limits, Restless spacing), compare Classic with Gentle using the numbers from Spike 1.5, and note changes. Ask the user if questions arise.
+  - Progress (2026-11-22, automated part): `shared` 1860, `api` 1208 and `web` 1484 tests pass; `tsc --noEmit` is clean for the files touched (the packages' own `process` and node-types errors are old); `node tools/check-traceability.mjs` and `node tools/build-print.mjs --check` (47 STLs) pass; `node --test tools/test/*.test.mjs` has one red, `guarded-only` (`api/dev/playthrough-calls.ts`, `ai.run`), which is not from this work. **Left open, needs people and devices:** the three full games (three Bots and one embedded pad in scripted mode; real phones and the model; a Display and printed relics), the clips for the write-up, the playtest of the design numbers and the Classic against Gentle comparison.
 
 - [ ] 15. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 21 and the `design-system` spec)
   - [ ] 15.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
