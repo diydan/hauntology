@@ -58,6 +58,19 @@ describe("the Controller with a real game behind its port (party-mode 9)", () =>
     fireEvent.change(screen.getByLabelText("World"), { target: { value: "kitchen" } });
     expect(port.sent).toContainEqual({ t: "world", id: "kitchen", walkRadius: 9, authoredZones: false });
   });
+  it("offers the lobby's contributions only before the game starts, with the client of this seat", async () => {
+    const api = { prompts: vi.fn(async () => ({ ok: true as const, value: { round: 0, prompts: [] } })), skip: vi.fn(), uploadPhoto: vi.fn(), zoneName: vi.fn(), suspectPortraits: vi.fn(), suspectSprite: vi.fn() };
+    const port = new GamePort({ phase: "lobby", game: game({ pub: null, priv: null, lobby: lobby({ started: false, worldId: null }) }) });
+    (port as unknown as { contributions: () => unknown }).contributions = () => api;
+    await act(async () => { render(<Controller port={port} extras={extras()} />); });
+    expect(screen.getByRole("region", { name: "Add your own touch" })).toBeTruthy();
+    expect(api.prompts).toHaveBeenCalledTimes(1);
+    cleanup();
+    const playing = new GamePort();
+    (playing as unknown as { contributions: () => unknown }).contributions = () => api;
+    render(<Controller port={playing} extras={extras()} />);
+    expect(screen.queryByRole("region", { name: "Add your own touch" })).toBeNull();
+  });
   it("in the panel layout shows the clock, the actions, the hand, the notebook, the cue controls and the log, and walking sends a message", () => {
     const port = new GamePort({ game: { ...game(), log: [{ id: 1, text: "Ana's turn." }] } });
     render(<Controller port={port} extras={extras()} />);

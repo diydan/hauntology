@@ -7,6 +7,7 @@ import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzle
 import type { TablePrivateInput, TablePublicInput } from "@hauntology/shared/table/data";
 import type { TableNotebook } from "@hauntology/shared/table/notebook";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
+import type { ContributionApi } from "./contribute-api";
 import type { GameView } from "./game-view";
 
 /**
@@ -146,6 +147,8 @@ export interface ControllerPort {
   doorKnock?(doorId: string, times: readonly number[]): void;
   /** Send one message to the Room (a Suggestion, a Cue, a setting...). The Room checks it; the page never does. Absent in the scripted stand-in. */
   send?(msg: Readonly<{ t: string } & Record<string, unknown>>): void;
+  /** This seat's contributions to the lobby (a photo, a Zone name, a Suspect); absent in the scripted stand-in. */
+  contributions?(): ContributionApi | null;
   /** The Player answered or dismissed the Room's Rattle prompt; it is not shown again until the Room sends another. */
   dismissPrompt?(): void;
   /** After a reload: take the seat this device already holds, from its stored token. Resolves to the join result, or `null` when there is none. */

@@ -1,4 +1,4 @@
-import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { PuzzleSettings, type DeviceSettingsControl } from "../../puzzles/PuzzleSettings";
 import { usePuzzleDevice } from "../../puzzles/usePuzzleDevice";
 import type { Connection, ControllerPort, RoomPhase, RoomView } from "./controller-port";
@@ -59,6 +59,8 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   // The Spirit table (spirit-table 1.1 to 1.4): the Player's own device switch and the Player's own Theory marks, both in this page only.
+  // the lobby's contribution client belongs to this seat: a new seat has a new token, so it is made again
+  const contributions = useMemo(() => port.contributions?.() ?? null, [port, view.seat, view.code]);
   const spirit = useSpiritTable(view.table);
   const [theory, setTheory] = useState<Theory>({});
 
@@ -99,7 +101,7 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
           {view.game !== undefined && extras !== undefined ? (
             view.game.pub !== null
               ? <PlayPanel port={port} view={view} layout={layout} storage={extras.storage} soundDeps={extras.soundDeps} embedded={extras.embedded === true} {...(extras.now ? { now: extras.now } : {})} />
-              : <LobbyPanel view={view} send={(m) => port.send?.(m)} worlds={extras.worlds} {...(extras.record ? { record: extras.record } : {})} />
+              : <LobbyPanel view={view} send={(m) => port.send?.(m)} worlds={extras.worlds} contributions={contributions} {...(extras.record ? { record: extras.record } : {})} />
           ) : layout === "pad" ? (
             <section className="pc-pad" aria-label="Pad">
               <Slot name="stick" label="Movement stick" />

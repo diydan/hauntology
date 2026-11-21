@@ -3,6 +3,8 @@ import type { PuzzleSetting, Transcript } from "@hauntology/shared/puzzles/types
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
 import { NOT_SEATED, type ControllerPort, type JoinFailure, type JoinResult, type LockOffer, type RoomView } from "../controller/controller-port";
 import { estimateOffset, type PingSample } from "@hauntology/shared/party/light";
+import { contributionClient } from "./contribution-client";
+import type { ContributionApi } from "../controller/contribute-api";
 import { applyRoomMessage, clearPrompt, EMPTY_GAME, type GameView } from "../controller/game-view";
 
 /**
@@ -250,6 +252,9 @@ export class RoomSocketPort implements ControllerPort {
     this.lockOffer = null;
     this.emit({ lock: null });
   }
+
+  /** The client for this seat's contributions (a photo, a Zone name, a Suspect), or `null` before it has a seat. */
+  contributions(): ContributionApi | null { return this.stored === null ? null : contributionClient(this.deps, this.stored.code, this.stored.token); }
 
   dismissPrompt(): void { this.game = clearPrompt(this.game); this.emit({}); }
 
