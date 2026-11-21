@@ -244,11 +244,13 @@ Order matters: tooling and spikes first (they retire the unverified assumptions 
     - Built by the shell (haunwallker group 9): the Stage display (`StagePanel`, `HauntController`) with failure copy and a Gallery link while waiting.
     - _Requirements: 7.3_
 
-- [ ] 11. Enhance (optional, gated by Spike 1.3)
-  - [ ] 11.1 `planEnhance` and guarded outpaint calls
+- [x] 11. Enhance (optional, gated by Spike 1.3)
+  - [x] 11.1 `planEnhance` and guarded outpaint calls
     - Plan extensions with ≥ 40% overlap and distinct azimuths; build multi-image prompt; any failure falls back to the single-image prompt.
+    - **Built 2026-11-21, over fakes, off by default, no call made and nothing spent:** `shared/src/world/enhance.ts` (`planEnhance`: a size the upload accepts gives 1 to 4 views, widest first (azimuth ±35°, then ±17.5°, from an assumed 70° field of view), each keeping 50% or 75% of the original; `multiImagePrompt` and `singlePrompt`, our own prompt shape; `enhanceEnabledFromEnv` is true only for the word `true`; `enhanceViewsFromEnv` 1 to 4, default 2); `api/src/guarded/workersai/outpaint.ts` (the door `outpaintView` needs an `image` Ticket, `FluxOutpainter` over the image model written like the sketch render, **unconfirmed by any call**, and `outpaintPrompt` with no artist or title); `api/src/worlds/enhance.ts` (`enhancePrompt`: one `image` unit reserved per view, kept when the model answered, given back when the call failed, and on a refusal, a failed or throwing call, an unusable picture, a bad photo or size or a throwing guard the answer is the single-image prompt with the original photo and nothing more is asked; never throws; counters only). **Not wired:** nothing calls `enhancePrompt` yet. The create route and `HttpWorldLabs` still send one image, because the service's multi-image request shape is unconfirmed (`steering/worldlabs-api.md` names the type only) and Spike 1.3 has not decided whether Enhance helps. **Decisions for review:** the 70° field of view and the shift table are mine; a half set is not kept (units already used stay used); an unusable picture still costs its unit because the model was called; the outpaint model's real behaviour (no mask input is documented; it may need a composite of the photo and a blank strip, and its reference image must be under 512 by 512) is Spike 1.3's question.
     - _Requirements: 11.1, 11.2, 11.3_
-  - [ ]* 11.2 Write property test for enhance planning and fallback
+  - [x]* 11.2 Write property test for enhance planning and fallback
+    - **Done 2026-11-21:** `shared/src/world/enhance.test.ts` (fast-check, the plan half: distinct azimuths, none zero, overlap at least 40%, any size and count) and `api/src/worlds/enhance.test.ts` (the fall-back half: seven failure kinds injected at each of four steps, 28 cases, a seeded sweep rather than fast-check because the `api` package has none; the units kept or given back are checked against the guard); 4 deliberate breakages caught, and the sweep found one real fault on its first run (a guard that threw on a later view lost the count of units already kept), now fixed.
     - **Property 14: Enhance plans overlap and fall back**
     - **Validates: Requirements 11.1, 11.3**
 
