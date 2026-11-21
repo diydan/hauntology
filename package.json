@@ -17,6 +17,7 @@
     "check-tokens": "node tools/build-tokens.mjs --check",
     "check-voice-library": "node tools/build-banks.mjs --check && node tools/check-voice-library.mjs",
     "check-sounds": "node tools/check-sounds.mjs",
+    "check-balance": "node tools/balance.mjs",
     "test:tools": "node --test tools/test/*.test.mjs",
     "prerender-voice": "node tools/prerender-voice.mjs",
     "voice-demo": "node tools/voice-demo/serve.mjs",

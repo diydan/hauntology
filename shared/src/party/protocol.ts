@@ -37,6 +37,7 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
     hauntMax: z.union([z.literal(8), z.literal(10), z.literal(12)]).optional(),
     cluePlace: z.enum(["phone", "world"]).optional(),
     errands: z.boolean().optional(),
+    selfies: z.boolean().optional(),
   }).strict(),
   z.object({ t: z.literal("errandOptOut"), on: z.boolean() }).strict(),
   z.object({ t: z.literal("errandDone") }).strict(),

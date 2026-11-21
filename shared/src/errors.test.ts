@@ -50,6 +50,9 @@ describe("ErrorCode is stable (world-pipeline 3.1)", () => {
     "turnstile_failed", "unsafe_image", "upload_bad_magic", "upload_bad_type", "upload_rejected", "upload_too_large",
     "upload_too_small", "upstream_no_credits", "upstream_rate_limited", "upstream_rejected", "voice_unavailable", "world_gen_disabled",
     "world_not_found", "world_too_small",
+    // party-mode 2.71
+    "already_inspected", "cold_spot", "cue_denied", "eavesdrop_denied", "frame_denied", "not_master", "nudge_denied", "photo_rejected",
+    "poltergeist", "rattle_denied", "stitch_denied", "world_not_set",
   ];
 
   it("is exactly this list: no code is renamed or dropped, and none is added without saying so here", () => {
