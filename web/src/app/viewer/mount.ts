@@ -19,7 +19,10 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { createAtmosphereController, splatTintForLook } from "./atmosphere";
 import { CAPSULE_RADIUS, collisionWorldFromGeometry, type CollisionWorld } from "./collision";
+import { browserCapsSources, readDeviceCaps } from "./capabilities";
 import { createDoorColliders } from "./door-colliders";
+import { mountPanoFallback, panoLadder } from "./pano-fallback";
+import { applyRemoteLook, createRemoteDrive, withRemote } from "./remote";
 import { applyLook, combineInput, stickAxes } from "./controls";
 import type { ViewerHandle, ViewerSetup } from "./types";
 import { buildAnswerTexture, buildSignTexture } from "./world-clue-props";
@@ -37,23 +40,7 @@ const DISC_RADIUS = 6;
 const POSE_EVERY_MS = 250;
 
 function deviceCaps(): DeviceCaps {
-  let webgl2 = false;
-  let maxTexture = 0;
-  try {
-    const gl = document.createElement("canvas").getContext("webgl2");
-    webgl2 = gl !== null;
-    if (gl) maxTexture = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 0;
-  } catch {
-    webgl2 = false;
-  }
-  const nav = navigator as Navigator & { deviceMemory?: number };
-  return {
-    mobile: matchMedia("(pointer: coarse)").matches,
-    ...(typeof nav.deviceMemory === "number" ? { memoryGb: nav.deviceMemory } : {}),
-    ...(typeof nav.hardwareConcurrency === "number" ? { cores: nav.hardwareConcurrency } : {}),
-    maxTexture,
-    webgl2,
-  };
+  return readDeviceCaps(browserCapsSources(document, navigator as Navigator & { deviceMemory?: number }, (q) => matchMedia(q)));
 }
 
 function note(container: HTMLElement, text: string, galleryLink = false): HTMLDivElement {
@@ -119,6 +106,12 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
     }
     const world: LoadedWorld = result.world;
     if (world.rung !== "splat") onMessage({ t: "degraded", rung: world.rung });
+    // No WebGL2 (or textures too small for the splats): the three renderer cannot start either, so the place is a flat picture in plain DOM, the chat still mounted (3.2).
+    if (!caps.webgl2) {
+      const pano = mountPanoFallback(container, panoLadder(world.manifest), "The place, as a picture. Drag or use the left and right arrow keys to look around.", () => note(container, "This place would not load. The chat still works, or you can choose another place.", true));
+      cleanup = () => pano.dispose();
+      return;
+    }
     // The world's own ghost picture, when the Creator made one (best effort; the drawn ghost stands in).
     try {
       const r = await fetch(`/api/worlds/${encodeURIComponent(worldId)}/ghost`);
@@ -262,19 +255,21 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     scene.add(splatMesh);
   } else {
     // Panorama or thumbnail on a surrounding sphere; drag still looks around (PanoFallback rung).
-    const url = world.rung === "pano" && manifest.assets.pano
-      ? assetUrl(manifest.id, manifest.assets.pano.path)
-      : manifest.assets.thumb ? assetUrl(manifest.id, manifest.assets.thumb.path) : null;
-    if (url) {
-      new THREE.TextureLoader().load(url, (tex) => {
+    // The ladder (3.2): the panorama first when this rung is `pano`, then the thumbnail; a picture that does not open falls to the next.
+    const ladder = panoLadder(manifest).filter((step) => world.rung === "pano" || step.rung === "thumb");
+    const tryStep = (i: number): void => {
+      const step = ladder[i];
+      if (step === undefined) return;
+      new THREE.TextureLoader().load(step.url, (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         const sphere = new THREE.Mesh(
           new THREE.SphereGeometry(60, 32, 16),
           new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide }),
         );
         scene.add(sphere);
-      });
-    }
+      }, undefined, () => tryStep(i + 1));
+    };
+    tryStep(0);
   }
 
   // The haunt layer (group 5): grade overlays over the canvas, orbs, the ghost, sky and weather.
@@ -425,6 +420,48 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   });
   toolsEl.append(muteButton);
 
+  // The Host's walk (party-mode 8.3): axes held a quarter of a second, a turn counted once.
+  const remote = createRemoteDrive();
+  // The photo frames (8.4): pictures on stands near the Zones, no collision (they are never added to the collider), and the Restless ghost's spot (8.9).
+  const frameGroup = new THREE.Group();
+  scene.add(frameGroup);
+  const clearFrames = () => {
+    frameGroup.traverse((o) => {
+      if (o instanceof THREE.Mesh) {
+        const m = o.material as THREE.MeshBasicMaterial;
+        m.map?.dispose();
+        m.dispose();
+        o.geometry.dispose();
+      }
+    });
+    frameGroup.clear();
+  };
+  const setFrames = (frames: readonly { pos: readonly [number, number, number]; yaw: number; url: string | null }[]) => {
+    clearFrames();
+    for (const f of frames) {
+      const g = new THREE.Group();
+      g.position.set(f.pos[0], f.pos[1], f.pos[2]);
+      g.rotation.y = f.yaw;
+      const border = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.85), new THREE.MeshBasicMaterial({ color: color.ink, side: THREE.DoubleSide }));
+      const picture = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.75), new THREE.MeshBasicMaterial({ color: color.bone, side: THREE.DoubleSide }));
+      picture.position.z = 0.005;
+      const stand = new THREE.Mesh(new THREE.BoxGeometry(0.04, f.pos[1], 0.04), new THREE.MeshBasicMaterial({ color: color.ink }));
+      stand.position.set(0, -f.pos[1] / 2 - 0.4, -0.03);
+      if (f.url !== null) {
+        new THREE.TextureLoader().load(f.url, (tex) => {
+          tex.colorSpace = THREE.SRGBColorSpace;
+          const mat = picture.material as THREE.MeshBasicMaterial;
+          mat.map = tex;
+          mat.color.set(0xffffff);
+          mat.needsUpdate = true;
+        });
+      }
+      g.add(border, picture, stand);
+      frameGroup.add(g);
+    }
+  };
+  let ghostOverride: Vec3 | null = null;
+
   // Collision: the collider merged into one world-space geometry, else the disc.
   let collision: CollisionWorld | null = null;
   // The shut doors of the world as thin boxes across their doorways (knock-door 8.1); empty for a world with no doors, and then nothing here runs.
@@ -556,6 +593,13 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       worldClues = [...m.clues];
       clueSeenSent.clear();
       rebuildClues();
+    } else if (m.t === "remote_input") {
+      remote.set(m, performance.now());
+    } else if (m.t === "set_frames") {
+      setFrames(m.frames);
+    } else if (m.t === "ghost_to") {
+      ghostOverride = m.pos === null ? null : [m.pos[0], m.pos[1], m.pos[2]];
+      if (ghostOverride !== null) haunt.ghostVisible = true;
     }
   });
   canvas.addEventListener("pointerdown", startDrone);
@@ -583,9 +627,12 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       hooks.onMessage({ t: "fps", fps: Math.round(fps) });
     }
     if (tiltOn && tiltCal && hooks.movementEnabled()) look = tiltLook(look, tiltReading, tiltCal, dtMs);
+    // The Host's remote walk: its turn is added to the look once, and its axes win while held.
+    const remoteFrame = remote.take(frameNow);
+    if (hooks.movementEnabled()) look = applyRemoteLook(look, remoteFrame);
     const yawDelta = look.yaw - player.yaw;
     if (!hooks.movementEnabled()) keys.clear();
-    const input = combineInput(keys, stick ? stickAxes(stick.dx, stick.dy, 56) : null, yawDelta);
+    const input = withRemote(combineInput(keys, stick ? stickAxes(stick.dx, stick.dy, 56) : null, yawDelta), hooks.movementEnabled() ? remoteFrame : { forward: 0, strafe: 0 });
     if (hooks.movementEnabled()) {
       player = stepMovement(player, input, dtMs, params);
       player = {
@@ -647,7 +694,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     if (haunt.ghostOpacity > 0.01) {
       const nearest = haunt.anchors.filter((a) => !haunt.found.has(a.id))
         .sort((x, y) => Math.hypot(player.pos[0] - x.pos[0], player.pos[2] - x.pos[2]) - Math.hypot(player.pos[0] - y.pos[0], player.pos[2] - y.pos[2]))[0];
-      const at = ghostPlacement(player.pos, player.yaw, nearest?.pos, frameNow, manifest.bounds);
+      const at = ghostOverride ?? ghostPlacement(player.pos, player.yaw, nearest?.pos, frameNow, manifest.bounds);
       ghostAt = at;
       ghost.position.set(at[0], at[1], at[2]);
       ghost.rotation.set(0, Math.atan2(player.pos[0] - at[0], player.pos[2] - at[2]), 0);
@@ -685,6 +732,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     if (document.pointerLockElement === canvas) document.exitPointerLock?.();
     atmosphereCtrl.dispose();
     clearClueMeshes();
+    clearFrames();
     signGeo.dispose();
     answerGeo.dispose();
     glowGeo.dispose();

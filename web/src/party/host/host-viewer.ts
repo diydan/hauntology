@@ -27,6 +27,12 @@ export function atmosphereFromSky(sky: Readonly<{ weather: string; timeOfDay: st
   return parsed.success ? parsed.data : null;
 }
 
+/** The Viewer's `remote_input` message for one frame of the active Detective's walk (party-mode 8.3): axes and the turn, held inside the contract's limits so no phone can send a spin. */
+export function remoteInputMessage(m: RemoteMove): Extract<ShellToViewer, { t: "remote_input" }> {
+  const c = (n: number, lim: number): number => (Number.isFinite(n) ? Math.min(lim, Math.max(-lim, n)) : 0);
+  return { t: "remote_input", forward: c(m.forward, 1), strafe: c(m.strafe, 1), yawDelta: c(m.yawDelta, 0.5), pitchDelta: c(m.pitchDelta, 0.5) };
+}
+
 export type HostViewer = Readonly<{ send(m: ShellToViewer): void; move?(m: RemoteMove): void }>;
 
 /** Everything the Viewer is told for one Host view: the sky (once per change), the Haunt level, and the active Detective's walk. */
