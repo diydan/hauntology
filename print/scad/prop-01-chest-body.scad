@@ -28,6 +28,30 @@ xv_15   =  55.4; // Right Split Lockbox & Clasp X center (vlid_w = 61.6 -> X = +
 ky_y    =  37.5; // Left-wall (-X) KY-040 Rotary Encoder Safe-Dial Y center (inside open-bottom rear electronics bay!)
 ky_z    =  36.5; // Left-wall (-X) KY-040 Rotary Encoder Safe-Dial Z center (32.7 mm above USB-C, 28.5 mm below closed lid!)
 
+// ESP32 pocket cutter. Used twice: in the main cut, and on the lever-servo pedestal, which is added after the main cut and
+// reaches into the front of this pocket (its rear face at Y = 26 would otherwise block the front pin row above Z = 15.6).
+module esp32_pocket_cut() {
+    // ESP32 pocket, board flipped (module and USB hang down, header pins point up). The old walls leaned in at 45 deg and
+    // closed to a 7.6 mm slot, so the two pin rows (22.86 mm apart) ended up inside solid plastic from Z = 8.6 up and the
+    // 27.9 mm PCB itself clipped the walls at Z = 5.95. The walls now lean in only 7 deg (28.6 -> 26.2 mm from Z = 5.6 to 18.0),
+    // which clears the PCB (27.9), the header strips (25.4 across) and the pin tails (about Z = 16, pocket top at Z = 18), and still prints without supports.
+    // Four shelves are left standing under the board's corners so it rests at Z = 5.95; their M2 pilots sit where the board's
+    // old screw pattern was (check your board: a stock DevKitC V4 may have no mounting holes, then glue or tape it to the shelves).
+    translate([-54.6, 36.9, -0.2])
+      difference() {
+        hull() {
+          linear_extrude(height = 5.8) rrect2d(56.4, 28.6, r = 1.6);
+          translate([0, 0, 18.2]) linear_extrude(height = 0.3) rrect2d(56.4, 26.2, r = 1.6);
+        }
+        for (sx = [-1, 1], sy = [-1, 1])
+          translate([sx * 25.8, sy * 12.2, 3.775]) cube([6.4, 5.2, 4.75], center = true);
+      }
+    for (sx = [-1, 1], sy = [-1, 1]) {
+      translate([-54.6 + sx * esp32_hole_w / 2, 36.9 + sy * esp32_hole_d / 2, 1.6])
+        cylinder(h = 4.4, d = sg90_m2_pilot_d);
+    }
+}
+
 module prop_01_chest_body() {
   difference() {
     union() {
@@ -143,8 +167,8 @@ module prop_01_chest_body() {
 
     // 6b. WIDE OPEN-BOTTOM REAR #20 SOLDERING & WIRING BAY + SELF-CENTERING 45-DEG ESP32 SEAT:
     //     - X = -25..+81 (and Z = 16..62 across full X = -81..+81!): 23.4 mm wide open-bottom soldering bay leaving a thin 4.8 mm rear wall!
-    //     - X = -82.6..-26.6, Z = 0..16: symmetric 28.6 mm 45-deg V-seat holding the ESP32 level at Z = 5.95 mm (4 mm from -X USB-C wall!)
-    //       with all 38 header pins projecting into the wide-open Z = 16..62 chamber above!
+    //     - X = -82.6..-26.6, Z = 0..16: 28.6 mm pocket (walls lean in only 7 deg above Z = 5.8) holding the ESP32 flipped, level at Z = 5.95 mm
+    //       (4 mm from -X USB-C wall) on four corner shelves, with the header pins projecting up into the Z = 16..62 chamber above.
     hull() {
       translate([28.0, 39.5, -0.2])
         linear_extrude(height = 50.7)
@@ -161,15 +185,7 @@ module prop_01_chest_body() {
         linear_extrude(height = 0.3)
           rrect2d(94.0, 2.0, r = 0.8);
     }
-    translate([-54.6, 36.9, -0.2])
-      hull() {
-        linear_extrude(height = 5.8) rrect2d(56.4, 28.6, r = 1.6);
-        translate([0, 0, 16.5]) linear_extrude(height = 0.3) rrect2d(48.0, 7.6, r = 1.2);
-      }
-    for (sx = [-1, 1], sy = [-1, 1]) {
-      translate([-54.6 + sx * esp32_hole_w / 2, 36.9 + sy * esp32_hole_d / 2, 7.2])
-        cylinder(h = 8.5, d = sg90_m2_pilot_d);
-    }
+    esp32_pocket_cut();
 
     // Concealed internal servo, switch & WS2812B LED strip pass-throughs through the Y = +25.4..+27.8 bulkhead & X = +24.9 divider:
     translate([-52.0, 26.6, 23.0])
@@ -431,6 +447,7 @@ module prop_01_chest_body() {
     translate([0, 0, 8.7]) cylinder(h = 1.4, d1 = 6.4, d2 = 5.0);
   }
   // Horizontal-Shaft SG90 Lever Servo Pedestal (front Y = -0.1..+20.2 on Z = 1.8 floor; rear Y = +20.2..+26.0 welded into Z = 17.5 curb & bulkhead!)
+  difference() {
   translate([xg_01 - 43.0, yg_01 + 16.75, 1.8])
   difference() {
     union() {
@@ -454,6 +471,8 @@ module prop_01_chest_body() {
     }
     translate([sg90_shaft_off_x, -sg90_body_h / 2 - 2.0, 30.2])
       cube([14.0, 8.0, 16.0], center = true);
+  }
+  esp32_pocket_cut();
   }
 
   // ===========================================================================

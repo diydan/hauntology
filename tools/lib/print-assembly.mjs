@@ -53,6 +53,21 @@ module lidopen(th) { translate([0, ${hy}, ${hz}]) rotate([th, 0, 0]) translate([
 // servo shaft along -Y at X = ${xg - 48.5}, Z = 32; the lever sweeps in the XZ plane, th degrees up from level
 module lever(a) { translate([${xg - 48.5}, ${yg - 11.0}, 32]) rotate([0, a, 0]) rotate([-90, 0, 0]) ${imp("prop-01-lever-arm")}; }
 module ghost(zo) { translate([${xg}, ${yg + 1.0}, zo]) rotate([90, 0, 0]) ${imp("prop-01-ghost-figure")}; }
+// ESP32 DevKitC V4 in the rear bay, flipped (module and micro-USB hang down, header pins point up). The bay is centred at X = -54.6, Y = 36.9
+// (esp32_pocket_cut in prop-01-chest-body.scad); dy moves the board along Y. PCB 54.4 x 27.9 x 1.6 with its underside at Z = 5.95; two header
+// strips (19 pins, 2.54 x 48.26 x 2.54) 22.86 mm apart, pins 0.64 square up to Z = 16.1; the module can (18 x 25.5 x 3.3) at the +X end;
+// the USB connector (7.4 wide, 2.6 tall) at the -X end, 1.5 mm past the PCB edge. Sizes are from memory of the datasheet: measure your board.
+module esp32(dy = 0) {
+  translate([-54.6, 36.9 + dy, 0]) union() {
+    translate([-27.2, -13.95, 5.95]) cube([54.4, 27.9, 1.6]);
+    for (s = [-1, 1]) {
+      translate([-24.13, s * 11.43 - 1.27, 7.55]) cube([48.26, 2.54, 2.54]);
+      for (i = [0 : 18]) translate([-22.86 + i * 2.54 - 0.32, s * 11.43 - 0.32, 10.09]) cube([0.64, 0.64, 6.01]);
+    }
+    translate([27.2 - 25.5, -9, 2.65]) cube([25.5, 18, 3.3]);
+    translate([-28.7, -3.7, 3.35]) cube([5.6, 7.4, 2.6]);
+  }
+}
 `;
 }
 function checks01(root) {
@@ -79,6 +94,9 @@ function checks01(root) {
   for (const [a, lift] of [[0, 24.5], [15, 37.5], [22, 44.1]]) c.push([`lever-${a}-ghost-${lift}`, `lever(${-a});`, `ghost(${lift});`, "clear", `the lever at ${a} degrees with the ghost it has lifted to Z = ${lift}`]);
   c.push(["control-ghost-lift-lid-closed", "ghost(34.1);", "lid();", "collide", "control: the ghost lifted with the lid still shut"]);
   c.push(["control-lid-low", `lid(${(lidZ - 2.3).toFixed(1)});`, "body();", "collide", "control: the lid 2.3 mm too low"]);
+  // The rear ESP32 bay used to close to a 7.6 mm slot, so both header rows sat inside the wall (about 5,000 mm3 of pins and strips).
+  c.push(["esp32-rear-bay", "esp32();", "body();", "clear", "the ESP32 board with its header pins in the rear bay"]);
+  c.push(["control-esp32-off-centre", "esp32(4);", "body();", "collide", "control: the board 4 mm off centre, so a pin row would be inside the wall"]);
   return c.map(([id, a, b, expect, note]) => ({ id: `p01/${id}`, prop: "p01", lib, a, b, expect, note }));
 }
 
@@ -196,7 +214,23 @@ module clock_servo() { translate([5.5, ${dcy}, ${(dz0 + dPH - 25.9).toFixed(2)}]
   translate([-5.5, 0, 22.5]) cylinder(h = 4.0, d = 11.8);
 } }
 ` : "";
-  const lib = lib09(L) + routeScad(L, THREAD_POS09) + rattleLib + clockLib;
+  // The ESP32 in the screen bezel's cradle, in the bezel's own frame (front face at Z = 0), module up, header pins down. The board rests on the
+  // ledge at Z = 10.6 round the header relief; the cradle is centred at Y = -33; dy moves it along Y. Board sizes: see esp32() in the p01 checks.
+  const espBezelLib = `
+module bezel_raw() { ${imp("prop-09-screen-bezel")}; }
+module esp32_bezel(dy = 0) {
+  translate([0, -33 + dy, 0]) union() {
+    translate([-27.2, -13.95, 10.6]) cube([54.4, 27.9, 1.6]);
+    for (s = [-1, 1]) {
+      translate([-24.13, s * 11.43 - 1.27, 8.06]) cube([48.26, 2.54, 2.54]);
+      for (i = [0 : 18]) translate([-22.86 + i * 2.54 - 0.32, s * 11.43 - 0.32, 2.2]) cube([0.64, 0.64, 5.86]);
+    }
+    translate([-27.2, -9, 12.2]) cube([25.5, 18, 3.3]);
+    translate([27.2 - 4.1, -3.7, 12.2]) cube([5.6, 7.4, 2.6]);
+  }
+}
+`;
+  const lib = lib09(L) + routeScad(L, THREAD_POS09) + rattleLib + clockLib + espBezelLib;
   const ALL = "frame(); bezel(); bar(); wheel(); drum(); servo(); horn();";
   const c = [
     ["servo-frame", "servo();", "frame();"], ["servo-bezel", "servo();", "bezel();"], ["servo-drum", "servo();", "drum();"],
@@ -205,6 +239,9 @@ module clock_servo() { translate([5.5, ${dcy}, ${(dz0 + dPH - 25.9).toFixed(2)}]
     ["wheel-bar", "wheel();", "bar();"], ["bar-frame", "bar();", "frame();"], ["bar-bezel", "bar();", "bezel();"],
     ["bar-servo", "bar();", "servo(); horn(); drum();"], ["wheel-bezel", "wheel();", "bezel();"], ["wheel-servo", "wheel();", "servo(); drum();"],
   ].map(([id, a, b]) => [id, a, b, "clear", "parts in the finished stage"]);
+  // The cradle's corner standoffs used to sit on the ends of the header strips (8 pins and 13% of the strip inside them).
+  c.push(["esp32-bezel-cradle", "esp32_bezel();", "bezel_raw();", "clear", "the ESP32 board with its header pins in the screen bezel's cradle"],
+    ["control-esp32-bezel-off-centre", "esp32_bezel(4);", "bezel_raw();", "collide", "control: the board 4 mm off centre in the cradle, so its pins and end would be inside the wall"]);
   if (hasRattle) {
     c.push(
       ["rattle-servo-frame", "rattle_servo();", ALL, "clear", "#12 rattle SG90 in upper belfry gable against stage & curtain hardware"],
