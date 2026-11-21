@@ -1,5 +1,5 @@
 import type { Preset } from "@hauntology/shared/puzzles/settings";
-import type { PuzzleSetting, Transcript } from "@hauntology/shared/puzzles/types";
+import type { PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
 import { NOT_SEATED, type ControllerPort, type JoinFailure, type JoinResult, type LockOffer, type RoomView } from "../controller/controller-port";
 import { estimateOffset, type PingSample } from "@hauntology/shared/party/light";
@@ -54,6 +54,8 @@ export class RoomSocketPort implements ControllerPort {
   private closing = false;
   private readonly pending = new Map<string, Pending>();
   private lockOffer: LockOffer | null = null;
+  /** Sights the Room has shown this seat, oldest first: the first is on screen and the rest wait behind it (integration 5.1). */
+  private sights: { id: string; sight: Sight }[] = [];
   private samples: PingSample[] = [];
   private pings = new Map<number, number>();
   private pingN = 0;
@@ -66,7 +68,9 @@ export class RoomSocketPort implements ControllerPort {
 
   private base(): string { return this.deps.base ?? "/api/party"; }
   private emit(patch: Partial<RoomView>): void {
-    this.view = { ...this.view, ...patch, game: this.game };
+    const { sight: _stale, ...rest } = { ...this.view, ...patch, game: this.game };
+    const first = this.sights[0];
+    this.view = first === undefined ? rest : { ...rest, sight: { id: first.id, sight: first.sight } };
     for (const l of [...this.listeners]) l(this.view);
   }
 
@@ -133,6 +137,7 @@ export class RoomSocketPort implements ControllerPort {
     if (m.t === "pong") { this.onPong(m); return; }
     if (m.t === "lock") { this.onLock(m); return; }
     if (m.t === "lockResult") { this.onLockResult(m); return; }
+    if (m.t === "sight") { this.onSight(m); return; }
     this.game = applyRoomMessage(this.game, msg, this.deps.now());
     this.emit(this.derived());
     if (m.t === "ended") this.dropSeat();
@@ -194,6 +199,20 @@ export class RoomSocketPort implements ControllerPort {
     this.emit({ lock: this.lockOffer, phase: "playing" });
   }
 
+  private onSight(m: Record<string, unknown>): void {
+    if (typeof m.sightId !== "string" || typeof m.sight !== "object" || m.sight === null) return;
+    this.sights.push({ id: m.sightId, sight: m.sight as Sight });
+    this.emit({});
+  }
+
+  /** The Sight on screen has been seen, or its time ran out: tell the Room and show the next one. Any other id is not on screen and changes nothing. */
+  ackSight(sightId: string): void {
+    if (this.sights[0]?.id !== sightId) return;
+    this.send({ t: "sightAck", sightId });
+    this.sights.shift();
+    this.emit({});
+  }
+
   private onLockResult(m: Record<string, unknown>): void {
     const id = typeof m.lockId === "string" ? m.lockId : "";
     const p = this.pending.get(id);
@@ -221,6 +240,7 @@ export class RoomSocketPort implements ControllerPort {
     this.pending.clear();
     this.stored = null;
     this.lockOffer = null;
+    this.sights = [];
     this.write(null);
     this.socket?.close();
     this.socket = null;

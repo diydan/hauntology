@@ -2,6 +2,8 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { soundAvailability } from "@hauntology/shared/party/sounds";
+import { encodeQr, qrPath } from "@hauntology/shared/qr/qr";
+import { decodeQr } from "@hauntology/shared/qr/qr-decode.testkit";
 import { game, lobby, pub } from "../../test/party-fixtures";
 import { EMPTY_HOST, applyHostMessage, type HostView } from "./host-view";
 import { Ending, recapReactions, RECAP_STEP_MS } from "./Ending";
@@ -24,14 +26,36 @@ const ENDING = { solution: { suspect: "s2", zone: "z1", relic: "r3" }, residueAt
   recap: { entries: [{ id: 1, kind: "turn-start", seat: 1 }, { id: 2, kind: "suggest", seat: 1, zone: "z1", suspect: "s2", relic: "r1", passed: [], refuter: 2, bluff: true }, { id: 3, kind: "accuse", seat: 2, right: true }], reveal: [{ eventId: 5, kind: "frame", from: 2 }, { eventId: 6, kind: "rattle", from: 3 }] } };
 
 describe("RoomCodeCard (party-mode 8.1)", () => {
-  it("shows the code large, the join address as text with only the code in it, and says when there is no picture to scan", () => {
-    render(<RoomCodeCard code="K7M2" origin="https://lab.example" />);
+  it("shows the code large, the join address as text with only the code in it, and a code to scan that carries exactly that address", () => {
+    const { container } = render(<RoomCodeCard code="K7M2" origin="https://lab.example" />);
     expect(screen.getByLabelText("Room Code K 7 M 2")).toBeTruthy();
     expect(text(screen.getByText(/lab\.example\/play\?code=K7M2/))).toContain("lab.example/play?code=K7M2");
-    expect(screen.getByText(/Type the code/)).toBeTruthy();
-    cleanup();
+    const svg = screen.getByRole("img", { name: /scan to join/i });
+    expect(svg.getAttribute("class")).toContain("ui-qr");
+    const path = container.querySelector(".ui-qr-modules")?.getAttribute("d");
+    expect(path).toBe(qrPath(encodeQr("https://lab.example/play?code=K7M2", "M"), 4));
+    expect(svg.getAttribute("viewBox")).toBe("0 0 37 37"); // version 3 (29 modules) and a quiet zone of 4 on each side
+    expect(screen.queryByText(/not available/)).toBeNull();
+    expect(container.querySelector("[style]")).toBeNull();
+  });
+  it("the code can be read back to the address and holds no token", () => {
+    const { container } = render(<RoomCodeCard code="K7M2" origin="https://lab.example" />);
+    const d = container.querySelector(".ui-qr-modules")?.getAttribute("d") ?? "";
+    const size = 29;
+    const grid = Array.from({ length: size }, () => new Array<boolean>(size).fill(false));
+    for (const [, x, y] of d.matchAll(/M(\d+) (\d+)h1v1h-1z/g)) grid[Number(y) - 4]![Number(x) - 4] = true;
+    const got = decodeQr(grid);
+    expect(got.eccClean).toBe(true);
+    expect(got.text).toBe("https://lab.example/play?code=K7M2");
+    expect(got.text).not.toMatch(/token/i);
+  });
+  it("still takes a ready-made picture, and says so in words when the address is too long to make one", () => {
     render(<RoomCodeCard code="K7M2" origin="https://lab.example" qr={<img alt="QR" />} />);
     expect(screen.getByAltText("QR")).toBeTruthy();
+    cleanup();
+    render(<RoomCodeCard code="K7M2" origin={`https://${"a".repeat(400)}.example`} />);
+    expect(screen.queryByRole("img", { name: /scan to join/i })).toBeNull();
+    expect(screen.getByText(/Type the code/)).toBeTruthy();
   });
 });
 
