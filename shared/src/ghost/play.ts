@@ -169,6 +169,7 @@ function buildOpenLockView(session: PlaySession, now: number): WanderLockView | 
     wrong: open.wrong,
     openedAt: open.openedAt,
     skipAvailable: skipAvailable(open, now),
+    ...(open.door === true ? { door: true as const } : {}),
   };
 }
 

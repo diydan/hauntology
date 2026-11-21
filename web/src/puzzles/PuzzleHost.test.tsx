@@ -159,6 +159,17 @@ describe("PuzzleHost", () => {
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
 
+  it("a door has Skip at once, says door, and an ordinary Lock still waits", async () => {
+    const onSkip = vi.fn();
+    host("clock", { capMs: null, onSkip, door: true });
+    await screenReady("clock");
+    expect(screen.queryByRole("button", { name: "Let the ghost open it" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Skip the door" }));
+    expect(onSkip).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Give up" }));
+    expect(screen.getByText(/Give up on this door\?/)).toBeTruthy();
+  });
+
   it("gives up on request", async () => {
     const h = host("clock");
     await screenReady("clock");

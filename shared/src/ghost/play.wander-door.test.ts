@@ -34,6 +34,7 @@ describe("the Wander door in the walk (knock-door 6)", () => {
       const hit = touch(b, 0, T0 + 2000);
       expect(hit.ok && hit.lock !== undefined && hit.lock.skipAvailable).toBe(false);
       expect(hit.ok && hit.session.lockState?.open?.door).toBeUndefined();
+      expect(hit.ok && hit.lock?.door).toBeUndefined();
     }
   });
 
@@ -44,6 +45,7 @@ describe("the Wander door in the walk (knock-door 6)", () => {
     expect(hit.revealed).toBe(false);
     expect(hit.lock?.kind).toBe("knock");
     expect(hit.lock?.skipAvailable).toBe(true);
+    expect(hit.lock?.door).toBe(true); // the screen is told, so it says "door" and shows Skip at once
     expect(hit.session.lockState?.open).toMatchObject({ index: 0, kind: "knock", wrong: 0, door: true });
     expect(hit.reply.text).toBe("A door stands in the way. It opens to a secret knock. You can skip it.");
     expect(hit.reply.text).not.toMatch(/\d/);

@@ -42,6 +42,8 @@ export type PuzzleHostProps = Readonly<{
   onFinish?: (reply: AttemptReply) => void;
   /** Wander only: Skip is offered (after 20 s or two wrong Attempts). */
   onSkip?: () => void;
+  /** Wander only: this Lock is a door. Skip is there at once, and the words say "door". */
+  door?: boolean;
   /** Spirit board only: say the word (the Whisper's line, or a voice). */
   onHear?: () => boolean | void | Promise<boolean | void>;
   /** The Player pressed the Tilt button: on (true) or off (false). The device's settings keep that wish, so tilt stays off once they turned it off. */
@@ -64,7 +66,7 @@ const TWIST_KINDS: ReadonlySet<Kind> = new Set<Kind>(["safe", "clock"]);
  * draws and plays. Heavy screens load only when needed, and nothing here needs motion, sound or buzz.
  */
 export function PuzzleHost(props: PuzzleHostProps): ReactNode {
-  const { kind, view, faded, clue = null, sign, prompt, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, onHear, onTiltChoice, barExtra } = props;
+  const { kind, view, faded, clue = null, sign, prompt, capMs, attempts, feel, assist, reducedMotion, onAttempt, onGiveUp, onTimeUp, onFinish, onSkip, door = false, onHear, onTiltChoice, barExtra } = props;
   const now = props.now ?? (() => performance.now());
   const [phase, setPhase] = useState<"faded" | "play" | "done">(faded ? "faded" : "play");
   const [wrong, setWrong] = useState(0);
@@ -162,7 +164,7 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
   ) : null;
   const timer = <span className="pz-timer" aria-hidden="true"><span className="pz-bar-label">Time</span> {capMs === null ? fmtS(shown) : `${fmtS(shown)} of ${Math.round(capMs / 1000)} s`}</span>;
   const pips = useMemo(() => Array.from({ length: attempts }, (_, i) => i < wrong), [attempts, wrong]);
-  const skipOffered = onSkip !== undefined && (wrong >= 2 || shown >= 20_000);
+  const skipOffered = onSkip !== undefined && (door || wrong >= 2 || shown >= 20_000);
 
   if (phase === "faded" && faded) {
     return (
@@ -220,12 +222,12 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
         <footer className="pz-foot-wrap">
           <div className="ui-row ui-row--center pz-foot">
             {assist && clue ? <button type="button" className="ui-button" onClick={() => { setHelping(false); setPeeking(true); }}>See the clue again</button> : null}
-            {skipOffered ? <button type="button" className="ui-button" onClick={onSkip}>Let the ghost open it</button> : null}
+            {skipOffered ? <button type="button" className="ui-button" onClick={onSkip}>{door ? "Skip the door" : "Let the ghost open it"}</button> : null}
             {confirmGive ? null : <button type="button" className="ui-button ui-button--quiet" onClick={() => setConfirmGive(true)}>Give up</button>}
           </div>
           {confirmGive ? (
             <div className="pz-give">
-              <p className="ui-hint">Give up on this lock? Nothing will open.{capMs !== null ? " The time you used still counts." : ""}</p>
+              <p className="ui-hint">{door ? "Give up on this door? It stays shut." : "Give up on this lock? Nothing will open."}{capMs !== null ? " The time you used still counts." : ""}</p>
               <div className="pz-grid2 pz-confirm">
                 <button type="button" className="ui-button ui-button--primary" onClick={() => setConfirmGive(false)}>Keep playing</button>
                 <button type="button" className="ui-button ui-button--quiet" onClick={onGiveUp}>Yes, give up</button>

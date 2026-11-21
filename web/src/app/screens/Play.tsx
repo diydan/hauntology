@@ -273,6 +273,7 @@ export default function Play() {
           reducedMotion={reducedMotion}
           onAttempt={(t) => controller.submitLockAttempt(t)}
           onSkip={() => void controller.skipLock()}
+          door={ui.activeLock.door === true}
           onGiveUp={() => controller.closeLock()}
           onFinish={() => controller.finishLock()}
           onTiltChoice={puzzleDevice.onTiltChoice}

@@ -57,6 +57,8 @@ export type WanderLockView = {
   wrong: number;
   openedAt: number;
   skipAvailable: boolean;
+  /** This memory is a door (`knock-door` 6): the screen says "door", and Skip is there at once. */
+  door?: true | undefined;
 };
 
 /** What the client may know about a play session. Never a hidden seed or an unfound memory's text. */
