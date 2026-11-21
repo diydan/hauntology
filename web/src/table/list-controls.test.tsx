@@ -103,6 +103,7 @@ describe("table.css", () => {
     expect(css).toMatch(/\.st-control\s*{[^}]*min-height: 48px/);
     expect(css).toMatch(/\.st-close\s*{[^}]*min-height: 48px/);
     expect(css).toMatch(/\.st-stop\s*{[^}]*min-height: 48px/);
+    expect(css).toMatch(/\.st-mode\s*{[^}]*min-height: 48px/); // the Table and List switch: found at 44 px in a real browser (2026-11-21)
     expect(css).toMatch(/grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
   });
   it("uses only token gaps and radii, and no animation of its own", () => {

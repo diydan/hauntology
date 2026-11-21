@@ -1,0 +1,11 @@
+/* The Clue ring: layout only, from tokens. The look is the design system's elements. */
+.cr-ring { display: grid; gap: var(--space-2); }
+.cr-stage { position: relative; width: 100%; height: min(70dvh, 42rem); overflow: hidden; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunk); touch-action: none; }
+.cr-video, .cr-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cr-video { object-fit: cover; }
+.cr-canvas { touch-action: none; }
+.cr-arrow { position: absolute; right: var(--space-3); top: 50%; display: inline-grid; place-items: center; width: 48px; height: 48px; padding: 0; border-radius: var(--radius-round); }
+.cr-camera-on { position: absolute; left: var(--space-2); top: var(--space-2); }
+.cr-controls { flex-wrap: wrap; }
+.cr-controls .ui-button { min-height: 48px; min-width: 48px; }
+@media (prefers-reduced-motion: reduce) { .cr-ring * { animation: none; transition: none; } }

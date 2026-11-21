@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { lazy, Suspense, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { PuzzleSettings, type DeviceSettingsControl } from "../../puzzles/PuzzleSettings";
 import { usePuzzleDevice } from "../../puzzles/usePuzzleDevice";
 import type { Connection, ControllerPort, RoomPhase, RoomView } from "./controller-port";
@@ -12,6 +12,10 @@ import { SpiritTableSection, SpiritTableSwitch, useSpiritTable } from "../../tab
 import { WorldClueNotebook } from "./WorldClueNotebook";
 import { GameSections } from "../GameSections";
 import { SightCard } from "../../puzzles/SightCard";
+import { SpiritCluesSwitch, useSpiritClues } from "../../puzzles/clues/SpiritCluesSwitch";
+import { ClueList } from "../../puzzles/clues/ClueList";
+import { showAllRead, startRing, readSet } from "@hauntology/shared/puzzles/ring";
+import { ringForSight } from "@hauntology/shared/puzzles/ring";
 import { LobbyPanel } from "./play/LobbyPanel";
 import { SeatPortrait } from "./play/SeatPortrait";
 import { MasterMenu, type WorldChoice } from "./play/MasterMenu";
@@ -21,6 +25,9 @@ import { PlayPanel } from "./play/PlayPanel";
 import type { SoundDeps } from "./play/phone-sound";
 import type { StorageLike } from "./play/notebook-store";
 import type { Recorder } from "../phone/recorder";
+
+// the Clue ring is a lazy chunk (with three.js): a phone that never turns "Spirit clues" on downloads none of it (puzzles 15.1)
+const SpiritSight = lazy(() => import("../../puzzles/clues/SpiritSight"));
 
 export type Layout = "pad" | "panel";
 
@@ -66,6 +73,8 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
   // the lobby's contribution client belongs to this seat: a new seat has a new token, so it is made again
   const contributions = useMemo(() => port.contributions?.() ?? null, [port, view.seat, view.code]);
   const spirit = useSpiritTable(view.table);
+  const spiritClues = useSpiritClues();
+  const [cluesOpen, setCluesOpen] = useState(false);
   const [theory, setTheory] = useState<Theory>({});
 
   const connection = <span className={`ui-chip${view.connection === "online" ? " is-active" : ""}`} role="status">{CONNECTION_WORDS[view.connection]}</span>;
@@ -96,7 +105,16 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
       {view.sight && !view.lock ? (
         // a clue the Room shows once, in place of the page until it is seen
         <div className="pc-lock">
-          <SightCard key={view.sight.id} sight={view.sight.sight} title="Something to remember" feel={device.feel} onDone={() => port.ackSight?.(view.sight!.id)} />
+          {(() => {
+            // the layer, when the Player turned it on, shows a Safe code as clues in the air in place of the 5 seconds; any other Kind is the plain Sight
+            const ring = spiritClues.on ? ringForSight(view.sight.id, view.sight.sight) : null;
+            return ring !== null ? (
+              <Suspense fallback={<p className="ui-status" role="status">Loading the clues…</p>}>
+                <SpiritSight key={view.sight.id} clues={ring} assist={device.device.assist} orientation={spiritClues.motion ? spiritClues.source : null} buzz={() => device.feel.haptics.buzz("click")}
+                  onRead={(read) => spiritClues.setLast({ clues: ring, read })} onDone={() => port.ackSight?.(view.sight!.id)} />
+              </Suspense>
+            ) : <SightCard key={view.sight.id} sight={view.sight.sight} title="Something to remember" feel={device.feel} onDone={() => port.ackSight?.(view.sight!.id)} />;
+          })()}
         </div>
       ) : view.lock ? (
         // the Controller's bar is not drawn above a Lock: the Menu (and a connection that is not fine) go in the puzzle's own bar
@@ -136,7 +154,11 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
           )}
           {view.phase === "playing" && view.errands ? <ErrandsPanel errands={view.errands} port={port} /> : null}
           {view.phase === "playing" ? <DoorControls port={port} view={view} /> : null}
-          {spirit.on && view.table ? <SpiritTableSection device={spirit} feed={view.table} roomCode={view.code ?? ""} theory={theory} onTheory={setTheory} /> : null}
+          {spirit.on && view.table ? <SpiritTableSection device={spirit} feed={view.table} roomCode={view.code ?? ""} theory={theory} onTheory={setTheory} clueRing={spiritClues.last} onClues={() => setCluesOpen((o) => !o)} /> : null}
+          {cluesOpen && spiritClues.last !== null ? (
+            <ClueList clues={spiritClues.last.clues} read={spiritClues.last.read} onClose={() => setCluesOpen(false)}
+              onShowAll={() => { const last = spiritClues.last!; spiritClues.setLast({ clues: last.clues, read: readSet(showAllRead(startRing(last.clues))) }); }} />
+          ) : null}
         </main>
       )}
 
@@ -149,6 +171,7 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
                 device={device.device} onDevice={(next) => { if (next.soundConsent !== device.device.soundConsent) port.setSound?.(next.soundConsent); if (next.assist !== device.device.assist) port.setAssist?.(next.assist); device.changeDevice(next); }} tiltState={device.tilt} canVibrate={device.canVibrate}
               />
               {spirit.offered ? <SpiritTableSwitch device={spirit} /> : null}
+              <SpiritCluesSwitch device={spiritClues} />
               {view.master && port.setCluePlace ? (
                 <div className="ui-stack--tight" role="radiogroup" aria-label="Clue place">
                   <p className="ui-hint">Clue place</p>

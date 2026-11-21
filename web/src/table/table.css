@@ -7,6 +7,7 @@
 .st-canvas { touch-action: none; }
 .st-indicator { position: absolute; top: var(--space-2); left: var(--space-2); display: flex; gap: var(--space-2); align-items: center; }
 .st-stop { min-height: 48px; min-width: 48px; }
+.st-mode { min-height: 48px; min-width: 48px; }
 .st-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-1); }
 .st-control { min-height: 48px; min-width: 48px; display: grid; gap: 0; padding-inline: var(--space-1); text-align: center; }
 .st-control-name { font-size: var(--text-small); }

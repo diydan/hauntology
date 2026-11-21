@@ -4,7 +4,10 @@
 .ph-code-letters { margin: 0; font-size: var(--text-display); font-weight: 600; letter-spacing: 0.3em; line-height: 1; }
 .ph-stage { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
 .ph-world { min-height: 24rem; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunk); overflow: hidden; }
-.ph-hud { min-width: 0; }
+.ph-hud, .ph-side { min-width: 0; }
+.ph-shadow-picture, .ph-reel-picture, .ph-film-picture { aspect-ratio: 4 / 3; max-height: 16rem; }
+.ph-shadow-picture video, .ph-reel-picture video, .ph-film-picture video, .ph-shadow-picture img, .ph-reel-picture img, .ph-film-picture img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ph-skip { justify-self: start; }
 .ph-clock { min-width: 5rem; justify-content: center; font-size: var(--text-lead); }
 .ph-zones { flex-wrap: wrap; }
 .ph-conn { position: sticky; top: 0; z-index: var(--z-sticky); }

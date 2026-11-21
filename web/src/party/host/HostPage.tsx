@@ -4,9 +4,16 @@ import { useWakeLock } from "../phone/wake-lock";
 import type { HostConnection, RoomHostPort } from "../phone/host-port";
 import type { SoundDeps } from "../controller/play/phone-sound";
 import { useNow } from "../controller/play/useNow";
+import { remainingMs as remainingOf } from "../controller/play/play-logic";
 import type { ControllerPort } from "../controller/controller-port";
 import type { PlayExtras } from "../controller/SeatedFrame";
 import { Ending } from "./Ending";
+import { ClockShadow } from "./scenes/ClockShadow";
+import { EndingFilm } from "./scenes/EndingFilm";
+import { Reel } from "./scenes/Reel";
+import { useSceneSignals } from "./scenes/signals";
+import type { SceneDeps } from "./scenes/types";
+import type { ZonePlaces } from "@hauntology/shared/party/door-view";
 import { PlayHere } from "./PlayHere";
 import { HostEffects } from "./HostEffects";
 import { Hud } from "./Hud";
@@ -34,6 +41,10 @@ export type HostExtras = Readonly<{
   /** What "Play on this screen" (party-mode 8.6) needs: a Controller port of its own (a second socket with its own token) and the phone extras for it. */
   playHere?: Readonly<{ port: ControllerPort; extras: PlayExtras }>;
   qr?: ReactNode;
+  /** The clock shadow, the Reel and the ending scene (puzzles 14.2 to 14.4). Absent: none of them, and the HUD reads the same. */
+  scenes?: SceneDeps;
+  /** The places of the Zones on the plan, for the angle of each door's wall (knock-door 8.1). Absent: every wall lies along x. */
+  zonePlaces?: ZonePlaces;
 }>;
 
 /**
@@ -52,9 +63,13 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
   useWakeLock(state.connection === "online" || state.connection === "reconnecting");
   const narration = useNarration(host, { roomCode: state.code, hostToken: state.hostToken }, extras.narration);
   const whisperText = useWhisper(host, extras.whisper ?? null);
+  const remaining = remainingOf(game.pub?.deadlineMs ?? null, nowMs, 0);
+  const signals = useSceneSignals(host, remaining, nowMs);
   const worldBox = useRef<HTMLDivElement>(null);
   const viewer = useRef<(HostViewer & { dispose(): Promise<void> }) | null>(null);
-  const lastSky = useRef<{ sky: string | null }>({ sky: null });
+  const lastSky = useRef<{ sky: string | null; doors?: string }>({ sky: null });
+  const hostRef = useRef(host); hostRef.current = host;
+  const zonesRef = useRef(extras.zonePlaces); zonesRef.current = extras.zonePlaces;
   const offsetMs = 0;
 
   // mount the world once the game is on, and tear it down when the page goes
@@ -62,12 +77,18 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
   useEffect(() => {
     if (!playing || extras.mountViewer === undefined || worldBox.current === null || worldId === null) return;
     let live = true;
-    void extras.mountViewer(worldBox.current, worldId).then((v) => { if (!live) { void v.dispose(); return; } viewer.current = v; }).catch(() => { viewer.current = null; });
+    void extras.mountViewer(worldBox.current, worldId).then((v) => {
+      if (!live) { void v.dispose(); return; }
+      viewer.current = v;
+      // what the Room said before the Viewer was there (the sky, the doors) is said now: the first messages had nobody to hear them
+      lastSky.current = { sky: null };
+      for (const m of viewerMessages(hostRef.current, lastSky.current, zonesRef.current)) v.send(m as ShellToViewer);
+    }).catch(() => { viewer.current = null; });
     return () => { live = false; void viewer.current?.dispose(); viewer.current = null; };
   }, [playing, extras, worldId]);
 
   // the sky and the Haunt, and the active Detective's walk, go to the Viewer
-  useEffect(() => { for (const m of viewerMessages(host, lastSky.current)) viewer.current?.send(m as ShellToViewer); }, [host.game.atmosphere, host]);
+  useEffect(() => { for (const m of viewerMessages(host, lastSky.current, extras.zonePlaces)) viewer.current?.send(m as ShellToViewer); }, [host.game.atmosphere, host, extras.zonePlaces]);
   useEffect(() => { const i = host.input; if (i !== null && viewer.current?.move) viewer.current.move(remoteMove(i)); }, [host.input]);
 
   const [creating, setCreating] = useState(false);
@@ -93,7 +114,11 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
   if (phase === "ended" && game.pub?.ending) {
     return (
       <div className="ph-page">
-        <Ending game={game} skipped={host.recapSkipped} reducedMotion={extras.reducedMotion} />
+        {extras.scenes !== undefined ? (
+          <EndingFilm outcome={game.pub.ending.houseWins ? "house" : "detectives"} joined={game.pub.seats.filter((s) => s.poltergeist).map((s) => s.nickname)} reducedMotion={extras.reducedMotion} deps={extras.scenes} roomLineBusy={signals.roomLineBusy}>
+            <Ending game={game} skipped={host.recapSkipped} reducedMotion={extras.reducedMotion} />
+          </EndingFilm>
+        ) : <Ending game={game} skipped={host.recapSkipped} reducedMotion={extras.reducedMotion} />}
         <p className="ui-sr-only" role="status">{connectionNote ?? ""}</p>
       </div>
     );
@@ -107,7 +132,15 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
       {playing ? (
         <div className="ph-stage">
           {extras.mountViewer ? <div className="ph-world" ref={worldBox} aria-label="The house" /> : null}
-          <Hud host={host} offsetMs={offsetMs} nowMs={nowMs} reducedMotion={extras.reducedMotion} />
+          <div className="ph-side ui-stack">
+            {extras.scenes !== undefined && game.pub !== null ? (
+              <>
+                <ClockShadow baseMs={signals.base} remainingMs={remaining} paused={game.pub.paused} nowMs={nowMs} reducedMotion={extras.reducedMotion} deps={extras.scenes} />
+                <Reel level={game.pub.haunt.level} max={game.pub.haunt.max} blocked={signals.blocked} roomLineBusy={signals.roomLineBusy} reducedMotion={extras.reducedMotion} deps={extras.scenes} />
+              </>
+            ) : null}
+            <Hud host={host} offsetMs={offsetMs} nowMs={nowMs} reducedMotion={extras.reducedMotion} />
+          </div>
           {extras.narration !== null && !narration.unlocked ? <button type="button" className="ui-button" onClick={narration.unlock}>Tap to let the house speak</button> : null}
           {narration.subtitle !== "" ? <p className="ui-speech" data-host-subtitle role="status" aria-live="polite">{narration.subtitle}</p> : null}
           {whisperText !== "" ? <p className="ui-speech" data-host-whisper role="status" aria-live="polite">{whisperText}</p> : null}
