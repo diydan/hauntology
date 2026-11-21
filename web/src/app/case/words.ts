@@ -1,4 +1,5 @@
 import type { EngineEvent, PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/engine";
+import type { Recap } from "@hauntology/shared/party/ending";
 import { caughtLogLine, doneLogLine } from "@hauntology/shared/party/errands";
 
 /**
@@ -56,3 +57,24 @@ export function notebook(view: PublicSnapshot, me: PrivateSnapshot | null): Read
 /** Seconds left on the clock, never below zero; null when no clock runs. */
 export const secondsLeft = (view: PublicSnapshot, nowMs: number): number | null =>
   view.deadlineMs === null || view.paused ? null : Math.max(0, Math.ceil((view.deadlineMs - nowMs) / 1000));
+
+/**
+ * The ending's reveal (party-mode 8.5, 11.6, 12.x): who sent each Frame, House Cue, Rattle and Haunting puzzle, in order.
+ * It reads only the recap (the public log plus the source list the Room releases at the end). A source whose public entry is
+ * missing is skipped, never guessed. Errands (and anything else) are left to their own sections: only the four kinds below produce a line.
+ */
+export function revealLines(recap: Recap, n: Names): string[] {
+  const entry = (id: number) => recap.entries.find((e) => e.id === id);
+  const out: string[] = [];
+  for (const src of recap.reveal) {
+    if (src.kind === "haunting-puzzle") { if (src.from !== null) out.push(`${n.seat(src.from)} solved a haunting puzzle.`); continue; }
+    const e = entry(src.eventId);
+    if (e === undefined) continue;
+    if (src.kind === "rattle" && e.kind === "rattle" && src.from !== null) out.push(`${n.seat(src.from)} rattled ${possessive(n.seat(e.target))} phone.`);
+    else if (src.kind === "frame" && e.kind === "phone-cue" && src.from !== null) out.push(`${n.seat(src.from)} sent the ${e.cue ?? "cue"} to ${n.seat(e.target)}, and it looked like the house.`);
+    else if (src.kind === "house-cue" && e.kind === "phone-cue") out.push(`The house itself sent the ${e.cue ?? "cue"} to ${n.seat(e.target)}.`);
+  }
+  return out;
+}
+
+const possessive = (name: string): string => (name === "You" ? "your" : `${name}'s`);

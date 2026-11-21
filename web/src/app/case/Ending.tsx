@@ -3,7 +3,7 @@ import { recapLine } from "@hauntology/shared/party/errands";
 import { STOCK_SONGS } from "@hauntology/shared/songs/stock";
 import { useEffect, useRef, useState } from "react";
 import { ThemeSong } from "../ThemeSong";
-import { eventLine, type Names } from "./words";
+import { eventLine, revealLines, type Names } from "./words";
 
 /**
  * The ending screen (party-mode 8.5, 8.14; integration 4.2). It reads only the ending the Room sent: the answer, who
@@ -72,6 +72,9 @@ export function Ending({
   const joined = view.seats.filter((s) => s.poltergeist);
   const residue = Object.entries(e.residueAt);
   const [first, ...rest] = e.winners;
+  const behind = revealLines(e.recap, n);
+  const scored = Object.entries(e.scare).filter(([, pts]) => pts > 0).map(([seat, pts]) => `${n.seat(Number(seat))}, ${pts} Scare points`);
+  const counted = view.seats.filter((s) => e.recap.counts[s.seat] !== undefined);
 
   return (
     <section className="ui-panel ui-stack case-ending" aria-labelledby="case-end-title">
@@ -114,6 +117,24 @@ export function Ending({
       ) : null}
       <EndingSong id={e.houseWins ? "fb-house" : "fb-detectives"} />
       <ThemeSong kind="outro" heading="h3" />
+
+      {behind.length > 0 || scored.length > 0 ? (
+        <section aria-label="Who was behind it">
+          <h3 className="ui-heading">Who was behind it</h3>
+          <ul className="ui-stack--tight">{behind.map((l, i) => <li key={i}>{l}</li>)}</ul>
+          {scored.length > 0 ? <p>{scored.join(". ")}.</p> : null}
+        </section>
+      ) : null}
+
+      <table className="ui-table" aria-label="Each player's turn">
+        <thead><tr><th scope="col">Player</th><th scope="col">Asked</th><th scope="col">Searched</th><th scope="col">Nudges</th><th scope="col">Ran out of time</th></tr></thead>
+        <tbody>
+          {counted.map((s) => {
+            const c = e.recap.counts[s.seat]!;
+            return <tr key={s.seat}><th scope="row">{n.seat(s.seat)}</th><td>{c.suggestions}</td><td>{c.inspects}</td><td>{c.nudges}</td><td>{c.timeouts}</td></tr>;
+          })}
+        </tbody>
+      </table>
 
       <section aria-label="What happened">
         <h3 className="ui-heading">What happened, in order</h3>
