@@ -154,6 +154,7 @@ export type ClientMsg =
   | Readonly<{ t: "sightAck"; sightId: string }>
   | Readonly<{ t: "clueSeen"; sign: Sign }>
   | Readonly<{ t: "plainInspect"; on: boolean }>
+  | Readonly<{ t: "assist"; on: boolean }>
   | Readonly<{ t: "hauntPuzzle" }>
   /** A Player acts on a heavy door (knock-door 4.1). */
   | Readonly<{ t: "doorAct"; doorId: string }>
@@ -217,7 +218,7 @@ export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; vie
       | Readonly<{ t: "doorResult"; doorId: string; outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>
       | Readonly<{ t: "tvKnockResult"; outcome: "help" | "wrong"; heard: string }>
       | Readonly<{ t: "cue"; eventId: number; cue: CueId; playAtMs: number; plan: SoundPlan }> | Readonly<{ t: "notYou"; eventId: number }>
-      | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null; sign?: Sign; prompt?: string; canSeeAgain?: boolean }>
+      | Readonly<{ t: "lock"; lockId: string; view: LockView; level: Level; attempts: number; deadlineAt: number; faded: Sight | null; sign?: Sign; prompt?: string; canSeeAgain?: boolean; assistText?: string }>
       | Readonly<{ t: "lockResult"; lockId: string; outcome: "solved" | "wrong" | "failed"; attemptsLeft?: number; zone?: string; card?: string | null }>
       | Readonly<{ t: "sight"; sightId: string; sight: Sight }>
       | Readonly<{ t: "errandDone"; object: ErrandObject }> }>;
@@ -563,6 +564,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     if (s.pausedSinceMs === null) return "not_paused";
     return resumeAll(s, now);
   }
+  if (msg.t === "assist") return { ...s, locks: { ...s.locks, assist: { ...(s.locks.assist ?? {}), [String(seat)]: msg.on } } };
   if (msg.t === "plainInspect") return { ...s, locks: { ...s.locks, plain: { ...s.locks.plain, [String(seat)]: msg.on } } };
   if (msg.t === "sightAck" && msg.sightId.startsWith("door-")) return s; // the ghost's knock at a door is heard once and is not kept in the Locks
   if (msg.t === "sightAck") { const r = ackSight(s.locks, String(seat), msg.sightId); return r.ok ? { ...s, locks: r.value } : "sight_unknown"; }
@@ -715,7 +717,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
         const locks: PartyLocks = { ...s.locks, placed: s.locks.placed.map((l) => (l.zone === t.at ? { ...l, level } : l)) };
         const capMs = capFor(s.settings.preset ?? "classic");
         const dl = deadlineOf(t.clock, now);
-        const opened = openLock(locks, String(seat), t.at as string, now, { setting, capMs, isBot: false, ...(dl === null ? {} : { turnDeadline: dl }) });
+        const opened = openLock(locks, String(seat), t.at as string, now, { setting, capMs, isBot: false, assist: s.locks.assist?.[String(seat)] === true, ...(dl === null ? {} : { turnDeadline: dl }) });
         if (!opened.ok) return "puzzle_not_open";
         const [st] = addLog({ ...s, locks: opened.value.state }, { kind: "inspect", seat, zone: t.at as string });
         return {
@@ -729,6 +731,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
                 t: "lock", lockId: opened.value.lockId, view: opened.value.view, level,
                 attempts: opened.value.attempts, deadlineAt: opened.value.deadlineAt, faded: opened.value.faded,
                 ...(opened.value.sign !== undefined ? { sign: opened.value.sign, prompt: opened.value.prompt, canSeeAgain: opened.value.canSeeAgain } : {}),
+                ...(opened.value.assistText !== undefined ? { assistText: opened.value.assistText } : {}),
               },
             },
           ],
@@ -885,7 +888,7 @@ function connectionCore(s: EngineState, seat: number, up: boolean, now: number):
 function resendOnReconnect(s: EngineState, seat: number, now: number): EngineState {
   const id = String(seat);
   const out: Outbound[] = [];
-  const restored = s.locks.open[id] ? restoreLock(s.locks, id, {}) : null;
+  const restored = s.locks.open[id] ? restoreLock(s.locks, id, { assist: s.locks.assist?.[id] === true }) : null;
   if (restored !== null && restored.ok) {
     const v = restored.value;
     const placed = s.locks.placed.find((l) => l.lockId === v.lockId);
@@ -894,7 +897,7 @@ function resendOnReconnect(s: EngineState, seat: number, now: number): EngineSta
       const level = placed.level;
       const dl = s.turn === null ? null : deadlineOf(s.turn.clock, now);
       const deadlineAt = Math.min(open.openedAt + capFor(s.settings.preset ?? "classic"), dl ?? Number.POSITIVE_INFINITY);
-      out.push({ to: "seat", seat, msg: { t: "lock", lockId: v.lockId, view: v.view, level, attempts: ATTEMPTS - v.attemptsUsed, deadlineAt, faded: v.faded, ...(v.sign !== undefined ? { sign: v.sign, prompt: v.prompt, canSeeAgain: v.canSeeAgain } : {}) } });
+      out.push({ to: "seat", seat, msg: { t: "lock", lockId: v.lockId, view: v.view, level, attempts: ATTEMPTS - v.attemptsUsed, deadlineAt, faded: v.faded, ...(v.sign !== undefined ? { sign: v.sign, prompt: v.prompt, canSeeAgain: v.canSeeAgain } : {}), ...(v.assistText !== undefined ? { assistText: v.assistText } : {}) } });
     }
   }
   for (const d of pendingSights(s.locks, id)) out.push({ to: "seat", seat, msg: { t: "sight", sightId: d.sightId, sight: d.sight } });

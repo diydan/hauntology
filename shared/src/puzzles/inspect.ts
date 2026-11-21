@@ -27,6 +27,8 @@ export type PartyLocks = Readonly<{
   sent: Readonly<Record<SeatId, readonly string[]>>;
   /** Plain Inspect on for a seat (an access setting). */
   plain: Readonly<Record<SeatId, boolean>>;
+  /** Assist on for a seat (an access setting): a Spirit board Lock then also carries its word as text. */
+  assist?: Readonly<Record<SeatId, boolean>>;
   /** World Clues & Decoys placed when `cluePlace === "world"`. */
   worldClues?: readonly WorldClue[];
   /** World Clue Signs ever within view of the shared camera during the game. */
@@ -143,6 +145,8 @@ export type OpenedLock = Readonly<{
   prompt?: string;
   /** Whether Assist offers "See the clue again" (only when seen during this Player's own Turn). */
   canSeeAgain?: boolean;
+  /** Under Assist, the Spirit board's word as text (requirement 10.3); absent otherwise and for every other Kind. */
+  assistText?: string;
 }>;
 
 export type OpenContext = Readonly<{ setting: PuzzleSetting; capMs: number; isBot: boolean; assist?: boolean; turnDeadline?: number }>;
@@ -167,6 +171,7 @@ export function openLock(state: PartyLocks, seat: SeatId, zone: string, now: num
     deadlineAt: Math.min(now + ctx.capMs, ctx.turnDeadline ?? Number.POSITIVE_INFINITY),
     faded: unseen ? fadedFor(lock, ctx.assist === true) : null,
     publicLine: { type: "inspect", seat, zone },
+    ...assistTextOf(lock, ctx.assist === true),
     ...(worldSign !== null
       ? {
           sign: worldSign,
@@ -177,8 +182,11 @@ export function openLock(state: PartyLocks, seat: SeatId, zone: string, now: num
   });
 }
 
+/** The Spirit board's word as text, only under Assist. */
+const assistTextOf = (lock: ReturnType<typeof makeLock>, assist: boolean): { assistText?: string } => (assist && lock.kind === "board" ? { assistText: lock.secret.word } : {});
+
 /** The same Lock again for a seat that reconnected: rebuilt from the seed, progress inside an Attempt lost. */
-export function restoreLock(state: PartyLocks, seat: SeatId, ctx: Pick<OpenContext, "assist">): Result<Readonly<{ lockId: string; view: LockView; faded: Sight | null; attemptsUsed: number; sign?: Sign; prompt?: string; canSeeAgain?: boolean }>> {
+export function restoreLock(state: PartyLocks, seat: SeatId, ctx: Pick<OpenContext, "assist">): Result<Readonly<{ lockId: string; view: LockView; faded: Sight | null; attemptsUsed: number; sign?: Sign; prompt?: string; canSeeAgain?: boolean; assistText?: string }>> {
   const open = state.open[seat];
   if (!open) return fail(ErrorCode.puzzle_not_open);
   const placed = lockAt(state, open.zone);
@@ -193,6 +201,7 @@ export function restoreLock(state: PartyLocks, seat: SeatId, ctx: Pick<OpenConte
     view: lock.view,
     faded: unseen ? fadedFor(lock, ctx.assist === true) : null,
     attemptsUsed: open.attemptsUsed,
+    ...assistTextOf(lock, ctx.assist === true),
     ...(worldSign !== null
       ? {
           sign: worldSign,

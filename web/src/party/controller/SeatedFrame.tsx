@@ -105,7 +105,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
             <div className="ui-stack">
               <PuzzleSettings
                 {...(view.master ? { master: { value: view.master.puzzles, preset: view.master.preset, onChange: (s) => port.setPuzzles(s) } } : {})}
-                device={device.device} onDevice={(next) => { if (next.soundConsent !== device.device.soundConsent) port.setSound?.(next.soundConsent); device.changeDevice(next); }} tiltState={device.tilt} canVibrate={device.canVibrate}
+                device={device.device} onDevice={(next) => { if (next.soundConsent !== device.device.soundConsent) port.setSound?.(next.soundConsent); if (next.assist !== device.device.assist) port.setAssist?.(next.assist); device.changeDevice(next); }} tiltState={device.tilt} canVibrate={device.canVibrate}
               />
               {view.master && port.setCluePlace ? (
                 <div className="ui-stack--tight" role="radiogroup" aria-label="Clue place">

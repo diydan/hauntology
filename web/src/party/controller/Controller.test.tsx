@@ -507,3 +507,16 @@ describe("the Sound switch and the Room's sound consent (puzzles 5.6)", () => {
     expect(port.getView().soundConsent).toBe(true);
   });
 });
+
+describe("the Assist switch and the Room (puzzles 8.3)", () => {
+  it("turning Assist on or off tells the Room this seat's setting", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    fireEvent.click(sw(/^Assist/));
+    expect(port.calls).toContain("setAssist true");
+    fireEvent.click(sw(/^Assist/));
+    expect(port.calls).toContain("setAssist false");
+  });
+});

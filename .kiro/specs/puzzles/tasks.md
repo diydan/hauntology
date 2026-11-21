@@ -229,7 +229,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - Built in `kinds/Words.tsx`.
     - _Requirements: 5.2_
   - [ ] 8.3 Spirit board screen (planchette physics, tick per letter, dwell to choose) and the 24 Library lines for the Whisper's words, with the browser voice as the fallback and the text under Assist
-    - Built in `kinds/Board.tsx` and `speech.ts` (the browser voice). Still to do: the 24 Library lines and the word as text under Assist, which come from the Room's Whisper.
+    - Built in `kinds/Board.tsx` and `speech.ts` (the browser voice). The word as text under Assist is built (2026-11-21): the `assist` seat message, `PartyLocks.assist`, `assistText` on the `lock` message for a board Lock only (shared/src/party/assist-text.prop.test.ts), `ControllerPort.setAssist`, `LockOffer.assistText`, and the line "The whisper says: WORD" in `Board.tsx` (needs Assist on and the Room's text). Still to do: the 24 Library lines, which wait for Dan's decision on the Voice Library upload (532 lines rendered, 24 more would change the render set).
     - _Requirements: 5.3, 10.3, 10.5_
   - [x]* 8.4 Marble maze screen (orb physics, the 100 millisecond bump)
     - Built in `kinds/Maze.tsx`.

@@ -37,6 +37,8 @@ export type LockOffer = Readonly<{
   sign?: Sign;
   prompt?: string;
   canSeeAgain?: boolean;
+  /** Spirit board under Assist: the word as text, from the Room, for this seat alone (puzzles 8.3). */
+  assistText?: string;
   attempts: number;
   /** The most Turn time this Lock may use, or null. */
   capMs: number | null;
@@ -100,6 +102,8 @@ export interface ControllerPort {
   closeLock(lockId: string, why: "finished" | "gave_up" | "time_up"): void;
   /** This seat's sound consent changed (the Sound switch): the Room keeps it with the seat, and the Synth plays only while it is yes (puzzles 5.6). */
   setSound?(consent: boolean): void;
+  /** This seat's Assist setting changed: under Assist the Room also sends the Spirit board's word as text (puzzles 8.3). */
+  setAssist?(on: boolean): void;
   /** The Master chose another Puzzle setting. A seat that is not the Master is refused by the Room. */
   setPuzzles(setting: PuzzleSetting): void;
   /** The Master chose where Memory clues live (`phone` or `world`). */
