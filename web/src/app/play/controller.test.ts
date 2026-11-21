@@ -80,9 +80,54 @@ describe("starting", () => {
     for (const [plan, expected] of cases) {
       const api = createFakeApi({ latencyMs: 0 });
       const start = vi.spyOn(api, "playStart");
-      await setup({ api, clientAnchors: plan }).controller.begin();
+      await setup({ api, ackNotice: true, clientAnchors: plan }).controller.begin();
       expect(start).toHaveBeenCalledWith(expected);
     }
+  });
+
+  it("waits for an asynchronous planner, and a planner that rejects leaves the placing to the server", async () => {
+    const planned = [
+      { id: "a1", pos: [4, 0, 0], radius: 2 },
+      { id: "a2", pos: [0, 0, 6], radius: 2 },
+      { id: "a3", pos: [-8, 0, 0], radius: 2 },
+    ] as NonNullable<Awaited<ReturnType<NonNullable<PlayDeps["clientAnchors"]>>>>;
+    const later = async () => { await new Promise((r) => setTimeout(r, 5)); return planned; };
+    const api = createFakeApi({ latencyMs: 0 });
+    const start = vi.spyOn(api, "playStart");
+    await setup({ api, ackNotice: true, clientAnchors: later }).controller.begin();
+    expect(start).toHaveBeenCalledWith({ worldId: W, anchors: planned });
+    const api2 = createFakeApi({ latencyMs: 0 });
+    const start2 = vi.spyOn(api2, "playStart");
+    await setup({ api: api2, ackNotice: true, clientAnchors: async () => { throw new Error("no floor"); } }).controller.begin();
+    expect(start2).toHaveBeenCalledWith({ worldId: W });
+  });
+
+  it("brings the Viewer up before it asks for the anchors (the floor is the Viewer's), and does not ask when no Viewer will start", async () => {
+    const t = setup({ ackNotice: true, clientAnchors: () => { t.log.push("anchors asked"); return undefined; } });
+    await t.controller.begin();
+    await t.controller.settled();
+    expect(t.log.indexOf("start")).toBeGreaterThanOrEqual(0);
+    expect(t.log.indexOf("start")).toBeLessThan(t.log.indexOf("anchors asked"));
+    expect(t.log.filter((l) => l === "start")).toHaveLength(1);
+    // The notice is not acknowledged yet: no Viewer, so no wait for a floor and no planner call.
+    const asked = vi.fn(() => undefined);
+    const api = createFakeApi({ latencyMs: 0 });
+    const start = vi.spyOn(api, "playStart");
+    await setup({ api, clientAnchors: asked }).controller.begin();
+    expect(asked).not.toHaveBeenCalled();
+    expect(start).toHaveBeenCalledWith({ worldId: W });
+  });
+
+  it("asks for no anchors when the Viewer would not start", async () => {
+    const asked = vi.fn(() => undefined);
+    const api = createFakeApi({ latencyMs: 0 });
+    const deps: PlayDeps = {
+      api, worldId: W, memory: createPlayMemory(), clientAnchors: asked, session: { ackNotice: true, lastPlayId: undefined, lastWorldId: undefined },
+      port: { start: async () => { throw new Error("no webgl"); }, send: () => {}, dispose: async () => {} },
+      navigate: () => {}, setFlow: () => {}, onNoticeAcked: () => {},
+    };
+    await createPlayController(deps).begin();
+    expect(asked).not.toHaveBeenCalled();
   });
 
   it("does not start the Viewer until the notice is acknowledged", async () => {

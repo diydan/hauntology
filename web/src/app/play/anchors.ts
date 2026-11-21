@@ -1,6 +1,8 @@
 import { placeAnchors, validateAnchors, walkRadiusOf, type FloorSampler } from "@hauntology/shared/ghost/anchors";
 import { hashText, makeRng } from "@hauntology/shared/ghost/rng";
 import type { Anchor, Bounds, Vec3 } from "@hauntology/shared/ghost/types";
+import { waitForGround } from "../viewer/anchor-ground";
+import type { AnchorGround } from "../viewer/types";
 
 /**
  * Client anchor placement (ghost-engine 6.3, the part that needs no Viewer). The Viewer's floor sampler (a raycast on its BVH) is
@@ -25,4 +27,23 @@ export function planClientAnchors(input: ClientAnchorInput): Anchor[] | undefine
   }
   const checked = validateAnchors(placed, { spawn, bounds, walkRadius });
   return checked.ok ? checked.anchors : undefined;
+}
+
+/**
+ * The anchors for `start` from the mounted Viewer: waits a short while for its collider, then plans on its floor. Gives `undefined` (the server
+ * places the anchors) when the Viewer has no ground in time, has no `anchorGround` (the stand-in), or the placed set does not pass the check.
+ * Never throws.
+ */
+export async function planAnchorsFromViewer(input: {
+  worldId: string;
+  ground: () => AnchorGround | undefined | null;
+  wait?: Parameters<typeof waitForGround>[1];
+}): Promise<Anchor[] | undefined> {
+  try {
+    const ground = await waitForGround(input.ground, input.wait);
+    if (ground === undefined) return undefined;
+    return planClientAnchors({ worldId: input.worldId, spawn: ground.spawn, bounds: ground.bounds, sampler: ground.sampler });
+  } catch {
+    return undefined;
+  }
 }
