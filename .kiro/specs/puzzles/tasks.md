@@ -205,7 +205,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 3.1_
   - [ ] 6.6 Checkpoint: play all three in a Party Room on two real phones (one Android, one iPhone) and in Wander; run Spike 1.5 for these three. Ensure every test passes; ask the user if questions arise.
 
-- [ ] 7. Second set of Kinds
+- [x] 7. Second set of Kinds
   - [x] 7.1 Safe code screen (dial, twist, click, thunk)
     - Built in `kinds/Safe.tsx`.
     - _Requirements: 4.1_
@@ -411,9 +411,11 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 24.3, 24.4_
   - [x] 16.5 The `knock` Kind in `shared/src/puzzles` (make, verify) and `web/src/puzzles/kinds` (the door, the look of the design system, the Tap control), with the clue as a Sight (built 2026-11-16: motion and the microphone through the feel layer, and Tap)
     - _Requirements: 24.1, 24.2, 24.3, 24.4, 24.5_
-  - [ ] 16.6 Hand the door between Zones and the Haunt Event knock to the Party Mode spec, and write there which it takes
+  - [x] 16.6 Hand the door between Zones and the Haunt Event knock to the Party Mode spec, and write there which it takes
     - _Requirements: 24.6_
-  - [ ] 16.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `judge` and `readKnocks`. Ensure every test passes, ask the user if questions arise.
+    - Built: `.kiro/specs/party-mode/design.md`, section "Doors between Zones and the Haunt Event knock": the `knock-door` spec takes both (decision for review); Party Mode only exposes the Zones, the Turn, the Haunt and the public view
+  - [x] 16.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `judge` and `readKnocks`. Ensure every test passes, ask the user if questions arise.
+    - Built: traceability OK; shared and tools tests pass; mutation pass on `judge` and `readKnocks` (JS and TS): every mutant fails a test, after one boundary test was added to `tools/playtest/test/secret-knock-core.test.js`
 
 - [ ] 17. Shared actions and Shake (added 2026-11-17; satisfies Requirement 25)
   - [x] 17.1 The needs, the shake reading and what a phone feels: `tools/playtest/js/shake-core.js`
