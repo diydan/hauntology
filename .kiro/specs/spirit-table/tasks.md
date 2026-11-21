@@ -11,6 +11,7 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - Built in `tools/playtest/ar.html`, `js/ar.js`, `css/ar.css` and `test/ar.test.js`, live on the playtest site. Sample data; it differs from this spec where the design says so.
     - _Requirements: 2.5, 4.2, 4.3, 5.1_
   - [ ] 1.2 Spike spirit-table 1.1: on a real Android phone and a real iPhone (Safari and the installed web app), with and without the camera: drift over 30 seconds, whether Place is enough, the comfortable size and distance, thumb targets, battery and warmth over 20 minutes at 30 frames a second, and the camera prompt in the installed app
+    - Progress (2026-11-21, not ticked): a fake-sensor run is recorded in `docs/spikes/spirit-table-1.md` section 5 (`web/src/table/drift.test.ts`: a made-up drift rate through `placeAt` and `boardView`, time until the Table leaves the view, the arrow, and Place putting it right). The real run on a phone (drift, size, battery, the camera prompt) is still open.
     - _Requirements: 4.1, 4.2, 4.4, 5.1, 6.1_
 
 - [x] 2. Pure logic (`shared/src/table/`)

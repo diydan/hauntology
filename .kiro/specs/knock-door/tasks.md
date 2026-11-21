@@ -88,10 +88,12 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
 
 - [ ] 7. Spike: the collider box
   - [ ] 7.1 In a real Gallery world, put a box across a doorway and record in `docs/spikes/` whether the walker stops cleanly, slides, snags or steps through at speed
+    - Progress (2026-11-21, not ticked): the fake run is built and recorded in `docs/spikes/knock-door-7.md` (`web/src/app/viewer/door-spike.test.ts`: the Viewer's own `stepMovement` and door boxes against a wall with a doorway; stops cleanly, slides, does not snag at the corner, cannot step through at any step the Viewer allows). Still open: a real Gallery world's Collider mesh, a real phone's frame rate, and how the stop feels.
     - _Requirements: 9.1_
 
 - [ ] 8. What the screens show
   - [ ] 8.1 The Viewer adds or removes the doorway box when a door changes
+    - Progress (2026-11-21, later): the Host side is built. `web/src/party/host/host-viewer.ts` (`viewerMessages`) sends `set_doors` from the Public View's doors once per change (never a lock or a pattern; an empty list only to clear), `HostPage.tsx` passes the places of the Zones (`extras.zonePlaces`, for the wall's angle) and tells a Viewer that mounts late what it missed (`host-doors.test.tsx`, 6 tests, mutation-checked). Not ticked: the spike of 7.1 on a real Gallery world is still open (`docs/spikes/knock-door-7.md` has the fake run), and the Room does not send the Zone places yet, so every wall lies along x until it does.
     - Progress (2026-11-21): the Viewer side is built and unit-tested: `shared/src/party/door-view.ts` (`doorBox`, `doorYaw`, `viewerDoors`, `playerAtDoor`), the `set_doors` message in `shared/src/app/events.ts` (strict, at most 3, no lock or pattern), `web/src/app/viewer/door-colliders.ts` (a shut door is a 0.2 m box across the doorway; an open one is none) and its use in `mount.ts` (`set_doors`; the push runs after the Collider's, also on the disc fallback). NOT done: the Host does not send `set_doors` yet (it needs `host.tsx`, which the `feat/knock-door-solo-panel` branch is editing), and the spike of 7.1 has not been run in a real Gallery world. Not ticked until both are.
     - _Requirements: 9.1_
   - [x] 8.2 The TV shows each door as a marker on the diorama, and swings it open or shut slowly with the `creak` sound; a Player is at a door within 1.5 m

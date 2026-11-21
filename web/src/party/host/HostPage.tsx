@@ -13,6 +13,7 @@ import { EndingFilm } from "./scenes/EndingFilm";
 import { Reel } from "./scenes/Reel";
 import { useSceneSignals } from "./scenes/signals";
 import type { SceneDeps } from "./scenes/types";
+import type { ZonePlaces } from "@hauntology/shared/party/door-view";
 import { PlayHere } from "./PlayHere";
 import { HostEffects } from "./HostEffects";
 import { Hud } from "./Hud";
@@ -42,6 +43,8 @@ export type HostExtras = Readonly<{
   qr?: ReactNode;
   /** The clock shadow, the Reel and the ending scene (puzzles 14.2 to 14.4). Absent: none of them, and the HUD reads the same. */
   scenes?: SceneDeps;
+  /** The places of the Zones on the plan, for the angle of each door's wall (knock-door 8.1). Absent: every wall lies along x. */
+  zonePlaces?: ZonePlaces;
 }>;
 
 /**
@@ -64,7 +67,9 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
   const signals = useSceneSignals(host, remaining, nowMs);
   const worldBox = useRef<HTMLDivElement>(null);
   const viewer = useRef<(HostViewer & { dispose(): Promise<void> }) | null>(null);
-  const lastSky = useRef<{ sky: string | null }>({ sky: null });
+  const lastSky = useRef<{ sky: string | null; doors?: string }>({ sky: null });
+  const hostRef = useRef(host); hostRef.current = host;
+  const zonesRef = useRef(extras.zonePlaces); zonesRef.current = extras.zonePlaces;
   const offsetMs = 0;
 
   // mount the world once the game is on, and tear it down when the page goes
@@ -72,12 +77,18 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
   useEffect(() => {
     if (!playing || extras.mountViewer === undefined || worldBox.current === null || worldId === null) return;
     let live = true;
-    void extras.mountViewer(worldBox.current, worldId).then((v) => { if (!live) { void v.dispose(); return; } viewer.current = v; }).catch(() => { viewer.current = null; });
+    void extras.mountViewer(worldBox.current, worldId).then((v) => {
+      if (!live) { void v.dispose(); return; }
+      viewer.current = v;
+      // what the Room said before the Viewer was there (the sky, the doors) is said now: the first messages had nobody to hear them
+      lastSky.current = { sky: null };
+      for (const m of viewerMessages(hostRef.current, lastSky.current, zonesRef.current)) v.send(m as ShellToViewer);
+    }).catch(() => { viewer.current = null; });
     return () => { live = false; void viewer.current?.dispose(); viewer.current = null; };
   }, [playing, extras, worldId]);
 
   // the sky and the Haunt, and the active Detective's walk, go to the Viewer
-  useEffect(() => { for (const m of viewerMessages(host, lastSky.current)) viewer.current?.send(m as ShellToViewer); }, [host.game.atmosphere, host]);
+  useEffect(() => { for (const m of viewerMessages(host, lastSky.current, extras.zonePlaces)) viewer.current?.send(m as ShellToViewer); }, [host.game.atmosphere, host, extras.zonePlaces]);
   useEffect(() => { const i = host.input; if (i !== null && viewer.current?.move) viewer.current.move(remoteMove(i)); }, [host.input]);
 
   const [creating, setCreating] = useState(false);

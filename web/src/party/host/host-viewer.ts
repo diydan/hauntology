@@ -1,6 +1,7 @@
 import type { ShellToViewer } from "@hauntology/shared/app/events";
 import { AtmosphereSchema, type Atmosphere } from "@hauntology/shared/conditions/types";
 import type { Input } from "@hauntology/shared/party/input";
+import { viewerDoors, type ZonePlaces } from "@hauntology/shared/party/door-view";
 import type { HostView } from "./host-view";
 
 /**
@@ -29,11 +30,20 @@ export function atmosphereFromSky(sky: Readonly<{ weather: string; timeOfDay: st
 
 export type HostViewer = Readonly<{ send(m: ShellToViewer): void; move?(m: RemoteMove): void }>;
 
-/** Everything the Viewer is told for one Host view: the sky (once per change), the Haunt level, and the active Detective's walk. */
-export function viewerMessages(host: HostView, last: { sky: string | null }): ShellToViewer[] {
+/**
+ * Everything the Viewer is told for one Host view: the sky (once per change) and the doors of the world (once per change: knock-door 8.1,
+ * Requirement 9.1). `set_doors` carries each door's place, width, wall angle and whether it is open, and never its lock or a pattern: it is built
+ * from the Public View's doors alone. A world with no doors sends nothing at first (the Viewer's default is no door) and an empty list only to
+ * clear doors it was told about. `zones` are the places of the Zones on the plan for the wall's angle; without them every wall lies along x (the
+ * Room does not send Zone places yet, so a world with doors needs them before this is useful: see the PR notes).
+ */
+export function viewerMessages(host: HostView, last: { sky: string | null; doors?: string }, zones: ZonePlaces = {}): ShellToViewer[] {
   const out: ShellToViewer[] = [];
   const atmosphere = atmosphereFromSky(host.game.atmosphere);
   const key = atmosphere === null ? null : JSON.stringify(atmosphere);
   if (key !== last.sky) { last.sky = key; out.push({ t: "set_atmosphere", atmosphere }); }
+  const doors = viewerDoors(host.game.pub?.doors, zones);
+  const doorKey = JSON.stringify(doors);
+  if (doorKey !== (last.doors ?? "[]")) { last.doors = doorKey; out.push({ t: "set_doors", doors }); }
   return out;
 }
