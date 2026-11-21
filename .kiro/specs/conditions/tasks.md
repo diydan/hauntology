@@ -102,8 +102,9 @@ Order: the spike first, then pure logic with property tests, then the API module
     - _Requirements: 6.2, 6.3_
 
 - [ ] 5. Narrator and scripted lines
-  - [ ] 5.1 Pass `toPromptFields(snapshot)` into `buildNarrationPrompt` (ghost-engine 2.15): one fixed sentence built from the three enums, none when the source is the Default; add one weather case per persona to ghost-engine Spike 4.1
-    - **Wired 2026-11-15** (ghost-engine 3.1): the narration job of a game started with a snapshot carries `sky` (`skyFor` in `shared/src/ghost/play.ts`: the three closed words, none when the weather was not read), and `buildNarrationPrompt` writes the one sentence. **Not done:** the weather case of ghost-engine Spike 4.1. Not ticked until it is.
+  - [x] 5.1 Pass `toPromptFields(snapshot)` into `buildNarrationPrompt` (ghost-engine 2.15): one fixed sentence built from the three enums, none when the source is the Default; add one weather case per persona to ghost-engine Spike 4.1
+    - Built (2026-11-21): the weather case is in the spike plan (`tools/lib/ghost-spike.mjs`: the soft ghost on a rainy dusk, the stern one on a snowy night, so every one of the 20 Tone calls carries its persona's sky sentence), pinned by a test in `tools/test/ghost-spike.test.mjs` (mutation-checked) and run on 2026-11-15 (`docs/spikes/4.1.md`).
+    - **Wired 2026-11-15** (ghost-engine 3.1): the narration job of a game started with a snapshot carries `sky` (`skyFor` in `shared/src/ghost/play.ts`: the three closed words, none when the weather was not read), and `buildNarrationPrompt` writes the one sentence. The weather case of ghost-engine Spike 4.1 is the line above.
     - _Requirements: 5.1_
   - [x] 5.2 `mentionsRealWorld` word-stem list (news, crime, death, real events) wired into `validateGhostReply` (ghost-engine 2.17): a matching reply is replaced by a scripted line
     - _Requirements: 5.2_
@@ -147,9 +148,11 @@ Order: the spike first, then pure logic with property tests, then the API module
   - Run tests, typecheck, `node tools/check-traceability.mjs`; play one game with conditions off, one with a city, one with a Memory Day, and one with the weather call failing; confirm each looks right and that the game state is the same in all four; ask the user if questions arise.
 
 - [ ] 9. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
-  - [ ] 9.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+  - [x] 9.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - Verified (2026-11-21): the only screen of this spec is the Set the sky card (`web/src/app/haunt/SkyCard.tsx`); it is made of `ui-` elements only, with no inline style and no stylesheet of its own (`sky-card`, `sky-body`, `memory-day` and `matches` are structure hooks no CSS uses).
     - _Requirements: 7.1, 7.3_
-  - [ ] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - Verified (2026-11-21): no missing piece, so nothing was added to `design/elements.css`; `tools/test/design-system.test.mjs` fails on any undefined `ui-` class in `web/src`.
     - _Requirements: 7.2_
   - [ ] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 7.4_
