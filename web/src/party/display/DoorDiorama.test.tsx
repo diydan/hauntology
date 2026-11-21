@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { soundAvailability } from "@hauntology/shared/party/sounds";
 import { game, pub } from "../../test/party-fixtures";
 import { EMPTY_HOST } from "../host/host-view";
@@ -27,8 +27,8 @@ const sounds = () => {
   const deps: SoundDeps = { play: (id) => played.push(id), vibrate: () => undefined, available: soundAvailability(["creak"]), canVibrate: false, reducedMotion: false, now: () => Date.now(), setTimer: (f) => { timers.push(f); return timers.length; }, clearTimer: () => undefined };
   return { played, timers, sound: { deps, offsetMs: 0 } };
 };
-const mount = (p: FakePort, over: { reduced?: boolean; sound?: ReturnType<typeof sounds>["sound"] } = {}) =>
-  render(<DisplayPage port={p as never} reducedMotion={over.reduced ?? false} storage={localStorage} size={{ width: 1000, height: 800 }} {...(over.sound ? { sound: over.sound } : {})} />);
+const mount = (p: FakePort, over: { reduced?: boolean; sound?: ReturnType<typeof sounds>["sound"]; playKnock?: () => void } = {}) =>
+  render(<DisplayPage port={p as never} reducedMotion={over.reduced ?? false} storage={localStorage} size={{ width: 1000, height: 800 }} {...(over.sound ? { sound: over.sound } : {})} {...(over.playKnock ? { playKnock: over.playKnock } : {})} />);
 const live = (c: HTMLElement): string => c.querySelector("[data-door-live]")?.textContent ?? "";
 
 describe("doors on the Display (knock-door 8.2, 8.4)", () => {
@@ -88,5 +88,42 @@ describe("doors never flash the Display (knock-door 9.3)", () => {
       }
       unmount();
     }
+  });
+});
+
+describe("the ghost's knock on the Display after a Slam (knock-door 5.3)", () => {
+  const withKnock = (tvKnock: unknown, round = 2) => {
+    const p = new FakePort([]);
+    const set = (k: unknown, r = round) => { p.state = { ...p.state, view: { ...EMPTY_HOST, game: game({ pub: pub({ doors: [], tvKnock: k, round: r }) }) } }; act(() => { for (const l of [...p.listeners]) l(); }); };
+    return { p, set };
+  };
+  it("knocks the pattern once, says so in words (never the pattern), and goes quiet when answered", () => {
+    vi.useFakeTimers();
+    let knocks = 0;
+    const { p, set } = withKnock(null);
+    const { container } = mount(p, { playKnock: () => { knocks++; } });
+    expect(container.querySelector("[data-knock-live]")!.textContent).toBe("");
+    set({ groups: [2, 1], long: null, answeredBy: null });
+    expect(container.querySelector("[data-knock-live]")!.textContent).toBe("The ghost is knocking at the TV. Listen, then knock it back on your phone.");
+    expect(container.querySelector(".pd-knock")!.textContent).not.toMatch(/\d/);
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(knocks).toBe(3);
+    set({ groups: [2, 1], long: null, answeredBy: null }); // the same Round again: no second knock
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(knocks).toBe(3);
+    set({ groups: [2, 1], long: null, answeredBy: 1 });
+    expect(container.querySelector("[data-knock-live]")!.textContent).toBe("Ana knocked it back.");
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(knocks).toBe(3);
+    set({ groups: [3], long: null, answeredBy: null }, 3); // a new Round, a new knock
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(knocks).toBe(6);
+    vi.useRealTimers();
+  });
+  it("is silent with no player for it, and the words still show", () => {
+    const { p, set } = withKnock(null);
+    const { container } = mount(p);
+    set({ groups: [2], long: null, answeredBy: null });
+    expect(container.querySelector(".pd-knock")).not.toBeNull();
   });
 });

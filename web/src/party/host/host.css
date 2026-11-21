@@ -38,3 +38,4 @@
 .pd-door[data-at-door="yes"] { outline: var(--stroke-thin) solid var(--accent); border-radius: var(--radius-lg); }
 .pd-door[data-motion="none"] .pd-door-leaf { transition: none; }
 .pd-door-words { margin: 0; padding: 0; list-style: none; text-align: center; }
+.pd-knock { margin: 0; font-size: var(--text-body); color: var(--text-quiet); }

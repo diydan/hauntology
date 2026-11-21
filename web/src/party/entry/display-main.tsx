@@ -42,8 +42,11 @@ function App(): React.ReactNode {
     return () => removeEventListener("resize", onResize);
   }, [port]);
   if (attached === false) return <main className="ph-page ui-stack"><h1 className="ui-title">Display</h1><p className="ui-lead">Open the Display from the Host page: it hands over the code and a one-time link.</p></main>;
-  return <DisplayPage port={port} reducedMotion={prefersReducedMotion()} storage={localStorage} size={size} sound={{ deps: sound.deps, offsetMs: sound.offsetMs }} />;
+  return <DisplayPage port={port} reducedMotion={prefersReducedMotion()} storage={localStorage} size={size} sound={{ deps: sound.deps, offsetMs: sound.offsetMs }} playKnock={playKnock} />;
 }
+
+/** The ghost's knock after a Slam: the footage-scene file `knock.m4a`, no louder than 80 percent. A missing file or a blocked sound is silent. */
+const playKnock = (): void => { try { const a = new Audio("/sounds/knock.m4a"); a.volume = 0.8; void a.play().catch(() => undefined); } catch { /* silent */ } };
 
 const root = document.getElementById("root");
 if (root !== null) createRoot(root).render(<StrictMode><App /></StrictMode>);

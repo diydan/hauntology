@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import type { PublicDoor } from "@hauntology/shared/party/doors";
 import { Controller } from "./Controller";
 import { StandInPort, STANDIN_CODES } from "./standin-port";
 
@@ -11,7 +12,7 @@ const seat = async (port: StandInPort): Promise<void> => {
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Join" })); await Promise.resolve(); await Promise.resolve(); });
   expect(port.getView().seat).toBe(1);
 };
-const HEAVY = { id: "iron-door", at: { x: 1, z: 1 }, width: 1.4, a: "z0", b: "z1", lock: "heavy", open: false, need: 2, have: 0 } as never;
+const HEAVY: PublicDoor = { id: "iron-door", at: { x: 1, z: 1 }, width: 1.4, a: "z0", b: "z1", lock: "heavy", open: false, need: 2, have: 0 };
 
 describe("Every lock opens by touch alone, and every change is in words (knock-door 9.2, 9.3)", () => {
   it("opens a Heavy door, a Knock door and the Slam's knock at the TV with taps (click events) only", async () => {
