@@ -2,7 +2,11 @@ import { whoIs } from "./auth";
 import { publicDoors, type DoorSetup } from "./doors";
 import { createEngine, repairDoors, seatedHumans, step, type EngineSettings, type EngineState, type Outbound, type PublicSnapshot } from "./engine";
 import { handOver } from "./master";
+import { applyPatch, emptyContrib, toContributions, type ContribPatch, type LobbyContrib } from "./lobby-contrib";
+import { offerFor, skipFor, type PromptOffer } from "./photoPrompts";
+import { buildPool } from "./pool";
 import { PRESET_GHOST_IDS } from "./preset-ghosts";
+import { NO_SPEND, type RoomSpend } from "./spend";
 import { parseClientMessage } from "./protocol";
 import { createRoomState, isRoomExpired, newToken, parseRoom, serializeRoom, type RoomState, type Seat } from "./room";
 import { humanCount, seatPlayer } from "./seats";
@@ -44,6 +48,8 @@ export type Ports = {
   doors?(): DoorSetup | null;
   /** Deletes stored Stitch clips for specific seats or all seats on leave/withdraw/switch-off. */
   deleteStitchClips?(forSeats: number[] | "all"): Promise<void>;
+  /** Deletes the Room's contributed photos and ghosts when it ends (party-mode 10.4). */
+  deleteContributions?(code: string): Promise<void>;
   /** Deletes stored generated songs for this Room when it ends (`game-songs` 3.1). */
   deleteSongs?(code: string): Promise<void>;
 };
@@ -75,6 +81,10 @@ export type ServerState = Readonly<{
   sockets: Readonly<Record<string, SocketInfo>>;
   voice: RoomVoiceState;
   songs: RoomSongsState;
+  /** What the lobby collected: Suspects, photos, Zone names, prompt skips and selfie yes answers (party-mode 4.2). */
+  contrib?: LobbyContrib;
+  /** What the Room has spent on paid calls, against its own caps (party-mode 10.1). */
+  spend?: RoomSpend;
 }>;
 
 export const DEFAULT_SETTINGS: EngineSettings = { baseSeconds: 60, hauntMax: 10, nudges: "all", frames: true, sounds: true, puzzles: "medium", preset: "classic" };
@@ -91,7 +101,7 @@ export class RoomCore {
     if (this.state !== null) return this.state;
     const text = await this.ports.load();
     if (text === undefined) return null;
-    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState };
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState; contrib?: LobbyContrib; spend?: RoomSpend };
     const room = parseRoom(raw.room);
     if (room === null) return null;
     // a saved door state that does not parse falls back to the start (knock-door 8.1)
@@ -104,6 +114,8 @@ export class RoomCore {
       sockets: raw.sockets,
       voice: raw.voice ?? initialRoomVoiceState(),
       songs: raw.songs ?? initialRoomSongsState(),
+      ...(raw.contrib !== undefined ? { contrib: raw.contrib } : {}),
+      ...(raw.spend !== undefined ? { spend: raw.spend } : {}),
     };
     return this.state;
   }
@@ -122,6 +134,8 @@ export class RoomCore {
       sockets: next.sockets,
       voice: next.voice,
       songs: next.songs,
+      ...(next.contrib !== undefined ? { contrib: next.contrib } : {}),
+      ...(next.spend !== undefined ? { spend: next.spend } : {}),
     }));
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
     await this.ports.setAlarm(wakeAtMs === null ? ttlAt : Math.min(wakeAtMs, ttlAt));
@@ -156,6 +170,7 @@ export class RoomCore {
       seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })),
       settings: s.lobbySettings,
       presetIds: PRESET_GHOST_IDS,
+      pool: buildPool(toContributions(s.contrib ?? emptyContrib()), PRESET_GHOST_IDS, s.room.seed),
       doors: s.doors ?? this.ports.doors?.() ?? null,
       ...(s.lobbyErrandOptOut ? { errandOptOut: s.lobbyErrandOptOut } : {}),
     });
@@ -189,6 +204,67 @@ export class RoomCore {
     await this.commit(next);
     this.broadcastLobby(next);
     return { ok: true, seat: res.seat, token };
+  }
+
+  // ------------------------------------------------------------ the lobby's contributions (party-mode 4.2, 5, 7)
+  /** Which device holds this token, for the routes: its role, seat, whether it is the Master, and whether the game has started. `null` for a token this Room never gave. */
+  async identify(token: string): Promise<{ role: "host" | "display" | "controller"; seat: number | null; master: boolean; started: boolean } | null> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return null;
+    const who = whoIs(s.room, token);
+    if (who === null) return null;
+    return { role: who.role, seat: who.seat, master: who.seat !== null && who.seat === s.room.masterSeat, started: s.room.started || s.engine !== null };
+  }
+
+  /** What a seat needs to contribute: its prompt offer, the selfie switch and its own yes. Only a Player's own token, and only in the lobby. */
+  async lobbyContext(token: string): Promise<{ ok: true; seat: number; offer: PromptOffer; selfies: boolean; selfieYes: boolean; selfieMade: boolean } | { ok: false; code: string }> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return { ok: false, code: "room_unknown" };
+    const who = whoIs(s.room, token);
+    if (who === null || who.role !== "controller" || who.seat === null) return { ok: false, code: "bad_token" };
+    if (s.room.started || s.engine !== null) return { ok: false, code: "game_started" };
+    const c = s.contrib ?? emptyContrib();
+    const offer = offerFor(s.room.seed, who.seat, c.promptRound[who.seat] ?? 0) as PromptOffer;
+    return { ok: true, seat: who.seat, offer, selfies: s.lobbySettings.selfies === true, selfieYes: c.selfieYes[who.seat] === true, selfieMade: c.selfieMade[who.seat] === true };
+  }
+
+  /** Records one contribution for the token's own seat. The Room keeps only ids and verdicts; the photo and the Ghost's files are stored elsewhere. */
+  async recordContribution(token: string, patch: ContribPatch): Promise<{ ok: true } | { ok: false; code: string }> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return { ok: false, code: "room_unknown" };
+    const who = whoIs(s.room, token);
+    if (who === null || who.role !== "controller" || who.seat === null) return { ok: false, code: "bad_token" };
+    if (s.room.started || s.engine !== null) return { ok: false, code: "game_started" };
+    if (patch.kind === "promptRound" && (!Number.isInteger(patch.round) || patch.round < 0 || patch.round > 3)) return { ok: false, code: "bad_request" };
+    const next = { ...s, contrib: applyPatch(s.contrib ?? emptyContrib(), who.seat, patch), room: { ...s.room, lastActiveMs: this.ports.now() } };
+    await this.commit(next);
+    return { ok: true };
+  }
+
+  /** One Photo Prompt skip for the token's own seat: the next three prompts, or `prompt_skips_used` after the third. */
+  async skipPrompt(token: string): Promise<{ ok: true; offer: PromptOffer } | { ok: false; code: string }> {
+    const ctx = await this.lobbyContext(token);
+    if (!ctx.ok) return ctx;
+    const s = (await this.loaded()) as ServerState;
+    const next = skipFor(s.room.seed, ctx.seat, ctx.offer.round);
+    if (next === null) return { ok: false, code: "prompt_skips_used" };
+    const r = await this.recordContribution(token, { kind: "promptRound", round: next.round });
+    return r.ok ? { ok: true, offer: next } : r;
+  }
+
+  /** What the Room has spent on paid calls. Zero for a Room that has spent nothing. */
+  async loadSpend(): Promise<RoomSpend> {
+    const s = await this.loaded();
+    return s?.spend ?? NO_SPEND;
+  }
+
+  /** Saves the Room's spend. Whole non-negative numbers only; anything else is ignored. */
+  async saveSpend(spend: RoomSpend): Promise<boolean> {
+    const s = await this.loaded();
+    const ok = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 0 && (n as number) <= 1_000_000;
+    if (s === null || !ok(spend?.images) || !ok(spend?.models)) return false;
+    await this.commit({ ...s, spend: { images: spend.images, models: spend.models } });
+    return true;
   }
 
   // ------------------------------------------------------------ sockets
@@ -529,6 +605,7 @@ export class RoomCore {
   private async end(s: ServerState): Promise<void> {
     for (const sid of Object.keys(s.sockets)) { this.ports.send(sid, { t: "ended" }); this.ports.close(sid, 4000, "room_ended"); }
     await this.ports.deleteSongs?.(s.room.code);
+    await this.ports.deleteContributions?.(s.room.code);
     await this.ports.deleteAll();
     await this.ports.setAlarm(null);
     this.state = null;

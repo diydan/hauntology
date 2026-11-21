@@ -53,6 +53,8 @@ export type EngineSettings = Readonly<{
   baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off"; sounds?: boolean; frames?: boolean;
   /** The Puzzle setting: off, or the starting level of the Locks (puzzles 1.4). */
   puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; preset?: SoloPreset; autoCross?: boolean;
+  /** Selfie ghosts (party-mode 3.10): off unless the Master turns them on in the lobby; a missing value means off. */
+  selfies?: boolean;
 }>;
 export const DISCONNECT_GRACE_MS = 20_000;
 export const MASTER_AWAY_MS = 60_000;
@@ -148,7 +150,7 @@ export type ClientMsg =
   | Readonly<{ t: "cue"; cue: string; place?: "tv" | "phone" }>
   | Readonly<{ t: "frame"; target: number; cue: string }>
   | Readonly<{ t: "sound"; consent: boolean; audio?: boolean }>
-  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
+  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; selfies?: boolean; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
   | Readonly<{ t: "attempt"; lockId: string; transcript: unknown }>
   | Readonly<{ t: "giveUp"; lockId: string }>
   | Readonly<{ t: "sightAck"; sightId: string }>
@@ -540,6 +542,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       ...(msg.sounds !== undefined ? { sounds: msg.sounds } : {}), ...(msg.puzzles !== undefined ? { puzzles: msg.puzzles } : {}),
       ...(timing && msg.cluePlace !== undefined ? { cluePlace: msg.cluePlace } : {}),
       ...(msg.errands !== undefined ? { errands: msg.errands } : {}),
+      ...(timing && msg.selfies !== undefined ? { selfies: msg.selfies } : {}),
       ...(timing && msg.baseSeconds !== undefined ? { baseSeconds: msg.baseSeconds } : {}), ...(timing && msg.hauntMax !== undefined ? { hauntMax: msg.hauntMax } : {}),
     };
     const seatBots = row ? s.seats.map((x) => (x.bot ? { ...x, botLevel: row.botLevel } : x)) : s.seats;

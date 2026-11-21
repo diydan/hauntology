@@ -1,4 +1,6 @@
 import { RoomCore, type Ports } from "@hauntology/shared/party/server";
+import { R2PhotoStore } from "../party/photo-store";
+import { roomScope } from "../party/contribute";
 import { RoomSongStore, type SongBucket } from "../songs/store";
 import { RoomStitchClipStore, type RoomClipStorage } from "../voice/stitch-store";
 
@@ -17,6 +19,11 @@ type DirectoryNamespace = { idFromName(name: string): unknown; get(id: unknown):
  *   POST /voice-line {lineId, token} -> {line} | {line: null}
  *   POST /end                   -> 204 (the same session made a new Room: this one ends)
  *   POST /end-as {token}        -> {result: "ended" | "forbidden" | "room_unknown"} (the Master or the host token only)
+ *   POST /identify {token}      -> {role, seat, master, started} | {ok:false}   (the contribution and delete routes)
+ *   POST /lobby {token}         -> {ok, seat, offer, selfies, selfieYes, selfieMade} | {ok:false, code}
+ *   POST /record {token, patch} -> {ok} | {ok:false, code}   (one contribution of the token's own seat)
+ *   POST /spend/load | /spend/save {spend}   -> the Room's own spend (images and model calls)
+ *   POST /skip {token}          -> {ok, offer} | {ok:false, code}   (one Photo Prompt skip)
  *   GET  /ws (Upgrade: websocket) -> 101; the first message must be {t:"hello", token}
  */
 export class PartyRoom {
@@ -43,6 +50,10 @@ export class PartyRoom {
       },
       deleteSongs: async (code) => {
         await songs?.deleteRoomSongs(code);
+      },
+      // Photos and ghosts the lobby collected go with the Room (party-mode 10.4).
+      deleteContributions: async (code) => {
+        if (env.BUCKET !== undefined) await new R2PhotoStore(env.BUCKET).deleteRoom(roomScope(code));
       },
       // Free the Room's place in the directory, so the cap counts only live Rooms.
       ended: async (code) => {
@@ -73,6 +84,14 @@ export class PartyRoom {
     if (pathname === "/join" && typeof body?.nickname === "string") return json(await this.core.join(body.nickname));
     if (pathname === "/voice-line" && typeof body?.lineId === "string" && typeof body?.token === "string") {
       return json({ line: await this.core.findVoiceLineForHost(body.lineId, body.token) });
+    }
+    if (pathname === "/spend/load") return json(await this.core.loadSpend());
+    if (pathname === "/spend/save" && typeof body?.spend === "object" && body.spend !== null) return json({ ok: await this.core.saveSpend(body.spend as Parameters<RoomCore["saveSpend"]>[0]) });
+    if (typeof body?.token === "string") {
+      if (pathname === "/identify") return json((await this.core.identify(body.token)) ?? { ok: false, code: "bad_token" });
+      if (pathname === "/lobby") return json(await this.core.lobbyContext(body.token));
+      if (pathname === "/skip") return json(await this.core.skipPrompt(body.token));
+      if (pathname === "/record" && typeof body.patch === "object" && body.patch !== null) return json(await this.core.recordContribution(body.token, body.patch as Parameters<RoomCore["recordContribution"]>[1]));
     }
     if (pathname === "/end") { await this.core.endRoom(); return new Response(null, { status: 204 }); }
     if (pathname === "/end-as" && typeof body?.token === "string") return json({ result: await this.core.endAs(body.token) });

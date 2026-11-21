@@ -7,6 +7,7 @@ import { R2CreatorStore } from "./creator/store";
 import { conditionsFromEnv, geocoderFromEnv } from "./conditions/snapshot-store";
 import { PartyDirectory } from "./do/party-directory";
 import { PartyRoom } from "./do/party-room";
+import { contributionServices } from "./party/wiring";
 import { PlayIndex } from "./do/play-index";
 import { PlaySession } from "./do/play-session";
 import { SpendGuard } from "./do/spend-guard";
@@ -119,7 +120,13 @@ export default {
         }),
         ...(voice !== null ? { voice } : {}),
         // Party mode (integration 3.2): one `PartyRoom` per Room Code, one `PartyDirectory` for the caps.
-        party: { rooms: env.PARTY_ROOM, directory: env.PARTY_DIRECTORY },
+        // The contributions of a Room (party-mode 5, 7): its budget, the photo check, the Ghost Creator, all charged to the Room. The selfie editor is
+        // `null` until a spike confirms its model, so the selfie ghost is off and every Player gets a Preset.
+        party: {
+          rooms: env.PARTY_ROOM,
+          directory: env.PARTY_DIRECTORY,
+          contribute: (code, room) => contributionServices({ guard, bucket: env.BUCKET as never, vetter: ai.vetter, shrinker: ai.shrinker, moderator: ai.guard, portraitist: ai.portraitist, cutter: ai.cutter, editor: null }, code, room),
+        },
         conditionsSearch: geocoderFromEnv(env),
         // The ghost's games (ghost-engine 3 and 5): one `PlaySession` for each, so a reader of a shared place can play it.
         ...(playsFor(env) !== null
