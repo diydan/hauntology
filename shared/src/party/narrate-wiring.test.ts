@@ -89,6 +89,37 @@ describe("early synthesis hook (ghost-voice 3.12)", () => {
   });
 });
 
+describe("prefetch list (ghost-voice 4.8)", () => {
+  it("lists Library lines for the Host only, while speaking is on, at most 8, findable by the Host token, never counted as spoken, and sent once", async () => {
+    const { f, core, hostToken } = await game(async () => null);
+    expect(f.of("host", "prefetch")).toHaveLength(0);
+    await say(core, "ana", { t: "speech", action: "on" });
+    await say(core, "ana", { t: "start" });
+    const lists = f.of("host", "prefetch");
+    expect(lists).toHaveLength(1);
+    const ids = lists[0]!.lineIds as string[];
+    expect(ids.length).toBeGreaterThan(0);
+    expect(ids.length).toBeLessThanOrEqual(8);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) {
+      const line = await core.findVoiceLineForHost(id, hostToken);
+      expect(line?.speaker === "lodger").toBe(false);
+      expect(line?.spoken).not.toBe("");
+    }
+    expect(await core.findVoiceLineForHost(ids[0]!, "0".repeat(32))).toBeNull();
+    expect(f.of("ana", "prefetch")).toHaveLength(0);
+    expect(f.of("ben", "prefetch")).toHaveLength(0);
+    expect((JSON.parse(f.disk.text!) as { voice: { spokenCount: number } }).voice.spokenCount).toBe(0);
+    await say(core, activeSid(f), { t: "seal", suspect: "s1", zone: "z1", relic: "r1" });
+    expect(f.of("host", "prefetch")).toHaveLength(1); // the list did not change, so it is not sent again
+  });
+  it("lists nothing while speaking is off", async () => {
+    const { f, core } = await game();
+    await say(core, "ana", { t: "start" });
+    expect(f.of("host", "prefetch")).toHaveLength(0);
+  });
+});
+
 describe("narrate-events", () => {
   it("narrates only key moments", () => {
     expect(directiveOfLog({ id: 1, kind: "seal", seat: 1 })).toBe("seal");

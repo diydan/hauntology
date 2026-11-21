@@ -34,6 +34,7 @@ type DirectoryNamespace = { idFromName(name: string): unknown; get(id: unknown):
  *   POST /lobby {token}         -> {ok, seat, offer, selfies, selfieYes, selfieMade} | {ok:false, code}
  *   POST /record {token, patch} -> {ok} | {ok:false, code}   (one contribution of the token's own seat)
  *   POST /spend/load | /spend/save {spend}   -> the Room's own spend (images and model calls)
+ *   POST /gate {token}         -> {ok} | {ok:false, code}   (the rate limit of one seat's contribution requests)
  *   POST /skip {token}          -> {ok, offer} | {ok:false, code}   (one Photo Prompt skip)
  *   GET  /ws (Upgrade: websocket) -> 101; the first message must be {t:"hello", token}
  */
@@ -115,8 +116,11 @@ export class PartyRoom {
       if (request.headers.get("Upgrade") !== "websocket") return new Response("expected a websocket", { status: 426 });
       const pair = new (globalThis as unknown as { WebSocketPair: new () => Record<0 | 1, WebSocket> }).WebSocketPair();
       const server = pair[1];
-      (server as unknown as { serializeAttachment(v: unknown): void }).serializeAttachment({ id: crypto.randomUUID() });
+      const id = crypto.randomUUID();
+      (server as unknown as { serializeAttachment(v: unknown): void }).serializeAttachment({ id });
       (this.state as unknown as { acceptWebSocket(ws: WebSocket): void }).acceptWebSocket(server);
+      // five seconds to say hello with a token, or the alarm closes the socket (party-mode 4.1)
+      await this.core.socketOpened(id);
       return new Response(null, { status: 101, webSocket: pair[0] } as ResponseInit);
     }
     if (request.method !== "POST") return new Response(null, { status: 405 });
@@ -135,6 +139,7 @@ export class PartyRoom {
       if (pathname === "/identify") return json((await this.core.identify(body.token)) ?? { ok: false, code: "bad_token" });
       if (pathname === "/lobby") return json(await this.core.lobbyContext(body.token));
       if (pathname === "/skip") return json(await this.core.skipPrompt(body.token));
+      if (pathname === "/gate") return json(await this.core.contributionGate(body.token));
       if (pathname === "/record" && typeof body.patch === "object" && body.patch !== null) return json(await this.core.recordContribution(body.token, body.patch as Parameters<RoomCore["recordContribution"]>[1]));
     }
     if (pathname === "/end") { await this.core.endRoom(); return new Response(null, { status: 204 }); }

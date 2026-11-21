@@ -166,6 +166,7 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
     app.route(
       "/api/party",
       partyRoutes({
+        log,
         ...options.party,
         sessionOf: (c) => (c as Context<AppEnv>).get("session").sid,
         ipHashOf: (c) => ipHashOf(c as Context<AppEnv>, (c as Context<AppEnv>).env.HMAC_SECRET as string),

@@ -365,7 +365,7 @@ describe("Play: the ghost's voice", () => {
     await enterPlay({ api });
     await goIn();
     await press("Talk");
-    fireEvent.click(screen.getByLabelText("Speak aloud"));
+    fireEvent.click(screen.getByRole("button", { name: "Speak aloud" }));
     await press("Look");
     await waitFor(() => expect(document.querySelectorAll("[data-who=ghost]")).toHaveLength(1));
     expect(speak).not.toHaveBeenCalled();
@@ -377,7 +377,7 @@ describe("Play: the ghost's voice", () => {
     await enterPlay({ api });
     await goIn();
     await press("Talk");
-    expect(screen.queryByLabelText("Speak aloud")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Speak aloud" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Hold to talk" })).toBeNull();
     await press("Look");
     await waitFor(() => expect(document.querySelectorAll("[data-who=ghost]")).toHaveLength(1));
@@ -450,7 +450,7 @@ describe("Play: the ghost's voice", () => {
     await goIn();
     await press("Talk");
     expect(screen.queryByRole("button", { name: "Hold to talk" })).toBeNull();
-    expect(screen.getByLabelText("Speak aloud")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Speak aloud" })).toBeTruthy();
   });
 
   it("shows unavailable controls with one line when tts and stt quotas are 0 and still plays to the Ending", async () => {
@@ -460,7 +460,7 @@ describe("Play: the ghost's voice", () => {
     const h = await enterPlay({ api });
     await goIn();
     await press("Talk");
-    expect((screen.getByLabelText("Speak aloud") as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Speak aloud" }) as HTMLInputElement).disabled).toBe(true);
     expect((screen.getByRole("button", { name: "Hold to talk" }) as HTMLButtonElement).disabled).toBe(true);
     expect(document.querySelector("[data-tts-unavailable]")).not.toBeNull();
     expect(document.querySelector("[data-stt-unavailable]")).not.toBeNull();
@@ -485,7 +485,7 @@ describe("Play: the ghost's voice", () => {
     const h = await enterPlay({ api });
     await goIn();
     await press("Talk");
-    expect(screen.queryByLabelText("Speak aloud")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Speak aloud" })).toBeNull();
     const box = screen.getByLabelText("Say something") as HTMLInputElement;
     fireEvent.change(box, { target: { value: "still listening" } });
     await act(async () => { fireEvent.submit(box.closest("form")!); });

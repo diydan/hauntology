@@ -1,4 +1,7 @@
 import { Hono, type Context } from "hono";
+import { isAllowedOrigin, parseOriginList } from "@hauntology/shared/origin";
+import { errorCodeOf } from "@hauntology/shared/party/telemetry";
+import type { Logger } from "../log";
 import type { ContribPatch } from "@hauntology/shared/party/lobby-contrib";
 import type { LodgerVoice } from "@hauntology/shared/voice/voices";
 import { presetFor, contributeSelfie, contributeZoneName, intakePhoto, suspectPortraits, suspectSprite, type Fail, type LodgerPick } from "../party/contribute";
@@ -26,6 +29,8 @@ export type PartyDeps = Readonly<{
    * and every Player gets Presets, so the game still starts.
    */
   contribute?: (code: string, room: Stub) => ContributionServices;
+  /** Where the counters-only request lines go (party-mode 10.5). Without it nothing is logged. */
+  log?: Logger;
 }>;
 
 export const MAX_CONTRIBUTION_BYTES = 12 * 1024 * 1024;
@@ -62,7 +67,16 @@ export function partyRoutes(deps: PartyDeps): Hono {
 
   app.use("*", async (c, next) => {
     if (!deps.enabled(c)) return c.json({ ok: false, code: "party_disabled" }, 503);
-    return next();
+    await next();
+    // Counters only (party-mode 10.5): the route pattern (never the Room code or a token), the status and, for a refusal, its code from the party error list.
+    // Nothing of the body, the address or a header is read, and a code that is not on the list is not written.
+    if (deps.log !== undefined) {
+      let code: string | null = null;
+      if (c.res.status >= 400 && (c.res.headers.get("Content-Type") ?? "").includes("application/json")) {
+        try { code = errorCodeOf(String(((await c.res.clone().json()) as { code?: unknown }).code ?? "")); } catch { code = null; }
+      }
+      deps.log.info("party.request", { route: c.req.routePath, status: c.res.status, ...(code !== null ? { code } : {}) });
+    }
   });
 
   app.post("/", async (c) => {
@@ -107,6 +121,9 @@ export function partyRoutes(deps: PartyDeps): Hono {
     const code = normalizeCode(c.req.param("code"));
     if (code === null) return c.json({ ok: false, code: "room_unknown" }, 404);
     if (c.req.header("Upgrade") !== "websocket") return c.json({ ok: false, code: "expected_websocket" }, 426);
+    // The upgrade is a GET, which the origin guard lets through, so the socket checks its own Origin (party-mode 4.1): a browser always sends one, and a page of another site is refused.
+    const origin = c.req.header("Origin");
+    if (origin !== undefined && !isAllowedOrigin(origin, c.req.url, parseOriginList((c.env as { ALLOWED_ORIGINS?: string } | undefined)?.ALLOWED_ORIGINS))) return c.json({ ok: false, code: "bad_origin" }, 403);
     // Only the upgrade headers go on (never the cookie): the Room knows a socket by the token in its first message.
     const headers = new Headers({ Upgrade: "websocket" });
     for (const h of ["Sec-WebSocket-Key", "Sec-WebSocket-Version", "Sec-WebSocket-Extensions"]) { const v = c.req.header(h); if (v !== undefined) headers.set(h, v); }
@@ -132,6 +149,13 @@ export function partyRoutes(deps: PartyDeps): Hono {
     const g = await guarded(c);
     if (g instanceof Response) return g;
     return g.who.role === "controller" && g.who.seat !== null ? { ...g, seat: g.who.seat } : refusal(c, "bad_token");
+  };
+  /** A contribution request of one seat, counted against that seat's own minute (party-mode 7): `rate_limited` (429) when it is too many. */
+  const asContributor = async (c: Context) => {
+    const g = await asPlayer(c);
+    if (g instanceof Response) return g;
+    const gate = await roomJson<{ ok: boolean; code?: string }>(g.stub, "/gate", { token: g.token });
+    return gate.ok ? g : refusal(c, gate.code ?? "rate_limited");
   };
   const services = (code: string, stub: Stub): ContributionServices | null => (deps.contribute === undefined ? null : deps.contribute(code, stub));
   const record = (stub: Stub, token: string, patch: ContribPatch) => roomJson<{ ok: boolean; code?: string }>(stub, "/record", { token, patch });
@@ -162,7 +186,7 @@ export function partyRoutes(deps: PartyDeps): Hono {
   });
 
   app.post("/:code/contribute/photo", async (c) => {
-    const g = await asPlayer(c);
+    const g = await asContributor(c);
     if (g instanceof Response) return g;
     const svc = services(g.code, g.stub);
     if (svc === null) return refusal(c, "contributions_unavailable");
@@ -180,7 +204,7 @@ export function partyRoutes(deps: PartyDeps): Hono {
   });
 
   app.put("/:code/contribute/zone", async (c) => {
-    const g = await asPlayer(c);
+    const g = await asContributor(c);
     if (g instanceof Response) return g;
     const svc = services(g.code, g.stub);
     if (svc === null) return refusal(c, "contributions_unavailable");
@@ -193,7 +217,7 @@ export function partyRoutes(deps: PartyDeps): Hono {
 
   // The Suspect, in the Ghost Creator's two steps: `portraits` (traits, with a detail that is checked first) then `sprite` (the chosen candidate).
   app.post("/:code/contribute/suspect", async (c) => {
-    const g = await asPlayer(c);
+    const g = await asContributor(c);
     if (g instanceof Response) return g;
     const svc = services(g.code, g.stub);
     if (svc === null) return c.json({ ok: true, fallback: true, reason: "contributions_unavailable", profileId: presetFor(g.seat).id });
@@ -228,7 +252,7 @@ export function partyRoutes(deps: PartyDeps): Hono {
   });
 
   app.post("/:code/contribute/selfie", async (c) => {
-    const g = await asPlayer(c);
+    const g = await asContributor(c);
     if (g instanceof Response) return g;
     const svc = services(g.code, g.stub);
     if (svc === null) return refusal(c, "selfie_not_allowed");

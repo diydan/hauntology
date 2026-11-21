@@ -16,11 +16,12 @@ import type { ContributionServices } from "../party/wiring";
 import { DEFAULT_CAPS, MemorySpendGuard } from "../worlds/fakes";
 import { FakeNamespace } from "../worlds/fake-cloudflare";
 import { partyRoutes } from "./party";
+import { createLogger, type Logger } from "../log";
 
 const NOW = 1_800_000_000_000;
 class MemoryPhotos implements PhotoStore { files = new Map<string, Uint8Array>(); async put(id: string, b: Uint8Array) { this.files.set(id, b); } async deleteRoom() { this.files.clear(); } }
 
-function world(o: { vet?: PhotoVetAnswer; guardVerdict?: "safe" | "unsafe"; services?: boolean; selfies?: boolean } = {}) {
+function world(o: { vet?: PhotoVetAnswer; guardVerdict?: "safe" | "unsafe"; services?: boolean; selfies?: boolean; log?: Logger } = {}) {
   const rooms = new FakeNamespace((state) => new PartyRoom(state, {}, () => NOW));
   const directory = new FakeNamespace((state) => new PartyDirectory(state));
   const ledger = new MemorySpendGuard({ ...DEFAULT_CAPS, image: { session: 99, day: 999 }, llm: { session: 99, day: 999 } }, () => NOW);
@@ -43,7 +44,7 @@ function world(o: { vet?: PhotoVetAnswer; guardVerdict?: "safe" | "unsafe"; serv
       selfie: { ...base, vetter, editor: null, cutter: null, store: cstore, styleRef: async () => null },
     };
   };
-  const routes = partyRoutes({ rooms, directory, sessionOf: () => "s1", ipHashOf: async () => "ip1", enabled: () => true, random: () => 0.31, ...(o.services === false ? {} : { contribute }) });
+  const routes = partyRoutes({ rooms, directory, sessionOf: () => "s1", ipHashOf: async () => "ip1", enabled: () => true, random: () => 0.31, ...(o.services === false ? {} : { contribute }), ...(o.log !== undefined ? { log: o.log } : {}) });
   return { routes, rooms, directory, photos, cstore, vetCalls, ledger };
 }
 type W = ReturnType<typeof world>;
@@ -189,5 +190,31 @@ describe("the selfie ghost route (party-mode 3.10 to 3.13, 5.5)", () => {
     expect(consent.status).toBe(200);
     expect((await send()).status).toBe(403); // the Master's switch is still off
     expect((await w.routes.request(`/${room.code}/contribute/selfie/consent`, { method: "PUT", headers: bearer(ana.token), body: JSON.stringify({ yes: "yes" }) })).status).toBe(400);
+  });
+});
+
+describe("the rate limit and the counters-only log of the party routes (party-mode 7, 10.5)", () => {
+  it("lets one seat make 12 contribution requests a minute, refuses the 13th with rate_limited, and leaves the other seat alone", async () => {
+    const w = world(); const { room, ana, ben } = await lobby(w);
+    const put = (token: string) => w.routes.request(`/${room.code}/contribute/zone`, { method: "PUT", headers: bearer(token), body: JSON.stringify({ name: "The Pier" }) });
+    for (let i = 0; i < 12; i++) expect((await put(ana.token)).status).toBe(200);
+    const refused = await put(ana.token);
+    expect([refused.status, await refused.json()]).toEqual([429, { ok: false, code: "rate_limited" }]);
+    expect((await put(ben.token)).status).toBe(200);
+  });
+  it("counts nothing else: a request that is not from a seat in the lobby never reaches the limit", async () => {
+    const w = world(); const { room } = await lobby(w);
+    for (let i = 0; i < 20; i++) expect((await w.routes.request(`/${room.code}/contribute/zone`, { method: "PUT", headers: bearer("0".repeat(32)), body: "{}" })).status).toBe(401);
+  });
+  it("writes one line per request with the route pattern, the status and a listed code, and never a Room code, a token, a nickname or a Zone name", async () => {
+    const lines: string[] = [];
+    const w = world({ log: createLogger((l) => lines.push(l), () => NOW) }); const { room, ana } = await lobby(w);
+    await w.routes.request(`/${room.code}/contribute/zone`, { method: "PUT", headers: bearer(ana.token), body: JSON.stringify({ name: "Secret Larder" }) });
+    await w.routes.request(`/${room.code}/contribute/zone`, { method: "PUT", headers: bearer("0".repeat(32)), body: "{}" });
+    const text = lines.join("\n");
+    expect(lines.length).toBeGreaterThanOrEqual(4); // create, two joins, two contributions
+    for (const l of lines) expect(JSON.parse(l)).toMatchObject({ event: "party.request" });
+    expect(lines.map((l) => JSON.parse(l)).find((l: { code?: string }) => l.code === "bad_token")).toMatchObject({ route: "/:code/contribute/zone", status: 401 });
+    for (const secret of [room.code, ana.token, "Ana", "Ben", "Secret", "Larder"]) expect(text).not.toContain(secret);
   });
 });

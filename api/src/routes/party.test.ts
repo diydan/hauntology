@@ -41,6 +41,17 @@ describe("/api/party routes", () => {
     expect(res.status).toBe(426);
   });
 
+  it("refuses a websocket upgrade from another site, and lets a same-site one reach the Room (party-mode 4.1)", async () => {
+    const { routes } = app();
+    const evil = await routes.request("/ABCD/ws", { headers: { Upgrade: "websocket", Origin: "https://evil.example" } });
+    expect(evil.status).toBe(403);
+    expect(await evil.json()).toEqual({ ok: false, code: "bad_origin" });
+    // a same-site upgrade is not refused for its origin: it goes on to the Room (the fake Room has no WebSocketPair, so it stops there)
+    let status = 0;
+    try { status = (await routes.request("/ABCD/ws", { headers: { Upgrade: "websocket", Origin: "http://localhost" } })).status; } catch { status = -1; }
+    expect(status).not.toBe(403);
+  });
+
   it("answers party_disabled on every route when the kill switch is off", async () => {
     const { routes, directory } = app("s1", { enabled: false });
     for (const [path, method] of [["/", "POST"], ["/ABCD/join", "POST"], ["/ABCD/ws", "GET"]] as const) {

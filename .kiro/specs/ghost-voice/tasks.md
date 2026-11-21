@@ -152,10 +152,11 @@ Tasks marked `*` are optional test tasks that should still be done before submis
 
 - [ ] 4. Web in Play and on the Host
   - These tasks are built inside the Play screen under the web shell spec `.kiro/specs/haunwallker` (Play tasks 6.1 and 6.2, the Chat and the HUD), and on the Host page from party-mode. They add components and change no part of its Play reducer.
-  - [ ] 4.1 Speak toggle
+  - [x] 4.1 Speak toggle
     - A button with `aria-pressed`, a 48 CSS pixel target and a text label; on by default in Single player, kept in `sessionStorage`; in Multiplayer it shows the room's switch and only the Master's phone can change it.
     - _Requirements: 2.1, 2.4_
-    - **Progress (2026-11-21, not ticked):** the room's switch is now on every phone: the Master's menu changes it (`MasterMenu.tsx`), and other seats see it as a disabled switch with "Only the Master can change this." (`web/src/party/controller/play/SpeechRoomSwitch.tsx`, mounted in `SeatedFrame.tsx`; tests in `play2.test.tsx`). **Open:** the single-player control is a checkbox ("Speak aloud"), not a 48 px button with `aria-pressed`; moving it is a design decision I did not make.
+    - **Ticked 2026-11-22:** the single-player control is now a button with `aria-pressed`, a text label "Speak aloud" and the main-control target (`ui-button ui-button--main`, `--target-main` 52 px, above the 48 px asked), on by default, kept in `sessionStorage`; `Chat.test.tsx` and `Play.test.tsx` follow it (pressed state, a press turns it off, disabled and unpressed when there is no TTS quota).
+    - **Progress (2026-11-21):** the room's switch is now on every phone: the Master's menu changes it (`MasterMenu.tsx`), and other seats see it as a disabled switch with "Only the Master can change this." (`web/src/party/controller/play/SpeechRoomSwitch.tsx`, mounted in `SeatedFrame.tsx`; tests in `play2.test.tsx`). The single-player control was a checkbox then; it is a button now (see above).
     - Progress (2026-11-19): single-player toggle (`Chat.tsx`, `voice.ts`) starts on and now persists in `sessionStorage` (`hauntology.speak`); multiplayer room switch waits on `3.9`.
   - [x] 4.2 Subtitle and audio player
     - The line's full text goes into the Chat transcript's polite live region when it arrives and is marked while it plays; one `AudioContext` created on the content-notice acknowledgement; a 5-second timer from the request; refusal, timeout or autoplay block falls back to `speechSynthesis` and then the Subtitle alone with a quiet "voice off" mark and no error screen; late audio is dropped; the line stops when the switch goes off.
@@ -186,7 +187,8 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - The Host (and Play) asks for each id in the room's prefetch list with `prefetch: true` and decodes the audio ahead into memory: at most 8 lines and 2 MB, cleared when the room ends, never written to disk, so a Library line starts at once. Nothing is prefetched that the server did not list.
     - _Requirements: 1.9_
     - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) is wired through `createHostAudio` into `SoloTable` (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code Host screen awaits `party-mode` 8.9.
-    - **Progress (2026-11-21, not ticked):** the standalone Host page now acts on the Room's `prefetch {lineIds}` message: `HostView.prefetch` (at most 8 string ids), and `useNarration` warms exactly those ids through `createHostAudio` with `prefetch: true`, only while speech is on (`web/src/party/host/host-view.ts`, `narration.ts`; tests in `host-view.test.ts` and `host.test.tsx`, 2 deliberate breakages caught). **Still open:** no Room code sends `prefetch` yet (`shared/src/party/server.ts` has no emitter; it needs 3.12's Library tier and `prefetchPlan` mapped to line ids), and Play has no list to prefetch from.
+    - **Progress (2026-11-22, not ticked):** the Room now sends the message (`shared/src/voice/room-voice.ts` `planRoomPrefetch`, `server.ts` `prefetchNew`): while the Master has speaking on, the Library lines `prefetchPlan` names for the public state (turn-start lines; the four Haunt Event options one level below a threshold; midnight lines within the hour; no Lodger lines), at most 8, each kept as a line of its own (apart from the 8 spoken-line slots, so a spoken line is never pushed out) so the Host's `speak {prefetch: true}` finds it, sent to the Host only and only when the list changes (`room-prefetch.test.ts`, `narrate-wiring.test.ts`; a mutant that ignored the switch was caught). **Still open:** Play (Single player) has no list to prefetch from, and the Host's decoded clip is reused only when the line later spoken carries the same words and voice as a listed one.
+    - **Progress (2026-11-21, not ticked):** the standalone Host page now acts on the Room's `prefetch {lineIds}` message: `HostView.prefetch` (at most 8 string ids), and `useNarration` warms exactly those ids through `createHostAudio` with `prefetch: true`, only while speech is on (`web/src/party/host/host-view.ts`, `narration.ts`; tests in `host-view.test.ts` and `host.test.tsx`, 2 deliberate breakages caught). (The Room emitter was the open part then; it is built, see above.)
 
 - [x] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
   - [x] 5.1 Word Bank, Templates and composition
@@ -265,11 +267,12 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - Progress (2026-11-19): automated Checkpoint 7 end-to-end tests (`api/src/voice/checkpoint7.test.ts` + zero-quota/`VOICE_ENABLED=false` Play-to-Ending in `web/src/app/screens/Play.test.tsx`) verify voice-on solo, `VOICE_ENABLED=false` + zero-meter solo to Ending, `PartyRoom` speaking-on + Stitch fake-clip play & end purge, and `VOICE_LIVE_ENABLED=false` cut isolation; live spike resolution docs (`tech.md`, `ghost-safety.md`, `security-and-cost.md`, `structure.md`) await operator approval of Spikes `1.1`–`1.3`.
 
 - [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
-  - [ ] 8.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+  - [x] 8.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
     - _Requirements: 7.1, 7.3_
-  - [ ] 8.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 8.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 7.2_
   - [ ] 8.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Progress (2026-11-22): the speak button and the Host's unlock tap use existing elements (`ui-button`, `ui-button--main`, `ui-switch`, `ui-note`, `ui-speech`) and no colour of their own; 8.1, 8.2 and 8.4 are ticked on that. **Open:** the check at 390 px and 1280 px next to the play-through needs a browser and a person's eyes.
     - _Requirements: 7.4_
-  - [ ] 8.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+  - [x] 8.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 7.1_

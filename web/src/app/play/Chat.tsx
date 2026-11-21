@@ -136,14 +136,12 @@ export function Chat({
 
       {voiceAvailable ? (
         <div role="group" aria-label="Voice">
-          <div className="ui-field ui-field--check">
-            <input
-              className="ui-check" id="chat-speak" type="checkbox"
-              checked={ttsAvailable && voice.speak} disabled={!ttsAvailable}
-              onChange={(e) => { if (ttsAvailable) onSpeak(e.target.checked); }}
-            />
-            <label className="ui-field-label" htmlFor="chat-speak">Speak aloud</label>
-          </div>
+          <button
+            className="ui-button ui-button--main" id="chat-speak" type="button" aria-pressed={ttsAvailable && voice.speak} disabled={!ttsAvailable}
+            onClick={() => { if (ttsAvailable) onSpeak(!voice.speak); }}
+          >
+            Speak aloud
+          </button>
           {!ttsAvailable ? <p className="ui-note" data-tts-unavailable>{VOICE_TTS_UNAVAILABLE}</p> : null}
           {voice.mic === "unsupported" || (liveEnabled && voice.live !== undefined && voice.live !== "off") ? null : (
             <button

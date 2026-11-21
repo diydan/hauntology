@@ -32,6 +32,9 @@ import { initialSongPlan, songRequests, type SongPlanState, type SongRequest } f
 import type { LineKind, VoiceLine } from "../voice/line";
 import { LODGER_VOICE_ORDER, type LodgerVoice, type Speaker } from "../voice/voices";
 import { confessionLine } from "./lodger";
+import { SCRIPTED_BANKS } from "../voice/banks";
+import { FINITE_VALUES } from "../voice/placeholders";
+import { buildLibrary, type LibraryEntry } from "../voice/library";
 import { lineKindOf, lodgerVoiceOfProfile, narratableLog, viewOfEngine } from "./narrate-events";
 import type { PublicView } from "./views";
 import { partyScripted, speakerFor, type PartyDirective } from "./narrate";
@@ -43,6 +46,7 @@ import {
   applyStitchMasterSwitch,
   findRoomVoiceLine,
   initialRoomVoiceState,
+  planRoomPrefetch,
   prepareRoomNarration,
   recordStitchPlayed,
   type RoomVoiceState,
@@ -135,11 +139,25 @@ export type ServerState = Readonly<{
   spend?: RoomSpend;
   /** The world, the Master's room switches, light consent, clock samples and the last hour strike (party-mode 4.11, 4.17 to 4.19). Optional, so a Room saved before it still loads. */
   extras?: RoomExtras;
+  /** Sockets that are open but have not said `hello` yet, by the time they must (party-mode 4.1: within 5 s, else closed). Saved, so a Room that hibernated still closes them. */
+  helloBy?: Readonly<Record<string, number>>;
 }>;
+
+/** A socket must say `hello` within this long of opening (party-mode 4.1). */
+export const HELLO_MS = 5_000;
+/** Contribution requests one seat may make in a minute (a photo, a Zone name, the Suspect steps and a selfie are a handful; this stops a loop). */
+export const CONTRIBUTIONS_PER_MINUTE = 12;
+
+let libraryCache: LibraryEntry[] | null = null;
+/** The Library entries a Room may list for prefetch: built once from the scripted banks. */
+const roomLibrary = (): LibraryEntry[] => (libraryCache ??= buildLibrary(SCRIPTED_BANKS, FINITE_VALUES));
 
 export const DEFAULT_SETTINGS: EngineSettings = { baseSeconds: 60, hauntMax: 10, nudges: "all", frames: true, sounds: true, puzzles: "medium", preset: "classic" };
 
-const seedFrom = (b: Uint8Array): number => ((b[0] ?? 0) | ((b[1] ?? 0) << 8) | ((b[2] ?? 0) << 16) | ((b[3] ?? 0) << 24)) >>> 0;
+/** Bytes of crypto randomness behind a Room's seed (party-mode 4.1: 128 bits). */
+export const SEED_BYTES = 16;
+/** The Room's seed: all 128 bits are drawn from the platform's `crypto.getRandomValues` and folded into the 32-bit state the Engine's generators take. */
+const seedFrom = (b: Uint8Array): number => hash("seed", ...Array.from(b.subarray(0, SEED_BYTES)));
 
 export class RoomCore {
   private state: ServerState | null = null;
@@ -155,7 +173,7 @@ export class RoomCore {
     if (this.state !== null) return this.state;
     const text = await this.ports.load();
     if (text === undefined) return null;
-    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState; contrib?: LobbyContrib; spend?: RoomSpend; extras?: RoomExtras };
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState; contrib?: LobbyContrib; spend?: RoomSpend; extras?: RoomExtras; helloBy?: Record<string, number> };
     const room = parseRoom(raw.room);
     if (room === null) return null;
     // a saved door state that does not parse falls back to the start (knock-door 8.1)
@@ -171,20 +189,12 @@ export class RoomCore {
       ...(raw.contrib !== undefined ? { contrib: raw.contrib } : {}),
       ...(raw.spend !== undefined ? { spend: raw.spend } : {}),
       ...(raw.extras !== undefined ? { extras: raw.extras } : {}),
+      ...(raw.helloBy !== undefined ? { helloBy: raw.helloBy } : {}),
     };
     return this.state;
   }
 
-  /** Save first, then set the alarm, then send: a crash after a send never loses what was sent. */
-  private async commit(next0: ServerState, out: readonly Outbound[] = [], wakeAtMs: number | null = null): Promise<void> {
-    // the Engine may pass the Master role on (a Master away 60 s); the lobby's record follows it
-    const merged = next0.engine !== null && next0.engine.masterSeat !== next0.room.masterSeat ? { ...next0, room: { ...next0.room, masterSeat: next0.engine.masterSeat as Seat } } : next0;
-    const prevEngine = this.state?.engine ?? null;
-    // the hour strike the alarm waits for next (party-mode 4.17): derived here, so every change keeps it right
-    const x0 = merged.extras;
-    const pending = x0 === undefined ? null : scheduleStrike(x0, merged.engine?.phase === "playing", this.ports.now());
-    const next: ServerState = x0 === undefined || (x0.pendingStrike ?? null) === pending ? merged : { ...merged, extras: { ...x0, pendingStrike: pending } };
-    this.state = next;
+  private async persist(next: ServerState): Promise<void> {
     await this.ports.save(JSON.stringify({
       room: serializeRoom(next.room),
       engine: next.engine,
@@ -197,17 +207,32 @@ export class RoomCore {
       ...(next.contrib !== undefined ? { contrib: next.contrib } : {}),
       ...(next.spend !== undefined ? { spend: next.spend } : {}),
       ...(next.extras !== undefined ? { extras: next.extras } : {}),
+      ...(next.helloBy !== undefined && Object.keys(next.helloBy).length > 0 ? { helloBy: next.helloBy } : {}),
     }));
+  }
+
+  /** Save first, then set the alarm, then send: a crash after a send never loses what was sent. */
+  private async commit(next0: ServerState, out: readonly Outbound[] = [], wakeAtMs: number | null = null): Promise<void> {
+    // the Engine may pass the Master role on (a Master away 60 s); the lobby's record follows it
+    const merged = next0.engine !== null && next0.engine.masterSeat !== next0.room.masterSeat ? { ...next0, room: { ...next0.room, masterSeat: next0.engine.masterSeat as Seat } } : next0;
+    const prevEngine = this.state?.engine ?? null;
+    // the hour strike the alarm waits for next (party-mode 4.17): derived here, so every change keeps it right
+    const x0 = merged.extras;
+    const pending = x0 === undefined ? null : scheduleStrike(x0, merged.engine?.phase === "playing", this.ports.now());
+    const next: ServerState = x0 === undefined || (x0.pendingStrike ?? null) === pending ? merged : { ...merged, extras: { ...x0, pendingStrike: pending } };
+    this.state = next;
+    await this.persist(next);
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
     const strikeAt = next.extras?.pendingStrike?.atMs ?? null;
     const purgeAt = next.extras?.purgeAtMs ?? null;
-    const wakes = [ttlAt, ...(wakeAtMs === null ? [] : [wakeAtMs]), ...(strikeAt === null ? [] : [strikeAt]), ...(purgeAt === null ? [] : [purgeAt])];
+    const wakes = [ttlAt, ...Object.values(next.helloBy ?? {}), ...(wakeAtMs === null ? [] : [wakeAtMs]), ...(strikeAt === null ? [] : [strikeAt]), ...(purgeAt === null ? [] : [purgeAt])];
     await this.ports.setAlarm(Math.min(...wakes));
     this.route(next, out);
     this.playLights(next, lightTriggers(prevEngine, next.engine));
     const from = prevEngine?.nextId ?? 0;
     if (next.engine !== null && next.engine.log.some((e) => e.id >= from && e.kind === "haunt-event")) this.stitchDue = "haunt_event";
     await this.narrateNew(prevEngine, next);
+    await this.prefetchNew(next);
     // the game is over: no clip stays (party-mode 18.5)
     if (prevEngine !== null && prevEngine.phase !== "ended" && next.engine?.phase === "ended") await this.ports.deleteStitchClips?.("all");
   }
@@ -238,6 +263,21 @@ export class RoomCore {
         await this.confess(view, -1, "ended-solved");
       }
     } finally { this.narrating = false; }
+  }
+
+  /** Lists the Library lines worth warming on the Host while speaking is on (ghost-voice 3.12, 4.8). Sent to the Host only, and only when the list changes. */
+  private async prefetchNew(committed: ServerState): Promise<void> {
+    // The narration just before may have committed a newer state (the spoken lines): plan from that one, never from the stale one.
+    const next = this.state ?? committed;
+    if (this.narrating || next.engine === null || !next.voice.speechOn) return;
+    const now = this.ports.now();
+    const plan = planRoomPrefetch(next.voice, { phase: next.engine.phase, haunt: { level: next.engine.haunt.level, max: next.engine.haunt.max }, minutesToMidnight: null }, roomLibrary(), now);
+    if (plan.state === next.voice) return;
+    const kept: ServerState = { ...next, voice: plan.state };
+    this.state = kept;
+    await this.persist(kept);
+    if (plan.hostMsg === null) return;
+    for (const [sid, info] of Object.entries(next.sockets)) if (info.role === "host") this.ports.send(sid, plan.hostMsg);
   }
 
   /** The Suspect in the Solution speaks its confession, in its own Lodger Voice, only once the Solution is public. */
@@ -371,7 +411,7 @@ export class RoomCore {
     const fill = (b: Uint8Array): Uint8Array => { b.set(this.ports.randomBytes(b.length)); return b; };
     const hostToken = newToken(fill);
     const displayToken = newToken(fill);
-    const room = createRoomState(code, seedFrom(this.ports.randomBytes(4)), this.ports.now(), hostToken, displayToken);
+    const room = createRoomState(code, seedFrom(this.ports.randomBytes(SEED_BYTES)), this.ports.now(), hostToken, displayToken);
     await this.commit({
       room,
       engine: null,
@@ -556,7 +596,7 @@ export class RoomCore {
       if (m.t === "playAgain") {
         if (!isMaster && !(me.role === "host" && s.room.seats.every((x) => x.bot))) return refuse("not_master");
         if (s.engine === null || s.engine.phase !== "ended") return refuse("not_ended");
-        const room = { ...s.room, seed: seedFrom(this.ports.randomBytes(4)), lastActiveMs: now };
+        const room = { ...s.room, seed: seedFrom(this.ports.randomBytes(SEED_BYTES)), lastActiveMs: now };
         const fresh = this.draftEngine({ ...s, room });
         const master = s.engine.masterSeat;
         let r = step({ ...fresh, masterSeat: master }, { kind: "client", seat: master, msg: { t: "start" } }, now);
@@ -759,7 +799,8 @@ export class RoomCore {
     const who = whoIs(s.room, token);
     if (who === null) { this.ports.close(socketId, 4403, "bad_token"); return; }
     const now = this.ports.now();
-    let next: ServerState = { ...s, sockets: { ...s.sockets, [socketId]: { role: who.role, seat: who.seat } } };
+    const stillWaiting = Object.fromEntries(Object.entries(s.helloBy ?? {}).filter(([sid]) => sid !== socketId));
+    let next: ServerState = { ...s, sockets: { ...s.sockets, [socketId]: { role: who.role, seat: who.seat } }, helloBy: stillWaiting };
     let out: readonly Outbound[] = [];
     let wake: number | null = null;
     if (who.role === "controller" && who.seat !== null) {
@@ -774,6 +815,33 @@ export class RoomCore {
     this.ports.send(socketId, this.lobbyView(next));
   }
 
+  /** Per seat, memory only: when the seat's current minute of contribution requests began and how many it made. An eviction resets it, which is harmless. */
+  private readonly contribRate = new Map<number, { startMs: number; n: number }>();
+
+  /**
+   * The rate limit of the contribution routes (party-mode 7): at most `CONTRIBUTIONS_PER_MINUTE` requests from one seat in a minute, on top of the Room's own
+   * caps on images and model calls. The token must belong to a seat in this Room's lobby; the answer is `{ok: true}` or `rate_limited`.
+   */
+  async contributionGate(token: string): Promise<{ ok: true } | { ok: false; code: string }> {
+    const s = await this.loaded();
+    if (s === null || isRoomExpired(s.room, this.ports.now())) return { ok: false, code: "room_unknown" };
+    const who = whoIs(s.room, token);
+    if (who === null || who.role !== "controller" || who.seat === null) return { ok: false, code: "bad_token" };
+    const now = this.ports.now();
+    const w = this.contribRate.get(who.seat);
+    if (w === undefined || now - w.startMs >= 60_000) { this.contribRate.set(who.seat, { startMs: now, n: 1 }); return { ok: true }; }
+    if (w.n >= CONTRIBUTIONS_PER_MINUTE) return { ok: false, code: "rate_limited" };
+    w.n += 1;
+    return { ok: true };
+  }
+
+  /** A socket was accepted: it has `HELLO_MS` to say `hello` with a token, or the alarm closes it (party-mode 4.1). */
+  async socketOpened(socketId: string): Promise<void> {
+    const s = await this.loaded();
+    if (s === null) { this.ports.close(socketId, 4404, "room_unknown"); return; }
+    await this.commit({ ...s, helloBy: { ...(s.helloBy ?? {}), [socketId]: this.ports.now() + HELLO_MS } });
+  }
+
   async socketClosed(socketId: string): Promise<void> {
     const s = await this.loaded();
     if (s === null) return;
@@ -782,7 +850,7 @@ export class RoomCore {
     const me = s.sockets[socketId];
     const sockets = { ...s.sockets };
     delete sockets[socketId];
-    let next: ServerState = { ...s, sockets };
+    let next: ServerState = { ...s, sockets, helloBy: Object.fromEntries(Object.entries(s.helloBy ?? {}).filter(([sid]) => sid !== socketId)) };
     let out: readonly Outbound[] = [];
     let wake: number | null = null;
     const stillHere = me?.seat != null && Object.values(sockets).some((x) => x.seat === me.seat);
@@ -809,7 +877,13 @@ export class RoomCore {
       const next = await this.ports.purgeStitchClips({ gameOver: s.engine?.phase === "ended", enabled: stitch.enabled, activeSeats: new Set(s.room.seats.filter((q) => !q.bot).map((q) => q.seat as number)), consents: stitch.consents }, now);
       s = { ...s, extras: { ...(s.extras ?? initialExtras()), purgeAtMs: next } };
     }
-    if (s.engine === null) { await this.ports.setAlarm(s.room.lastActiveMs + s.room.ttlMs); return; }
+    // a socket that has not said `hello` in 5 s is closed (party-mode 4.1)
+    const late = Object.entries(s.helloBy ?? {}).filter(([, by]) => now >= by).map(([sid]) => sid);
+    if (late.length > 0) {
+      for (const sid of late) { this.ports.close(sid, 4408, "hello_timeout"); this.rate.delete(sid); this.lastInputMs.delete(sid); }
+      s = { ...s, helloBy: Object.fromEntries(Object.entries(s.helloBy ?? {}).filter(([sid]) => !late.includes(sid))) };
+    }
+    if (s.engine === null) { await this.commit(s); return; }
     const r = step(s.engine, { kind: "alarm" }, now);
     const struck = this.strikeIfDue({ ...s, engine: r.state }, now);
     await this.commit(struck.state, [...r.out, ...struck.out], r.wakeAtMs);

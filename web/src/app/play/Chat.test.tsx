@@ -183,10 +183,10 @@ describe("Chat: the ghost on the stage", () => {
 
   it("shows each voice control as unavailable with one line of words when its quota is empty (ghost-voice 4.4)", () => {
     const { calls } = show({ voiceAvailable: true, ttsAvailable: false, sttAvailable: false, voice: { speak: true } });
-    const speak = screen.getByLabelText("Speak aloud") as HTMLInputElement;
+    const speak = screen.getByRole("button", { name: "Speak aloud" }) as HTMLButtonElement;
     const talk = screen.getByRole("button", { name: "Hold to talk" }) as HTMLButtonElement;
     expect(speak.disabled).toBe(true);
-    expect(speak.checked).toBe(false);
+    expect(speak.getAttribute("aria-pressed")).toBe("false");
     expect(talk.disabled).toBe(true);
     expect(document.querySelector("[data-tts-unavailable]")?.textContent).toBe(VOICE_TTS_UNAVAILABLE);
     expect(document.querySelector("[data-stt-unavailable]")?.textContent).toBe(VOICE_STT_UNAVAILABLE);
@@ -229,15 +229,26 @@ describe("Chat: the voice controls by keyboard alone, and the microphone indicat
     expect(calls.press).toHaveBeenCalledTimes(2);
   });
 
-  it("reaches Speak aloud and Hold to talk as real controls with a text label, in that order, and switches speech with the checkbox", () => {
+  it("reaches Speak aloud and Hold to talk as real controls with a text label, in that order, and switches speech with a pressed button (48 px or more, ghost-voice 4.1)", () => {
     const { calls } = show({ voiceAvailable: true });
     const group = screen.getByRole("group", { name: "Voice" });
     const controls = [...group.querySelectorAll("input, button")];
-    expect(controls.map((c) => c.tagName)).toEqual(["INPUT", "BUTTON"]);
+    expect(controls.map((c) => c.tagName)).toEqual(["BUTTON", "BUTTON"]);
     expect(controls.every((c) => (c as HTMLInputElement | HTMLButtonElement).tabIndex >= 0 && !(c as HTMLInputElement | HTMLButtonElement).disabled)).toBe(true);
-    expect(screen.getByLabelText("Speak aloud")).toBeTruthy();
-    fireEvent.click(screen.getByLabelText("Speak aloud"));
+    expect(screen.getByRole("button", { name: "Speak aloud" })).toBeTruthy();
+    const toggle = screen.getByRole("button", { name: "Speak aloud" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    expect(toggle.classList.contains("ui-button--main")).toBe(true); // --target-main, 52 px, above the 48 px the spec asks for
+    fireEvent.click(toggle);
     expect(calls.speak).toHaveBeenCalledWith(true);
+  });
+
+  it("shows the speak switch as pressed when speech is on, and a press turns it off (ghost-voice 4.1)", () => {
+    const { calls } = show({ voiceAvailable: true, voice: { speak: true } });
+    const toggle = screen.getByRole("button", { name: "Speak aloud" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(toggle);
+    expect(calls.speak).toHaveBeenCalledWith(false);
   });
 
   it("shows the microphone indicator, with its dot and words, only while the stream is open, as a hint whose colour is the checked quiet-text token", () => {
