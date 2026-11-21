@@ -94,12 +94,14 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
   - [ ] 8.1 The Viewer adds or removes the doorway box when a door changes
     - Progress (2026-11-21): the Viewer side is built and unit-tested: `shared/src/party/door-view.ts` (`doorBox`, `doorYaw`, `viewerDoors`, `playerAtDoor`), the `set_doors` message in `shared/src/app/events.ts` (strict, at most 3, no lock or pattern), `web/src/app/viewer/door-colliders.ts` (a shut door is a 0.2 m box across the doorway; an open one is none) and its use in `mount.ts` (`set_doors`; the push runs after the Collider's, also on the disc fallback). NOT done: the Host does not send `set_doors` yet (it needs `host.tsx`, which the `feat/knock-door-solo-panel` branch is editing), and the spike of 7.1 has not been run in a real Gallery world. Not ticked until both are.
     - _Requirements: 9.1_
-  - [ ] 8.2 The TV shows each door as a marker on the diorama, and swings it open or shut slowly with the `creak` sound; a Player is at a door within 1.5 m
+  - [x] 8.2 The TV shows each door as a marker on the diorama, and swings it open or shut slowly with the `creak` sound; a Player is at a door within 1.5 m
+    - Built (2026-11-21): `shared/src/party/door-markers.ts` (`doorMarkers`, `doorChanges`, `doorStates`; `door-markers.test.ts`, mutation-checked) and `web/src/party/display/DoorDiorama.tsx` (marker per door, swing with the `--fade-slow` time and none under reduced motion, state in words, a polite live region, a `creak` cue through `usePhoneSound`), drawn in each Display picture by `DisplayPage.tsx` (`DoorDiorama.test.tsx`), styles in `web/src/party/host/host.css`, sound wired in `web/src/party/entry/display-main.tsx` (unlocked by the first touch or key). NOT proven: the look and the creak in a real browser on a TV. The "Player within 1.5 m" rule is built (`playerAtDoor`, `atDoor`, shown as "A Player is at it") but the Display is not fed any Player place yet (the Public View has only the active Player's Zone, no point on the plan), so it never shows.
     - _Requirements: 2.4, 9.2_
   - [ ] 8.3 Each phone runs `feel` for the change from its own place and facing
     - Progress (2026-11-21): the rule is built and tested in `shared/src/party/door-feel.ts` (`feel`, a port of the lab's `tools/playtest/js/shake-core.js` kept the same by a random-input parity test, and `doorFeel`, which takes the door's place on the plan as the source and applies reduced motion (no picture shake) and a phone that cannot buzz). NOT done: the Controller has no place or facing for the phone yet (puzzles 25.6: a tap on the floor plan and a Turn control, or the Spirit table's marks), so `DoorControls.tsx` does not call it, and the buzz, shake and sound on the phone are not wired. Not ticked until they are.
     - _Requirements: 2.4_
-  - [ ] 8.4 A world with no doors loads and shows nothing for doors
+  - [x] 8.4 A world with no doors loads and shows nothing for doors
+    - Built (2026-11-21): the TV half is tested in `DoorDiorama.test.tsx` (no `.pd-doors`, no words, no creak with `doors: []`); the Viewer half is below.
     - Progress (2026-11-21): the Viewer half is tested (`viewerDoors([])` is `[]`, an empty list makes no box, `resolve` returns the same eye object); the TV half waits for 8.2. Not ticked until it does.
     - _Requirements: 9.3_
 

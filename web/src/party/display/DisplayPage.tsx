@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { effectLimits, pyramidLayout } from "@hauntology/shared/party/display";
+import { doorMarkers, type DoorMarker } from "@hauntology/shared/party/door-markers";
 import type { RoomHostPort } from "../phone/host-port";
 import { clockWords, remainingMs } from "../controller/play/play-logic";
 import { useNow } from "../controller/play/useNow";
 import type { HostView } from "../host/host-view";
+import { DoorCreak, DoorDiorama, useDoorChanges, type DoorSound } from "./DoorDiorama";
 import { culpritOf, FRESH_DISPLAY, reactionsFor, type DisplayMemory } from "./display-model";
 
 export type Calibration = Readonly<{ innerPx: number; tilePx: number; orientation: "inward" | "outward"; mirror: boolean; single: boolean }>;
@@ -23,7 +25,7 @@ export function loadCalibration(storage: Pick<Storage, "getItem">): Calibration 
 }
 
 /** The one picture the Display repeats: whose turn, the clock, the haunting, and the latest line. Only what the Public View says. */
-function Stage({ host, nowMs, reveal }: { host: HostView; nowMs: number; reveal: string | null }): ReactNode {
+function Stage({ host, nowMs, reveal, doors, reducedMotion }: { host: HostView; nowMs: number; reveal: string | null; doors: readonly DoorMarker[]; reducedMotion: boolean }): ReactNode {
   const pub = host.game.pub;
   if (pub === null) return <p className="pd-wait">Waiting for the game…</p>;
   const active = pub.seats.find((s) => s.seat === pub.active)?.nickname ?? null;
@@ -35,6 +37,7 @@ function Stage({ host, nowMs, reveal }: { host: HostView; nowMs: number; reveal:
       <p className="pd-clock">{clockWords(left, pub.paused)}</p>
       <p className="pd-haunt">Haunting {pub.haunt.level} / {pub.haunt.max}</p>
       <p className="pd-line">{last}</p>
+      <DoorDiorama markers={doors} reducedMotion={reducedMotion} />
     </div>
   );
 }
@@ -45,7 +48,7 @@ function Stage({ host, nowMs, reveal }: { host: HostView; nowMs: number; reveal:
  * toggles; nothing assumes a pixel density. Reactions stay inside the photosensitivity limits (at most three flashes a second, steps under 20 percent,
  * none under reduced motion) and the culprit is named when a correct Accusation ends the game. It takes no input from the game and the game does not wait for it.
  */
-export function DisplayPage({ port, reducedMotion, storage, size }: { port: RoomHostPort; reducedMotion: boolean; storage: Pick<Storage, "getItem" | "setItem">; size: { width: number; height: number } }): ReactNode {
+export function DisplayPage({ port, reducedMotion, storage, size, sound }: { port: RoomHostPort; reducedMotion: boolean; storage: Pick<Storage, "getItem" | "setItem">; size: { width: number; height: number }; sound?: DoorSound }): ReactNode {
   const state = useSyncExternalStore((l) => port.subscribe(() => l()), () => port.getState(), () => port.getState());
   const nowMs = useNow();
   const host = state.view;
@@ -78,6 +81,9 @@ export function DisplayPage({ port, reducedMotion, storage, size }: { port: Room
     // the timers belong to a reaction that already happened: they run out on their own, and a later event does not cancel them
     return () => { void timers; };
   }, [pub, reducedMotion]);
+  const doors = useMemo(() => doorMarkers(pub?.doors, pub?.zones ?? []), [pub]);
+  const doorNow = useRef(Date.now);
+  const { words: doorWords, creaks } = useDoorChanges(pub, doorNow.current);
   const reveal = pub?.phase === "ended" ? culpritOf(pub) : null;
 
   const tiles = useMemo(() => (cal.single ? [] : pyramidLayout({ width: size.width, height: size.height, innerPx: cal.innerPx, tilePx: cal.tilePx, orientation: cal.orientation, mirror: cal.mirror })), [cal, size]);
@@ -87,16 +93,18 @@ export function DisplayPage({ port, reducedMotion, storage, size }: { port: Room
     <div className="pd-page" data-flash={flashing && !reducedMotion ? "on" : "off"} data-dim={dimmed && !reducedMotion ? "on" : "off"}>
       {state.connection === "reconnecting" ? <p className="pd-note" role="status">Connection lost. Trying again…</p> : null}
       {cal.single || tiles.length === 0 ? (
-        <div className="pd-single"><Stage host={host} nowMs={nowMs} reveal={reveal} /></div>
+        <div className="pd-single"><Stage host={host} nowMs={nowMs} reveal={reveal} doors={doors} reducedMotion={reducedMotion} /></div>
       ) : (
         <div className="pd-pyramid" aria-hidden="true">
           {tiles.map((t) => (
             <div key={t.id} className="pd-tile" data-tile={t.id} style={{ left: t.cx - t.size / 2, top: t.cy - t.size / 2, width: t.size, height: t.size, transform: `rotate(${t.rotationDeg}deg)${t.mirror ? " scaleX(-1)" : ""}` }}>
-              <Stage host={host} nowMs={nowMs} reveal={reveal} />
+              <Stage host={host} nowMs={nowMs} reveal={reveal} doors={doors} reducedMotion={reducedMotion} />
             </div>
           ))}
         </div>
       )}
+      <p className="ui-sr-only" aria-live="polite" data-door-live="">{doorWords}</p>
+      {sound !== undefined ? <DoorCreak creaks={creaks} sound={sound} /> : null}
       {cal.single || tiles.length === 0 ? null : <p className="ui-sr-only" role="status">{reveal !== null ? `It was ${reveal}.` : pub === null ? "Waiting for the game." : `The game is showing four times.`}</p>}
       <button type="button" className="ui-button pd-toggle" aria-expanded={showCal} onClick={() => setShowCal((v) => !v)}>Set up</button>
       {showCal ? (
