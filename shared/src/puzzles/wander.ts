@@ -8,14 +8,18 @@ import { kindForDiscovery } from "./place";
 import { fadedFor, sightFor } from "./sight";
 import { isMemoryKind, type Kind, type Level, type LockView, type Sight } from "./types";
 import { verify } from "./verify";
+import { wanderDoorFor } from "./wander-door";
 
-/** Skip is offered after 20 seconds or two wrong Attempts, whichever comes first. */
+/** Skip is offered after 20 seconds or two wrong Attempts, whichever comes first. A door's Skip is offered at once (knock-door 6.2). */
 export const SKIP_AFTER_MS = 20_000;
 export const SKIP_AFTER_WRONG = 2;
 
-export type WanderOpen = Readonly<{ anchorId: string; index: number; kind: Kind; level: Level; seed: number; openedAt: number; wrong: number }>;
+/** `door` marks the one memory with a Wander door (knock-door 6): its Lock is the ghost's knock, and Skip is there from the start. */
+export type WanderOpen = Readonly<{ anchorId: string; index: number; kind: Kind; level: Level; seed: number; openedAt: number; wrong: number; door?: true }>;
 export type WanderLocks = Readonly<{
   on: boolean;
+  /** Whether the walk has a door (knock-door 6.1). Absent means no; set by the Room switch `WANDER_DOORS_ENABLED`. */
+  doors?: true;
   /** Anchors whose memory has been let through (solved or skipped), in the order they were found. */
   revealed: readonly string[];
   open: WanderOpen | null;
@@ -23,8 +27,11 @@ export type WanderLocks = Readonly<{
   seen: readonly string[];
 }>;
 
-export const initWander = (on: boolean): WanderLocks => ({ on, revealed: [], open: null, seen: [] });
-export const skipAvailable = (open: WanderOpen, now: number): boolean => now - open.openedAt >= SKIP_AFTER_MS || open.wrong >= SKIP_AFTER_WRONG;
+export const initWander = (on: boolean, doors = false): WanderLocks => ({ on, ...(on && doors ? { doors: true as const } : {}), revealed: [], open: null, seen: [] });
+export const skipAvailable = (open: WanderOpen, now: number): boolean => open.door === true || now - open.openedAt >= SKIP_AFTER_MS || open.wrong >= SKIP_AFTER_WRONG;
+
+/** The walk's door for memory `index`: a knock door only, until the heavy door has a screen. Null when the walk has no doors or this is not the door's memory. */
+const doorFor = (state: WanderLocks, sessionSeed: number, index: number, level: Level) => (state.doors === true ? wanderDoorFor(sessionSeed, index, true, level, ["knock"]) : null);
 
 export type Gate =
   | Readonly<{ gate: "pass"; state: WanderLocks }>
@@ -45,11 +52,12 @@ export function gateReveal(state: WanderLocks, input: GateInput, now: number): G
     return { gate: "open", state, view: lock.view, faded: faded(lock, state, state.open.index, input.assist === true), kind: lock.kind };
   }
   const index = state.revealed.length;
-  const kind = kindForDiscovery(input.sessionSeed, index, input.enabled);
+  const door = doorFor(state, input.sessionSeed, index, level);
+  const kind = door !== null ? "knock" : kindForDiscovery(input.sessionSeed, index, input.enabled);
   if (kind === null) return { gate: "pass", state };
-  const seed = lockSeed(input.sessionSeed, index);
+  const seed = door !== null ? door.seed : lockSeed(input.sessionSeed, index);
   const lock = makeLock(kind, level, seed);
-  const open: WanderOpen = { anchorId: input.anchorId, index, kind, level, seed, openedAt: now, wrong: 0 };
+  const open: WanderOpen = { anchorId: input.anchorId, index, kind, level, seed, openedAt: now, wrong: 0, ...(door !== null ? { door: true as const } : {}) };
   return { gate: "open", state: { ...state, open }, view: lock.view, faded: faded(lock, state, index, input.assist === true), kind };
 }
 
@@ -92,9 +100,10 @@ export type SightAfter = Readonly<{ state: WanderLocks; delivery: Readonly<{ sig
 export function sightAfterReveal(state: WanderLocks, sessionSeed: number, level: Level = "easy", enabled?: readonly Kind[], assist = false): SightAfter {
   if (!state.on) return { state, delivery: null };
   const index = state.revealed.length;
-  const kind = kindForDiscovery(sessionSeed, index, enabled);
+  const door = doorFor(state, sessionSeed, index, level);
+  const kind = door !== null ? "knock" : kindForDiscovery(sessionSeed, index, enabled);
   if (kind === null || !isMemoryKind(kind) || state.seen.includes(sightKey(index))) return { state, delivery: null };
-  const sight = sightFor(makeLock(kind, level, lockSeed(sessionSeed, index)), assist);
+  const sight = sightFor(makeLock(kind, level, door !== null ? door.seed : lockSeed(sessionSeed, index)), assist);
   if (sight === null) return { state, delivery: null };
   return { state: { ...state, seen: [...state.seen, sightKey(index)] }, delivery: { sightId: sightKey(index), sight } };
 }

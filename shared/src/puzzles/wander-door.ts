@@ -26,10 +26,13 @@ export const startWanderDoor = (): WanderDoorState => ({ open: false, wrong: 0, 
 /**
  * The door for the walk's memory `index`, or null. At most one door per walk: it sits on the memory at index
  * `hash(seed) % WANDER_DOOR_WINDOW`. `on` is the visitor's choice (off means no doors at all, and nothing changes).
+ * `allowed` limits which kinds may be placed (the walk places knock doors only until the heavy door has a screen); the
+ * kind is picked from the allowed ones, in their order, so the default gives the same door as before.
  */
-export function wanderDoorFor(sessionSeed: number, index: number, on: boolean, level: Level = "easy"): WanderDoor | null {
+export function wanderDoorFor(sessionSeed: number, index: number, on: boolean, level: Level = "easy", allowed: readonly WanderDoorLock[] = WANDER_DOOR_LOCKS): WanderDoor | null {
   if (!on || index !== hash("wander-door-at", sessionSeed) % WANDER_DOOR_WINDOW) return null;
-  const lock: WanderDoorLock = hash("wander-door-lock", sessionSeed) % 2 === 0 ? "knock" : "heavy";
+  const pool = allowed.length > 0 ? allowed : WANDER_DOOR_LOCKS;
+  const lock = pool[hash("wander-door-lock", sessionSeed) % pool.length] as WanderDoorLock;
   return { lock, level, seed: hash("wander-door", sessionSeed, index), need: 1 };
 }
 

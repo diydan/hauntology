@@ -6,7 +6,7 @@ import { MAX_BODY_BYTES } from "@hauntology/shared/world/requests";
 import { toBase64Url } from "@hauntology/shared/session-cookie";
 import { Hono, type Context } from "hono";
 import type { AppEnv } from "../http/env";
-import { flagsFrom } from "../http/flags";
+import { flagsFrom, wanderDoorsEnabled } from "../http/flags";
 import { setLastPlay, setLastWorld } from "../http/session";
 import type { ConditionsService } from "../conditions/snapshot-store";
 import { SILENT, type Logger } from "../log";
@@ -108,7 +108,7 @@ export function playRoutes(deps: PlayDeps): Hono<AppEnv> {
     const locks = flagsFrom(c.env).puzzlesEnabled && body.locks === true;
     // The one read of the real world for this game (a bounded wait: 3 seconds at the most, then the Default). It is kept with the game and never read again, not by a turn, the view or a reset.
     const conditions = deps.conditions === undefined ? null : await deps.conditions.read(body.conditions).catch(() => null);
-    let session = startSession({ id: `p-${randomId()}`, worldId: body.worldId, ownerSid: sid, world: found.facts, ghostPreset: body.ghostPreset, clientAnchors: body.anchors, conditions, locks, seed: randomSeed(), now: now() });
+    let session = startSession({ id: `p-${randomId()}`, worldId: body.worldId, ownerSid: sid, world: found.facts, ghostPreset: body.ghostPreset, clientAnchors: body.anchors, conditions, locks, wanderDoor: locks && wanderDoorsEnabled(c.env), seed: randomSeed(), now: now() });
     if (!(await deps.sessions.start(session))) {
       // An id that is taken (a chance of about one in 2^128): try one more.
       session = { ...session, id: `p-${randomId()}` };
