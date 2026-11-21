@@ -1,4 +1,5 @@
 import type { SpendGuard } from "@hauntology/shared/world/spend";
+import { quotaFlagsFrom, quotaFlagsOn } from "@hauntology/shared/voice/quota-flags";
 import { Hono } from "hono";
 import type { AppEnv } from "../http/env";
 import { asQuota, ipHashOf, NO_PLACES } from "./world-create";
@@ -10,6 +11,8 @@ import { asQuota, ipHashOf, NO_PLACES } from "./world-create";
  * - With no guard, or a guard that cannot answer, every meter reads none (the same fail-closed reading the Quote uses).
  * - It never makes a Session: the Session request that goes with it does, and two first requests at once would otherwise each write a cookie.
  *   A visitor with no cookie yet is told what a new Session would have, which is what they have.
+ * - With `VOICE_QUOTA_FLAGS` on (off by default, so the answer is otherwise unchanged) it also carries `flags: { voice, stitch, live }`
+ *   (ghost-voice 3.2); with it off the body is exactly the six counts, as the shell's strict schema expects.
  * - It is never cached: the numbers change with every reservation.
  */
 export function quotaRoutes(deps: { guard?: Pick<SpendGuard, "remaining"> }): Hono<AppEnv> {
@@ -17,8 +20,8 @@ export function quotaRoutes(deps: { guard?: Pick<SpendGuard, "remaining"> }): Ho
   routes.get("/", async (c) => {
     c.set("sessionNoCookie", true);
     c.header("Cache-Control", "no-store");
-    if (deps.guard === undefined) return c.json(NO_PLACES);
-    return c.json(asQuota(await deps.guard.remaining(c.get("session").sid, await ipHashOf(c, c.env.HMAC_SECRET as string))));
+    const counts = deps.guard === undefined ? NO_PLACES : asQuota(await deps.guard.remaining(c.get("session").sid, await ipHashOf(c, c.env.HMAC_SECRET as string)));
+    return c.json(quotaFlagsOn(c.env) ? { ...counts, flags: quotaFlagsFrom(c.env) } : counts);
   });
   return routes;
 }
