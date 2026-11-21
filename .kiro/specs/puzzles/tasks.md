@@ -218,7 +218,8 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x] 7.4 What moved screen (the shelf, the dark with the rumble, tap the changed objects)
     - Built in `kinds/Moved.tsx`.
     - _Requirements: 4.4_
-  - [ ] 7.5 Checkpoint: play the second set; set the Kinds per Zone so every Kind appears. Ensure every test passes; ask the user if questions arise.
+  - [x] 7.5 Checkpoint: play the second set; set the Kinds per Zone so every Kind appears. Ensure every test passes; ask the user if questions arise.
+    - Built: `shared/src/puzzles/place.coverage.test.ts` (every default Kind is placed across 300 rooms, at most twice a game; every second-set Kind solves with its reference answer at each level). Playing it on a real phone stays with 6.6 and Spike 1.5
 
 - [ ] 8. Third set of Kinds
   - [x] 8.1 Torn photo screen (turn, drag, click on a fit, the original shape pictures)
@@ -296,17 +297,19 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 16.1_
 
-- [ ] 12. Decisions of 2026-11-15: the level follows the Haunt, Haunting puzzles, Locks in the solo case
+- [x] 12. Decisions of 2026-11-15: the level follows the Haunt, Haunting puzzles, Locks in the solo case
   - [x] 12.1 `lockLevel(setting, preset, haunt, kind, sightLevel)` in `shared/src/puzzles/`
     - _Requirements: 1.4_
   - [x]* 12.2 Write property test for the level
     - **Property 21: The level follows the Haunt, and a clue always fits**
     - **Validates: Requirements 1.4**
-  - [ ] 12.3 Haunting puzzles: one per Round per human Poltergeist, no-clue Kinds, one Scare point, closed at the Round end or the game end
+  - [x] 12.3 Haunting puzzles: one per Round per human Poltergeist, no-clue Kinds, one Scare point, closed at the Round end or the game end
     - _Requirements: 17.1, 17.2, 17.3_
-  - [ ]* 12.4 Write property test for Haunting puzzles
+    - Built: `shared/src/puzzles/haunting.ts` (pure) and `startHauntingPuzzle`, `hauntingAction`, `closeHauntings` in shared/src/party/engine.ts; the `hauntPuzzle` message (`protocol.ts`) starts it, `attempt` and `giveUp` reuse their messages; a solve is a secret `haunting-puzzle` source (one Scare point in `scarePoints`), no log line. The Room side only: the phone's start button waits for the real Controller port
+  - [x]* 12.4 Write property test for Haunting puzzles
     - **Property 22: Haunting puzzles change only Scare points**
     - **Validates: Requirements 17.1, 17.2, 17.3**
+    - Built: `shared/src/party/haunting-puzzle.prop.test.ts` (Property 22; mutations checked: no Round-end close, no Poltergeist check, no one-per-Round check each fail it)
 
 - [ ] 13. Public-domain footage (added 2026-11-15; satisfies Requirement 18)
   - [x] 13.1 One clip tried on the playtest site: `stair-shadow` (Nosferatu, 1922, Orlok's shadow on the stairs, 4.2 s), the page `footage.html` with three screens and three looks, the clip files and `media/PROVENANCE.md`, the build copy, and `test/footage-page.test.js`

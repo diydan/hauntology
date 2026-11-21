@@ -24,7 +24,8 @@ import { capFor } from "../puzzles/settings";
 import { lockLevel } from "../puzzles/level";
 import { placePuzzles } from "../puzzles/place";
 import { makeLock } from "../puzzles/make";
-import { freezeFor, closeLock, initPartyLocks, markWorldClueSeen, openLock, pendingSights, restoreLock, sightsOnEntry, ackSight, submitAttempt, worldClueNotebook, type PartyLocks } from "../puzzles/inspect";
+import { attemptHaunting, closeHaunting, EMPTY_HAUNTING, openHaunting, hauntingKind } from "../puzzles/haunting";
+import { freezeFor, closeLock, initPartyLocks, tally, markWorldClueSeen, openLock, pendingSights, restoreLock, sightsOnEntry, ackSight, submitAttempt, worldClueNotebook, type PartyLocks } from "../puzzles/inspect";
 import { ATTEMPTS, type Level, type LockView, type PuzzleSetting, type Sight } from "../puzzles/types";
 import { placeWorldClues, toPublicWorldClues, type CluePlace, type PublicWorldClue, type Sign } from "../puzzles/world-clues";
 import { CUE_PLAY_MS, canCue, canFrame, houseCuePhones, isCue, restlessSchedule, soundPlan, type CueId, type FrameSeat, type PhoneSeat, type SoundPlan } from "./cues";
@@ -153,6 +154,7 @@ export type ClientMsg =
   | Readonly<{ t: "sightAck"; sightId: string }>
   | Readonly<{ t: "clueSeen"; sign: Sign }>
   | Readonly<{ t: "plainInspect"; on: boolean }>
+  | Readonly<{ t: "hauntPuzzle" }>
   /** A Player acts on a heavy door (knock-door 4.1). */
   | Readonly<{ t: "doorAct"; doorId: string }>
   /** A Player knocks back at the TV after a Slam (knock-door 5.3). */
@@ -385,6 +387,7 @@ function endTurn(s0: EngineState, now: number): EngineState {
   const nxt = nextPlayer(order(st), st.first as number, t.seat);
   if (nxt !== null) return startTurn(st, nxt, now);
   // the Round is over (party-mode 6.5)
+  st = closeHauntings(st);
   const deal = st.deal as Deal;
   const acc: AccuseState = {
     round: st.round, phase: "playing", haunt: { level: st.haunt.level, max: st.haunt.max }, winners: [], houseWins: false,
@@ -475,7 +478,8 @@ function settleErrandAsk(s: EngineState, answer: "yes" | "no" | "timeout"): Engi
 /** How many Players are seated: a door never asks for more than this (knock-door 4.2). */
 export const seatedHumans = (s: EngineState): number => s.seats.filter((x) => !x.bot).length;
 
-function finish(s: EngineState, _now: number): EngineState {
+function finish(s0: EngineState, _now: number): EngineState {
+  const s = closeHauntings(s0);
   const deal = s.deal as Deal;
   const ending = endingPayload({
     solution: deal.solution, residueAt: s.residueAt, winners: s.winners, houseWins: s.houseWins,
@@ -658,6 +662,8 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     const st = setPlayer(s, seat, (p) => ({ ...p, resolve: spendResolve(p.resolve, 1) as number, heard: [...p.heard, { eventId: w.eventId, card }] }));
     return addLog(st, { kind: "eavesdrop", seat })[0];
   }
+  if (msg.t === "hauntPuzzle") return startHauntingPuzzle(s, seat, now);
+  if ((msg.t === "attempt" || msg.t === "giveUp") && s.locks.haunting?.open[String(seat)]?.lockId === msg.lockId) return hauntingAction(s, seat, msg, now);
   if (msg.t === "attempt" || msg.t === "giveUp") return lockAction(s, seat, msg, now);
   if (msg.t === "choose") {
     const pend = s.haunt.pending;
@@ -788,6 +794,54 @@ function lockAction(s: EngineState, seat: number, msg: Extract<ClientMsg, { t: "
   const card = out.inspectResult;
   let st = setPlayer({ ...s, locks: out.state }, seat, (q) => ({ ...q, inspected: [...q.inspected, zone], found: card === null ? q.found : [...q.found, card] }));
   return send(st, { t: "lockResult", lockId: msg.lockId, outcome: "solved", zone, card });
+}
+
+/** A human Poltergeist starts their Haunting puzzle of the Round (puzzles 12.3): a Kind with no Sight, never a Detective, a Bot or a Zone's Lock. */
+function startHauntingPuzzle(s: EngineState, seat: number, now: number): EngineState | string {
+  const setting = s.settings.puzzles ?? "off";
+  if (setting === "off") return "puzzle_disabled";
+  const me = player(s, seat);
+  if (!me || !me.poltergeist || isBot(s, seat)) return "not_a_poltergeist";
+  if (s.haunt.pending?.chooser === seat) return "answering_choice";
+  const id = String(seat);
+  const kind = hauntingKind(s.seed, id, s.round);
+  const level = lockLevel(setting, s.settings.preset === "gentle", s.haunt.level, kind, setting) as Level;
+  const r = openHaunting(s.locks.haunting ?? EMPTY_HAUNTING, id, s.round, s.seed, level, now, capFor(s.settings.preset ?? "classic"));
+  if (!r.ok) return r.code;
+  const v = r.value;
+  return { ...s, locks: { ...s.locks, haunting: v.state }, outbox: [...s.outbox, { to: "seat", seat, msg: { t: "lock", lockId: v.lockId, view: v.view, level: v.level, attempts: v.attempts, deadlineAt: v.deadlineAt, faded: null } }] };
+}
+
+/** An Attempt or a give-up on a Haunting puzzle. Solved is one Scare point (a secret source) and nothing else changes. */
+function hauntingAction(s: EngineState, seat: number, msg: Extract<ClientMsg, { t: "attempt" } | { t: "giveUp" }>, now: number): EngineState | string {
+  const id = String(seat);
+  const state = s.locks.haunting ?? EMPTY_HAUNTING;
+  const send = (st: EngineState, m: Extract<Outbound, { to: "seat" }>["msg"]): EngineState => ({ ...st, outbox: [...st.outbox, { to: "seat", seat, msg: m }] });
+  if (msg.t === "giveUp") {
+    const c = closeHaunting(state, id);
+    if (!c.ok) return c.code;
+    return send({ ...s, locks: tally({ ...s.locks, haunting: c.value.state }, c.value.kind, "failed", c.value.attempts) }, { t: "lockResult", lockId: msg.lockId, outcome: "failed" });
+  }
+  const r = attemptHaunting(state, id, msg.lockId, msg.transcript, now, capFor(s.settings.preset ?? "classic"));
+  if (!r.ok) return r.code;
+  const out = r.value;
+  if (out.outcome === "wrong") return send({ ...s, locks: { ...s.locks, haunting: out.state } }, { t: "lockResult", lockId: msg.lockId, outcome: "wrong", attemptsLeft: out.attemptsLeft });
+  const locks = tally({ ...s.locks, haunting: out.state }, out.kind, out.outcome, out.attempts);
+  if (out.outcome === "failed") return send({ ...s, locks }, { t: "lockResult", lockId: msg.lockId, outcome: "failed" });
+  // one Scare point: a secret source with no public log line, which the ending counts
+  const st: EngineState = { ...s, locks, nextId: s.nextId + 1, sources: [...s.sources, { eventId: s.nextId, kind: "haunting-puzzle", from: seat }] };
+  return send(st, { t: "lockResult", lockId: msg.lockId, outcome: "solved" });
+}
+
+/** The Round or the game ended: every open Haunting puzzle closes with no point. */
+function closeHauntings(s: EngineState): EngineState {
+  let st = s;
+  for (const [seatId, o] of Object.entries(s.locks.haunting?.open ?? {})) {
+    if (!o) continue;
+    const c = closeHaunting(st.locks.haunting ?? EMPTY_HAUNTING, seatId);
+    if (c.ok) st = { ...st, locks: tally({ ...st.locks, haunting: c.value.state }, c.value.kind, "failed", c.value.attempts), outbox: [...st.outbox, { to: "seat", seat: Number(seatId), msg: { t: "lockResult", lockId: o.lockId, outcome: "failed" } }] };
+  }
+  return st;
 }
 
 /** Close every open Lock at the end of a Turn: no Zone result, the Zone not inspected. */

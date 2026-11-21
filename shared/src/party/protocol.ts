@@ -47,6 +47,8 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("sightAck"), sightId: id }).strict(),
   z.object({ t: z.literal("clueSeen"), sign: z.enum(SIGNS) }).strict(),
   z.object({ t: z.literal("plainInspect"), on: z.boolean() }).strict(),
+  /** A human Poltergeist starts their one Haunting puzzle of the Round (puzzles 12.3). Attempts and give-ups reuse `attempt` and `giveUp`. */
+  z.object({ t: z.literal("hauntPuzzle") }).strict(),
   /** A Player acts on a heavy door (knock-door 4.1). */
   z.object({ t: z.literal("doorAct"), doorId: id }).strict(),
   /** A Player knocks back at the TV after a Slam: the times of their knocks in ms (knock-door 5.3). At most 64, like every knock transcript. */

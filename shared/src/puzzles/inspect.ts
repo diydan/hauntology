@@ -10,6 +10,7 @@ import type { PlacedLock } from "./place";
 import { fadedFor, sightFor } from "./sight";
 import { ATTEMPTS, isMemoryKind, type LockView, type PuzzleSetting, type Sight } from "./types";
 import { verify } from "./verify";
+import type { HauntingState } from "./haunting";
 import { signForLock, toPublicWorldClues, worldCluePrompt, type PublicWorldClue, type Sign, type WorldClue } from "./world-clues";
 
 export type SeatId = string;
@@ -37,6 +38,8 @@ export type PartyLocks = Readonly<{
    * nothing else: no seat, Zone, time, Tilt value or Transcript. Dies with the Room.
    */
   stats?: Readonly<Record<string, number>>;
+  /** Haunting puzzles of the Poltergeists (puzzles 12.3): not a Zone's Lock, not in any view. */
+  haunting?: HauntingState;
 }>;
 
 export const MIN_ATTEMPT_GAP_MS = 1000;
@@ -222,15 +225,19 @@ export type AttemptOutcome<R> =
 
 function closed(state: PartyLocks, seat: SeatId): PartyLocks { return { ...state, open: put(state.open, seat, null) }; }
 
-/** Closes a seat's Lock and counts it: the Kind, the outcome and the Attempts made, never who, where or when. */
-function finish(state: PartyLocks, seat: SeatId, open: OpenLock, outcome: "solved" | "failed", attemptsMade: number): PartyLocks {
-  const kind = lockAt(state, open.zone)?.kind;
-  const base = closed(state, seat);
-  if (kind === undefined) return base;
+/** Counts one finished Lock: the Kind, the outcome and the Attempts made, never who, where or when (requirement 14.2). */
+export function tally(state: PartyLocks, kind: string, outcome: "solved" | "failed", attemptsMade: number): PartyLocks {
   const stats = state.stats ?? {};
   const key = `${kind}.${outcome}`;
   const akey = `${kind}.attempts`;
-  return { ...base, stats: { ...stats, [key]: (stats[key] ?? 0) + 1, [akey]: (stats[akey] ?? 0) + attemptsMade } };
+  return { ...state, stats: { ...stats, [key]: (stats[key] ?? 0) + 1, [akey]: (stats[akey] ?? 0) + attemptsMade } };
+}
+
+/** Closes a seat's Lock and counts it. */
+function finish(state: PartyLocks, seat: SeatId, open: OpenLock, outcome: "solved" | "failed", attemptsMade: number): PartyLocks {
+  const kind = lockAt(state, open.zone)?.kind;
+  const base = closed(state, seat);
+  return kind === undefined ? base : tally(base, kind, outcome, attemptsMade);
 }
 
 /** Sights sent to a seat and not yet acknowledged, as the same deliveries again (sent after a reconnect). */
