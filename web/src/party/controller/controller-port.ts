@@ -4,7 +4,6 @@ import type { Errand, ErrandObject } from "@hauntology/shared/party/errands";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import type { Kind, LockView, PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
 import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
-import type { PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/engine";
 import type { TablePrivateInput, TablePublicInput } from "@hauntology/shared/table/data";
 import type { TableNotebook } from "@hauntology/shared/table/notebook";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
