@@ -20,7 +20,7 @@ describe("SpiritLens (party-mode 9.17)", () => {
   it("builds its data only from what this Player already knows: Hand, cards shown to them, Residue they found, their own inspected Zones, the latest ripples", () => {
     const events = [{ id: 1, kind: "inspect", seat: 1, zone: "z2" }, { id: 2, kind: "inspect", seat: 2, zone: "z3" }, { id: 3, kind: "phone-cue", target: 2 }, { id: 4, kind: "rattle", target: 1, turn: 1 }];
     const d = lensDataOf(game({ pub: pub({ events }), priv: priv({ shownToMe: [{ card: "s2", by: 2 }], found: ["r3"] }) }), 1)!;
-    expect(d.known.sort()).toEqual(["r2", "r3", "s1", "s2", "z3"]);
+    expect([...d.known].sort()).toEqual(["r2", "r3", "s1", "s2", "z3"]);
     expect(d.inspected).toEqual(["z2"]);
     expect(d.ripples.map((r) => r.eventId)).toEqual([3, 4]);
     expect(lensDataOf(game({ priv: null }), 1)).toBeNull();
