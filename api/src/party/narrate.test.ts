@@ -23,7 +23,7 @@ const ok = (text: string, stopReason: string | null = "end_turn"): NarrationAnsw
 const view: PublicView = { phase: "playing", suspects: [], zones: [{ id: "z1", name: "Larder" }], relics: [], players: [{ seat: 1, nickname: "Sam", bot: false, poltergeist: false, handSize: 3 }], events: [{ id: 1, kind: "inspect", seat: 1, zone: "z1" }], ending: null };
 const setup = (narrator: Narrator | null, over: Partial<PartyNarrationDeps> = {}, caps = { images: 0, models: 60 }) => {
   const guard = new FakeGuard(); const store = new MemoryRoomSpendStore();
-  const deps: PartyNarrationDeps = { narrator, budget: new RoomBudget(guard, "room:ABCD", caps, store), enabled: true, scope: "room:ABCD", ...over };
+  const deps: PartyNarrationDeps = { narrator, budget: new RoomBudget(guard, "room-ABCD", caps, store), enabled: true, scope: "room-ABCD", ...over };
   return { deps, guard, store };
 };
 const scripted = (kind: (typeof DIRECTIVE_KINDS)[number], speaker: "keeper" | "whisper" | "lodger") => PARTY_LINES[kind]?.[speaker] ?? [];

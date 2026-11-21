@@ -26,15 +26,15 @@ const ask = (b: RoomBudget, meter: Meter) => b.reserve({ meter, sessionId: "call
 describe("RoomBudget (party-mode 5.4, 10.1)", () => {
   it("takes a unit from the Room and from the global guard, with the Room as the scope", async () => {
     const g = new FakeGuard(); const store = new MemoryRoomSpendStore();
-    const b = new RoomBudget(g, "room:ABCD", { images: 2, models: 3 }, store);
+    const b = new RoomBudget(g, "room-ABCD", { images: 2, models: 3 }, store);
     expect((await ask(b, "image")).ok).toBe(true);
     expect((await ask(b, "llm")).ok).toBe(true);
     expect(store.spend).toEqual({ images: 1, models: 1 });
-    expect(g.scopes).toEqual(["room:ABCD", "room:ABCD"]);
+    expect(g.scopes).toEqual(["room-ABCD", "room-ABCD"]);
   });
   it("refuses past the Room's cap without asking the guard at all, and spends nothing upstream", async () => {
     const g = new FakeGuard(); const store = new MemoryRoomSpendStore();
-    const b = new RoomBudget(g, "room:ABCD", { images: 1, models: 60 }, store);
+    const b = new RoomBudget(g, "room-ABCD", { images: 1, models: 60 }, store);
     expect((await ask(b, "image")).ok).toBe(true);
     const r = await ask(b, "image");
     expect(r).toEqual({ ok: false, reason: "session" });
@@ -45,14 +45,14 @@ describe("RoomBudget (party-mode 5.4, 10.1)", () => {
   });
   it("keeps the global caps on top: a global refusal takes nothing from the Room", async () => {
     const g = new FakeGuard({ llm: 0 }); const store = new MemoryRoomSpendStore();
-    const b = new RoomBudget(g, "room:ABCD", { images: 12, models: 60 }, store);
+    const b = new RoomBudget(g, "room-ABCD", { images: 12, models: 60 }, store);
     expect(await ask(b, "llm")).toEqual({ ok: false, reason: "total" });
     expect(b.lastDeny).toBe("total");
     expect(store.spend).toEqual({ images: 0, models: 0 });
   });
   it("gives a unit back to the Room when the work fails, and keeps it when the work is committed", async () => {
     const g = new FakeGuard(); const store = new MemoryRoomSpendStore();
-    const b = new RoomBudget(g, "room:ABCD", { images: 2, models: 2 }, store);
+    const b = new RoomBudget(g, "room-ABCD", { images: 2, models: 2 }, store);
     const a = await ask(b, "image"); const c = await ask(b, "image");
     if (!a.ok || !c.ok) throw new Error("expected tickets");
     await b.release(a.ticket); await b.commit(c.ticket);
@@ -64,7 +64,7 @@ describe("RoomBudget (party-mode 5.4, 10.1)", () => {
   it("answers the kill switch before anything else, and passes other meters straight to the guard", async () => {
     const g = new FakeGuard(); const store = new MemoryRoomSpendStore();
     let killed = true;
-    const b = new RoomBudget(g, "room:ABCD", { images: 12, models: 60 }, store, { killed: () => killed });
+    const b = new RoomBudget(g, "room-ABCD", { images: 12, models: 60 }, store, { killed: () => killed });
     expect(await ask(b, "llm")).toEqual({ ok: false, reason: "killed" });
     expect(g.scopes).toHaveLength(0);
     killed = false;
@@ -73,13 +73,13 @@ describe("RoomBudget (party-mode 5.4, 10.1)", () => {
   });
   it("never lets concurrent reserves pass the cap", async () => {
     const g = new FakeGuard(); const store = new MemoryRoomSpendStore();
-    const b = new RoomBudget(g, "room:ABCD", { images: 3, models: 0 }, store);
+    const b = new RoomBudget(g, "room-ABCD", { images: 3, models: 0 }, store);
     const rs = await Promise.all(Array.from({ length: 10 }, () => ask(b, "image")));
     expect(rs.filter((r) => r.ok)).toHaveLength(3);
     expect(store.spend.images).toBe(3);
   });
   it("reports what is left as the smaller of the Room's and the guard's", async () => {
-    const b = new RoomBudget(new FakeGuard(), "room:ABCD", { images: 12, models: 60 }, new MemoryRoomSpendStore({ images: 10, models: 0 }));
+    const b = new RoomBudget(new FakeGuard(), "room-ABCD", { images: 12, models: 60 }, new MemoryRoomSpendStore({ images: 10, models: 0 }));
     const r = await b.remaining("x", "h");
     expect([r.image, r.llm, r.tts]).toEqual([2, 60, 9]);
   });

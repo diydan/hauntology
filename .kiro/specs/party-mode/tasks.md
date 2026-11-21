@@ -462,13 +462,16 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 6.1, 6.2_
 
 - [ ] 5. Contribution services
-  - [ ] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded WorkersAiClient (Llama 4 Scout), fail closed, store privately for the Room
+  - [x] 5.1 Photo intake: world-pipeline upload rules, downscale to 512 px, vision moderation through the guarded WorkersAiClient (Llama 4 Scout), fail closed, store privately for the Room
+    - **Built 2026-11-21** (`api/src/party/contribute.ts` `intakePhoto`, `api/src/guarded/workersai/photo-vet.ts`, `shared/src/party/photo-verdict.ts`): the world-pipeline upload rules (`prepareUpload`), a 512 px shrink (`ImagesPhotoShrinker`), the vision check on Scout (`ScoutPhotoVetter`, `safe` and `personVisible`, fail closed) behind a guarded door that needs an `llm` Ticket, and private storage under an opaque id through a `PhotoStore` port (`deleteRoom` for the Room's end). Tested over fakes. Not confirmed by a real call: the Images binding's `fit: scale-down` and Scout's accuracy on 'a person is visible'. The Room's R2 `PhotoStore` is not written.
     - _Requirements: 3.2_
   - [ ] 5.1a Vision verdict returns `{safe, personVisible}`; `personVisible` rejects with `photo_rejected:person_visible`; `POST /api/party/:code/prompt/skip` with up to three skips per Player
     - _Requirements: 3.8, 3.9_
-  - [ ] 5.2 Suspect flow reusing the Ghost Creator, charged to the Room budget, Preset fallback on any failure
+  - [x] 5.2 Suspect flow reusing the Ghost Creator, charged to the Room budget, Preset fallback on any failure
+    - **Built 2026-11-21** (`contribute.ts` `suspectPortraits`, `suspectSprite`): the Ghost Creator is reused as it is, handed the Room's `RoomBudget` as its `guard`, so portraits and cut-outs are charged to the Room. Any failure (bad traits, a failed portrait, the Room's cap, a refused cut-out, a missing candidate or creator) gives the seat's stable Preset with the reason. The Lodger Voice the Player picked (lower is Mark, lighter is Chloe, Mark when none) is saved with the profile.
     - _Requirements: 3.3_
-  - [ ] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement, and a Llama Guard 3 check through the guarded WorkersAiClient (`llm` meter, charged to the Room budget), failing closed with `moderation_unavailable`
+  - [x] 5.3 Zone naming and Suspect detail: sanitise, length limits, data-block placement, and a Llama Guard 3 check through the guarded WorkersAiClient (`llm` meter, charged to the Room budget), failing closed with `moderation_unavailable`
+    - **Built 2026-11-21** (`contribute.ts` `contributeZoneName`, `contributeDetail`): the existing `cleanZoneName` (3 to 24 characters, no markup) and `sanitizeDetail` (140 characters, no markup or URLs), then Llama Guard 3 on the Room's `llm` meter, failing closed with `moderation_unavailable` (and `quota_model` at the Room's cap). The data-block placement of a detail is the Ghost Creator's own.
     - _Requirements: 3.1, 10.3_
   - [x] 5.4 Room budget wiring: Room-scoped caps through SpendGuard on top of global caps
     - **Built 2026-11-21** (`api/src/party/budget.ts`): `RoomBudget implements SpendGuard` with the Room as the scope. A unit comes from the Room's caps (12 images, 60 model calls, `shared/src/party/spend.ts`) before the guard is asked, a Room refusal never reaches the guard, a global refusal takes nothing from the Room, and a released unit comes back. Handing it to `createCreator` or the narrator charges them to the Room. Tested over a fake guard (`budget.test.ts`). Wiring it into the Room's Durable Object storage is 4.x.
