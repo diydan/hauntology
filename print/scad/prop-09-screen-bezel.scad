@@ -46,23 +46,17 @@ module prop_09_screen_bezel() {
         cylinder(h = 6.0, d = 2.75);
     }
 
-    // 7. ESP32 DevKitC Cavity (with 4 corner standoffs at Z = 10.6 + deep pin-header relief down to Z = 2.0) & Right-End USB-C Cutout
+    // 7. ESP32 DevKitC Cavity (board rests on the ledge at Z = 10.6, deep pin-header relief down to Z = 2.0) & Right-End USB-C Cutout
     translate([0, -33.0, 10.6])
       linear_extrude(height = 6.0)
         rrect2d(esp32_w, esp32_d, r = 1.0);
-    difference() {
-      translate([0, -33.0, 2.0])
-        linear_extrude(height = 9.0)
-          rrect2d(esp32_w - 2.0, esp32_d - 1.6, r = 1.0);
-      for (sx = [-1, 1], sy = [-1, 1]) {
-        translate([sx * (esp32_w / 2 - 3.6), -33.0 + sy * (esp32_d / 2 - 2.8), 1.8])
-          chamfer_box(7.6, 6.0, 9.0, r = 1.0, ch_bot = 0, ch_top = 0);
-      }
-    }
-    for (sx = [-1, 1], sy = [-1, 1]) {
-      translate([sx * esp32_hole_w / 2, -33.0 + sy * esp32_hole_d / 2, 2.0])
-        cylinder(h = 10.0, d = sg90_m2_pilot_d);
-    }
+    // The header relief is one open rectangle. It used to leave four corner standoffs at X = +-24.2, Y = +-11.45, which are exactly
+    // where the two header strips end: 8 of the 38 pins and 13% of the strip plastic were inside them, so a board with pins fitted
+    // could not seat. The board now rests on the 0.8-1.0 mm ledge round the relief (the 55.6 x 28.5 pocket floor at Z = 10.6).
+    // A stock DevKitC V4 may have no mounting holes; hold the board with a dab of hot glue or a strip of tape across the ledge.
+    translate([0, -33.0, 2.0])
+      linear_extrude(height = 9.0)
+        rrect2d(esp32_w - 2.0, esp32_d - 1.6, r = 1.0);
     translate([0, -14.0, 10.0])
       cube([18.0, 20.0, 9.0], center = true);
     // USB-C connector port opening on +X end of ESP32 cradle
