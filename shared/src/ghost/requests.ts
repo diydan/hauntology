@@ -11,6 +11,7 @@ export const PlayStartRequestSchema = z.object({
   ghostPreset: Id.max(64).optional(),
   anchors: z.unknown().optional(),
   conditions: z.unknown().optional(),
+  locks: z.boolean().optional(),
 });
 export type PlayStartRequest = z.infer<typeof PlayStartRequestSchema>;
 

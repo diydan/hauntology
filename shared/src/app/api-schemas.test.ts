@@ -61,12 +61,18 @@ describe("the demo FakeApi and the real client share the same shapes", () => {
     check("world", b.world(t + 60_000, created.worldId));
     check("searchPlaces", b.searchPlaces(t, "lis"));
     check("ghostPresets", b.ghostPresets(t));
+    check("ghostProfile", b.ghostProfile(t, "attic-room"));
     check("ackNotice", b.ackNotice(t));
     const play = value(b.playStart(t, { worldId: "attic-room" }));
     check("playStart", { ok: true, value: play });
     const near = { pos: [ANCHORS[0]!.pos[0], 0, ANCHORS[0]!.pos[2]] as [number, number, number], yaw: 0 };
     check("playTurn", b.playTurn(t, play.playId, { input: { button: "look" }, pose: near }));
     check("playGet", b.playGet(t, play.playId));
+    const locked = value(b.playStart(t, { worldId: "attic-room", locks: true }));
+    const opened = value(b.playLockOpen!(t, locked.playId, "a1"));
+    check("playLockOpen", { ok: true, value: opened });
+    check("playLockAttempt", b.playLockAttempt!(t + 1_100, locked.playId, { kind: opened.lock.kind, elapsedMs: 50 } as never));
+    check("playLockSkip", b.playLockSkip!(t + 25_000, locked.playId));
     check("shareWorld", b.shareWorld(t + 60_000, created.worldId, true));
     check("world", b.world(t + 60_000, created.worldId)); // now with `shared: true`
     check("deleteWorld", b.deleteWorld(t, created.worldId));

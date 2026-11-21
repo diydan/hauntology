@@ -33,6 +33,8 @@ export const LOG_SCHEMA = {
    * `no_place`, `timeout`, `error` or `empty`) and whether the answer came from the 15 minute cache. Counters of one word each: never a place, a coordinate, a label, a date or a query.
    */
   "conditions.read": { source: "word", reason: "word", cache: "bool" },
+  /** City search counters (conditions 3.5, 3.7): outcome (`ok`, `disabled`, `rate_limited`, `bad_place`, `unavailable`) and match count. Never the query or any place. */
+  "conditions.geocode": { outcome: "word", count: "int" },
   /** A game was finished or played again, with how many turns it took. */
   "play.end": { turns: "int" },
   "play.reset": { turns: "int" },
@@ -44,6 +46,14 @@ export const LOG_SCHEMA = {
    * was a prefetch (which never pays), and how long it took in milliseconds. Counters of one word each: never the line's words, its id, the game's id or the audio.
    */
   "voice.speak": { via: "word", outcome: "word", paid: "bool", prefetch: "bool", ms: "int" },
+  /** One listen transcription attempt (ghost-voice 2.16, 3.7): outcome, reason/step, whether a paid stt call ran, duration. Never audio or transcript. */
+  "voice.listen": { outcome: "word", reason: "word", paid: "bool", ms: "int" },
+  /** One Stitch Word Check (ghost-voice 2.16, 5.9): whether the clip passed or was rejected, outcome code, checks counted. Never the word or audio. */
+  "voice.stitch.check": { outcome: "word", accepted: "bool", rejected: "bool", checks: "int" },
+  /** Stitches played (ghost-voice 2.16, 5.12): outcome and total stitches played in the room. Never a seat, word, clip or subtitle. */
+  "voice.stitch.play": { outcome: "word", count: "int" },
+  /** Live mode slice or stop telemetry (ghost-voice 2.16, 6.3): stop reason and slice count. Never audio or transcript. */
+  "voice.live": { outcome: "word", stop: "word", slices: "int" },
 } as const;
 
 export type LogEvent = keyof typeof LOG_SCHEMA;

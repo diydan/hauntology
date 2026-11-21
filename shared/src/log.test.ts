@@ -86,10 +86,15 @@ describe("formatLog", () => {
       "play.turn": { directive: "word", revealed: "bool", scripted: "bool" },
       "play.narrate": { outcome: "word", attempts: "int" },
       "conditions.read": { source: "word", reason: "word", cache: "bool" },
+      "conditions.geocode": { outcome: "word", count: "int" },
       "play.end": { turns: "int" },
       "play.reset": { turns: "int" },
       "play.refused": { code: "word" },
       "voice.speak": { via: "word", outcome: "word", paid: "bool", prefetch: "bool", ms: "int" },
+      "voice.listen": { outcome: "word", reason: "word", paid: "bool", ms: "int" },
+      "voice.stitch.check": { outcome: "word", accepted: "bool", rejected: "bool", checks: "int" },
+      "voice.stitch.play": { outcome: "word", count: "int" },
+      "voice.live": { outcome: "word", stop: "word", slices: "int" },
     });
   });
 

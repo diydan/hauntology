@@ -1,9 +1,11 @@
 import { color } from "@hauntology/shared/design/tokens";
 import { hashText } from "@hauntology/shared/ghost/rng";
 import { parseShellMessage, type Anchor, type ShellToViewer } from "@hauntology/shared/app/events";
-import { atmosphereParams, tiltLook, type AtmosphereParams, type LookState, type TiltCalibration, type TiltReading } from "@hauntology/shared/viewer/atmosphere";
+import type { PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
+import { tiltLook, type LookState, type TiltCalibration, type TiltReading } from "@hauntology/shared/viewer/atmosphere";
 import { flicker } from "@hauntology/shared/viewer/flicker";
 import { ghostPlacement, gradeParams, orbIntensity, orbPulse, promptFor, smoothHaunt, type PromptTarget } from "@hauntology/shared/viewer/haunt";
+import { clueClarity, clueGlowPulse, cluePropPositions, type PlacedWorldClueProp } from "@hauntology/shared/viewer/world-clues";
 import { inputReduce } from "@hauntology/shared/viewer/input";
 import { assetUrl, loadWorld, LOAD_STAGE_LABELS, type LoadStage, type LoadedWorld, type LoaderPorts } from "@hauntology/shared/viewer/loader";
 import { constrainToDisc, stepMovement } from "@hauntology/shared/viewer/movement";
@@ -15,9 +17,11 @@ import { SparkRenderer, SplatMesh } from "@sparkjsdev/spark";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { createAtmosphereController, splatTintForLook } from "./atmosphere";
 import { CAPSULE_RADIUS, collisionWorldFromGeometry, type CollisionWorld } from "./collision";
 import { applyLook, combineInput, stickAxes } from "./controls";
 import type { ViewerHandle, ViewerSetup } from "./types";
+import { buildAnswerTexture, buildSignTexture } from "./world-clue-props";
 
 /**
  * The real Viewer (world-viewer tasks 3 and 4): three + Spark behind the shell's seam.
@@ -81,6 +85,7 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
 
   void (async () => {
     let splatMesh: SplatMesh | null = null;
+    let ghostSpriteUrl: string | null = null;
     const ports: LoaderPorts = {
       fetchManifest: async (id) => {
         const r = await fetch(`/api/worlds/${encodeURIComponent(id)}`);
@@ -113,7 +118,16 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
     }
     const world: LoadedWorld = result.world;
     if (world.rung !== "splat") onMessage({ t: "degraded", rung: world.rung });
-    cleanup = startScene(container, world, splatMesh, caps, {
+    // The world's own ghost picture, when the Creator made one (best effort; the drawn ghost stands in).
+    try {
+      const r = await fetch(`/api/worlds/${encodeURIComponent(worldId)}/ghost`);
+      if (r.ok) {
+        const view = (await r.json()) as { spriteUrl?: string };
+        if (typeof view.spriteUrl === "string") ghostSpriteUrl = view.spriteUrl;
+      }
+    } catch { /* the drawn ghost stands in */ }
+    if (disposed) return;
+    cleanup = startScene(container, world, splatMesh, caps, ghostSpriteUrl, {
       onMessage,
       mode: () => mode,
       movementEnabled: () => inputMode.movementEnabled,
@@ -219,7 +233,7 @@ function grainDataUrl(): string {
   return c.toDataURL();
 }
 
-function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: SplatMesh | null, caps: DeviceCaps, hooks: SceneHooks): () => void {
+function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: SplatMesh | null, caps: DeviceCaps, ghostSpriteUrl: string | null, hooks: SceneHooks): () => void {
   const manifest = world.manifest;
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   // Quality (7.1): start where this device's score puts it, then follow nextQuality's timing rules.
@@ -271,12 +285,25 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     container.append(d);
     return d;
   };
+  const gradeEl = document.createElement("div");
+  gradeEl.style.position = "absolute";
+  gradeEl.style.inset = "0";
+  gradeEl.style.pointerEvents = "none";
+  container.append(gradeEl);
   const vignetteEl = overlay("ui-viewer-vignette");
   const grainEl = overlay("ui-viewer-grain");
   grainEl.style.backgroundImage = `url(${grainDataUrl()})`;
   const toolsEl = document.createElement("div");
   toolsEl.className = "ui-viewer-tools";
   container.append(toolsEl);
+
+  const atmosphereCtrl = createAtmosphereController({
+    scene,
+    gradeEl,
+    floorY: manifest.floorY,
+    quality: quality.level,
+    reducedMotion,
+  });
 
   const haunt = {
     anchors: [] as Anchor[],
@@ -285,8 +312,6 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     level: 0,
     ghostVisible: false,
     ghostOpacity: 0,
-    atmosphere: null as Parameters<typeof atmosphereParams>[0],
-    params: atmosphereParams(null, 2, reducedMotion) as AtmosphereParams,
   };
   const orbGroup = new THREE.Group();
   scene.add(orbGroup);
@@ -304,6 +329,47 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       orbGroup.add(s);
     }
   };
+  let worldClues: PublicWorldClue[] = [];
+  const clueSeenSent = new Set<Sign>();
+  const clueGroup = new THREE.Group();
+  scene.add(clueGroup);
+  const signGeo = new THREE.PlaneGeometry(0.5, 0.25);
+  const answerGeo = new THREE.PlaneGeometry(0.75, 0.45);
+  const glowGeo = new THREE.PlaneGeometry(0.95, 0.95);
+  const clearClueMeshes = () => {
+    for (const child of clueGroup.children) {
+      child.traverse((o) => {
+        if (o instanceof THREE.Mesh) {
+          const m = o.material as THREE.MeshBasicMaterial;
+          if (m.map && m.map !== orbTex) m.map.dispose();
+          m.dispose();
+        }
+      });
+    }
+    clueGroup.clear();
+  };
+  const rebuildClues = () => {
+    clearClueMeshes();
+    const rawEye = world.spawn.pos[1] - manifest.floorY;
+    const ey = rawEye >= 0.5 && rawEye <= 3 ? rawEye : 1.6;
+    const anchorSource = haunt.anchors.length > 0 ? haunt.anchors : manifest.anchors ?? [];
+    const placed = cluePropPositions(worldClues, anchorSource, manifest.bounds, manifest.floorY, ey);
+    for (const item of placed) {
+      const prop = new THREE.Group();
+      prop.position.set(item.pos[0], item.pos[1], item.pos[2]);
+      const glow = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({ map: orbTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.22, side: THREE.DoubleSide }));
+      glow.renderOrder = 9;
+      const signMesh = new THREE.Mesh(signGeo, new THREE.MeshBasicMaterial({ map: buildSignTexture(item), transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+      signMesh.position.set(0, 0.26, 0.01);
+      signMesh.renderOrder = 10;
+      const answerMesh = new THREE.Mesh(answerGeo, new THREE.MeshBasicMaterial({ map: buildAnswerTexture(item), transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+      answerMesh.position.set(0, -0.14, 0.02);
+      answerMesh.renderOrder = 11;
+      prop.add(glow, signMesh, answerMesh);
+      prop.userData = { placed: item, glow, answerMesh } satisfies { placed: PlacedWorldClueProp; glow: THREE.Mesh; answerMesh: THREE.Mesh };
+      clueGroup.add(prop);
+    }
+  };
   const ghost = new THREE.Mesh(
     new THREE.PlaneGeometry(0.95, 1.45),
     new THREE.MeshBasicMaterial({ map: ghostTexture(), transparent: true, alphaTest: 0.05, depthWrite: false, opacity: 0, side: THREE.DoubleSide }),
@@ -311,48 +377,18 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   ghost.visible = false;
   ghost.renderOrder = 10;
   scene.add(ghost);
-
-  let precip: THREE.Points | null = null;
-  let stars: THREE.Points | null = null;
-  const applyAtmosphere = () => {
-    const p = atmosphereParams(haunt.atmosphere, 2, reducedMotion);
-    haunt.params = p;
-    scene.fog = p.fogDensity > 0 ? new THREE.FogExp2(new THREE.Color(p.tint[0] * 0.4, p.tint[1] * 0.4, p.tint[2] * 0.45), p.fogDensity) : null;
-    if (precip) { scene.remove(precip); precip.geometry.dispose(); precip = null; }
-    if (p.precipitation.count > 0) {
-      const n = p.precipitation.count;
-      const pos = new Float32Array(n * 3);
-      let s = 987654321;
-      const rand = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
-      for (let i = 0; i < n; i++) { pos[i * 3] = (rand() - 0.5) * 26; pos[i * 3 + 1] = rand() * 12; pos[i * 3 + 2] = (rand() - 0.5) * 26; }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-      precip = new THREE.Points(geo, new THREE.PointsMaterial({
-        color: new THREE.Color(color.bone), size: p.precipitation.kind === "snow" ? 0.07 : 0.045,
-        transparent: true, opacity: 0.75, depthWrite: false,
-      }));
-      scene.add(precip);
-    }
-    if (stars) { scene.remove(stars); stars.geometry.dispose(); stars = null; }
-    const sky = haunt.atmosphere?.stars;
-    if (p.sky.starsVisible && sky && sky.length > 0) {
-      const pos = new Float32Array(sky.length * 3);
-      sky.forEach((star, i) => {
-        const az = (star.az * Math.PI) / 180, alt = (star.alt * Math.PI) / 180;
-        pos[i * 3] = Math.sin(az) * Math.cos(alt) * 90;
-        pos[i * 3 + 1] = Math.sin(alt) * 90;
-        pos[i * 3 + 2] = -Math.cos(az) * Math.cos(alt) * 90;
-      });
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-      stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: new THREE.Color(color.bone), size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.9, depthWrite: false }));
-      scene.add(stars);
-    }
-  };
+  if (ghostSpriteUrl) {
+    new THREE.TextureLoader().load(ghostSpriteUrl, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      (ghost.material as THREE.MeshBasicMaterial).map = tex;
+      (ghost.material as THREE.MeshBasicMaterial).needsUpdate = true;
+    });
+  }
 
   // The ambient drone (5.5, stretch): two detuned oscillators through a low-pass, only after a gesture.
   const drone = { ctx: null as AudioContext | null, gain: null as GainNode | null, muted: false };
   const startDrone = () => {
+    atmosphereCtrl.unlockAudio();
     if (drone.ctx) { void drone.ctx.resume(); return; }
     try {
       const ctx = new AudioContext();
@@ -384,6 +420,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     muteButton.textContent = drone.muted ? "Sound: off" : "Sound: on";
     muteButton.setAttribute("aria-pressed", String(!drone.muted));
     if (drone.ctx && drone.gain) drone.gain.gain.setTargetAtTime(drone.muted ? 0 : 0.035, drone.ctx.currentTime, 0.2);
+    atmosphereCtrl.setAudioState(drone.muted, hooks.mode() === "chat");
   });
   toolsEl.append(muteButton);
 
@@ -507,9 +544,13 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       haunt.target = m.hauntLevel;
       haunt.ghostVisible = m.ghostVisible;
       rebuildOrbs();
+      if (worldClues.length > 0) rebuildClues();
     } else if (m.t === "set_atmosphere") {
-      haunt.atmosphere = m.atmosphere;
-      applyAtmosphere();
+      atmosphereCtrl.setAtmosphere(m.atmosphere);
+    } else if (m.t === "set_world_clues") {
+      worldClues = [...m.clues];
+      clueSeenSent.clear();
+      rebuildClues();
     }
   });
   canvas.addEventListener("pointerdown", startDrone);
@@ -532,6 +573,7 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       if (stepped.level !== quality.level) {
         quality = stepped.state;
         applyQuality();
+        atmosphereCtrl.setQuality(quality.level);
       } else quality = stepped.state;
       hooks.onMessage({ t: "fps", fps: Math.round(fps) });
     }
@@ -557,11 +599,14 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     haunt.level = smoothHaunt(haunt.level, haunt.target, dtMs);
     const grade = gradeParams(haunt.level);
     const flick = 1 - (1 - flicker(frameNow, hashText(manifest.id), reducedMotion)) * haunt.level;
-    const bright = (1 - grade.dim) * haunt.params.brightness * flick;
+    const bright = (1 - grade.dim) * atmosphereCtrl.look.brightness * flick;
     canvas.style.filter = `saturate(${(1 - grade.desaturate).toFixed(3)}) brightness(${bright.toFixed(3)})`;
     vignetteEl.style.opacity = grade.vignette.toFixed(3);
     grainEl.style.opacity = grade.grain.toFixed(3);
-    if (splatMesh) { const [tr = 1, tg = 1, tb = 1] = haunt.params.tint; splatMesh.recolor.setRGB(tr, tg, tb); }
+    if (splatMesh) {
+      const [tr, tg, tb] = splatTintForLook(atmosphereCtrl.look);
+      splatMesh.recolor.setRGB(tr, tg, tb);
+    }
     for (const child of orbGroup.children) {
       const orb = child as THREE.Mesh;
       const a = (orb.userData as { anchor: Anchor }).anchor;
@@ -572,6 +617,21 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       orb.scale.set(scale, scale, 1);
       orb.quaternion.copy(camera.quaternion);
       orb.visible = k > 0;
+    }
+    for (const child of clueGroup.children) {
+      const prop = child as THREE.Group;
+      const { placed, glow, answerMesh } = prop.userData as { placed: PlacedWorldClueProp; glow: THREE.Mesh; answerMesh: THREE.Mesh };
+      const pulse = clueGlowPulse(frameNow, reducedMotion);
+      (glow.material as THREE.MeshBasicMaterial).opacity = 0.2 * pulse;
+      glow.scale.set(pulse, pulse, 1);
+      const clarity = clueClarity(player.pos, look.yaw, placed.pos);
+      (answerMesh.material as THREE.MeshBasicMaterial).opacity = clarity;
+      answerMesh.visible = clarity > 0.01;
+      prop.quaternion.copy(camera.quaternion);
+      if (clarity >= 0.15 && !clueSeenSent.has(placed.sign)) {
+        clueSeenSent.add(placed.sign);
+        hooks.onMessage({ t: "clue_seen", sign: placed.sign });
+      }
     }
     haunt.ghostOpacity += ((haunt.ghostVisible ? 0.85 : 0) - haunt.ghostOpacity) * Math.min(1, dtMs / 350);
     let ghostAt: Vec3 | null = null;
@@ -585,19 +645,13 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       (ghost.material as THREE.MeshBasicMaterial).opacity = haunt.ghostOpacity;
       ghost.visible = true;
     } else ghost.visible = false;
-    if (precip) {
-      precip.position.set(player.pos[0], manifest.floorY, player.pos[2]);
-      const arr = (precip.geometry.getAttribute("position") as THREE.BufferAttribute).array as Float32Array;
-      const fall = (haunt.params.precipitation.kind === "snow" ? 1.1 : 8.5) * (dtMs / 1000);
-      for (let i = 1; i < arr.length; i += 3) { const y = (arr[i] ?? 0) - fall; arr[i] = y < 0 ? y + 12 : y; }
-      precip.geometry.getAttribute("position").needsUpdate = true;
-    }
-    if (stars) stars.position.set(player.pos[0], player.pos[1], player.pos[2]);
+    atmosphereCtrl.update(dtMs, player.pos);
     const prompt = promptFor(player.pos, haunt.anchors, ghostAt, haunt.ghostVisible);
     if (prompt !== lastPrompt) {
       lastPrompt = prompt;
       hooks.onMessage({ t: "prompt", target: prompt });
     }
+    atmosphereCtrl.setAudioState(drone.muted, hooks.mode() === "chat");
     if (drone.ctx && drone.gain && !drone.muted) {
       drone.gain.gain.setTargetAtTime(hooks.mode() === "chat" ? 0.012 : 0.035, drone.ctx.currentTime, 0.3);
     }
@@ -620,6 +674,11 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
     removeEventListener("resize", onResize);
     removeEventListener("deviceorientation", onOrient);
     if (document.pointerLockElement === canvas) document.exitPointerLock?.();
+    atmosphereCtrl.dispose();
+    clearClueMeshes();
+    signGeo.dispose();
+    answerGeo.dispose();
+    glowGeo.dispose();
     splatMesh?.dispose?.();
     scene.traverse((o) => {
       if (o instanceof THREE.Mesh || o instanceof THREE.Points) {

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { instantFor, validateMemoryDay, weatherRequestFor, type WeatherRequest } from "./memory-day";
 import { moonPhase } from "./moon";
 import { normalizePlace } from "./place";
+import { moonSky, starsAbove } from "./stars";
 import { localHour, timeOfDay } from "./time";
 import { tempBand, weatherClassFromCode, windBand } from "./weather";
 import {
@@ -135,14 +136,18 @@ export async function readSnapshot(choice: ConditionsChoice, deps: ReadDeps): Pr
 
     const rawZone = raw !== null && raw.tz !== null && localHour(now, raw.tz) !== null ? raw.tz : null;
     const zone = place.tz ?? rawZone;
+    const resolvedPlace = { ...place, tz: zone };
+    const tod = memory === undefined ? timeOfDay(localHour(now, zone) ?? hostHour) : memory.timeOfDay;
+    const skyAt = memory === undefined ? now : instantFor(memory, place.lon);
     return finish(
       {
-        place: { ...place, tz: zone },
-        timeOfDay: memory === undefined ? timeOfDay(localHour(now, zone) ?? hostHour) : memory.timeOfDay,
+        place: resolvedPlace,
+        timeOfDay: tod,
         weather: raw === null ? "clear" : weatherClassFromCode(raw.code),
         tempBand: raw === null ? "mild" : tempBand(raw.tempC),
         windBand: raw === null ? "calm" : windBand(raw.windKmh),
-        moon: moonPhase(memory === undefined ? now : instantFor(memory, place.lon)),
+        moon: moonPhase(skyAt),
+        ...(tod === "dusk" || tod === "night" ? { stars: starsAbove(resolvedPlace, skyAt), moonSky: moonSky(resolvedPlace, skyAt) } : {}),
         ...(memory === undefined ? {} : { memoryDay: memory }),
         source: raw === null ? "default" : memory === undefined ? "live" : "memory",
       },

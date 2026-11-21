@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { ErrorCode } from "../errors";
 import {
-  ackSight, closeLock, freezeFor, initPartyLocks, inspectPlan, openLock, restoreLock, setPlain, sightIdOf, sightsOnEntry, submitAttempt,
+  ackSight, closeLock, freezeFor, initPartyLocks, inspectPlan, markWorldClueSeen, openLock, restoreLock, setPlain, sightIdOf, sightsOnEntry, submitAttempt, worldClueNotebook,
   type PartyLocks,
 } from "./inspect";
 import { makeLock } from "./make";
 import { placePuzzles, type PlacedLock } from "./place";
 import { isMemoryKind } from "./types";
 import { referenceSolve } from "./verify";
+import { placeWorldClues, worldCluePrompt } from "./world-clues";
 
 const CAP = 25_000;
 const zones = ["Hall", "Library", "Kitchen", "Attic", "Cellar", "Garden"];
@@ -167,5 +168,49 @@ describe("pause, reconnect and Plain Inspect", () => {
     const { state } = fixture();
     const r = ackSight(state, "s1", "Snope");
     expect(!r.ok && r.code).toBe(ErrorCode.sight_unknown);
+  });
+});
+
+describe("World Clues in inspect", () => {
+  it("suppresses phone Sights for World Clue Locks, names the Sign in the Lock prompt with no answer, tracks Assist own-turn clues and uses Faded when never in view", () => {
+    const { placed } = fixture();
+    const zones = [...new Set([...placed.map((p) => p.zone), "Attic", "Cellar", "Vault", "Study"])];
+    const clues = placeWorldClues(11, zones, placed.map((p) => ({ zone: p.zone, lock: makeLock(p.kind, p.level, p.seed) })));
+    const target = clues.find((c) => c.lockZone !== null)!;
+    const decoy = clues.find((c) => c.lockZone === null)!;
+    const lock = placed.find((p) => p.zone === target.lockZone)!;
+    const state = initPartyLocks(placed, clues);
+
+    // No phone Sight is sent on entry for a World Clue lock even if sightZone exists
+    if (lock.sightZone) expect(sightsOnEntry(state, "s1", lock.sightZone).delivery).toBeNull();
+
+    // Opening before anyone saw the World Clue yields Faded, prompt naming the Sign (without answer), and canSeeAgain: false
+    const unseen = openLock(state, "s1", lock.zone, 0, { setting: "medium", capMs: CAP, isBot: false });
+    expect(unseen.ok).toBe(true);
+    if (!unseen.ok) return;
+    expect(unseen.value.faded).not.toBeNull();
+    expect(unseen.value.sign).toBe(target.sign);
+    expect(unseen.value.prompt).toBe(worldCluePrompt(lock.kind, target.sign));
+    expect(unseen.value.prompt).toContain(target.sign);
+    expect(unseen.value.canSeeAgain).toBe(false);
+    expect(worldClueNotebook(state, "s1")).toEqual([]);
+
+    // Seeing the clue off-turn clears Faded for Locks opened next, without adding to Assist own-turn notebook
+    const offTurn = markWorldClueSeen(state, "s2", target.sign, false);
+    const afterOffTurn = openLock(offTurn, "s1", lock.zone, 0, { setting: "medium", capMs: CAP, isBot: false });
+    expect(afterOffTurn.ok && afterOffTurn.value.faded).toBeNull();
+    expect(afterOffTurn.ok && afterOffTurn.value.canSeeAgain).toBe(false);
+    expect(worldClueNotebook(offTurn, "s2")).toEqual([]);
+
+    // Seeing clues (both real and decoy) on the player's own turn keeps them in Assist's notebook and sets canSeeAgain
+    const own1 = markWorldClueSeen(offTurn, "s1", target.sign, true);
+    const own2 = markWorldClueSeen(own1, "s1", decoy.sign, true);
+    expect(worldClueNotebook(own2, "s1").map((c) => c.sign)).toEqual([target.sign, decoy.sign]);
+    const canSee = openLock(own2, "s1", lock.zone, 0, { setting: "medium", capMs: CAP, isBot: false });
+    expect(canSee.ok && canSee.value.faded).toBeNull();
+    expect(canSee.ok && canSee.value.canSeeAgain).toBe(true);
+    const restored = canSee.ok ? restoreLock(canSee.value.state, "s1", {}) : null;
+    expect(restored?.ok && restored.value.sign).toBe(target.sign);
+    expect(restored?.ok && restored.value.canSeeAgain).toBe(true);
   });
 });

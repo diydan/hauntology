@@ -24,6 +24,7 @@ export function PlayChoice({ worldId }: { worldId: string }) {
   const boot = useBoot();
   const { flow } = useRouterState();
   const [open, setOpen] = useState(false);
+  const [locksOn, setLocksOn] = useState(() => memory.get().wanderLocks === true);
   // What the Host said about this world on the way here, read once, so this visit to Haunt keeps showing it.
   const [refusal] = useState(() => memory.get().caseRefusal);
   useEffect(() => {
@@ -34,13 +35,14 @@ export function PlayChoice({ worldId }: { worldId: string }) {
   const flags = boot.status === "ready" ? boot.session.flags : null;
   const caseState = flags === null ? ({ available: false, reason: "Checking what this place can do…" } as const) : caseAvailability(flags, refusal, worldId);
   const wanderOn = flow.ghostReady;
+  const showLocksSwitch = flags?.puzzlesEnabled === true;
 
   const startCase = (setup: CaseSetup) => {
     memory.set({ caseSetup: setup, caseStart: true });
     router.navigate({ screen: "case", worldId });
   };
   const wander = () => {
-    memory.set({ startFresh: true });
+    memory.set({ startFresh: true, ...(showLocksSwitch ? { wanderLocks: locksOn } : { wanderLocks: false }) });
     router.navigate({ screen: "play", worldId });
   };
 
@@ -69,6 +71,22 @@ export function PlayChoice({ worldId }: { worldId: string }) {
             Wander
           </button>
           <p id="wander-line" className="ui-hint">{wanderOn ? WANDER_LINE : `${WANDER_LINE}. ${GHOST_FIRST_LINE}`}</p>
+          {showLocksSwitch ? (
+            <button
+              type="button"
+              role="switch"
+              className="ui-button ui-switch"
+              aria-checked={locksOn}
+              onClick={() => {
+                const next = !locksOn;
+                setLocksOn(next);
+                memory.set({ wanderLocks: next });
+              }}
+            >
+              <span>Wander locks</span>
+              <span>{locksOn ? "On" : "Off"}</span>
+            </button>
+          ) : null}
         </li>
       </ul>
       {open ? (

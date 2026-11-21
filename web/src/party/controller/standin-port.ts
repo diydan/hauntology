@@ -1,9 +1,12 @@
+import type { PublicDoor } from "@hauntology/shared/party/doors";
+import type { ErrandObject } from "@hauntology/shared/party/errands";
 import { makeLock } from "@hauntology/shared/puzzles/make";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import { ATTEMPTS, type Kind, type Level, type Lock, type PuzzleSetting, type Transcript } from "@hauntology/shared/puzzles/types";
 import { verify } from "@hauntology/shared/puzzles/verify";
+import { worldCluePrompt, type CluePlace, type PublicWorldClue, type Sign } from "@hauntology/shared/puzzles/world-clues";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
-import { NOT_SEATED, type ControllerPort, type JoinResult, type LockOffer, type RoomView } from "./controller-port";
+import { NOT_SEATED, type ControllerDoorLock, type ControllerErrandsView, type ControllerPort, type JoinResult, type LockOffer, type RoomView } from "./controller-port";
 
 /** The codes this Room answers to. Anything else is an unknown Room: the answer never says what exists. */
 export const STANDIN_CODES = { open: "K7M2", full: "MAX6", started: "STR4" } as const;
@@ -53,13 +56,21 @@ export class StandInPort implements ControllerPort {
   }
 
   /** Put a Lock in front of this seat (the Room's side of "Inspect"). */
-  offerLock(kind: Kind, level: Level = "easy", seed = 1, faded = true): void {
+  offerLock(kind: Kind, level: Level = "easy", seed = 1, faded = true, world?: { sign: Sign; canSeeAgain: boolean }): void {
     const lock = makeLock(kind, level, seed);
     this.lock = lock;
     this.tries = 0;
     const sight = lock.sight === null ? null : { kind, payload: lock.sight, showMs: 8000 };
-    const offer: LockOffer = { id: `${kind}-${level}-${seed}`, kind, view: lock.view, faded: faded ? sight : null, clue: sight, attempts: ATTEMPTS, capMs: null };
+    const offer: LockOffer = {
+      id: `${kind}-${level}-${seed}`, kind, view: lock.view, faded: faded ? sight : null, clue: sight, attempts: ATTEMPTS, capMs: null,
+      ...(world ? { sign: world.sign, prompt: worldCluePrompt(kind, world.sign), canSeeAgain: world.canSeeAgain } : {}),
+    };
     this.set({ phase: "playing", lock: offer });
+  }
+
+  /** Set the World Clues kept on this seat's own Turn (Assist notebook). */
+  setWorldClues(worldClues: readonly PublicWorldClue[]): void {
+    this.set({ worldClues });
   }
 
   /** What the connection says (the header shows it in words). */
@@ -86,6 +97,60 @@ export class StandInPort implements ControllerPort {
   setPuzzles(setting: PuzzleSetting): void {
     this.calls.push(`setPuzzles ${setting}`);
     if (this.view.master !== null) this.set({ master: { ...this.view.master, puzzles: setting } });
+  }
+
+  setCluePlace(place: CluePlace): void {
+    this.calls.push(`setCluePlace ${place}`);
+    if (this.view.master !== null) this.set({ master: { ...this.view.master, cluePlace: place } });
+  }
+
+  setErrands(on: boolean): void {
+    this.calls.push(`setErrands ${on}`);
+    if (this.view.master !== null) this.set({ master: { ...this.view.master, errands: on } });
+  }
+
+  setErrandsView(errands: ControllerErrandsView): void {
+    this.set({ phase: "playing", errands });
+  }
+
+  setErrandOptOut(on: boolean): void {
+    this.calls.push(`errandOptOut ${on}`);
+    if (this.view.errands) this.set({ errands: { ...this.view.errands, optOut: on } });
+  }
+
+  errandDone(): void {
+    this.calls.push("errandDone");
+    if (this.view.errands) this.set({ errands: { ...this.view.errands, doneTriedThisRound: true } });
+  }
+
+  errandAnswer(yes: boolean): void {
+    this.calls.push(`errandAnswer ${yes}`);
+    if (this.view.errands) this.set({ errands: { ...this.view.errands, ask: null } });
+  }
+
+  errandCaught(poltergeist: number, object: ErrandObject): void {
+    this.calls.push(`errandCaught ${poltergeist} ${object}`);
+    if (this.view.errands) this.set({ errands: { ...this.view.errands, caughtUsed: true } });
+  }
+
+  setDoorsView(opts: { doors?: readonly PublicDoor[]; doorProblems?: readonly string[]; doorLock?: ControllerDoorLock | null }): void {
+    this.set({ phase: "playing", ...opts });
+  }
+
+  doorAct(doorId: string): void {
+    this.calls.push(`doorAct ${doorId}`);
+    if (!this.view.doors) return;
+    this.set({
+      doors: this.view.doors.map((d) =>
+        d.id === doorId && d.lock === "heavy" && !d.open
+          ? { ...d, have: Math.min(d.need, d.have + 1), open: d.have + 1 >= d.need }
+          : d,
+      ),
+    });
+  }
+
+  doorKnock(doorId: string, times: readonly number[]): void {
+    this.calls.push(`doorKnock ${doorId} ${times.length}`);
   }
 
   async leave(): Promise<void> {

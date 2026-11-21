@@ -146,16 +146,16 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ]* 3.8 Write a model-based test of `PartyRoom` with fast-check command sequences (move, open, attempt, wrong, give up, reconnect, pause, Turn end) against a model that carries `seen` and checks every view
     - _Requirements: 1.3, 6.5, 13.1, 13.2_
 
-- [ ] 4. Wander integration (`PlaySession`)
-  - [ ] 4.1 Add `WanderLocks` to the Session and `gateReveal` in front of the `reveal` Directive, with the setting off as the identity
+- [x] 4. Wander integration (`PlaySession`)
+  - [x] 4.1 Add `WanderLocks` to the Session and `gateReveal` in front of the `reveal` Directive, with the setting off as the identity
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
-  - [ ] 4.2 The routes `POST /api/play/lock/open`, `/attempt` and `/skip` with the origin and session-cookie checks and the one-Attempt-a-second limit
+  - [x] 4.2 The routes `POST /api/play/lock/open`, `/attempt` and `/skip` with the origin and session-cookie checks and the one-Attempt-a-second limit
     - _Requirements: 2.2, 2.3, 7.6_
-  - [ ] 4.3 Show the Sight card after the memory text and keep the shown Sights in the Session through a reload within 24 hours
+  - [x] 4.3 Show the Sight card after the memory text and keep the shown Sights in the Session through a reload within 24 hours
     - _Requirements: 2.5_
-  - [ ] 4.4 Suspend movement and release pointer lock while a Lock is open, restore on close (reuse the `chat` Input Mode)
+  - [x] 4.4 Suspend movement and release pointer lock while a Lock is open, restore on close (reuse the `chat` Input Mode)
     - _Requirements: 2.6_
-  - [ ] 4.5 `PUZZLES_ENABLED` (default true) and the Wander default (off), with the switch hidden when disabled
+  - [x] 4.5 `PUZZLES_ENABLED` (default true) and the Wander default (off), with the switch hidden when disabled
     - _Requirements: 14.1, 2.1_
 
 - [ ] 5. Feel layer (`web/src/puzzles/feel/`)

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AtmosphereSchema } from "../conditions/types";
 import { ErrorCode } from "../errors";
+import { KINDS, LockViewSchema, SightSchema } from "../puzzles/types";
 import { AnchorIdSchema, AnchorSchema } from "./events";
 import { JOB_STATES } from "./types";
 
@@ -44,6 +45,7 @@ export const ShellFlagsSchema = z.object({
   voiceEnabled: z.boolean(),
   liveEnabled: z.boolean(),
   partyEnabled: z.boolean(),
+  puzzlesEnabled: z.boolean(),
   ghostModel: z.boolean(),
 });
 
@@ -64,6 +66,8 @@ export const GalleryItemSchema = z.object({
 
 export const GhostPresetSchema = z.object({ id: Id, name: Text(60), spriteUrl: OwnPathSchema });
 
+export const GhostProfileViewSchema = z.object({ name: Text(60), spriteUrl: OwnPathSchema, voice: z.enum(["soft", "dry"]) });
+
 export const CandidateSchema = z.object({ imageId: Id, imageUrl: OwnPathSchema });
 
 export const WorldStatusSchema = z.object({
@@ -75,6 +79,16 @@ export const WorldStatusSchema = z.object({
   shared: z.boolean().optional(),
 });
 
+export const WanderLockViewSchema = z.object({
+  anchorId: AnchorIdSchema,
+  kind: z.enum(KINDS),
+  view: LockViewSchema,
+  faded: SightSchema.nullable(),
+  wrong: z.number().int().min(0),
+  openedAt: z.number().finite(),
+  skipAvailable: z.boolean(),
+});
+
 export const PlayViewSchema = z.object({
   found: z.array(AnchorIdSchema).max(3),
   anchors: z.array(AnchorSchema).max(3),
@@ -83,6 +97,8 @@ export const PlayViewSchema = z.object({
   ended: z.boolean(),
   journal: z.array(z.object({ anchorId: AnchorIdSchema, text: Text(1000) })).max(3),
   atmosphere: AtmosphereSchema.nullable(),
+  lock: WanderLockViewSchema.optional(),
+  locks: z.object({ on: z.boolean(), seen: z.array(z.string().max(32)).max(16) }).optional(),
 });
 
 export const PlaceMatchSchema = z.object({
@@ -108,14 +124,32 @@ export const API_SCHEMAS = {
   deleteWorld: z.null(),
   shareWorld: z.object({ shared: z.boolean() }),
   ghostPresets: z.array(GhostPresetSchema).max(12),
+  ghostProfile: GhostProfileViewSchema,
   searchPlaces: z.array(PlaceMatchSchema).max(5),
   listen: z.object({ transcript: Text(1000) }),
   playStart: z.object({ playId: Id, view: PlayViewSchema }),
   playTurn: z.object({
     reply: z.object({ text: Text(2000), scripted: z.boolean(), voice: z.object({ lineId: Id }).optional() }),
     view: PlayViewSchema,
+    lock: WanderLockViewSchema.optional(),
+    sight: SightSchema.optional(),
   }),
   playGet: z.object({ worldId: Id, view: PlayViewSchema }),
+  playLockOpen: z.object({ view: PlayViewSchema, lock: WanderLockViewSchema }),
+  playLockAttempt: z.union([
+    z.object({ outcome: z.literal("wrong"), skipAvailable: z.boolean(), view: PlayViewSchema }),
+    z.object({
+      outcome: z.literal("solved"),
+      reply: z.object({ text: Text(2000), scripted: z.boolean(), voice: z.object({ lineId: Id }).optional() }),
+      view: PlayViewSchema,
+      sight: SightSchema.optional(),
+    }),
+  ]),
+  playLockSkip: z.object({
+    reply: z.object({ text: Text(2000), scripted: z.boolean(), voice: z.object({ lineId: Id }).optional() }),
+    view: PlayViewSchema,
+    sight: SightSchema.optional(),
+  }),
 } as const;
 
 export type ApiSchemaName = keyof typeof API_SCHEMAS;

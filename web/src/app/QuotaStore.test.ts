@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createFakeApi } from "./FakeApi";
 import { capabilitiesOf, createQuotaStore } from "./QuotaStore";
 
-const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false };
+const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false };
 const session: SessionRecord = { ackNotice: false, flags };
 const quota: QuotaSnapshot = { world: 2, image: 8, llm: 40, tts: 40, stt: 20, live: 30 };
 

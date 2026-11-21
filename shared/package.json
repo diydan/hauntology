@@ -15,6 +15,7 @@
     "./origin": "./src/origin.ts",
     "./conditions/*": "./src/conditions/*.ts",
     "./ghost/*": "./src/ghost/*.ts",
+    "./creator/*": "./src/creator/*.ts",
     "./world/*": "./src/world/*.ts",
     "./viewer/*": "./src/viewer/*.ts",
     "./puzzles/*": "./src/puzzles/*.ts",
@@ -22,6 +23,7 @@
     "./party/*": "./src/party/*.ts",
     "./songs/*": "./src/songs/*.ts",
     "./print/*": "./src/print/*.ts",
+    "./voice/stitch/*": "./src/voice/stitch/*.ts",
     "./voice/*": "./src/voice/*.ts"
   },
   "scripts": {

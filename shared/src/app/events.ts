@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AtmosphereSchema } from "../conditions/types";
 import { ErrorCode } from "../errors";
+import { SIGNS } from "../puzzles/world-clues";
 import { VIEWER_RUNGS } from "./types";
 
 /**
@@ -20,10 +21,36 @@ export type AnchorId = z.infer<typeof AnchorIdSchema>;
 export const AnchorSchema = z.object({ id: AnchorIdSchema, pos: Vec3Schema, radius: z.number().finite().positive() }).strict();
 export type Anchor = z.infer<typeof AnchorSchema>;
 
+const PictureShapeSchema = z.object({
+  t: z.enum(["circle", "rect", "tri"]),
+  x: z.number().finite(),
+  y: z.number().finite(),
+  s: z.number().finite(),
+  c: z.string().min(1),
+  a: z.number().finite(),
+}).strict();
+
+const SightPayloadSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("wires"), order: z.array(z.number().int().nonnegative()).max(8) }).strict(),
+  z.object({ kind: z.literal("clock"), h: z.number().int().min(1).max(12), m: z.number().int().min(0).max(59) }).strict(),
+  z.object({ kind: z.literal("safe"), code: z.array(z.number().int().min(0).max(99)).max(8) }).strict(),
+  z.object({ kind: z.literal("moved"), shelf: z.array(z.number().int().nonnegative()).max(16) }).strict(),
+  z.object({
+    kind: z.literal("photo"),
+    cols: z.number().int().positive(),
+    rows: z.number().int().positive(),
+    picture: z.object({ top: z.string().min(1), bottom: z.string().min(1), shapes: z.array(PictureShapeSchema).max(32) }).strict(),
+  }).strict(),
+  z.object({ kind: z.literal("knock"), groups: z.array(z.number().int().positive()).max(8), long: z.number().int().nonnegative().nullable() }).strict(),
+]);
+
+export const PublicWorldClueSchema = z.object({ zone: z.string().min(1), sign: z.enum(SIGNS), sight: SightPayloadSchema }).strict();
+
 /** Viewer to Shell. `pose` is sent at most 4 times a second; `fps` about once a second, for the debug overlay. */
 export const ViewerToShellSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("pose"), pos: Vec3Schema, yaw: z.number().finite() }).strict(),
   z.object({ t: z.literal("prompt"), target: z.enum(["anchor", "ghost"]).nullable() }).strict(),
+  z.object({ t: z.literal("clue_seen"), sign: z.enum(SIGNS) }).strict(),
   z.object({ t: z.literal("degraded"), rung: z.enum(VIEWER_RUNGS) }).strict(),
   z.object({ t: z.literal("fps"), fps: z.number().finite().nonnegative() }).strict(),
 ]);
@@ -34,6 +61,7 @@ export const ShellToViewerSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("set_input_mode"), mode: z.enum(["play", "chat"]) }).strict(),
   // The frozen conditions of the place, or null to restore the normal look. Idempotent.
   z.object({ t: z.literal("set_atmosphere"), atmosphere: AtmosphereSchema.nullable() }).strict(),
+  z.object({ t: z.literal("set_world_clues"), clues: z.array(PublicWorldClueSchema).max(6) }).strict(),
   z
     .object({
       t: z.literal("apply_view"),

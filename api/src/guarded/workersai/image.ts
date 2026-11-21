@@ -61,3 +61,46 @@ export class FluxImageMaker implements ImageMaker {
     return image === null ? { ok: false, kind: "failed" } : { ok: true, image };
   }
 }
+
+/** A portrait from words alone (ghost-creator task 3): no reference image. */
+export interface PortraitMaker {
+  render(req: { prompt: string; negativePrompt: string; seed: number; width: number; height: number }): Promise<RenderAnswer>;
+}
+
+/** The only door to text-to-image portrait calls: a Ticket for the `image` meter, as everywhere. */
+export function renderPortrait(maker: PortraitMaker, ticket: SpendTicket, req: Parameters<PortraitMaker["render"]>[0]): ReturnType<PortraitMaker["render"]> {
+  assertTicket(ticket, "image");
+  return maker.render(req);
+}
+
+/**
+ * FLUX.2 text-to-image for a ghost portrait: the same multipart form as the sketch render
+ * without `input_image_0`, plus the negative prompt as its own field. **Not confirmed by a
+ * call** (world-pipeline Spike 1.2 owns the image model's real behaviour); the answer is
+ * checked by the caller as any upload is. Nothing sent or received is logged.
+ */
+export class FluxPortraitMaker implements PortraitMaker {
+  constructor(
+    private readonly ai: AiBinding,
+    private readonly modelId: string = DEFAULT_IMAGE_MODEL,
+    private readonly options: { timeoutMs?: number } = {},
+  ) {}
+
+  async render(req: Parameters<PortraitMaker["render"]>[0]): Promise<RenderAnswer> {
+    const form = new FormData();
+    form.append("prompt", req.prompt);
+    form.append("negative_prompt", req.negativePrompt);
+    form.append("width", String(req.width));
+    form.append("height", String(req.height));
+    form.append("seed", String(req.seed));
+    const serialized = new Response(form);
+    let answer: unknown;
+    try {
+      answer = await withTimeout(this.ai.run(this.modelId, { multipart: { body: serialized.body, contentType: serialized.headers.get("content-type") } }), this.options.timeoutMs ?? 60_000);
+    } catch (e) {
+      return { ok: false, kind: failureKind(e) };
+    }
+    const image = typeof answer === "object" && answer !== null && typeof (answer as { image?: unknown }).image === "string" ? fromBase64((answer as { image: string }).image) : null;
+    return image === null ? { ok: false, kind: "failed" } : { ok: true, image };
+  }
+}

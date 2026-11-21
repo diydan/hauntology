@@ -105,7 +105,8 @@ export type BotAction =
   | Readonly<{ kind: "walk"; zone: string }>
   | Readonly<{ kind: "pass" }>;
 
-export type BotTurn = Readonly<{ inZone: string | null; inspected: readonly string[]; suggested: boolean; canSuggestHere: boolean; residueFound: number; seed: number; turn: number }>;
+/** `open` is the Zones a Bot may walk to when some are closed behind a shut door (knock-door 2.3); left out, every Zone is open. */
+export type BotTurn = Readonly<{ inZone: string | null; inspected: readonly string[]; suggested: boolean; canSuggestHere: boolean; residueFound: number; seed: number; turn: number; open?: readonly string[] }>;
 
 /**
  * One action for the Bot's Turn, from its mind and its own Turn only. A Standard Bot seals only when each category
@@ -118,7 +119,7 @@ export function botAct(m: Mind, level: "standard" | "gentle", t: BotTurn): BotAc
   const pick = (xs: readonly string[]): string => xs[randInt(r, xs.length)] as string;
   const sure = c.suspect.length === 1 && c.zone.length === 1 && c.relic.length === 1;
   if (sure || (level === "gentle" && chance(m) >= 0.5)) return { kind: "seal", suspect: pick(c.suspect), zone: pick(c.zone), relic: pick(c.relic) };
-  const zones = m.cards.filter((x) => x.kind === "zone").map((x) => x.id);
+  const zones = m.cards.filter((x) => x.kind === "zone" && (t.open === undefined || t.open.includes(x.id))).map((x) => x.id);
   const score = (z: string): number => (t.residueFound < m.residueCount && !t.inspected.includes(z) ? 3 : 0) + (c.zone.includes(z) ? 2 : 0) + r() * 0.5;
   if (t.inZone !== null && !t.inspected.includes(t.inZone) && t.residueFound < m.residueCount) return { kind: "inspect" };
   if (t.inZone !== null && t.canSuggestHere && !t.suggested) {

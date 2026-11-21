@@ -1,8 +1,8 @@
 import { readSnapshot, type ConditionsCache, type RawWeather, type ReadNote, type WeatherRequest } from "@hauntology/shared/conditions/snapshot";
-import type { ConditionsChoice, ConditionsSnapshot } from "@hauntology/shared/conditions/types";
+import type { ConditionsChoice, ConditionsSnapshot, Place } from "@hauntology/shared/conditions/types";
 import { SILENT, type Logger } from "../log";
 import { defaultConditionsCache } from "./cache";
-import { weatherBaseFrom, weatherFetcher, type WeatherFetch } from "./open-meteo";
+import { geocode, weatherBaseFrom, weatherFetcher, type WeatherFetch } from "./open-meteo";
 
 /**
  * The snapshot store of a new game (conditions 3.3 and 3.4; ghost-engine 3.1): the game's start reads the real world ONCE, through `readSnapshot`, and the game keeps what
@@ -73,4 +73,20 @@ export function conditionsFromEnv(env: ConditionsEnv, overrides: Partial<Pick<Co
     sleep: overrides.sleep ?? ((ms) => new Promise<void>((resolve) => void setTimeout(resolve, ms))),
     ...(overrides.log === undefined ? {} : { log: overrides.log }),
   });
+}
+
+export type GeocoderService = Readonly<{
+  enabled: boolean;
+  search: (query: string) => Promise<Place[]>;
+}>;
+
+/** City-search adapter from `CONDITIONS_ENABLED` and `WEATHER_BASE_URL` (conditions 3.4, 3.5); keeps all upstream calls inside `api/src/conditions/`. */
+export function geocoderFromEnv(env: ConditionsEnv, overrides: { fetch?: WeatherFetch } = {}): GeocoderService {
+  const base = weatherBaseFrom(env.WEATHER_BASE_URL);
+  const call: WeatherFetch = overrides.fetch ?? ((url, init) => globalThis.fetch(url, init));
+  const enabled = env.CONDITIONS_ENABLED !== "false" && base.ok;
+  return {
+    enabled,
+    search: (query) => (enabled && base.ok ? geocode(query, { fetch: call, base: base.base }) : Promise.resolve([])),
+  };
 }

@@ -1,8 +1,10 @@
 import { atmosphereForGame, toPromptFields } from "../conditions/snapshot";
 import type { Atmosphere, ConditionsSnapshot, PromptFields } from "../conditions/types";
-import type { PlayView } from "../app/api";
+import type { PlayView, WanderLockView } from "../app/api";
+import type { Sight } from "../puzzles/types";
+import { gateReveal, initWander, sightAfterReveal, skipAvailable, skipWanderLock, submitWanderAttempt, type WanderLocks } from "../puzzles/wander";
 import { placeAnchors, ringAnchors, validateAnchors, walkRadiusOf } from "./anchors";
-import { initialState, step, withHistory, withMemory } from "./engine";
+import { initialState, step, withHistory, withMemory, type StepResult } from "./engine";
 import { parseAction } from "./parse";
 import { sanitizePose } from "./pose";
 import { acceptTurn, retryAfterMs } from "./rate";
@@ -15,7 +17,7 @@ import { clientView } from "./view";
 import { keepLine, liveLines, type VoiceLine } from "../voice/line";
 import { playerTextOf, toVoiceLine } from "../voice/to-line";
 import { speakerForGhostVoice } from "../voice/voices";
-import type { Anchor, AnchorId, Bounds, Directive, Memory, Seed, Vec3 } from "./types";
+import type { Anchor, AnchorId, Bounds, Directive, Memory, Pose, Seed, Vec3 } from "./types";
 
 /**
  * One whole game, from the first call to the last (ghost-engine tasks 3.1 and 3.2, over the pure parts of task 2): start a Session, take a turn,
@@ -52,6 +54,8 @@ export type StartInput = {
    * Day: the pure Default carries nothing), the Atmosphere the client sees is taken from it unless one is given, and the narrator's sky words come from it. Never an input to a rule.
    */
   conditions?: ConditionsSnapshot | null | undefined;
+  /** Enables optional Wander Locks (`puzzles` Requirement 2; off by default). */
+  locks?: boolean | undefined;
 };
 
 /** Where the anchors come from: the world's own, else the client's if they pass, else placed from the seed, else the ring. */
@@ -91,12 +95,23 @@ export function startSession(input: StartInput): PlaySession {
     expiresAt: now + SESSION_TTL_MS,
     atmosphere: input.atmosphere ?? atmosphereForGame(kept),
     ...(kept === null ? {} : { conditions: kept }),
+    ...(input.locks === true ? { gameSeed: seed >>> 0, lockState: initWander(true) } : {}),
   };
 }
 
 /** "Haunt again" (Requirement 8.3): the same Session id, owner and voice, a fresh seed, new anchors and seeds, an empty journal. */
 export function resetSession(session: PlaySession, input: { world: WorldFacts; seed: number; now: number }): PlaySession {
-  const fresh = startSession({ id: session.id, worldId: session.worldId, ownerSid: session.ownerSid, world: input.world, seed: input.seed, now: input.now, atmosphere: session.atmosphere, conditions: session.conditions ?? null });
+  const fresh = startSession({
+    id: session.id,
+    worldId: session.worldId,
+    ownerSid: session.ownerSid,
+    world: input.world,
+    seed: input.seed,
+    now: input.now,
+    atmosphere: session.atmosphere,
+    conditions: session.conditions ?? null,
+    ...(session.lockState?.on === true ? { locks: true } : {}),
+  });
   return { ...fresh, voice: session.voice };
 }
 
@@ -129,6 +144,26 @@ export type NarrationJob = {
   /** What the visitor typed this turn, when they typed (never the stock sentence a button gets): kept out of anything spoken. */
   typed?: string | undefined;
 };
+export const WANDER_ATTEMPT_COOLDOWN_MS = 1000;
+const LOCK_HOLDING_LINE = "Something holds this memory shut. Open the lock to hear it.";
+
+function buildOpenLockView(session: PlaySession, now: number): WanderLockView | undefined {
+  const ls = session.lockState;
+  if (!ls?.on || ls.open === null) return undefined;
+  const open = ls.open;
+  const g = gateReveal(ls, { anchorId: open.anchorId, sessionSeed: session.gameSeed ?? session.state.seedState }, now);
+  if (g.gate !== "open") return undefined;
+  return {
+    anchorId: open.anchorId as AnchorId,
+    kind: g.kind,
+    view: g.view,
+    faded: g.faded,
+    wrong: open.wrong,
+    openedAt: open.openedAt,
+    skipAvailable: skipAvailable(open, now),
+  };
+}
+
 export type TurnResult =
   | { ok: false; code: "rate_limited"; retryAfterMs: number }
   | { ok: false; code: "session_expired" }
@@ -142,18 +177,20 @@ export type TurnResult =
       job: NarrationJob | null;
       /** The line this turn's reply was kept as, when the caller asked for one and the reply could be one. */
       voiceLine: VoiceLine | null;
+      lock?: WanderLockView | undefined;
+      sight?: Sight | undefined;
     };
 
 const seedOf = (seeds: readonly Seed[], id: string): Seed | undefined => seeds.find((s) => s.anchorId === id);
 
-export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
-  if (isExpired(session, turn.now)) return { ok: false, code: "session_expired" };
-  if (!acceptTurn(session.state.lastTurnAt, turn.now)) return { ok: false, code: "rate_limited", retryAfterMs: retryAfterMs(session.state.lastTurnAt, turn.now) };
-
-  const pose = sanitizePose(turn.pose, turn.world.bounds, session.pose);
-  const action = parseAction(turn.input);
-  const stepped = step(session.state, action, { anchors: session.anchors, pos: pose.pos, yaw: pose.yaw, now: turn.now });
-
+function finalizeTurnStep(
+  session: PlaySession,
+  stepped: StepResult,
+  pose: Pose,
+  action: ReturnType<typeof parseAction>,
+  turn: Pick<TurnInput, "now" | "world" | "voiceLineId">,
+  nextLockState?: WanderLocks,
+): Extract<TurnResult, { ok: true }> {
   // Two numbers from the saved generator, so the words of a restored game go on as they would have.
   const [r0, s1] = stepRng(stepped.state.seedState);
   const [r1, s2] = stepRng(s1);
@@ -162,6 +199,9 @@ export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
   let text: string;
   let farewell: string | null = null;
   let toldSeed: Seed | undefined;
+  let sight: Sight | undefined;
+  let lockState = nextLockState ?? session.lockState;
+
   if (stepped.revealed !== null) {
     const seed = seedOf(session.seeds, stepped.revealed) as Seed;
     toldSeed = seed;
@@ -169,6 +209,11 @@ export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
     state = withMemory(state, memory);
     if (stepped.directive.kind === "ending") farewell = narrate({ directive: stepped.directive, voice: session.voice, brief: turn.world.brief, seeds: session.seeds, r: [r0, r1] });
     text = farewell === null ? memory.text : `${memory.text} ${farewell}`;
+    if (lockState?.on === true && !state.ended) {
+      const after = sightAfterReveal(lockState, session.gameSeed ?? session.state.seedState);
+      lockState = after.state;
+      if (after.delivery !== null) sight = after.delivery.sight;
+    }
   } else {
     text = narrate({ directive: stepped.directive, voice: session.voice, brief: turn.world.brief, seeds: session.seeds, r: [r0, r1] });
   }
@@ -205,9 +250,115 @@ export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
     ...session,
     state,
     pose,
+    ...(lockState !== undefined ? { lockState } : {}),
     ...(turn.voiceLineId === undefined ? {} : { voiceLines: voiceLine === null ? liveLines(session.voiceLines, turn.now) : keepLine(session.voiceLines, voiceLine, turn.now) }),
   };
-  return { ok: true, session: next, reply: { text, scripted: true }, view: clientView({ state, anchors: next.anchors, atmosphere: next.atmosphere }), directive: stepped.directive, revealed: stepped.revealed !== null, job, voiceLine };
+  return {
+    ok: true,
+    session: next,
+    reply: { text, scripted: true },
+    view: viewOf(next, turn.now),
+    directive: stepped.directive,
+    revealed: stepped.revealed !== null,
+    job,
+    voiceLine,
+    ...(sight !== undefined ? { sight } : {}),
+  };
+}
+
+export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
+  if (isExpired(session, turn.now)) return { ok: false, code: "session_expired" };
+  if (!acceptTurn(session.state.lastTurnAt, turn.now)) return { ok: false, code: "rate_limited", retryAfterMs: retryAfterMs(session.state.lastTurnAt, turn.now) };
+
+  const pose = sanitizePose(turn.pose, turn.world.bounds, session.pose);
+  const action = parseAction(turn.input);
+  const stepped = step(session.state, action, { anchors: session.anchors, pos: pose.pos, yaw: pose.yaw, now: turn.now });
+
+  // When Wander Locks are on, `gateReveal` intercepts unrevealed memories behind their Lock (puzzles 4.1).
+  if (session.lockState?.on === true && stepped.revealed !== null) {
+    const gated = gateReveal(session.lockState, { anchorId: stepped.revealed, sessionSeed: session.gameSeed ?? session.state.seedState }, turn.now);
+    if (gated.gate === "open") {
+      const next: PlaySession = {
+        ...session,
+        pose,
+        state: { ...session.state, lastTurnAt: turn.now },
+        lockState: gated.state,
+      };
+      const lock = buildOpenLockView(next, turn.now);
+      return {
+        ok: true,
+        session: next,
+        reply: { text: LOCK_HOLDING_LINE, scripted: true },
+        view: viewOf(next, turn.now),
+        directive: stepped.directive,
+        revealed: false,
+        job: null,
+        voiceLine: null,
+        ...(lock !== undefined ? { lock } : {}),
+      };
+    }
+  }
+
+  return finalizeTurnStep(session, stepped, pose, action, turn);
+}
+
+export type LockActionFailure =
+  | { ok: false; code: "session_expired" | "puzzle_disabled" | "puzzle_not_open" | "puzzle_rate_limited" }
+  | { ok: false; code: "anchor_not_found" };
+
+export function openWanderLock(session: PlaySession, args: { anchorId: AnchorId; now: number }): LockActionFailure | { ok: true; session: PlaySession; view: PlayView; lock: WanderLockView } {
+  if (isExpired(session, args.now)) return { ok: false, code: "session_expired" };
+  if (!session.lockState?.on) return { ok: false, code: "puzzle_disabled" };
+  const anchor = session.anchors.find((a) => a.id === args.anchorId);
+  if (!anchor || session.state.found.includes(args.anchorId)) return { ok: false, code: "anchor_not_found" };
+  const gated = gateReveal(session.lockState, { anchorId: args.anchorId, sessionSeed: session.gameSeed ?? session.state.seedState }, args.now);
+  if (gated.gate !== "open") return { ok: false, code: "anchor_not_found" };
+  const next: PlaySession = { ...session, lockState: gated.state };
+  const lock = buildOpenLockView(next, args.now)!;
+  return { ok: true, session: next, view: viewOf(next, args.now), lock };
+}
+
+export function attemptWanderLock(
+  session: PlaySession,
+  args: { transcript: unknown; now: number; world: Pick<WorldFacts, "bounds" | "brief">; voiceLineId?: string | undefined },
+): LockActionFailure | { ok: true; outcome: "wrong"; session: PlaySession; view: PlayView; skipAvailable: boolean } | ({ ok: true; outcome: "solved" } & Extract<TurnResult, { ok: true }>) {
+  if (isExpired(session, args.now)) return { ok: false, code: "session_expired" };
+  if (!session.lockState?.on) return { ok: false, code: "puzzle_disabled" };
+  if (session.lockState.open === null) return { ok: false, code: "puzzle_not_open" };
+  if (session.lastAttemptAt !== undefined && session.lastAttemptAt !== null && args.now - session.lastAttemptAt < WANDER_ATTEMPT_COOLDOWN_MS) {
+    return { ok: false, code: "puzzle_rate_limited" };
+  }
+  const r = submitWanderAttempt(session.lockState, args.transcript, args.now);
+  if (!r.ok) return { ok: false, code: r.code === "puzzle_not_open" ? "puzzle_not_open" : "puzzle_disabled" };
+  const outcome = r.value;
+  if (outcome.outcome === "wrong") {
+    const next: PlaySession = { ...session, lockState: outcome.state, lastAttemptAt: args.now };
+    return { ok: true, outcome: "wrong", session: next, view: viewOf(next, args.now), skipAvailable: outcome.skipAvailable };
+  }
+  const anchor = session.anchors.find((a) => a.id === outcome.anchorId);
+  if (!anchor) return { ok: false, code: "anchor_not_found" };
+  const pose = sanitizePose({ pos: anchor.pos, yaw: session.pose.yaw }, args.world.bounds, session.pose);
+  const action = parseAction({ button: "touch" });
+  const stepped = step(session.state, action, { anchors: session.anchors, pos: anchor.pos, yaw: pose.yaw, now: args.now });
+  const done = finalizeTurnStep({ ...session, lastAttemptAt: args.now }, stepped, pose, action, { now: args.now, world: args.world, voiceLineId: args.voiceLineId }, outcome.state);
+  return { ...done, outcome: "solved" };
+}
+
+export function skipWanderLockForSession(
+  session: PlaySession,
+  args: { now: number; world: Pick<WorldFacts, "bounds" | "brief">; voiceLineId?: string | undefined },
+): LockActionFailure | Extract<TurnResult, { ok: true }> {
+  if (isExpired(session, args.now)) return { ok: false, code: "session_expired" };
+  if (!session.lockState?.on) return { ok: false, code: "puzzle_disabled" };
+  if (session.lockState.open === null) return { ok: false, code: "puzzle_not_open" };
+  const r = skipWanderLock(session.lockState, args.now);
+  if (!r.ok) return { ok: false, code: r.code === "puzzle_not_open" ? "puzzle_not_open" : "puzzle_rate_limited" };
+  const anchor = session.anchors.find((a) => a.id === r.value.anchorId);
+  if (!anchor) return { ok: false, code: "anchor_not_found" };
+  const pose = sanitizePose({ pos: anchor.pos, yaw: session.pose.yaw }, args.world.bounds, session.pose);
+  const action = parseAction({ button: "touch" });
+  const stepped = step(session.state, action, { anchors: session.anchors, pos: anchor.pos, yaw: pose.yaw, now: args.now });
+  return finalizeTurnStep(session, stepped, pose, action, { now: args.now, world: args.world, voiceLineId: args.voiceLineId }, r.value.state);
 }
 
 /** What the model said for a turn, to be put where the scripted words were. */
@@ -246,4 +397,8 @@ export function settleNarration(session: PlaySession, settle: Settle, voice?: { 
   return next;
 }
 
-export const viewOf = (session: PlaySession): PlayView => clientView({ state: session.state, anchors: session.anchors, atmosphere: session.atmosphere });
+export const viewOf = (session: PlaySession, now = Date.now()): PlayView => {
+  const lock = buildOpenLockView(session, now);
+  const locks = session.lockState?.on === true ? { on: true, seen: [...session.lockState.seen] } : undefined;
+  return clientView({ state: session.state, anchors: session.anchors, atmosphere: session.atmosphere, ...(lock !== undefined ? { lock } : {}), ...(locks !== undefined ? { locks } : {}) });
+};

@@ -5,6 +5,7 @@
 .pc-page { --pc-target: max(48px, var(--target)); display: grid; align-content: start; gap: var(--space-3); max-width: 40rem; min-height: 100vh; min-height: 100dvh; margin: 0 auto; padding: var(--space-3); padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); }
 .pc-page, .pc-page * { box-sizing: border-box; }
 .pc-page .ui-button, .pc-page .ui-input { min-height: var(--pc-target); }
+.pc-page .ui-select { min-height: var(--pc-target); }
 .pc-page .ui-hint { margin: 0; }
 
 /* the join page */

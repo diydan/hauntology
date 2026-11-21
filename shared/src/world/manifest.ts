@@ -78,6 +78,20 @@ export const WorldManifestSchema = z.object({
   brief: z.string().max(2000),
   anchors: z.array(AnchorSchema).max(3).optional(),
   ghostPreset: z.string().min(1).max(60).optional(),
+  /** Optional doors between Zones (knock-door 1.1, 1.4); validated against the Room's Zones on start. */
+  doors: z.object({
+    home: z.string().min(1).max(32),
+    passages: z.array(z.tuple([z.string().min(1).max(32), z.string().min(1).max(32)])).max(64),
+    doors: z.array(z.object({
+      id: z.string().max(64),
+      at: z.object({ x: Num, z: Num }),
+      width: Num,
+      a: z.string().min(1).max(32),
+      b: z.string().min(1).max(32),
+      lock: z.string().max(16),
+      need: z.number().optional(),
+    })).max(16),
+  }).optional(),
   /** A Gallery world only: the credit and licence of its picture. */
   attribution: AttributionSchema.optional(),
 });

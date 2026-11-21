@@ -452,6 +452,51 @@ describe("Play: the ghost's voice", () => {
     expect(screen.queryByRole("button", { name: "Hold to talk" })).toBeNull();
     expect(screen.getByLabelText("Speak aloud")).toBeTruthy();
   });
+
+  it("shows unavailable controls with one line when tts and stt quotas are 0 and still plays to the Ending", async () => {
+    const api = createFakeApi({ latencyMs: 0, quota: { world: 0, image: 0, llm: 0, tts: 0, stt: 0, live: 0 } });
+    const speak = vi.spyOn(api, "speak");
+    const listen = vi.spyOn(api, "listen");
+    const h = await enterPlay({ api });
+    await goIn();
+    await press("Talk");
+    expect((screen.getByLabelText("Speak aloud") as HTMLInputElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Hold to talk" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(document.querySelector("[data-tts-unavailable]")).not.toBeNull();
+    expect(document.querySelector("[data-stt-unavailable]")).not.toBeNull();
+
+    // Still types and reaches the Ending with zero quota and zero voice calls.
+    const box = screen.getByLabelText("Say something") as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "anyone here?" } });
+    await act(async () => { fireEvent.submit(box.closest("form")!); });
+    await waitFor(() => expect(document.querySelectorAll("[data-who=ghost]")).toHaveLength(1));
+    await press("Close chat");
+    await lookHere(1);
+    await lookHere(2);
+    await lookHere(3);
+    await screen.findByRole("heading", { name: "You remembered" });
+    expect(h.history.stack.at(-1)).toBe("/end/attic-room");
+    expect(speak).not.toHaveBeenCalled();
+    expect(listen).not.toHaveBeenCalled();
+  });
+
+  it("reaches the Ending cleanly when VOICE_ENABLED is false and every quota meter is at zero (Checkpoint 7)", async () => {
+    const api = createFakeApi({ latencyMs: 0, quota: { world: 0, image: 0, llm: 0, tts: 0, stt: 0, live: 0 }, flags: { voiceEnabled: false } });
+    const h = await enterPlay({ api });
+    await goIn();
+    await press("Talk");
+    expect(screen.queryByLabelText("Speak aloud")).toBeNull();
+    const box = screen.getByLabelText("Say something") as HTMLInputElement;
+    fireEvent.change(box, { target: { value: "still listening" } });
+    await act(async () => { fireEvent.submit(box.closest("form")!); });
+    await waitFor(() => expect(document.querySelectorAll("[data-who=ghost]")).toHaveLength(1));
+    await press("Close chat");
+    await lookHere(1);
+    await lookHere(2);
+    await lookHere(3);
+    await screen.findByRole("heading", { name: "You remembered" });
+    expect(h.history.stack.at(-1)).toBe("/end/attic-room");
+  });
 });
 
 describe("Play: one game per visit to the Screen", () => {

@@ -110,7 +110,7 @@ describe("Property 2: No outbound message leaks", () => {
     fc.assert(fc.property(fc.integer(), fc.integer({ min: 2, max: 5 }), (seed, n) => {
       play(seed, n, 8, true, mulberry32(seed), (res) => {
         for (const o of res.out) {
-          if (o.to !== "public") continue;
+          if (o.to !== "public" || o.msg.t !== "public") continue;
           const v = o.msg.view;
           const text = JSON.stringify(v);
           if (v.phase === "ended") continue; // the ending shows the Solution and the Residue places, by design

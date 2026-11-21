@@ -47,7 +47,7 @@ export async function loadDemoPlatform(search: string): Promise<Partial<Platform
   if (!import.meta.env.PROD && wantsDemo(search)) {
     const { standinTurnstile } = await import("./confirm/turnstile-standin");
     // No server behind the demo: "Play a case" uses the stand-in Host, and Play the stand-in Viewer.
-    return { loadTurnstile: standinTurnstile, loadHost: () => import("./case/standin"), loadViewer: () => import("./viewer/standin") };
+    return { loadTurnstile: standinTurnstile, loadHost: () => import("./case/standin"), loadViewer: () => import("./viewer/standin"), loadCreator: () => import("./haunt/creator-standin") };
   }
   return null;
 }

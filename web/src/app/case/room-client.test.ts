@@ -44,6 +44,7 @@ describe("startSolo", () => {
     expect(ws.sent[1]).toEqual({ t: "settings", preset: "gentle" });
     expect(ws.sent[2]).toEqual({ t: "settings", puzzles: "off" });
     expect(c.getSnapshot().status).toBe("connecting");
+    expect(c.getSnapshot().hostToken).toBe("h");
   });
 
   it("fails with the Room's own reason when it cannot make or join the Room", async () => {
@@ -101,5 +102,21 @@ describe("checkWorld", () => {
   });
   it("starts no case on a world it cannot read", async () => {
     await expect(checkWorld(deps({}).d, "w1", { preset: "classic", bots: 2 })).rejects.toEqual(new RoomError("case_failed"));
+  });
+});
+
+describe("openRoom voice protocol", () => {
+  it("tracks speech toggle, voice cues, and prefetch lists on the Host snapshot", () => {
+    const { d, sockets } = deps({});
+    const c = openRoom(d, "ABCD", "t", { hostToken: "host-sec" });
+    const ws = sockets[0]!;
+    ws.open();
+    ws.say({ t: "speech", on: true });
+    expect(c.getSnapshot().speechOn).toBe(true);
+    ws.say({ t: "prefetch", lineIds: ["lib-1", "lib-2"] });
+    expect(c.getSnapshot().prefetch).toEqual(["lib-1", "lib-2"]);
+    ws.say({ t: "voice", lineId: "l-1", text: "Cold air.", kind: "haunt" });
+    expect(c.getSnapshot().voice).toEqual({ seq: 1, lineId: "l-1", text: "Cold air.", kind: "haunt" });
+    expect(c.getSnapshot().hostToken).toBe("host-sec");
   });
 });

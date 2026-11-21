@@ -12,10 +12,14 @@ export type Bindings = {
   VOICE_TTS_MODEL_ID?: string;
   /** The fallback speech model: blank is `@cf/deepgram/aura-2-en`, which is the only id accepted; anything else turns the voice off. */
   VOICE_TTS_FALLBACK_MODEL_ID?: string;
+  /** The transcription model: blank is `@cf/openai/whisper-large-v3-turbo`, the only id accepted (`sttModelFromEnv`). */
+  VOICE_STT_MODEL_ID?: string;
   /** `true` or `1` turns live conversation mode on (a stretch). Unset is off. */
   VOICE_LIVE_ENABLED?: string;
   /** `false`, `0` or `off` stops new Party Rooms, a solo case included; Wander stays (party-mode). Unset is on. */
   PARTY_ENABLED?: string;
+  /** `false`, `0` or `off` turns off puzzles (Party runs plain Inspect; Wander hides the Locks switch). Unset is on. */
+  PUZZLES_ENABLED?: string;
   /** When set (not empty), Turnstile is configured and its origin is allowed by the page policy. */
   TURNSTILE_SECRET?: string;
   /** The Turnstile widget's public site key, sent in the Quote when Turnstile is on. Public; not a secret. */
