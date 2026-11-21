@@ -39,7 +39,8 @@
   - [x] 4.1 Build the captions, the Songs setting with mute and skip, and the ending screen's song line from the elements in `design/catalogue.html`; their own style says only where things go
     - _Requirements: 5.1, 5.3_
     - Done (2026-11-19): `SongControls` (`web/src/app/songs/SongControls.tsx`, `SongControls.test.tsx`: captions in `ui-speech ui-hint`, setting in `ui-segments`, Mute/Skip in `ui-button`s) and `Ending` song line (`web/src/app/case/Ending.tsx`, `Ending.test.tsx`: `ui-speech ui-hint` inside `ui-panel`), both with zero inline styles.
-  - [ ] 4.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 4.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - Verified (2026-11-21): the song screens (`SongControls.tsx`, `Ending.tsx`) use only `ui-` elements that exist in `design/elements.css`, none missing, so nothing was added; `tools/test/design-system.test.mjs` fails on any undefined `ui-` class in `web/src`.
     - _Requirements: 5.2_
   - [ ] 4.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 5.4_

@@ -422,3 +422,17 @@ test('CLI: an unknown option or a missing value is refused', () => {
   assert.equal(cli(['--budget-usd']).status, 1);
   assert.equal(cli(['--worker', '--run']).status, 1);
 });
+
+// conditions 5.1: one weather case per persona. The soft ghost plays on a rainy dusk and the stern one on a snowy night, so the sky sentence of every
+// Tone call is the one for its own persona, and no call carries a sky the persona does not have.
+test('every Tone call carries its own persona\'s sky: rain at dusk for the wistful ghost, snow at night for the stern one', () => {
+  const tone = plan.cases.filter((c) => c.group === 'T');
+  assert.equal(tone.length, 20);
+  const skyLine = (system) => /sky tonight[^\n]*/.exec(system)?.[0] ?? '';
+  for (const c of tone) {
+    const { system } = c.prompt([]);
+    assert.match(system, c.persona === 'wistful' ? /rain, dusk, waxing crescent/ : /snow, night, full moon/, `${c.id} (${c.persona})`);
+    assert.doesNotMatch(system, c.persona === 'wistful' ? /snow, night, full moon/ : /rain, dusk, waxing crescent/, `${c.id} (${c.persona}) carries the other persona's sky`);
+    assert.ok(skyLine(system).length > 0, `${c.id} has a sky sentence`);
+  }
+});
