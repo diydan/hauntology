@@ -20,6 +20,10 @@ export type Bindings = {
   VOICE_STITCH_ENABLED?: string;
   /** `true`, `1` or `on` adds `flags: { voice, stitch, live }` to `GET /api/quota` (ghost-voice 3.2). Unset is off: the answer is then exactly the six counts. */
   VOICE_QUOTA_FLAGS?: string;
+  /** `false` turns the real-world conditions (weather, sky, stars) off everywhere. Anything else, or unset, is on (conditions spec). */
+  CONDITIONS_ENABLED?: string;
+  /** The page origin, read by tests and local runs only. Not a secret. */
+  ORIGIN?: string;
   /** `false`, `0` or `off` stops new Party Rooms, a solo case included; Wander stays (party-mode). Unset is on. */
   PARTY_ENABLED?: string;
   /** `false`, `0` or `off` turns off puzzles (Party runs plain Inspect; Wander hides the Locks switch). Unset is on. */
