@@ -126,14 +126,18 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.36 Write property test for endings and replays, with the recap checked in the token-planting fuzz game (no planted Hand, shown card, unfound Residue, Inspect, Eavesdrop or Stitch token), counts equal to the matching public events, Bluff marks on exactly the Suggestions whose Suspect or Relic was in the suggester's Hand (Bots included), and no recap before the game ends
     - **Property 17: Endings and replays preserve what they should**
     - **Validates: Requirements 6.6, 6.8, 11.6**
-  - [ ] 2.37 `pyramidLayout` and `fitTile`
+  - [x] 2.37 `pyramidLayout` and `fitTile`
+    - **Built 2026-11-21** (`shared/src/party/display.ts`): `fitTile` caps a tile at the space to the screen edge and at twice the inner gap, so no tile leaves the screen or meets a neighbour; `pyramidLayout` gives four equal tiles at 0, 90, 180 and 270 degrees, flipped 180 for tops pointing outward.
     - _Requirements: 7.3_
-  - [ ]* 2.38 Write property test for the pyramid layout
+  - [x]* 2.38 Write property test for the pyramid layout
+    - **Built 2026-11-21** (`shared/src/party/display.prop.test.ts`).
     - **Property 18: The pyramid layout is symmetric and in bounds**
     - **Validates: Requirements 7.3**
-  - [ ] 2.39 `effectLimits` (including Haunt Event reactions and Blackout dimming)
+  - [x] 2.39 `effectLimits` (including Haunt Event reactions and Blackout dimming)
+    - **Built 2026-11-21** (`display.ts`): `effectLimits` spaces flashes at least 334 ms apart across every reaction, keeps every step to 20% or less, ramps a Blackout down in 20% steps to 40%, delays rather than drops, and returns none under reduced motion.
     - _Requirements: 7.4_
-  - [ ]* 2.40 Write property test for display effects
+  - [x]* 2.40 Write property test for display effects
+    - **Built 2026-11-21** (`display.prop.test.ts`).
     - **Property 19: Display effects respect photosensitivity limits**
     - **Validates: Requirements 7.4**
   - [x] 2.41 `botAct` on `botMind` (walk to and Inspect, Suggest from the candidates, seal when Standard certain or Gentle at 50%, the default answer and Eavesdrop; never a Cue, Nudge, Frame, Rattle or Haunt Event choice) and `peekAllowed`
@@ -141,14 +145,18 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.42 Write property test for bots
     - **Property 22: Bots are legal and blind to other hands**
     - **Validates: Requirements 9.2, 9.3**
-  - [ ] 2.43 `roomCaps`, `narrationRequests`, spend accounting, and a scripted line library with at least five variants per party directive kind in its Speaker's voice (`partyScripted(kind, speaker, rng)`)
+  - [x] 2.43 `roomCaps`, `narrationRequests`, spend accounting, and a scripted line library with at least five variants per party directive kind in its Speaker's voice (`partyScripted(kind, speaker, rng)`)
+    - **Built 2026-11-21** (`spend.ts`, `narrate.ts`): `roomCaps` (12 images, 60 model calls), `reserve` (kill switch, then Room cap, then global answer), `planNarration` and `narrationRequests` (at most one model call per event id, none for `cue`, `nudge` or `phone-cue`), and `partyScripted` with at least five variants per kind and Speaker, 30 banks in all.
     - _Requirements: 10.1, 10.2, 7.8_
-  - [ ]* 2.44 Write property test for spend and narration independence
+  - [x]* 2.44 Write property test for spend and narration independence
+    - **Built 2026-11-21** (`spend-narrate.prop.test.ts`).
     - **Property 23: Spend is bounded and narration never changes the game**
     - **Validates: Requirements 10.1, 10.2**
-  - [ ] 2.45 Telemetry whitelist, `acceptJoin` and `acceptRoom`
+  - [x] 2.45 Telemetry whitelist, `acceptJoin` and `acceptRoom`
+    - **Built 2026-11-21** (`telemetry.ts`, `limits.ts`): counters and error codes only, `acceptJoin` (20 a minute per hashed IP) and `acceptRoom` (switch, one Room per session, 20 in total).
     - _Requirements: 10.5, 10.6_
-  - [ ]* 2.46 Write property test for telemetry and abuse caps
+  - [x]* 2.46 Write property test for telemetry and abuse caps
+    - **Built 2026-11-21** (`telemetry-limits.prop.test.ts`).
     - **Property 24: Telemetry carries no content and abuse is capped**
     - **Validates: Requirements 10.5, 10.6**
   - [x] 2.47 `canControl`, `nextMaster` and `handOver` (Master-only room controls, host token may only end, never a Bot as Master)
@@ -176,9 +184,11 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x]* 2.56 Write property test for Resolve and Eavesdrop
     - **Property 29: Resolve is bounded and Eavesdrop reveals one card that was not shown**
     - **Validates: Requirements 11.4, 11.5, 12.2**
-  - [ ] 2.57 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
+  - [x] 2.57 `PHOTO_PROMPTS` (12 entries, every tip ends with "No people or faces."), `offerPrompts` (three per round, four rounds) and `skipOffer` (three skips) with a derived seeded stream per seat
+    - **Built 2026-11-21** (`photoPrompts.ts`): 12 prompts, `offerPrompts` from the stream `photo:<seat>`, `skipOffer`.
     - _Requirements: 3.6, 3.7, 3.8_
-  - [ ]* 2.58 Write property test for Photo Prompts
+  - [x]* 2.58 Write property test for Photo Prompts
+    - **Built 2026-11-21** (`photoPrompts.prop.test.ts`).
     - **Property 30: Photo Prompt offers are deterministic, complete and bounded**
     - **Validates: Requirements 3.6, 3.7, 3.8**
   - [x] 2.59 `nudgeCost`, `canNudge` (with every named reason) and `nudge`: Help +10 s up to 120 s, Spook -10 s with 20 s left, a 30 s floor, one of each per Turn, one Spook per Round, never the same Player on consecutive Turns, none from the active Player or a Bot (a Poltergeist may Help and Spook), and no Spook within three Turns of the last; each accepted Nudge counted for haunting Players or for everyone else
