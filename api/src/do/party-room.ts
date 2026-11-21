@@ -16,6 +16,7 @@ type DirectoryNamespace = { idFromName(name: string): unknown; get(id: unknown):
  *   POST /join {nickname}       -> {ok, seat, token} | {ok:false, code}
  *   POST /voice-line {lineId, token} -> {line} | {line: null}
  *   POST /end                   -> 204 (the same session made a new Room: this one ends)
+ *   POST /end-as {token}        -> {result: "ended" | "forbidden" | "room_unknown"} (the Master or the host token only)
  *   GET  /ws (Upgrade: websocket) -> 101; the first message must be {t:"hello", token}
  */
 export class PartyRoom {
@@ -74,6 +75,7 @@ export class PartyRoom {
       return json({ line: await this.core.findVoiceLineForHost(body.lineId, body.token) });
     }
     if (pathname === "/end") { await this.core.endRoom(); return new Response(null, { status: 204 }); }
+    if (pathname === "/end-as" && typeof body?.token === "string") return json({ result: await this.core.endAs(body.token) });
     return json({ ok: false, code: "bad_request" }, 400);
   }
 
