@@ -113,6 +113,10 @@ const REFUSALS: Record<string, string> = {
   already_suggested: "You have asked once this turn.",
   not_in_zone: "Go to a room first.",
   zone_closed: "A shut door blocks the way to that room.",
+  puzzle_attempts_spent: "You have haunted with a puzzle this round already. Another one opens next round.",
+  puzzle_already_open: "A puzzle is open already.",
+  answering_choice: "The house is waiting on you to choose first.",
+  puzzle_disabled: "Puzzles are off in this case.",
 };
 
 export type SoloAudioDeps = Partial<Pick<HostAudioDeps, "fetchSpeech" | "createAudio" | "unlockAudio" | "fallbackSpeak" | "deadlineMs">>;
@@ -311,6 +315,13 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
               <button key={o} type="button" className="ui-button" onClick={() => client.send({ t: "choose", option: o })}>{o.replace("-", " ")}</button>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {view.seats.find((x) => x.seat === snap.seat)?.poltergeist === true && view.puzzleSetting !== "off" ? (
+        <section className="ui-panel ui-stack" aria-label="Haunting puzzle">
+          <p>You have joined the haunting. Open a puzzle once a round: solve it for a Scare point.</p>
+          <button type="button" className="ui-button" onClick={() => client.send({ t: "hauntPuzzle" })}>Haunt a puzzle</button>
         </section>
       ) : null}
 

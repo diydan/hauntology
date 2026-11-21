@@ -27,8 +27,8 @@ function playing(): EngineState {
   return s;
 }
 
-function client(over: Partial<RoomSnapshot>) {
-  const s = playing();
+function client(over: Partial<RoomSnapshot>, mutate: (s: EngineState) => EngineState = (s) => s) {
+  const s = mutate(playing());
   const calls: unknown[][] = [];
   const snap: RoomSnapshot = { status: "playing", code: "ABCD", seat: 1, public: publicSnapshot(s, 0), private: privateSnapshot(s, 1), refused: null, lock: null, sight: null, ...over };
   const c: RoomClient = {
@@ -84,5 +84,32 @@ describe("the solo table with a Lock or a Sight (integration 5.3)", () => {
     expect(screen.queryByTestId("puzzle")).toBeNull();
     expect(screen.getByRole("group", { name: "Rooms" })).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button")[0]!); // the table still takes clicks
+  });
+
+  const joined = (s: EngineState): EngineState => ({ ...s, players: s.players.map((p) => (p.seat === 1 ? { ...p, poltergeist: true } : p)) });
+  const sendsOf = (c: RoomClient) => { const sent: unknown[] = []; const orig = c.send; c.send = (m) => { sent.push(m); orig(m); }; return sent; };
+
+  it("a visitor who has joined the haunting can open a Haunting puzzle (5.7); a Detective has no such button", () => {
+    const { c } = client({}, joined);
+    const sent = sendsOf(c);
+    render(<SoloTable client={c} />);
+    fireEvent.click(screen.getByRole("button", { name: "Haunt a puzzle" }));
+    expect(sent).toEqual([{ t: "hauntPuzzle" }]);
+    expect(document.body.textContent).not.toMatch(/poltergeist/i);
+    cleanup();
+    render(<SoloTable client={client({}).c} />);
+    expect(screen.queryByRole("button", { name: "Haunt a puzzle" })).toBeNull();
+  });
+
+  it("offers no Haunting puzzle when the Puzzle setting is off", () => {
+    const { c } = client({}, (s) => ({ ...joined(s), settings: { ...s.settings, puzzles: "off" } }));
+    render(<SoloTable client={c} />);
+    expect(screen.queryByRole("button", { name: "Haunt a puzzle" })).toBeNull();
+  });
+
+  it("says in words that a second Haunting puzzle in a Round waits for the next Round", () => {
+    const { c } = client({ refused: "puzzle_attempts_spent" }, joined);
+    render(<SoloTable client={c} />);
+    expect(screen.getByRole("alert").textContent).toBe("You have haunted with a puzzle this round already. Another one opens next round.");
   });
 });
