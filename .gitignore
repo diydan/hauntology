@@ -78,3 +78,6 @@ web/public/media/src/
 tools/animations/*
 !tools/animations/.gitignore
 tools/character-builder/**/clips_*.glb
+
+# Spike 1.3 arm C: stripped copies of personal photos, their dark edits and the call count (tools/worldlabs-spike/dark-first.mjs). Local only, never committed.
+/.dark-first/

@@ -1,0 +1,19 @@
+// LOCAL-ONLY config for dev/dark-edit-worker.ts: the DARK EDIT of world-pipeline Spike 1.3, arm C (tools/worldlabs-spike/dark-first.mjs). NEVER deployed: `wrangler deploy` reads wrangler.jsonc.
+// !! The `AI` binding below reaches the real, billed service (Nano Banana 2 through the AI Gateway, from prepaid credits). Start this Worker ONLY after the owner has said go.
+// The product config api/wrangler.jsonc is NOT changed: it still declares no `AI` binding.
+// Without the binding use wrangler.darkedit.rehearsal.jsonc: nothing can be called and nothing can be spent.
+// From the repo root, with a random value of 16+ characters that is never written to a file:
+//   export RUN_TOKEN=$(openssl rand -hex 16)
+//   pnpm --filter api exec wrangler dev -c wrangler.darkedit.jsonc --ip 127.0.0.1 --port 8803 \
+//     --persist-to ../.dark-first/state --var RUN_TOKEN:$RUN_TOKEN
+//   DARK_FIRST_TOKEN=$RUN_TOKEN node tools/worldlabs-spike/dark-first.mjs --photo <file> --yes-spend --max-images 3
+// The image meter is capped at 3 for the day AND per visitor: three edits in all (one for each photo). A retry after a charged answer counts. The count is kept in the persisted state, so a restart does not reset it.
+{
+  "name": "hauntology-dark-edit",
+  "main": "dev/dark-edit-worker.ts",
+  "compatibility_date": "2025-06-01",
+  "ai": { "binding": "AI" },
+  "durable_objects": { "bindings": [{ "name": "SPEND_GUARD", "class_name": "SpendGuard" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SpendGuard"] }],
+  "vars": { "AI_GATEWAY_ID": "default", "IMAGE_DAY_CAP": "3", "IMAGE_SESSION_CAP": "3" }
+}

@@ -1,0 +1,12 @@
+// LOCAL-ONLY REHEARSAL config for dev/dark-edit-worker.ts (see wrangler.darkedit.jsonc). NEVER deployed. NO `ai` binding and no AI_GATEWAY_ID: the Worker answers 503 to every edit,
+// so the runner can be tried end to end (token, strip, request) with nothing to call and nothing to spend.
+//   export RUN_TOKEN=$(openssl rand -hex 16)
+//   pnpm --filter api exec wrangler dev -c wrangler.darkedit.rehearsal.jsonc --ip 127.0.0.1 --port 8803 --persist-to $KIROCREW_SCRATCH/dark-edit-state --var RUN_TOKEN:$RUN_TOKEN
+{
+  "name": "hauntology-dark-edit-rehearsal",
+  "main": "dev/dark-edit-worker.ts",
+  "compatibility_date": "2025-06-01",
+  "durable_objects": { "bindings": [{ "name": "SPEND_GUARD", "class_name": "SpendGuard" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SpendGuard"] }],
+  "vars": { "IMAGE_DAY_CAP": "3", "IMAGE_SESSION_CAP": "3" }
+}
