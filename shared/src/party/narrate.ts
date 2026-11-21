@@ -6,7 +6,8 @@ import type { Rng } from "../puzzles/rng";
  * nothing else: no Solution, no Hand and no guilt flag can reach a Lodger line, so the same `(kind, rng)` gives the
  * same line for a guilty and an innocent Suspect. The ghost's manner is horror told calmly.
  */
-export type Speaker = "whisper" | "keeper" | "lodger";
+import type { Speaker } from "../voice/voices";
+export type { Speaker };
 
 export const DIRECTIVE_KINDS = [
   "turn-start", "suggest", "shown", "none-shown", "inspect", "seal", "reveal", "accuse-wrong", "accuse-right", "achievement",
