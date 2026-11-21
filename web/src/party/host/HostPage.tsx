@@ -115,6 +115,7 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
       ) : (
         <main className="ph-lobby ui-stack">
           {code !== null ? <RoomCodeCard code={code} origin={extras.origin} qr={extras.qr} /> : null}
+          {extras.narration !== null && !narration.unlocked ? <button type="button" className="ui-button" onClick={narration.unlock}>Tap to let the house speak</button> : null}
           <section aria-label="Players" className="ui-stack--tight">
             <h2 className="ui-heading">At the table</h2>
             {(game.lobby?.seats ?? []).length === 0 ? <p className="ui-hint">Nobody has joined yet.</p> : (

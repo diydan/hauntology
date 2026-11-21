@@ -15,6 +15,7 @@ import { SightCard } from "../../puzzles/SightCard";
 import { LobbyPanel } from "./play/LobbyPanel";
 import { SeatPortrait } from "./play/SeatPortrait";
 import { MasterMenu, type WorldChoice } from "./play/MasterMenu";
+import { SpeechRoomSwitch } from "./play/SpeechRoomSwitch";
 import { SoundLightSettings } from "./play/PlayerSettings";
 import { PlayPanel } from "./play/PlayPanel";
 import type { SoundDeps } from "./play/phone-sound";
@@ -175,6 +176,7 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
               {view.game !== undefined && extras !== undefined ? (
                 <>
                   <SoundLightSettings send={(m) => port.send?.(m)} unlock={extras.unlock} />
+                  {view.seat !== null ? <SpeechRoomSwitch game={view.game} me={view.seat} /> : null}
                   {view.game.pub !== null && view.seat !== null ? <MasterMenu game={view.game} me={view.seat} send={(m) => port.send?.(m)} worlds={extras.worlds} /> : null}
                 </>
               ) : null}

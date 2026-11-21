@@ -5,6 +5,7 @@ import { game, lobby, priv, pub } from "../../../test/party-fixtures";
 import { HauntingPanel } from "./Haunting";
 import { LobbyPanel } from "./LobbyPanel";
 import { MasterMenu } from "./MasterMenu";
+import { SpeechRoomSwitch } from "./SpeechRoomSwitch";
 import { Pad, usePadInput } from "./Pad";
 import { SoundLightSettings } from "./PlayerSettings";
 import { RelicScanner } from "./RelicScanner";
@@ -467,5 +468,26 @@ describe("LobbyPanel", () => {
     rerender(<LobbyPanel view={view(2)} send={() => undefined} worlds={WORLDS} />);
     expect(screen.queryByRole("region", { name: "Master controls" })).toBeNull();
     expect(screen.getByText("Waiting for the Master to start the game.")).toBeTruthy();
+  });
+});
+
+describe("SpeechRoomSwitch (ghost-voice 4.1, Multiplayer)", () => {
+  const lobbyG = (speechOn: boolean) => ({ ...game({ pub: null, priv: null, lobby: lobby({ started: false, worldId: null }) }), speechOn });
+  it("shows the room's switch, unchangeable, on a phone that is not the Master's, with the reason in words", () => {
+    render(<SpeechRoomSwitch game={lobbyG(true)} me={2} />);
+    const sw = screen.getByRole("switch", { name: /Spoken narration/ }) as HTMLButtonElement;
+    expect(sw.getAttribute("aria-checked")).toBe("true");
+    expect(sw.disabled).toBe(true);
+    expect(text(sw)).toContain("On");
+    expect(screen.getByText("Only the Master can change this.")).toBeTruthy();
+    cleanup();
+    render(<SpeechRoomSwitch game={lobbyG(false)} me={2} />);
+    expect(screen.getByRole("switch", { name: /Spoken narration/ }).getAttribute("aria-checked")).toBe("false");
+  });
+  it("sends nothing when pressed, and is not shown on the Master's own phone or before the lobby exists", () => {
+    const { container, rerender } = render(<SpeechRoomSwitch game={lobbyG(true)} me={1} />);
+    expect(container.firstChild).toBeNull();
+    rerender(<SpeechRoomSwitch game={game({ pub: null, priv: null, lobby: null })} me={2} />);
+    expect(container.firstChild).toBeNull();
   });
 });

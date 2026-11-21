@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { soundAvailability } from "@hauntology/shared/party/sounds";
 import { game, lobby, pub } from "../../test/party-fixtures";
@@ -346,6 +346,61 @@ describe("HostPage (party-mode 8.1 to 8.14)", () => {
     expect(screen.getByRole("button", { name: "Tap to let the house speak" })).toBeTruthy();
     expect(document.querySelector("[data-host-subtitle]")!.textContent).toBe("A cold draft passes.");
     expect(narration.fetchSpeech).not.toHaveBeenCalled(); // speech is off: the subtitle only
+  });
+});
+
+describe("Host audio unlock on the room-code screen (ghost-voice 4.6)", () => {
+  const lobbyPort = () => {
+    const state: HostState = { ...IDLE_HOST, connection: "online", code: "K7M2", hostToken: "ab".repeat(16), view: { ...EMPTY_HOST, game: game({ pub: null, priv: null, lobby: lobby({ started: false, seats: [] }) }) } };
+    return { getState: () => state, subscribe: () => () => undefined, create: async () => true };
+  };
+  const base = (narration: HostExtras["narration"]): HostExtras => ({
+    origin: "https://lab.example", narration, reducedMotion: false, now: () => 0,
+    soundDeps: { play: () => undefined, vibrate: () => undefined, available: soundAvailability([]), canVibrate: false, reducedMotion: false, now: () => 0, setTimer: () => 0, clearTimer: () => undefined },
+  });
+  it("offers one tap beside the Room Code, which goes away once audio is unlocked", () => {
+    const narration = { fetchSpeech: vi.fn(async () => ({ ok: false as const, code: "voice_unavailable" as never })), createAudio: () => ({ audio: { play: async () => undefined, pause: () => undefined, onended: null }, release: () => undefined }) };
+    render(<HostPage port={lobbyPort() as never} extras={base(narration as never)} />);
+    expect(screen.getByLabelText("Room Code K 7 M 2")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Tap to let the house speak" }));
+    expect(screen.queryByRole("button", { name: "Tap to let the house speak" })).toBeNull();
+  });
+  it("offers no tap when narration is not available: the Subtitle alone", () => {
+    render(<HostPage port={lobbyPort() as never} extras={base(null)} />);
+    expect(screen.queryByRole("button", { name: "Tap to let the house speak" })).toBeNull();
+  });
+});
+
+describe("Host prefetch (ghost-voice 4.8)", () => {
+  const withView = (over: Partial<typeof EMPTY_HOST>) => {
+    const state: HostState = { ...IDLE_HOST, connection: "online", code: "K7M2", hostToken: "ab".repeat(16), view: { ...EMPTY_HOST, game: game(), ...over } };
+    return { getState: () => state, subscribe: () => () => undefined, create: async () => true };
+  };
+  const narrationDeps = () => ({
+    fetchSpeech: vi.fn(async (_req: { roomCode: string; lineId: string; prefetch?: boolean }, _token: string) => ({ ok: true as const, value: { audio: new Blob([new Uint8Array(100)], { type: "audio/mpeg" }) } })),
+    createAudio: () => ({ audio: { play: async () => undefined, pause: () => undefined, onended: null }, release: () => undefined }),
+  });
+  const ex = (narration: ReturnType<typeof narrationDeps>): HostExtras => ({
+    origin: "https://lab.example", narration: narration as never, reducedMotion: false, now: () => 0,
+    soundDeps: { play: () => undefined, vibrate: () => undefined, available: soundAvailability([]), canVibrate: false, reducedMotion: false, now: () => 0, setTimer: () => 0, clearTimer: () => undefined },
+  });
+  it("asks for each id the Room listed with prefetch: true and the Host token, and for no other", async () => {
+    const narration = narrationDeps();
+    render(<HostPage port={withView({ speechOn: true, prefetch: ["l1", "l2"] }) as never} extras={ex(narration)} />);
+    await waitFor(() => expect(narration.fetchSpeech).toHaveBeenCalledTimes(2));
+    expect(narration.fetchSpeech.mock.calls.map((c) => [c[0].lineId, c[0].prefetch, c[0].roomCode, c[1]])).toEqual([
+      ["l1", true, "K7M2", "ab".repeat(16)],
+      ["l2", true, "K7M2", "ab".repeat(16)],
+    ]);
+  });
+  it("prefetches nothing while speech is off, or when the Room listed nothing", async () => {
+    const narration = narrationDeps();
+    render(<HostPage port={withView({ speechOn: false, prefetch: ["l1"] }) as never} extras={ex(narration)} />);
+    await Promise.resolve();
+    cleanup();
+    render(<HostPage port={withView({ speechOn: true, prefetch: [] }) as never} extras={ex(narration)} />);
+    await Promise.resolve();
+    expect(narration.fetchSpeech).not.toHaveBeenCalled();
   });
 });
 
