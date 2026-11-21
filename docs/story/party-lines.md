@@ -13,7 +13,7 @@ Speakers: **the Keeper** (Inworld Ronald, id suffix `dry`, played by Mr. Ashby o
 | `accuse.wrong`, `accuse.right`, `end.solved` | `accuse-wrong`, `accuse-right`, `ended-solved` | Keeper | spoken |
 | `cue.<sound>`, `nudge.help`, `nudge.spook`, `phone-cue.<sound>` | `cue`, `nudge`, `phone-cue` (scripted only, never a model) | Keeper | text only (proposed: they happen too often to voice) |
 | `not-you` | the private `notYou` message of a House Cue and a Frame | Keeper | text only, on the target's phone |
-| `haunt.cold-spot`, `haunt.blackout`, `haunt.restless`, `haunt.lull` | `haunt-event` | Whisper | spoken |
+| `haunt.cold-spot`, `haunt.blackout`, `haunt.restless`, `haunt.lull`, `haunt.slam` | `haunt-event` | Whisper | spoken |
 | `poltergeist` | `poltergeist` (a Player joins the haunting) | Whisper | spoken |
 | `end.haunting` | `ended-haunted` | Whisper | spoken |
 | `haunt.choose` | none: the prompt that offers two options to a Poltergeist | Whisper | text only, private on the phone |
@@ -302,6 +302,18 @@ The Haunt falls by one. The lines say only that the house settles.
 | `haunt.lull.soft.3` | Something loosens its grip, and I think that is my doing, though I am not sure I mean it. Breathe, all of you. |
 | `haunt.lull.soft.4` | I let the house be for a little, and it forgets itself. I am glad of the rest. So is the house. |
 | `haunt.lull.soft.5` | The house takes a long, slow, kindly breath, and I let it. I think it has earned that. You may take one too. |
+
+## Whisper: haunt.slam (spoken)
+
+The Haunt shuts a door (`knock-door` Requirement 5). It opens again by itself, and the ghost knocks at the TV for whoever is quick. No line names a door, a Zone or a Player: only the door that is shut, and no one is behind it. No line says when it opens again.
+
+| Id | Line |
+|---|---|
+| `haunt.slam.soft.1` | A door swings shut, quite on its own. I like the sound it makes. It means something has been decided. |
+| `haunt.slam.soft.2` | I close a door. It is only a door, and it will open again in its own time. I would not lean on it. |
+| `haunt.slam.soft.3` | Somewhere a door slams, and the whole house hears it. I say nothing. A slam says all I mean. |
+| `haunt.slam.soft.4` | One door fewer to walk through. I shut it gently, the way you would for a sleeper. It wakes by itself. |
+| `haunt.slam.soft.5` | I shut a door, and I knock to say so. Knock back, if you are quick. I answer the quick. |
 
 ## Whisper: haunt.choose (text only, private to a Poltergeist) PROPOSED
 

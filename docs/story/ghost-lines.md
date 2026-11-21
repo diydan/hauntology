@@ -197,6 +197,15 @@ New 2026-11-16, in the storybook voice of `narration-style.md`. One line for eac
 | `wander.letter.soft.1` | A sealed envelope, and a pair of gloves set down just so. It is not mine to open. I keep it safe all the same. |
 | `wander.departure.soft.1` | Somebody waves from this window until the road is empty. I wave too, now and then. Nobody has told me to stop. |
 
+### wander door, soft (the Whisper)
+
+New 2026-11-22 (`knock-door` Requirement 6). The two lines of a Wander door, word for word the scripted reply the walk shows (`DOOR_HOLDING_LINE` and `DOOR_OPENED_LINE` in `shared/src/ghost/play.ts`), so what is spoken is what is shown. Neither says the knock: the Skip is always there.
+
+| Id | Line |
+|---|---|
+| `wander.door.soft.1` | A door stands in the way. It opens to a secret knock. You can skip it. |
+| `wander.door-open.soft.1` | The door opens. |
+
 ## Greeting (kind not in the spec yet)
 
 **REVIEW: the ghost-engine has no `meet` Directive kind.** The seven kinds are `reveal`, `echo`, `tease`, `hint`, `ambient`, `ending`, `refuse`. The only mention of a greeting is `ghost-creator` Requirement 6.3 ("a short scripted 'meet your ghost' line in the Persona's voice without calling any paid model"), which sets no kind, no id scheme and no number of variants. Only the two fixed lines already spoken in clips are placed here, word for word. No other `meet` line was written, because the kind is not defined. A person decides where `meet` lives (a new Directive kind, a Creator-only bank, or `ambient`) and how many variants it needs.

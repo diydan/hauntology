@@ -50,7 +50,7 @@
       "very close"
     ]
   },
-  "count": 532,
+  "count": 539,
   "entries": [
     {
       "key": "speech/lib/v1/d8ce0fe2cd4d4dea406a515ee239522af8b19543f8139702cee27be7cbe8c10f",
@@ -1485,6 +1485,22 @@
       ]
     },
     {
+      "key": "speech/lib/v1/c708fd8c778ab345f19fa0891b648006b762e25a12f87108c2030675904e8752",
+      "voice": "inworld:Pippa",
+      "spoken": "A door stands in the way. It opens to a secret knock. You can skip it.",
+      "sources": [
+        "wander.door.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a265e21dcd696a31334c0c5045361203f27c44dd6184fc69052693e037de140d",
+      "voice": "inworld:Pippa",
+      "spoken": "The door opens.",
+      "sources": [
+        "wander.door-open.soft.1"
+      ]
+    },
+    {
       "key": "speech/lib/v1/6d2a06a767de35ceaa73fe4761d6c4a23b8da91d82b19a64297e1442002a807b",
       "voice": "inworld:Pippa",
       "spoken": "Hello. I was waiting. I did not mind. I am very good at waiting.",
@@ -1682,6 +1698,46 @@
       "spoken": "The house takes a long, slow, kindly breath, and I let it. I think it has earned that. You may take one too.",
       "sources": [
         "haunt.lull.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/0da4e1c88226d61cf842777378afab0b1fb1dfe39694e044efc1f5ac5d46129b",
+      "voice": "inworld:Pippa",
+      "spoken": "A door swings shut, quite on its own. I like the sound it makes. It means something has been decided.",
+      "sources": [
+        "haunt.slam.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/48f2b4b8785ec36ebf2fe659f5135fc9a6fb54cadbde60aa07e2d5b3a52e5ebb",
+      "voice": "inworld:Pippa",
+      "spoken": "I close a door. It is only a door, and it will open again in its own time. I would not lean on it.",
+      "sources": [
+        "haunt.slam.soft.2"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b8c1d5a7fc8151f2ddb0f7277e191220b5b0cc75fbb8531d2e9fd5e63f27788f",
+      "voice": "inworld:Pippa",
+      "spoken": "Somewhere a door slams, and the whole house hears it. I say nothing. A slam says all I mean.",
+      "sources": [
+        "haunt.slam.soft.3"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/b9cf59fae9dfdda8305ba2f4447824578e6a01a169dcb85e56300e160434e685",
+      "voice": "inworld:Pippa",
+      "spoken": "One door fewer to walk through. I shut it gently, the way you would for a sleeper. It wakes by itself.",
+      "sources": [
+        "haunt.slam.soft.4"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/11956909867d18bc4462eb05855e59780dbb82ddd4082080934773a97e8a6ce9",
+      "voice": "inworld:Pippa",
+      "spoken": "I shut a door, and I knock to say so. Knock back, if you are quick. I answer the quick.",
+      "sources": [
+        "haunt.slam.soft.5"
       ]
     },
     {
