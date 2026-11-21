@@ -1,98 +1,53 @@
 import type { ReactNode } from "react";
-import type { TableData } from "@hauntology/shared/table/data";
-import type { TablePawn } from "@hauntology/shared/table/pawns";
-import "./TableList.css";
-
-const MARK_WORDS = { ruled_out: "ruled out", maybe: "maybe" } as const;
-
-function PawnLine({ pawn }: { pawn: TablePawn }): ReactNode {
-  const tags = [pawn.active ? "their turn" : null, pawn.mono ? "poltergeist" : null].filter((t): t is string => t !== null);
-  return (
-    <li>
-      {pawn.nickname}
-      {tags.length > 0 ? <span className="tl-tag"> ({tags.join(", ")})</span> : null}
-    </li>
-  );
-}
+import type { Theory } from "@hauntology/shared/party/theory";
+import { describePiece, type PieceId, type TableModel } from "./model";
+import { TheoryChoice } from "./TheoryChoice";
+import "./table.css";
 
 /**
- * The Spirit table as a plain list (spirit-table 3.2): every room with its Pawns, the Cold Spot, what this Player has
- * inspected and their own marks, then every Suspect and Relic with its mark. It reads the same `TableData` as the 3D
- * table, so it says nothing the table does not, and it is the only view when WebGL is missing. Text only: each line is
- * read out by a screen reader as it stands.
+ * The Table list (spirit-table 3.2 of the plan, Requirement 6.3): the text twin of the Table. Every room with its Pawns and the Player's own
+ * Marks, every Suspect and Relic, and the room choice per Suspect (9.5). It is the only view when WebGL is missing, and every piece has its
+ * text here, so nothing on the Table is only a picture. It reads the same `TableModel` the drawing does, so the two cannot disagree.
  */
-export function TableList({ data, playerSeat }: { data: TableData; playerSeat?: number | null }): ReactNode {
-  const pawnsIn = (zone: string): TablePawn[] => data.pawns.filter((p) => p.zone === zone);
-  const doorPawns = data.pawns.filter((p) => p.zone === "door");
-  const ended = data.ended;
+export function TableList({ model, theory, onTheory, notice, onPick }: {
+  model: TableModel;
+  theory: Theory;
+  onTheory: (next: Theory) => void;
+  /** One line that says why this is the only view (no WebGL), or nothing. */
+  notice?: string;
+  /** Called with a piece's id when its row is tapped, to open its card on the Table (not needed when the list is the only view). */
+  onPick?: (id: PieceId) => void;
+}): ReactNode {
+  const atDoor = model.pawns.filter((p) => p.zone === "door");
+  const row = (id: PieceId, label: string, text: string): ReactNode => (
+    <li key={id} className="st-row" data-piece={id}>
+      {onPick ? <button type="button" className="ui-button st-row-button" onClick={() => onPick(id)} aria-label={`${label}. ${text}`}><span className="st-row-name">{label}</span></button> : <span className="st-row-name">{label}</span>}
+      <span className="st-row-text">{text}</span>
+    </li>
+  );
   return (
-    <section className="tl ui-panel" aria-label="The Spirit table as a list">
-      <h2 className="ui-heading">The table</h2>
-      <p className="ui-hint">
-        Haunt {data.haunt.level} of {data.haunt.max}.{playerSeat === undefined || playerSeat === null ? "" : " Your marks show only to you."}
-      </p>
-
-      <h3 className="ui-eyebrow">Rooms</h3>
-      <ul className="tl-list">
-        {data.rooms.map((room) => {
-          const here = pawnsIn(room.zone);
-          const placed = data.suspects.filter((s) => s.placedIn === room.zone);
-          const flags = [
-            room.coldSpot ? "Cold Spot" : null,
-            room.inspected ? "you have read it" : null,
-            room.mark !== undefined ? `your mark: ${MARK_WORDS[room.mark]}` : null,
-          ].filter((f): f is string => f !== null);
-          return (
-            <li key={room.zone} className="tl-room">
-              <strong>{room.name}</strong>
-              {flags.length > 0 ? <span className="tl-tag"> ({flags.join("; ")})</span> : null}
-              <ul className="tl-sub" aria-label={`Players in ${room.name}`}>
-                {here.length === 0 ? <li className="tl-empty">No one here</li> : here.map((p) => <PawnLine key={p.seat} pawn={p} />)}
-                {placed.map((s) => (
-                  <li key={`theory-${s.card}`} className="tl-theory">
-                    {s.name}: your theory puts them here
-                  </li>
-                ))}
-              </ul>
-            </li>
-          );
-        })}
-      </ul>
-
-      {doorPawns.length > 0 ? (
-        <>
-          <h3 className="ui-eyebrow">At the door</h3>
-          <ul className="tl-sub">{doorPawns.map((p) => <PawnLine key={p.seat} pawn={p} />)}</ul>
-        </>
-      ) : null}
-
-      <h3 className="ui-eyebrow">Suspects</h3>
-      <ul className="tl-sub">
-        {data.suspects.map((s) => (
-          <li key={s.card}>
-            {s.name}
-            {s.mark !== undefined ? <span className="tl-tag"> ({MARK_WORDS[s.mark]})</span> : null}
-          </li>
-        ))}
-      </ul>
-
-      <h3 className="ui-eyebrow">Relics</h3>
-      <ul className="tl-sub">
-        {data.relics.map((r) => (
-          <li key={r.card}>
-            {r.name}
-            {r.mark !== undefined ? <span className="tl-tag"> ({MARK_WORDS[r.mark]})</span> : null}
-          </li>
-        ))}
-      </ul>
-
-      {ended !== undefined ? (
-        <p className="tl-answer" role="status">
-          The answer: {data.suspects.find((s) => s.card === ended.suspect)?.name ?? ended.suspect}, with{" "}
-          {data.relics.find((r) => r.card === ended.relic)?.name ?? ended.relic}, in the{" "}
-          {data.rooms.find((r) => r.zone === ended.zone)?.name ?? ended.zone}.
-        </p>
-      ) : null}
+    <section className="st-list ui-stack" aria-label="Spirit table, as a list">
+      {notice ? <p className="ui-notice" role="status">{notice}</p> : null}
+      <section className="ui-panel" aria-labelledby="st-rooms">
+        <h2 className="ui-heading" id="st-rooms">Rooms</h2>
+        <ul className="st-rows">{model.rooms.map((r) => row(r.id, r.name, describePiece(model, r)))}</ul>
+        {atDoor.length ? <p className="ui-hint">At the front door: {atDoor.map((p) => p.nickname).join(", ")}.</p> : null}
+      </section>
+      <section className="ui-panel" aria-labelledby="st-suspects">
+        <h2 className="ui-heading" id="st-suspects">Suspects</h2>
+        <ul className="st-rows">{model.suspects.map((s) => row(s.id, s.name, describePiece(model, s)))}</ul>
+      </section>
+      <section className="ui-panel" aria-labelledby="st-relics">
+        <h2 className="ui-heading" id="st-relics">Relics</h2>
+        <ul className="st-rows">{model.relics.map((r) => row(r.id, r.name, describePiece(model, r)))}</ul>
+      </section>
+      <p className="ui-hint">The Whisper: {describePiece(model, model.whisper)}</p>
+      <TheoryChoice
+        suspects={model.suspects.map((s) => ({ id: s.card, name: s.name }))}
+        zones={model.rooms.map((r) => ({ id: r.zone, name: r.name }))}
+        theory={theory}
+        onChange={onTheory}
+      />
     </section>
   );
 }

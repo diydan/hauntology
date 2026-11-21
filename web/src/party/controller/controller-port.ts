@@ -4,6 +4,8 @@ import type { Errand, ErrandObject } from "@hauntology/shared/party/errands";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import type { Kind, LockView, PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
 import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
+import type { TablePrivateInput, TablePublicInput } from "@hauntology/shared/table/data";
+import type { TableNotebook } from "@hauntology/shared/table/notebook";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
 
 /**
@@ -61,6 +63,19 @@ export type ControllerDoorLock = Readonly<{
   lastResult?: Readonly<{ outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>;
 }>;
 
+/**
+ * What the Spirit table may draw (spirit-table 3.1): the Public View as the table reads it, the Player's own seat, the Player's own notebook
+ * and, where the Room has any, how many Spirit clues are read. Nothing else reaches the Table, so a hidden fact cannot, by type. A port that
+ * has no such view leaves `table` out, and the Controller then has no Spirit table switch. `solo` is the solo-case rule that removes it.
+ */
+export type TableFeed = Readonly<{
+  pub: TablePublicInput;
+  priv: TablePrivateInput | null;
+  solo: boolean;
+  notebook?: TableNotebook;
+  clueCount?: number | null;
+}>;
+
 /** What the Room last said to this seat. The shell draws from it and keeps nothing else about the game. */
 export type RoomView = Readonly<{
   connection: Connection;
@@ -82,6 +97,8 @@ export type RoomView = Readonly<{
   doorProblems?: readonly string[];
   /** Active shut knock door at this Detective's feet on their Turn (knock-door 3.3). */
   doorLock?: ControllerDoorLock | null;
+  /** What the Spirit table may draw (spirit-table 1.1, 3.1). Absent: no Spirit table switch. */
+  table?: TableFeed;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };

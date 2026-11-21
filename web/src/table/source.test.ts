@@ -22,4 +22,23 @@ describe("web/src/table source rules", () => {
       for (const re of banned) expect(re.test(stripped), `${p} uses ${re}`).toBe(false);
     }
   });
+
+  it("is loaded only when switched on: nothing in web/src/party or the switch imports the drawing, three.js or the layer except through import()", () => {
+    const outside = import.meta.glob(["../party/**/*.ts", "../party/**/*.tsx", "!../party/**/*.test.ts", "!../party/**/*.test.tsx"], { query: "?raw", import: "default", eager: true }) as Record<string, string>;
+    for (const [p, src] of Object.entries(outside)) {
+      const stripped = src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+      expect(/from\s+["'][^"']*table\/(SpiritTable|SpiritTableLayer|threeScene|renderer)["']/.test(stripped), `${p} imports the Table statically`).toBe(false);
+      expect(/from\s+["']three["']/.test(stripped), `${p} imports three`).toBe(false);
+    }
+    const sw = code("./SpiritTableSwitch.tsx");
+    expect(/import\s+(?!type)[^;]*from\s+["']\.\/(SpiritTable|SpiritTableLayer|threeScene|renderer)["']/.test(sw)).toBe(false);
+    expect(sw).toMatch(/lazy\(\(\) => import\("\.\/SpiritTableLayer"\)\)/);
+  });
+
+  it("makes no paid call, no model call and no sound, and loads no picture of its own (6.4)", () => {
+    for (const p of paths) {
+      const stripped = code(p);
+      for (const re of [/\bnew Audio\b/, /AudioContext/, /\.mp3|\.wav|\.ogg/, /\/api\//, /SpendTicket|withTicket/, /\.(png|jpe?g|webp|gif|avif)["']/]) expect(re.test(stripped), `${p} uses ${re}`).toBe(false);
+    }
+  });
 });

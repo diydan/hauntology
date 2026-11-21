@@ -2,8 +2,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { TableData } from "@hauntology/shared/table/data";
-import css from "./TableList.css?raw";
-import { TableList } from "./TableList";
+import css from "./TableDataList.css?raw";
+import { TableDataList } from "./TableDataList";
 
 afterEach(cleanup);
 
@@ -21,9 +21,9 @@ const data: TableData = {
   haunt: { level: 2, max: 5 },
 };
 
-describe("TableList", () => {
+describe("TableDataList", () => {
   it("lists every room with its Pawns, the Cold Spot and the Player's marks", () => {
-    render(<TableList data={data} playerSeat={0} />);
+    render(<TableDataList data={data} playerSeat={0} />);
     const library = screen.getByText("Library").closest("li") as HTMLElement;
     expect(within(library).getByText("Ada")).toBeTruthy();
     expect(within(library).getByText(/their turn/)).toBeTruthy();
@@ -36,7 +36,7 @@ describe("TableList", () => {
   });
 
   it("names the door Pawns and every Suspect and Relic with its mark", () => {
-    render(<TableList data={data} />);
+    render(<TableDataList data={data} />);
     expect(screen.getByText("At the door")).toBeTruthy();
     expect(screen.getByText(/Bo/).textContent).toContain("poltergeist");
     expect(screen.getByText("Suspects").nextElementSibling?.textContent).toBe("Cora Bell (ruled out)");
@@ -45,10 +45,10 @@ describe("TableList", () => {
   });
 
   it("says the answer only when the game has ended, with names rather than card ids", () => {
-    const { unmount } = render(<TableList data={data} />);
+    const { unmount } = render(<TableDataList data={data} />);
     expect(screen.queryByText(/The answer:/)).toBeNull();
     unmount();
-    render(<TableList data={{ ...data, ended: { zone: "kitchen", suspect: "cora", relic: "key" } }} />);
+    render(<TableDataList data={{ ...data, ended: { zone: "kitchen", suspect: "cora", relic: "key" } }} />);
     expect(screen.getByRole("status").textContent).toBe("The answer: Cora Bell, with The brass key, in the Kitchen.");
   });
 
