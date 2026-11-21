@@ -181,6 +181,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 4.7 Accessibility and manual checks
     - Keyboard-only run of the speak toggle and Talk Button; a screen-reader pass that a spoken line is announced once; contrast of the indicator at least 4.5:1; a real iPhone and Android run of recording and playback.
     - _Requirements: 1.2, 3.2_
+    - **Progress (2026-11-21, not ticked):** the parts a test can check are checked in `web/src/app/play/Chat.test.tsx`: Hold to talk by Space and Enter (once per press, repeats ignored), the two controls are real labelled controls in order, the microphone indicator shows its dot and words only while the stream is open and carries no colour of its own (it is `ui-hint`, `text-quiet`, whose 4.5:1 on every surface `node tools/build-tokens.mjs --check` enforces), and the transcript is not a second live region. **Still manual (a person, a real phone):** the screen-reader pass, a real iPhone and Android recording and playback run.
   - [ ] 4.8 Prefetch and decode ahead
     - The Host (and Play) asks for each id in the room's prefetch list with `prefetch: true` and decodes the audio ahead into memory: at most 8 lines and 2 MB, cleared when the room ends, never written to disk, so a Library line starts at once. Nothing is prefetched that the server did not list.
     - _Requirements: 1.9_
