@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { knockPlayTimes } from "../puzzles/knock";
 import { makeLock } from "../puzzles/make";
@@ -8,7 +7,12 @@ import { createEngine, step, type ClientMsg, type EngineSeat, type EngineSetting
 // Knock-door task 9.1 (Requirement 7.1): a door decides only which Zones can be reached. It never reads or writes a card, the Solution,
 // the Turn order, a score or the winners. Two checks: what the door code can see (its imports and words), and what a door does to a game.
 
-const here = (f: string): string => readFileSync(new URL(f, import.meta.url), "utf8");
+// Node's modules are loaded by name at run time, as `conditions/rules-free.test.ts` does, so the package needs no Node types.
+const nodeFs = "node:fs";
+const nodeUrl = "node:url";
+const fs = (await import(nodeFs)) as { readFileSync(p: string, enc: string): string };
+const url = (await import(nodeUrl)) as { fileURLToPath(u: string): string };
+const here = (f: string): string => fs.readFileSync(url.fileURLToPath(new URL(f, import.meta.url).href), "utf8");
 const code = (f: string): string => here(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 
 describe("door code cannot see what it must not touch (knock-door 9.1)", () => {

@@ -92,12 +92,14 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
 
 - [ ] 8. What the screens show
   - [ ] 8.1 The Viewer adds or removes the doorway box when a door changes
+    - Progress (2026-11-21): the Viewer side is built and unit-tested: `shared/src/party/door-view.ts` (`doorBox`, `doorYaw`, `viewerDoors`, `playerAtDoor`), the `set_doors` message in `shared/src/app/events.ts` (strict, at most 3, no lock or pattern), `web/src/app/viewer/door-colliders.ts` (a shut door is a 0.2 m box across the doorway; an open one is none) and its use in `mount.ts` (`set_doors`; the push runs after the Collider's, also on the disc fallback). NOT done: the Host does not send `set_doors` yet (it needs `host.tsx`, which the `feat/knock-door-solo-panel` branch is editing), and the spike of 7.1 has not been run in a real Gallery world. Not ticked until both are.
     - _Requirements: 9.1_
   - [ ] 8.2 The TV shows each door as a marker on the diorama, and swings it open or shut slowly with the `creak` sound; a Player is at a door within 1.5 m
     - _Requirements: 2.4, 9.2_
   - [ ] 8.3 Each phone runs `feel` for the change from its own place and facing
     - _Requirements: 2.4_
   - [ ] 8.4 A world with no doors loads and shows nothing for doors
+    - Progress (2026-11-21): the Viewer half is tested (`viewerDoors([])` is `[]`, an empty list makes no box, `resolve` returns the same eye object); the TV half waits for 8.2. Not ticked until it does.
     - _Requirements: 9.3_
 
 - [ ] 9. Fairness and access pass

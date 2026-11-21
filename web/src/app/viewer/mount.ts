@@ -19,6 +19,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { createAtmosphereController, splatTintForLook } from "./atmosphere";
 import { CAPSULE_RADIUS, collisionWorldFromGeometry, type CollisionWorld } from "./collision";
+import { createDoorColliders } from "./door-colliders";
 import { applyLook, combineInput, stickAxes } from "./controls";
 import type { ViewerHandle, ViewerSetup } from "./types";
 import { buildAnswerTexture, buildSignTexture } from "./world-clue-props";
@@ -426,6 +427,8 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
 
   // Collision: the collider merged into one world-space geometry, else the disc.
   let collision: CollisionWorld | null = null;
+  // The shut doors of the world as thin boxes across their doorways (knock-door 8.1); empty for a world with no doors, and then nothing here runs.
+  const doorColliders = createDoorColliders();
   if (world.colliderBytes) {
     new GLTFLoader().parseAsync(world.colliderBytes, "").then((gltf) => {
       const parts: THREE.BufferGeometry[] = [];
@@ -547,6 +550,8 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       if (worldClues.length > 0) rebuildClues();
     } else if (m.t === "set_atmosphere") {
       atmosphereCtrl.setAtmosphere(m.atmosphere);
+    } else if (m.t === "set_doors") {
+      doorColliders.set(m.doors);
     } else if (m.t === "set_world_clues") {
       worldClues = [...m.clues];
       clueSeenSent.clear();
@@ -585,9 +590,13 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       player = stepMovement(player, input, dtMs, params);
       player = {
         ...player,
-        pos: collision
-          ? collision.resolve(player.pos, eyeHeight, CAPSULE_RADIUS)
-          : constrainToDisc(player.pos, world.spawn.pos, DISC_RADIUS, world.spawn.pos[1]),
+        pos: doorColliders.resolve(
+          collision
+            ? collision.resolve(player.pos, eyeHeight, CAPSULE_RADIUS)
+            : constrainToDisc(player.pos, world.spawn.pos, DISC_RADIUS, world.spawn.pos[1]),
+          eyeHeight,
+          CAPSULE_RADIUS,
+        ),
       };
       if (!player.pos.every(Number.isFinite) || player.pos[1] < manifest.floorY - 1) player = { ...player, pos: [...lastSafe] as Vec3 };
       else lastSafe = [...player.pos] as Vec3;

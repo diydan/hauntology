@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AtmosphereSchema } from "../conditions/types";
 import { ErrorCode } from "../errors";
+import { DOOR_ID_PATTERN, MAX_DOORS } from "../party/doors";
 import { SIGNS } from "../puzzles/world-clues";
 import { VIEWER_RUNGS } from "./types";
 
@@ -56,11 +57,22 @@ export const ViewerToShellSchema = z.discriminatedUnion("t", [
 ]);
 export type ViewerToShell = z.infer<typeof ViewerToShellSchema>;
 
+const ViewerDoorSchema = z.object({
+  id: z.string().regex(DOOR_ID_PATTERN),
+  x: z.number().finite(),
+  z: z.number().finite(),
+  width: z.number().finite().positive(),
+  yaw: z.number().finite(),
+  open: z.boolean(),
+}).strict();
+
 /** Shell to Viewer. `hauntLevel` is 0 to 1 (world-viewer glossary). */
 export const ShellToViewerSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("set_input_mode"), mode: z.enum(["play", "chat"]) }).strict(),
   // The frozen conditions of the place, or null to restore the normal look. Idempotent.
   z.object({ t: z.literal("set_atmosphere"), atmosphere: AtmosphereSchema.nullable() }).strict(),
+  // The doors of the world (knock-door 8.1): where each stands, how wide, the wall's angle and whether it is open. Never the lock or a pattern. Empty for a world with no doors.
+  z.object({ t: z.literal("set_doors"), doors: z.array(ViewerDoorSchema).max(MAX_DOORS) }).strict(),
   z.object({ t: z.literal("set_world_clues"), clues: z.array(PublicWorldClueSchema).max(6) }).strict(),
   z
     .object({
