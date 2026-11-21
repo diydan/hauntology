@@ -28,6 +28,7 @@
   - [x] 3.1 The guarded Song Service adapter, the `song` spend meter and cap, the kill switch, and deletion with the Room
     - _Requirements: 3.2, 3.3_
     - Done (2026-11-19): `MurekaSongMaker` / `assertSongTicket` (`api/src/guarded/songs/mureka.ts`), `SongSpendGuard` (`api/src/songs/spend.ts`), and `RoomSongStore` (`api/src/songs/store.ts`), verified with `FakeR2`, `MapKv`, and fake `fetch` in `api/src/songs/songs-service.test.ts` (note: live Mureka endpoint payload/latency remains unverified until Spike 1.1).
+    - Updated (2026-11-21): `MurekaSongMaker` now follows the async flow recorded in `docs/spikes/songs-1.md` (submit, task id, poll every 5 s, 120 s overall wait, shorter of two versions), tested over a fake in `api/src/guarded/songs/mureka-async.test.ts`. UNVERIFIED against the live API: the JSON field names (`prompt`, `id`, `status`, `choices[].url`, `duration`) are not in the spike notes.
   - [x] 3.2 The Room asks for songs and plays them at Song Slots; Stock Songs as the fallback
     - _Requirements: 1.1, 1.2, 1.4, 2.1_
     - Done (2026-11-19): `RoomSongCoordinator` (`api/src/songs/service.ts`), `RoomCore.planRoomSongs`/`sendRoomSong`/`deleteSongs` (`shared/src/party/server.ts`, `songs.test.ts`), and `PartyRoom` DO R2 song cleanup (`api/src/do/party-room.ts`, `party-room.test.ts`); standalone Party Mode screens attach via `party-mode` 8.9.
