@@ -1,0 +1,53 @@
+{
+  "note": "Draft authored content for the six Gallery Worlds (world-pipeline 9.1, ghost-engine 7). Not a plan: a plan needs each world's files. Each entry is the id, title, Place Brief and Preset Ghost of one place, plus words for the person choosing the picture and tuning the three anchors in the Viewer. Checked by shared/src/world/gallery-draft.test.ts. Pictures must be your own, public domain or licensed (record each in docs/ATTRIBUTION.md); no living artist or title is named anywhere here. `ghostPreset` is the Preset Ghost's name here; a plan's `ghostPreset` is kept as given, and the profile ids (`presetById`) are hashes of each preset's traits and persona, so they change when a preset is edited: decide whether a plan should carry the name or the id before the first upload.",
+  "entries": [
+    {
+      "id": "nursery-attic",
+      "title": "The attic nursery",
+      "ghostPreset": "Cora Bell",
+      "brief": "A nursery under a sloping roof, with a rocking horse, a small desk and a slate where a lesson was left half copied.",
+      "picture": "A child's room or a school corner under a sloped ceiling, daylight from one small window, a few toys and a desk. Wide enough to see the whole floor.",
+      "anchorSpots": ["the rocking horse", "the desk and its slate", "the window seat"]
+    },
+    {
+      "id": "warm-kitchen",
+      "title": "The warm kitchen",
+      "ghostPreset": "Mrs. Dunmore",
+      "brief": "A long kitchen with a black range, copper pans on the wall and a scrubbed table that has fed a great many people.",
+      "picture": "A large old-fashioned kitchen, a range or stove at one end, a long table in the middle, pans on hooks. Warm light, clear floor.",
+      "anchorSpots": ["the range", "the long table", "the pantry door"]
+    },
+    {
+      "id": "drawing-room",
+      "title": "The drawing room",
+      "ghostPreset": "Lady Vane",
+      "brief": "A drawing room with tall windows, chairs under dust sheets and a piano that nobody has played for years.",
+      "picture": "A big formal sitting room, tall windows, some furniture covered, a piano or a fireplace as the centre. Dusk or lamp light.",
+      "anchorSpots": ["the piano", "the covered chairs by the fire", "the tall window"]
+    },
+    {
+      "id": "consulting-room",
+      "title": "The consulting room",
+      "ghostPreset": "Dr. Pike",
+      "brief": "A physician's consulting room: a glass-fronted cabinet of bottles, a leather couch and a desk with a ledger left open.",
+      "picture": "An old study or surgery, a desk, a cabinet, a couch, shelves of books or bottles. Low light, a clear route round the desk.",
+      "anchorSpots": ["the cabinet of bottles", "the open ledger on the desk", "the leather couch"]
+    },
+    {
+      "id": "sea-landing",
+      "title": "The sea landing",
+      "ghostPreset": "Captain Thorne",
+      "brief": "A stair landing with a brass barometer, a lantern on its hook and a long window that looks out over the sea.",
+      "picture": "A wide landing or hall with a large window, a stair rail, a lantern or lamp and some brass or nautical objects. Grey daylight.",
+      "anchorSpots": ["the barometer", "the lantern hook", "the long window"]
+    },
+    {
+      "id": "back-corridor",
+      "title": "The back corridor",
+      "ghostPreset": "Percy",
+      "brief": "A narrow back corridor of many doors, with a board of labelled keys by the kitchen door and a floor worn pale in the middle.",
+      "picture": "A long plain passage with several doors, a key board or coat pegs, a worn floor. A single bare bulb or a window at the end. Wide enough to turn round.",
+      "anchorSpots": ["the board of keys", "the third door", "the end of the passage"]
+    }
+  ]
+}

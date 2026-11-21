@@ -148,6 +148,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
 
 - [ ] 7. Gallery content
   - Author anchors and review scripted lines for the six Gallery Worlds and six Preset Ghosts.
+  - **Part done 2026-11-21, not ticked:** the six places and their Preset Ghosts are drafted (`shared/fixtures/gallery/draft-entries.json`, checked by `shared/src/world/gallery-draft.test.ts`; see world-pipeline 9.1), with three anchor spots named in words for each. The scripted lines were reviewed by test: every Directive has at least five lines in each of the two voices, none with a digit, address or markup (`shared/src/ghost/scripted.test.ts` and `redteam.test.ts`, passing). **Open, needs the generated worlds:** the anchor positions themselves (each is a point in a world's own coordinates, tuned in the Viewer), and one read of the lines in place for each of the six presets.
   - _Requirements: 1.3, 5.4_
 
 - [ ] 8. Checkpoint
