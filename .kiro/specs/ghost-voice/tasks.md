@@ -155,6 +155,7 @@ Tasks marked `*` are optional test tasks that should still be done before submis
   - [ ] 4.1 Speak toggle
     - A button with `aria-pressed`, a 48 CSS pixel target and a text label; on by default in Single player, kept in `sessionStorage`; in Multiplayer it shows the room's switch and only the Master's phone can change it.
     - _Requirements: 2.1, 2.4_
+    - **Progress (2026-11-21, not ticked):** the room's switch is now on every phone: the Master's menu changes it (`MasterMenu.tsx`), and other seats see it as a disabled switch with "Only the Master can change this." (`web/src/party/controller/play/SpeechRoomSwitch.tsx`, mounted in `SeatedFrame.tsx`; tests in `play2.test.tsx`). **Open:** the single-player control is a checkbox ("Speak aloud"), not a 48 px button with `aria-pressed`; moving it is a design decision I did not make.
     - Progress (2026-11-19): single-player toggle (`Chat.tsx`, `voice.ts`) starts on and now persists in `sessionStorage` (`hauntology.speak`); multiplayer room switch waits on `3.9`.
   - [x] 4.2 Subtitle and audio player
     - The line's full text goes into the Chat transcript's polite live region when it arrives and is marked while it plays; one `AudioContext` created on the content-notice acknowledgement; a 5-second timer from the request; refusal, timeout or autoplay block falls back to `speechSynthesis` and then the Subtitle alone with a quiet "voice off" mark and no error screen; late audio is dropped; the line stops when the switch goes off.
@@ -172,17 +173,20 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - A Live button, a microphone indicator and a stop button that are visible whenever the microphone is open, disabled with a reason when speaking is off, and a return to the Talk Button on every stop.
     - _Requirements: 6.1, 6.2_
     - Done (2026-11-19): `startLive`/`stopLive` and live state in `web/src/app/play/voice.ts`, controls + disabled reason + Talk Button fallback in `web/src/app/play/Chat.tsx` and `Play.tsx`, verified in `Chat.test.tsx` and `voice.test.ts` (`openLiveSession` transport stays gated on `6.3` after Spike 1.3).
-  - [ ] 4.6 Host audio
+  - [x] 4.6 Host audio
     - The Host page asks for audio with its host token for each `voice` message, plays it, shows the Subtitle in its polite live region, and offers one tap to unlock audio on the room-code screen; without the tap it shows Subtitles only.
     - _Requirements: 1.2, 1.3, 2.3_
     - Progress (2026-11-19): `createHostAudio`, `fetchHostSpeech`, and `browserHostAudioSupport` (`web/src/app/case/host-voice.ts`, `host-voice.test.ts`), `RoomSnapshot` voice/speech/prefetch/hostToken tracking (`web/src/app/case/room-client.ts`, `room-client.test.ts`), and `SoloTable` unlock + Master voice toggle + polite live-region subtitle wiring (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code screen awaits `party-mode` 8.9.
+    - **Ticked 2026-11-21:** the standalone Host page (`web/src/party/host/HostPage.tsx`, `narration.ts`; party-mode 8.8) asks for each `voice` line's audio with the Host token, plays it, shows the Subtitle in a polite live region, and now offers the one unlock tap on the room-code screen too, not only in play (`host.test.tsx`: tap shown beside the Room Code, gone once unlocked, absent without narration). Real iPhone and Android playback is a manual check under 4.7.
   - [ ] 4.7 Accessibility and manual checks
     - Keyboard-only run of the speak toggle and Talk Button; a screen-reader pass that a spoken line is announced once; contrast of the indicator at least 4.5:1; a real iPhone and Android run of recording and playback.
     - _Requirements: 1.2, 3.2_
+    - **Progress (2026-11-21, not ticked):** the parts a test can check are checked in `web/src/app/play/Chat.test.tsx`: Hold to talk by Space and Enter (once per press, repeats ignored), the two controls are real labelled controls in order, the microphone indicator shows its dot and words only while the stream is open and carries no colour of its own (it is `ui-hint`, `text-quiet`, whose 4.5:1 on every surface `node tools/build-tokens.mjs --check` enforces), and the transcript is not a second live region. **Still manual (a person, a real phone):** the screen-reader pass, a real iPhone and Android recording and playback run.
   - [ ] 4.8 Prefetch and decode ahead
     - The Host (and Play) asks for each id in the room's prefetch list with `prefetch: true` and decodes the audio ahead into memory: at most 8 lines and 2 MB, cleared when the room ends, never written to disk, so a Library line starts at once. Nothing is prefetched that the server did not list.
     - _Requirements: 1.9_
     - Progress (2026-11-19): `createAudioPrefetcher` in `web/src/app/voice/prefetch.ts` (`voice-helpers.test.ts`) is wired through `createHostAudio` into `SoloTable` (`web/src/app/case/host.tsx`, `host.test.tsx`); standalone Party Mode room-code Host screen awaits `party-mode` 8.9.
+    - **Progress (2026-11-21, not ticked):** the standalone Host page now acts on the Room's `prefetch {lineIds}` message: `HostView.prefetch` (at most 8 string ids), and `useNarration` warms exactly those ids through `createHostAudio` with `prefetch: true`, only while speech is on (`web/src/party/host/host-view.ts`, `narration.ts`; tests in `host-view.test.ts` and `host.test.tsx`, 2 deliberate breakages caught). **Still open:** no Room code sends `prefetch` yet (`shared/src/party/server.ts` has no emitter; it needs 3.12's Library tier and `prefetchPlan` mapped to line ids), and Play has no list to prefetch from.
 
 - [x] 5. Stitch services (second in the cut order; `shared/src/voice/stitch/`)
   - [x] 5.1 Word Bank, Templates and composition

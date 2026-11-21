@@ -10,7 +10,7 @@ const W = "attic-room";
 const photo = new Blob([new Uint8Array(10)], { type: "image/jpeg" });
 
 /** A Viewer port that writes every call to a shared log, so the order of effects can be checked. */
-function setup(over: { ackNotice?: boolean; lastPlayId?: string; lastWorldId?: string; api?: ShellApi; memory?: ReturnType<typeof createPlayMemory> } = {}) {
+function setup(over: { ackNotice?: boolean; lastPlayId?: string; lastWorldId?: string; api?: ShellApi; memory?: ReturnType<typeof createPlayMemory>; clientAnchors?: PlayDeps["clientAnchors"] } = {}) {
   const log: string[] = [];
   const sent: unknown[] = [];
   const port: ViewerPort = {
@@ -26,6 +26,7 @@ function setup(over: { ackNotice?: boolean; lastPlayId?: string; lastWorldId?: s
   const fpsSeen: number[] = [];
   const deps: PlayDeps = {
     api, worldId: W, memory,
+    ...(over.clientAnchors === undefined ? {} : { clientAnchors: over.clientAnchors }),
     session: { ackNotice: over.ackNotice ?? false, lastPlayId: over.lastPlayId, lastWorldId: over.lastWorldId },
     port,
     navigate: (r) => { navigated.push(r); log.push(`navigate ${r.screen}`); },
@@ -63,6 +64,25 @@ describe("starting", () => {
     const start = vi.spyOn(api, "playStart");
     await setup({ api }).controller.begin();
     expect(start).toHaveBeenCalledWith({ worldId: W });
+  });
+
+  it("sends the client's anchors with start when a planner gives them, and none when it gives nothing or throws (ghost-engine 6.3)", async () => {
+    const planned = [
+      { id: "a1", pos: [4, 0, 0], radius: 2 },
+      { id: "a2", pos: [0, 0, 6], radius: 2 },
+      { id: "a3", pos: [-8, 0, 0], radius: 2 },
+    ] as NonNullable<ReturnType<NonNullable<PlayDeps["clientAnchors"]>>>;
+    const cases: Array<[NonNullable<PlayDeps["clientAnchors"]>, Record<string, unknown>]> = [
+      [() => planned, { worldId: W, anchors: planned }],
+      [() => undefined, { worldId: W }],
+      [() => { throw new Error("no floor"); }, { worldId: W }],
+    ];
+    for (const [plan, expected] of cases) {
+      const api = createFakeApi({ latencyMs: 0 });
+      const start = vi.spyOn(api, "playStart");
+      await setup({ api, clientAnchors: plan }).controller.begin();
+      expect(start).toHaveBeenCalledWith(expected);
+    }
   });
 
   it("does not start the Viewer until the notice is acknowledged", async () => {

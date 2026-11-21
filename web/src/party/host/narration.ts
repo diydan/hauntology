@@ -37,6 +37,12 @@ export function useNarration(host: HostView, ids: { roomCode: string | null; hos
     if (host.speechOn && !mutedRef.current) void audio.current?.onVoiceCue({ lineId: line.lineId, text: line.text, kind: line.kind });
   }, [line, host.speechOn]);
 
+  // the Room's prefetch list: decode ahead the ids it names, only while speech is on, and nothing else (ghost-voice 4.8)
+  useEffect(() => {
+    if (!host.speechOn || host.prefetch.length === 0) return;
+    void audio.current?.prefetch(host.prefetch);
+  }, [host.prefetch, host.speechOn]);
+
   // switching the voice off stops what is playing
   useEffect(() => { if (!host.speechOn) audio.current?.stop(); }, [host.speechOn]);
 

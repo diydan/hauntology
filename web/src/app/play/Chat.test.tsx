@@ -212,6 +212,56 @@ describe("Chat: the ghost on the stage", () => {
   });
 });
 
+describe("Chat: the voice controls by keyboard alone, and the microphone indicator (ghost-voice 4.7, the parts a test can check)", () => {
+  it("holds Hold to talk with Space or Enter, once per press (a held key's repeats do not press again), and lets go on key up", () => {
+    const { calls } = show({ voiceAvailable: true });
+    const talk = screen.getByRole("button", { name: "Hold to talk" });
+    for (const key of [" ", "Enter"]) {
+      fireEvent.keyDown(talk, { key });
+      fireEvent.keyDown(talk, { key, repeat: true });
+      fireEvent.keyDown(talk, { key, repeat: true });
+      fireEvent.keyUp(talk, { key });
+    }
+    expect(calls.press).toHaveBeenCalledTimes(2);
+    expect(calls.release).toHaveBeenCalledTimes(2);
+    fireEvent.keyDown(talk, { key: "a" });
+    fireEvent.keyUp(talk, { key: "a" });
+    expect(calls.press).toHaveBeenCalledTimes(2);
+  });
+
+  it("reaches Speak aloud and Hold to talk as real controls with a text label, in that order, and switches speech with the checkbox", () => {
+    const { calls } = show({ voiceAvailable: true });
+    const group = screen.getByRole("group", { name: "Voice" });
+    const controls = [...group.querySelectorAll("input, button")];
+    expect(controls.map((c) => c.tagName)).toEqual(["INPUT", "BUTTON"]);
+    expect(controls.every((c) => (c as HTMLInputElement | HTMLButtonElement).tabIndex >= 0 && !(c as HTMLInputElement | HTMLButtonElement).disabled)).toBe(true);
+    expect(screen.getByLabelText("Speak aloud")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Speak aloud"));
+    expect(calls.speak).toHaveBeenCalledWith(true);
+  });
+
+  it("shows the microphone indicator, with its dot and words, only while the stream is open, as a hint whose colour is the checked quiet-text token", () => {
+    show({ voiceAvailable: true, voice: { mic: "recording" } });
+    const badge = document.querySelector("[data-mic-indicator]")!;
+    expect(badge.textContent).toContain("●");
+    expect(badge.textContent).toContain("Listening");
+    expect(badge.classList.contains("ui-hint")).toBe(true); // text-quiet on the sheet, 4.5:1 or more, enforced by `build-tokens --check`
+    expect(badge.getAttribute("style")).toBeNull(); // no colour of its own
+    cleanup();
+    show({ voiceAvailable: true, voice: { mic: "idle" } });
+    expect(document.querySelector("[data-mic-indicator]")).toBeNull();
+    cleanup();
+    show({ voiceAvailable: true, voice: { mic: "sending" } });
+    expect(document.querySelector("[data-mic-indicator]")).toBeNull();
+  });
+
+  it("keeps the transcript out of a second live region, so a spoken line is announced once (by the app's one polite region)", () => {
+    show({ ui: { lines: [{ id: 1, who: "ghost", text: "Something moved." }], reply: { text: "Something moved." } as never }, voiceAvailable: true, voice: { speak: true } });
+    expect(screen.getByRole("log", { name: "Conversation" }).getAttribute("aria-live")).toBe("off");
+    expect(document.querySelectorAll("[aria-live='polite'], [role='status'], [role='alert']")).toHaveLength(0);
+  });
+});
+
 describe("Journal: a panel with a log (ghost-engine 6.2, Requirement 10.3)", () => {
   it("lists the memories in the order found, each with its number", () => {
     render(<Journal entries={[{ anchorId: "a1", text: "A low hum." }, { anchorId: "a2", text: "A name, almost." }]} onClose={() => {}} />);

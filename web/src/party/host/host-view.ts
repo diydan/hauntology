@@ -11,6 +11,8 @@ export type RattleCue = Readonly<{ id: string; level: number; sound: string; vol
 export type HostInput = Readonly<{ seat: number; move: readonly [number, number]; look: readonly [number, number]; aim?: readonly [number, number] }>;
 export type Whisper = Readonly<{ id: string; subtitle: string; clips: readonly Readonly<{ word: string; contentType: string; durationMs: number; audio: string }>[] }>;
 export type SpokenLine = Readonly<{ lineId: string; text: string; kind: string }>;
+/** The Host decodes at most 8 lines ahead (ghost-voice 1.9). */
+export const MAX_PREFETCH_IDS = 8;
 export type SpeechAction = "mute" | "unmute" | "replay" | "skip";
 
 export type HostView = Readonly<{
@@ -23,12 +25,14 @@ export type HostView = Readonly<{
   spoken: readonly SpokenLine[];
   speechOn: boolean;
   speechAction: Readonly<{ action: SpeechAction; n: number }> | null;
+  /** The line ids the Room listed for decoding ahead (ghost-voice 4.8); nothing else is ever prefetched. */
+  prefetch: readonly string[];
   input: HostInput | null;
   recapSkipped: number;
   songs: readonly Readonly<{ key: string; title: string; captions: string }>[];
 }>;
 
-export const EMPTY_HOST: HostView = { game: EMPTY_GAME, tvCues: [], rattles: [], becomings: [], strikes: [], whispers: [], spoken: [], speechOn: false, speechAction: null, input: null, recapSkipped: 0, songs: [] };
+export const EMPTY_HOST: HostView = { game: EMPTY_GAME, tvCues: [], rattles: [], becomings: [], strikes: [], whispers: [], spoken: [], speechOn: false, speechAction: null, prefetch: [], input: null, recapSkipped: 0, songs: [] };
 
 const num = (v: unknown, d = 0): number => (typeof v === "number" && Number.isFinite(v) ? v : d);
 const str = (v: unknown, d = ""): string => (typeof v === "string" ? v : d);
@@ -60,6 +64,8 @@ export function applyHostMessage(h: HostView, raw: unknown, now: number): HostVi
       return { ...h, speechOn: m.on === true };
     case "speechControl":
       return m.action === "mute" || m.action === "unmute" || m.action === "replay" || m.action === "skip" ? { ...h, speechAction: { action: m.action, n: (h.speechAction?.n ?? 0) + 1 } } : h;
+    case "prefetch":
+      return Array.isArray(m.lineIds) ? { ...h, prefetch: (m.lineIds as unknown[]).filter((id): id is string => typeof id === "string" && id !== "").slice(0, MAX_PREFETCH_IDS) } : h;
     case "recapSkip":
       return { ...h, recapSkipped: h.recapSkipped + 1 };
     case "song":

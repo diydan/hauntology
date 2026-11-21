@@ -118,7 +118,7 @@ export interface ShellApi {
   /** A held-button clip (at most 8 seconds). The audio is dropped on the server; only the transcript comes back. */
   listen(clip: Blob): Promise<ApiResult<{ transcript: string }>>;
   /** `conditions` is the visitor's choice from the Set the sky card; the snapshot is frozen once, here. */
-  playStart(req: { worldId: string; ghostPreset?: string; conditions?: ConditionsChoice; locks?: boolean }): Promise<ApiResult<{ playId: string; view: PlayView }>>;
+  playStart(req: { worldId: string; anchors?: Anchor[]; ghostPreset?: string; conditions?: ConditionsChoice; locks?: boolean }): Promise<ApiResult<{ playId: string; view: PlayView }>>;
   playTurn(playId: string, turn: PlayTurn): Promise<ApiResult<{ reply: PlayReply; view: PlayView; lock?: WanderLockView | undefined; sight?: Sight | undefined }>>;
   playGet(playId: string): Promise<ApiResult<{ worldId: string; view: PlayView }>>;
   playLockOpen?(playId: string, anchorId: AnchorId): Promise<ApiResult<{ view: PlayView; lock: WanderLockView }>>;

@@ -40,4 +40,12 @@ describe("the Host view (party-mode 8)", () => {
     expect(h.game.log.map((l) => l.text)).toEqual(["The clock struck one."]);
     expect(run(EMPTY_HOST, null, 5, { t: 3 })).toBe(EMPTY_HOST);
   });
+  it("keeps the Room's prefetch list (strings only, at most 8) and nothing it did not name (ghost-voice 4.8)", () => {
+    const ids = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
+    expect(run(EMPTY_HOST, { t: "prefetch", lineIds: ["l1", 5, "", "l2"] }).prefetch).toEqual(["l1", "l2"]);
+    expect(run(EMPTY_HOST, { t: "prefetch", lineIds: ids }).prefetch).toEqual(ids.slice(0, 8));
+    expect(run(EMPTY_HOST, { t: "prefetch", lineIds: ["l1"] }, { t: "prefetch", lineIds: [] }).prefetch).toEqual([]);
+    expect(run(EMPTY_HOST, { t: "prefetch", lineIds: "l1" })).toBe(EMPTY_HOST);
+    expect(EMPTY_HOST.prefetch).toEqual([]);
+  });
 });
