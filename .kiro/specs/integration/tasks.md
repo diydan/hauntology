@@ -47,6 +47,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
   - [x] 4.4 **Property 4: Every solo case ends**
     - **Validates: Requirements 4.1, 4.2, 4.3**
   - [ ] 4.5 Checkpoint: a person plays a solo case from the Case screen to the ending on a laptop, with no phone and zero quota
+    - Left open (a person's): the machine part is done: `tools/ui-check.mjs` drives the case in a real browser, `?demo=1&zero=1`, from Play a case to its ending with no request to `/api/`, and `room-client.test.ts`, `host.test.tsx` and `solo-ending.prop.test.ts` cover the real Room path; a person still has to play it through on a laptop with the real Worker.
     - _Requirements: 1.2, 4.2_
 
 - [ ] 5. Phase 5: phones, with puzzles on Inspect
@@ -63,6 +64,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
   - [x] 5.7 (Engine built: `hauntPuzzle`, one per Round, Scare points only, `haunting-puzzle.prop.test.ts`; solo screen built: a visitor who joined the haunting gets a "Haunt a puzzle" button in `host.tsx`, the Lock plays in `SoloLockLayer`, `host-locks.test.tsx`, mutation-checked; the phone: the same button in `GameSections`, shown in the Controller's panel (`Controller.play.test.tsx`)) Haunting puzzles for Players who joined the haunting: one per Round, Scare points only (puzzles 17)
     - _Requirements: 5.1_
   - [ ] 5.6 Checkpoint: two phones and a laptop play a party game with at least one puzzle solved on Inspect
+    - Left open (needs two phones and a laptop): everything that can run without them passes: a whole party game through `RoomCore` with fake ports (`server.test.ts`), Locks, Sights and Attempts through `RoomSocketPort` (`socket-port.test.ts`), the Controller's Lock and Sight screens (`Controller.play.test.tsx`), the Host page and its code card (`host.test.tsx`). Blocked on: real phones, the Worker deployed, and a person.
     - _Requirements: 1.2_
 
 - [x] 6. Phase 6: Wander puzzles
@@ -71,7 +73,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
   - [x] 6.2 (Off is the identity: `gateReveal` returns the same state (`wander.prop.test.ts`), and `PUZZLES_ENABLED=false` answers `puzzle_disabled` (`play.wander-locks.test.ts`); no new paid call: `api/src/routes/play.wander-locks-spend.test.ts` counts the narrator's calls, 0 for the turn that opens a Lock, a wrong Attempt and a reload, and exactly 1 for the reveal by Skip, the same 1 as a Wander without puzzles) Wander with puzzles off is unchanged and makes no new paid call
     - _Requirements: 6.2_
 
-- [ ] 7. Phase 7: the Optional layers
+- [x] 7. Phase 7: the Optional layers
   - [x] 7.1 Errands through the Engine (errands 2 and 3), behind the Errands switch
     - _Requirements: 7.1, 7.2_
   - [x] 7.2 World Clues through the Engine and the Viewer (world-clues 2 to 4), behind the Clue place setting
@@ -81,12 +83,12 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
   - [x] 7.4 **Property 5: Optional layers change nothing when off**
     - **Validates: Requirements 7.1**
 
-- [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 8 and the `design-system` spec)
+- [x] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 8 and the `design-system` spec)
   - [x] 8.1 (Audited: the Case, solo table, Lock layer, ending and Controller panel use `ui-` elements only; `web/src/styles/styles.test.ts` keeps the old look classes out and every own style to layout; one solid yellow button per view is pinned in `host-locks.test.tsx` (Ask), `Ending.test.tsx` (none; Play again is the Case screen's) and `one-primary.test.tsx` (puzzles)) Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
     - _Requirements: 8.1, 8.3_
   - [x] 8.2 (Done once in this branch: the ending's counts needed a table, so `ui-table` went into `design/elements.css` and `design/catalogue.html` first and is then used in `Ending.tsx`) A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 8.2_
-  - [ ] 8.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 8.3 (Built and run: `tools/ui-check.mjs` (new; headless Chrome over its debugging port, the app's `?demo=1&zero=1` flow on the Vite dev server, no new dependency, no request to `/api/`; its rules are `tools/lib/ui-audit.mjs`, unit-tested in `tools/test/ui-audit.test.mjs`, and a deliberate break of a target size and of a text colour is caught) ran 2026-11-21 at 390 and 1280 px, with and without reduced motion, over Home, Gallery, Haunt, Case setup, the solo Case, the Case ending, Wander, the Wander ending, Create, the Expired answer for a link to a Gallery place, Not found, the Controller over the stand-in Room, the Master's and a Player's song controls (`web/songs-demo.html`, a dev page) and the puzzle demo: nothing found. It checks no sideways scroll, a 44 px target for every control (a checkbox or radio by its label), one solid yellow button in view, text contrast (4.5:1, 3:1 for large text; text over an image or gradient is not measured), a focus ring after each Tab, and no running animation of 100 ms or more under reduced motion. Not covered: the Confirm screen (checked by hand on 2026-11-15, `design-system` 4.3), the Lock layer inside a running solo case, the Ending's song line, the real Host and Controller pages (they need a Room), iOS Safari and a real phone.) Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 8.4_
-  - [ ] 8.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+  - [x] 8.4 (Kept by checks, not by memory: `tools/test/design-system.test.mjs` fails any `ui-` class that does not exist and any old look class in `web/src`, and `web/src/styles/styles.test.ts` keeps screen styles to layout; the screens changed in this branch, the Host's code card and the phone port, use the elements, and the new `ui-qr` went into the elements and the catalogue first) A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 8.1_

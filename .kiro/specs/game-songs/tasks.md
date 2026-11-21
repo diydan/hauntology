@@ -43,7 +43,8 @@
   - [x] 4.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - Verified (2026-11-21): the song screens (`SongControls.tsx`, `Ending.tsx`) use only `ui-` elements that exist in `design/elements.css`, none missing, so nothing was added; `tools/test/design-system.test.mjs` fails on any undefined `ui-` class in `web/src`.
     - _Requirements: 5.2_
-  - [ ] 4.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 4.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Done (2026-11-21): the Master's and a Player's `SongControls` (the Songs mode, Mute, Skip, Sing my name, a caption in `ui-speech ui-hint`) were checked in headless Chrome at 390 and 1280 px, with and without reduced motion, by `tools/ui-check.mjs` on the new dev page `web/songs-demo.html` (fixed state, not in the build): nothing found. The tool first found a real problem, in the demo and not the app: two controls on one page share the checkbox's fixed id, so the second's label pointed at the first; the demo now shows one view at a time. Not checked: the Ending's song line (it needs a finished case with a song; `Ending.test.tsx` pins its elements) and the live Room's controls, which show only with a Host token.
     - _Requirements: 5.4_
 
 - [ ] 5. Song catalogue and house style (added 2026-11-16; satisfies Requirement 6)
