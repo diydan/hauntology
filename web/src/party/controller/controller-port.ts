@@ -4,6 +4,7 @@ import type { Errand, ErrandObject } from "@hauntology/shared/party/errands";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import type { Kind, LockView, PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
 import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
+import type { PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/engine";
 import type { TablePrivateInput, TablePublicInput } from "@hauntology/shared/table/data";
 import type { TableNotebook } from "@hauntology/shared/table/notebook";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
@@ -103,6 +104,10 @@ export type RoomView = Readonly<{
   doorLock?: ControllerDoorLock | null;
   /** What the Spirit table may draw (spirit-table 1.1, 3.1). Absent: no Spirit table switch. */
   table?: TableFeed;
+  /** The game as the Room last told this seat: the Public View and this seat's own Private View. Absent in the scripted stand-in. */
+  game?: Readonly<{ pub: PublicSnapshot; priv: PrivateSnapshot | null }>;
+  /** The last thing the Room refused, until its next public view. */
+  refused?: string;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -139,6 +144,8 @@ export interface ControllerPort {
   doorAct?(doorId: string): void;
   /** Detective sends knock timestamps (ms) for a shut knock door (knock-door 3.3). */
   doorKnock?(doorId: string, times: readonly number[]): void;
+  /** Send the Room one game message (walk, inspect, suggest, show, seal, choose, hauntPuzzle...). The Room checks it and refuses what is not allowed. Absent in the scripted stand-in. */
+  act?(msg: Readonly<{ t: string }> & Record<string, unknown>): void;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }

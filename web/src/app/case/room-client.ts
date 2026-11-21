@@ -38,6 +38,8 @@ export type RoomSnapshot = Readonly<{
   private: PrivateSnapshot | null;
   /** The last thing the Room refused, for one line on screen. */
   refused: string | null;
+  /** The seat the Room says is the Master (from its lobby word), or null before it has said. */
+  masterSeat: number | null;
   /** The Lock open in front of the visitor, or null. */
   lock: SoloLock | null;
   /** The Sight (a clue shown once) waiting to be shown, or null. Later ones wait behind it. */
@@ -87,6 +89,8 @@ export type RoomClient = {
   closeLock(lockId: string, why: "finished" | "gave_up" | "time_up"): void;
   /** The Sight on screen has been seen (or timed out). */
   ackSight(sightId: string): void;
+  /** Gives up this seat's connection and nothing else: no `end`, so a phone leaving never ends the Room. Safe to call twice. */
+  disconnect(): void;
   /** Ends the Room (the Master's End) and closes the socket. Safe to call twice. */
   close(): void;
 };
@@ -134,7 +138,7 @@ export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "Yo
 
 /** Opens the socket for `code` with `token`. Messages sent before it opens wait, in order. */
 export function openRoom(deps: RoomDeps, code: string, token: string, opts: { hostToken?: string } = {}): RoomClient {
-  let snap: RoomSnapshot = { status: "connecting", code, seat: null, public: null, private: null, refused: null, lock: null, sight: null, hostToken: opts.hostToken ?? null, speechOn: false, voice: null, prefetch: [], songsSetting: "off", songMuted: false, activeSong: null, songHints: [] };
+  let snap: RoomSnapshot = { status: "connecting", code, seat: null, public: null, private: null, refused: null, masterSeat: null, lock: null, sight: null, hostToken: opts.hostToken ?? null, speechOn: false, voice: null, prefetch: [], songsSetting: "off", songMuted: false, activeSong: null, songHints: [] };
   const now = deps.now ?? Date.now;
   const sights: { id: string; sight: Sight }[] = [];
   const attempts: ((r: AttemptReply) => void)[] = [];
@@ -160,7 +164,9 @@ export function openRoom(deps: RoomDeps, code: string, token: string, opts: { ho
     try { m = JSON.parse(ev.data) as Record<string, unknown>; } catch { return; }
     switch (m.t) {
       case "welcome": set({ seat: typeof m.seat === "number" ? m.seat : null }); return;
-      case "lobby": if (snap.status === "connecting") set({ status: "lobby" }); return;
+      case "lobby":
+        set({ ...(snap.status === "connecting" ? { status: "lobby" as const } : {}), masterSeat: typeof m.masterSeat === "number" ? m.masterSeat : null });
+        return;
       case "public": {
         const view = m.view as PublicSnapshot;
         set({ public: view, status: view.phase === "ended" ? "ended" : view.phase === "playing" ? "playing" : snap.status, refused: null });
@@ -266,6 +272,12 @@ export function openRoom(deps: RoomDeps, code: string, token: string, opts: { ho
       if (snap.sight?.id !== sightId) return;
       send({ t: "sightAck", sightId });
       set({ sight: sights.shift() ?? null });
+    },
+    disconnect() {
+      if (closed) return;
+      closed = true;
+      try { ws.close(1000, "left"); } catch { /* already gone */ }
+      if (snap.status !== "closed") set({ status: "closed" });
     },
     close() {
       if (closed) return;

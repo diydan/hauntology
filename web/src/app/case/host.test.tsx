@@ -22,7 +22,7 @@ function game(): { s: EngineState; now: number } {
 
 function fakeClient(s: EngineState, now: number) {
   const sent: Record<string, unknown>[] = [];
-  let snap: RoomSnapshot = { status: "playing", code: "ABCD", seat: 1, public: publicSnapshot(s, now), private: privateSnapshot(s, 1), refused: null, lock: null, sight: null };
+  let snap: RoomSnapshot = { status: "playing", code: "ABCD", seat: 1, public: publicSnapshot(s, now), private: privateSnapshot(s, 1), refused: null, masterSeat: null, lock: null, sight: null };
   const ls = new Set<() => void>();
   const client: RoomClient = {
     getSnapshot: () => snap,
@@ -31,6 +31,7 @@ function fakeClient(s: EngineState, now: number) {
     attempt: async () => ({ outcome: "failed", reason: "test" }),
     closeLock: () => {},
     ackSight: () => {},
+    disconnect: () => {},
     close: () => {},
   };
   const set = (p: Partial<RoomSnapshot>) => { snap = { ...snap, ...p }; for (const l of ls) l(); };
@@ -270,6 +271,7 @@ describe("SoloTable doors (knock-door 1.4, 2.8)", () => {
       public: { ...base, active: 1, closedZones: [closedId], doorProblems: ["0:width"] },
       private: privateSnapshot(s, 1),
       refused: null,
+      masterSeat: null,
       lock: null,
       sight: null,
     };
@@ -280,6 +282,7 @@ describe("SoloTable doors (knock-door 1.4, 2.8)", () => {
       attempt: async () => ({ outcome: "failed", reason: "test" }),
       closeLock() {},
       ackSight() {},
+      disconnect() {},
       close() {},
     };
     const { container } = render(<SoloTable client={client} />);

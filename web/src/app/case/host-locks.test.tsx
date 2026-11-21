@@ -30,9 +30,9 @@ function playing(): EngineState {
 function client(over: Partial<RoomSnapshot>, mutate: (s: EngineState) => EngineState = (s) => s) {
   const s = mutate(playing());
   const calls: unknown[][] = [];
-  const snap: RoomSnapshot = { status: "playing", code: "ABCD", seat: 1, public: publicSnapshot(s, 0), private: privateSnapshot(s, 1), refused: null, lock: null, sight: null, ...over };
+  const snap: RoomSnapshot = { status: "playing", code: "ABCD", seat: 1, public: publicSnapshot(s, 0), private: privateSnapshot(s, 1), refused: null, masterSeat: null, lock: null, sight: null, ...over };
   const c: RoomClient = {
-    getSnapshot: () => snap, subscribe: () => () => {}, send: () => {}, close: () => {},
+    getSnapshot: () => snap, subscribe: () => () => {}, send: () => {}, close: () => {}, disconnect: () => {},
     attempt: async (...a) => { calls.push(["attempt", ...a]); return { outcome: "solved" }; },
     closeLock: (...a) => void calls.push(["closeLock", ...a]),
     ackSight: (...a) => void calls.push(["ackSight", ...a]),

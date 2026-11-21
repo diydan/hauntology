@@ -196,3 +196,33 @@ describe("Locks and Sights in the solo case (integration 5.3)", () => {
   });
 });
 
+describe("a phone's connection (integration 5.1)", () => {
+  it("takes the Master's seat from the lobby word and keeps it across later lobby words", () => {
+    const { d, sockets } = deps({});
+    const c = openRoom(d, "ABCD", "t");
+    sockets[0]!.open();
+    expect(c.getSnapshot().masterSeat).toBeNull();
+    sockets[0]!.say({ t: "lobby", masterSeat: 3 });
+    expect(c.getSnapshot()).toMatchObject({ masterSeat: 3, status: "lobby" });
+    sockets[0]!.say({ t: "public", view: { phase: "playing" } });
+    sockets[0]!.say({ t: "lobby", masterSeat: 2 });
+    expect(c.getSnapshot()).toMatchObject({ masterSeat: 2, status: "playing" });
+  });
+
+  it("disconnect closes the socket and ends nothing; close still ends the Room", () => {
+    const a = deps({});
+    const phone = openRoom(a.d, "ABCD", "t");
+    a.sockets[0]!.open();
+    phone.disconnect();
+    expect(a.sockets[0]!.sent.some((m) => m.t === "end")).toBe(false);
+    expect(a.sockets[0]!.closedWith).toBe(1000);
+    expect(phone.getSnapshot().status).toBe("closed");
+    phone.disconnect();
+    const b = deps({});
+    const master = openRoom(b.d, "ABCD", "t");
+    b.sockets[0]!.open();
+    master.close();
+    expect(b.sockets[0]!.sent.at(-1)).toEqual({ t: "end" });
+  });
+});
+
