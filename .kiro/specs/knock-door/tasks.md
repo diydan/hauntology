@@ -34,7 +34,7 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
   - [x]* 1.12 Write property test for the Slam rule
     - **Property 7: A Slam shuts only an open door that nobody stands behind**
     - **Validates: Requirements 2.6, 5.2, 5.4**
-  - Progress (2026-11-17): done, 21 tests in `shared/src/party/doors.test.ts`. Mutation checks on the route check, the Player cap, the act count, the Slam rule, the puzzles-off rule and the seed rule are NOT yet run.
+  - Progress (2026-11-17): done, 21 tests in `shared/src/party/doors.test.ts`. Mutation checks run 2026-11-21 (route check, Player cap, act count, window, Slam rule, auto-open, puzzles-off rule, seed and level rule): all caught; the level rule needed one more assertion in `doors.test.ts`.
 
 - [x] 2. Room wiring (`shared/src/party/`, `api/`)
   - [x] 2.1 Keep `{ doors, acts }` in the Room's storage; a stored value that does not parse falls back to the start
@@ -78,7 +78,7 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
     - _Requirements: 5.2_
   - [x] 5.3 The ghost knocks a pattern at the TV for every Player; the first to knock it back gets Help
     - _Requirements: 5.3_
-  - Progress (2026-11-18): 5.1 to 5.3 are in the Engine (`haunt.ts`, `doors.ts`, `engine.ts`, `protocol.ts`) with `doors-slam.test.ts` (15 tests). 5.4 (a slammed door opens by itself next Round) is covered by task 2.6 and tested. Not done: the Voice Library has no `haunt.slam` lines, so a Slam is silent until some are written; the TV and phone screens for the Slam (task 8); mutation checks on the Slam rules. "Help" is built as 10 seconds more on the knocker's next Turn: that is my reading of puzzles 24.6, to confirm.
+  - Progress (2026-11-18): 5.1 to 5.3 are in the Engine (`haunt.ts`, `doors.ts`, `engine.ts`, `protocol.ts`) with `doors-slam.test.ts` (15 tests). 5.4 (a slammed door opens by itself next Round) is covered by task 2.6 and tested. Not done: the Voice Library has no `haunt.slam` lines, so a Slam is silent until some are written; the TV and phone screens for the Slam (task 8); mutation checks on the Slam rules (run 2026-11-21, all caught; the Help cap needed one more test in `doors-slam.test.ts`). "Help" is built as 10 seconds more on the knocker's next Turn: that is my reading of puzzles 24.6, to confirm.
 
 - [ ] 6. Wander door
   - [ ] 6.1 One door on the way to a memory, a Knock door or a Heavy door that asks for 1
@@ -101,7 +101,8 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
     - _Requirements: 9.3_
 
 - [ ] 9. Fairness and access pass
-  - [ ] 9.1 Check that no door code reads or writes a card, the Solution, the Turn order, a score or the winners
+  - [x] 9.1 Check that no door code reads or writes a card, the Solution, the Turn order, a score or the winners
+    - Built (2026-11-21): `shared/src/party/doors-fairness.test.ts` (doors.ts imports and words, the Engine's door handlers' written fields, and a door opened by Players acting together or by a knock leaving the cards, Solution, order, scores and winners untouched; mutation-checked).
     - _Requirements: 7.1_
   - [ ] 9.2 Every lock opens by touch alone (the Tap control, the control to act, Skip)
     - _Requirements: 7.2_
