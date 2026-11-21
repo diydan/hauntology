@@ -54,7 +54,6 @@ export function Reel({ level, max, blocked, roomLineBusy, reducedMotion, deps }:
     if (stillPicture) handles.push(setTimeout(() => dispatch({ t: "done" }), 0));
     return () => { for (const h of handles) clearTimeout(h); };
     // a new play (not a re-render) starts the line, the sound and the voice afresh
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.plays, state.playing]);
   // the line goes when the level moves on (a step back too) or the Reel is skipped
   useEffect(() => { setLineText(""); }, [state.level, state.skips]);

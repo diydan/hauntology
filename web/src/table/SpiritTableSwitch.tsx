@@ -38,13 +38,13 @@ export function SpiritTableSwitch({ device }: { device: SpiritTableDevice }): Re
   );
 }
 
-export function SpiritTableSection({ device, feed, roomCode, theory, onTheory }: {
+export function SpiritTableSection({ device, feed, roomCode, theory, onTheory, clueRing, onClues }: {
   device: SpiritTableDevice; feed: TableFeed; roomCode: string; theory: Theory; onTheory: (t: Theory) => void;
-} & Partial<Pick<SpiritTableLayerProps, "createRenderer" | "media" | "frame" | "reducedMotion">>): ReactNode {
+} & Partial<Pick<SpiritTableLayerProps, "createRenderer" | "media" | "frame" | "reducedMotion" | "clueRing" | "onClues">>): ReactNode {
   return (
     <section className="ui-stack" aria-label="Spirit table">
       <Suspense fallback={<p className="ui-status" role="status">Loading the table…</p>}>
-        <Layer feed={feed} roomCode={roomCode} theory={theory} onTheory={onTheory} orientation={device.source} initialTilt={device.motion} />
+        <Layer feed={feed} roomCode={roomCode} theory={theory} onTheory={onTheory} orientation={device.source} initialTilt={device.motion} {...(clueRing !== undefined ? { clueRing } : {})} {...(onClues !== undefined ? { onClues } : {})} />
       </Suspense>
     </section>
   );
