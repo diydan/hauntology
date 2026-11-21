@@ -84,7 +84,8 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - Wires the timeline behind the same `ShellApi` interface (`shared/src/app/api.ts`, defined here because `ApiClient`, task 4.1, implements it too) with a short delay per call. This task also adds the minimal `web/` package (`package.json`, `tsconfig.json`, vitest config) that the tests need; `world-pipeline` task 2 adds Vite and React to it. `demo.ts` reads `?demo=1` and the switches `fast`, `zero`, `turnstile` and `fail`. The import sits behind an `import.meta.env.PROD` guard so it is tree-shaken from production builds.
     - _Requirements: 11.2, 11.3_
 
-- [ ] 3. Session routes (`api/src/routes/session.ts`)
+- [x] 3. Session routes (`api/src/routes/session.ts`)
+  - **Ticked 2026-11-21 (audit):** 3.1 to 3.3 are ticked and the access contract runs against the real routes; `api` vitest passes (85 files, 1122 tests).
   - [x] 3.1 `GET /api/session` and `POST /api/session/ack-notice`
     - The Session record is a signed cookie (`shared/src/session-cookie.ts`) holding the session id, `lastWorldId`, `lastPlayId` and `ackNotice`. `GET` returns `{lastWorldId?, lastPlayId?, ackNotice, flags}`; `POST` sets the notice flag and answers 204. Origin check (`shared/src/origin.ts`, code `bad_origin`) runs before the Session middleware, so a refused request sets no cookie. A missing, forged, re-signed or expired cookie gets a new Session with no ids. `requireSession` answers `session_expired` for routes that need earlier state. `setLastWorld`, `setLastPlay` and `forgetWorld` are the helpers `POST /api/worlds`, `POST /api/play/start` and `DELETE /api/worlds/:id` call when they are built. This task also adds the minimal `api/` package (Hono, vitest, a `createApp` that mounts the routes); `world-pipeline` task 2 adds the Worker entry and bindings.
     - _Requirements: 4.5, 6.1, 6.8, 7.7_
