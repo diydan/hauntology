@@ -39,7 +39,7 @@ export function mountViewer({ container, onMessage }: ViewerSetup): ViewerHandle
       if (m === null) return;
       if (m.t === "apply_view") set({ ...state, anchors: m.anchors, found: m.found, hauntLevel: m.hauntLevel });
       else if (m.t === "set_input_mode") set({ ...state, mode: m.mode });
-      else set({ ...state, atmosphere: m.atmosphere === null ? "normal" : `${m.atmosphere.weather}, ${m.atmosphere.timeOfDay}` });
+      else if (m.t === "set_atmosphere") set({ ...state, atmosphere: m.atmosphere === null ? "normal" : `${m.atmosphere.weather}, ${m.atmosphere.timeOfDay}` });
     },
     async dispose() {
       root.unmount();

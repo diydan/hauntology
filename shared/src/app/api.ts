@@ -1,5 +1,6 @@
 import type { ErrorCode, Fail, Ok } from "../errors";
 import type { Atmosphere, ConditionsChoice } from "../conditions/types";
+import type { Kind, LockView, Sight, Transcript } from "../puzzles/types";
 import type { Anchor, AnchorId, Vec3 } from "./events";
 import type { JobState, QuotaSnapshot, SessionRecord } from "./types";
 
@@ -47,6 +48,17 @@ export type WorldStatus = {
 
 export type JournalEntry = { anchorId: AnchorId; text: string };
 
+/** What the client sees of an open Wander Lock (`puzzles` Requirement 2). */
+export type WanderLockView = {
+  anchorId: AnchorId;
+  kind: Kind;
+  view: LockView;
+  faded: Sight | null;
+  wrong: number;
+  openedAt: number;
+  skipAvailable: boolean;
+};
+
 /** What the client may know about a play session. Never a hidden seed or an unfound memory's text. */
 export type PlayView = {
   found: AnchorId[];
@@ -57,10 +69,17 @@ export type PlayView = {
   journal: JournalEntry[];
   /** The frozen conditions of the place for this game, or null for the normal look. */
   atmosphere: Atmosphere | null;
+  /** Present only while a Wander Lock is currently open (puzzles 4.1). */
+  lock?: WanderLockView | undefined;
+  /** Present when Wander Locks are on, keeping which Sights were seen across reloads within 24 h (puzzles 4.3). */
+  locks?: { on: boolean; seen: string[] } | undefined;
 };
 
 /** A Preset Ghost the visitor can pick on Haunt (`GET /api/ghosts/presets`, flattened to what the shell shows). */
 export type GhostPreset = { id: string; name: string; spriteUrl: string };
+
+/** What the shell may know of a world's ghost for its portrait: a name, a picture, a voice. */
+export type GhostProfileView = { name: string; spriteUrl: string; voice: "soft" | "dry" };
 
 /** One city-search match: the position is already rounded to two decimals. */
 export type PlaceMatch = { label: string; lat: number; lon: number; tz: string | null };
@@ -92,13 +111,17 @@ export interface ShellApi {
   shareWorld(worldId: string, on: boolean): Promise<ApiResult<{ shared: boolean }>>;
 
   ghostPresets(): Promise<ApiResult<GhostPreset[]>>;
+  ghostProfile(worldId: string): Promise<ApiResult<GhostProfileView>>;
   searchPlaces(q: string): Promise<ApiResult<PlaceMatch[]>>;
   /** The audio of a line the server holds. A refusal is `voice_unavailable` and the client falls back quietly to the subtitle. */
   speak(req: { playId: string; lineId: string }): Promise<ApiResult<{ audio: Blob }>>;
   /** A held-button clip (at most 8 seconds). The audio is dropped on the server; only the transcript comes back. */
   listen(clip: Blob): Promise<ApiResult<{ transcript: string }>>;
   /** `conditions` is the visitor's choice from the Set the sky card; the snapshot is frozen once, here. */
-  playStart(req: { worldId: string; ghostPreset?: string; conditions?: ConditionsChoice }): Promise<ApiResult<{ playId: string; view: PlayView }>>;
-  playTurn(playId: string, turn: PlayTurn): Promise<ApiResult<{ reply: PlayReply; view: PlayView }>>;
+  playStart(req: { worldId: string; ghostPreset?: string; conditions?: ConditionsChoice; locks?: boolean }): Promise<ApiResult<{ playId: string; view: PlayView }>>;
+  playTurn(playId: string, turn: PlayTurn): Promise<ApiResult<{ reply: PlayReply; view: PlayView; lock?: WanderLockView | undefined; sight?: Sight | undefined }>>;
   playGet(playId: string): Promise<ApiResult<{ worldId: string; view: PlayView }>>;
+  playLockOpen?(playId: string, anchorId: AnchorId): Promise<ApiResult<{ view: PlayView; lock: WanderLockView }>>;
+  playLockAttempt?(playId: string, transcript: Transcript): Promise<ApiResult<{ outcome: "wrong"; skipAvailable: boolean; view: PlayView } | { outcome: "solved"; reply: PlayReply; view: PlayView; sight?: Sight | undefined }>>;
+  playLockSkip?(playId: string): Promise<ApiResult<{ reply: PlayReply; view: PlayView; sight?: Sight | undefined }>>;
 }

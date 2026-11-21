@@ -12,7 +12,7 @@ Order: the spike first, then pure logic with property tests, then the API module
     - Also check, with one real outdoor and one real indoor world, whether the sky behind the splat is visible for the sky dome. Write `docs/spikes/conditions-1.1.md`.
     - _Requirements: 2.3, 2.4, 2.5, 3.2_
 
-- [ ] 2. Pure logic (`shared/src/conditions/`)
+- [x] 2. Pure logic (`shared/src/conditions/`)
   - [x] 2.1 `types.ts`: types and zod schemas from the design (Place, TimeOfDay, WeatherClass, bands, MoonPhase, MemoryDay, SkyStar, ConditionsSnapshot, Atmosphere, PublicConditions, PromptFields); add `conditions_disabled`, `bad_place`, `bad_memory_day` and `geocode_unavailable` to `shared/src/errors.ts`
     - _Requirements: 2.2_
   - [x] 2.2 `normalizePlace` and `normalizeMatches` (round to two decimals, drop every other field, at most five matches)
@@ -29,11 +29,11 @@ Order: the spike first, then pure logic with property tests, then the API module
     - **Done 2026-11-15** (`time.prop.test.ts`).
     - **Property 2: Every hour maps to exactly one time of day**
     - **Validates: Requirements 1.4**
-  - [ ] 2.6 `weatherClassFromCode`, `tempBand`, `windBand`, `atmosphereLook`, `particleBudget`
-    - **Partly built 2026-11-15** (`weather.ts`): `weatherClassFromCode`, `tempBand`, `windBand` and `particleBudget`. **Not built:** `atmosphereLook` (the Viewer's, task 4.1: its tint colours must come from `shared/src/design/tokens.ts`). Not ticked until it is.
+  - [x] 2.6 `weatherClassFromCode`, `tempBand`, `windBand`, `atmosphereLook`, `particleBudget`
+    - **Built 2026-11-15 & 2026-11-19** (`weather.ts`): `weatherClassFromCode`, `tempBand`, `windBand`, `particleBudget`, and `atmosphereLook` (using `shared/src/design/tokens.ts`).
     - _Requirements: 2.3, 4.2, 4.3_
-  - [ ]* 2.7 Write property test for the weather mapping
-    - The part that exists is tested (`weather.prop.test.ts`: any value gives one class and one band, the bands never go down as the number rises, the particle caps); the look values of Property 3 wait for `atmosphereLook`.
+  - [x]* 2.7 Write property test for the weather mapping
+    - Tested in `weather.prop.test.ts` (including `atmosphereLook` ranges, brightness floor `>= 0.6`, and `clear`/`day` identity).
     - **Property 3: Weather class and band mapping is total**
     - **Validates: Requirements 2.3, 4.2, 4.3**
   - [x] 2.8 `moonPhase` and `moonAge` (eight phases, no service); known-value unit tests
@@ -78,42 +78,43 @@ Order: the spike first, then pure logic with property tests, then the API module
   - [ ] 3.3 Snapshot store for `PlaySession` and `PartyRoom`: read once at start, store, return the stored Snapshot on every later read, include `atmosphere` in the client view, read again only for a new game
     - **Built for `PlaySession` 2026-11-15** (ghost-engine 3.1): `api/src/conditions/snapshot-store.ts` reads once at the start of a game; the game keeps the frozen snapshot in its own stored record (`conditions` in the `PlaySession`, only when it holds a Place or a Memory Day), `atmosphere` is in the client view, a turn, the view and "Haunt again" never read again, and the record is deleted with the game. **Not built:** the `PartyRoom` side (party-mode 15.4). Not ticked until it is.
     - _Requirements: 2.1, 2.2, 4.1_
-  - [ ] 3.4 Variables `CONDITIONS_ENABLED` (default `true`) and `WEATHER_BASE_URL`; off means the Default and no outside call, and a search answers `conditions_disabled`
-    - **Built 2026-11-15** except the search: `CONDITIONS_ENABLED` (on unless `false`) and `WEATHER_BASE_URL` are read by `conditionsFromEnv` and `api/src/worker.ts`; off, or a base address that is not acceptable, gives the Default and no outside call. `conditions_disabled` for a search waits for 3.5. Not ticked until it is.
+  - [x] 3.4 Variables `CONDITIONS_ENABLED` (default `true`) and `WEATHER_BASE_URL`; off means the Default and no outside call, and a search answers `conditions_disabled`
+    - **Built 2026-11-15 & 2026-11-19**: `CONDITIONS_ENABLED` and `WEATHER_BASE_URL` are read by `conditionsFromEnv` and `geocoderFromEnv`, and `POST /api/conditions/search` answers `503 conditions_disabled` when off.
     - _Requirements: 2.4_
-  - [ ] 3.5 `POST /api/conditions/search`: origin and cookie checks, rate limit, query trimmed to 60 characters, at most five rounded matches, `geocode_unavailable` on failure
+  - [x] 3.5 `POST /api/conditions/search`: origin and cookie checks, rate limit, query trimmed to 60 characters, at most five rounded matches, `geocode_unavailable` on failure
     - _Requirements: 1.1, 1.3_
   - [x] 3.6 Privacy tests: nothing under `api/src/conditions/` reads `request.cf` location or logs a query, coordinates or label; no module outside `open-meteo.ts` names an Open-Meteo host; no answer carries an upstream host
     - **Done 2026-11-15** (`tools/test/conditions-privacy.test.mjs`): only `open-meteo.ts` names a weather host (a credit link to open-meteo.com is allowed anywhere), nothing in `api` or `shared` reads `request.cf`, a location header or the browser's position, nothing under `api/src/conditions/` handles a request or logs anything but the three counters of `conditions.read`, and the parsers keep named fields only.
     - _Requirements: 1.2, 1.3_
-  - [ ] 3.7 `telemetry.ts` counter whitelist (reads, cache hits, timeouts, errors, defaults, geocode calls, geocode errors)
-    - **Partly built 2026-11-15:** one log event, `conditions.read` (`shared/src/log.ts`: `source`, `reason`, `cache`), gives reads, cache hits, timeouts, errors and defaults; no place, label, date or query can be written. **Not built:** the geocode counters (no search route yet). Not ticked until they are.
+  - [x] 3.7 `telemetry.ts` counter whitelist (reads, cache hits, timeouts, errors, defaults, geocode calls, geocode errors)
+    - **Built 2026-11-15 & 2026-11-19** (`shared/src/conditions/telemetry.ts`, `shared/src/log.ts`): `conditions.read` (`source`, `reason`, `cache`) and `conditions.geocode` (`outcome`, `count`).
     - _Requirements: 2.4_
 
-- [ ] 4. Atmosphere in the viewer (`web/src/viewer/atmosphere/`)
-  - [ ] 4.1 Tint and fog: `setAtmosphere` applies `atmosphereLook` to the grade overlay uniforms (idempotent; `null` restores the normal look; storms add no flashes of their own)
+- [ ] 4. Atmosphere in the viewer (`web/src/app/viewer/atmosphere.ts`, `web/src/viewer/atmosphere/` in design)
+  - [x] 4.1 Tint and fog: `setAtmosphere` applies `atmosphereLook` to the grade overlay uniforms (idempotent; `null` restores the normal look; storms add no flashes of their own)
     - _Requirements: 4.1, 4.2_
-  - [ ] 4.2 Precipitation: instanced rain and snow capped by `particleBudget`; lower cap at quality level 1 or lower and under reduced motion (quarter speed)
+  - [x] 4.2 Precipitation: instanced rain and snow capped by `particleBudget`; lower cap at quality level 1 or lower and under reduced motion (quarter speed)
     - _Requirements: 4.3_
   - [ ] 4.3 Optional ambient loops: up to 12 files `web/public/sounds/ambient/<weather>-<day|night>.m4a`, gain at most 0.3, started only after a user gesture, mute and chat ducking, a missing or undecodable file is skipped silently, every file credited in `docs/sounds/CREDITS.md`
+    - **Player wired 2026-11-19** (`web/src/app/viewer/atmosphere.ts`: `ambientLoopPath`, `ambientGain <= 0.3`, gesture unlock, mute/chat ducking, and silent skip on missing/undecodable files). **Optional assets not added:** `.m4a` loops in `web/public/sounds/ambient/` and credits in `docs/sounds/CREDITS.md`.
     - _Requirements: 4.4_
-  - [ ] 4.4 Sky dome using the Star Texture: a dome mesh behind the world; call `rasterizeSky` once per Atmosphere (never per frame); `DataTexture`; not added when visibility is zero; dispose on unmount; test that a thousand frames call it zero times
+  - [x] 4.4 Sky dome using the Star Texture: a dome mesh behind the world; call `rasterizeSky` once per Atmosphere (never per frame); `DataTexture`; not added when visibility is zero; dispose on unmount; test that a thousand frames call it zero times
     - _Requirements: 6.2, 6.3_
 
 - [ ] 5. Narrator and scripted lines
   - [ ] 5.1 Pass `toPromptFields(snapshot)` into `buildNarrationPrompt` (ghost-engine 2.15): one fixed sentence built from the three enums, none when the source is the Default; add one weather case per persona to ghost-engine Spike 4.1
     - **Wired 2026-11-15** (ghost-engine 3.1): the narration job of a game started with a snapshot carries `sky` (`skyFor` in `shared/src/ghost/play.ts`: the three closed words, none when the weather was not read), and `buildNarrationPrompt` writes the one sentence. **Not done:** the weather case of ghost-engine Spike 4.1. Not ticked until it is.
     - _Requirements: 5.1_
-  - [ ] 5.2 `mentionsRealWorld` word-stem list (news, crime, death, real events) wired into `validateGhostReply` (ghost-engine 2.17): a matching reply is replaced by a scripted line
+  - [x] 5.2 `mentionsRealWorld` word-stem list (news, crime, death, real events) wired into `validateGhostReply` (ghost-engine 2.17): a matching reply is replaced by a scripted line
     - _Requirements: 5.2_
-  - [ ] 5.3 Scripted weather lines (per Weather Class and time bucket, at least five variants each) and star lines; `pickStarLine` names one star above 20 degrees at most once per game, with the flag kept in the narration record and not in game state
+  - [x] 5.3 Scripted weather lines (per Weather Class and time bucket, at least five variants each) and star lines; `pickStarLine` names one star above 20 degrees at most once per game, with the flag kept in the narration record and not in game state
     - _Requirements: 5.2, 5.3_
-  - [ ] 5.4 Red-team fixture for real events: 20 or more news, crime, death and real-event strings, and hostile place labels, through `validateGhostReply`, `buildNarrationPrompt` and the scripted library
+  - [x] 5.4 Red-team fixture for real events: 20 or more news, crime, death and real-event strings, and hostile place labels, through `validateGhostReply`, `buildNarrationPrompt` and the scripted library
     - _Requirements: 5.2_
   - [x] 5.5 Rules stay free of conditions: a source-level test that `shared/src/ghost/engine.ts` and the Party Mode reducers do not import `shared/src/conditions/`; a model-based run of `step` with and without a Snapshot
     - **Built 2026-11-15** (`rules-free.test.ts`: no module of the ghost engine's rules and none of Party Mode's that decides something imports the conditions code; and the conditions code imports no game). The run with and without a snapshot is of `playTurn` (which calls `step`) in `play-conditions.test.ts`; the Party Mode half waits for party-mode 15.4.
     - _Requirements: 4.1, 5.1_
-  - [ ]* 5.6 Write property test for the narrator prompt and scripted lines
+  - [x]* 5.6 Write property test for the narrator prompt and scripted lines
     - **Property 11: Scripted lines and the narrator prompt carry no news, crime, death or real events**
     - **Validates: Requirements 5.1, 5.2, 5.3**
   - [ ]* 5.7 Write property test for rules unchanged by the real world
@@ -121,14 +122,14 @@ Order: the spike first, then pure logic with property tests, then the API module
     - **Property 7: The real world never changes a rule**
     - **Validates: Requirements 2.2, 4.1, 5.1**
 
-- [ ] 6. Stars (`shared/src/conditions/`)
-  - [ ] 6.1 `STAR_LIST`: at most 300 stars from a public-domain catalogue, brightest first, proper names where they exist; header records the source and licence (avoid share-alike catalogues); unit test for length, ranges and unique names
+- [x] 6. Stars (`shared/src/conditions/`)
+  - [x] 6.1 `STAR_LIST`: at most 300 stars from a public-domain catalogue, brightest first, proper names where they exist; header records the source and licence (avoid share-alike catalogues); unit test for length, ranges and unique names
     - _Requirements: 6.1_
-  - [ ] 6.2 `starsAbove` and `moonSky`: sidereal time, hour angle, altitude and azimuth, simple low-precision formulas; unit tests against a few known positions
+  - [x] 6.2 `starsAbove` and `moonSky`: sidereal time, hour angle, altitude and azimuth, simple low-precision formulas; unit tests against a few known positions
     - _Requirements: 6.1_
-  - [ ] 6.3 `skyVisibility` and `rasterizeSky`: RGBA buffer at most 1024 by 512 (512 by 256 at low quality), dimmed under cloud, empty in fog, rain, storm and snow, nothing at dawn or day
+  - [x] 6.3 `skyVisibility` and `rasterizeSky`: RGBA buffer at most 1024 by 512 (512 by 256 at low quality), dimmed under cloud, empty in fog, rain, storm and snow, nothing at dawn or day
     - _Requirements: 6.2, 6.3_
-  - [ ]* 6.4 Write property test for the star texture
+  - [x]* 6.4 Write property test for the star texture
     - **Property 10: Star texture bounds and dimming**
     - **Validates: Requirements 6.1, 6.2, 6.3**
 

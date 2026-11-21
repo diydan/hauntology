@@ -1,10 +1,12 @@
-import type { PlayReply, PlayView, ShellApi } from "@hauntology/shared/app/api";
+import type { PlayReply, PlayView, ShellApi, WanderLockView } from "@hauntology/shared/app/api";
 import { parseViewerMessage, type ShellToViewer, type Vec3 } from "@hauntology/shared/app/events";
 import { errorCopy } from "@hauntology/shared/app/errors-copy";
 import { playReduce, playStart } from "@hauntology/shared/app/play";
 import { routeForApiError } from "@hauntology/shared/app/routes";
 import type { FlowState, PlayEffect, PlayEvent, PlayState, Route, SessionRecord } from "@hauntology/shared/app/types";
 import type { ErrorCode } from "@hauntology/shared/errors";
+import type { Sight, Transcript } from "@hauntology/shared/puzzles/types";
+import type { AttemptReply } from "../../puzzles/PuzzleHost";
 import type { PlayMemoryStore } from "./memory";
 
 /**
@@ -48,10 +50,14 @@ export type PlayUi = {
   reply: { n: number; text: string; voice?: { lineId: string } | undefined } | null;
   turnFailure: Failure | null;
   journalOpen: boolean;
+  /** Open Wander Lock (`puzzles` Requirement 2); movement & pointer lock stay suspended while non-null. */
+  activeLock: WanderLockView | null;
+  /** Sight card revealed after a memory (`puzzles` Requirement 2.5); movement stays suspended while non-null. */
+  pendingSight: Sight | null;
 };
 
 export type PlayDeps = {
-  api: Pick<ShellApi, "playStart" | "playTurn" | "playGet" | "ackNotice">;
+  api: Pick<ShellApi, "playStart" | "playTurn" | "playGet" | "ackNotice" | "playLockOpen" | "playLockAttempt" | "playLockSkip">;
   worldId: string;
   memory: PlayMemoryStore;
   session: Pick<SessionRecord, "ackNotice" | "lastPlayId" | "lastWorldId">;
@@ -75,6 +81,11 @@ export type PlayController = {
   submit(input: { text: string } | { button: QuickButton }): Promise<void>;
   openJournal(): void;
   closeJournal(): void;
+  submitLockAttempt(transcript: Transcript): Promise<AttemptReply>;
+  finishLock(): void;
+  skipLock(): Promise<void>;
+  closeLock(): void;
+  dismissSight(): void;
   exit(to?: "home" | "gallery"): Promise<void>;
   /** A raw message from the Viewer; anything that is not in the contract is dropped. */
   onViewerMessage(raw: unknown): void;
@@ -98,8 +109,9 @@ export function createPlayController(deps: PlayDeps): PlayController {
   const first = playStart(deps.session.ackNotice);
   let ui: PlayUi = {
     phase: "loading", failure: null, play: first.state, view: null, prompt: null, lines: [], busy: false,
-    scripted: false, reply: null, turnFailure: null, journalOpen: false,
+    scripted: false, reply: null, turnFailure: null, journalOpen: false, activeLock: null, pendingSight: null,
   };
+  let queuedSight: Sight | null = null;
   const listeners = new Set<() => void>();
   const set = (patch: Partial<PlayUi>) => {
     ui = { ...ui, ...patch };
@@ -131,12 +143,17 @@ export function createPlayController(deps: PlayDeps): PlayController {
 
   /** What the Viewer needs once it is up: the sky, the view and the input mode. */
   let synced = false;
+  const syncInputMode = () => {
+    if (!viewerUp) return;
+    const suspended = ui.play.mode === "chat" || ui.activeLock !== null || ui.pendingSight !== null;
+    send({ t: "set_input_mode", mode: suspended ? "chat" : "play" });
+  };
   const sync = () => {
     if (!viewerUp || ui.view === null || synced) return;
     synced = true;
     send({ t: "set_atmosphere", atmosphere: ui.view.atmosphere });
     send(viewMessage(ui.view));
-    send({ t: "set_input_mode", mode: ui.play.mode });
+    syncInputMode();
   };
 
   const runEffect = async (effect: PlayEffect): Promise<void> => {
@@ -154,7 +171,7 @@ export function createPlayController(deps: PlayDeps): PlayController {
         sync();
         return;
       case "set_input_mode":
-        if (viewerUp) send({ t: "set_input_mode", mode: effect.mode });
+        syncInputMode();
         return;
       case "dispose_viewer":
         if (!viewerUp) return;
@@ -188,7 +205,7 @@ export function createPlayController(deps: PlayDeps): PlayController {
   const adopt = (id: string, view: PlayView): Promise<void> => {
     playId = id;
     memory.set({ playId: id, startFresh: false });
-    set({ phase: "ready", failure: null, view });
+    set({ phase: "ready", failure: null, view, activeLock: view.lock ?? null });
     // A restored game keeps what was found; the reducer starts from none.
     const catchUp = dispatch({ t: "view", found: view.found.length, ended: false });
     const start = first.effects.length > 0 ? enqueue(() => runEffect({ e: "start_viewer" })) : Promise.resolve();
@@ -210,6 +227,7 @@ export function createPlayController(deps: PlayDeps): PlayController {
       worldId,
       ...(m.ghostPreset === undefined ? {} : { ghostPreset: m.ghostPreset }),
       ...(m.conditions === undefined ? {} : { conditions: m.conditions }),
+      ...(m.wanderLocks === true ? { locks: true } : {}),
     });
     if (!result.ok) {
       const gone = routeForApiError(result.code);
@@ -306,13 +324,64 @@ export function createPlayController(deps: PlayDeps): PlayController {
         return;
       }
       set({ busy: false });
+      if (result.value.lock !== undefined) {
+        set({ activeLock: result.value.lock, play: { ...ui.play, mode: "play" } });
+        syncInputMode();
+      }
       await applyReply(result.value.reply, result.value.view);
+      if (result.value.sight !== undefined) {
+        set({ pendingSight: result.value.sight });
+        syncInputMode();
+      }
     },
     openJournal() {
       set({ journalOpen: true });
     },
     closeJournal() {
       set({ journalOpen: false });
+    },
+    async submitLockAttempt(transcript) {
+      if (playId === null || !api.playLockAttempt) return { outcome: "wrong", attemptsLeft: 3 };
+      const r = await api.playLockAttempt(playId, transcript);
+      if (!r.ok) {
+        const gone = routeForApiError(r.code);
+        if (gone) await leaveFor(gone);
+        return { outcome: "wrong", attemptsLeft: 3 };
+      }
+      if (r.value.outcome === "wrong") {
+        set({ view: r.value.view, activeLock: r.value.view.lock ?? ui.activeLock });
+        return { outcome: "wrong", attemptsLeft: 3 };
+      }
+      queuedSight = r.value.sight ?? null;
+      await applyReply(r.value.reply, r.value.view);
+      return { outcome: "solved" };
+    },
+    finishLock() {
+      const nextSight = queuedSight;
+      queuedSight = null;
+      set({ activeLock: null, pendingSight: nextSight });
+      syncInputMode();
+    },
+    async skipLock() {
+      if (playId === null || !api.playLockSkip) return;
+      const r = await api.playLockSkip(playId);
+      if (!r.ok) {
+        const gone = routeForApiError(r.code);
+        if (gone) await leaveFor(gone);
+        return;
+      }
+      set({ activeLock: null, pendingSight: r.value.sight ?? null });
+      syncInputMode();
+      await applyReply(r.value.reply, r.value.view);
+    },
+    closeLock() {
+      queuedSight = null;
+      set({ activeLock: null });
+      syncInputMode();
+    },
+    dismissSight() {
+      set({ pendingSight: null });
+      syncInputMode();
     },
     async exit(to) {
       await dispatch(to === undefined ? { t: "exit" } : { t: "exit", to });
@@ -332,6 +401,8 @@ export function createPlayController(deps: PlayDeps): PlayController {
           return;
         case "fps":
           deps.onFps?.(message.fps);
+          return;
+        case "clue_seen":
           return;
       }
     },

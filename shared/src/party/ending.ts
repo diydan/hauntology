@@ -1,4 +1,5 @@
 import { dealCase, type Deal, type Solution } from "./deal";
+import { DONE_SCARE, type Errand, type ErrandObject } from "./errands";
 import type { Pool } from "./pool";
 import { placeResidue } from "./residue";
 
@@ -22,10 +23,14 @@ export type RecapEvent =
   | Readonly<{ id: number; kind: "rattle"; target: number; turn: number }>
   | Readonly<{ id: number; kind: "haunt"; level: number }>
   /** Only that someone Eavesdropped, never what they heard. */
-  | Readonly<{ id: number; kind: "eavesdrop"; seat: number }>;
+  | Readonly<{ id: number; kind: "eavesdrop"; seat: number }>
+  /** An Errand was Done: names Target and object only, never the sender (errands 2.2). */
+  | Readonly<{ id: number; kind: "errand-done"; target: number; object: ErrandObject }>
+  /** A Detective caught an Errand (errands 3.2). */
+  | Readonly<{ id: number; kind: "errand-caught"; seat: number }>;
 
-/** Who sent each Frame, House Cue, Rattle and solved Haunting puzzle. Secret until the ending. */
-export type Source = Readonly<{ eventId: number; kind: "house-cue" | "frame" | "rattle" | "haunting-puzzle"; from: number | null; turn?: number }>;
+/** Who sent each Frame, House Cue, Rattle, solved Haunting puzzle and Done Errand. Secret until the ending. */
+export type Source = Readonly<{ eventId: number; kind: "house-cue" | "frame" | "rattle" | "haunting-puzzle" | "errand"; from: number | null; turn?: number }>;
 
 export type PlayerStats = Readonly<{ seat: number; nickname: string; bot: boolean; poltergeist: boolean; suggestions: number; turnMsUsed: number }>;
 
@@ -44,7 +49,7 @@ export function rankWinners(winners: readonly number[], players: readonly Player
 export function scarePoints(log: readonly RecapEvent[], sources: readonly Source[], poltergeists: readonly number[]): Record<number, number> {
   const pts: Record<number, number> = Object.fromEntries(poltergeists.map((s) => [s, 0]));
   const add = (s: number | null, n: number): void => { if (s !== null && s in pts) pts[s] = (pts[s] ?? 0) + n; };
-  for (const src of sources) if (src.kind !== "house-cue") add(src.from, 1);
+  for (const src of sources) if (src.kind !== "house-cue") add(src.from, src.kind === "errand" ? DONE_SCARE : 1);
   const spooks = log.filter((e): e is Extract<RecapEvent, { kind: "nudge" }> => e.kind === "nudge" && e.nudge === "spook");
   for (const e of spooks) add(e.seat, 2);
   const timedOut = new Set(log.flatMap((e) => (e.kind === "timeout" ? [e.turn] : [])));
@@ -71,10 +76,11 @@ export type Recap = Readonly<{
   counts: Readonly<Record<number, Readonly<{ suggestions: number; inspects: number; nudges: number; timeouts: number }>>>;
   solution: Solution;
   reveal: readonly Source[];
+  errands?: readonly Errand[];
 }>;
 
 /** The recap from the redacted public log and the Bluff ids only. It cannot see a Hand, a shown card or a Residue it was not given. */
-export function buildRecap(publicLog: readonly RecapEvent[], seats: readonly number[], solution: Solution, reveal: readonly Source[], bluffs: ReadonlySet<number>): Recap {
+export function buildRecap(publicLog: readonly RecapEvent[], seats: readonly number[], solution: Solution, reveal: readonly Source[], bluffs: ReadonlySet<number>, errands?: readonly Errand[]): Recap {
   const entries = publicLog.map((e) => (e.kind === "suggest" ? { ...e, bluff: bluffs.has(e.id) } : { ...e }));
   const counts = Object.fromEntries(seats.map((s) => [s, {
     suggestions: publicLog.filter((e) => e.kind === "suggest" && e.seat === s).length,
@@ -82,7 +88,10 @@ export function buildRecap(publicLog: readonly RecapEvent[], seats: readonly num
     nudges: publicLog.filter((e) => e.kind === "nudge" && e.seat === s).length,
     timeouts: publicLog.filter((e) => e.kind === "timeout" && e.seat === s).length,
   }]));
-  return { entries, counts, solution: { ...solution }, reveal: reveal.map((r) => ({ ...r })) };
+  return {
+    entries, counts, solution: { ...solution }, reveal: reveal.map((r) => ({ ...r })),
+    ...(errands && errands.length > 0 ? { errands: errands.map((e) => ({ ...e })) } : {}),
+  };
 }
 
 // ---------------------------------------------------------------- the payload
@@ -99,7 +108,7 @@ export type EndingPayload = Readonly<{
 
 export function endingPayload(o: Readonly<{
   solution: Solution; residueAt: Readonly<Record<string, string>>; winners: readonly number[]; houseWins: boolean;
-  players: readonly PlayerStats[]; log: readonly RecapEvent[]; sources: readonly Source[]; bluffs: ReadonlySet<number>;
+  players: readonly PlayerStats[]; log: readonly RecapEvent[]; sources: readonly Source[]; bluffs: ReadonlySet<number>; errands?: readonly Errand[];
 }>): EndingPayload {
   const polts = o.players.filter((p) => p.poltergeist).map((p) => p.seat);
   const scare = scarePoints(o.log, o.sources, polts);
@@ -112,7 +121,7 @@ export function endingPayload(o: Readonly<{
     mostHaunting: mostHaunting(scare),
     scare,
     nudges: { help: nudges.filter((n) => n.nudge === "help").length, spook: nudges.filter((n) => n.nudge === "spook").length },
-    recap: buildRecap(o.log, o.players.map((p) => p.seat), o.solution, o.sources, o.bluffs),
+    recap: buildRecap(o.log, o.players.map((p) => p.seat), o.solution, o.sources, o.bluffs, o.errands),
   };
 }
 

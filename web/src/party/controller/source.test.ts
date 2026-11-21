@@ -33,14 +33,15 @@ describe("web/src/party/controller source rules", () => {
     for (const p of all) expect(/navigator\.vibrate|\bAudioContext\b|getUserMedia|deviceorientation|devicemotion/i.test(code(p)), rel(p)).toBe(false);
   });
 
-  it("has one main button: Join. The frame and the menu have none (a Lock brings its own)", () => {
+  it("has one main button per view: Join on JoinPage and Caught on seated ErrandsControls (the frame and menu have none)", () => {
     const primaries = shell.map((p) => [rel(p), (code(p).match(/ui-button--primary/g) ?? []).length] as const).filter(([, n]) => n > 0);
-    expect(primaries).toEqual([["JoinPage.tsx", 1]]);
+    expect(primaries).toEqual([["ErrandsControls.tsx", 1], ["JoinPage.tsx", 1]]);
   });
 
   it("makes every button and box on its page at least 48 px (--pc-target), in layout-only CSS", () => {
     expect(css).toMatch(/\.pc-page \{[^}]*--pc-target: max\(48px, var\(--target\)\);/);
     expect(css).toMatch(/\.pc-page \.ui-button, \.pc-page \.ui-input \{ min-height: var\(--pc-target\); \}/);
+    expect(css).toMatch(/\.pc-page \.ui-select \{ min-height: var\(--pc-target\); \}/);
     expect(css).toMatch(/@media \(orientation: landscape\) and \(max-height: 32rem\) \{[\s\S]*?\.pc-pad \{ grid-template-columns: repeat\(3,/);
     expect(css).toMatch(/min-height: 100vh; min-height: 100dvh;/); // dvh with the vh fallback
     expect(css).not.toMatch(/:hover/);

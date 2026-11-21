@@ -7,7 +7,8 @@ import { originGuard } from "./http/origin";
 import { securityHeadersMiddleware } from "./http/security-headers";
 import { session, type SessionOptions } from "./http/session";
 import { playRoutes } from "./routes/play";
-import type { ConditionsService } from "./conditions/snapshot-store";
+import type { ConditionsService, GeocoderService } from "./conditions/snapshot-store";
+import { conditionsRoutes } from "./routes/conditions";
 import type { Narration } from "./play/narrate";
 import type { PlaySessions } from "./play/ports";
 import { quotaRoutes } from "./routes/quota";
@@ -19,10 +20,14 @@ import { uploadRoutes, type UploadsDeps } from "./routes/uploads";
 import { imageRoutes, worldCreateRoutes, type CreationDeps } from "./routes/world-create";
 import { SILENT, type Logger } from "./log";
 import { galleryRoutes } from "./routes/gallery";
+import type { Creator } from "./creator/service";
+import { creatorRoutes, ghostRoutes, worldGhostRoutes } from "./routes/ghosts";
 import { worldRoutes, type WorldsDeps } from "./routes/worlds";
 import { partyRoutes, type PartyDeps } from "./routes/party";
 import { ipHashOf } from "./routes/world-create";
 import { voiceRoutes } from "./routes/voice";
+import type { RoomVoiceLineStore } from "./voice/lines";
+import type { ListenDeps } from "./voice/listen";
 import type { SpeakDeps } from "./voice/speak";
 import type { VoiceWindow } from "./voice/window";
 
@@ -64,7 +69,11 @@ export type AppOptions = SessionOptions & {
    * With a `window` the voice is also off until the operator opens a window (`POST /admin/voice`), and off again when it closes: while it is closed the speech
    * route is quiet, no reply names a line and Home says `voiceEnabled: false`, so the client hides its speak control. Without a `window` only `VOICE_ENABLED` decides.
    */
-  voice?: { speak: SpeakDeps; window?: Pick<VoiceWindow, "isOpen"> };
+  voice?: { speak: SpeakDeps; roomLines?: RoomVoiceLineStore; listen?: ListenDeps; window?: Pick<VoiceWindow, "isOpen"> };
+  /** The Ghost Creator (ghost-creator task 3). When given, the paid creator steps and the world's ghost are served. */
+  creator?: Creator;
+  /** City search (`POST /api/conditions/search`, conditions 3.5); answers `conditions_disabled` while off. */
+  conditionsSearch?: GeocoderService;
 };
 
 /**
@@ -111,6 +120,12 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
   app.route("/api/session", sessionRoutes({ flags }));
   // What the visitor has left, asked for by the shell as it opens (world-pipeline 5.7). Needs only the guard; with none it reads as no places.
   app.route("/api/quota", quotaRoutes({ ...(options.worlds?.creation?.guard !== undefined ? { guard: options.worlds.creation.guard } : {}) }));
+  if (options.creator !== undefined) {
+    app.route("/api/ghosts", creatorRoutes(options.creator));
+    app.route("/api/worlds", worldGhostRoutes(options.creator));
+  }
+  // The Preset Ghosts are static shipped content (ghost-creator task 2): no store, no key.
+  app.route("/api/ghosts", ghostRoutes());
   if (options.uploads !== undefined) {
     app.route("/api/uploads", uploadRoutes({ ...options.uploads, enabled: async (c) => (await flags(c)).worldGenEnabled }));
   }
@@ -164,8 +179,22 @@ export function createApp(options: AppOptions = {}): Hono<AppEnv> {
       "/api/voice",
       voiceRoutes({
         speak: { log, ...options.voice.speak },
+        ...(options.voice.roomLines !== undefined ? { roomLines: options.voice.roomLines } : {}),
+        ...(options.voice.listen !== undefined ? { listen: { log, ...options.voice.listen } } : {}),
         // Off while `VOICE_ENABLED` is off or the window is closed (or cannot be read): nothing is looked up and nothing is called.
         enabled: async (c) => flagsFrom((c as Context<AppEnv>).env).voiceEnabled && (window === undefined || (await window.isOpen())),
+      }),
+    );
+  }
+  if (options.conditionsSearch !== undefined) {
+    const gc = options.conditionsSearch;
+    app.route(
+      "/api/conditions",
+      conditionsRoutes({
+        enabled: (c) => gc.enabled && (c as Context<AppEnv>).env.CONDITIONS_ENABLED !== "false",
+        search: gc.search,
+        log,
+        ...(options.now ? { now: options.now } : {}),
       }),
     );
   }

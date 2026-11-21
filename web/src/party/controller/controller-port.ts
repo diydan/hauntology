@@ -1,6 +1,9 @@
 import type { JoinRefusal } from "@hauntology/shared/party/seats";
+import type { PublicDoor } from "@hauntology/shared/party/doors";
+import type { Errand, ErrandObject } from "@hauntology/shared/party/errands";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import type { Kind, LockView, PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
+import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
 
 /**
@@ -30,9 +33,32 @@ export type LockOffer = Readonly<{
   faded: Sight | null;
   /** The Lock's clue, to look at again while playing (offered only with Assist on). */
   clue: Sight | null;
+  /** World Clue mark & prompt when the Lock's clue lives in the shared world (world-clues 3.1, 3.2). */
+  sign?: Sign;
+  prompt?: string;
+  canSeeAgain?: boolean;
   attempts: number;
   /** The most Turn time this Lock may use, or null. */
   capMs: number | null;
+}>;
+
+export type ControllerErrandsView = Readonly<{
+  on: boolean;
+  optOut: boolean;
+  poltergeist: boolean;
+  errand: Errand | null;
+  doneTriedThisRound: boolean;
+  ask: Readonly<{ errandId: string; object: ErrandObject; deadlineMs: number }> | null;
+  poltergeists: readonly Readonly<{ seat: number; nickname: string }>[];
+  caughtUsed: boolean;
+  seatName: (seat: number) => string;
+}>;
+
+export type ControllerDoorLock = Readonly<{
+  doorId: string;
+  triesLeft: number;
+  faded: Sight | null;
+  lastResult?: Readonly<{ outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>;
 }>;
 
 /** What the Room last said to this seat. The shell draws from it and keeps nothing else about the game. */
@@ -44,8 +70,18 @@ export type RoomView = Readonly<{
   seat: number | null;
   nickname: string | null;
   /** Set only for the Master seat: the room controls are the Master's alone (Requirement 1.7). */
-  master: Readonly<{ puzzles: PuzzleSetting; preset: Preset }> | null;
+  master: Readonly<{ puzzles: PuzzleSetting; preset: Preset; cluePlace?: CluePlace; errands?: boolean }> | null;
   lock: LockOffer | null;
+  /** World Clues and Decoys kept on this seat's own Turn (shown when Assist is on). */
+  worldClues?: readonly PublicWorldClue[];
+  /** Private Errands state for this phone (errands spec Groups 3 & 4). */
+  errands?: ControllerErrandsView;
+  /** Public door states in this Room (knock-door 4.2, 8.2). */
+  doors?: readonly PublicDoor[];
+  /** Validation fault codes if the picked world's doors were disabled at start (knock-door 1.4). */
+  doorProblems?: readonly string[];
+  /** Active shut knock door at this Detective's feet on their Turn (knock-door 3.3). */
+  doorLock?: ControllerDoorLock | null;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -62,6 +98,22 @@ export interface ControllerPort {
   closeLock(lockId: string, why: "finished" | "gave_up" | "time_up"): void;
   /** The Master chose another Puzzle setting. A seat that is not the Master is refused by the Room. */
   setPuzzles(setting: PuzzleSetting): void;
+  /** The Master chose where Memory clues live (`phone` or `world`). */
+  setCluePlace?(place: CluePlace): void;
+  /** Master-only: switch Haunting errands on or off (from next Errand). */
+  setErrands?(on: boolean): void;
+  /** Any Player: opt out of being chosen as an Errand Target. */
+  setErrandOptOut?(on: boolean): void;
+  /** Poltergeist taps Done on their open Errand. */
+  errandDone?(): void;
+  /** Target answers the private "Are you holding a <object>?" prompt. */
+  errandAnswer?(yes: boolean): void;
+  /** Detective calls Caught once per Round. */
+  errandCaught?(poltergeist: number, object: ErrandObject): void;
+  /** Player acts on a shut heavy door (knock-door 4.2). */
+  doorAct?(doorId: string): void;
+  /** Detective sends knock timestamps (ms) for a shut knock door (knock-door 3.3). */
+  doorKnock?(doorId: string, times: readonly number[]): void;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }

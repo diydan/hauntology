@@ -10,7 +10,11 @@ import { createPlayController, type PlayController, type ViewerPort } from "../p
 import { ghostFace } from "../play/ghost-face";
 import { Hud, TOTAL_MEMORIES } from "../play/Hud";
 import { Journal } from "../play/Journal";
-import { createVoice } from "../play/voice";
+import { createVoice, voiceQuotaState } from "../play/voice";
+import { useDeviceSettings } from "../../device/device-settings";
+import { PuzzleHost } from "../../puzzles/PuzzleHost";
+import { SightCard } from "../../puzzles/SightCard";
+import { usePuzzleDevice } from "../../puzzles/usePuzzleDevice";
 import type { ViewerHandle } from "../viewer/types";
 import { errorCopy } from "@hauntology/shared/app/errors-copy";
 
@@ -30,7 +34,8 @@ export default function Play() {
   const shell = useShell();
   const { api, router, quota, memory, platform } = shell;
   const boot = useBoot();
-  const worldId = useRouterState().route.worldId ?? "";
+  const routerState = useRouterState();
+  const worldId = routerState.route.worldId ?? "";
   const container = useRef<HTMLDivElement>(null);
 
   // One controller and one voice per visit to this Screen. Creating them has no side effect; `begin` runs in an effect and runs once.
@@ -62,15 +67,27 @@ export default function Play() {
     const voice = createVoice({
       api, recorder: platform.voice.recorder, createAudio: platform.voice.createAudio, unlockAudio: platform.voice.unlockAudio,
       onTranscript: (text) => void controller.submit({ text }),
+      storage: typeof sessionStorage !== "undefined" ? sessionStorage : null,
+      fallbackSpeak: (text) => {
+        if (typeof speechSynthesis === "undefined" || typeof SpeechSynthesisUtterance === "undefined") return false;
+        speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+        return true;
+      },
     });
     return { controller, voice };
   });
   const { controller, voice } = parts;
+  const [device, setDevice] = useDeviceSettings();
+  const puzzleDevice = usePuzzleDevice({ device, setDevice });
+  const reducedMotion = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)").matches : false;
 
   const ui = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);
   const voiceUi = useSyncExternalStore(voice.subscribe, voice.getSnapshot, voice.getSnapshot);
   const announce = useAnnounce();
-  const voiceAvailable = boot.status === "ready" && boot.session.flags.voiceEnabled;
+  const voiceQuota = boot.status === "ready"
+    ? voiceQuotaState(boot.session.flags, boot.quota)
+    : { enabled: false, tts: false, stt: false, live: false };
+  const voiceAvailable = voiceQuota.enabled;
   // The note that typed words may go to a model is shown only when the server says one is on.
   const modelOn = boot.status === "ready" && boot.session.flags.ghostModel;
 
@@ -90,8 +107,8 @@ export default function Play() {
     lastReply.current = reply.n;
     announce(reply.text);
     const playId = memory.get().playId;
-    if (voiceAvailable && reply.voice !== undefined && playId !== undefined) void voice.playLine(playId, reply.voice.lineId);
-  }, [ui.reply, announce, voice, voiceAvailable, memory]);
+    if (voiceQuota.tts && reply.voice !== undefined && playId !== undefined) void voice.playLine(playId, reply.voice.lineId, reply.text);
+  }, [ui.reply, announce, voice, voiceQuota.tts, memory]);
 
   // A note in the Chat (a failed turn) is announced too; a new memory is announced as it is found.
   const lastLines = useRef(0);
@@ -118,6 +135,17 @@ export default function Play() {
     const copy = errorCopy(failure.code);
     announce(`${copy.title}. ${copy.body}`);
   }, [failure, announce]);
+
+  // A ghost made in the Creator kept its profile with the API, so when memory holds no picture the world is asked.
+  const [madeGhost, setMadeGhost] = useState<{ name: string; sprite: string } | null>(null);
+  useEffect(() => {
+    if (ghostFace(memory.get()).sprite !== null || !routerState.flow.ghostReady) return;
+    let live = true;
+    void api.ghostProfile(worldId).then((r) => {
+      if (live && r.ok) setMadeGhost({ name: r.value.name, sprite: r.value.spriteUrl });
+    });
+    return () => { live = false; };
+  }, [routerState.flow.ghostReady, api, worldId]);
 
   // A still picture of the place, when the Viewer cannot show it.
   const [thumb, setThumb] = useState<string | null>(null);
@@ -173,7 +201,8 @@ export default function Play() {
 
   const chatOpen = ui.play.mode === "chat";
   // Who the visitor picked on Haunt; it does not change during a visit to this Screen.
-  const ghost = ghostFace(memory.get());
+  const picked = ghostFace(memory.get());
+  const ghost = madeGhost && picked.sprite === null ? { ...picked, name: madeGhost.name, sprite: madeGhost.sprite } : picked;
   return (
     <div className="play-layout">
       <main className="play-main ui-stack">
@@ -211,7 +240,8 @@ export default function Play() {
       </main>
       {chatOpen ? (
         <Chat
-          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} modelOn={modelOn} ghost={ghost}
+          ui={ui} voice={voiceUi} voiceAvailable={voiceAvailable} ttsAvailable={voiceQuota.tts} sttAvailable={voiceQuota.stt}
+          liveEnabled={boot.status === "ready" && boot.session.flags.liveEnabled} liveAvailable={voiceQuota.live} modelOn={modelOn} ghost={ghost}
           onSubmit={(input) => {
             voice.unlock();
             void controller.submit(input);
@@ -223,9 +253,34 @@ export default function Play() {
           }}
           onPress={() => void voice.pressTalk()}
           onRelease={() => void voice.releaseTalk()}
+          onStartLive={() => {
+            voice.unlock();
+            void voice.startLive();
+          }}
+          onStopLive={() => voice.stopLive("stop")}
         />
       ) : null}
       {ui.journalOpen ? <Journal entries={ui.view?.journal ?? []} onClose={() => controller.closeJournal()} /> : null}
+      {ui.activeLock !== null ? (
+        <PuzzleHost
+          kind={ui.activeLock.kind}
+          view={ui.activeLock.view}
+          faded={ui.activeLock.faded}
+          capMs={null}
+          attempts={3}
+          feel={puzzleDevice.feel}
+          assist={puzzleDevice.device.assist}
+          reducedMotion={reducedMotion}
+          onAttempt={(t) => controller.submitLockAttempt(t)}
+          onSkip={() => void controller.skipLock()}
+          onGiveUp={() => controller.closeLock()}
+          onFinish={() => controller.finishLock()}
+          onTiltChoice={puzzleDevice.onTiltChoice}
+        />
+      ) : null}
+      {ui.activeLock === null && ui.pendingSight !== null ? (
+        <SightCard sight={ui.pendingSight} title="Something to remember" feel={puzzleDevice.feel} onDone={() => controller.dismissSight()} />
+      ) : null}
     </div>
   );
 }

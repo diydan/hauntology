@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { ERRAND_OBJECTS } from "./errands";
+import { SIGNS } from "../puzzles/world-clues";
 import type { ClientMsg } from "./engine";
 
 /**
@@ -20,7 +22,7 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("seal"), suspect: id, zone: id, relic: id }).strict(),
   z.object({ t: z.literal("endTurn") }).strict(),
   z.object({ t: z.literal("pass") }).strict(),
-  z.object({ t: z.literal("choose"), option: z.enum(["cold-spot", "blackout", "restless", "lull"]) }).strict(),
+  z.object({ t: z.literal("choose"), option: z.enum(["cold-spot", "blackout", "restless", "lull", "slam"]) }).strict(),
   z.object({ t: z.literal("nudge"), kind: z.enum(["help", "spook"]) }).strict(),
   z.object({ t: z.literal("eavesdrop"), eventId: z.number().int().nonnegative() }).strict(),
   z.object({ t: z.literal("pause") }).strict(),
@@ -33,11 +35,24 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
     frames: z.boolean().optional(), sounds: z.boolean().optional(), puzzles: level.optional(),
     baseSeconds: z.union([z.literal(30), z.literal(45), z.literal(60), z.literal(90), z.null()]).optional(),
     hauntMax: z.union([z.literal(8), z.literal(10), z.literal(12)]).optional(),
+    cluePlace: z.enum(["phone", "world"]).optional(),
+    errands: z.boolean().optional(),
   }).strict(),
+  z.object({ t: z.literal("errandOptOut"), on: z.boolean() }).strict(),
+  z.object({ t: z.literal("errandDone") }).strict(),
+  z.object({ t: z.literal("errandAnswer"), yes: z.boolean() }).strict(),
+  z.object({ t: z.literal("errandCaught"), poltergeist: z.number().int().min(1).max(6), object: z.enum(ERRAND_OBJECTS) }).strict(),
   z.object({ t: z.literal("attempt"), lockId: id, transcript: z.unknown() }).strict(),
   z.object({ t: z.literal("giveUp"), lockId: id }).strict(),
   z.object({ t: z.literal("sightAck"), sightId: id }).strict(),
+  z.object({ t: z.literal("clueSeen"), sign: z.enum(SIGNS) }).strict(),
   z.object({ t: z.literal("plainInspect"), on: z.boolean() }).strict(),
+  /** A Player acts on a heavy door (knock-door 4.1). */
+  z.object({ t: z.literal("doorAct"), doorId: id }).strict(),
+  /** A Player knocks back at the TV after a Slam: the times of their knocks in ms (knock-door 5.3). At most 64, like every knock transcript. */
+  z.object({ t: z.literal("tvKnock"), times: z.array(z.number().finite().nonnegative()).max(64) }).strict(),
+  /** A Detective's try at a knock door: the times of their knocks in ms (knock-door 3.3). At most 64, like every knock transcript. */
+  z.object({ t: z.literal("doorKnock"), doorId: id, times: z.array(z.number().finite().nonnegative()).max(64) }).strict(),
 ]);
 
 /** Room controls handled by the server around the Engine (the lobby), not by the Engine itself. */
@@ -50,6 +65,13 @@ export const RoomMsgSchema = z.discriminatedUnion("t", [
   /** The Master, after an ending: a new case with the same seats and settings, a new deal (party-mode 8.5). */
   z.object({ t: z.literal("playAgain") }).strict(),
   z.object({ t: z.literal("startBots"), bots: z.number().int().min(2).max(6).optional() }).strict(),
+  z.object({ t: z.literal("speech"), action: z.enum(["on", "off"]) }).strict(),
+  z.object({ t: z.literal("stitchSetting"), on: z.boolean() }).strict(),
+  z.object({ t: z.literal("stitchAnswer"), seat: z.number().int().min(1).max(6).optional(), yes: z.boolean(), tick: z.boolean() }).strict(),
+  z.object({ t: z.literal("songsSetting"), setting: z.enum(["off", "stock", "on"]) }).strict(),
+  z.object({ t: z.literal("songMute"), muted: z.boolean() }).strict(),
+  z.object({ t: z.literal("songSkip") }).strict(),
+  z.object({ t: z.literal("singMyName"), seat: z.number().int().min(1).max(6).optional(), yes: z.boolean() }).strict(),
 ]);
 export type RoomMsg = z.infer<typeof RoomMsgSchema>;
 

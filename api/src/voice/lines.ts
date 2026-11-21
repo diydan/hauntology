@@ -1,12 +1,12 @@
-import type { VoiceLine } from "@hauntology/shared/voice/line";
+import { normalizeCode } from "@hauntology/shared/party/roomCode";
+import { VoiceLineSchema, type VoiceLine } from "@hauntology/shared/voice/line";
 import type { PlaySessions } from "../play/ports";
+import type { JobNamespaceLike } from "../worlds/cloudflare-store";
 
 /**
- * Where the speech route finds the line a visitor asks to hear (ghost-voice 3.5 and 3.6). A line is found by its id AND the game it belongs to
- * AND the Session that owns the game, the way a game is found (`PlaySessions`): someone else's line, a line that has expired and a line that
- * never existed are the same answer, `null`, so an id tells nobody anything.
- *
- * Behind it sit the lines a `PlaySession` keeps (the last 8, valid for 10 minutes, under unguessable ids): `PlayVoiceLines` below.
+ * Where the speech route finds the line a visitor asks to hear (ghost-voice 3.5, 3.6, and 3.9). A line is found by its id AND the game or Room
+ * it belongs to AND the Session or Host token that owns it: someone else's line, a line that has expired and a line that never existed are
+ * the same answer, `null`, so an id tells nobody anything.
  */
 export type LineScope = { playId: string; ownerSid: string };
 
@@ -20,5 +20,33 @@ export class PlayVoiceLines implements VoiceLines {
 
   find(scope: LineScope, lineId: string): Promise<VoiceLine | null> {
     return this.sessions.voiceLine(scope.playId, scope.ownerSid, lineId);
+  }
+}
+
+export interface RoomVoiceLineStore {
+  findRoomLine(roomCode: string, lineId: string, hostToken: string): Promise<VoiceLine | null>;
+}
+
+/** Reads a live line from a `PartyRoom` Durable Object when presented with that Room's Host token (`ghost-voice` 3.9). */
+export class CloudflareRoomVoiceLines implements RoomVoiceLineStore {
+  constructor(private readonly rooms: JobNamespaceLike) {}
+
+  async findRoomLine(roomCode: string, lineId: string, hostToken: string): Promise<VoiceLine | null> {
+    const code = normalizeCode(roomCode);
+    if (code === null || hostToken === "") return null;
+    try {
+      const stub = this.rooms.get(this.rooms.idFromName(code));
+      const res = await stub.fetch("https://party/voice-line", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lineId, token: hostToken }),
+      });
+      if (!res.ok) return null;
+      const body = (await res.json()) as { line?: unknown };
+      const parsed = VoiceLineSchema.safeParse(body.line);
+      return parsed.success ? (parsed.data as VoiceLine) : null;
+    } catch {
+      return null;
+    }
   }
 }

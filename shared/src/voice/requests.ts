@@ -7,5 +7,7 @@ import { z } from "zod";
  * paid call. A room (`roomCode`) is not accepted yet: it comes with ghost-voice 3.9.
  */
 const Id = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/);
-export const SpeakRequestSchema = z.object({ playId: Id, lineId: Id, prefetch: z.boolean().optional() }).strict();
+export const PlaySpeakRequestSchema = z.object({ playId: Id, lineId: Id, prefetch: z.boolean().optional() }).strict();
+export const RoomSpeakRequestSchema = z.object({ roomCode: Id, lineId: Id, prefetch: z.boolean().optional() }).strict();
+export const SpeakRequestSchema = z.union([PlaySpeakRequestSchema, RoomSpeakRequestSchema]);
 export type SpeakRequest = z.infer<typeof SpeakRequestSchema>;

@@ -1,3 +1,4 @@
+import { mentionsRealWorld } from "../conditions/real-world-terms";
 import type { Atmosphere, PromptFields } from "../conditions/types";
 import { sanitizeText } from "./parse";
 import { BEARING_PHRASE, briefPhrase } from "./scripted";
@@ -144,8 +145,6 @@ const CONTROL = /[\u0000-\u001F\u007F-\u009F​-‏‪-‮⁠-⁤⁦-⁩﻿]/u;
 const LINK = /https?:|www\.|:\/\/|(?:^|\s)\/\/\S|\b[a-z0-9-]+\.(?:com|org|net|io|app|dev|co|ai|xyz)\b/iu;
 const MARKUP = /[`*#<>]/u;
 const OUT_OF_FICTION = /\b(?:as an ai|an ai|language model|system prompt|instructions?|chatbot|chatgpt|openai|anthropic|claude|i (?:cannot|can(?:'|’)?t|can not|am unable to|am not able to) (?:assist|comply|fulfil+))\b/iu;
-/** A stand-in for the `conditions` spec's `mentionsRealWorld` (not built yet): news, crime, death and real events, which a real place may not carry. */
-const REAL_WORLD = /\b(?:news|headlines?|police|arrest(?:ed)?|murder(?:ed|er)?|killed|killing|suicide|shooting|crimes?|criminal|funeral|died|death|election|president|pandemic|war|attack|accident|blood)\b/iu;
 
 const ENGLISH_WORDS = new Set("the an and of to in on is are was were it its i you your my with for that this there here not but as at by be have has had so if or what which from they them we our his her he she do does did will would can could may might one all just only still too very".split(" "));
 /** The voice is English only: a reply of eight words or more of which fewer than one in five are common English words is not English. (The lowest of 36 real English replies was a third; a Spanish one was none.) */
@@ -251,7 +250,7 @@ export function validateGhostReply(raw: unknown, options: ReplyOptions = {}): Re
   if (LINK.test(text)) return { ok: false, reason: "link" };
   if (MARKUP.test(text)) return { ok: false, reason: "markup" };
   if (OUT_OF_FICTION.test(text)) return { ok: false, reason: "out_of_fiction" };
-  if (REAL_WORLD.test(text)) return { ok: false, reason: "real_world" };
+  if (mentionsRealWorld(text)) return { ok: false, reason: "real_world" };
   if (!looksEnglish(text)) return { ok: false, reason: "not_english" };
   if (options.forbidDigits === true && /\d/u.test(text)) return { ok: false, reason: "digits" };
   const sentences = sentenceCount(text);

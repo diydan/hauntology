@@ -1,4 +1,7 @@
-import type { ShellApi } from "@hauntology/shared/app/api";
+import type { ApiResult, ShellApi } from "@hauntology/shared/app/api";
+import type { QuotaSnapshot, ShellFlags } from "@hauntology/shared/app/types";
+import { LIVE_SILENCE_MS, SPEECH_DEADLINE_MS } from "@hauntology/shared/voice/limits";
+import { initialLiveState, liveReduce, type LivePhase, type LiveState, type LiveStop } from "@hauntology/shared/voice/live";
 
 /**
  * The ghost's voice in Single player (Requirement 12.3): speaking the line the server holds, and
@@ -9,6 +12,7 @@ import type { ShellApi } from "@hauntology/shared/app/api";
  */
 
 export const MAX_CLIP_MS = 8000;
+export const SPEAK_STORAGE_KEY = "hauntology.speak";
 
 export type AudioLike = { play(): Promise<void>; pause(): void; onended: (() => void) | null };
 export type Recorder = { start(): void; stop(): Promise<Blob>; cancel(): void };
@@ -24,6 +28,16 @@ export type VoiceDeps = {
   /** The visitor said something: treat it exactly like typed text. */
   onTranscript: (text: string) => void;
   maxClipMs?: number;
+  /** Maximum wait for fetched line audio before falling back quietly (default 5000 ms). */
+  deadlineMs?: number;
+  /** Optional browser fallback (e.g. speechSynthesis) when fetched audio fails or times out. */
+  fallbackSpeak?: (text: string) => boolean;
+  /** Optional `sessionStorage` to persist the visitor's speak switch. */
+  storage?: Pick<Storage, "getItem" | "setItem"> | null;
+  /** Optional Live Mode session opener (Spike 1.3 transport hook, ghost-voice 4.5 & 6.5). */
+  openLiveSession?: () => Promise<ApiResult<{ close(): void }>>;
+  /** Live Mode silence cutoff (default `LIVE_SILENCE_MS`). */
+  liveSilenceMs?: number;
 };
 
 export type MicState = "unsupported" | "idle" | "starting" | "recording" | "sending" | "unavailable";
@@ -35,6 +49,8 @@ export type VoiceUi = {
   mic: MicState;
   /** A calm one-line note about the microphone, or null. */
   note: string | null;
+  /** Live Mode phase (`"off"` when using Hold to talk). */
+  live?: LivePhase | "off";
 };
 
 export type Voice = {
@@ -44,22 +60,63 @@ export type Voice = {
   /** Call from a click or key press. */
   unlock(): void;
   /** Speaks a line if the switch is on and audio is unlocked. Returns whether it started. */
-  playLine(playId: string, lineId: string): Promise<boolean>;
+  playLine(playId: string, lineId: string, subtitleText?: string): Promise<boolean>;
   stopSpeaking(): void;
   /** The talk button went down. */
   pressTalk(): Promise<void>;
   /** The talk button came up (or the key did). */
   releaseTalk(): Promise<void>;
+  /** Starts Live Mode if speaking is on; falls back quietly to Hold to talk on any failure. */
+  startLive(): Promise<boolean>;
+  /** Ends Live Mode and returns cleanly to Hold to talk. */
+  stopLive(reason?: Extract<LiveStop, "stop" | "hidden" | "silence" | "transport" | "mic" | "denied">): void;
   destroy(): void;
 };
 
 export const NOTE_UNAVAILABLE = "Talking is not available right now. You can type instead.";
 export const NOTE_NOT_HEARD = "I did not catch that. Try again, or type.";
+export const VOICE_TTS_UNAVAILABLE = "Ghost voice is out right now — subtitles stay on.";
+export const VOICE_STT_UNAVAILABLE = "Talking out loud is unavailable right now. You can type instead.";
+export const LIVE_SPEAK_REQUIRED = "Turn on speaking to use Live mode.";
+export const LIVE_QUOTA_UNAVAILABLE = "Live mode is unavailable right now. Hold to talk instead.";
+export const LIVE_ENDED_NOTE = "Live mode ended. Hold to talk instead.";
+
+export type VoiceQuota = {
+  /** Whether the server switch allows voice controls to appear at all. */
+  enabled: boolean;
+  /** Whether text-to-speech quota remains (`tts > 0`). */
+  tts: boolean;
+  /** Whether speech-to-text quota remains (`stt > 0`). */
+  stt: boolean;
+  /** Whether live voice mode is enabled and quota remains (`live > 0`). */
+  live: boolean;
+};
+
+/** Derives per-control voice availability from boot flags and quota snapshot (ghost-voice 4.4). */
+export function voiceQuotaState(
+  flags: Pick<ShellFlags, "voiceEnabled" | "liveEnabled">,
+  quota: Pick<QuotaSnapshot, "tts" | "stt" | "live">,
+): VoiceQuota {
+  const enabled = flags.voiceEnabled;
+  return {
+    enabled,
+    tts: enabled && quota.tts > 0,
+    stt: enabled && quota.stt > 0,
+    live: enabled && flags.liveEnabled && quota.live > 0,
+  };
+}
 
 export function createVoice(deps: VoiceDeps): Voice {
   const maxClipMs = deps.maxClipMs ?? MAX_CLIP_MS;
+  const deadlineMs = deps.deadlineMs ?? SPEECH_DEADLINE_MS;
   const recorderFactory = deps.recorder === undefined ? null : deps.recorder;
-  let ui: VoiceUi = { speak: true, speaking: false, mic: recorderFactory === null ? "unsupported" : "idle", note: null };
+  let storedSpeak = true;
+  try {
+    if (deps.storage) storedSpeak = deps.storage.getItem(SPEAK_STORAGE_KEY) !== "false";
+  } catch {
+    storedSpeak = true;
+  }
+  let ui: VoiceUi = { speak: storedSpeak, speaking: false, mic: recorderFactory === null ? "unsupported" : "idle", note: null, live: "off" };
   const listeners = new Set<() => void>();
   const set = (patch: Partial<VoiceUi>) => {
     ui = { ...ui, ...patch };
@@ -73,6 +130,35 @@ export function createVoice(deps: VoiceDeps): Voice {
   let held = false;
   let timer: ReturnType<typeof setTimeout> | null = null;
   let session = 0;
+  let liveState: LiveState = initialLiveState(0);
+  let liveConn: { close(): void } | null = null;
+  let liveTimer: ReturnType<typeof setTimeout> | null = null;
+  let removeVisibility: (() => void) | null = null;
+  const liveSilenceMs = deps.liveSilenceMs ?? LIVE_SILENCE_MS;
+
+  const stopLiveInternal = (reason: Extract<LiveStop, "stop" | "hidden" | "silence" | "transport" | "mic" | "denied"> = "stop", showFallbackNote = true) => {
+    if (liveTimer !== null) {
+      clearTimeout(liveTimer);
+      liveTimer = null;
+    }
+    removeVisibility?.();
+    removeVisibility = null;
+    const conn = liveConn;
+    liveConn = null;
+    try {
+      conn?.close();
+    } catch {
+      // ignore close errors
+    }
+    if (liveState.phase !== "idle" && liveState.phase !== "stopped") {
+      const ev = reason === "hidden" ? ({ t: "hidden" } as const) : reason === "transport" ? ({ t: "transport_error" } as const) : reason === "mic" ? ({ t: "mic_error" } as const) : reason === "denied" ? ({ t: "slice_denied", reason: "denied" } as const) : ({ t: "stop" } as const);
+      liveState = liveReduce(liveState, ev, Date.now()).state;
+    }
+    liveState = initialLiveState(Date.now());
+    if (ui.live !== "off") {
+      set({ live: "off", ...(showFallbackNote && reason !== "stop" ? { note: LIVE_ENDED_NOTE } : {}) });
+    }
+  };
 
   const stopSpeaking = () => {
     if (current === null) return;
@@ -125,7 +211,15 @@ export function createVoice(deps: VoiceDeps): Voice {
       return () => void listeners.delete(listener);
     },
     setSpeak(on) {
-      if (!on) stopSpeaking();
+      if (!on) {
+        stopSpeaking();
+        stopLiveInternal("stop", false);
+      }
+      try {
+        deps.storage?.setItem(SPEAK_STORAGE_KEY, on ? "true" : "false");
+      } catch {
+        // storage disabled
+      }
       set({ speak: on });
     },
     unlock() {
@@ -135,12 +229,28 @@ export function createVoice(deps: VoiceDeps): Voice {
         unlocked = false;
       });
     },
-    async playLine(playId, lineId) {
+    async playLine(playId, lineId, subtitleText) {
       if (!ui.speak || !unlocked || speechRefused || deps.createAudio === undefined) return false;
-      const got = await deps.api.speak({ playId, lineId });
+      let timedOut = false;
+      let deadlineTimer: ReturnType<typeof setTimeout> | null = null;
+      const got = await Promise.race([
+        deps.api.speak({ playId, lineId }),
+        new Promise<null>((resolve) => {
+          deadlineTimer = setTimeout(() => {
+            timedOut = true;
+            resolve(null);
+          }, deadlineMs);
+        }),
+      ]);
+      if (deadlineTimer !== null) clearTimeout(deadlineTimer);
+      if (timedOut || got === null) {
+        if (subtitleText !== undefined) deps.fallbackSpeak?.(subtitleText);
+        return false;
+      }
       if (!got.ok) {
         // A spent meter or a switch that is off will not change this game: stop asking.
         if (got.code === "voice_unavailable") speechRefused = true;
+        if (subtitleText !== undefined) deps.fallbackSpeak?.(subtitleText);
         return false;
       }
       if (!ui.speak) return false;
@@ -162,6 +272,7 @@ export function createVoice(deps: VoiceDeps): Voice {
           current = null;
           made.release();
         }
+        if (subtitleText !== undefined) deps.fallbackSpeak?.(subtitleText);
         return false;
       }
       set({ speaking: true });
@@ -202,7 +313,48 @@ export function createVoice(deps: VoiceDeps): Voice {
       }
       await finish(session);
     },
+    async startLive() {
+      if (ui.live !== undefined && ui.live !== "off") return true;
+      const start = liveReduce(initialLiveState(Date.now()), { t: "start", mode: "single", speakingOn: ui.speak }, Date.now());
+      if (start.state.phase === "stopped" || deps.openLiveSession === undefined) {
+        liveState = initialLiveState(Date.now());
+        set({ live: "off", note: ui.speak ? LIVE_QUOTA_UNAVAILABLE : LIVE_SPEAK_REQUIRED });
+        return false;
+      }
+      liveState = start.state;
+      set({ live: "listening", note: null });
+      const res = await deps.openLiveSession().catch(() => ({ ok: false as const, code: "live_unavailable" as const }));
+      if (!res.ok) {
+        stopLiveInternal("transport", true);
+        return false;
+      }
+      if (ui.live === "off") {
+        try {
+          res.value.close();
+        } catch {
+          // ignore
+        }
+        return false;
+      }
+      const granted = liveReduce(liveState, { t: "slice_granted" }, Date.now());
+      liveState = granted.state;
+      liveConn = res.value;
+      if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+        const onVis = () => {
+          if (document.visibilityState === "hidden") stopLiveInternal("hidden", true);
+        };
+        document.addEventListener("visibilitychange", onVis);
+        removeVisibility = () => document.removeEventListener("visibilitychange", onVis);
+      }
+      liveTimer = setTimeout(() => stopLiveInternal("silence", true), liveSilenceMs);
+      set({ live: "listening" });
+      return true;
+    },
+    stopLive(reason = "stop") {
+      stopLiveInternal(reason, reason !== "stop");
+    },
     destroy() {
+      stopLiveInternal("stop", false);
       stopSpeaking();
       clearTimer();
       session++;

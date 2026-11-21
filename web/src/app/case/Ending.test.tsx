@@ -6,6 +6,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Ending, RECAP_STEP_MS } from "./Ending";
 import { namesOf } from "./words";
+import { eventLine } from "./words";
 
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
@@ -86,5 +87,35 @@ describe("the ending screen", () => {
     expect(screen.getByRole("status").textContent).toContain("would not play");
     expect(document.querySelector(".ui-lyrics")).toBeTruthy();
     vi.unstubAllGlobals();
+  });
+
+  it("renders the ending song line using design-system ui-speech ui-hint when provided (game-songs 4.1)", () => {
+    const view = ended({ houseWins: false, winners: [1] });
+    render(<Ending view={view} n={namesOf(view, 1)} reducedMotion songLine={{ title: "Ballad of the Case", captions: "The lanterns went out together." }} />);
+    const line = document.querySelector("[data-ending-song-line]")!;
+    expect(line.classList.contains("ui-speech")).toBe(true);
+    expect(line.classList.contains("ui-hint")).toBe(true);
+    expect(line.textContent).toBe("Ballad of the Case: The lanterns went out together.");
+  });
+
+  it("formats errand public log lines without the sender and lists every Errand in the ending recap (errands 2.2, 2.4)", () => {
+    const view = ended({ houseWins: false, winners: [1] });
+    const n = namesOf(view, 1);
+    expect(eventLine({ id: 9, kind: "errand-done", target: 2, object: "spoon" }, n)).toBe(`${n.seat(2)} was made to hold a spoon`);
+    expect(eventLine({ id: 10, kind: "errand-caught", seat: 3 }, n)).toBe(`${n.seat(3)} caught a haunting`);
+
+    const withErrands: PublicSnapshot = {
+      ...view,
+      ending: {
+        ...view.ending!,
+        recap: {
+          ...view.ending!.recap,
+          errands: [{ id: "1:0", from: 1, target: 2, object: "spoon", givenRound: 1, doneTriedRound: 1, status: "done" }],
+        },
+      },
+    };
+    render(<Ending view={withErrands} n={n} reducedMotion />);
+    const sec = screen.getByRole("region", { name: "Haunting errands" });
+    expect(sec.textContent).toContain(`You tried to get ${n.seat(2)} to hold a spoon: done`);
   });
 });

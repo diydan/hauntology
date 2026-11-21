@@ -19,4 +19,4 @@ export type CreatorModule = {
 export type LoadCreator = () => Promise<CreatorModule>;
 
 /** Loaded only when the visitor opens the Creator, so Haunt's first load does not carry it. */
-export const defaultLoadCreator: LoadCreator = () => import("./creator-standin");
+export const defaultLoadCreator: LoadCreator = () => import("./creator-ui");

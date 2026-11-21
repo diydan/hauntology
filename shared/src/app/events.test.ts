@@ -11,6 +11,7 @@ describe("ViewerToShell", () => {
       { t: "prompt", target: "ghost" },
       { t: "prompt", target: "anchor" },
       { t: "prompt", target: null },
+      { t: "clue_seen", sign: "moon" },
       { t: "degraded", rung: "pano" },
       { t: "degraded", rung: "thumb" },
       { t: "fps", fps: 59.6 },
@@ -50,6 +51,7 @@ describe("ShellToViewer", () => {
       { t: "set_atmosphere", atmosphere: { timeOfDay: "night", weather: "fog", tempBand: "cold", windBand: "calm", moon: "full moon" } },
       { t: "apply_view", found: [], anchors: [], hauntLevel: 0, ghostVisible: false },
       { t: "apply_view", found: ["a1", "a3"], anchors: [anchor as never], hauntLevel: 1, ghostVisible: true },
+      { t: "set_world_clues", clues: [{ zone: "z1", sign: "key", sight: { kind: "clock", h: 3, m: 15 } }] },
     ];
     for (const m of ok) expect(parseShellMessage(m)).toEqual(m);
   });

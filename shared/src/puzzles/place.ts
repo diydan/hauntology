@@ -14,7 +14,9 @@ export type PlacedLock = Readonly<{
 
 /**
  * Put one Lock in every Zone, deterministically from the room seed. Each enabled Kind is used at most twice, and a
- * Memory Kind's Sight sits in the next Zone round the ring, so every Zone holds at most one Sight. `off` places none.
+ * Memory Kind's Sight sits in another Zone with no two Sights sharing a Zone. When `reachable` is supplied, Sights for
+ * Locks in reachable Zones stay within `reachable` (avoiding Memory Kinds if fewer than 2 reachable Zones exist and a
+ * non-Memory Kind is enabled), so no Player is sent behind a shut door for an open Lock (knock-door 2.8). `off` places none.
  * Needs at least two Zones, and at most two Zones for every enabled Kind.
  */
 export function placePuzzles(
@@ -22,6 +24,7 @@ export function placePuzzles(
   zones: readonly string[],
   setting: PuzzleSetting,
   enabled: readonly Kind[] = DEFAULT_KINDS,
+  reachable?: readonly string[],
 ): Result<readonly PlacedLock[]> {
   if (setting === "off") return ok([]);
   const kinds = [...new Set(enabled)];
@@ -30,6 +33,25 @@ export function placePuzzles(
   }
   const r = mulberry32(hash("place", roomSeed));
   const pool = [...shuffle(r, kinds), ...shuffle(r, kinds)];
+  const open = reachable ? zones.filter((z) => reachable.includes(z)) : zones;
+  const shut = reachable ? zones.filter((z) => !reachable.includes(z)) : [];
+  if (reachable !== undefined && open.length === 1) {
+    const idx0 = zones.indexOf(open[0] as string);
+    if (idx0 >= 0 && isMemoryKind(pool[idx0] as Kind)) {
+      const swapIdx = pool.slice(0, zones.length).findIndex((k) => !isMemoryKind(k));
+      if (swapIdx >= 0) [pool[idx0], pool[swapIdx]] = [pool[swapIdx] as Kind, pool[idx0] as Kind];
+    }
+  }
+  const sightForZone = (zone: string, i: number, kind: Kind): string | null => {
+    if (!isMemoryKind(kind)) return null;
+    if (reachable === undefined) return zones[(i + 1) % zones.length] as string;
+    if (open.includes(zone)) {
+      if (open.length >= 2) return open[(open.indexOf(zone) + 1) % open.length] as string;
+      return zones[(i + 1) % zones.length] as string;
+    }
+    if (shut.length >= 2) return shut[(shut.indexOf(zone) + 1) % shut.length] as string;
+    return open[0] ?? (zones[(i + 1) % zones.length] as string);
+  };
   const locks = zones.map((zone, i): PlacedLock => {
     const kind = pool[i] as Kind;
     return {
@@ -38,7 +60,7 @@ export function placePuzzles(
       kind,
       level: setting,
       seed: hash(roomSeed, "lock", zone),
-      sightZone: isMemoryKind(kind) ? (zones[(i + 1) % zones.length] as string) : null,
+      sightZone: sightForZone(zone, i, kind),
     };
   });
   return ok(locks);

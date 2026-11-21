@@ -69,7 +69,7 @@ describe("App boot", () => {
   it("sends a world the server no longer has to the Expired Screen", async () => {
     // The Session still names the world, but it ran out of time on the server.
     const base = createFakeApi({ latencyMs: 0 });
-    const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, ghostModel: false };
+    const flags = { worldGenEnabled: true, dayCapReached: false, totalCapReached: false, voiceEnabled: true, liveEnabled: false, partyEnabled: true, puzzlesEnabled: true, ghostModel: false };
     const api = {
       ...base,
       session: async () => ({ ok: true, value: { ackNotice: false, flags, lastWorldId: "w-gone", lastPlayId: "p-gone" } }),

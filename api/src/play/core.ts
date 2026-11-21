@@ -1,10 +1,13 @@
-import { playTurn, resetSession, settleNarration, viewOf, type Settle } from "@hauntology/shared/ghost/play";
+import {
+  attemptWanderLock, openWanderLock, playTurn, resetSession, settleNarration, skipWanderLockForSession, viewOf,
+  type Settle, type TurnResult, type WorldFacts,
+} from "@hauntology/shared/ghost/play";
 import { isExpired, parseSession, serializeSession, type PlaySession } from "@hauntology/shared/ghost/session";
-import type { WorldFacts } from "@hauntology/shared/ghost/play";
+import type { AnchorId } from "@hauntology/shared/app/events";
 import { ANCHOR_IDS } from "@hauntology/shared/ghost/types";
 import { toBase64Url } from "@hauntology/shared/session-cookie";
 import { findLine, type VoiceLine } from "@hauntology/shared/voice/line";
-import type { Peek, PlayRefusal, Settled, TurnDone, VoiceRef } from "./ports";
+import type { LockAttemptDone, LockOpenDone, LockRefusal, LockSkipDone, Peek, PlayRefusal, Settled, TurnDone, VoiceRef } from "./ports";
 
 /** A line's id: 128 random bits, so it cannot be guessed (and a line is found by it only through its own game and owner as well). */
 const randomLineId = (): string => toBase64Url(crypto.getRandomValues(new Uint8Array(16)));
@@ -46,6 +49,22 @@ export class PlayCore {
     return true;
   }
 
+  private toTurnDone(r: Extract<TurnResult, { ok: true }>): TurnDone {
+    return {
+      ok: true,
+      reply: r.reply,
+      view: r.view,
+      directive: r.directive.kind,
+      revealed: r.revealed,
+      ended: r.session.state.ended,
+      turns: r.session.state.turn,
+      job: r.job,
+      voice: refOf(r.voiceLine),
+      ...(r.lock !== undefined ? { lock: r.lock } : {}),
+      ...(r.sight !== undefined ? { sight: r.sight } : {}),
+    };
+  }
+
   async turn(ownerSid: string, turn: { input: unknown; pose: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<TurnDone | PlayRefusal> {
     // One reading of the clock for the whole turn: the game that was found alive is the one that is played.
     const now = this.now();
@@ -54,7 +73,47 @@ export class PlayCore {
     const r = playTurn(session, { input: turn.input, pose: turn.pose, world: turn.world, now, voiceLineId: this.newId() });
     if (!r.ok) return r.code === "session_expired" ? { ok: false, code: "session_expired" } : { ok: false, code: "rate_limited", retryAfterMs: r.retryAfterMs };
     await this.slot.save(serializeSession(r.session));
-    return { ok: true, reply: r.reply, view: r.view, directive: r.directive.kind, revealed: r.revealed, ended: r.session.state.ended, turns: r.session.state.turn, job: r.job, voice: refOf(r.voiceLine) };
+    return this.toTurnDone(r);
+  }
+
+  async lockOpen(ownerSid: string, anchorId: AnchorId): Promise<LockOpenDone | LockRefusal> {
+    const now = this.now();
+    const session = await this.load(ownerSid, now);
+    if ("ok" in session) return session;
+    const r = openWanderLock(session, { anchorId, now });
+    if (!r.ok) {
+      if (r.code === "session_expired") await this.slot.clear();
+      return r;
+    }
+    await this.slot.save(serializeSession(r.session));
+    return { ok: true, view: r.view, lock: r.lock };
+  }
+
+  async lockAttempt(ownerSid: string, args: { transcript: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<LockAttemptDone | LockRefusal> {
+    const now = this.now();
+    const session = await this.load(ownerSid, now);
+    if ("ok" in session) return session;
+    const r = attemptWanderLock(session, { transcript: args.transcript, now, world: args.world, voiceLineId: this.newId() });
+    if (!r.ok) {
+      if (r.code === "session_expired") await this.slot.clear();
+      return r;
+    }
+    await this.slot.save(serializeSession(r.session));
+    if (r.outcome === "wrong") return { ok: true, outcome: "wrong", skipAvailable: r.skipAvailable, view: r.view };
+    return { ...this.toTurnDone(r), outcome: "solved" };
+  }
+
+  async lockSkip(ownerSid: string, world: Pick<WorldFacts, "bounds" | "brief">): Promise<LockSkipDone | LockRefusal> {
+    const now = this.now();
+    const session = await this.load(ownerSid, now);
+    if ("ok" in session) return session;
+    const r = skipWanderLockForSession(session, { now, world, voiceLineId: this.newId() });
+    if (!r.ok) {
+      if (r.code === "session_expired") await this.slot.clear();
+      return r;
+    }
+    await this.slot.save(serializeSession(r.session));
+    return this.toTurnDone(r);
   }
 
   /**
@@ -86,9 +145,10 @@ export class PlayCore {
   }
 
   async get(ownerSid: string): Promise<Peek | PlayRefusal> {
-    const session = await this.load(ownerSid, this.now());
+    const now = this.now();
+    const session = await this.load(ownerSid, now);
     if ("ok" in session) return session;
-    return { ok: true, worldId: session.worldId, view: viewOf(session), turns: session.state.turn, ended: session.state.ended };
+    return { ok: true, worldId: session.worldId, view: viewOf(session, now), turns: session.state.turn, ended: session.state.ended };
   }
 
   async reset(ownerSid: string, args: { world: WorldFacts; seed: number }): Promise<Peek | PlayRefusal> {
@@ -97,7 +157,7 @@ export class PlayCore {
     if ("ok" in session) return session;
     const again = resetSession(session, { world: args.world, seed: args.seed, now });
     await this.slot.save(serializeSession(again));
-    return { ok: true, worldId: again.worldId, view: viewOf(again), turns: 0, ended: false };
+    return { ok: true, worldId: again.worldId, view: viewOf(again, now), turns: 0, ended: false };
   }
 
   /** The game's id and its world, for the index, or `null` when there is no game. */

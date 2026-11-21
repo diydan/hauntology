@@ -2,7 +2,7 @@
 import { createEngine, privateSnapshot, publicSnapshot, step, type EngineState } from "@hauntology/shared/party/engine";
 import { PRESET_GHOST_IDS } from "@hauntology/shared/party/preset-ghosts";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mountHost, SoloTable } from "./host";
 import type { RoomClient, RoomSnapshot } from "./room-client";
 import { eventLine, namesOf, notebook } from "./words";
@@ -91,6 +91,81 @@ describe("the solo table", () => {
     expect(document.body.textContent).toContain(`It was ${n.card(sol.suspect)}, in the ${n.card(sol.zone)}, with the ${n.card(sol.relic)}.`);
     expect(document.body.textContent).toContain("First DetectiveYou");
   });
+
+  it("shows subtitles before audio unlock, unlocks on tap, toggles Ghost voice as Master, and uses prefetched audio (4.6, 4.8)", async () => {
+    const { s, now } = game();
+    const f = fakeClient(s, now);
+    f.set({ hostToken: "host-tok-1", speechOn: false, prefetch: [] });
+    const fetchSpeech = vi.fn(async (req: { roomCode: string; lineId: string; prefetch?: boolean }) => ({
+      ok: true as const,
+      value: { audio: new Blob([req.lineId], { type: "audio/mpeg" }) },
+    }));
+    const played: Array<{ paused: boolean }> = [];
+    const createAudio = () => {
+      const a = { paused: false, onended: null as (() => void) | null, play: async () => {}, pause() { this.paused = true; } };
+      played.push(a);
+      return { audio: a, release: () => {} };
+    };
+
+    render(<SoloTable client={f.client} fetchSpeech={fetchSpeech} createAudio={createAudio} />);
+
+    // Before unlock: voice cue updates polite live-region subtitle without fetching audio.
+    await act(async () => {
+      f.set({ voice: { seq: 1, lineId: "l-1", text: "A cold draft passes.", kind: "haunt" } });
+    });
+    const sub = document.querySelector("[data-host-subtitle]")!;
+    expect(sub.getAttribute("aria-live")).toBe("polite");
+    expect(sub.textContent).toBe("A cold draft passes.");
+    expect(fetchSpeech).not.toHaveBeenCalled();
+
+    // Tapping Ghost voice as seat 1 Master sends speech on & unlocks Host audio.
+    const voiceBtn = screen.getByRole("button", { name: "Ghost voice" });
+    expect(voiceBtn.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(voiceBtn);
+    expect(f.sent.at(-1)).toEqual({ t: "speech", action: "on" });
+    await act(async () => {
+      f.set({ speechOn: true, prefetch: ["p-1"] });
+    });
+    expect(fetchSpeech).toHaveBeenCalledWith({ roomCode: "ABCD", lineId: "p-1", prefetch: true }, "host-tok-1");
+
+    // Subsequent voice cue for prefetched id plays immediately without a second fetch!
+    const callsAfterPrefetch = fetchSpeech.mock.calls.length;
+    await act(async () => {
+      f.set({ voice: { seq: 2, lineId: "p-1", text: "It whispers from the hall.", kind: "whisper" } });
+    });
+    expect(fetchSpeech).toHaveBeenCalledTimes(callsAfterPrefetch);
+    expect(played).toHaveLength(1);
+    expect(played[0]!.paused).toBe(false);
+
+    // Turning speech off stops the playing clip.
+    await act(async () => { f.set({ speechOn: false }); });
+    expect(played[0]!.paused).toBe(true);
+  });
+
+  it("wires SongControls into SoloTable for Master setting/mute/skip, Sing my name, captions, and hint log (game-songs 3.3)", async () => {
+    const { s, now } = game();
+    const f = fakeClient(s, now);
+    f.set({ hostToken: "host-tok-2" });
+    render(<SoloTable client={f.client} />);
+
+    fireEvent.click(screen.getByRole("radio", { name: "On" }));
+    expect(f.sent.at(-1)).toEqual({ t: "songsSetting", setting: "on" });
+    fireEvent.click(screen.getByLabelText("Sing my name"));
+    expect(f.sent.at(-1)).toEqual({ t: "singMyName", yes: true });
+
+    await act(async () => {
+      f.set({
+        songsSetting: "on",
+        activeSong: { seq: 1, key: "clue-1", title: "A Quiet Drift", captions: "Nothing stirs in the Attic.", hintLogLine: "A song drifted: Attic is clear." },
+      });
+    });
+    const cap = document.querySelector("[data-song-captions]")!;
+    expect(cap.textContent).toContain("A Quiet Drift: Nothing stirs in the Attic.");
+    expect(document.body.textContent).toContain("A song drifted: Attic is clear.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Skip song" }));
+    expect(f.sent.at(-1)).toEqual({ t: "songSkip" });
+  });
 });
 
 describe("words", () => {
@@ -145,5 +220,66 @@ describe("mountHost", () => {
     await act(() => h.dispose());
     expect(disposed).toBe(1);
     expect(container.querySelector(".case-split")).toBeNull();
+  });
+
+  it("forwards Public View worldClues to the Viewer and forwards viewer clue_seen back to the Room", async () => {
+    const sentToViewer: unknown[] = [];
+    const sentToSocket: string[] = [];
+    let emitViewerMessage: ((m: unknown) => void) | null = null;
+    const sockets: { onopen: (() => void) | null; onmessage: ((e: { data: string }) => void) | null; send(t: string): void; close(): void; onclose: null }[] = [];
+    const deps = {
+      fetch: async (url: string) => new Response(JSON.stringify(url.startsWith("/api/worlds") ? { manifest: { bounds: { min: [-9, 0, -9], max: [9, 3, 9] } } } : url.endsWith("/join") ? { ok: true, seat: 1, token: "t".repeat(32) } : { code: "ABCD" }), { status: 200 }),
+      openSocket: () => { const ws = { onopen: null, onmessage: null, onclose: null, send(t: string) { sentToSocket.push(t); }, close() {} }; sockets.push(ws); return ws as never; },
+      socketOrigin: "ws://x",
+    };
+    const container = document.createElement("div");
+    document.body.append(container);
+    const h = await act(() => mountHost({
+      container, worldId: "w1", setup: { preset: "classic", bots: 2 }, sky: undefined, onMessage: () => {},
+      loadViewer: async () => ({
+        mountViewer: ({ container: c, onMessage }) => {
+          emitViewerMessage = onMessage;
+          c.append(Object.assign(document.createElement("canvas"), { id: "world" }));
+          return { send: (m) => void sentToViewer.push(m), dispose: async () => {} };
+        },
+      }),
+    }, deps));
+    const { s, now } = game();
+    sockets[0]!.onopen?.();
+    const clues = [{ zone: "z2", sign: "moon" as const, sight: { kind: "clock" as const, h: 4, m: 20 } }];
+    act(() => sockets[0]!.onmessage?.({ data: JSON.stringify({ t: "public", view: { ...publicSnapshot(s, now), cluePlace: "world", worldClues: clues } }) }));
+    expect(sentToViewer).toContainEqual({ t: "set_world_clues", clues });
+    act(() => emitViewerMessage?.({ t: "clue_seen", sign: "moon" }));
+    expect(sentToSocket).toContain(JSON.stringify({ t: "clueSeen", sign: "moon" }));
+    await act(() => h.dispose());
+  });
+});
+
+describe("SoloTable doors (knock-door 1.4, 2.8)", () => {
+  it("disables closed Zones in the Turn Room picker and shows doorProblems to the Master", () => {
+    const { s, now } = game();
+    const base = publicSnapshot(s, now);
+    const closedId = base.zones[1]!.id;
+    const snap = {
+      status: "playing" as const,
+      code: "ABCD",
+      seat: 1,
+      public: { ...base, active: 1, closedZones: [closedId], doorProblems: ["0:width"] },
+      private: privateSnapshot(s, 1),
+      refused: null,
+    };
+    const client = {
+      getSnapshot: () => snap,
+      subscribe: () => () => {},
+      send() {},
+      close() {},
+    };
+    const { container } = render(<SoloTable client={client} />);
+    const rooms = within(container).getByRole("group", { name: "Rooms" });
+    const closedBtn = within(rooms).getByRole("button", { name: base.zones[1]!.name });
+    const openBtn = within(rooms).getByRole("button", { name: base.zones[0]!.name });
+    expect(closedBtn.hasAttribute("disabled")).toBe(true);
+    expect(openBtn.hasAttribute("disabled")).toBe(false);
+    expect(within(container).getByText(/Door 1 width must be between/)).toBeTruthy();
   });
 });

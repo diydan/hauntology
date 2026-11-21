@@ -1,4 +1,6 @@
 import { RoomCore, type Ports } from "@hauntology/shared/party/server";
+import { RoomSongStore, type SongBucket } from "../songs/store";
+import { RoomStitchClipStore, type RoomClipStorage } from "../voice/stitch-store";
 
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const STATE_KEY = "room";
@@ -9,16 +11,20 @@ type DirectoryNamespace = { idFromName(name: string): unknown; get(id: unknown):
  * no rule: every message goes to `RoomCore` (`shared/src/party/server.ts`), which saves before it sends and keeps the
  * one alarm. Sockets use the Hibernation API, so an idle Room costs nothing; each socket carries its own id.
  *
- * Internal addresses, from the Worker's `/api/party` routes only:
- *   POST /create {code}   -> {hostToken, displayToken}
- *   POST /join {nickname} -> {ok, seat, token} | {ok:false, code}
- *   POST /end             -> 204 (the same session made a new Room: this one ends)
+ * Internal addresses, from the Worker's `/api/party` & `/api/voice` routes only:
+ *   POST /create {code}         -> {hostToken, displayToken}
+ *   POST /join {nickname}       -> {ok, seat, token} | {ok:false, code}
+ *   POST /voice-line {lineId, token} -> {line} | {line: null}
+ *   POST /end                   -> 204 (the same session made a new Room: this one ends)
  *   GET  /ws (Upgrade: websocket) -> 101; the first message must be {t:"hello", token}
  */
 export class PartyRoom {
   private readonly core: RoomCore;
+  private readonly clips: RoomStitchClipStore;
 
-  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace } = {}, clock: () => number = Date.now) {
+  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace; BUCKET?: SongBucket } = {}, clock: () => number = Date.now) {
+    this.clips = new RoomStitchClipStore(this.state.storage as unknown as RoomClipStorage);
+    const songs = env.BUCKET !== undefined ? new RoomSongStore(env.BUCKET) : null;
     const sockets = (): WebSocket[] => (this.state as unknown as { getWebSockets(): WebSocket[] }).getWebSockets();
     const byId = (id: string): WebSocket | undefined => sockets().find((ws) => (ws as unknown as { deserializeAttachment(): { id?: string } | null }).deserializeAttachment()?.id === id);
     const ports: Ports = {
@@ -30,6 +36,13 @@ export class PartyRoom {
       close: (id, code, reason) => { try { byId(id)?.close(code, reason); } catch { /* already closed */ } },
       now: clock,
       randomBytes: (n) => crypto.getRandomValues(new Uint8Array(n)),
+      deleteStitchClips: async (forSeats) => {
+        if (forSeats === "all") await this.clips.deleteAll();
+        else for (const seat of forSeats) await this.clips.deleteForSeat(seat);
+      },
+      deleteSongs: async (code) => {
+        await songs?.deleteRoomSongs(code);
+      },
       // Free the Room's place in the directory, so the cap counts only live Rooms.
       ended: async (code) => {
         const dir = env.PARTY_DIRECTORY;
@@ -52,8 +65,14 @@ export class PartyRoom {
     }
     if (request.method !== "POST") return new Response(null, { status: 405 });
     const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-    if (pathname === "/create" && typeof body?.code === "string") return json(await this.core.create(body.code));
+    if (pathname === "/create" && typeof body?.code === "string") {
+      const doors = body.doors && typeof body.doors === "object" ? (body.doors as Parameters<RoomCore["create"]>[1] extends infer T ? T extends { doors?: infer D } ? D : never : never) : undefined;
+      return json(await this.core.create(body.code, doors !== undefined ? { doors } : undefined));
+    }
     if (pathname === "/join" && typeof body?.nickname === "string") return json(await this.core.join(body.nickname));
+    if (pathname === "/voice-line" && typeof body?.lineId === "string" && typeof body?.token === "string") {
+      return json({ line: await this.core.findVoiceLineForHost(body.lineId, body.token) });
+    }
     if (pathname === "/end") { await this.core.endRoom(); return new Response(null, { status: 204 }); }
     return json({ ok: false, code: "bad_request" }, 400);
   }

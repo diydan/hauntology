@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DEVICE_SETTINGS_KEY } from "../../device/device-settings";
+import { ERRAND_RULE_LINE } from "@hauntology/shared/party/errands";
 import { stubCanvas, stubGeometry } from "../../puzzles/test-utils";
 import { Controller } from "./Controller";
 import { StandInPort, STANDIN_CODES } from "./standin-port";
@@ -289,5 +290,205 @@ describe("a Lock in front of the seat", () => {
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Tilt" })); await Promise.resolve(); }); // on in the Lock ...
     expect(saved()?.tilt).toBe(true);
     await waitFor(() => expect(sw(/Tilt/).getAttribute("aria-checked")).toBe("true"), { timeout: 3000 }); // ... and on in the menu
+  });
+});
+
+describe("World Clues UI and shared look (Group 5)", () => {
+  it("shows Master-only Clue place setting in MenuSheet", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    const cluePlace = screen.getByRole("radiogroup", { name: "Clue place" });
+    expect(within(cluePlace).getByRole("radio", { name: "Phone" }).getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(within(cluePlace).getByRole("radio", { name: "World" }));
+    expect(port.calls).toContain("setCluePlace world");
+    expect(within(screen.getByRole("radiogroup", { name: "Clue place" })).getByRole("radio", { name: "World" }).getAttribute("aria-checked")).toBe("true");
+    cleanup();
+
+    const guest = new StandInPort({ master: false });
+    render(<Controller port={guest} />);
+    await seat(guest);
+    openMenu();
+    expect(screen.queryByRole("radiogroup", { name: "Clue place" })).toBeNull();
+  });
+
+  it("shows World Clue Sign chip and prompt with no answer, and gates See the clue again on Assist + canSeeAgain", async () => {
+    stubCanvas();
+    stubGeometry();
+    const port = new StandInPort();
+    localStorage.setItem(DEVICE_SETTINGS_KEY, JSON.stringify({ assist: true }));
+    render(<Controller port={port} />);
+    await seat(port);
+    // Lock whose clue was NOT seen on the player's own turn (canSeeAgain: false)
+    act(() => port.offerLock("clock", "easy", 1, false, { sign: "moon", canSeeAgain: false }));
+    const note = screen.getByRole("note", { name: "World clue mark" });
+    expect(note.querySelector(".ui-chip")?.textContent).toContain("Moon");
+    expect(note.querySelector(".ui-prompt")?.textContent).toContain("moon");
+    expect(note.querySelector(".ui-hint")?.textContent).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "See the clue again" })).toBeNull();
+
+    // Lock whose clue WAS seen on own turn (canSeeAgain: true) offers See the clue again when Assist is on
+    act(() => port.offerLock("clock", "easy", 2, false, { sign: "star", canSeeAgain: true }));
+    expect(screen.getByRole("note", { name: "World clue mark" }).querySelector(".ui-chip")?.textContent).toContain("Star");
+    expect(screen.getByRole("button", { name: "See the clue again" })).toBeTruthy();
+  });
+
+  it("lists own-turn World Clues in Assist's ui-panel / ui-log notebook and leaves the empty slot when Assist is off", async () => {
+    stubCanvas();
+    stubGeometry();
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    act(() => port.setWorldClues([{ zone: "Hall", sign: "bell", sight: { kind: "clock", h: 3, m: 15 } }]));
+    // Assist off: empty notebook slot remains
+    const nbOff = document.querySelector('[data-slot="notebook"]') as HTMLElement;
+    expect(nbOff.querySelector(".ui-log")).toBeNull();
+
+    // Turn Assist on in Menu: notebook renders ui-panel with ui-log / ui-log-row and clue picture
+    openMenu();
+    fireEvent.click(sw(/Assist/));
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    const nbOn = document.querySelector('[data-slot="notebook"]') as HTMLElement;
+    expect(nbOn.className).toContain("ui-panel");
+    expect(nbOn.querySelector(".ui-log .ui-log-row")).not.toBeNull();
+    expect(within(nbOn).getByText("Bell")).toBeTruthy();
+    expect(within(nbOn).getByText("Hall")).toBeTruthy();
+    expect(within(nbOn).getByText("3:15")).toBeTruthy();
+  });
+});
+
+describe("Errands Controller UI and Shared look (errands Groups 3 & 4)", () => {
+  it("gives Master an Errands switch in MenuSheet (off by default) and any Player an opt-out checkbox", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    const errSwitch = sw(/^Errands/);
+    expect(errSwitch.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(errSwitch);
+    expect(port.calls).toContain("setErrands true");
+    expect(sw(/^Errands/).getAttribute("aria-checked")).toBe("true");
+
+    const optOut = screen.getByRole("checkbox", { name: "Do not pick me for errands" });
+    expect(optOut.className).toContain("ui-check");
+    fireEvent.click(optOut);
+    expect(port.calls).toContain("errandOptOut true");
+    cleanup();
+
+    const guest = new StandInPort({ master: false });
+    render(<Controller port={guest} />);
+    await seat(guest);
+    openMenu();
+    expect(screen.queryByRole("switch", { name: /^Errands/ })).toBeNull();
+    expect(screen.getByRole("checkbox", { name: "Do not pick me for errands" })).toBeTruthy();
+  });
+
+  it("shows Poltergeist's ui-card Errand card with Done button and safety line in ui-hint", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    act(() => port.setErrandsView({
+      on: true,
+      optOut: false,
+      poltergeist: true,
+      errand: { id: "1:0", from: 1, target: 2, object: "mug", givenRound: 1, doneTriedRound: null, status: "open" },
+      doneTriedThisRound: false,
+      ask: null,
+      poltergeists: [{ seat: 1, nickname: "Ann" }],
+      caughtUsed: false,
+      seatName: (s) => (s === 2 ? "Bob" : `P${s}`),
+    }));
+    const card = screen.getByRole("region", { name: "Errand" });
+    expect(card.className).toContain("ui-card");
+    expect(card.querySelector(".ui-hint")?.textContent).toBe(ERRAND_RULE_LINE);
+    expect(within(card).getByText(/Bob/)).toBeTruthy();
+    expect(within(card).getByText(/mug/)).toBeTruthy();
+    const doneBtn = within(card).getByRole("button", { name: "Done" });
+    expect(doneBtn.className).toContain("ui-button");
+    fireEvent.click(doneBtn);
+    expect(port.calls).toContain("errandDone");
+    expect(doneBtn.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("shows Detective's Caught picker with two ui-selects and one ui-button--primary, and Target Yes/No prompt", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    act(() => port.setErrandsView({
+      on: true,
+      optOut: false,
+      poltergeist: false,
+      errand: null,
+      doneTriedThisRound: false,
+      ask: null,
+      poltergeists: [{ seat: 2, nickname: "Bob" }],
+      caughtUsed: false,
+      seatName: (s) => `P${s}`,
+    }));
+    const caught = screen.getByRole("region", { name: "Call caught" });
+    const poltSel = within(caught).getByLabelText("Poltergeist") as HTMLSelectElement;
+    const objSel = within(caught).getByLabelText("Object") as HTMLSelectElement;
+    expect(poltSel.className).toContain("ui-select");
+    expect(objSel.className).toContain("ui-select");
+    expect(document.querySelectorAll(".ui-button--primary").length).toBe(1);
+
+    fireEvent.change(objSel, { target: { value: "spoon" } });
+    fireEvent.click(within(caught).getByRole("button", { name: "Caught" }));
+    expect(port.calls).toContain("errandCaught 2 spoon");
+
+    // Target Yes/No prompt keeps at most one primary button on screen
+    act(() => port.setErrandsView({
+      on: true,
+      optOut: false,
+      poltergeist: false,
+      errand: null,
+      doneTriedThisRound: false,
+      ask: { errandId: "2:0", object: "spoon", deadlineMs: 25_000 },
+      poltergeists: [{ seat: 2, nickname: "Bob" }],
+      caughtUsed: false,
+      seatName: (s) => `P${s}`,
+    }));
+    const ask = screen.getByRole("region", { name: "Errand check" });
+    expect(ask.textContent).toContain("Are you holding a spoon right now?");
+    expect(document.querySelectorAll(".ui-button--primary").length).toBeLessThanOrEqual(1);
+    fireEvent.click(within(ask).getByRole("button", { name: "Yes" }));
+    expect(port.calls).toContain("errandAnswer true");
+  });
+});
+
+describe("Doors Controller UI (knock-door 1.4, 3.3, 4.2, 11.1)", () => {
+  it("shows Heavy door 'n of need' in a live region with Push together, Knock touch taps with Faded clue, and Master door problems", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+
+    act(() => port.setDoorsView({
+      doors: [
+        { id: "iron-door", at: { x: 1, z: 1 }, width: 1.4, a: "z0", b: "z1", lock: "heavy", open: false, need: 2, have: 1 },
+      ],
+      doorProblems: ["0:width"],
+      doorLock: {
+        doorId: "cellar-door",
+        triesLeft: 3,
+        faded: { kind: "knock", payload: { kind: "knock", groups: [2, 1], long: null }, showMs: 8000 },
+      },
+    }));
+
+    expect(screen.getByRole("region", { name: "Door notice" }).textContent).toContain("Door 1 width must be between");
+    const heavy = screen.getByRole("region", { name: "Heavy door iron-door" });
+    expect(within(heavy).getByRole("status").textContent).toContain("1 of 2");
+    fireEvent.click(within(heavy).getByRole("button", { name: "Push together" }));
+    expect(port.calls).toContain("doorAct iron-door");
+    // Live announcement after iron-door opens
+    expect(screen.getByText("The door iron-door opens.")).toBeTruthy();
+
+    const knock = screen.getByRole("region", { name: "Knock door cellar-door" });
+    expect(knock.querySelector(".ui-hint")?.textContent).toContain("2, 1 knocks");
+    const tap = within(knock).getByRole("button", { name: /^Tap/ });
+    fireEvent.click(tap);
+    fireEvent.click(tap);
+    fireEvent.click(within(knock).getByRole("button", { name: "Send knock" }));
+    expect(port.calls).toContain("doorKnock cellar-door 2");
   });
 });

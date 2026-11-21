@@ -1,7 +1,8 @@
+import type { AnchorId } from "@hauntology/shared/app/events";
 import type { PlaySession } from "@hauntology/shared/ghost/session";
 import type { VoiceLine } from "@hauntology/shared/voice/line";
 import { PlayCore } from "./core";
-import type { Peek, PlayRefusal, PlaySessions, Settled, TurnDone } from "./ports";
+import type { LockAttemptDone, LockOpenDone, LockRefusal, LockSkipDone, Peek, PlayRefusal, PlaySessions, Settled, TurnDone } from "./ports";
 import type { Settle, WorldFacts } from "@hauntology/shared/ghost/play";
 
 /** The games in one process, for tests and the test-only dev Worker: one `PlayCore` over a variable for each game, the same rules as the Durable Object. */
@@ -32,6 +33,15 @@ export class MemoryPlaySessions implements PlaySessions {
   }
   turn(id: string, ownerSid: string, turn: { input: unknown; pose: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<TurnDone | PlayRefusal> {
     return this.slotFor(id).core.turn(ownerSid, turn);
+  }
+  lockOpen(id: string, ownerSid: string, anchorId: AnchorId): Promise<LockOpenDone | LockRefusal> {
+    return this.slotFor(id).core.lockOpen(ownerSid, anchorId);
+  }
+  lockAttempt(id: string, ownerSid: string, args: { transcript: unknown; world: Pick<WorldFacts, "bounds" | "brief"> }): Promise<LockAttemptDone | LockRefusal> {
+    return this.slotFor(id).core.lockAttempt(ownerSid, args);
+  }
+  lockSkip(id: string, ownerSid: string, world: Pick<WorldFacts, "bounds" | "brief">): Promise<LockSkipDone | LockRefusal> {
+    return this.slotFor(id).core.lockSkip(ownerSid, world);
   }
   settle(id: string, ownerSid: string, settle: Settle): Promise<Settled | PlayRefusal> {
     return this.slotFor(id).core.settle(ownerSid, settle);

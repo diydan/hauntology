@@ -1,7 +1,10 @@
 import { singleFlight } from "@hauntology/shared/voice/flight";
 import { retentionFromEnv } from "@hauntology/shared/world/retention";
+import { WorldManifestSchema } from "@hauntology/shared/world/manifest";
 import { createApp } from "./app";
-import { conditionsFromEnv } from "./conditions/snapshot-store";
+import { createCreator } from "./creator/service";
+import { R2CreatorStore } from "./creator/store";
+import { conditionsFromEnv, geocoderFromEnv } from "./conditions/snapshot-store";
 import { PartyDirectory } from "./do/party-directory";
 import { PartyRoom } from "./do/party-room";
 import { PlayIndex } from "./do/play-index";
@@ -12,6 +15,7 @@ import type { AiBinding } from "./guarded/workersai/call";
 import { WorkersAiClient } from "./guarded/workersai/client";
 import type { ImagesBinding } from "./guarded/workersai/cutout";
 import { WorkersAiSpeaker, voiceModelsFromEnv } from "./guarded/workersai/speak";
+import { sttModelFromEnv, WorkersAiTranscriber } from "./guarded/workersai/transcribe";
 import { worldLabsFromEnv, type WorldLabsEnv } from "./guarded/worldlabs-live";
 import type { AssetsPort } from "./http/assets";
 import type { Bindings } from "./http/env";
@@ -21,7 +25,7 @@ import { CloudflarePlaySessions } from "./play/cloudflare";
 import { SpendGuardClient } from "./spend/client";
 import { R2SpeechCache } from "./voice/cache";
 import { R2SpeechLibrary } from "./voice/library";
-import { PlayVoiceLines } from "./voice/lines";
+import { CloudflareRoomVoiceLines, PlayVoiceLines } from "./voice/lines";
 import { SpendGuardVoiceWindow, windowedSpend } from "./voice/window";
 import { cleanupExpired } from "./worlds/cleanup";
 import { CloudflareCandidateStore } from "./worlds/cloudflare-candidates";
@@ -69,10 +73,16 @@ export default {
       // a line of the window first, and the speech route, the replies and the Home flag all say "off" while it is closed (`voice/window.ts`).
       const plays = playsFor(env);
       const voiceModels = voiceModelsFromEnv(env);
+      const sttModel = sttModelFromEnv(env.VOICE_STT_MODEL_ID);
       const voiceWindow = new SpendGuardVoiceWindow(env.SPEND_GUARD);
       const voice =
         plays !== null && env.AI !== undefined && voiceModels !== null
-          ? { speak: { lines: new PlayVoiceLines(plays), cache: new R2SpeechCache(env.BUCKET), library: new R2SpeechLibrary(env.BUCKET), maker: new WorkersAiSpeaker(env.AI, voiceModels), spend: windowedSpend(guard, voiceWindow), flights: singleFlight(), log: logger }, window: voiceWindow }
+          ? {
+              speak: { lines: new PlayVoiceLines(plays), cache: new R2SpeechCache(env.BUCKET), library: new R2SpeechLibrary(env.BUCKET), maker: new WorkersAiSpeaker(env.AI, voiceModels), spend: windowedSpend(guard, voiceWindow), flights: singleFlight(), log: logger },
+              roomLines: new CloudflareRoomVoiceLines(env.PARTY_ROOM),
+              ...(sttModel !== null ? { listen: { transcriber: new WorkersAiTranscriber(env.AI, { model: sttModel }), spend: guard, log: logger } } : {}),
+              window: voiceWindow,
+            }
           : null;
       app = createApp({
         log: logger,
@@ -85,9 +95,32 @@ export default {
         // Uploads are taken only where a world can be made from them: with no key there is nothing to keep a picture for.
         ...(live ? { uploads: { store: new CloudflareUploadStore(env.BUCKET) } } : {}),
         spend: () => guard.status(),
+        // The Ghost Creator (ghost-creator task 3): paid steps only through the guarded doors, each adapter
+        // null without its binding, so without the AI binding the routes answer creator_unavailable and Presets stand in.
+        creator: createCreator({
+          guard,
+          ...(ai.portraitist !== null ? { portraitist: ai.portraitist } : {}),
+          ...(ai.guard !== null ? { moderator: ai.guard } : {}),
+          ...(ai.cutter !== null ? { cutter: ai.cutter } : {}),
+          store: new R2CreatorStore(env.BUCKET),
+          briefFor: async (worldId) => {
+            const store = storeFor(env);
+            const record = await store.find(worldId).catch(() => null);
+            if (!record) return "";
+            const bytes = await store.read(record, "world.json").catch(() => null);
+            if (!bytes || bytes instanceof ReadableStream) return "";
+            try {
+              const parsed = WorldManifestSchema.safeParse(JSON.parse(new TextDecoder().decode(bytes)));
+              return parsed.success ? parsed.data.brief : "";
+            } catch {
+              return "";
+            }
+          },
+        }),
         ...(voice !== null ? { voice } : {}),
         // Party mode (integration 3.2): one `PartyRoom` per Room Code, one `PartyDirectory` for the caps.
         party: { rooms: env.PARTY_ROOM, directory: env.PARTY_DIRECTORY },
+        conditionsSearch: geocoderFromEnv(env),
         // The ghost's games (ghost-engine 3 and 5): one `PlaySession` for each, so a reader of a shared place can play it.
         ...(playsFor(env) !== null
           ? {

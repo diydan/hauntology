@@ -1,5 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
+import { propParams } from "../app/prop-config";
 import type { SpendTicket } from "../world/spend";
 import { withTicket, type GateMeter, type GatePorts } from "./gate";
 
@@ -94,6 +95,8 @@ describe("withTicket: settling", () => {
 });
 
 describe("withTicket: Property 7, budgets are never exceeded and no call follows a denial", () => {
+  // Feature: ghost-voice, Property 7: Budgets are never exceeded and no call follows a denial
+  // Validates: Requirements 4.1, 4.2
   it("for any run of requests: a call needs a granted Ticket, makes one call per Ticket and settles every granted Ticket exactly once", async () => {
     const step = fc.record({
       kill: fc.constantFrom(false, false, false, true, "throws" as const),
@@ -135,7 +138,7 @@ describe("withTicket: Property 7, budgets are never exceeded and no call follows
         expect(commits + releases).toBe(granted);                // never both, never neither
         expect(granted).toBeLessThanOrEqual(cap);                // the cap is never exceeded
       }),
-      { numRuns: 200 },
+      propParams(200),
     );
   });
 });
