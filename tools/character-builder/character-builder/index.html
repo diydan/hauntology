@@ -319,14 +319,15 @@ body.thumbs .hud{display:none!important}
     padding:5px 7px;gap:4px;z-index:6;flex-wrap:nowrap;
   }
   #stageUtils .seg{gap:3px;flex-wrap:nowrap}
-  #stageUtils button{padding:5px 6px;font-size:10px;min-height:28px}
+  .seg button,.btn{min-height:44px} /* touch targets: 44 px tall on a phone (the swatch dots and sliders are not buttons of this kind and keep their own size) */
+  #stageUtils button{padding:5px 6px;font-size:10px;min-height:44px}
   #look.closed{
-    top:auto;bottom:calc(124px + env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);
+    top:auto;bottom:calc(178px + env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);
     width:auto;max-width:calc(100% - 24px);max-height:none;border-radius:999px;outline-offset:-3px;
     box-shadow:0 10px 26px rgba(0,0,0,.78);z-index:5;
   }
   #look.closed #lookTop{padding:7px 14px;background:rgba(15,11,8,.72)}
-  #look.closed #lookToggle{gap:10px;font-size:10px;letter-spacing:.12em}
+  #look.closed #lookToggle{gap:10px;font-size:10px;letter-spacing:.12em;min-height:44px}
   #look.closed #lookToggle i{transform:rotate(-135deg);margin:3px 0 0}
   #look:not(.closed){
     top:auto;bottom:0;left:0;right:0;width:100%;max-width:none;
@@ -334,16 +335,17 @@ body.thumbs .hud{display:none!important}
     border-radius:14px 14px 0 0;border-left:0;border-right:0;border-bottom:0;outline-offset:-4px;
     padding-bottom:env(safe-area-inset-bottom);z-index:5;
   }
-  #look:not(.closed) #lookTop{padding:9px 14px 8px}
+  #look:not(.closed) #lookTop{padding:0 14px}
+  #look:not(.closed) #lookToggle{min-height:44px}
   #look:not(.closed) #lookToggle i{transform:rotate(45deg);margin:-3px 2px 0 0}
   #look:not(.closed)~#bar{display:none}
   #lookTabs{padding:6px 8px;gap:4px}
-  #lookTabs button{min-height:34px;font-size:10px;letter-spacing:.04em;padding:5px 2px}
+  #lookTabs button{min-height:44px;font-size:10px;letter-spacing:.04em;padding:5px 2px}
   .lbody{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:9px 12px calc(14px + env(safe-area-inset-bottom))}
   .cast-scroll{max-height:192px;-webkit-overflow-scrolling:touch}
   .cast-card{padding:6px 7px;min-height:44px}
   .tile{flex-basis:64px}
-  .btn.mini{min-height:30px;padding:4px 9px}
+  .btn.mini{min-height:44px;padding:4px 9px}
   .swdot{width:22px;height:22px}
   .swatches.pal-wide{gap:6px}
   .rng input{height:24px}
@@ -359,10 +361,10 @@ body.thumbs .hud{display:none!important}
     scrollbar-width:none;justify-content:flex-start;padding:1px 0;
   }
   #bar #clipSeg::-webkit-scrollbar,#bar #propSeg::-webkit-scrollbar{display:none}
-  #bar #clipSeg button,#bar #propSeg button{flex:0 0 auto;white-space:nowrap;padding:5px 8px;font-size:10px;min-height:28px}
+  #bar #clipSeg button,#bar #propSeg button{flex:0 0 auto;white-space:nowrap;padding:5px 8px;font-size:10px;min-height:44px}
   #bar .grp:last-child>span{display:none}
   #bar .grp:last-child .seg{width:100%;justify-content:space-between}
-  #bar .grp:last-child .seg button{flex:1 1 0;text-align:center;padding:6px 4px;font-size:10px;min-height:30px}
+  #bar .grp:last-child .seg button{flex:1 1 0;text-align:center;padding:6px 4px;font-size:10px;min-height:44px}
 }
 @media (max-width:420px){
   #title{max-width:calc(100% - 210px);padding:6px 8px}
@@ -423,7 +425,7 @@ function resize() {
   const isClosed = $('look').classList.contains('closed');
   const isMobile = w <= 760;
   const shiftX = (!isMobile && w > 980 && !isClosed) ? -Math.round(Math.min(182, w * 0.125)) : 0;
-  const shiftY = isMobile ? Math.round(h * (isClosed ? 0.07 : 0.12)) : Math.round(h * 0.05);
+  const shiftY = isMobile ? Math.round(h * (isClosed ? 0.11 : 0.12)) : Math.round(h * 0.05);
   camera.setViewOffset(w, h, shiftX, shiftY, w, h);
   camera.updateProjectionMatrix();
 }
