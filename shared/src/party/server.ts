@@ -511,6 +511,20 @@ export class RoomCore {
     if (s !== null) await this.end(s);
   }
 
+  /**
+   * Ends the Room for its Master (the controller in the Master's seat) or its host token, and nobody else (party-mode 7,
+   * `DELETE /api/party/:code`). A display token, another Player or a wrong token is refused and the Room stays.
+   */
+  async endAs(token: string): Promise<"ended" | "forbidden" | "room_unknown"> {
+    const s = await this.loaded();
+    if (s === null) return "room_unknown";
+    const who = token === "" ? null : whoIs(s.room, token);
+    const allowed = who !== null && (who.role === "host" || (who.role === "controller" && who.seat === s.room.masterSeat));
+    if (!allowed) return "forbidden";
+    await this.end(s);
+    return "ended";
+  }
+
   /** End the Room: tell every socket, close them, and delete everything at once (party-mode 1.5). */
   private async end(s: ServerState): Promise<void> {
     for (const sid of Object.keys(s.sockets)) { this.ports.send(sid, { t: "ended" }); this.ports.close(sid, 4000, "room_ended"); }

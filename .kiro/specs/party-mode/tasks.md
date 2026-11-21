@@ -430,6 +430,7 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
 - [ ] 7. Routes
   - `POST /api/party/rooms` (no body, no world), `POST /api/party/:code/join`, `GET /api/party/:code/ws`, contribution routes, `DELETE /api/party/:code` (Master or host token); origin and cookie checks for host routes; reason codes; counters only in logs. The `cue`, `nudge`, `frame` and `sound` socket messages are validated like every other message.
   - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.7, 10.5, 10.6, 10.7_
+  - Progress (2026-11-21): built and tested: `POST /api/party` (create, with `replace`), `POST /:code/join`, `GET /:code/ws` (`api/src/routes/party.ts`), and `DELETE /:code {token}` (`endAs` in `shared/src/party/server.ts`, `/end-as` in `api/src/do/party-room.ts`; 204 for the Master or host token, 403 `forbidden` otherwise, the directory place freed; `api/src/routes/party.test.ts`, 8 pass). Still open, so the task stays unticked: the contribution routes (task 5), and the check that the `cue`, `nudge`, `frame` and `sound` socket messages are validated like the rest (not audited yet).
 
 - [ ] 8. Web: Host (`web/src/party/host/`), display-only
   - [ ] 8.1 Party page: create a Room, show the Room Code and QR until the game starts, request a screen wake lock, show a reconnect state when the socket drops
