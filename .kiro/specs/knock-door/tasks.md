@@ -85,6 +85,7 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
     - _Requirements: 6.1_
   - [ ] 6.2 Skip always shown at the door: it opens at once, and says so in words
     - _Requirements: 6.2_
+  - Progress (2026-11-21): the pure rules are in `shared/src/puzzles/wander-door.ts` with 12 tests in `wander-door.test.ts`: at most one door per walk (on memory `hash % 3`), a knock or a heavy door that asks for 1, Skip with no clock and no count, the words. One mutation of the Skip rule was caught by the tests and reverted. NOT done: the walk does not use it yet. `shared/src/ghost/play.ts` and the Play screen still use the Wander Lock (`wander.ts`), whose Skip waits 20 s or two wrong tries; wiring the door in replaces that gate for a door memory, which needs a decision (below).
 
 - [ ] 7. Spike: the collider box
   - [ ] 7.1 In a real Gallery world, put a box across a doorway and record in `docs/spikes/` whether the walker stops cleanly, slides, snags or steps through at speed
