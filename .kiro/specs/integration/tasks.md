@@ -54,7 +54,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 1.1_
   - [ ] 5.2 Host page for party mode (party-mode 8); the Display stays optional
     - _Requirements: 1.1_
-  - [ ] 5.3 Inspect opens a Lock on the phone through `PuzzleHost` at the Puzzle setting's level; a solved Lock gives the plain Inspect result; Bots get a plain Inspect; the solo case opens the Lock on the shared screen by touch or mouse; the level follows the Haunt (puzzles 3, 1.4)
+  - [ ] 5.3 (solo case built: `room-client.ts` takes `lock`, `lockResult` and `sight` and sends `attempt`, `giveUp` and `sightAck`; `SoloLockLayer.tsx` plays the Lock and Sights on the shared screen by touch or mouse, with settings kept for the visit only; `startSolo` no longer forces puzzles off, so the preset decides (Classic medium, Relaxed easy, Quick none); tests in `room-client.test.ts` and `host-locks.test.tsx`, mutation-checked; Engine side (Bots plain, level follows the Haunt) was already built; still to do: the phone, which waits for the Controller's real socket port, since `LockArea` is built and tested against a stand-in port) Inspect opens a Lock on the phone through `PuzzleHost` at the Puzzle setting's level; a solved Lock gives the plain Inspect result; Bots get a plain Inspect; the solo case opens the Lock on the shared screen by touch or mouse; the level follows the Haunt (puzzles 3, 1.4)
     - _Requirements: 5.1, 5.2_
   - [ ] 5.4 `PlatformKit.puzzleFeel` from the Controller's device settings; touch-only always works
     - _Requirements: 5.3_

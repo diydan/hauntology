@@ -10,6 +10,7 @@ import type { HostHandle, HostSetup } from "./types";
 import type { ViewerHandle } from "../viewer/types";
 import { eventLine, namesOf, notebook, secondsLeft } from "./words";
 import { Ending } from "./Ending";
+import { SoloLockLayer } from "./SoloLockLayer";
 
 /**
  * The real Host for "Play a case" (integration 4.1, 4.2; party-mode 8.15): a real Room on the server, the visitor in
@@ -216,6 +217,9 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
   const mine = view.active !== null && view.active === snap.seat;
   const left = secondsLeft(view, now);
   const lines = view.events.map((e) => eventLine(e, n)).filter((x): x is string => x !== null).slice(-8);
+
+  // A Lock or a Sight from the Room comes first: the puzzle fills the shared screen, played by touch or mouse (integration 5.3).
+  if (view.phase === "playing" && (snap.lock !== null || snap.sight !== null)) return <SoloLockLayer client={client} lock={snap.lock} sight={snap.sight} />;
 
   if (view.phase === "ended" && view.ending) {
     const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;

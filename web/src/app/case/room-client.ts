@@ -4,6 +4,9 @@ import { walkRadiusOf } from "@hauntology/shared/ghost/anchors";
 import type { Bounds } from "@hauntology/shared/ghost/types";
 import { soloSetup } from "@hauntology/shared/party/solo";
 import type { SongsSetting } from "@hauntology/shared/songs/lyrics";
+import type { Sign } from "@hauntology/shared/puzzles/world-clues";
+import type { Kind, LockView, Sight, Transcript } from "@hauntology/shared/puzzles/types";
+import type { AttemptReply } from "../../puzzles/PuzzleHost";
 import type { ActiveRoomSong } from "../songs/room-songs";
 import type { HostVoiceCue } from "./host-voice";
 
@@ -12,6 +15,21 @@ import type { HostVoiceCue } from "./host-voice";
  * Master, opens the socket and keeps the latest views. The screen reads `getSnapshot()` and sends with `send()`.
  * It holds no game rule: the Room refuses what is not allowed, and the refusal is shown.
  */
+/** A Lock the Room gave the visitor on the shared screen (integration 5.3). The Room made it and checks every Attempt. */
+export type SoloLock = Readonly<{
+  id: string;
+  kind: Kind;
+  view: LockView;
+  faded: Sight | null;
+  attempts: number;
+  /** The most Turn time this Lock may use, counted from when it arrived; null for none. */
+  capMs: number | null;
+  sign?: Sign;
+  prompt?: string;
+  canSeeAgain?: boolean;
+  assistText?: string;
+}>;
+
 export type RoomSnapshot = Readonly<{
   status: "connecting" | "lobby" | "playing" | "ended" | "closed";
   code: string | null;
@@ -20,6 +38,10 @@ export type RoomSnapshot = Readonly<{
   private: PrivateSnapshot | null;
   /** The last thing the Room refused, for one line on screen. */
   refused: string | null;
+  /** The Lock open in front of the visitor, or null. */
+  lock: SoloLock | null;
+  /** The Sight (a clue shown once) waiting to be shown, or null. Later ones wait behind it. */
+  sight: Readonly<{ id: string; sight: Sight }> | null;
   /** Host token captured on Room creation (`POST /api/party`), used for `/api/voice/speak`. */
   hostToken?: string | null;
   /** Whether Room speech is currently switched on by the Master. */
@@ -51,12 +73,20 @@ export type RoomDeps = {
   openSocket: (url: string) => SocketLike;
   /** `ws://host` or `wss://host`, the start of the socket address. */
   socketOrigin: string;
+  /** The clock a Lock's Cap is counted on (the Room's deadline is in the same wall-clock time); `Date.now` when left out. */
+  now?: () => number;
 };
 
 export type RoomClient = {
   getSnapshot(): RoomSnapshot;
   subscribe(listener: () => void): () => void;
   send(msg: Readonly<{ t: string }> & Record<string, unknown>): void;
+  /** Sends an Attempt on the open Lock and answers with the Room's next word on it. */
+  attempt(lockId: string, transcript: Transcript): Promise<AttemptReply>;
+  /** The Player is done with the Lock: Done (nothing to tell the Room), or they gave up or the time ran out (giveUp). The Lock goes either way. */
+  closeLock(lockId: string, why: "finished" | "gave_up" | "time_up"): void;
+  /** The Sight on screen has been seen (or timed out). */
+  ackSight(sightId: string): void;
   /** Ends the Room (the Master's End) and closes the socket. Safe to call twice. */
   close(): void;
 };
@@ -85,7 +115,7 @@ export async function checkWorld(deps: RoomDeps, worldId: string, setup: CaseSet
 
 /**
  * The solo case (party-mode 8.15): make a Room, sit as the Master, set the preset, add the Bots and start.
- * Puzzles stay off here until Locks open on the shared screen (integration 5.3): every Inspect is the plain one.
+ * Puzzles follow the preset (Quick has none): an Inspect in a Zone with a Lock opens it on this screen (integration 5.3).
  */
 export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "You", doors?: unknown): Promise<RoomClient> {
   const post = (path: string, body?: unknown) => deps.fetch(`/api/party${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
@@ -96,8 +126,7 @@ export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "Yo
   const joined = await json(await post(`/${room.code}/join`, { nickname }));
   if (joined.ok !== true || typeof joined.token !== "string") throw new RoomError(typeof joined.code === "string" ? joined.code : "case_failed");
   const client = openRoom(deps, room.code, joined.token, { ...(typeof room.hostToken === "string" ? { hostToken: room.hostToken } : {}) });
-  client.send({ t: "settings", preset: setup.preset });
-  client.send({ t: "settings", puzzles: "off" });
+  client.send({ t: "settings", preset: setup.preset }); // the preset carries the puzzle level: Classic medium, Relaxed easy, Quick off
   for (let i = 0; i < setup.bots; i++) client.send({ t: "addBot" });
   client.send({ t: "start" });
   return client;
@@ -105,7 +134,10 @@ export async function startSolo(deps: RoomDeps, setup: CaseSetup, nickname = "Yo
 
 /** Opens the socket for `code` with `token`. Messages sent before it opens wait, in order. */
 export function openRoom(deps: RoomDeps, code: string, token: string, opts: { hostToken?: string } = {}): RoomClient {
-  let snap: RoomSnapshot = { status: "connecting", code, seat: null, public: null, private: null, refused: null, hostToken: opts.hostToken ?? null, speechOn: false, voice: null, prefetch: [], songsSetting: "off", songMuted: false, activeSong: null, songHints: [] };
+  let snap: RoomSnapshot = { status: "connecting", code, seat: null, public: null, private: null, refused: null, lock: null, sight: null, hostToken: opts.hostToken ?? null, speechOn: false, voice: null, prefetch: [], songsSetting: "off", songMuted: false, activeSong: null, songHints: [] };
+  const now = deps.now ?? Date.now;
+  const sights: { id: string; sight: Sight }[] = [];
+  const attempts: ((r: AttemptReply) => void)[] = [];
   let voiceSeq = 0;
   let songSeq = 0;
   const listeners = new Set<() => void>();
@@ -169,6 +201,40 @@ export function openRoom(deps: RoomDeps, code: string, token: string, opts: { ho
       case "songHint":
         if (typeof m.line === "string") set({ songHints: [...(snap.songHints ?? []), m.line] });
         return;
+      case "lock":
+        if (typeof m.lockId === "string" && typeof m.view === "object" && m.view !== null && typeof m.attempts === "number") {
+          const view = m.view as LockView;
+          const deadline = typeof m.deadlineAt === "number" ? m.deadlineAt : null;
+          set({
+            lock: {
+              id: m.lockId, kind: view.kind, view, faded: (m.faded as Sight | null | undefined) ?? null, attempts: m.attempts,
+              capMs: deadline === null ? null : Math.max(0, deadline - now()),
+              ...(m.sign !== undefined ? { sign: m.sign as Sign } : {}),
+              ...(typeof m.prompt === "string" ? { prompt: m.prompt } : {}),
+              ...(typeof m.canSeeAgain === "boolean" ? { canSeeAgain: m.canSeeAgain } : {}),
+              ...(typeof m.assistText === "string" ? { assistText: m.assistText } : {}),
+            },
+          });
+        }
+        return;
+      case "lockResult": {
+        if (typeof m.lockId !== "string" || snap.lock?.id !== m.lockId) return;
+        const reply: AttemptReply = m.outcome === "solved" ? { outcome: "solved" }
+          : m.outcome === "wrong" ? { outcome: "wrong", attemptsLeft: typeof m.attemptsLeft === "number" ? m.attemptsLeft : 0 }
+          : { outcome: "failed", reason: "closed" };
+        const waiting = attempts.shift();
+        if (waiting !== undefined) {
+          waiting(reply);
+          if (reply.outcome === "wrong") set({ lock: { ...snap.lock, attempts: reply.attemptsLeft } });
+        } else set({ lock: null }); // nobody asked: the Room closed it (the Turn ended)
+        return;
+      }
+      case "sight":
+        if (typeof m.sightId === "string" && typeof m.sight === "object" && m.sight !== null) {
+          const next = { id: m.sightId, sight: m.sight as Sight };
+          if (snap.sight === null) set({ sight: next }); else sights.push(next);
+        }
+        return;
       case "refused": set({ refused: typeof m.code === "string" ? m.code : "refused" }); return;
       case "ended": set({ status: "closed" }); return;
     }
@@ -185,6 +251,22 @@ export function openRoom(deps: RoomDeps, code: string, token: string, opts: { ho
     getSnapshot: () => snap,
     subscribe(l) { listeners.add(l); return () => void listeners.delete(l); },
     send,
+    attempt(lockId, transcript) {
+      return new Promise<AttemptReply>((resolve) => {
+        attempts.push(resolve);
+        send({ t: "attempt", lockId, transcript });
+      });
+    },
+    closeLock(lockId, why) {
+      if (why !== "finished") send({ t: "giveUp", lockId });
+      for (const w of attempts.splice(0)) w({ outcome: "failed", reason: "closed" });
+      if (snap.lock?.id === lockId) set({ lock: null });
+    },
+    ackSight(sightId) {
+      if (snap.sight?.id !== sightId) return;
+      send({ t: "sightAck", sightId });
+      set({ sight: sights.shift() ?? null });
+    },
     close() {
       if (closed) return;
       closed = true;
