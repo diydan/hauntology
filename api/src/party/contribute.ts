@@ -1,12 +1,10 @@
 import { buildPersona } from "@hauntology/shared/creator/persona";
 import { PRESET_PROFILES } from "@hauntology/shared/creator/presets";
 import { buildProfile, type GhostProfile } from "@hauntology/shared/creator/profile";
-import { sanitizeDetail } from "@hauntology/shared/creator/sanitize";
 import { validateSprite } from "@hauntology/shared/creator/sprite";
 import { validateTraits, type Traits } from "@hauntology/shared/creator/traits";
 import type { ErrorCode } from "@hauntology/shared/errors";
 import { cleanZoneName } from "@hauntology/shared/party/pool";
-import { offerPrompts, skipOffer, PHOTO_PROMPTS } from "@hauntology/shared/party/photoPrompts";
 import { SELFIE_EDIT_OPTIONS } from "@hauntology/shared/party/photo-verdict";
 import { selfieAllowed, selfieQuality, withTransientSelfie, type SelfieReport } from "@hauntology/shared/party/selfie";
 import { toBase64Url } from "@hauntology/shared/session-cookie";
@@ -89,20 +87,6 @@ export async function intakePhoto(d: PhotoDeps, input: Readonly<{ seat: number; 
   return { ok: true, photoId, status: "accepted" };
 }
 
-export type PromptOffer = Readonly<{ round: number; prompts: readonly { id: string; text: string; tip: string; source: string }[] }>;
-/** The prompts a seat is offered at its current round (0 to 3). `null` past the last. */
-export function promptsFor(seed: number, seat: number, round: number): PromptOffer | null {
-  const ids = offerPrompts(seed, seat, round);
-  if (ids === null) return null;
-  return { round, prompts: ids.map((id) => PHOTO_PROMPTS.find((p) => p.id === id) as (typeof PHOTO_PROMPTS)[number]) };
-}
-/** One skip: the next three prompts, or `prompt_skips_used` after the third. The Room stores only the seat's round. */
-export function skipPrompt(seed: number, seat: number, round: number): PromptOffer | Fail {
-  const next = skipOffer(round);
-  const offer = next === null ? null : promptsFor(seed, seat, next);
-  return offer ?? fail("prompt_skips_used");
-}
-
 // ---------------------------------------------------------------- 5.3 names and details
 export type NameDeps = ContributeDeps & Readonly<{ guard: TextGuard | null }>;
 
@@ -124,15 +108,6 @@ export async function contributeZoneName(d: NameDeps, raw: unknown): Promise<Rea
   if (name === null) return fail("name_invalid");
   const verdict = await checked(d, name);
   if (verdict === "safe") return { ok: true, name };
-  return verdict === "unsafe" ? fail("name_unsafe") : verdict;
-}
-
-/** A Suspect detail: the Ghost Creator's own clean-up (140 characters, no markup or URLs), then checked. An empty detail needs no call. */
-export async function contributeDetail(d: NameDeps, raw: unknown): Promise<Readonly<{ ok: true; detail: string }> | Fail> {
-  const detail = typeof raw === "string" ? sanitizeDetail(raw) : "";
-  if (detail === "") return { ok: true, detail: "" };
-  const verdict = await checked(d, detail);
-  if (verdict === "safe") return { ok: true, detail };
   return verdict === "unsafe" ? fail("name_unsafe") : verdict;
 }
 

@@ -10,7 +10,7 @@ import type { EditAnswer, PortraitEditor } from "../guarded/workersai/selfie-edi
 import type { TextGuard } from "../guarded/workersai/guard";
 import { DEFAULT_CAPS, MemorySpendGuard } from "../worlds/fakes";
 import { MemoryRoomSpendStore, RoomBudget } from "./budget";
-import { contributeDetail, contributeSelfie, contributeZoneName, ghostKey, intakePhoto, presetFor, promptsFor, skipPrompt, suspectPortraits, suspectSprite, type ContributeDeps, type PhotoStore, type SelfieDeps } from "./contribute";
+import { contributeSelfie, contributeZoneName, ghostKey, intakePhoto, presetFor, suspectPortraits, suspectSprite, type ContributeDeps, type PhotoStore, type SelfieDeps } from "./contribute";
 import { pngWithSubject } from "./test-kit";
 
 const NOW = 1_800_000_000_000;
@@ -36,7 +36,7 @@ const vetter = (photo: PhotoVetAnswer | (() => PhotoVetAnswer), selfie: SelfieVe
 };
 const shrinker = { shrink: async () => ({ ok: true as const, image: new Uint8Array([7, 7]), contentType: "image/jpeg" as const }) };
 
-describe("photo intake (party-mode 5.1, 5.1a)", () => {
+describe("photo intake (party-mode 5.1)", () => {
   it("validates, shrinks, checks and stores a photo privately for the Room, charging one model unit", async () => {
     const w = world(); const photos = new MemoryPhotos(); const { v, calls } = vetter({ ok: true, verdict: { kind: "ok" } });
     const r = await intakePhoto({ ...w.base, vetter: v, shrinker, photos }, { seat: 3, bytes: jpeg(), declaredType: "image/jpeg", promptId: "mug" });
@@ -85,16 +85,6 @@ describe("photo intake (party-mode 5.1, 5.1a)", () => {
     const broken: PhotoStore = { put: async () => { throw new Error("r2 down"); }, deleteRoom: async () => undefined };
     expect(await intakePhoto({ ...w.base, vetter: v, shrinker, photos: broken }, input)).toEqual({ ok: false, code: "photo_unavailable" });
   });
-  it("offers three prompts a round and allows exactly three skips, then says prompt_skips_used", () => {
-    const first = promptsFor(42, 2, 0)!;
-    expect(first.prompts).toHaveLength(3);
-    expect(first.prompts.every((p) => p.tip.endsWith("No people or faces."))).toBe(true);
-    let round = 0; const seen = new Set(first.prompts.map((p) => p.id));
-    for (let i = 0; i < 3; i++) { const r = skipPrompt(42, 2, round); if ("ok" in r) throw new Error("skip should work"); round = r.round; for (const p of r.prompts) { expect(seen.has(p.id)).toBe(false); seen.add(p.id); } }
-    expect(round).toBe(3);
-    expect(skipPrompt(42, 2, 3)).toEqual({ ok: false, code: "prompt_skips_used" });
-    expect(seen.size).toBe(12);
-  });
 });
 
 const guardOf = (verdict: "safe" | "unsafe" | "unusable" | "throws" | "fails") => {
@@ -103,7 +93,7 @@ const guardOf = (verdict: "safe" | "unsafe" | "unusable" | "throws" | "fails") =
   return { g, calls };
 };
 
-describe("Zone names and Suspect details (party-mode 5.3, 10.3)", () => {
+describe("Zone names (party-mode 5.3, 10.3)", () => {
   it("cleans a Zone name, checks it with Llama Guard on the Room's model meter, and returns the cleaned text", async () => {
     const w = world(); const { g, calls } = guardOf("safe");
     expect(await contributeZoneName({ ...w.base, guard: g }, "  The <b>Old</b>   Mill  ")).toEqual({ ok: true, name: "The b Old /b Mill" });
@@ -122,17 +112,6 @@ describe("Zone names and Suspect details (party-mode 5.3, 10.3)", () => {
       expect(await contributeZoneName({ ...w.base, guard }, "The Mill")).toEqual({ ok: false, code: "moderation_unavailable" });
     }
     expect(await contributeZoneName({ ...world({ images: 12, models: 0 }).base, guard: guardOf("safe").g }, "The Mill")).toEqual({ ok: false, code: "quota_model" });
-  });
-  it("cleans a detail (no markup, no URLs, 140 characters), needs no call when it is empty, and refuses an unsafe one", async () => {
-    const w = world(); const { g, calls } = guardOf("safe");
-    expect(await contributeDetail({ ...w.base, guard: g }, "")).toEqual({ ok: true, detail: "" });
-    expect(await contributeDetail({ ...w.base, guard: g }, undefined)).toEqual({ ok: true, detail: "" });
-    expect(calls).toHaveLength(0);
-    const r = await contributeDetail({ ...w.base, guard: g }, `loves <i>tea</i> see http://evil.example ${"a".repeat(300)}`);
-    expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.detail).not.toMatch(/[<>]|http/); expect(r.detail.length).toBeLessThanOrEqual(140); }
-    expect(await contributeDetail({ ...world().base, guard: guardOf("unsafe").g }, "something rude")).toEqual({ ok: false, code: "name_unsafe" });
-    expect(await contributeDetail({ ...world().base, guard: null }, "something")).toEqual({ ok: false, code: "moderation_unavailable" });
   });
 });
 

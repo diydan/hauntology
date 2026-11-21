@@ -39,3 +39,16 @@ export function offerPrompts(seed: number, seat: number, round: number): [Prompt
 
 /** The next round after a skip, or `null` once all three skips are used. */
 export const skipOffer = (round: number): number | null => (Number.isInteger(round) && round >= 0 && round < PROMPT_SKIPS ? round + 1 : null);
+
+export type PromptOffer = Readonly<{ round: number; prompts: readonly PhotoPrompt[] }>;
+/** The three prompts (with their tips and sources) a seat is offered at its round, or `null` past the last. */
+export function offerFor(seed: number, seat: number, round: number): PromptOffer | null {
+  const ids = offerPrompts(seed, seat, round);
+  if (ids === null) return null;
+  return { round, prompts: ids.map((id) => PHOTO_PROMPTS.find((p) => p.id === id) as PhotoPrompt) };
+}
+/** One skip: the next offer, or `null` after the third skip. */
+export function skipFor(seed: number, seat: number, round: number): PromptOffer | null {
+  const next = skipOffer(round);
+  return next === null ? null : offerFor(seed, seat, next);
+}

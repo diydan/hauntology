@@ -61,7 +61,7 @@ export type AppOptions = SessionOptions & {
     creation?: Omit<CreationDeps, "store" | "now" | "worldGenEnabled">;
   };
   /** The party Rooms (`PartyRoom`) and their directory (`PartyDirectory`). When given, `/api/party` is served; it answers `party_disabled` when `PARTY_ENABLED` is off (the same switch as the Home flag). */
-  party?: Pick<PartyDeps, "rooms" | "directory">;
+  party?: Pick<PartyDeps, "rooms" | "directory" | "contribute">;
   /**
    * The ghost's voice (ghost-voice 3.6). When given, `POST /api/voice/speak` is served: audio for a line the visitor's own game holds, or a quiet
    * `503 voice_unavailable`. It answers that whenever `VOICE_ENABLED` is off. The Worker passes it when it has the games and the `AI` binding.

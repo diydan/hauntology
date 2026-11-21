@@ -1,7 +1,7 @@
 import * as fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { propParams } from "../app/prop-config";
-import { offerPrompts, PHOTO_PROMPTS, skipOffer } from "./photoPrompts";
+import { offerFor, offerPrompts, PHOTO_PROMPTS, skipFor, skipOffer } from "./photoPrompts";
 
 describe("Property 30: Photo Prompt offers are deterministic, complete and bounded", () => {
   // Feature: party-mode, Property 30: Photo Prompt offers are deterministic, complete and bounded
@@ -30,5 +30,14 @@ describe("Property 30: Photo Prompt offers are deterministic, complete and bound
     expect([0, 1, 2, 3].map(skipOffer)).toEqual([1, 2, 3, null]);
     expect(skipOffer(-1)).toBeNull();
     expect(skipOffer(1.5)).toBeNull();
+  });
+  it("gives the whole entries of an offer, and walks three skips through all twelve with no repeat, then nothing", () => {
+    const seen = new Set<string>();
+    let offer = offerFor(7, 3, 0)!;
+    for (const p of offer.prompts) { expect(p.tip.endsWith("No people or faces.")).toBe(true); seen.add(p.id); }
+    for (let i = 0; i < 3; i++) { offer = skipFor(7, 3, offer.round)!; expect(offer.round).toBe(i + 1); for (const p of offer.prompts) { expect(seen.has(p.id)).toBe(false); seen.add(p.id); } }
+    expect(seen.size).toBe(12);
+    expect(skipFor(7, 3, 3)).toBeNull();
+    expect(offerFor(7, 3, 4)).toBeNull();
   });
 });
