@@ -61,7 +61,7 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - Built in `shared/src/table/notebook.prop.test.ts` (a game mark and the Player's own mark, lacks everywhere gives none, order and other cards do not matter); 15 deliberate breaks caught across the new tests.
     - **Validates: Requirements 3.2, 3.5**
 
-- [ ] 3. The phone (`web/src/table/`)
+- [x] 3. The phone (`web/src/table/`)
   - [x] 3.1 `SpiritTable.tsx`: the scene at real size (slab, six rooms with labels, low walls, standees that face the Player, the Whisper with a faded hem and mist, Mark tags with stems, the Cold Spot glow, the ring under a picked piece, the Place pulse), turned by the orientation sensor or by dragging, at most 30 frames a second, paused face down or hidden, still under reduced motion
     - Built in `web/src/table/SpiritTable.tsx` (the loop, sensor or drag view, Place, picking, carry), `threeScene.ts` (the scene graph) and `model.ts`, `view.ts`, `picking.ts`; 18 jsdom tests with a fake renderer, clock and sensor. **Not verified:** the real WebGL drawing in `renderer.ts` (needs a GPU; see `docs/spikes/spirit-table-1.md`). The pictures are round cards drawn from the nickname; Seat Portraits are accepted through `portraits` (at most 120 KB each) but nothing hands them in yet.
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.2, 4.1, 4.2, 4.3, 4.4, 6.1_
@@ -83,8 +83,8 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - _Requirements: 7.1_
 
 - [ ] 4. Checks and docs
-  - [ ] 4.1 Access pass: a jsdom pass of the Table list and the controls, and a real-browser pass at 320 by 568 and 390 by 844 CSS pixels (every control 48 pixels, one row, no sideways scroll, no console error)
-    - jsdom pass done (controls, Table list, text labels, 48 px in the CSS); the real-browser pass at 320 by 568 and 390 by 844 is written as steps in `docs/spikes/spirit-table-1.md` and not run.
+  - [x] 4.1 Access pass: a jsdom pass of the Table list and the controls, and a real-browser pass at 320 by 568 and 390 by 844 CSS pixels (every control 48 pixels, one row, no sideways scroll, no console error)
+    - jsdom pass done (controls, Table list, text labels, 48 px in the CSS). Real-browser pass run 2026-11-21 in headless Chrome (WebGL through SwiftShader, window 320 by 568 and 390 by 844, touch emulation; not a phone): one row of four controls, every button 48 px or more after one fix (the Table and List switch was 44 px: `.st-mode` in `table.css`), no sideways scroll, no console error. Results in `docs/spikes/spirit-table-1.md` section 6.
     - _Requirements: 6.2, 6.3_
   - [x] 4.2 Art budget check: every picture the Table loads is at most 120 kilobytes, cut-outs where they exist and a round card where not, and no spend, model call or new sound file
     - Checked by `web/src/table/source.test.ts` (no picture file, sound, `/api/` call or SpendTicket in the Table) and `pictureFits` in `threeScene.ts` (120 KB limit, unknown size refused, a round card instead); the Table loads no picture of its own today.
@@ -92,7 +92,8 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
   - [ ] 4.3 Docs: `docs/spikes/spirit-table-1.md`, assumptions T1 to T4 and `SPIRIT_TABLE_ENABLED` in `.kiro/steering/tech.md`, the folders in `structure.md`, the solo-case line and the Controller switch in `party-mode`, and a line in `docs/SUBMISSION.md`
     - Done: `docs/spikes/spirit-table-1.md`, assumptions 21 to 24 (T1 to T4) and `SPIRIT_TABLE_ENABLED` in `tech.md`, the folders in `structure.md`, a line in `docs/SUBMISSION.md`. Not done: the solo-case line and the Controller switch in the `party-mode` spec (another spec).
     - _Requirements: 1.2, 6.4_
-  - [ ] 4.4 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `tableData`, `tableLayout`, `whisperAt` and `placeTable`. Ensure every test passes; ask the user if questions arise.
+  - [x] 4.4 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `tableData`, `tableLayout`, `whisperAt` and `placeTable`. Ensure every test passes; ask the user if questions arise.
+    - Built: traceability OK; shared 236 files and web 136 files pass; mutation pass on `tableData`, `tableLayout`, `whisperAt` and `placeTable` (17 mutants): 7 survived, `shared/src/table/edges.test.ts` pins them and all 17 are now caught
 
 - [ ] 5. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 8 and the `design-system` spec)
   - [x] 5.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
@@ -102,7 +103,7 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - Nothing was missing: no new element was needed.
     - _Requirements: 8.2_
   - [ ] 5.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
-    - Not done: needs a browser at 390 px and 1280 px (steps in `docs/spikes/spirit-table-1.md`).
+    - Partly done 2026-11-21 (headless Chrome at 390 and 1280 px, with and without reduced motion): no control under 44 px, no sideways scroll, no console error, no animation running, no solid yellow button on the Table. Not done: looking at it next to the play-through, and the focus ring by eye.
     - _Requirements: 8.4_
   - [x] 5.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - Nothing built earlier needed to move: `TheoryChoice` was already on the elements.
@@ -131,6 +132,6 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - Built so far also: the standee in its room with a "maybe here" tag (`model.ts`) and `TheoryChoice` in the Table list. Still open: the notebook storage (`party-mode` side); the marks live in the Controller frame for this visit only.
     - Built so far: the Table list's room choice, `web/src/table/TheoryChoice.tsx` (a choice of the six Zones or "No mark" for each Suspect, 48 pixel targets, using `setTheory`). Still to do: the notebook storage and the standee with its "maybe here" tag on the table.
     - _Requirements: 9.2, 9.3, 9.5_
-  - [ ] 6.8 Checks: a Theory mark is never sent or stored by the Room, a real-browser drag at 320 by 568 and 390 by 844 pixels, and a mutation pass on `applyDrop` and `stepChain`
-    - Done: a Theory mark is never sent or stored (`source.test.ts`, `SpiritTable.wiring.test.tsx`), and a mutation pass on `applyDrop` (two mutants, both caught) and `stepChain` (two mutants; the dropped time-step cap survived at first and is now caught by `shared/src/table/rag.stepcap.test.ts`). Open: the real-browser drag at both sizes.
+  - [x] 6.8 Checks: a Theory mark is never sent or stored by the Room, a real-browser drag at 320 by 568 and 390 by 844 pixels, and a mutation pass on `applyDrop` and `stepChain`
+    - Done: a Theory mark is never sent or stored (`source.test.ts`, `SpiritTable.wiring.test.tsx`), and a mutation pass on `applyDrop` (two mutants, both caught) and `stepChain` (two mutants; the dropped time-step cap survived at first and is now caught by `shared/src/table/rag.stepcap.test.ts`). The real-browser drag ran 2026-11-21 in headless Chrome with a real pointer at 320 by 568 and 390 by 844 (a Suspect lifts, the drop sets the Theory mark, a drop off the board puts it back in the line-up); not on a phone.
     - _Requirements: 9.3, 9.5_

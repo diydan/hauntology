@@ -54,3 +54,20 @@ Next to the play-through (`pnpm voice-demo`) at 390 px and 1280 px: contrast, 44
 What this means for the real run (T1, "is Place enough"): over the 30 seconds of step 1, a phone that drifts less than about 0.55 degrees a second keeps the Table in view without a second tap; one that drifts a degree a second loses it at 17 s and shows the "board" arrow at 19 s. Place (a tap) always puts it back dead ahead (tested). Record the real drift in degrees over 30 s, and compare: under 16 degrees, Place is enough; over that, the arrow and the Place tap carry it, and T1 should say so in `tech.md`.
 
 Still not known and not knowable here: the real drift, the thumb size, battery and warmth, the camera prompt in the installed iPhone app. Task 1.2 stays open.
+
+## 6. A real-browser pass in headless Chrome (added 2026-11-21, by an agent with no phone)
+
+Run with Google Chrome headless (a real Chromium with WebGL through SwiftShader, so no GPU), the Table layer (`SpiritTableLayer`, the Clue ring hung in it) served by the Vite dev server on loopback, a window of 320 by 568 and 390 by 844 CSS pixels with touch emulation, and the Clue ring page (`ClueRing`) alone. Nothing here was run on a phone.
+
+| Check | Result |
+|---|---|
+| The Table draws (WebGL context, canvas, standees, the Whisper's mist, the Cold Spot glow) | Yes at both sizes; the screenshots show the six rooms, the walls, the three Suspect standees and the glow |
+| The four controls (Camera, Place, Tilt, Clues) | One row at both sizes, every control 76 px tall, 73 px wide at 320 and 91 px at 390 |
+| Every button 48 px or more | All of them, **after one fix**: the Table and List switch was 44 px tall (the shared `ui-button` height won); it now has `.st-mode { min-height: 48px }` in `web/src/table/table.css`, and `list-controls.test.tsx` reads it |
+| No sideways scroll, no console error | None, at 320, 390 and 1280 |
+| The Clue ring hung in the Table's scene (spirit-table 3.6) | Drawn: a read clue's card stands in the air round the same view, and the Clues control says "Clues, 2 read" |
+| The ring alone (`ClueRing`) in a real browser | An unread clue is a dark disc with a light ring and a question mark; after looking at it steadily it becomes its card (the phone number card is slanted handwriting); 3 buttons of 48 px, one solid yellow button, no scroll, no console error |
+| Drag to mark (spirit-table 6.8), a real pointer | A press on a Suspect lifts it (the ring under its feet, the lit room), and a drop sets the Theory mark: `cora` in the library at 390 by 844 and in the hall at 320 by 568; dropping off the board puts a Suspect back in the line-up ("Cora Bell: back in the line-up.") |
+| Animations running, with and without reduced motion | None either way |
+
+Not done here: the check next to the play-through at 1280 px by eye (task 5.3: contrast and the focus ring are in the design-system tests, but nobody compared the pictures), clearing a mark by dragging a placed Suspect off the board in the browser (jsdom covers it), a real phone, a real GPU.

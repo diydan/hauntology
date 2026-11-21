@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, render } from "@testing-library/react";
 import fc from "fast-check";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { DOOR_ID_PATTERN } from "@hauntology/shared/party/doors";
 import { ShellToViewerSchema, type ShellToViewer } from "@hauntology/shared/app/events";
 import { soundAvailability } from "@hauntology/shared/party/sounds";

@@ -255,7 +255,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x] 9.6 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `verify`, `lockCharge`, `placePuzzles` and `planHaptics`. Ensure every test passes; ask the user if questions arise.
     - Built: traceability OK; shared 1601 tests and web all pass (one full web run timed out under load, and the failing files pass on re-run); mutation pass by hand on `verify`, `lockCharge`, `placePuzzles` and `planHaptics` (about 40 single-line mutants): every non-equivalent mutant now fails a test, after edge tests were added in `verify.edges.test.ts`, `haptics.caps.test.ts` and `place.coverage.test.ts`. Two verify mutants are equivalent (the schema-failure branch is caught by the same `catch`)
 
-- [ ] 10. Spirit clues (optional layer; the first thing to cut)
+- [x] 10. Spirit clues (optional layer; the first thing to cut)
   - [x] 10.1 Mockup of the Clue ring, the question-mark rings, the 0.7 second read, the arrow, the Clue list and "Show all as text", with the made-up values and a guard test
     - Built in `tools/playtest/ar.html`, `js/ar.js`, `css/ar.css` and `test/ar.test.js` (and published to the playtest site). It is a reference and not the real code: it shows the camera as an opt-in (15.10) but draws at full speed, keeps nothing between loads and has no camera indicator beyond the pressed button.
     - _Requirements: 15.2, 15.3, 15.5, 15.7_
@@ -274,7 +274,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - **Property 19: Reading needs a steady look**
     - **Validates: Requirements 15.5**
   - [x] 10.6 `ClueRing.tsx` (sprites, tilt or drag, the question-mark rings, the click buzz and its pulse, 30 frames a second, face-down pause) and `ClueList.tsx` (the list, "Code so far", "Show all as text", the arrow after 3 seconds), and the optional camera backdrop (a video element under the canvas, a visible indicator, a stop control, the stand-in backdrop on refusal)
-    - Built: `web/src/puzzles/clues/ClueList.tsx` (the list, "Code so far", "Show all as text", 48 pixel targets); `ClueRing.tsx` and `ringScene.ts` (three.js sprites at 1.5 m, the question-mark rings, a mark of shape for each form, the 0.7 s read with one click buzz and one soft pulse, drag when there is no sensor, at most 12 clues and 30 frames a second, paused face down or hidden, still under reduced motion, the arrow after 3 s, the Camera tap with its indicator and Stop, one line on refusal); the pure maths is `shared/src/puzzles/ring.ts` (`stepRing`, `arrowFor`, `ringDone`, `ringPlan`, `ringForSight`). Tested in jsdom with a fake renderer, sensor and frame loop (`ClueRing.test.tsx`, `ring.test.ts`; 14 of 16 hand mutants caught, the other two equivalent). **Not seen on a real phone:** the WebGL drawing of the sprites (the same blind spot as the Table's `renderer.ts`) and the camera prompt
+    - Built: `web/src/puzzles/clues/ClueList.tsx` (the list, "Code so far", "Show all as text", 48 pixel targets); `ClueRing.tsx` and `ringScene.ts` (three.js sprites at 1.5 m, the question-mark rings, a mark of shape for each form, the 0.7 s read with one click buzz and one soft pulse, drag when there is no sensor, at most 12 clues and 30 frames a second, paused face down or hidden, still under reduced motion, the arrow after 3 s, the Camera tap with its indicator and Stop, one line on refusal); the pure maths is `shared/src/puzzles/ring.ts` (`stepRing`, `arrowFor`, `ringDone`, `ringPlan`, `ringForSight`). Tested in jsdom with a fake renderer, sensor and frame loop (`ClueRing.test.tsx`, `ring.test.ts`; 14 of 16 hand mutants caught, the other two equivalent). Drawn in a real browser 2026-11-21 (headless Chrome with WebGL through SwiftShader, 390 by 844: the question-mark ring, a read card, three 48 px buttons, no console error; `docs/spikes/spirit-table-1.md` section 6). **Not seen on a real phone or GPU**, and the camera prompt
     - _Requirements: 15.5, 15.7, 15.9, 15.10_
   - [x]* 10.7 Write property test for the text path
     - Built in `shared/src/puzzles/clues.prop.test.ts` (Property 20): the list shows the digits of the Sight in order, Show all as text reads every clue, and `verify` gives the same verdict whatever was read.
@@ -293,13 +293,16 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - Built: traceability OK; shared 236 files and web 136 files pass (the web lint test included); mutation pass on `placeClues` (6 mutants) and `stepRead`/`stepClue` (5 mutants), every one caught, and on the new ring maths (9 mutants, two added tests for the ones that survived)
 
 - [ ] 11. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 16 and the `design-system` spec)
-  - [ ] 11.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+  - [x] 11.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - Built: the new screens (`ClueRing`, `SpiritSight`, `SpiritCluesSwitch`, the Host's `ClockShadow`, `Reel`, `EndingFilm`) are made of `ui-` elements; `tools/test/design-system.test.mjs` (a page uses only elements that exist, no hex colour in screen code: it caught two hex colours in `ringScene.ts`, now the `bone` and `ink` tokens) passes
     - _Requirements: 16.1, 16.3_
-  - [ ] 11.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 11.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - Built: nothing was missing: the ring and the scenes use existing elements (`ui-panel`, `ui-button`, `ui-chip`, `ui-gauge`, `ui-figure`, `ui-card`, `ui-speech`, `ui-log`); the `cr-`, `ph-` classes only place things
     - _Requirements: 16.2_
   - [ ] 11.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 16.4_
-  - [ ] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+  - [x] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - Built: the Controller menu (`SeatedFrame.tsx`) changed in this branch and the new switch is a `ui-switch`; nothing else built earlier needed to move
     - _Requirements: 16.1_
 
 - [x] 12. Decisions of 2026-11-15: the level follows the Haunt, Haunting puzzles, Locks in the solo case
@@ -405,8 +408,8 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - **Property 31: A clip is blank at its Place**
     - **Validates: Requirements 22.3, 22.10**
     - Built: `check-places` in the root `package.json` (says so and passes while no shot has a Place); Property 31 in `tools/playtest/test/place-check.test.js` (`placeRecordProblems`: a clip with a Place needs its entry, and a model's clip names its model, take, date and prompt)
-  - [ ] 15.7 The demo: section 8 of `footage.html`, "A clue written on the scene", on a stand-in Place (a flat patch of a wall in a clip we already have, until a model clip has a real one): the clue on the picture, the film layer over both, the panel and the Clue list, and the footage-off state. Check it in jsdom and in desktop Chrome
-    - Built, not ticked: section 12 of `footage.html` with `js/scene-clue-page.js` and `css/footage.css` (the clue laid on a stand-in plate of the hand shot, one film layer over both, the panel, the Clue list, the footage-off state, a shot with no Place); 8 jsdom tests in `test/scene-clue-demo.test.js`, 13 of 15 hand mutants caught (the other two are equivalent branches). Still to do: a look in desktop Chrome, which I could not open here (the Place is also not measured on the clip).
+  - [x] 15.7 The demo: section 8 of `footage.html`, "A clue written on the scene", on a stand-in Place (a flat patch of a wall in a clip we already have, until a model clip has a real one): the clue on the picture, the film layer over both, the panel and the Clue list, and the footage-off state. Check it in jsdom and in desktop Chrome
+    - Built, not ticked: section 12 of `footage.html` with `js/scene-clue-page.js` and `css/footage.css` (the clue laid on a stand-in plate of the hand shot, one film layer over both, the panel, the Clue list, the footage-off state, a shot with no Place); 8 jsdom tests in `test/scene-clue-demo.test.js`, 13 of 15 hand mutants caught (the other two are equivalent branches). Looked at in desktop Chrome 2026-11-21 (headless, 1280 wide, page served from source so it has no design CSS): the clue "3 2 5 8" is drawn over the hand shot's door plate by the page, the panel, the live line and the Clue list say "Moon: 3 2 5 8", the no-Place shot says the words carry it, no console error. The Place is still a stand-in, not measured on the clip.
     - _Requirements: 22.4, 22.5, 22.7_
   - [x]* 15.8 Write property test for the fallbacks
     - **Property 29: Nothing is lost when the picture is not shown**

@@ -1,4 +1,5 @@
-import { CanvasTexture, Group, Sprite, SpriteMaterial, SRGBColorSpace, type PerspectiveCamera, type Scene, type Texture } from "three";
+import { CanvasTexture, Color, Group, Sprite, SpriteMaterial, SRGBColorSpace, type PerspectiveCamera, type Scene, type Texture } from "three";
+import { color } from "@hauntology/shared/design/tokens";
 import { clueTitle, RING_RADIUS_M, type ClueForm, type SpiritClue } from "@hauntology/shared/puzzles/clues";
 import { clueSpot, drawnClues } from "@hauntology/shared/puzzles/ring";
 
@@ -12,8 +13,8 @@ import { clueSpot, drawnClues } from "@hauntology/shared/puzzles/ring";
  */
 export type Labeller = (clue: SpiritClue, read: boolean) => Texture | null;
 
-const INK = "#0b0b0d";
-const BONE = "#e8e1d0";
+const INK = color.ink;
+const BONE = color.bone;
 
 function drawn(w: number, h: number, draw: (g: CanvasRenderingContext2D) => void): CanvasTexture | null {
   if (typeof document === "undefined") return null;
@@ -82,7 +83,7 @@ export function createRingScene(clues: readonly SpiritClue[], label: Labeller = 
   const labels = new Map<string, string>();
   for (const c of shown) {
     const unread = label(c, false);
-    const mat = new SpriteMaterial({ ...(unread ? { map: unread } : {}), color: unread ? 0xffffff : 0xe8e1d0, transparent: true, depthTest: false });
+    const mat = new SpriteMaterial({ ...(unread ? { map: unread } : {}), color: unread ? 0xffffff : new Color(color.bone), transparent: true, depthTest: false });
     const sprite = new Sprite(mat);
     const p = clueSpot(c, RING_RADIUS_M);
     sprite.position.set(p.x, p.y, p.z);

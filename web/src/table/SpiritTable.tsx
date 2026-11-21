@@ -256,8 +256,8 @@ export function SpiritTable(props: SpiritTableProps): ReactNode {
   return (
     <div className="st-layer">
       <div className="ui-segments" role="group" aria-label="Table or list">
-        <button type="button" className="ui-button" aria-pressed={mode === "table"} onClick={() => setMode("table")}>Table</button>
-        <button type="button" className="ui-button" aria-pressed={mode === "list"} onClick={() => setMode("list")}>List</button>
+        <button type="button" className="ui-button st-mode" aria-pressed={mode === "table"} onClick={() => setMode("table")}>Table</button>
+        <button type="button" className="ui-button st-mode" aria-pressed={mode === "list"} onClick={() => setMode("list")}>List</button>
       </div>
       {mode === "list" ? (
         <TableList model={model} theory={theory} onTheory={onTheory} onPick={(id) => { setPicked(id); setMode("table"); }} />
