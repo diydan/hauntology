@@ -152,6 +152,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - _Requirements: 1.3, 5.4_
 
 - [ ] 8. Checkpoint
+  - **Automated half run 2026-11-21 (finish pass, branch `feat/finish-conditions-engine-pipeline`):** `shared` 1,856 tests, `api` 1,242 (30 skipped: they need a live Worker), `web` 1,478, `tools` 449 of 450 (the one red is `guarded-only.test.mjs` naming `ai.run` in `api/dev/playthrough-calls.ts`, a file this pass did not touch), `node tools/check-traceability.mjs` OK, `tsc` clean in `web`. **Still open:** playing each of the six Gallery Worlds to the end (the worlds do not exist yet, task 7) and once with the model (needs the `AI` binding, your go and spend), and your judgement of the tone.
   - **Played once with the model 2026-11-16, with the owner's go (60 of 60 calls, `docs/spikes/4.2.md`): game A reached the ending, 42 of 48 eligible turns were worded by Haiku 5.5, median 1.7 s, no wrong hint, both voices held under four attacks; not ticked, because the six Gallery Worlds were not played (the run used one made-up attic) and the tone is the owner's to judge.** Earlier: runner built and rehearsed 2026-11-16, no spend: Earlier note: **Plan written 2026-11-15:** the "once with the model" run, from the game itself, with the real Worker, `PlaySession` and `SpendGuard` behind a real Haiku 5.5: `docs/spikes/4.2.md` (60 calls, $0.02 cap, three games: a whole game, the hints, and the stern voice with the red-team lines).
   - Run tests, typecheck, `node tools/check-traceability.mjs`; play each Gallery World to completion in Scripted Mode and once with the model; ask the user if questions arise.
 
@@ -159,7 +160,9 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - [x] 9.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
     - **Done 2026-11-15** for the chat panel and the journal: every class is a `ui-` element or a layout class (`chat`, `chat-stage`, `chat-quick`, `transcript`, `journal`), `app.css` says only where things go (columns, widths, a row that wraps), and the test fails on a `style` attribute or an unknown class.
     - _Requirements: 10.1, 10.3_
-  - [ ] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - **Verified 2026-11-21:** no missing piece. Every class of the chat panel, the journal and the end screen is a `ui-` element already in `design/elements.css` or a layout class (`chat`, `chat-stage`, `chat-quick`, `transcript`, `journal`) that `web/src/styles/app.css` uses for position only; `tools/test/design-system.test.mjs` fails on any undefined `ui-` class or colour in `web/src` and passes (the finish pass added no screen: the anchor work is logic and the Viewer hook).
     - _Requirements: 10.2_
   - [ ] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - **Not done, needs a real browser or phone (left open on purpose in the finish pass):** the chat panel, journal and end screen at 390 and 1280 px.
     - _Requirements: 10.4_

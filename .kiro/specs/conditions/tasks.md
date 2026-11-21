@@ -145,6 +145,7 @@ Order: the spike first, then pure logic with property tests, then the API module
     - _Requirements: 3.3_
 
 - [ ] 8. Checkpoint
+  - **Automated half run 2026-11-21 (finish pass):** `shared` 1,856 tests, `api` 1,242 (30 skipped: they need a live Worker), `web` 1,478, `tools` 449 of 450 (the one red is `guarded-only.test.mjs`, `api/dev/playthrough-calls.ts`, not touched here), `node tools/check-traceability.mjs` OK, `tsc` clean in `web`. The four games are covered in Node: conditions off, a city, a Memory Day and a failing weather call each start and play (`api/src/routes/play-conditions.test.ts`), the Wander rules and the Room's rules are identical under any sky or none (`shared/src/ghost/play-conditions.test.ts`, `shared/src/party/conditions-rules.test.ts`). **Still open:** looking at each of the four in a browser (does the sky look right, does the game feel the same), and the sky dome on a real outdoor and a real indoor world.
   - Run tests, typecheck, `node tools/check-traceability.mjs`; play one game with conditions off, one with a city, one with a Memory Day, and one with the weather call failing; confirm each looks right and that the game state is the same in all four; ask the user if questions arise.
 
 - [ ] 9. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 7 and the `design-system` spec)
@@ -155,4 +156,5 @@ Order: the spike first, then pure logic with property tests, then the API module
     - Verified (2026-11-21): no missing piece, so nothing was added to `design/elements.css`; `tools/test/design-system.test.mjs` fails on any undefined `ui-` class in `web/src`.
     - _Requirements: 7.2_
   - [ ] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - **Not done, needs a real browser or phone (left open on purpose in the finish pass):** the Set the sky card (`SkyCard.tsx`) at 390 and 1280 px.
     - _Requirements: 7.4_
