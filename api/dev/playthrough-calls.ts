@@ -2,7 +2,7 @@
  * The call recorder of the narrator play-through Worker (`playthrough-worker.ts`, `docs/spikes/4.2.md`), with no import at all, so a plain Node test can run it.
  * LOCAL ONLY, never deployed.
  *
- * WHY: the game asks the model through `env.AI.run(...)` and checks each reply; a reply that fails its check is thrown away and asked again once, so the runner,
+ * WHY: the game asks the model through the `run` method of `env.AI` and checks each reply; a reply that fails its check is thrown away and asked again once, so the runner,
  * which sees only the final reply of a turn, could not say WHAT the model wrote or WHICH check refused it (the paid run of 2026-11-16 lost six hints that way,
  * at two calls each). The Worker wraps its `AI` binding with this recorder (the real game code is untouched: it is handed the wrapped binding), and the runner reads
  * what was recorded with `GET /dev/calls?since=N` and runs the game's own checks over it.
