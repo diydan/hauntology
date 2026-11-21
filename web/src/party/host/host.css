@@ -27,3 +27,15 @@
 .pd-cal { position: absolute; right: var(--space-3); bottom: calc(var(--space-3) + 3.5rem); width: min(24rem, calc(100% - var(--space-5))); }
 .pd-page[data-flash="on"] { background: var(--surface-raised); }
 .pd-page[data-dim="on"] .pd-pyramid, .pd-page[data-dim="on"] .pd-single { opacity: 0.6; }
+
+/* The doors on the Display (knock-door 8.2): a marker for each door on the diorama, swung slowly with the one slow fade, none under reduced motion */
+.pd-doors { display: grid; gap: var(--space-2); justify-items: center; }
+.pd-diorama { position: relative; width: 100%; min-width: 8rem; aspect-ratio: 2 / 1; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunk); }
+.pd-door { position: absolute; width: 1.5rem; height: 1.5rem; transform: translate(-50%, -50%); }
+.pd-door-leaf { position: absolute; inset: 0 auto 0 0; width: 0.25rem; border-radius: var(--radius-sm); background: var(--accent); transform-origin: top left; transition: transform var(--fade-slow) var(--ease); }
+.pd-door[data-open="no"] .pd-door-leaf { transform: rotate(0deg); }
+.pd-door[data-open="yes"] .pd-door-leaf { transform: rotate(-70deg); background: var(--text-quiet); }
+.pd-door[data-at-door="yes"] { outline: var(--stroke-thin) solid var(--accent); border-radius: var(--radius-lg); }
+.pd-door[data-motion="none"] .pd-door-leaf { transition: none; }
+.pd-door-words { margin: 0; padding: 0; list-style: none; text-align: center; }
+.pd-knock { margin: 0; font-size: var(--text-body); color: var(--text-quiet); }

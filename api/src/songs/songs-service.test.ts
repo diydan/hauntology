@@ -26,14 +26,22 @@ describe("Guarded Song Service & SongSpendGuard (game-songs 3.1)", () => {
     let calls = 0;
     const maker = new MurekaSongMaker({
       apiKey: "test-key",
+      sleep: async () => {},
       fetch: (async (url: string | URL | Request, init?: RequestInit) => {
         calls++;
-        if (String(url).startsWith("https://cdn.example/")) {
+        const u = String(url);
+        if (u.startsWith("https://cdn.example/")) {
           return new Response(fakeMp3(), { status: 200, headers: { "Content-Type": "audio/mpeg" } });
         }
-        seenBodies.push(JSON.parse(String(init?.body)));
-        if (calls === 1) return new Response("err", { status: 500 }); // retries once automatically
-        return new Response(JSON.stringify({ url: "https://cdn.example/song.mp3" }), { status: 200, headers: { "Content-Type": "application/json" } });
+        if (u.endsWith("/generate")) {
+          seenBodies.push(JSON.parse(String(init?.body)));
+          if (calls === 1) return new Response("err", { status: 500 }); // retries once automatically
+          return new Response(JSON.stringify({ id: "task-1", status: "preparing" }), { status: 200 });
+        }
+        return new Response(
+          JSON.stringify({ id: "task-1", status: "succeeded", choices: [{ url: "https://cdn.example/song.mp3", duration: 100 }] }),
+          { status: 200 },
+        );
       }) as typeof fetch,
     });
 
@@ -51,8 +59,9 @@ describe("Guarded Song Service & SongSpendGuard (game-songs 3.1)", () => {
     // Valid call retries once on 500, downloads MP3, and sends ONLY { lyrics, style }.
     const good = await maker.make(r.ticket, { lyrics: "A lantern burns in the hall.", style: "slow minor waltz" });
     expect(good.ok).toBe(true);
-    expect(calls).toBe(3); // 500 + generate ok + audio download
-    expect(Object.keys(seenBodies[0] as object).sort()).toEqual(["lyrics", "style"]);
+    expect(calls).toBe(4); // 500 + generate ok + one poll + audio download
+    expect(Object.keys(seenBodies[0] as object).sort()).toEqual(["lyrics", "model", "prompt"]);
+    expect(JSON.stringify(seenBodies[0])).not.toContain("ABCD"); // no Room token
   });
 
   it("enforces kill switch, room cap, day cap, releases failed tickets, and deletes songs with Room", async () => {
