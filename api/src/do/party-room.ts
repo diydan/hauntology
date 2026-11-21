@@ -43,6 +43,8 @@ export class PartyRoom {
       send: (id, msg) => { try { byId(id)?.send(JSON.stringify(msg)); } catch { /* a socket that just closed */ } },
       close: (id, code, reason) => { try { byId(id)?.close(code, reason); } catch { /* already closed */ } },
       now: clock,
+      // a game starts only on a world the Master chose (party-mode 4.11)
+      requireWorld: () => true,
       randomBytes: (n) => crypto.getRandomValues(new Uint8Array(n)),
       deleteStitchClips: async (forSeats) => {
         if (forSeats === "all") await this.clips.deleteAll();

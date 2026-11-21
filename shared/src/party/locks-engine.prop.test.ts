@@ -47,9 +47,9 @@ describe("Property 33: Presets and switches do what they say", () => {
       const off = s.turn!.seat === 1 ? 2 : 1;
       s = { ...s, players: s.players.map((p) => ({ ...p, resolve: 3 })) };
       const spook = step(s, { kind: "client", seat: off, msg: { t: "nudge", kind: "spook" } }, 1000);
-      expect(spook.refused).toBe(nudges === "off" ? "nudges_off" : "spook_off");
+      expect(spook.refused).toBe(nudges === "off" ? "nudge_denied:nudges_off" : "nudge_denied:spook_off");
       expect(spook.state).toBe(s);
-      if (nudges === "off") expect(step(s, { kind: "client", seat: off, msg: { t: "nudge", kind: "help" } }, 1000).refused).toBe("nudges_off");
+      if (nudges === "off") expect(step(s, { kind: "client", seat: off, msg: { t: "nudge", kind: "help" } }, 1000).refused).toBe("nudge_denied:nudges_off");
     }
   });
 });

@@ -52,7 +52,7 @@ export type EngineSeat = Readonly<{ seat: number; nickname: string; bot: boolean
 export type EngineSettings = Readonly<{
   baseSeconds: BaseSeconds | null; hauntMax: 8 | 10 | 12; nudges?: "all" | "help-only" | "off"; sounds?: boolean; frames?: boolean;
   /** The Puzzle setting: off, or the starting level of the Locks (puzzles 1.4). */
-  puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; preset?: SoloPreset; autoCross?: boolean;
+  puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; preset?: SoloPreset; autoCross?: boolean; botLevel?: "standard" | "gentle";
   /** Selfie ghosts (party-mode 3.10): off unless the Master turns them on in the lobby; a missing value means off. */
   selfies?: boolean;
 }>;
@@ -150,7 +150,7 @@ export type ClientMsg =
   | Readonly<{ t: "cue"; cue: string; place?: "tv" | "phone" }>
   | Readonly<{ t: "frame"; target: number; cue: string }>
   | Readonly<{ t: "sound"; consent: boolean; audio?: boolean }>
-  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; selfies?: boolean; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
+  | Readonly<{ t: "settings"; preset?: SoloPreset; nudges?: "all" | "help-only" | "off"; frames?: boolean; sounds?: boolean; puzzles?: PuzzleSetting; cluePlace?: CluePlace; errands?: boolean; selfies?: boolean; autoCross?: boolean; botLevel?: "standard" | "gentle"; baseSeconds?: BaseSeconds | null; hauntMax?: 8 | 10 | 12 }>
   | Readonly<{ t: "attempt"; lockId: string; transcript: unknown }>
   | Readonly<{ t: "giveUp"; lockId: string }>
   | Readonly<{ t: "sightAck"; sightId: string }>
@@ -215,7 +215,9 @@ export type PrivateSnapshot = Readonly<{
   errandCaughtUsed?: boolean;
 }>;
 export type Outbound = Readonly<{ to: "public"; msg: Readonly<{ t: "public"; view: PublicSnapshot }> | Readonly<{ t: "door"; id: string; open: boolean; reason: DoorReason; need: number; have: number }>
-  | Readonly<{ t: "tvKnock"; groups: readonly number[]; long: number | null; answeredBy: number | null }> }>
+  | Readonly<{ t: "tvKnock"; groups: readonly number[]; long: number | null; answeredBy: number | null }>
+  /** A Cue played on the TV: the Host plays it at `playAtMs` on the server clock; everyone reads the same log line (party-mode 4.14). */
+  | Readonly<{ t: "tvCue"; eventId: number; cue: CueId; playAtMs: number }> }>
   | Readonly<{ to: "seat"; seat: number; msg: Readonly<{ t: "private"; view: PrivateSnapshot }> | Readonly<{ t: "refused"; code: string }>
       | Readonly<{ t: "doorResult"; doorId: string; outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }>
       | Readonly<{ t: "tvKnockResult"; outcome: "help" | "wrong"; heard: string }>
@@ -536,16 +538,20 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     const timing = s.phase === "lobby"; // the clock and the Haunt maximum change only before the start
     const next: EngineSettings = {
       ...s.settings,
-      ...(row ? { nudges: row.nudges, frames: row.frames, autoCross: row.autoCross, puzzles: row.puzzles, preset: msg.preset } : {}),
+      ...(row ? { nudges: row.nudges, frames: row.frames, autoCross: row.autoCross, botLevel: row.botLevel, puzzles: row.puzzles, preset: msg.preset } : {}),
       ...(row && timing ? { baseSeconds: row.baseSeconds, hauntMax: row.hauntMax } : {}),
       ...(msg.nudges !== undefined ? { nudges: msg.nudges } : {}), ...(msg.frames !== undefined ? { frames: msg.frames } : {}),
       ...(msg.sounds !== undefined ? { sounds: msg.sounds } : {}), ...(msg.puzzles !== undefined ? { puzzles: msg.puzzles } : {}),
       ...(timing && msg.cluePlace !== undefined ? { cluePlace: msg.cluePlace } : {}),
       ...(msg.errands !== undefined ? { errands: msg.errands } : {}),
+      ...(msg.autoCross !== undefined ? { autoCross: msg.autoCross } : {}),
+      ...(msg.botLevel !== undefined ? { botLevel: msg.botLevel } : {}),
       ...(timing && msg.selfies !== undefined ? { selfies: msg.selfies } : {}),
       ...(timing && msg.baseSeconds !== undefined ? { baseSeconds: msg.baseSeconds } : {}), ...(timing && msg.hauntMax !== undefined ? { hauntMax: msg.hauntMax } : {}),
     };
-    const seatBots = row ? s.seats.map((x) => (x.bot ? { ...x, botLevel: row.botLevel } : x)) : s.seats;
+    // a preset sets every Bot's level; a separate botLevel switch (sent after it) wins
+    const level = next.botLevel;
+    const seatBots = level !== undefined && (row || msg.botLevel !== undefined) ? s.seats.map((x) => (x.bot ? { ...x, botLevel: level } : x)) : s.seats;
     const updated: EngineState = { ...s, settings: next, seats: seatBots, haunt: timing ? { ...s.haunt, max: next.hauntMax } : s.haunt };
     return next.errands && updated.phase === "playing" ? assignErrands(updated) : updated;
   }
@@ -622,7 +628,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
     let st = setPlayer(s, seat, (p) => ({ ...p, lastCueMs: now }));
     st = { ...st, playing: [...st.playing.filter((e) => e > now), now + CUE_PLAY_MS], turn: t === null ? null : { ...t, cueCount: t.cueCount + 1 } };
     const [st2, id] = addLog(st, { kind: "cue", seat, cue: msg.cue, place });
-    if (place === "tv") return st2;
+    if (place === "tv") return { ...st2, outbox: [...st2.outbox, { to: "public", msg: { t: "tvCue", eventId: id, cue: msg.cue, playAtMs: now } }] };
     const plan = soundPlan(phoneOf(st2, player(st2, seat) as PlayerRec), st2.settings.sounds ?? true);
     const st3 = setPlayer(st2, seat, (p) => ({ ...p, soundsThisRound: plan === "none" ? p.soundsThisRound : p.soundsThisRound + 1 }));
     return { ...st3, outbox: [...st3.outbox, { to: "seat", seat, msg: { t: "cue", eventId: id, cue: msg.cue, playAtMs: now, plan } }] };
@@ -650,7 +656,7 @@ function apply(s: EngineState, a: Action, now: number): EngineState | string {
       clockRunning: t !== null && t.clock.budgetMs !== null && t.clock.pausedSinceMs === null, budgetMs: t?.clock.budgetMs ?? 0, leftMs: left,
       usedThisTurn: t?.nudges ?? { help: false, spook: false }, round: s.round, turnIndex: s.turnNo, lastSpook: s.lastSpook,
     }, msg.kind);
-    if (!ok.ok) return ok.reason;
+    if (!ok.ok) return `nudge_denied:${ok.reason}`;
     const tt = t as TurnRec;
     const n = applyNudge(tt.clock.budgetMs as number, me.resolve, msg.kind);
     let st = setPlayer(s, seat, (p) => ({ ...p, resolve: n.resolve }));

@@ -38,6 +38,9 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
     cluePlace: z.enum(["phone", "world"]).optional(),
     errands: z.boolean().optional(),
     selfies: z.boolean().optional(),
+    /** The separate switches the presets set (party-mode 12.5): auto-cross in the notebook, and the Bots' level. */
+    autoCross: z.boolean().optional(),
+    botLevel: z.enum(["standard", "gentle"]).optional(),
   }).strict(),
   z.object({ t: z.literal("errandOptOut"), on: z.boolean() }).strict(),
   z.object({ t: z.literal("errandDone") }).strict(),
@@ -73,6 +76,22 @@ export const RoomMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("speech"), action: z.enum(["on", "off"]) }).strict(),
   z.object({ t: z.literal("stitchSetting"), on: z.boolean() }).strict(),
   z.object({ t: z.literal("stitchAnswer"), seat: z.number().int().min(1).max(6).optional(), yes: z.boolean(), tick: z.boolean() }).strict(),
+  /** The Master chooses the world (party-mode 4.11): checked at once, so a world too small is refused before the lobby closes. */
+  z.object({ t: z.literal("world"), id: z.string().min(1).max(64), walkRadius: z.number().finite().min(0).max(10_000), authoredZones: z.boolean().optional(),
+    bounds: z.object({ min: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]), max: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]) }).strict().optional() }).strict(),
+  /** The Master's room switches (party-mode 9.21): the sky, the hour strike, the light bar, Rattle and Stitch. */
+  z.object({ t: z.literal("roomSettings"), conditions: z.enum(["off", "place", "table"]).optional(), hourStrike: z.boolean().optional(), lightBar: z.boolean().optional(), rattle: z.boolean().optional(), stitch: z.boolean().optional() }).strict(),
+  /** A phone's stick and look (party-mode 2.2). Never stored; only the active Detective's input reaches the Host. */
+  z.object({ t: z.literal("input"), seq: z.number().int().nonnegative(), move: z.tuple([z.number(), z.number()]), look: z.tuple([z.number(), z.number()]), aim: z.tuple([z.number(), z.number()]).optional() }).strict(),
+  /** The Host's pose (party-mode 4.5), at most 4 a second; never stored. */
+  z.object({ t: z.literal("pose"), pos: z.tuple([z.number(), z.number(), z.number()]), yaw: z.number() }).strict(),
+  /** The Host's offset from UTC in minutes, for the hour strike (party-mode 15.1). */
+  z.object({ t: z.literal("hostClock"), offsetMin: z.number().int().min(-840).max(840) }).strict(),
+  /** The clock exchange (party-mode 17.3): `ping` is answered with `pong`; `clockSample` reports one finished exchange. */
+  z.object({ t: z.literal("ping"), id: z.number().int().nonnegative(), clientMs: z.number().finite() }).strict(),
+  z.object({ t: z.literal("clockSample"), sentMs: z.number().finite(), serverMs: z.number().finite(), receivedMs: z.number().finite() }).strict(),
+  /** A phone's own yes to the light bar (party-mode 17.1), and whether its Player prefers reduced motion. */
+  z.object({ t: z.literal("light"), consent: z.boolean(), reducedMotion: z.boolean().optional() }).strict(),
   z.object({ t: z.literal("songsSetting"), setting: z.enum(["off", "stock", "on"]) }).strict(),
   z.object({ t: z.literal("songMute"), muted: z.boolean() }).strict(),
   z.object({ t: z.literal("songSkip") }).strict(),

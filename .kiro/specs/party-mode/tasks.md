@@ -422,15 +422,20 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
   - [x] 4.2 Lobby: contribution intake and pool build when the lobby closes
     - **Built 2026-11-21** (`shared/src/party/lobby-contrib.ts`, `server.ts`, `api/src/do/party-room.ts`): the Room keeps each seat's Suspect, photo verdict, Zone name, prompt round and selfie yes (ids and verdicts only), `identify`, `lobbyContext`, `recordContribution` and `skipPrompt` answer the routes, and `draftEngine` builds the pool with `buildPool(toContributions(...))` at the start, so contributed Suspects and Zone names come first and Presets fill the rest. Contributions and ghost files are deleted when the Room ends (`deleteContributions`, `R2PhotoStore`).
     - _Requirements: 3.1, 3.4_
-  - [ ] 4.3 Game start (Master only, a valid world required): choose the Solution, set aside and place the Residue, deal 12 cards, place Zones (authored, placed or ring), fan out Public and Private Views
+  - [x] 4.3 Game start (Master only, a valid world required): choose the Solution, set aside and place the Residue, deal 12 cards, place Zones (authored, placed or ring), fan out Public and Private Views
+    - **Built 2026-11-21** (`shared/src/party/engine.ts` start, `server.ts` world gate, `server-room-extras.test.ts`): only the Master starts, a world must be chosen first (`world_not_set`), the Solution, three Residue cards and the 12-card deal are made by the Engine, and the public and private views fan out after the start. Zone points are placed by `placeZones` when the Host loads the world (task 8).
     - _Requirements: 4.1, 4.2, 4.5, 4.6_
-  - [ ] 4.4 Turn engine: `nextWake(state, now)` and a single DO alarm always set to it; 10-second warning, disconnect pause and skip, Master pause and resume, no-clock mode, Poltergeists skipped, Haunt rise at Round end and on a lost Turn
+  - [x] 4.4 Turn engine: `nextWake(state, now)` and a single DO alarm always set to it; 10-second warning, disconnect pause and skip, Master pause and resume, no-clock mode, Poltergeists skipped, Haunt rise at Round end and on a lost Turn
+    - **Built 2026-11-21** (`engine.ts` `wakeOf`, `clock.ts` `nextWake`, `server.ts` `commit`): one alarm always at the next wake; the 10-second warning, disconnect pause and skip, Master pause and resume, no-clock mode, Poltergeists skipped and the Haunt rise at Round end and on a lost Turn are covered by the Property 13, 26 and 34 tests. The hour boundary joins `nextWake` in 4.17.
     - _Requirements: 5.1, 5.2, 5.3, 5.5, 5.6, 5.7, 11.1_
-  - [ ] 4.5 Pose and input pipeline: sanitise host pose at ≤ 4 Hz, relay the active Player's input only, rate limit every token
+  - [x] 4.5 Pose and input pipeline: sanitise host pose at ≤ 4 Hz, relay the active Player's input only, rate limit every token
+    - **Built 2026-11-21** (`server.ts` `input` and `pose` messages, `room-extras.ts`, `server-room-extras.test.ts`): only the active Detective's input reaches the Host, clamped, at most 30 a second, never stored; the Host pose is cleaned by `sanitizePose` inside the world bounds, relayed at 4 Hz at most and never stored; every socket keeps the 40 a second limit.
     - _Requirements: 2.2, 7.2_
-  - [ ] 4.6 Suggestion, `show`, `seal` and `endTurn` handlers, the round-end reveal with the shared win, the event log, achievement awards and end conditions; the handler records a Bluff only in `state.bluffs` and never in an event, log line or view, and a sealed Accusation only in its owner's view until the Round ends
+  - [x] 4.6 Suggestion, `show`, `seal` and `endTurn` handlers, the round-end reveal with the shared win, the event log, achievement awards and end conditions; the handler records a Bluff only in `state.bluffs` and never in an event, log line or view, and a sealed Accusation only in its owner's view until the Round ends
+    - **Built 2026-11-21** (`engine.ts` suggest, show, seal, endTurn; `ending.ts`): covered by the Property 14, 15, 17, 54 and 55 tests. A Bluff is kept only in `state.bluffs`; a sealed Accusation shows only in its owner's private view until the Round ends.
     - _Requirements: 5.4, 6.1, 6.2, 6.3, 6.5, 6.7_
-  - [ ] 4.7 Ending payload with the winners, the Residue placements, the Most Haunting award and the recap, built once when the game ends, and Play again
+  - [x] 4.7 Ending payload with the winners, the Residue placements, the Most Haunting award and the recap, built once when the game ends, and Play again
+    - **Built 2026-11-21** (`ending.ts` `buildEnding`, `server.ts` `playAgain`): the ending payload is built once when the game ends (winners, Residue placements, Most Haunting, recap, sources); Play again keeps the world, Players and pool and deals anew (Property 17 and the `server.test.ts` Play again test).
     - _Requirements: 6.6, 6.8, 11.6_
   - [x] 4.8 (`shared/src/party/server.ts`, `api/src/do/party-room.ts`, `api/src/routes/party.ts`; a new solo case ends the same visitor's old Room first) Time-to-live alarm, Master or host end, immediate deletion of all Room data, one active Room per session and total Room cap enforced via PartyDirectory, `PARTY_ENABLED` kill switch
     - _Requirements: 1.5, 10.4, 10.6, 10.7_
@@ -438,17 +443,23 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 9.1, 9.2_
   - [x] 4.10 (`api/src/do/party-directory.ts`) PartyDirectory singleton DO: `createRoom`, `deleteRoom`, atomic cap and per-session checks; no sockets, no alarm
     - _Requirements: 10.6_
-  - [ ] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings (including the Classic, Gentle and Quick presets and the Nudge, Frame, sound, auto-cross and Bot switches), hand-over, 60 s Master timeout, host token limited to `end`
+  - [x] 4.11 Master handling: `canControl` on every control message, world choice with `world_too_small` and `world_not_set`, settings (including the Classic, Gentle and Quick presets and the Nudge, Frame, sound, auto-cross and Bot switches), hand-over, 60 s Master timeout, host token limited to `end`
+    - **Built 2026-11-21** (`server.ts`, `protocol.ts`, `engine.ts` settings): every control message checks the Master (`not_master`), the world choice answers `world_too_small` and start answers `world_not_set`, the settings include the Classic, Gentle and Quick presets and separate switches for Nudges, Frames, sound, auto-cross and the Bot level, hand-over and the 60 s Master timeout work, and the host and display tokens can only end the Room (or, in an all-Bot Room, choose the world and start Bots).
     - _Requirements: 1.7, 1.5, 12.5, 14.6_
-  - [ ] 4.12 Residue, Inspect and Haunt handlers: place the Residue, run the 10 s Inspect timer, private results, Haunt Event choice with the 15 s default, Cold Spot and Blackout effects, Poltergeist transition
+  - [x] 4.12 Residue, Inspect and Haunt handlers: place the Residue, run the 10 s Inspect timer, private results, Haunt Event choice with the 15 s default, Cold Spot and Blackout effects, Poltergeist transition
+    - **Built 2026-11-21** (`engine.ts` inspect, choose, fireHaunt; `haunt.ts`, `residue.ts`): Residue is placed, the 10 s Inspect runs on the Room alarm, results are private, the Haunt Event choice has a 15 s default, Cold Spot and Blackout take effect and a sealed wrong Accusation moves a Player into the haunting (Property 26 and 28).
     - _Requirements: 4.6, 11.1, 11.2, 11.3_
-  - [ ] 4.13 Resolve and Eavesdrop handlers: gain at Round end, the 10 s window after a resolved Suggestion, private `heard` message, speech relay from the Master to the Host
+  - [x] 4.13 Resolve and Eavesdrop handlers: gain at Round end, the 10 s window after a resolved Suggestion, private `heard` message, speech relay from the Master to the Host
+    - **Built 2026-11-21** (`engine.ts` eavesdrop, `resolve.ts`, `server.ts` speech): Resolve is gained at Round end, the 10 s Eavesdrop window follows a resolved Suggestion, `heard` is private, and the Master's speech toggle is relayed to the Host (Property 29).
     - _Requirements: 11.4, 11.5, 7.6_
-  - [ ] 4.14 Cue handler: `cue` messages through `canCue` and `playCue`, delivery to the Host or the sender's phone with `playAtMs`, public log line (scripted text), pruning of `playing`
+  - [x] 4.14 Cue handler: `cue` messages through `canCue` and `playCue`, delivery to the Host or the sender's phone with `playAtMs`, public log line (scripted text), pruning of `playing`
+    - **Built 2026-11-21** (`engine.ts` cue, `cues.ts`): `cue` goes through `canCue` and `playCue`; a TV Cue tells every screen with `tvCue {eventId, cue, playAtMs}` and a phone Cue goes to the sender's phone with `playAtMs`; the log line is scripted text and `playing` is pruned (Property 32 and `server-room-extras.test.ts`).
     - _Requirements: 12.1, 14.2_
-  - [ ] 4.15 Nudge handlers: `nudge` messages through `canNudge` and `nudge`, `clock` sent to every screen at once, `nextWake` and the single alarm recomputed after every Nudge, no Haunt rise for a timeout after a Spook, refusals as `nudge_denied` with a reason
+  - [x] 4.15 Nudge handlers: `nudge` messages through `canNudge` and `nudge`, `clock` sent to every screen at once, `nextWake` and the single alarm recomputed after every Nudge, no Haunt rise for a timeout after a Spook, refusals as `nudge_denied` with a reason
+    - **Built 2026-11-21** (`engine.ts` nudge): Nudges go through `canNudge`; the new deadline reaches every screen in the same public view, the single alarm is recomputed after each, a timeout after a Spook raises no Haunt, and refusals are `nudge_denied:<reason>` (a change made in this task; two older tests now expect the prefixed code).
     - _Requirements: 12.2, 12.3, 12.4, 11.1, 13.1_
-  - [ ] 4.16 Sound consent, House Cues at every Haunt Event (Restless on every consenting phone), Frames, the private `notYou`, the secret `cueSources` kept out of every view and prompt, and the reveal in the ending payload
+  - [x] 4.16 Sound consent, House Cues at every Haunt Event (Restless on every consenting phone), Frames, the private `notYou`, the secret `cueSources` kept out of every view and prompt, and the reveal in the ending payload
+    - **Built 2026-11-21** (`engine.ts` houseCue, frame, cueOnPhone; `cues.ts`, `sounds.ts`): sound consent, House Cues at every Haunt Event (Restless on every consenting phone), Frames, the private `notYou` and the secret `sources` kept out of every view and prompt, with the reveal in the ending payload (Property 2, 35 and 36).
     - _Requirements: 14.1, 14.3, 14.4, 14.5_
   - [ ] 4.17 Hour strike and midnight: `nextWake` includes the next hour boundary, `strike` to the Host and the consenting phones at one server time, the scripted midnight line (through the ghost voice when it is on)
     - _Requirements: 15.1, 15.2, 15.3_
@@ -460,7 +471,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5_
   - [ ] 4.21 Rattle, the Becoming and prompts: handlers through `canRattle`, intensity by count, the three anonymous log lines, the secret senders, `becoming` once per Player, prompts
     - _Requirements: 19.1, 19.2, 19.4, 19.5, 19.6, 19.7_
-  - [ ] 4.22 Answer-choice window: the private `answer` prompt, 10 s to `show`, the default card on timeout (and at once for a Bot or a Poltergeist), the Turn Clock paused throughout, and the 15 s window after the answer
+  - [x] 4.22 Answer-choice window: the private `answer` prompt, 10 s to `show`, the default card on timeout (and at once for a Bot or a Poltergeist), the Turn Clock paused throughout, and the 15 s window after the answer
+    - **Built 2026-11-21** (`engine.ts` suggest, show, tick): the private answer prompt holds for 10 s, the default card is shown on timeout and at once for a Bot or a Poltergeist, the Turn Clock stays paused, and the 15 s window follows the answer (Property 14).
     - _Requirements: 6.1, 6.2_
 
 - [ ] 5. Contribution services

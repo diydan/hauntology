@@ -2,6 +2,9 @@ import { whoIs } from "./auth";
 import { publicDoors, type DoorSetup } from "./doors";
 import { createEngine, repairDoors, seatedHumans, step, type EngineSettings, type EngineState, type Outbound, type PublicSnapshot } from "./engine";
 import { handOver } from "./master";
+import { acceptMovement, maySend, sanitizeInput } from "./input";
+import { addClockSample, applySwitches, chooseWorld, cleanPose, initialExtras, ORIGIN_POSE, poseDue, type RoomExtras } from "./room-extras";
+import type { Pose } from "../ghost/types";
 import { applyPatch, emptyContrib, toContributions, type ContribPatch, type LobbyContrib } from "./lobby-contrib";
 import { offerFor, skipFor, type PromptOffer } from "./photoPrompts";
 import { buildPool } from "./pool";
@@ -52,6 +55,8 @@ export type Ports = {
   deleteContributions?(code: string): Promise<void>;
   /** Deletes stored generated songs for this Room when it ends (`game-songs` 3.1). */
   deleteSongs?(code: string): Promise<void>;
+  /** True when a game may start only after the Master chose a world (`world_not_set`, party-mode 4.11). The Worker says yes; a bare test Room does not. */
+  requireWorld?(): boolean;
 };
 
 export type RoomSongsState = Readonly<{
@@ -85,6 +90,8 @@ export type ServerState = Readonly<{
   contrib?: LobbyContrib;
   /** What the Room has spent on paid calls, against its own caps (party-mode 10.1). */
   spend?: RoomSpend;
+  /** The world, the Master's room switches, light consent, clock samples and the last hour strike (party-mode 4.11, 4.17 to 4.19). Optional, so a Room saved before it still loads. */
+  extras?: RoomExtras;
 }>;
 
 export const DEFAULT_SETTINGS: EngineSettings = { baseSeconds: 60, hauntMax: 10, nudges: "all", frames: true, sounds: true, puzzles: "medium", preset: "classic" };
@@ -95,13 +102,17 @@ export class RoomCore {
   private state: ServerState | null = null;
   /** Per socket: the start of its current one-second window and the messages in it. Memory only: an eviction resets it, which is harmless. */
   private readonly rate = new Map<string, { startMs: number; n: number }>();
+  /** Per socket, memory only (input and pose are never stored): when its last input was taken and when the Host's last pose was relayed. */
+  private readonly lastInputMs = new Map<string, number>();
+  private lastPoseMs: number | null = null;
+  private lastPose: Pose = ORIGIN_POSE;
   constructor(private readonly ports: Ports) {}
 
   private async loaded(): Promise<ServerState | null> {
     if (this.state !== null) return this.state;
     const text = await this.ports.load();
     if (text === undefined) return null;
-    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState; contrib?: LobbyContrib; spend?: RoomSpend };
+    const raw = JSON.parse(text) as { room: string; engine: EngineState | null; lobbySettings: EngineSettings; lobbyErrandOptOut?: Record<number, boolean>; doors?: DoorSetup | null; sockets: Record<string, SocketInfo>; voice?: RoomVoiceState; songs?: RoomSongsState; contrib?: LobbyContrib; spend?: RoomSpend; extras?: RoomExtras };
     const room = parseRoom(raw.room);
     if (room === null) return null;
     // a saved door state that does not parse falls back to the start (knock-door 8.1)
@@ -116,6 +127,7 @@ export class RoomCore {
       songs: raw.songs ?? initialRoomSongsState(),
       ...(raw.contrib !== undefined ? { contrib: raw.contrib } : {}),
       ...(raw.spend !== undefined ? { spend: raw.spend } : {}),
+      ...(raw.extras !== undefined ? { extras: raw.extras } : {}),
     };
     return this.state;
   }
@@ -136,6 +148,7 @@ export class RoomCore {
       songs: next.songs,
       ...(next.contrib !== undefined ? { contrib: next.contrib } : {}),
       ...(next.spend !== undefined ? { spend: next.spend } : {}),
+      ...(next.extras !== undefined ? { extras: next.extras } : {}),
     }));
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
     await this.ports.setAlarm(wakeAtMs === null ? ttlAt : Math.min(wakeAtMs, ttlAt));
@@ -152,6 +165,7 @@ export class RoomCore {
 
   private lobbyView(s: ServerState) {
     return { t: "lobby" as const, code: s.room.code, masterSeat: s.room.masterSeat, started: s.room.started, settings: s.lobbySettings,
+      worldId: s.extras?.world?.id ?? null, switches: (s.extras ?? initialExtras()).switches,
       seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, connected: x.connected })) };
   }
   private broadcastLobby(s: ServerState): void { for (const sid of Object.keys(s.sockets)) this.ports.send(sid, this.lobbyView(s)); }
@@ -164,7 +178,7 @@ export class RoomCore {
   }
 
   private draftEngine(s: ServerState): EngineState {
-    const botLevel = s.lobbySettings.preset === "gentle" ? ("gentle" as const) : ("standard" as const);
+    const botLevel = s.lobbySettings.botLevel ?? (s.lobbySettings.preset === "gentle" ? ("gentle" as const) : ("standard" as const));
     return createEngine({
       seed: s.room.seed,
       seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, botLevel })),
@@ -286,6 +300,62 @@ export class RoomCore {
     if (parsed.kind === "room") {
       const m = parsed.msg;
       const isMaster = me.role === "controller" && me.seat === s.room.masterSeat;
+      if (m.t === "world") {
+        // the Master chooses; in an all-Bot Room (no human seated) the Host does
+        if (!isMaster && !(me.role === "host" && humanCount(s.room) === 0)) return refuse("not_master");
+        if (s.engine !== null) return refuse("game_started");
+        const w = chooseWorld(m);
+        if (!w.ok) return refuse(w.code);
+        const next = { ...s, extras: { ...(s.extras ?? initialExtras()), world: w.world } };
+        await this.commit(next);
+        return this.broadcastLobby(next);
+      }
+      if (m.t === "roomSettings") {
+        if (!isMaster) return refuse("not_master");
+        const x = s.extras ?? initialExtras();
+        const next = { ...s, extras: { ...x, switches: applySwitches(x.switches, m) } };
+        await this.commit(next);
+        return this.broadcastLobby(next);
+      }
+      if (m.t === "hostClock") {
+        if (me.role !== "host") return refuse("not_host");
+        await this.commit({ ...s, extras: { ...(s.extras ?? initialExtras()), hostOffsetMin: m.offsetMin } });
+        return;
+      }
+      if (m.t === "ping") { this.ports.send(socketId, { t: "pong", id: m.id, serverMs: now }); return; }
+      if (m.t === "clockSample") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const x = s.extras ?? initialExtras();
+        const clock = addClockSample(x.clock, me.seat, m);
+        if (clock !== x.clock) await this.commit({ ...s, extras: { ...x, clock } });
+        return;
+      }
+      if (m.t === "light") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const x = s.extras ?? initialExtras();
+        await this.commit({ ...s, extras: { ...x, light: { ...x.light, [me.seat]: { consent: m.consent, reducedMotion: m.reducedMotion === true } } } });
+        return;
+      }
+      if (m.t === "input") {
+        // Not stored and not answered: a phone's stick reaches the Host only while it is the active Detective's, at most 30 a second.
+        if (me.role !== "controller" || me.seat === null || s.engine === null || s.engine.phase !== "playing" || s.engine.pausedSinceMs !== null) return;
+        const last = this.lastInputMs.get(socketId) ?? null;
+        if (!maySend(last, now)) return;
+        const eng = s.engine;
+        const ok = acceptMovement(sanitizeInput(m), me.seat, eng.turn?.seat ?? null, eng.players.filter((p) => p.poltergeist).map((p) => p.seat));
+        if (ok === null) return;
+        this.lastInputMs.set(socketId, now);
+        for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "host") this.ports.send(sid, { t: "input", seat: me.seat, input: ok });
+        return;
+      }
+      if (m.t === "pose") {
+        if (me.role !== "host") return refuse("not_host");
+        if (!poseDue(this.lastPoseMs, now)) return;
+        this.lastPoseMs = now;
+        this.lastPose = cleanPose(m, s.extras?.world ?? null, this.lastPose);
+        for (const [sid, info] of Object.entries(s.sockets)) if (info.role !== "host") this.ports.send(sid, { t: "pose", pos: this.lastPose.pos, yaw: this.lastPose.yaw });
+        return;
+      }
       if (m.t === "end") {
         if (!isMaster && me.role !== "host") return refuse("not_master");
         return this.end(s);
@@ -316,6 +386,7 @@ export class RoomCore {
         if (me.role !== "host") return refuse("not_host");
         if (s.engine !== null) return refuse("already_started");
         if (humanCount(s.room) > 0) return refuse("players_seated");
+        if (this.ports.requireWorld?.() === true && s.extras?.world == null) return refuse("world_not_set");
         let room = s.room;
         while (room.seats.length < (m.bots ?? 4)) {
           const res = seatPlayer(room, this.botName(room), null, now);
@@ -441,6 +512,7 @@ export class RoomCore {
       }
       if (parsed.msg.t === "sound") return refuse("not_started");
       if (s.room.seats.length < 2) return refuse("too_few_players");
+      if (this.ports.requireWorld?.() === true && s.extras?.world == null) return refuse("world_not_set");
       engine = draft;
     }
     const r = step(engine, { kind: "client", seat: me.seat, msg: parsed.msg }, now);
@@ -473,6 +545,7 @@ export class RoomCore {
     const s = await this.loaded();
     if (s === null) return;
     this.rate.delete(socketId);
+    this.lastInputMs.delete(socketId);
     const me = s.sockets[socketId];
     const sockets = { ...s.sockets };
     delete sockets[socketId];

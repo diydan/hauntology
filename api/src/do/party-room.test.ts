@@ -39,6 +39,9 @@ describe("PartyRoom Durable Object", () => {
     await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "hello", token: ana.token }));
     await t.r.webSocketMessage(sb as unknown as WebSocket, JSON.stringify({ t: "hello", token: ben.token }));
     await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "start" }));
+    expect(sa.sent.some((m) => (m as { t: string; code?: string }).t === "refused" && (m as { code: string }).code === "world_not_set")).toBe(true);
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "world", id: "gallery-1", walkRadius: 9 }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "start" }));
     expect(host.sent.some((m) => (m as { t: string; view?: { phase: string } }).t === "public" && (m as { view: { phase: string } }).view.phase === "playing")).toBe(true);
     expect(sa.sent.some((m) => (m as { t: string }).t === "private")).toBe(true);
     expect(host.sent.some((m) => (m as { t: string }).t === "private")).toBe(false);
