@@ -143,6 +143,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
     - _Requirements: 8.1, 8.2, 8.3_
   - [ ] 6.3 Client anchor placement
     - Build floor sampler from the Viewer BVH, call `placeAnchors` with a seed from the world id, send to `start`; pose reporting at ≤ 4 Hz.
+    - **Progress (2026-11-21, not ticked):** built without the Viewer: `planClientAnchors` (seed from the world id, `placeAnchors`, checked with the server's `validateAnchors`; none without a sampler) in `web/src/app/play/anchors.ts`, the 4 Hz pose limiter `createPoseLimiter` in `web/src/app/play/pose-limit.ts`, and `clientAnchors` in `PlayDeps`, which the controller sends with `start` (`anchors` on `ShellApi.playStart`); tests in `anchors.test.ts` and `controller.test.ts`, 2 deliberate breakages caught. **Still open (needs the real Viewer):** the BVH floor sampler and connecting the limiter and `clientAnchors` to the mounted Viewer.
     - _Requirements: 1.2, 3.5_
 
 - [ ] 7. Gallery content
