@@ -2,10 +2,11 @@
 
 Order matters: tooling and spikes first (they retire the unverified assumptions in `steering/tech.md`), then pure logic with property tests, then Durable Objects, then routes, then UI. Tasks marked `*` are optional test tasks that should still be done before submission.
 
-- [ ] 0. Dev tooling: World Labs MCP server
+- [x] 0. Dev tooling: World Labs MCP server
   - Build `tools/worldlabs-mcp` per its README: stdio MCP, tools `worldlabs_generate_from_image`, `worldlabs_get_operation`, `worldlabs_get_world`, `worldlabs_list_worlds`, `worldlabs_spend_status`; hard credit cap and ledger; scrub secrets when saving fixtures.
   - Build to `dist/index.js` so `.kiro/settings/mcp.json` works.
-  - Not built. Spike 1.1 uses a lighter runner instead, `tools/worldlabs-spike/spike.mjs`, which has the same spend cap, ledger (`tools/worldlabs-mcp/.ledger.json`) and scrubbed fixtures; the MCP server is still wanted for driving the API from Kiro.
+  - Built (2026-11-21): `tools/worldlabs-mcp/src/` (`api.mjs` the client, `server.mjs` the JSON-RPC tools, `stdio.mjs` the entry); `build.mjs` writes `dist/index.js`. Generate takes a required `max_credits` and is refused before anything is sent when its ceiling is above that, the per-call cap, the total cap or the live balance; a refused request gives its estimate back. Tests: `tools/test/worldlabs-mcp.test.mjs` (16, over a fake API, no spend). `dist/` is git-ignored, so run `node tools/worldlabs-mcp/build.mjs` after a clone. `worldlabs_get_world` and `worldlabs_list_worlds` use endpoint paths not yet seen on the service (see the README); no paid call has been made through the server.
+  - The spike runner `tools/worldlabs-spike/spike.mjs` stays for Spike 1.1, with the same ledger.
   - _Requirements: 7.1_
 
 - [ ] 1. Spikes (time-boxed; each writes `docs/spikes/<id>.md` and fixtures)

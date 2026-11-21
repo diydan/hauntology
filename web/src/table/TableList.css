@@ -1,0 +1,9 @@
+/* The Spirit table as a list (spirit-table 3.2): plain text in a column from 320 px wide, no sideways scroll. */
+.tl { display: grid; gap: var(--space-2); }
+.tl, .tl * { box-sizing: border-box; }
+.tl-list, .tl-sub { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.tl-sub { padding-left: var(--space-3); }
+.tl-room { display: grid; gap: var(--space-1); overflow-wrap: anywhere; }
+.tl-tag { opacity: 0.85; }
+.tl-empty, .tl-theory { font-style: italic; }
+.tl-answer { font-weight: var(--weight-strong, 600); }
