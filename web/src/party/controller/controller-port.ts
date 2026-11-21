@@ -78,6 +78,13 @@ export type TableFeed = Readonly<{
   clueCount?: number | null;
 }>;
 
+/** The ghost's knock at the TV after a Slam, as a phone sees it: the pattern is heard at the TV, never sent here (knock-door 5.3). */
+export type ControllerTvKnock = Readonly<{
+  /** The seat that knocked it back first, or null while nobody has. */
+  answeredBy: number | null;
+  lastResult?: Readonly<{ outcome: "help" | "wrong"; heard: string }>;
+}>;
+
 /** What the Room last said to this seat. The shell draws from it and keeps nothing else about the game. */
 export type RoomView = Readonly<{
   connection: Connection;
@@ -103,6 +110,8 @@ export type RoomView = Readonly<{
   doorLock?: ControllerDoorLock | null;
   /** What the Spirit table may draw (spirit-table 1.1, 3.1). Absent: no Spirit table switch. */
   table?: TableFeed;
+  /** The ghost's knock at the TV after a Slam, or none (knock-door 5.3). */
+  tvKnock?: ControllerTvKnock | null;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -139,6 +148,8 @@ export interface ControllerPort {
   doorAct?(doorId: string): void;
   /** Detective sends knock timestamps (ms) for a shut knock door (knock-door 3.3). */
   doorKnock?(doorId: string, times: readonly number[]): void;
+  /** Any Player: knock the ghost's pattern back at the TV after a Slam; the first right knock gets a Help (knock-door 5.3). */
+  tvKnock?(times: readonly number[]): void;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }

@@ -6,7 +6,7 @@ import { ATTEMPTS, type Kind, type Level, type Lock, type PuzzleSetting, type Tr
 import { verify } from "@hauntology/shared/puzzles/verify";
 import { worldCluePrompt, type CluePlace, type PublicWorldClue, type Sign } from "@hauntology/shared/puzzles/world-clues";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
-import { NOT_SEATED, type TableFeed, type ControllerDoorLock, type ControllerErrandsView, type ControllerPort, type JoinResult, type LockOffer, type RoomView } from "./controller-port";
+import { NOT_SEATED, type TableFeed, type ControllerDoorLock, type ControllerErrandsView, type ControllerPort, type ControllerTvKnock, type JoinResult, type LockOffer, type RoomView } from "./controller-port";
 
 /** The codes this Room answers to. Anything else is an unknown Room: the answer never says what exists. */
 export const STANDIN_CODES = { open: "K7M2", full: "MAX6", started: "STR4" } as const;
@@ -150,7 +150,7 @@ export class StandInPort implements ControllerPort {
     if (this.view.errands) this.set({ errands: { ...this.view.errands, caughtUsed: true } });
   }
 
-  setDoorsView(opts: { doors?: readonly PublicDoor[]; doorProblems?: readonly string[]; doorLock?: ControllerDoorLock | null }): void {
+  setDoorsView(opts: { doors?: readonly PublicDoor[]; doorProblems?: readonly string[]; doorLock?: ControllerDoorLock | null; tvKnock?: ControllerTvKnock | null }): void {
     this.set({ phase: "playing", ...opts });
   }
 
@@ -168,6 +168,10 @@ export class StandInPort implements ControllerPort {
 
   doorKnock(doorId: string, times: readonly number[]): void {
     this.calls.push(`doorKnock ${doorId} ${times.length}`);
+  }
+
+  tvKnock(times: readonly number[]): void {
+    this.calls.push(`tvKnock ${times.length}`);
   }
 
   async leave(): Promise<void> {
