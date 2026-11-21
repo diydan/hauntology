@@ -7,6 +7,7 @@ import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzle
 import type { TablePrivateInput, TablePublicInput } from "@hauntology/shared/table/data";
 import type { TableNotebook } from "@hauntology/shared/table/notebook";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
+import type { GameView } from "./game-view";
 
 /**
  * The Controller's side of a party Room (party-mode group 9), with nothing of the network in it. The shell talks only to this, so it is
@@ -103,6 +104,10 @@ export type RoomView = Readonly<{
   doorLock?: ControllerDoorLock | null;
   /** What the Spirit table may draw (spirit-table 1.1, 3.1). Absent: no Spirit table switch. */
   table?: TableFeed;
+  /** The game as this phone knows it, built only from the Room's messages (party-mode 9). Absent in the scripted stand-in. */
+  game?: GameView;
+  /** This phone's clock against the Room's (`server = phone + offsetMs`), measured with ping and pong; 0 until measured. */
+  clock?: Readonly<{ offsetMs: number; errorMs: number }>;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -139,6 +144,12 @@ export interface ControllerPort {
   doorAct?(doorId: string): void;
   /** Detective sends knock timestamps (ms) for a shut knock door (knock-door 3.3). */
   doorKnock?(doorId: string, times: readonly number[]): void;
+  /** Send one message to the Room (a Suggestion, a Cue, a setting...). The Room checks it; the page never does. Absent in the scripted stand-in. */
+  send?(msg: Readonly<{ t: string } & Record<string, unknown>>): void;
+  /** The Player answered or dismissed the Room's Rattle prompt; it is not shown again until the Room sends another. */
+  dismissPrompt?(): void;
+  /** After a reload: take the seat this device already holds, from its stored token. Resolves to the join result, or `null` when there is none. */
+  restore?(code?: string): Promise<JoinResult | null>;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }

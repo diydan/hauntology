@@ -158,3 +158,18 @@ describe("the Rattle prompts (party-mode 19.7)", () => {
     expect(view(1)).toBeUndefined();
   });
 });
+
+describe("the private Scare points (party-mode 9.12)", () => {
+  it("a haunting Player's private view carries their own points, and nobody else's view carries any", () => {
+    const j = joinHaunting(playing(), 2, 100);
+    let st = send(j.state, 2, { t: "rattleOn", on: true }, j.now + 10_000).state;
+    const r = send(st, 2, { t: "rattle", via: "button" }, j.now + 10_001);
+    const priv = r.out.filter((o): o is Extract<Outbound, { to: "seat" }> => o.to === "seat" && o.msg.t === "private");
+    const scare = (seat: number) => (priv.find((o) => o.seat === seat)!.msg as { view: { scare?: number } }).view.scare;
+    expect(scare(2)).toBe(1);
+    expect(scare(1)).toBeUndefined();
+    expect(JSON.stringify(r.out.filter((o) => o.to === "public"))).not.toContain('"scare"');
+    st = r.state;
+    expect(st.players.length).toBe(4);
+  });
+});

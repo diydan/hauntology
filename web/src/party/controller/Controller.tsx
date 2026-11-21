@@ -1,8 +1,8 @@
-import { useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { useDeviceSettings } from "../../device/device-settings";
 import type { ControllerPort } from "./controller-port";
 import { JoinPage } from "./JoinPage";
-import { SeatedFrame } from "./SeatedFrame";
+import { SeatedFrame, type PlayExtras } from "./SeatedFrame";
 import "./controller.css";
 
 /**
@@ -11,12 +11,14 @@ import "./controller.css";
  * and the frame, the menu and the Lock all use that one setting (a tap on Tilt in a Lock and the switch in the menu are the same choice).
  * `?code=` fills the Room Code in (the join URL carries only the code).
  */
-export function Controller({ port, initialCode = "" }: { port: ControllerPort; initialCode?: string }): ReactNode {
+export function Controller({ port, initialCode = "", extras }: { port: ControllerPort; initialCode?: string; extras?: PlayExtras }): ReactNode {
   const view = useSyncExternalStore((onChange) => port.subscribe(() => onChange()), () => port.getView(), () => port.getView());
   const [device, setDevice] = useDeviceSettings();
+  // a reload or a returning tab takes the seat this device already holds (party-mode 9.1)
+  useEffect(() => { void port.restore?.(initialCode === "" ? undefined : initialCode); }, [port, initialCode]);
   return (
     <div className={view.lock ? "pc-page pc-page--lock" : "pc-page"}>
-      {view.seat === null ? <JoinPage port={port} initialCode={initialCode} /> : <SeatedFrame port={port} view={view} control={{ device, setDevice }} />}
+      {view.seat === null ? <JoinPage port={port} initialCode={initialCode} /> : <SeatedFrame port={port} view={view} control={{ device, setDevice }} {...(extras ? { extras } : {})} />}
     </div>
   );
 }

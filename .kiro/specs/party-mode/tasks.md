@@ -547,59 +547,80 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 9.1, 9.5, 9.6_
 
 - [ ] 9. Web: Controller (`web/src/party/controller/`), installable web app
-  - [ ] 9.1 Join page with Room Code and nickname; reconnect with the stored token
+  - [x] 9.1 Join page with Room Code and nickname; reconnect with the stored token
+    - **Built 2026-11-21** (`web/src/party/phone/socket-port.ts`, `web/src/party/controller/Controller.tsx`): `RoomSocketPort` joins with `POST /api/party/:code/join`, opens the Room socket, sends the token only in the first `hello` message, keeps it in session storage under the seat, takes the same seat after a reload (`restore`) and reconnects with a 0.5 to 8 s back-off; a token or Room the server does not know ends the seat. Tested with a fake fetch, socket, storage and timers; a real phone and a real Room are not run here.
     - Built so far (2026-11-15): the join page `web/src/party/controller/JoinPage.tsx` against a port (`controller-port.ts`, with a scripted stand-in `standin-port.ts` for the dev page `web/controller-demo.html` and the tests): the Room Code and nickname rules of `shared/src/party`, plain-word refusals that reveal nothing about any Room, one main button. Still to do: the real port over the Room socket, and reconnect with the stored token.
     - _Requirements: 1.2, 1.4_
-  - [ ] 9.2 Pad and panel layouts with switching; 48 px targets, focus, contrast, tap-to-walk pad
+  - [x] 9.2 Pad and panel layouts with switching; 48 px targets, focus, contrast, tap-to-walk pad
+    - **Built 2026-11-21** (`SeatedFrame.tsx`, `play/PlayPanel.tsx`, `play/Pad.tsx`): the pad (stick, look area, tilt switch) and the panel (clock, actions, hand, notebook, cue controls, log) switch as before; a Player can walk by tapping a room button; targets are 48 px.
     - Built so far (2026-11-15): the seated frame `SeatedFrame.tsx` (header with Room Code, nickname, Master and the connection in words; a Pad / Panel switch that follows the phone's turn and lets the Player's choice win; named regions for the stick, look area, face buttons, hand, notebook and contributions; a Menu sheet with this phone's settings from `PuzzleSettings`; the Lock in `LockArea.tsx`). The settings are the phone's remembered ones (`web/src/device/`, `useDeviceSettings()`): a tilt choice made in a Lock and in the Menu is one saved setting. While a Lock is open the header and the page's padding are not drawn: the Menu (and a connection that is not fine) go in the puzzle's own bar (`PuzzleHost`'s `barExtra`), so a Lock fits a phone as it does on its own page. Still to do: the contents of the pad and the panel (stick, look, face buttons, tap-to-walk pad, hand, notebook).
     - _Requirements: 2.1, 2.6_
-  - [ ] 9.3 Multitouch stick and look, input at ≤ 30 Hz, release on blur and disconnect
+  - [x] 9.3 Multitouch stick and look, input at ≤ 30 Hz, release on blur and disconnect
+    - **Built 2026-11-21** (`play/Pad.tsx` `usePadInput`, `play.test.tsx`): a multitouch stick and look area send `input` at most 30 a second, clamped and with looks folded together; the stick and look are released on blur, on a hidden page, on a dropped connection and when the turn passes, and nothing is sent when the Player is not the active Detective.
     - _Requirements: 2.2, 2.3_
-  - [ ] 9.4 Gyro aim opt-in with permission from a tap and touch fallback
+  - [x] 9.4 Gyro aim opt-in with permission from a tap and touch fallback
+    - **Built 2026-11-21** (`play/Pad.tsx`, `phone/sensors.ts`): gyro aim is off until a tap, the permission is asked from the tap, a refusal or a missing sensor is said in words, and touch look stays. A real iPhone and Android check is blocked.
     - _Requirements: 2.4_
-  - [ ] 9.5 Vibration where supported, with visual and optional sound cues otherwise
+  - [x] 9.5 Vibration where supported, with visual and optional sound cues otherwise
+    - **Built 2026-11-21** (`phone/haptics.ts`, `play/PlayPanel.tsx`): a short buzz when the turn comes round or a question is put, and a visual pulse of the page on a phone that cannot buzz.
     - _Requirements: 2.5_
-  - [ ] 9.6 Hand view and the notebook grid (18 cards against every Player and the Residue, the Residue counter, auto-cross when the Master turned it on) stored on the device
+  - [x] 9.6 Hand view and the notebook grid (18 cards against every Player and the Residue, the Residue counter, auto-cross when the Master turned it on) stored on the device
+    - **Built 2026-11-21** (`play/Notebook.tsx`, `play/notebook-store.ts`): the Hand and the 18-card notebook grid against every Player and the Residue, filled only with what the Player knows for certain (Hand, shown, found, and passes with auto-cross), own marks cycling on a tap, the Residue counter, stored on the device under the Room Code and seat.
     - _Requirements: 4.2, 4.4_
-  - [ ] 9.7 Suggest and seal screens (a two-step "This is final" confirm, and the 15 s window after a Suggestion), relic selection by list or by camera scan; the Suggest list offers every Suspect and Relic, including cards in the Hand and cards marked no
+  - [x] 9.7 Suggest and seal screens (a two-step "This is final" confirm, and the 15 s window after a Suggestion), relic selection by list or by camera scan; the Suggest list offers every Suspect and Relic, including cards in the Hand and cards marked no
+    - **Built 2026-11-21** (`play/Actions.tsx`, `play/RelicScanner.tsx`): Suggest offers every Suspect and Relic (including cards in the Hand), the seal has a second step that says it is final, the 15 s window shows after a Suggestion, and a Relic can be scanned (built-in detector; fake detector in tests) or chosen from the list.
     - _Requirements: 6.1, 6.3, 6.4, 6.7_
   - [ ] 9.8 Contribution screens for Suspect, photo and Zone name; the photo step shows three Photo Prompts with tips to choose from, opens the camera for `take_now` and the picker for `camera_roll`, offers "Show me three more" (up to three times, with the remaining count shown) and "Use my own photo"
     - _Requirements: 3.1_
-  - [ ] 9.9 Clock, warning and Achievement display
+  - [x] 9.9 Clock, warning and Achievement display
+    - **Built 2026-11-21** (`play/ClockBar.tsx`): the Turn Clock on the Room's clock (the phone measures its offset with ping and pong), a once-only 10 s warning in a polite live region, paused and no-clock in words, and the Achievements earned with their seconds.
     - _Requirements: 5.3, 5.4_
-  - [ ] 9.10 Master menu: choose the world, settings (clock, Haunt maximum, speech), Bots, start, pause, end, Play again, hand-over; non-Masters never see it
+  - [x] 9.10 Master menu: choose the world, settings (clock, Haunt maximum, speech), Bots, start, pause, end, Play again, hand-over; non-Masters never see it
+    - **Built 2026-11-21** (`play/MasterMenu.tsx`, `play/LobbyPanel.tsx`): the world, settings, Bots, start, pause or resume, end, Play again and hand-over, for the Master only. The list of worlds comes from the page (`PlayExtras.worlds`); the Gallery source for it is not wired here.
     - _Requirements: 1.7, 2.1_
-  - [ ] 9.11 Inspect button with a 10 s progress bar and the private result, found Residue in the notebook, Resolve count and the Eavesdrop reaction after another Player's Suggestion
+  - [x] 9.11 Inspect button with a 10 s progress bar and the private result, found Residue in the notebook, Resolve count and the Eavesdrop reaction after another Player's Suggestion
+    - **Built 2026-11-21** (`play/Actions.tsx`, `play/TableControls.tsx`): Inspect sends the message and shows a 10 s bar then what was found (the Residue shows in the notebook), the Resolve count shows beside the Nudges, and Listen in appears after another Player's Suggestion with what was heard.
     - _Requirements: 2.1, 4.4, 4.6, 11.4, 11.5_
-  - [ ] 9.12 Poltergeist view: a clear "you are haunting now" state, spectating the world, the Haunt Event choice with a 15 s countdown, and the scare points shown privately
+  - [x] 9.12 Poltergeist view: a clear "you are haunting now" state, spectating the world, the Haunt Event choice with a 15 s countdown, and the scare points shown privately
+    - **Built 2026-11-21** (`play/Haunting.tsx`, `play/Prompts.tsx`): a clear "you are haunting now" screen, the Haunt Event choice with a 15 s countdown and effect text, the private scare points (new `scare` field in the private view), and Rattle. Spectating the world uses the Host pose (`pose` messages, kept in the game view); drawing it needs the 3D viewer and is part of task 8.
     - _Requirements: 11.2, 11.3, 11.6_
   - [ ] 9.13 Installable web app: manifest, service worker with an offline shell that explains how to rejoin, screen wake lock while a game is running
     - _Requirements: 7.7_
-  - [ ] 9.14 Phone sound: the one-time consent question with a tap that unlocks Web Audio, changeable from the menu; the four Cue sound files (at most 3 s each, absent files mean flash, vibration and the log line); playback at the scheduled start on the server clock; the flash (at most three per second, none under reduced motion) and vibration fallback; the private "that was not you" message
+  - [x] 9.14 Phone sound: the one-time consent question with a tap that unlocks Web Audio, changeable from the menu; the four Cue sound files (at most 3 s each, absent files mean flash, vibration and the log line); playback at the scheduled start on the server clock; the flash (at most three per second, none under reduced motion) and vibration fallback; the private "that was not you" message
+    - **Built 2026-11-21** (`play/PlayerSettings.tsx`, `play/phone-sound.ts`, `phone/browser-audio.ts`): the sound yes unlocks Web Audio from the tap and tells the Room whether audio works, sounds start at the Room's time (a cue more than 1.5 s late is dropped), at most 80 percent volume, a missing file or a phone with no audio flashes (at most three a second, none under reduced motion) and buzzes, and the private "not you" line is kept. Loudness on real phones is blocked.
     - _Requirements: 14.1, 14.3, 14.4_
-  - [ ] 9.15 Master presets: Classic, Gentle and Quick in the Master menu, with separate switches for Nudges (all, help-only or off), Frames, sounds, auto-cross and the Bot level; non-Masters never see them
+  - [x] 9.15 Master presets: Classic, Gentle and Quick in the Master menu, with separate switches for Nudges (all, help-only or off), Frames, sounds, auto-cross and the Bot level; non-Masters never see them
+    - **Built 2026-11-21** (`play/MasterMenu.tsx`): Classic, Gentle and Quick with separate switches for Nudges, Frames, sounds, auto-cross and the Bot level, for the Master only.
     - _Requirements: 12.5, 14.6_
-  - [ ] 9.16 Cue, Nudge and Frame controls in the menu: the Cue picker with TV or this phone, Help and Spook with their Resolve cost, the Frame picker (a Player and a Cue), 48 px targets, and the reason in words whenever one is unavailable
+  - [x] 9.16 Cue, Nudge and Frame controls in the menu: the Cue picker with TV or this phone, Help and Spook with their Resolve cost, the Frame picker (a Player and a Cue), 48 px targets, and the reason in words whenever one is unavailable
+    - **Built 2026-11-21** (`play/TableControls.tsx`): the Cue picker with the screen or this phone, Help and Spook with their cost, the Frame picker (another human and a Cue), 48 px targets, and the Room's refusal reason in words; not offered to a solo Player.
     - _Requirements: 13.1, 14.2, 14.4_
   - [ ] 9.17 Spirit lens: off by default, a calibration tap, motion permission from a tap, a fixed view without sensors, simple sprites at 30 fps at most, paused face down or hidden, a re-tap to calibrate again
     - _Requirements: 16.1, 16.2, 16.3, 16.4_
-  - [ ] 9.18 Light bar on the phone: the consent in the join question, light cues played at their scheduled start within the limits, nothing under reduced motion
+  - [x] 9.18 Light bar on the phone: the consent in the join question, light cues played at their scheduled start within the limits, nothing under reduced motion
+    - **Built 2026-11-21** (`play/PlayerSettings.tsx`, `play/PhoneEffects.tsx`, `play/phone-sound.ts`): the light bar has its own yes (sent with the reduced-motion preference), plays the Room's grey steps at their start on the Room's clock, never above 0.9, and is dark under reduced motion. OLED and LCD checks are blocked.
     - _Requirements: 17.1, 17.3_
-  - [ ] 9.19 Rattle: the opt-in with the motion permission, shake detection and the hold-to-rattle button, the prompts, the Becoming sting, and Rattle offered afterwards
+  - [x] 9.19 Rattle: the opt-in with the motion permission, shake detection and the hold-to-rattle button, the prompts, the Becoming sting, and Rattle offered afterwards
+    - **Built 2026-11-21** (`play/Haunting.tsx`, `play/Prompts.tsx`, `phone/sensors.ts`, `game-view.ts`): the Rattle opt-in with the motion permission from a tap, shake detection (three swings in 1.5 s) and the hold-to-rattle button, the two prompts, the Becoming sting on this phone with its own yes to sound, and Rattle offered afterwards. Real-phone shake checks are blocked.
     - _Requirements: 19.1, 19.3, 19.6, 19.7_
-  - [ ] 9.20 Stitch on the phone: the join question with the tick and the plain words, recording the Word Bank with the word check, leaving deletes the clips
+  - [x] 9.20 Stitch on the phone: the join question with the tick and the plain words, recording the Word Bank with the word check, leaving deletes the clips
+    - **Built 2026-11-21** (`play/StitchPanel.tsx`, `phone/recorder.ts`): the join question in plain words with the tick, the Player's own yes, recording the twelve words (at most 2 s, base64 to the Room), the word check answer in words, and Delete my recordings (also sent on leaving).
     - _Requirements: 18.2, 18.3_
-  - [ ] 9.21 Master switches: the conditions choice (place, table's location or off), the hour strike, the light bar, Rattle and Stitch, alongside the presets of 9.15
+  - [x] 9.21 Master switches: the conditions choice (place, table's location or off), the hour strike, the light bar, Rattle and Stitch, alongside the presets of 9.15
+    - **Built 2026-11-21** (`play/MasterMenu.tsx`): the sky (off, a place, this table), the hour strike, the light bar, Rattle and Stitch switches beside the presets.
     - _Requirements: 15.3, 15.4, 17.1, 18.1, 19.3_
-  - [ ] 9.22 Ending recap on the phone: the entries as a plain list with a text line each, each Bluff marked in words, the Solution and the Frame and House Cue senders at the end, usable with no Display and no sound
+  - [x] 9.22 Ending recap on the phone: the entries as a plain list with a text line each, each Bluff marked in words, the Solution and the Frame and House Cue senders at the end, usable with no Display and no sound
+    - **Built 2026-11-21** (`play/Recap.tsx`): the ending as a plain list with a line each, each Bluff marked in words, the Solution, the winners or "The haunting continues", Most Haunting, and who sent every Frame, House Cue and Rattle, usable with no Display and no sound.
     - _Requirements: 6.8_
-  - [ ] 9.23 Controller: the card-choice prompt when holding several named cards, with a 10 s countdown and the default shown in words
+  - [x] 9.23 Controller: the card-choice prompt when holding several named cards, with a 10 s countdown and the default shown in words
+    - **Built 2026-11-21** (`play/Prompts.tsx` `AnswerPrompt`): the card-choice prompt for a Player holding several named cards, with the 10 s countdown and, in words, that the Room chooses if they do not.
     - _Requirements: 6.2_
   - [ ] 9.24 Controller: the Suspect step offers Preset, designed or (only when the Master's `selfies` switch is on) selfie, with no push towards the selfie; the consent in plain words with a tick; live front camera only with a guide and a retake; the quality check in the browser; a Preset Ghost on any failure; a Master `selfies` switch in the menu, off by default; for a designed or selfie Suspect, the voice pick in plain words ("a lower voice" or "a lighter voice", lower when nothing is picked, no free text, never guessed from a face)
     - _Requirements: 3.10, 3.11, 3.12, 3.13, 3.14_
   - [ ] 9.25 Controller, Host HUD and ending screen: draw each Player's Seat Portrait (their contributed Ghost Profile in full colour, or a nickname chip) and cross-fade it to black and white, 0.6 s at most and a cut under reduced motion, when `seatLook` turns `'mono'` after the Becoming; the nickname row says "joined the haunting" in words; Suspect cards, the Lodger badge and the narrators never change colour
     - _Requirements: 19.8, 19.9_
-  - [ ] 9.26 Controller notebook: Theory marks, a choice of the six Zones or "No mark" for each Suspect (48 pixel targets), stored on the device with the grid, shared with the Spirit table through `setTheory`, nothing sent
+  - [x] 9.26 Controller notebook: Theory marks, a choice of the six Zones or "No mark" for each Suspect (48 pixel targets), stored on the device with the grid, shared with the Spirit table through `setTheory`, nothing sent
+    - **Built 2026-11-21** (`play/Notebook.tsx`): the Theory marks (six Zones or No mark for each Suspect, via `TheoryChoice` and `setTheory`) are kept on the device with the grid and sent nowhere.
     - Built so far: the room choice, `web/src/table/TheoryChoice.tsx` (six Zones or "No mark" for each Suspect, 48 pixel targets, `setTheory`, a note that the marks are the Player's own). Still to do: keeping the marks on the device with the notebook grid, and the Controller wiring (the Controller does not exist yet).
     - _Requirements: 4.7, 4.8_
 

@@ -8,7 +8,7 @@ import {
   shutDoor, slamTargetsAt, startTvKnock,
   type DoorReason, type DoorSetup, type DoorsState, type PublicDoor, type TvKnock,
 } from "./doors";
-import { endingPayload, type EndingPayload, type RecapEvent, type Source } from "./ending";
+import { endingPayload, scarePoints, type EndingPayload, type RecapEvent, type Source } from "./ending";
 import {
   CAUGHT_BONUS_MS, DONE_ANSWER_MS, isExpired, mayCallCaught, mayTryDone, nextErrand, settleCaught, settleDone,
   type Errand, type ErrandObject, type SeatInfo,
@@ -215,6 +215,8 @@ export type PrivateSnapshot = Readonly<{
   soundConsent: boolean;
   /** Only for a human who is haunting: whether Rattle is allowed by the Master and whether this Player turned it on. */
   rattle?: Readonly<{ allowed: boolean; on: boolean }>;
+  /** Only for a human who is haunting: their own Scare points so far, private until the ending (party-mode 9.12). */
+  scare?: number;
   choose: Readonly<{ options: readonly HauntOption[]; deadlineMs: number }> | null;
   worldClues?: readonly PublicWorldClue[];
   /** Shut knock door in front of this Detective on their Turn, with its Faded clue if they missed the Sight (knock-door 3.3). */
@@ -1149,7 +1151,7 @@ export function privateSnapshot(s: EngineState, seat: number): PrivateSnapshot |
     choose: pend !== null && pend.chooser === seat ? { options: [...pend.options], deadlineMs: pend.deadlineMs } : null,
     heard: p.heard.map((h) => ({ ...h })),
     soundConsent: p.soundConsent,
-    ...(p.poltergeist && !isBot(s, seat) ? { rattle: { allowed: s.settings.rattle ?? true, on: p.rattleOn === true } } : {}),
+    ...(p.poltergeist && !isBot(s, seat) ? { rattle: { allowed: s.settings.rattle ?? true, on: p.rattleOn === true }, scare: scarePoints(s.log as readonly RecapEvent[], s.sources, s.players.filter((q) => q.poltergeist).map((q) => q.seat))[seat] ?? 0 } : {}),
     canEavesdrop: s.eavesdrop !== null && s.eavesdrop.suggester !== seat && s.eavesdrop.refuter !== seat && !p.poltergeist && p.resolve >= 1 && !p.heard.some((h) => h.eventId === s.eavesdrop?.eventId) ? s.eavesdrop.eventId : null,
     ...((s.settings.cluePlace ?? "phone") === "world" ? { worldClues: worldClueNotebook(s.locks, String(seat)) } : {}),
     ...(doorLock ? { doorLock } : {}),
