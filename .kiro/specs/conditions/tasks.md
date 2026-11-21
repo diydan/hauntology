@@ -133,14 +133,14 @@ Order: the spike first, then pure logic with property tests, then the API module
     - **Property 10: Star texture bounds and dimming**
     - **Validates: Requirements 6.1, 6.2, 6.3**
 
-- [ ] 7. Web: the sky panel
-  - [ ] 7.1 City search: built under `.kiro/specs/haunwallker` task 9.6 (the Set the sky card on the Haunt screen) and task 7.1 (photo timestamp read before the re-encode); tick this line when those are done
+- [x] 7. Web: the sky panel
+  - [x] 7.1 City search: built under `.kiro/specs/haunwallker` task 9.6 (the Set the sky card on the Haunt screen) and task 7.1 (photo timestamp read before the re-encode)
     - _Requirements: 1.1_
-  - [ ] 7.2 "Use this table's location" button, asked only on the tap and rounded in the browser: built under `.kiro/specs/haunwallker` task 9.6 (the Set the sky card on the Haunt screen) and task 7.1 (photo timestamp read before the re-encode); tick this line when those are done
+  - [x] 7.2 "Use this table's location" button, asked only on the tap and rounded in the browser: built under `.kiro/specs/haunwallker` task 9.6 (the Set the sky card on the Haunt screen) and task 7.1 (photo timestamp read before the re-encode)
     - _Requirements: 1.2_
-  - [ ] 7.3 Memory Day picker (date from 1940 to yesterday, time of day): built under `.kiro/specs/haunwallker` task 9.6 (the Set the sky card on the Haunt screen) and task 7.1 (photo timestamp read before the re-encode); tick this line when those are done
+  - [x] 7.3 Memory Day picker (date from 1940 to yesterday, time of day): built under `.kiro/specs/haunwallker` task 9.6 (the Set the sky card on the Haunt screen) and task 7.1 (photo timestamp read before the re-encode)
     - _Requirements: 3.1_
-  - [ ] 7.4 Photo timestamp suggestion, changeable and clearable: built under `.kiro/specs/haunwallker` task 9.6 (the Set the sky card on the Haunt screen) and task 7.1 (photo timestamp read before the re-encode); tick this line when those are done
+  - [x] 7.4 Photo timestamp suggestion, changeable and clearable: built under `.kiro/specs/haunwallker` task 9.6 (the Set the sky card on the Haunt screen) and task 7.1 (photo timestamp read before the re-encode)
     - _Requirements: 3.3_
 
 - [ ] 8. Checkpoint
