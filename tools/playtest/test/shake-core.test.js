@@ -85,3 +85,23 @@ test('a stored state is cleaned: anything unexpected falls back to the start', (
   assert.deepEqual(cleanState({ bigDoor: 'ajar', chair: 99 }), INITIAL_STATE);
   assert.deepEqual(cleanState({ chair: '2' }), INITIAL_STATE);
 });
+
+test('feel: the reach and the facing are pinned at their edges, and a far phone hears at half volume', () => {
+  const src = { x: 5, y: 5 };
+  const at = (m, facing = 0) => ({ x: 5 + m, y: 5, facing }); // m metres east of the source
+  // a phone east of the source looks at it when it faces west (180)
+  assert.equal(feel(src, at(REACH.near, 180)).level, 'strong', 'exactly near is still strong');
+  assert.equal(feel(src, at(REACH.near + 0.01, 180)).level, 'soft');
+  assert.equal(feel(src, at(REACH.far, 180)).level, 'soft', 'exactly far is still soft');
+  assert.equal(feel(src, at(REACH.far + 0.01, 180)).level, 'none');
+  // facing: 100 degrees off is still in view, 101 is not, and straight away is faint
+  assert.equal(feel(src, at(3, 180 - 100)).level, 'soft');
+  assert.equal(feel(src, at(3, 180 - 101)).level, 'faint');
+  assert.equal(feel(src, at(3, 180 - 135)).level, 'faint');
+  assert.equal(feel(src, at(3, 0)).level, 'faint');
+  // what each level gives
+  assert.deepEqual(pick(feel(src, at(1, 180))), { level: 'strong', buzz: true, picture: true, sound: 1 });
+  assert.deepEqual(pick(feel(src, at(4, 180))), { level: 'soft', buzz: false, picture: true, sound: 0.5 });
+  assert.deepEqual(pick(feel(src, at(3, 0))), { level: 'faint', buzz: false, picture: false, sound: 0.2 });
+});
+const pick = ({ level, buzz, picture, sound }) => ({ level, buzz, picture, sound });

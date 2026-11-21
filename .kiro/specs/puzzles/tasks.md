@@ -435,4 +435,5 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 25.7_
   - [ ] 17.6 Phone positions and facing from each phone's own view, in place of the tap-to-move and Turn controls
     - _Requirements: 25.6_
-  - [ ] 17.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `makeTogether` and `feel`. Ensure every test passes, ask the user if questions arise.
+  - [x] 17.7 Checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `makeTogether` and `feel`. Ensure every test passes, ask the user if questions arise.
+    - Built: traceability OK; `shake-core` and `shake-room` tests pass; mutation pass on `makeTogether` and `feel`: 12 mutants, 3 survived (the near edge, the facing cut-off, the far-phone volume) until an edge test was added to `tools/playtest/test/shake-core.test.js`; all 12 now fail a test. The wider `tools/test` run has one failure that is also on main (the World Labs host-name check)
