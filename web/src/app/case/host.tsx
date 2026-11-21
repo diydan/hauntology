@@ -10,6 +10,7 @@ import type { HostHandle, HostSetup } from "./types";
 import type { ViewerHandle } from "../viewer/types";
 import { eventLine, namesOf, notebook, secondsLeft } from "./words";
 import { Ending } from "./Ending";
+import { DoorsPanel } from "./DoorsPanel";
 
 /**
  * The real Host for "Play a case" (integration 4.1, 4.2; party-mode 8.15): a real Room on the server, the visitor in
@@ -112,6 +113,13 @@ const REFUSALS: Record<string, string> = {
   already_suggested: "You have asked once this turn.",
   not_in_zone: "Go to a room first.",
   zone_closed: "A shut door blocks the way to that room.",
+  not_at_door: "Go to a room beside that door first.",
+  not_a_detective: "Only a detective can knock on a door.",
+  door_open: "That door is open already.",
+  no_tries_left: "No knocks left at that door this turn.",
+  no_knocks: "Knock first.",
+  tv_knock_answered: "Someone knocked it back already.",
+  no_tv_knock: "The ghost has not knocked.",
 };
 
 export type SoloAudioDeps = Partial<Pick<HostAudioDeps, "fetchSpeech" | "createAudio" | "unlockAudio" | "fallbackSpeak" | "deadlineMs">>;
@@ -217,8 +225,8 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
   const left = secondsLeft(view, now);
   const lines = view.events.map((e) => eventLine(e, n)).filter((x): x is string => x !== null).slice(-8);
 
+  const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (view.phase === "ended" && view.ending) {
-    const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     return <Ending view={view} n={n} reducedMotion={reduced} songLine={snap.activeSong ?? null} />;
   }
 
@@ -304,7 +312,7 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
           <p>The house stirs. You choose what happens:</p>
           <div className="ui-row">
             {me.choose.options.map((o) => (
-              <button key={o} type="button" className="ui-button" onClick={() => client.send({ t: "choose", option: o })}>{o.replace("-", " ")}</button>
+              <button key={o} type="button" className="ui-button" onClick={() => client.send({ t: "choose", option: o })}>{o === "slam" ? "Slam a door" : o.replace("-", " ")}</button>
             ))}
           </div>
         </section>
@@ -342,6 +350,8 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
           <button type="submit" className="ui-button ui-button--primary" disabled={!mine || view.at === null || !ask.suspect || !ask.relic}>Ask</button>
         </form>
       </section>
+
+      <DoorsPanel client={client} snap={snap} view={view} n={n} reducedMotion={reduced} />
 
       <section className="ui-panel ui-stack" aria-label="Your cards and notebook">
         <p>Your cards: {me ? me.hand.map((c) => n.card(c.id)).join(", ") : "…"}</p>
