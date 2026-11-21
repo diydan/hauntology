@@ -18,6 +18,7 @@ function fadedKnockHint(faded: Sight | null): string | null {
  */
 export function DoorControls({ port, view }: { port: ControllerPort; view: RoomView }): ReactNode {
   const [taps, setTaps] = useState<number[]>([]);
+  const [tvTaps, setTvTaps] = useState<number[]>([]);
   const [announcement, setAnnouncement] = useState<string>("");
   const prevDoors = useRef<readonly PublicDoor[] | undefined>(undefined);
 
@@ -38,8 +39,9 @@ export function DoorControls({ port, view }: { port: ControllerPort; view: RoomV
   const shutHeavy = (view.doors ?? []).filter((d) => !d.open && d.lock === "heavy");
   const problems = view.master && view.doorProblems && view.doorProblems.length > 0 ? doorProblemLines(view.doorProblems) : [];
   const knock = view.doorLock ?? null;
+  const tv = view.tvKnock ?? null;
 
-  if (shutHeavy.length === 0 && problems.length === 0 && !knock && !announcement) return null;
+  if (shutHeavy.length === 0 && problems.length === 0 && !knock && !tv && !announcement) return null;
 
   const fadedHint = knock ? fadedKnockHint(knock.faded) : null;
 
@@ -71,6 +73,43 @@ export function DoorControls({ port, view }: { port: ControllerPort; view: RoomV
           </button>
         </section>
       ))}
+
+      {tv ? (
+        tv.answeredBy === null ? (
+          <section className="ui-panel ui-stack--tight" aria-label="Knock back at the TV">
+            <p className="ui-prompt">The ghost is knocking at the TV. Listen, then knock it back. The first right knock gets 10 more seconds.</p>
+            {tv.lastResult ? (
+              <p className="ui-status" role="status" aria-live="polite">{tv.lastResult.heard} Not quite. Try again; it costs nothing.</p>
+            ) : null}
+            <div className="ui-row">
+              <button type="button" className="ui-button" onClick={() => setTvTaps((prev) => [...prev, Date.now()])}>
+                Tap ({tvTaps.length})
+              </button>
+              <button
+                type="button"
+                className="ui-button"
+                disabled={tvTaps.length === 0}
+                onClick={() => {
+                  const start = tvTaps[0] ?? 0;
+                  port.tvKnock?.(tvTaps.map((t) => Math.max(0, t - start)));
+                  setTvTaps([]);
+                }}
+              >
+                Send knock
+              </button>
+              {tvTaps.length > 0 ? (
+                <button type="button" className="ui-button ui-button--quiet" onClick={() => setTvTaps([])}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
+          </section>
+        ) : (
+          <p className="ui-status" role="status" aria-live="polite" aria-label="Knock back result">
+            {tv.answeredBy === view.seat ? "You knocked it back. You get 10 more seconds on your next Turn." : "Someone else knocked it back."}
+          </p>
+        )
+      ) : null}
 
       {knock ? (
         <section className="ui-panel ui-stack--tight" aria-label={`Knock door ${knock.doorId}`}>
