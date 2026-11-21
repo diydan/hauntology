@@ -14,7 +14,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - _Requirements: 1.2_
 
 - [ ] 2. Phase 2: the Engine (`shared/src/party/engine.ts`)
-  - [ ] 2.1 `RoomGameState`, `Action`, `Outbound`, `StepResult` and the protocol schemas (party-mode `protocol.ts`)
+  - [x] 2.1 (Built: `shared/src/party/engine.ts` exports `EngineState` (the design's `RoomGameState`), `Action`, `Outbound`, `StepResult`; `shared/src/party/protocol.ts` has `ClientMsgSchema` for client messages; server messages are typed by `Outbound` only, with no server-side zod schema) `RoomGameState`, `Action`, `Outbound`, `StepResult` and the protocol schemas (party-mode `protocol.ts`)
     - _Requirements: 2.1_
   - [ ] 2.2 (core loop done in `shared/src/party/engine.ts`: start, Turns, walk, plain Inspect, Suggestions with the answer choice, Accusations, the clock, Round end, Haunt Events, ending, Bots, Eavesdrop, Nudges with every limit, the Master pause, Cues, Frames, House Cues on every Haunt Event, sound consent, reconnects (20 s grace, the two-miss skip, the Master hand-over after 60 s); presets and switches from the Master, Locks on a human's Inspect (Sights on entering a Zone, Attempts, give-up, the Cap, the Turn end, Plain Inspect, the level rising with the Haunt); still to add: Haunting puzzles, Bots that Eavesdrop) `step` for the lobby, start, turns, Suggestions, the answer choice, Accusations, Inspect, the Haunt, alarms and Bots, calling only the rule modules
     - _Requirements: 2.1, 2.2, 2.4_
@@ -24,7 +24,7 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - **Validates: Requirements 2.3**
   - [x] 2.5 **Property 3: One alarm is enough**
     - **Validates: Requirements 2.4, 3.1**
-  - [ ] 2.6 (60 random all-Bot games and 40 solo games end in the test suite; the ten thousand run is next) Checkpoint: ten thousand random all-Bot games end, with no leak and no stuck alarm
+  - [x] 2.6 (Built: `shared/src/party/engine.prop.test.ts`, opt-in `HAUNT_CHECKPOINT_10K=1`: 10,000 seeded all-Bot games, 2 to 6 seats, hauntMax 8/10/12; 0 leaks, 0 stuck alarms, 0 unended; 92 s run on 2026-11-21) Checkpoint: ten thousand random all-Bot games end, with no leak and no stuck alarm
     - _Requirements: 1.2, 2.3_
 
 - [x] 3. Phase 3: the Room server (`api/`)
