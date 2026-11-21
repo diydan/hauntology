@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { eventLine, type GameView } from "../game-view";
 import { nameOf } from "./play-logic";
+import { SeatRow } from "./SeatPortrait";
 
 const SENT: Readonly<Record<string, string>> = { "house-cue": "sent a sound", frame: "sent a frame", rattle: "rattled the house", "haunting-puzzle": "solved a haunting puzzle", errand: "did an errand" };
 
@@ -21,6 +22,7 @@ export function Recap({ game, me }: { game: GameView; me: number }): ReactNode {
   return (
     <section className="ui-card ui-stack" aria-label="The ending">
       <h2 className="ui-heading">{end.houseWins ? "The haunting continues" : end.winners.length > 0 ? `${end.winners.map(name).join(" and ")} solved it` : "Nobody solved it"}</h2>
+      <SeatRow game={game} me={me} reducedMotion={typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches} />
       <p className="ui-lead">It was {solution}.</p>
       {end.mostHaunting !== null ? <p className="ui-hint">Most haunting: {name(end.mostHaunting)}.</p> : null}
       <p className="ui-hint">Help given: {end.nudges.help}. Spooks: {end.nudges.spook}.</p>

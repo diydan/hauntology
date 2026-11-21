@@ -2,6 +2,7 @@ import { whoIs } from "./auth";
 import { publicDoors, type DoorSetup } from "./doors";
 import { createEngine, repairDoors, seatedHumans, step, type EngineSettings, type EngineState, type Outbound, type PublicSnapshot } from "./engine";
 import { handOver } from "./master";
+import { seatProfile } from "./seat-portraits";
 import { acceptMovement, maySend, sanitizeInput } from "./input";
 import { addClockSample, applySwitches, type SkyPlace, chooseWorld, cleanPose, initialExtras, ORIGIN_POSE, poseDue, scheduleStrike, type RoomExtras, type Sky } from "./room-extras";
 import { lightMessages, lightTriggers, strikeLine, strikeMessages } from "./room-time";
@@ -283,7 +284,11 @@ export class RoomCore {
   private lobbyView(s: ServerState) {
     return { t: "lobby" as const, code: s.room.code, masterSeat: s.room.masterSeat, started: s.room.started, settings: s.lobbySettings,
       worldId: s.extras?.world?.id ?? null, switches: (s.extras ?? initialExtras()).switches,
-      seats: s.room.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, connected: x.connected })) };
+      seats: s.room.seats.map((x) => {
+        // each Player's picture, if they contributed a ghost (a chip is drawn for the rest and for every Bot)
+        const portrait = x.bot ? null : seatProfile(s.room.code, x.seat, s.contrib);
+        return { seat: x.seat, nickname: x.nickname, bot: x.bot, connected: x.connected, ...(portrait !== null ? { portrait } : {}) };
+      }) };
   }
   private broadcastLobby(s: ServerState): void { for (const sid of Object.keys(s.sockets)) this.ports.send(sid, this.lobbyView(s)); }
 

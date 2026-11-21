@@ -11,6 +11,7 @@ import type { Theory } from "@hauntology/shared/party/theory";
 import { SpiritTableSection, SpiritTableSwitch, useSpiritTable } from "../../table/SpiritTableSwitch";
 import { WorldClueNotebook } from "./WorldClueNotebook";
 import { LobbyPanel } from "./play/LobbyPanel";
+import { SeatPortrait } from "./play/SeatPortrait";
 import { MasterMenu, type WorldChoice } from "./play/MasterMenu";
 import { SoundLightSettings } from "./play/PlayerSettings";
 import { PlayPanel } from "./play/PlayPanel";
@@ -78,6 +79,7 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
         <header className="pc-bar">
           <div className="pc-who">
             <span className="ui-chip is-active" aria-label={`Room Code ${view.code ?? ""}`}>{view.code}</span>
+            {view.game !== undefined && view.seat !== null ? <SeatPortrait seat={view.seat} nickname={view.nickname ?? ""} profile={view.game.lobby?.seats.find((x) => x.seat === view.seat)?.portrait ?? null} look={view.game.pub?.seats.find((x) => x.seat === view.seat)?.poltergeist ? "mono" : "colour"} reducedMotion={typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches} /> : null}
             <span className="pc-name">{view.nickname}</span>
             {view.master ? <span className="ui-chip">Master</span> : null}
           </div>

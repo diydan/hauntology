@@ -266,3 +266,23 @@ describe("RoomCore: the Master's speaker controls and recap skip reach the Host 
     expect(f.of("ben", "refused").at(-1)).toMatchObject({ code: "not_master" });
   });
 });
+
+describe("RoomCore: Seat Portraits in the lobby view (party-mode 19.8)", () => {
+  it("names a Player's contributed ghost picture in the lobby view for every screen, none for a Bot or a Player who made none, and no token", async () => {
+    const f = fakes(3, false);
+    const core = new RoomCore(f.ports);
+    const { hostToken } = await core.create("ABCD");
+    const a = await core.join("Ana");
+    const b = await core.join("Ben");
+    if (!a.ok || !b.ok) throw new Error("join");
+    await say(core, "host", { t: "hello", token: hostToken });
+    await say(core, "ana", { t: "hello", token: a.token });
+    await core.recordContribution(a.token, { kind: "ghost", profileId: "ghost-xyz", status: "ok" });
+    await say(core, "ana", { t: "addBot" });
+    const view = f.of("host", "lobby").at(-1)!.seats as { seat: number; portrait?: { portraitUrl: string } }[];
+    expect(view.find((s) => s.seat === 1)!.portrait).toEqual({ portraitUrl: "/api/ghosts/sprite/room-ABCD-1" });
+    expect(view.find((s) => s.seat === 2)!.portrait).toBeUndefined();
+    expect(view.find((s) => s.seat === 3)!.portrait).toBeUndefined();
+    expect(JSON.stringify(view)).not.toContain(a.token);
+  });
+});

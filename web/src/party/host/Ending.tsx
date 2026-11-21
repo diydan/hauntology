@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { effectLimits, type ReactionEvent } from "@hauntology/shared/party/display";
 import { eventLine, type GameView } from "../controller/game-view";
 import { nameOf } from "../controller/play/play-logic";
+import { SeatRow } from "../controller/play/SeatPortrait";
 
 type EndingView = NonNullable<NonNullable<GameView["pub"]>["ending"]> & { stitch?: readonly { seat: number; templateId: string; subtitle: string }[] };
 type Entry = Readonly<Record<string, unknown>>;
@@ -51,6 +52,7 @@ export function Ending({ game, skipped, reducedMotion }: { game: GameView; skipp
           {end.winners.map((seat, i) => <li key={seat} className="ui-lead">{i === 0 && end.winners.length > 0 ? "First Detective: " : "Also solved it: "}{name(seat)}</li>)}
         </ol>
       )}
+      <SeatRow game={game} reducedMotion={reducedMotion} />
       <p className="ui-lead">It was <strong>{nameOf(pub, end.solution.suspect)}</strong>, in the <strong>{nameOf(pub, end.solution.zone)}</strong>, with the <strong>{nameOf(pub, end.solution.relic)}</strong>.</p>
       {haunting.length > 0 ? <p className="ui-hint">Joined the haunting: {haunting.map((s) => s.nickname).join(", ")}.</p> : null}
       {end.mostHaunting !== null ? <p className="ui-hint">Most Haunting: {name(end.mostHaunting)}, with {end.scare[end.mostHaunting] ?? 0} scare points.</p> : null}

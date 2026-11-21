@@ -8,7 +8,7 @@ import type { PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/e
 export type LobbyInfo = Readonly<{
   code: string; masterSeat: number | null; started: boolean; worldId: string | null;
   settings: Readonly<Record<string, unknown>>; switches: Readonly<Record<string, unknown>>;
-  seats: readonly Readonly<{ seat: number; nickname: string; bot: boolean; connected: boolean }>[];
+  seats: readonly Readonly<{ seat: number; nickname: string; bot: boolean; connected: boolean; portrait?: Readonly<{ portraitUrl: string; monoUrl?: string; preset?: boolean }> }>[];
 }>;
 
 /** A line of the public log, in words (the game's text never depends on sound or colour). */

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { SeatRow } from "../controller/play/SeatPortrait";
 import { achievementsOf, clockWords, nameOf, remainingMs, WARNING_MS } from "../controller/play/play-logic";
 import type { HostView } from "./host-view";
 
@@ -7,7 +8,7 @@ import type { HostView } from "./host-view";
  * Zone being searched (never what was found), how many Accusations are sealed this Round, who joined the haunting (in those words), the
  * Achievements earned, the narrator's line and the public log, in polite live regions. It reads only the Public View, so it cannot name a hidden card.
  */
-export function Hud({ host, offsetMs, nowMs }: { host: HostView; offsetMs: number; nowMs: number }): ReactNode {
+export function Hud({ host, offsetMs, nowMs, reducedMotion = false }: { host: HostView; offsetMs: number; nowMs: number; reducedMotion?: boolean }): ReactNode {
   const g = host.game;
   const pub = g.pub;
   if (pub === null) return null;
@@ -46,6 +47,7 @@ export function Hud({ host, offsetMs, nowMs }: { host: HostView; offsetMs: numbe
       </ul>
       {searching ? <p className="ui-hint" role="status">{active?.nickname ?? "Someone"} is searching the {searching}.</p> : null}
       <p className="ui-hint" role="status">{sealed} of {humansLeft} Accusations sealed this round.</p>
+      <SeatRow game={g} reducedMotion={reducedMotion} />
       {haunting.length > 0 ? <p className="ui-hint">Joined the haunting: {haunting.map((s) => s.nickname).join(", ")}.</p> : null}
       {achievements.length > 0 ? (
         <ul className="ui-chips" aria-label="Achievements">

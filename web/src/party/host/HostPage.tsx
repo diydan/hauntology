@@ -107,7 +107,7 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
       {playing ? (
         <div className="ph-stage">
           {extras.mountViewer ? <div className="ph-world" ref={worldBox} aria-label="The house" /> : null}
-          <Hud host={host} offsetMs={offsetMs} nowMs={nowMs} />
+          <Hud host={host} offsetMs={offsetMs} nowMs={nowMs} reducedMotion={extras.reducedMotion} />
           {extras.narration !== null && !narration.unlocked ? <button type="button" className="ui-button" onClick={narration.unlock}>Tap to let the house speak</button> : null}
           {narration.subtitle !== "" ? <p className="ui-speech" data-host-subtitle role="status" aria-live="polite">{narration.subtitle}</p> : null}
           {whisperText !== "" ? <p className="ui-speech" data-host-whisper role="status" aria-live="polite">{whisperText}</p> : null}
