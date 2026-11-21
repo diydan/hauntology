@@ -74,3 +74,19 @@ describe("doors on the Display (knock-door 8.2, 8.4)", () => {
     expect(live(container)).toBe("The door between Cellar and Attic opened.");
   });
 });
+
+describe("doors never flash the Display (knock-door 9.3)", () => {
+  it("a door opening or shutting never turns the flash or the dimming on, with or without reduced motion", () => {
+    for (const reduced of [false, true]) {
+      const port = new FakePort([DOOR]);
+      const { container, unmount } = mount(port, { reduced });
+      const page = container.querySelector<HTMLElement>(".pd-page")!;
+      for (const open of [true, false, true]) {
+        port.setDoors([{ ...DOOR, open }]);
+        expect(page.dataset.flash).toBe("off");
+        expect(page.dataset.dim).toBe("off");
+      }
+      unmount();
+    }
+  });
+});

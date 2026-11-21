@@ -110,8 +110,10 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
     - Built (2026-11-21): `shared/src/party/doors-fairness.test.ts` (doors.ts imports and words, the Engine's door handlers' written fields, and a door opened by Players acting together or by a knock leaving the cards, Solution, order, scores and winners untouched; mutation-checked).
     - _Requirements: 7.1_
   - [ ] 9.2 Every lock opens by touch alone (the Tap control, the control to act, Skip)
+    - Progress (2026-11-21): the Tap (Knock door), act (Heavy door) and knock-back-at-the-TV controls are proven touch-only in `web/src/party/controller/DoorAccess.test.tsx` (click events only, shared `ui-button`, no bare clickable divs) and `tools/test/knock-door-access.test.mjs` (no key, motion, microphone, camera, long-press or drag in any door screen; every button is `type="button"` with an `onClick`; mutation-checked). NOT done: Skip, which belongs to the Wander door (task 6.2, built as pure rules only on `feat/knock-door-wander`, not on this branch). Not ticked until Skip exists and is tested.
     - _Requirements: 7.2_
-  - [ ] 9.3 No flash, reduced motion shows the final state, every change is words in the live region
+  - [x] 9.3 No flash, reduced motion shows the final state, every change is words in the live region
+    - Built (2026-11-21): the Display (`DoorDiorama.test.tsx`: a door change never turns the flash or dim on, reduced motion shows the final state with no swing, the change is in a polite live region), the phone (`DoorAccess.test.tsx`: opens and shuts are said in a polite live region, no flash) and the door styles (`tools/test/knock-door-access.test.mjs`: no animation or keyframes, the swing uses only `--fade-slow` and `--ease`, none under reduced motion; mutation-checked). The Wander door's screens (task 6) must reuse these words and styles.
     - _Requirements: 7.3, 2.5_
 
 - [ ] 10. Checkpoint
