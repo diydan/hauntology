@@ -6,4 +6,4 @@
 .tl-room { display: grid; gap: var(--space-1); overflow-wrap: anywhere; }
 .tl-tag { opacity: 0.85; }
 .tl-empty, .tl-theory { font-style: italic; }
-.tl-answer { font-weight: var(--weight-strong, 600); }
+.tl-answer { font-weight: 500; }
