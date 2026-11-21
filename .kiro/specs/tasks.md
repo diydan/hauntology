@@ -1,6 +1,6 @@
 # Hauntology: main task list
 
-Counted from ticked boxes (`- [x]`) in each `.kiro/specs/*/tasks.md` on `integration/overnight-merge` (origin/main plus PRs #81 to #89), 2026-11-21 10:00. Every nesting level is counted.
+Counted from ticked boxes (`- [x]`) in each `.kiro/specs/*/tasks.md` on `integration/overnight-merge` (origin/main plus PRs #81 to #91), 2026-11-21 22:55. Every nesting level is counted.
 
 ## Progress by spec
 
@@ -17,12 +17,12 @@ Counted from ticked boxes (`- [x]`) in each `.kiro/specs/*/tasks.md` on `integra
 | party-mode | 199 | 37 | 236 | 84% |
 | conditions | 44 | 11 | 55 | 80% |
 | game-songs | 16 | 6 | 22 | 73% |
-| ghost-voice | 51 | 20 | 71 | 72% |
+| ghost-voice | 52 | 19 | 71 | 73% |
 | spirit-table | 32 | 13 | 45 | 71% |
 | integration | 31 | 13 | 44 | 70% |
 | puzzles | 114 | 50 | 164 | 70% |
-| knock-door | 33 | 17 | 50 | 66% |
-| **Total** | **841** | **198** | **1039** | **81%** |
+| knock-door | 36 | 14 | 50 | 72% |
+| **Total** | **845** | **194** | **1039** | **81%** |
 
 ## What is left (top-level groups with unticked work)
 
