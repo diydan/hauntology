@@ -114,6 +114,21 @@ describe("the Controller's real Room port (integration 5.1, 5.3)", () => {
     expect(port.getView().lock).toBeNull();
   });
 
+  it("shows a Sight once and tells the Room when it was seen; the next Sight waits behind it", async () => {
+    const { port, sockets } = kit();
+    await port.join("ABCD", "Pip");
+    const ws = sockets[0]!;
+    ws.open();
+    ws.say({ t: "sight", sightId: "S1", sight: { showMs: 3000 } });
+    ws.say({ t: "sight", sightId: "S2", sight: { showMs: 2000 } });
+    expect(port.getView().sight).toMatchObject({ id: "S1" });
+    port.ackSight?.("S1");
+    expect(ws.sent.at(-1)).toEqual({ t: "sightAck", sightId: "S1" });
+    expect(port.getView().sight).toMatchObject({ id: "S2" });
+    port.ackSight?.("S2");
+    expect(port.getView().sight).toBeUndefined();
+  });
+
   it("sends the Player's settings and game messages as the Room's own words", async () => {
     const { port, sockets } = kit();
     await port.join("ABCD", "Pip");

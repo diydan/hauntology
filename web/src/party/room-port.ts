@@ -39,6 +39,7 @@ export function viewOf(snap: RoomSnapshot, nickname: string | null, joinedSeat: 
     },
     ...(snap.public === null ? {} : { game: { pub: snap.public, priv: snap.private } }),
     ...(snap.refused === null ? {} : { refused: snap.refused }),
+    ...(snap.sight === null ? {} : { sight: snap.sight }),
   };
 }
 
@@ -85,6 +86,7 @@ export function createRoomPort(deps: RoomDeps): ControllerPort {
     },
     attempt: (lockId, transcript) => (client === null ? { outcome: "failed", reason: "offline" } : client.attempt(lockId, transcript)),
     closeLock: (lockId, why) => client?.closeLock(lockId, why),
+    ackSight: (sightId) => client?.ackSight(sightId),
     setSound: (consent) => send({ t: "sound", consent }),
     setAssist: (on) => send({ t: "assist", on }),
     setPuzzles: (setting: PuzzleSetting) => send({ t: "settings", puzzles: setting }),

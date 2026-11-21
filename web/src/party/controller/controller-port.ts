@@ -108,6 +108,8 @@ export type RoomView = Readonly<{
   game?: Readonly<{ pub: PublicSnapshot; priv: PrivateSnapshot | null }>;
   /** The last thing the Room refused, until its next public view. */
   refused?: string;
+  /** A clue the Room showed this seat once (a Sight, on entering a Zone), waiting to be seen. Later ones wait behind it. */
+  sight?: Readonly<{ id: string; sight: Sight }>;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -144,6 +146,8 @@ export interface ControllerPort {
   doorAct?(doorId: string): void;
   /** Detective sends knock timestamps (ms) for a shut knock door (knock-door 3.3). */
   doorKnock?(doorId: string, times: readonly number[]): void;
+  /** The Sight on screen has been seen, or its time ran out. */
+  ackSight?(sightId: string): void;
   /** Send the Room one game message (walk, inspect, suggest, show, seal, choose, hauntPuzzle...). The Room checks it and refuses what is not allowed. Absent in the scripted stand-in. */
   act?(msg: Readonly<{ t: string }> & Record<string, unknown>): void;
   /** Give the seat up and close the connection. */

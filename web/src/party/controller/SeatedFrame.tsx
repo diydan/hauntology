@@ -10,6 +10,8 @@ import { Slot } from "./Slot";
 import type { Theory } from "@hauntology/shared/party/theory";
 import { SpiritTableSection, SpiritTableSwitch, useSpiritTable } from "../../table/SpiritTableSwitch";
 import { WorldClueNotebook } from "./WorldClueNotebook";
+import { GameSections } from "../GameSections";
+import { SightCard } from "../../puzzles/SightCard";
 
 export type Layout = "pad" | "panel";
 
@@ -62,7 +64,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
 
   return (
     <div className="pc-seated" data-layout={layout}>
-      {view.lock ? null : (
+      {view.lock || view.sight ? null : (
         <header className="pc-bar">
           <div className="pc-who">
             <span className="ui-chip is-active" aria-label={`Room Code ${view.code ?? ""}`}>{view.code}</span>
@@ -76,7 +78,12 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
         </header>
       )}
 
-      {view.lock ? (
+      {view.sight && !view.lock ? (
+        // a clue the Room shows once, in place of the page until it is seen
+        <div className="pc-lock">
+          <SightCard key={view.sight.id} sight={view.sight.sight} title="Something to remember" feel={device.feel} onDone={() => port.ackSight?.(view.sight!.id)} />
+        </div>
+      ) : view.lock ? (
         // the Controller's bar is not drawn above a Lock: the Menu (and a connection that is not fine) go in the puzzle's own bar
         <LockArea port={port} offer={view.lock} device={device} barExtra={<>{view.connection === "online" ? null : connection}{menuButton}</>} />
       ) : (
@@ -94,8 +101,17 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
             </section>
           ) : (
             <section className="pc-panel" aria-label="Panel">
-              <Slot name="hand" label="Your hand" />
-              {device.device.assist && view.worldClues && view.worldClues.length > 0 ? <WorldClueNotebook clues={view.worldClues} /> : <Slot name="notebook" label="Notebook" />}
+              {view.game && view.seat !== null && (view.phase === "playing" || view.phase === "paused") ? (
+                // the game itself: the hand, the notebook, the turn, the question and the accusation, from the Room's two views
+                <section className="pc-slot pc-slot--game" data-slot="game" aria-label="The game">
+                  <GameSections view={view.game.pub} me={view.game.priv} seat={view.seat} send={(m) => port.act?.(m)} refused={view.refused ?? null} />
+                </section>
+              ) : (
+                <>
+                  <Slot name="hand" label="Your hand" />
+                  {device.device.assist && view.worldClues && view.worldClues.length > 0 ? <WorldClueNotebook clues={view.worldClues} /> : <Slot name="notebook" label="Notebook" />}
+                </>
+              )}
               <Slot name="contributions" label="Contributions" />
             </section>
           )}
