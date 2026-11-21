@@ -18,10 +18,11 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { createAtmosphereController, splatTintForLook } from "./atmosphere";
-import { CAPSULE_RADIUS, collisionWorldFromGeometry, type CollisionWorld } from "./collision";
+import { anchorGroundFrom } from "./anchor-ground";
+import { CAPSULE_RADIUS, collisionWorldFromGeometry, type CollisionWorld, type FloorProbe } from "./collision";
 import { createDoorColliders } from "./door-colliders";
 import { applyLook, combineInput, stickAxes } from "./controls";
-import type { ViewerHandle, ViewerSetup } from "./types";
+import type { AnchorGround, ViewerHandle, ViewerSetup } from "./types";
 import { buildAnswerTexture, buildSignTexture } from "./world-clue-props";
 
 /**
@@ -81,6 +82,7 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
   let cleanup: (() => void) | null = null;
   const pending: ShellToViewer[] = [];
   let deliver: ((m: ShellToViewer) => void) | null = null;
+  let ground: (() => AnchorGround | undefined | null) | null = null;
 
   const loadingNote = note(container, LOAD_STAGE_LABELS.manifest);
 
@@ -137,10 +139,12 @@ export function mountViewer({ container, worldId, onMessage }: ViewerSetup): Vie
         deliver = fn;
         for (const m of pending.splice(0)) fn(m);
       },
+      registerGround: (fn) => { ground = fn; },
     });
   })();
 
   return {
+    anchorGround: () => (ground === null ? undefined : ground()),
     send(message) {
       const m = parseShellMessage(message);
       if (m === null) return;
@@ -166,6 +170,7 @@ type SceneHooks = {
   movementEnabled: () => boolean;
   isDisposed: () => boolean;
   registerDeliver: (fn: (m: ShellToViewer) => void) => void;
+  registerGround: (fn: () => AnchorGround | undefined | null) => void;
 };
 
 const rgba = (hex: string, alpha: number): string => {
@@ -426,7 +431,10 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
   toolsEl.append(muteButton);
 
   // Collision: the collider merged into one world-space geometry, else the disc.
-  let collision: CollisionWorld | null = null;
+  let collision: (CollisionWorld & FloorProbe) | null = null;
+  // The shell asks for the floor to place the ghost's anchors on (ghost-engine 6.3): "pending" until the collider is built, "none" when there is none or it would not parse.
+  let colliderState: "pending" | "none" = world.colliderBytes ? "pending" : "none";
+  hooks.registerGround(() => anchorGroundFrom(collision ?? colliderState, world.spawn.pos, manifest.bounds));
   // The shut doors of the world as thin boxes across their doorways (knock-door 8.1); empty for a world with no doors, and then nothing here runs.
   const doorColliders = createDoorColliders();
   if (world.colliderBytes) {
@@ -440,8 +448,8 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       if (merged) {
         merged.applyMatrix4(transform);
         collision = collisionWorldFromGeometry(merged);
-      }
-    }).catch(() => { /* the disc fallback stays */ });
+      } else colliderState = "none";
+    }).catch(() => { colliderState = "none"; /* the disc fallback stays */ });
   }
 
   const eyeHeightRaw = world.spawn.pos[1] - manifest.floorY;

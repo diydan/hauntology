@@ -1,4 +1,6 @@
 import type { ShellToViewer } from "@hauntology/shared/app/events";
+import type { FloorSampler } from "@hauntology/shared/ghost/anchors";
+import type { Bounds, Vec3 } from "@hauntology/shared/ghost/types";
 
 /**
  * The seam between the shell and the Viewer. The shell knows only this: it hands a container and a
@@ -13,8 +15,16 @@ export type ViewerSetup = {
   onMessage: (message: unknown) => void;
 };
 
+/** What the shell needs to place the ghost's three anchors on the world's real floor (ghost-engine 6.3). */
+export type AnchorGround = { sampler: FloorSampler; spawn: Vec3; bounds: Bounds };
+
 export type ViewerHandle = {
   send(message: ShellToViewer): void;
+  /**
+   * The floor sampler, spawn and bounds once the collider is built: `undefined` while it is still being built (ask again), `null` when there never will be one
+   * (a world with no collider, or one that would not parse). Absent on the stand-in, which has no floor.
+   */
+  anchorGround?(): AnchorGround | undefined | null;
   /** Releases the renderer, its listeners and its canvas. */
   dispose(): Promise<void>;
 };
