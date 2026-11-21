@@ -61,36 +61,49 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
     - **Validates: Requirements 3.2, 3.5**
 
 - [ ] 3. The phone (`web/src/table/`)
-  - [ ] 3.1 `SpiritTable.tsx`: the scene at real size (slab, six rooms with labels, low walls, standees that face the Player, the Whisper with a faded hem and mist, Mark tags with stems, the Cold Spot glow, the ring under a picked piece, the Place pulse), turned by the orientation sensor or by dragging, at most 30 frames a second, paused face down or hidden, still under reduced motion
+  - [x] 3.1 `SpiritTable.tsx`: the scene at real size (slab, six rooms with labels, low walls, standees that face the Player, the Whisper with a faded hem and mist, Mark tags with stems, the Cold Spot glow, the ring under a picked piece, the Place pulse), turned by the orientation sensor or by dragging, at most 30 frames a second, paused face down or hidden, still under reduced motion
+    - Built in `web/src/table/SpiritTable.tsx` (the loop, sensor or drag view, Place, picking, carry), `threeScene.ts` (the scene graph) and `model.ts`, `view.ts`, `picking.ts`; 18 jsdom tests with a fake renderer, clock and sensor. **Not verified:** the real WebGL drawing in `renderer.ts` (needs a GPU; see `docs/spikes/spirit-table-1.md`). The pictures are round cards drawn from the nickname; Seat Portraits are accepted through `portraits` (at most 120 KB each) but nothing hands them in yet.
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.2, 4.1, 4.2, 4.3, 4.4, 6.1_
-  - [ ] 3.2 `TableList.tsx` and the text labels for a screen reader (every room with its Pawns and the Player's Marks, every Suspect and Relic), the only view when WebGL is missing
+  - [x] 3.2 `TableList.tsx` and the text labels for a screen reader (every room with its Pawns and the Player's Marks, every Suspect and Relic), the only view when WebGL is missing
+    - Built in `web/src/table/TableList.tsx` (every room with its Pawns and Marks, every Suspect and Relic, the Whisper, and the room choice per Suspect); the only view without WebGL (one line of why), one tap away otherwise; tested in `list-controls.test.tsx` and `SpiritTable.test.tsx`.
     - _Requirements: 6.3_
-  - [ ] 3.3 The backdrop: the dark stand-in table, and the camera in a video element under the canvas from the Camera tap only, with a visible indicator, a stop control, stop on close or hide, and one line of text on refusal
+  - [x] 3.3 The backdrop: the dark stand-in table, and the camera in a video element under the canvas from the Camera tap only, with a visible indicator, a stop control, stop on close or hide, and one line of text on refusal
+    - Built in `web/src/table/camera.ts` (`useRearCamera`: off each time, only from the Camera tap, `facingMode: environment`, no audio, indicator and a Stop control, stops on hide and on close, one line on refusal) and the video element under the canvas in `SpiritTable.tsx`; `camera.test.tsx` with a fake `getUserMedia`. The real permission prompt is not seen (T4).
     - _Requirements: 5.1, 5.2_
-  - [ ] 3.4 The row of four controls (Camera, Place, Tilt, Clues) and the piece card (48 pixel targets, one row at 320 pixels, shapes besides colour, tap picks a figure before the room beneath, a narrow tap area for the Whisper, the arrow to the board)
+  - [x] 3.4 The row of four controls (Camera, Place, Tilt, Clues) and the piece card (48 pixel targets, one row at 320 pixels, shapes besides colour, tap picks a figure before the room beneath, a narrow tap area for the Whisper, the arrow to the board)
+    - Built in `web/src/table/TableControls.tsx` (`TableControls`, `PieceCard`, `BoardArrow`) and `table.css` (48 px, four equal columns, a test reads the CSS); a tap picks a figure before the room (`picking.ts`), the Whisper's tap area is narrower than her picture. One row at 320 px is checked by CSS only, not in a browser (task 4.1).
     - _Requirements: 2.6, 4.5, 4.6, 6.2_
-  - [ ] 3.5 Controller wiring: the "Spirit table" device switch (off by default, with the motion tap, no Master control), absent in a solo case and with `SPIRIT_TABLE_ENABLED` false, a lazy chunk, nothing sent and no effect on any rule or the Turn Clock
+  - [x] 3.5 Controller wiring: the "Spirit table" device switch (off by default, with the motion tap, no Master control), absent in a solo case and with `SPIRIT_TABLE_ENABLED` false, a lazy chunk, nothing sent and no effect on any rule or the Turn Clock
+    - Built in `web/src/table/SpiritTableSwitch.tsx` (the lazy chunk and the device switch), `flag.ts` (`SPIRIT_TABLE_ENABLED`) and `SeatedFrame.tsx`; `RoomView` gains an optional `table` feed (a contract addition, default absent: a port that gives none has no switch). Tests: `web/src/party/controller/SpiritTable.wiring.test.tsx`, and a source test that nothing outside the switch imports the drawing or three.js. The flag is a constant, not yet read from the Worker's flags. The Theory marks live in the frame's state for this visit only until the notebook lands.
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 3.4_
   - [ ] 3.6 Hang the Clue ring of `puzzles` round the same viewpoint, and show the count of read clues on the Clues control
+    - Partly built: `SpiritTable` takes a `ring` hook that gets the same scene and camera the Table is drawn with (so a Clue ring hangs round the same viewpoint and turns with the same view) and shows the count on the Clues control (tested). Left open: the Clue ring itself belongs to `puzzles` (its web code is not built).
     - _Requirements: 7.1_
 
 - [ ] 4. Checks and docs
   - [ ] 4.1 Access pass: a jsdom pass of the Table list and the controls, and a real-browser pass at 320 by 568 and 390 by 844 CSS pixels (every control 48 pixels, one row, no sideways scroll, no console error)
+    - jsdom pass done (controls, Table list, text labels, 48 px in the CSS); the real-browser pass at 320 by 568 and 390 by 844 is written as steps in `docs/spikes/spirit-table-1.md` and not run.
     - _Requirements: 6.2, 6.3_
-  - [ ] 4.2 Art budget check: every picture the Table loads is at most 120 kilobytes, cut-outs where they exist and a round card where not, and no spend, model call or new sound file
+  - [x] 4.2 Art budget check: every picture the Table loads is at most 120 kilobytes, cut-outs where they exist and a round card where not, and no spend, model call or new sound file
+    - Checked by `web/src/table/source.test.ts` (no picture file, sound, `/api/` call or SpendTicket in the Table) and `pictureFits` in `threeScene.ts` (120 KB limit, unknown size refused, a round card instead); the Table loads no picture of its own today.
     - _Requirements: 2.5, 6.4_
   - [ ] 4.3 Docs: `docs/spikes/spirit-table-1.md`, assumptions T1 to T4 and `SPIRIT_TABLE_ENABLED` in `.kiro/steering/tech.md`, the folders in `structure.md`, the solo-case line and the Controller switch in `party-mode`, and a line in `docs/SUBMISSION.md`
+    - Done: `docs/spikes/spirit-table-1.md`, assumptions 21 to 24 (T1 to T4) and `SPIRIT_TABLE_ENABLED` in `tech.md`, the folders in `structure.md`, a line in `docs/SUBMISSION.md`. Not done: the solo-case line and the Controller switch in the `party-mode` spec (another spec).
     - _Requirements: 1.2, 6.4_
   - [ ] 4.4 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `tableData`, `tableLayout`, `whisperAt` and `placeTable`. Ensure every test passes; ask the user if questions arise.
 
 - [ ] 5. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 8 and the `design-system` spec)
-  - [ ] 5.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+  - [x] 5.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+    - Built from `ui-panel`, `ui-button`, `ui-notice`, `ui-status`, `ui-chip`, `ui-switch`, `ui-segments`; `table.css` only places things and a test says it writes no colour and uses only token gaps and radii.
     - _Requirements: 8.1, 8.3_
-  - [ ] 5.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 5.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+    - Nothing was missing: no new element was needed.
     - _Requirements: 8.2_
   - [ ] 5.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Not done: needs a browser at 390 px and 1280 px (steps in `docs/spikes/spirit-table-1.md`).
     - _Requirements: 8.4_
-  - [ ] 5.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+  - [x] 5.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
+    - Nothing built earlier needed to move: `TheoryChoice` was already on the elements.
     - _Requirements: 8.1_
 
 - [ ] 6. Drag to mark (Requirement 9)
@@ -109,10 +122,13 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
   - [x] 6.5 **Property 8: The rag doll keeps its shape and stands back up**
     - Built in `shared/src/table/rag.prop.test.ts` (link stretch under 8 percent at up to 1.5 m/s, flat at rest, upright and still within two seconds, bad input).
     - **Validates: Requirements 9.1, 9.4**
-  - [ ] 6.6 Phone: the carry and the drop in `SpiritTable.tsx` (an 8 pixel threshold, the finger-held head, the lit room, the landing ring, the buzz, the card text, no swing under reduced motion)
+  - [x] 6.6 Phone: the carry and the drop in `SpiritTable.tsx` (an 8 pixel threshold, the finger-held head, the lit room, the landing ring, the buzz, the card text, no swing under reduced motion)
+    - Built in `SpiritTable.tsx` with `carry.ts` and `threeScene.ts`: the 8 pixel threshold, the finger-held head (the ray cut at head height, the room under the feet), the lit room and landing ring, one buzz, the card text, the rag doll, and no swing under reduced motion; `carry.test.ts` (with a property test) and `SpiritTable.test.tsx`.
     - _Requirements: 9.1, 9.2, 9.4_
   - [ ] 6.7 The Theory mark in the notebook (the notebook side is `party-mode` 4.7 and 4.8, tasks 2.120 and 9.26), drawn as a standee in its room with a "maybe here" tag for its owner only, and the Table list's room choice per Suspect (48 pixel targets)
+    - Built so far also: the standee in its room with a "maybe here" tag (`model.ts`) and `TheoryChoice` in the Table list. Still open: the notebook storage (`party-mode` side); the marks live in the Controller frame for this visit only.
     - Built so far: the Table list's room choice, `web/src/table/TheoryChoice.tsx` (a choice of the six Zones or "No mark" for each Suspect, 48 pixel targets, using `setTheory`). Still to do: the notebook storage and the standee with its "maybe here" tag on the table.
     - _Requirements: 9.2, 9.3, 9.5_
   - [ ] 6.8 Checks: a Theory mark is never sent or stored by the Room, a real-browser drag at 320 by 568 and 390 by 844 pixels, and a mutation pass on `applyDrop` and `stepChain`
+    - Done: a Theory mark is never sent or stored (`source.test.ts`, `SpiritTable.wiring.test.tsx`), and a mutation pass on `applyDrop` (two mutants, both caught) and `stepChain` (two mutants; the dropped time-step cap survived at first and is now caught by `shared/src/table/rag.stepcap.test.ts`). Open: the real-browser drag at both sizes.
     - _Requirements: 9.3, 9.5_
