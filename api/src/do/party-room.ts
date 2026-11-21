@@ -8,6 +8,12 @@ import { sttModelFromEnv, WorkersAiTranscriber } from "../guarded/workersai/tran
 import type { AiBinding } from "../guarded/workersai/call";
 import { runWordCheck } from "../voice/stitch";
 import { RoomStitchClipStore, type RoomClipStorage } from "../voice/stitch-store";
+import { WorkersAiClient } from "../guarded/workersai/client";
+import { RoomBudget } from "../party/budget";
+import { makeNarratePort } from "../party/narrate-port";
+import { speakDepsForDo, speculateLine } from "../voice/room-speak";
+import { SpendGuardVoiceWindow, windowedSpend } from "../voice/window";
+import { DEFAULT_ROOM_CAPS } from "@hauntology/shared/party/spend";
 
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const STATE_KEY = "room";
@@ -35,14 +41,26 @@ export class PartyRoom {
   private readonly core: RoomCore;
   private readonly clips: RoomStitchClipStore;
 
-  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace; BUCKET?: SongBucket; AI?: AiBinding; SPEND_GUARD?: ConstructorParameters<typeof SpendGuardClient>[0]; VOICE_STT_MODEL_ID?: string } & ConditionsEnv = {}, clock: () => number = Date.now) {
+  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace; BUCKET?: SongBucket; AI?: AiBinding; SPEND_GUARD?: ConstructorParameters<typeof SpendGuardClient>[0]; VOICE_STT_MODEL_ID?: string; VOICE_TTS_MODEL_ID?: string; VOICE_TTS_FALLBACK_MODEL_ID?: string; NARRATOR_MODEL_ID?: string; AI_GATEWAY_ID?: string; GHOST_MODEL_ID?: string; GHOST_NARRATION_ENABLED?: string } & ConditionsEnv = {}, clock: () => number = Date.now) {
     // The Room's own alarm belongs to `RoomCore` alone: the clip store keeps clips, and its alarm calls do nothing here.
     const st = this.state.storage as unknown as RoomClipStorage;
     this.clips = new RoomStitchClipStore({ get: (k) => st.get(k), put: (k, v) => st.put(k, v), delete: (k) => st.delete(k), list: (o) => st.list(o), setAlarm: async () => undefined, deleteAlarm: async () => undefined });
     const songs = env.BUCKET !== undefined ? new RoomSongStore(env.BUCKET) : null;
     const sockets = (): WebSocket[] => (this.state as unknown as { getWebSockets(): WebSocket[] }).getWebSockets();
     const byId = (id: string): WebSocket | undefined => sockets().find((ws) => (ws as unknown as { deserializeAttachment(): { id?: string } | null }).deserializeAttachment()?.id === id);
+    // The narrator and the early voice (party-mode 6.1, ghost-voice 3.12): both need the `AI` binding and the one spend guard, and a Room is
+    // a session of that guard, so the Room's own caps (`RoomBudget`) sit in front of the global ones. Without them the Room speaks its scripted lines.
+    const guard = env.SPEND_GUARD !== undefined ? new SpendGuardClient(env.SPEND_GUARD) : null;
+    const narrator = env.AI !== undefined ? new WorkersAiClient(env as ConstructorParameters<typeof WorkersAiClient>[0]).narrator : null;
+    // A paid call takes a line of the operator's voice window first, exactly as the Worker's speak route does; a closed window means only the Library and the cache.
+    const speakDeps = guard !== null && env.SPEND_GUARD !== undefined ? speakDepsForDo(env, windowedSpend(guard, new SpendGuardVoiceWindow(env.SPEND_GUARD as never))) : null;
+    const roomBudget = (code: string): RoomBudget | null => guard === null ? null : new RoomBudget(guard, roomScope(code), DEFAULT_ROOM_CAPS, { load: () => this.core.loadSpend(), save: async (v) => { await this.core.saveSpend(v); } });
     const ports: Ports = {
+      narrate: makeNarratePort((code) => {
+        const budget = roomBudget(code);
+        return budget === null ? null : { narrator, budget, enabled: env.GHOST_NARRATION_ENABLED !== "false", scope: roomScope(code), ipHash: "party-room" };
+      }),
+      spoke: (line, code) => { speculateLine(speakDeps, { sessionId: roomScope(code), ipHash: "party-room" }, line, { speaking: true, defer: (w) => this.state.waitUntil(w) }); },
       load: async () => (await this.state.storage.get<string>(STATE_KEY)) ?? undefined,
       save: async (text) => { await this.state.storage.put(STATE_KEY, text); },
       deleteAll: async () => { await this.state.storage.deleteAll(); },

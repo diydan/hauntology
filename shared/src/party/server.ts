@@ -30,7 +30,11 @@ import { BOT_NAMES } from "./solo";
 import type { NameConsent, SongsSetting } from "../songs/lyrics";
 import { initialSongPlan, songRequests, type SongPlanState, type SongRequest } from "../songs/plan";
 import type { LineKind, VoiceLine } from "../voice/line";
-import type { LodgerVoice, Speaker } from "../voice/voices";
+import { LODGER_VOICE_ORDER, type LodgerVoice, type Speaker } from "../voice/voices";
+import { confessionLine } from "./lodger";
+import { lineKindOf, lodgerVoiceOfProfile, narratableLog, viewOfEngine } from "./narrate-events";
+import type { PublicView } from "./views";
+import { partyScripted, speakerFor, type PartyDirective } from "./narrate";
 import type { PlayedStitch } from "../voice/stitch/play";
 import {
   applyRoomSpeechToggle,
@@ -86,6 +90,16 @@ export type Ports = {
   /** Drops clips that no longer qualify (game over, switch off, left, six hours) and returns when the next one expires. */
   purgeStitchClips?(ctx: Readonly<{ gameOver: boolean; enabled: boolean; activeSeats: ReadonlySet<number>; consents: readonly StitchConsent[] }>, now: number): Promise<number | null>;
   conditions?(choice: "place" | "table", place: SkyPlace | null, hostHour: number): Promise<Sky | null>;
+  /**
+   * The words for one public event (party-mode 6.1): a guarded model line, or the scripted one. It gets the Public View only and
+   * never throws; absent, the Room narrates from the scripted banks. Asked only while the Master has speaking on.
+   */
+  /**
+   * A line was validated, kept for the Host and is about to be asked for (ghost-voice 3.12): the place to start its synthesis early so the
+   * Host's `speak` joins the running call. Never throws into the Room, and is not awaited.
+   */
+  spoke?(line: VoiceLine, code: string): void;
+  narrate?(view: PublicView, event: Readonly<{ id: number; kind: PartyDirective; code: string }>, rng: () => number): Promise<{ text: string; speaker: Speaker } | null>;
 };
 
 export type RoomSongsState = Readonly<{
@@ -193,8 +207,48 @@ export class RoomCore {
     this.playLights(next, lightTriggers(prevEngine, next.engine));
     const from = prevEngine?.nextId ?? 0;
     if (next.engine !== null && next.engine.log.some((e) => e.id >= from && e.kind === "haunt-event")) this.stitchDue = "haunt_event";
+    await this.narrateNew(prevEngine, next);
     // the game is over: no clip stays (party-mode 18.5)
     if (prevEngine !== null && prevEngine.phase !== "ended" && next.engine?.phase === "ended") await this.ports.deleteStitchClips?.("all");
+  }
+
+  /**
+   * Narrates the public events this change added, while speaking is on (party-mode 6): the Speaker's line from `ports.narrate` (or the
+   * scripted bank), then, once the Solution is public, the Suspect's own confession in that Suspect's Lodger Voice. Every line goes
+   * through `speakRoomEvent`, so the 20-line cap and the Master's switch apply, and nothing here changes a rule.
+   */
+  private narrating = false;
+  private async narrateNew(prev: EngineState | null, next: ServerState): Promise<void> {
+    if (this.narrating || next.engine === null || !next.voice.speechOn) return;
+    const from = prev?.nextId ?? 0;
+    const events = narratableLog(next.engine.log, from);
+    const view = viewOfEngine(next.engine);
+    if (events.length === 0 && !(prev !== null && prev.phase !== "ended" && next.engine.phase === "ended")) return;
+    this.narrating = true;
+    try {
+      for (const ev of events) {
+        const rng = mulberry32(hash(next.room.code, ev.id));
+        const spoken = this.ports.narrate === undefined ? null : await this.ports.narrate(view, { ...ev, code: next.room.code }, rng).catch(() => null);
+        const text = spoken?.text ?? partyScripted(ev.kind, speakerFor(ev.kind), rng);
+        const speaker = spoken?.speaker ?? speakerFor(ev.kind);
+        await this.speakRoomEvent({ id: `ev-${ev.id}`, kind: lineKindOf(ev.kind), speaker, text });
+        if (ev.kind === "accuse-right") await this.confess(view, ev.id, "accuse-right");
+      }
+      if (prev !== null && prev.phase !== "ended" && next.engine.phase === "ended" && view.ending !== null && !events.some((e) => e.kind === "accuse-right")) {
+        await this.confess(view, -1, "ended-solved");
+      }
+    } finally { this.narrating = false; }
+  }
+
+  /** The Suspect in the Solution speaks its confession, in its own Lodger Voice, only once the Solution is public. */
+  private async confess(view: PublicView, eventId: number, kind: "accuse-right" | "ended-solved"): Promise<void> {
+    const s = this.state;
+    if (s === null || view.ending === null) return;
+    const suspect = view.suspects.find((x) => x.id === view.ending?.solution.suspect);
+    if (suspect === undefined) return;
+    const text = confessionLine(view, suspect.id, kind, mulberry32(hash(s.room.code, "confess", eventId)));
+    if (text === null || text === "") return;
+    await this.speakRoomEvent({ id: `lodger-${kind}-${eventId}`, kind: "ending", speaker: "lodger", lodgerVoice: lodgerVoiceOfProfile(s.contrib, suspect.profileId), text });
   }
 
   /** What the next `flushStitch` may whisper at: a Haunt Event or midnight. Memory only; a missed moment is simply missed. */
@@ -371,6 +425,7 @@ export class RoomCore {
     const who = whoIs(s.room, token);
     if (who === null || who.role !== "controller" || who.seat === null) return { ok: false, code: "bad_token" };
     if (s.room.started || s.engine !== null) return { ok: false, code: "game_started" };
+    if (patch.kind === "ghost" && patch.lodgerVoice !== undefined && !(LODGER_VOICE_ORDER as readonly string[]).includes(patch.lodgerVoice)) return { ok: false, code: "bad_request" };
     if (patch.kind === "promptRound" && (!Number.isInteger(patch.round) || patch.round < 0 || patch.round > 3)) return { ok: false, code: "bad_request" };
     const next = { ...s, contrib: applyPatch(s.contrib ?? emptyContrib(), who.seat, patch), room: { ...s.room, lastActiveMs: this.ports.now() } };
     await this.commit(next);
@@ -823,6 +878,8 @@ export class RoomCore {
     for (const [sid, info] of Object.entries(s.sockets)) {
       if (info.role === "host") this.ports.send(sid, prepared.hostMsg);
     }
+    const kept = prepared.state.voiceLines.find((l) => l.id === prepared.hostMsg?.lineId);
+    if (kept !== undefined) { try { this.ports.spoke?.(kept, s.room.code); } catch { /* a synthesis that cannot start only means the Host's request pays for itself */ } }
     return { spoke: true, lineId: prepared.hostMsg.lineId };
   }
 

@@ -1,5 +1,6 @@
 import { Hono, type Context } from "hono";
 import type { ContribPatch } from "@hauntology/shared/party/lobby-contrib";
+import type { LodgerVoice } from "@hauntology/shared/voice/voices";
 import { presetFor, contributeSelfie, contributeZoneName, intakePhoto, suspectPortraits, suspectSprite, type Fail, type LodgerPick } from "../party/contribute";
 import type { ContributionServices } from "../party/wiring";
 import { readLimited } from "./uploads";
@@ -208,7 +209,7 @@ export function partyRoutes(deps: PartyDeps): Hono {
       const pick: LodgerPick | undefined = body.voice === "lower" || body.voice === "lighter" ? body.voice : undefined;
       const r = await suspectSprite(svc.suspect, g.seat, body.candidateId, pick);
       if (!r.fallback) {
-        const saved = await record(g.stub, g.token, { kind: "ghost", profileId: r.profile.id, status: "ok" });
+        const saved = await record(g.stub, g.token, { kind: "ghost", profileId: r.profile.id, status: "ok", ...(r.profile.lodgerVoice !== undefined ? { lodgerVoice: r.profile.lodgerVoice } : {}) });
         if (!saved.ok) return refusal(c, saved.code ?? "bad_request");
       }
       return c.json({ ok: true, fallback: r.fallback, profileId: r.profile.id, ...(r.reason !== undefined ? { reason: r.reason } : {}) });
@@ -249,9 +250,9 @@ export function partyRoutes(deps: PartyDeps): Hono {
       report: report as never, traits, ...(voice === "lower" || voice === "lighter" ? { pick: voice } : {}),
     });
     if (!r.ok && !("fallback" in r)) return refuseFail(c, r as Fail);
-    const made = r as { fallback: boolean; profile: { id: string }; reason?: string };
+    const made = r as { fallback: boolean; profile: { id: string; lodgerVoice?: LodgerVoice }; reason?: string };
     if (!made.fallback) {
-      await record(g.stub, g.token, { kind: "ghost", profileId: made.profile.id, status: "ok" });
+      await record(g.stub, g.token, { kind: "ghost", profileId: made.profile.id, status: "ok", ...(made.profile.lodgerVoice !== undefined ? { lodgerVoice: made.profile.lodgerVoice } : {}) });
       await record(g.stub, g.token, { kind: "selfieMade" });
     }
     return c.json({ ok: true, fallback: made.fallback, profileId: made.profile.id, ...(made.reason !== undefined ? { reason: made.reason } : {}) });
