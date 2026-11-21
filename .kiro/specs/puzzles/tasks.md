@@ -166,7 +166,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x] 4.5 `PUZZLES_ENABLED` (default true) and the Wander default (off), with the switch hidden when disabled
     - _Requirements: 14.1, 2.1_
 
-- [ ] 5. Feel layer (`web/src/puzzles/feel/`)
+- [x] 5. Feel layer (`web/src/puzzles/feel/`)
   - [x] 5.1 The `Motion`, `Haptics`, `Synth` and `Breath` interfaces, the four fakes, `PlatformKit.puzzleFeel`, and a per-device switch for each
     - Built in `web/src/puzzles/feel/types.ts` (the four interfaces and `PuzzleFeel`), `fakes.ts` (the four fakes) and `create.ts` (`createBrowserFeel`). `PlatformKit.puzzleFeel` (`web/src/app/platform.ts`; Wander's Play screen and `usePuzzleDevice` take it). The per-device switches are the `DeviceSettings` rows (tilt for Motion, `hapticMode` for Haptics, `soundConsent` for Synth, and `touchOnly` for all); Breath has no standing switch on purpose, because the microphone opens only from the "Blow to snuff" tap each time (decision for review).
     - _Requirements: 8.6, 9.4_
@@ -182,7 +182,8 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x] 5.5 `browserBreath`: the "Blow to snuff" tap, the microphone with echo cancellation and gain off, loudness only, the visible indicator and stop control, stop on end, hide or close
     - Built in `feel/breath.ts` (`BrowserBreath`): loudness numbers only, and it stops when the page is hidden.
     - _Requirements: 11.1, 11.2, 11.3_
-  - [ ] 5.6 Tie the Synth to the seat's sound consent (Party) and the Sound switch (Wander)
+  - [x] 5.6 Tie the Synth to the seat's sound consent (Party) and the Sound switch (Wander)
+    - Built: `ControllerPort.setSound` and `RoomView.soundConsent`; `usePuzzleDevice(..., { soundAllowed })` in `web/src/puzzles/usePuzzleDevice.ts`, fed by `SeatedFrame` (Party); Wander has no gate, so its Sound switch alone decides
     - `BrowserSynth` already reads `soundConsent`; tying it to the seat and the Wander switch is the Controller's.
     - _Requirements: 10.2_
 
