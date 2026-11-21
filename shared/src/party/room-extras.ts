@@ -36,6 +36,12 @@ export type RoomExtras = Readonly<{
   lastStrike: Strike | null;
   /** The strike the Room alarm is waiting for, or null (switch off, Host offset unknown, or no game running). */
   pendingStrike?: Strike | null;
+  /** When the game started (server clock), for Stitch's "never in the first 60 seconds". */
+  gameStartMs?: number;
+  /** The Rounds in which a Stitch whisper played, for its one-a-Round cap. */
+  stitchRounds?: readonly number[];
+  /** When the next stored Stitch clip expires (6 hours), so the one alarm wakes for it. */
+  purgeAtMs?: number | null;
 }>;
 
 export const DEFAULT_SWITCHES: RoomSwitches = { conditions: "off", place: null, hourStrike: true, lightBar: true, rattle: true, stitch: false };

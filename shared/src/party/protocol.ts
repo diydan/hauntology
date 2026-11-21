@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { STITCH_AUDIO_B64_MAX, STITCH_CLIP_MESSAGE_BYTES } from "./room-stitch";
 import { ERRAND_OBJECTS } from "./errands";
 import { SIGNS } from "../puzzles/world-clues";
 import type { ClientMsg } from "./engine";
@@ -94,6 +95,10 @@ export const RoomMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("clockSample"), sentMs: z.number().finite(), serverMs: z.number().finite(), receivedMs: z.number().finite() }).strict(),
   /** A phone's own yes to the light bar (party-mode 17.1), and whether its Player prefers reduced motion. */
   z.object({ t: z.literal("light"), consent: z.boolean(), reducedMotion: z.boolean().optional() }).strict(),
+  /** One recorded word of the Word Bank, for the word check (party-mode 4.20). Base64 audio, at most 2 s; never stored outside the Room. */
+  z.object({ t: z.literal("stitchClip"), word: z.string().min(1).max(24), audio: z.string().min(4).max(STITCH_AUDIO_B64_MAX), contentType: z.string().min(1).max(60), durationMs: z.number().finite().positive().max(2000) }).strict(),
+  /** A Player leaves the Stitch (party-mode 18.3): their clips go. */
+  z.object({ t: z.literal("stitchLeave") }).strict(),
   z.object({ t: z.literal("songsSetting"), setting: z.enum(["off", "stock", "on"]) }).strict(),
   z.object({ t: z.literal("songMute"), muted: z.boolean() }).strict(),
   z.object({ t: z.literal("songSkip") }).strict(),
@@ -105,7 +110,8 @@ export type Parsed = Readonly<{ kind: "room"; msg: RoomMsg }> | Readonly<{ kind:
 
 /** Parse one socket message. Never throws. Anything too big or not on the list is `bad`. */
 export function parseClientMessage(raw: string): Parsed {
-  if (raw.length > MAX_MESSAGE_BYTES) return { kind: "bad" };
+  // only a recorded word may be larger than an ordinary message
+  if (raw.length > MAX_MESSAGE_BYTES && !(raw.length <= STITCH_CLIP_MESSAGE_BYTES && raw.startsWith('{"t":"stitchClip"'))) return { kind: "bad" };
   let v: unknown;
   try { v = JSON.parse(raw); } catch { return { kind: "bad" }; }
   const room = RoomMsgSchema.safeParse(v);

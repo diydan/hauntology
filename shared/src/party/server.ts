@@ -6,6 +6,15 @@ import { acceptMovement, maySend, sanitizeInput } from "./input";
 import { addClockSample, applySwitches, type SkyPlace, chooseWorld, cleanPose, initialExtras, ORIGIN_POSE, poseDue, scheduleStrike, type RoomExtras, type Sky } from "./room-extras";
 import { lightMessages, lightTriggers, strikeLine, strikeMessages } from "./room-time";
 import { MIDNIGHT_LINE } from "./hour";
+import { audioBase, clipLengthOk, decodeB64, hostClips, isBankWord } from "./room-stitch";
+import { mulberry32, hash } from "../puzzles/rng";
+import { canCheck, type ChecksState } from "../voice/stitch/check";
+import { composeStitch } from "../voice/stitch/compose";
+import { consentEffective, type StitchConsent } from "../voice/stitch/consent";
+import { nextPurgeAt } from "../voice/stitch/purge";
+import { stitchReveal } from "../voice/stitch/play";
+import type { StitchClip } from "../voice/stitch/compose";
+import { stitchSchedule } from "./stitch";
 import { roomConditions } from "./conditions";
 import type { Pose } from "../ghost/types";
 import { applyPatch, emptyContrib, toContributions, type ContribPatch, type LobbyContrib } from "./lobby-contrib";
@@ -25,6 +34,7 @@ import type { PlayedStitch } from "../voice/stitch/play";
 import {
   applyRoomSpeechToggle,
   applyStitchAnswer,
+  applyStitchLeave,
   applyStitchMasterSwitch,
   findRoomVoiceLine,
   initialRoomVoiceState,
@@ -64,6 +74,16 @@ export type Ports = {
    * The real world at the start (party-mode 4.18): called once, with the Master's choice (and place), for the sky. It may take its time
    * and may fail; the Room keeps only the three cosmetic fields and falls back to the default sky on a `null`, a throw or a refusal.
    */
+  /**
+   * The word check for one recorded word (party-mode 4.20, ghost-voice 5.9): transcribes the clip once, keeps it in the Room's own
+   * storage only when the word was heard, and returns the new check counters. Absent without a speech binding: the Player is told it is unavailable.
+   */
+  wordCheck?(i: Readonly<{ code: string; seat: number; word: string; audio: Uint8Array; contentType: string; durationMs: number; state: Readonly<{ enabled: boolean; consents: readonly StitchConsent[]; checks: ChecksState }> }>):
+    Promise<{ ok: true; accepted: boolean; checks: ChecksState } | { ok: false; code: string; checks: ChecksState }>;
+  /** The clips the Room holds, for the whisper and the purge. */
+  listStitchClips?(): Promise<StitchClip[]>;
+  /** Drops clips that no longer qualify (game over, switch off, left, six hours) and returns when the next one expires. */
+  purgeStitchClips?(ctx: Readonly<{ gameOver: boolean; enabled: boolean; activeSeats: ReadonlySet<number>; consents: readonly StitchConsent[] }>, now: number): Promise<number | null>;
   conditions?(choice: "place" | "table", place: SkyPlace | null, hostHour: number): Promise<Sky | null>;
 };
 
@@ -165,10 +185,53 @@ export class RoomCore {
     }));
     const ttlAt = next.room.lastActiveMs + next.room.ttlMs;
     const strikeAt = next.extras?.pendingStrike?.atMs ?? null;
-    const wakes = [ttlAt, ...(wakeAtMs === null ? [] : [wakeAtMs]), ...(strikeAt === null ? [] : [strikeAt])];
+    const purgeAt = next.extras?.purgeAtMs ?? null;
+    const wakes = [ttlAt, ...(wakeAtMs === null ? [] : [wakeAtMs]), ...(strikeAt === null ? [] : [strikeAt]), ...(purgeAt === null ? [] : [purgeAt])];
     await this.ports.setAlarm(Math.min(...wakes));
     this.route(next, out);
     this.playLights(next, lightTriggers(prevEngine, next.engine));
+    const from = prevEngine?.nextId ?? 0;
+    if (next.engine !== null && next.engine.log.some((e) => e.id >= from && e.kind === "haunt-event")) this.stitchDue = "haunt_event";
+    // the game is over: no clip stays (party-mode 18.5)
+    if (prevEngine !== null && prevEngine.phase !== "ended" && next.engine?.phase === "ended") await this.ports.deleteStitchClips?.("all");
+  }
+
+  /** What the next `flushStitch` may whisper at: a Haunt Event or midnight. Memory only; a missed moment is simply missed. */
+  private stitchDue: "haunt_event" | "midnight" | null = null;
+
+  /**
+   * Stitch at a Haunt Event or midnight (party-mode 4.20): when `stitchSchedule` allows (rare, never early, never during an
+   * Accusation, never the same Player twice running, only a Player with a yes and the clips), the Host plays the composed
+   * line with its subtitle and every screen reads "a voice whispered". The clips never leave the Room except to the Host.
+   */
+  private async flushStitch(): Promise<void> {
+    const kind = this.stitchDue;
+    this.stitchDue = null;
+    if (kind === null || this.ports.listStitchClips === undefined) return;
+    const s = await this.loaded();
+    if (s === null || s.engine === null || s.engine.phase !== "playing" || !s.voice.stitch.enabled) return;
+    const now = this.ports.now();
+    const x = s.extras ?? initialExtras();
+    const stitch = s.voice.stitch;
+    const clips = await this.ports.listStitchClips();
+    const rounds = x.stitchRounds ?? [];
+    const eng = s.engine;
+    const input = {
+      kind, gameElapsedMs: now - (x.gameStartMs ?? now), accusationActive: eng.players.some((p) => p.hasSealed),
+      roundStitches: rounds.filter((r) => r === eng.round).length, gameStitches: stitch.played.game, lastSeat: stitch.played.lastSeat, enabled: true,
+      seats: s.room.seats.filter((q) => !q.bot).map((q) => ({ seat: q.seat as number, consent: stitch.consents.find((c) => c.seat === q.seat) ?? null, clips: clips.filter((c) => c.seat === q.seat) })),
+    };
+    const pick = stitchSchedule(input, mulberry32(hash("stitch", s.room.seed, stitch.played.game)));
+    if (!pick.ok) return;
+    const line = composeStitch(pick.seat, pick.template, clips);
+    if (line === null) return;
+    const event = { eventId: `stitch-${stitch.played.game + 1}`, seat: pick.seat, templateId: pick.template.id, subtitle: line.subtitle, at: now };
+    const rec = recordStitchPlayed(s.voice, event, hostClips(line.clips));
+    await this.commit({ ...s, voice: rec.state, extras: { ...x, stitchRounds: [...rounds, eng.round] } });
+    for (const [sid, info] of Object.entries(s.sockets)) {
+      if (info.role === "host") this.ports.send(sid, rec.hostMsg);
+      this.ports.send(sid, rec.publicLog);
+    }
   }
 
   /** The light bar for the Haunt Events and House Cues the last step logged (party-mode 4.19). */
@@ -184,7 +247,15 @@ export class RoomCore {
     const sky = roomConditions(s.extras?.sky);
     for (const o of out) {
       // only the three cosmetic fields of the frozen sky ride on the Public View (party-mode 4.18)
-      const msg = o.to === "public" && o.msg.t === "public" && sky !== undefined ? { ...o.msg, view: { ...o.msg.view, atmosphere: sky } } : o.msg;
+      let msg: typeof o.msg = o.msg;
+      if (o.to === "public" && o.msg.t === "public") {
+        let view = o.msg.view as PublicSnapshot & Record<string, unknown>;
+        if (sky !== undefined) view = { ...view, atmosphere: sky };
+        // the ending names each whispered line and whose words it used (party-mode 18.5)
+        const played = s.voice.stitch.played.list;
+        if (view.ending !== null && played.length > 0) view = { ...view, ending: { ...view.ending, stitch: stitchReveal(played) } as PublicSnapshot["ending"] };
+        msg = { ...o.msg, view };
+      }
       for (const [sid, info] of Object.entries(s.sockets)) {
         if (o.to === "public" || (o.to === "host" && info.role === "host") || (o.to === "seat" && info.role === "controller" && info.seat === o.seat)) this.ports.send(sid, msg);
       }
@@ -192,8 +263,9 @@ export class RoomCore {
   }
 
   /** The real world, once, at the start: the Master's choice, or nothing. Never blocks and never throws (party-mode 4.18). */
-  private async skyAtStart(s: ServerState): Promise<ServerState> {
-    const x = s.extras ?? initialExtras();
+  private async skyAtStart(s0: ServerState): Promise<ServerState> {
+    const s: ServerState = { ...s0, extras: { ...(s0.extras ?? initialExtras()), gameStartMs: this.ports.now(), stitchRounds: [] } };
+    const x = s.extras as RoomExtras;
     if (x.switches.conditions === "off" || this.ports.conditions === undefined) return s;
     let sky: Sky | null = null;
     const hostHour = Math.floor((((this.ports.now() + (x.hostOffsetMin ?? 0) * 60_000) % 86_400_000) + 86_400_000) % 86_400_000 / 3_600_000);
@@ -328,6 +400,11 @@ export class RoomCore {
 
   // ------------------------------------------------------------ sockets
   async message(socketId: string, raw: string): Promise<void> {
+    await this.messageInner(socketId, raw);
+    await this.flushStitch();
+  }
+
+  private async messageInner(socketId: string, raw: string): Promise<void> {
     const s = await this.loaded();
     if (s === null) { this.ports.close(socketId, 4004, "room_unknown"); return; }
     const t = this.ports.now();
@@ -428,7 +505,8 @@ export class RoomCore {
         let out = [...r.out];
         // everyone still on a socket is here in the new game too
         for (const info of Object.values(s.sockets)) if (info.role === "controller" && info.seat !== null) { r = step(engine, { kind: "connect", seat: info.seat }, now); engine = r.state; out = [...out, ...r.out]; }
-        return this.commit({ ...s, room, engine }, out, r.wakeAtMs);
+        const again: ServerState = { ...s, room, engine, voice: { ...s.voice, stitch: { ...s.voice.stitch, played: { round: 0, game: 0, lastSeat: null, list: [] } } }, extras: { ...(s.extras ?? initialExtras()), gameStartMs: now, stitchRounds: [] } };
+        return this.commit(again, out, r.wakeAtMs);
       }
       if (m.t === "startBots") {
         if (me.role !== "host") return refuse("not_host");
@@ -492,6 +570,36 @@ export class RoomCore {
           await this.ports.deleteStitchClips?.(answered.deleteClipsFor);
         }
         await this.commit({ ...s, voice: answered.state });
+        return;
+      }
+      if (m.t === "stitchClip") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const stitch = s.voice.stitch;
+        const consent = stitch.consents.find((c) => c.seat === me.seat);
+        if (!stitch.enabled) return refuse("stitch_denied:off");
+        if (!consentEffective(consent)) return refuse("stitch_denied:no_consent");
+        if (!isBankWord(m.word)) return refuse("stitch_denied:bad_word");
+        const type = audioBase(m.contentType);
+        const audio = decodeB64(m.audio);
+        if (type === null || audio === null || audio.length === 0 || !clipLengthOk(m.durationMs)) return refuse("stitch_denied:bad_clip");
+        const state = { enabled: stitch.enabled, consents: stitch.consents, checks: stitch.checks };
+        if (!canCheck(state, me.seat, m.word)) { audio.fill(0); this.ports.send(socketId, { t: "stitchResult", word: m.word, ok: false, reason: "limit" }); return; }
+        if (this.ports.wordCheck === undefined) { audio.fill(0); this.ports.send(socketId, { t: "stitchResult", word: m.word, ok: false, reason: "check_unavailable" }); return; }
+        let res: Awaited<ReturnType<NonNullable<Ports["wordCheck"]>>>;
+        try { res = await this.ports.wordCheck({ code: s.room.code, seat: me.seat, word: m.word, audio, contentType: type, durationMs: m.durationMs, state }); }
+        catch { audio.fill(0); this.ports.send(socketId, { t: "stitchResult", word: m.word, ok: false, reason: "check_unavailable" }); return; }
+        audio.fill(0);
+        const fresh = (await this.loaded()) ?? s;
+        const purgeAtMs = res.ok && res.accepted && this.ports.listStitchClips !== undefined ? nextPurgeAt(await this.ports.listStitchClips()) : fresh.extras?.purgeAtMs ?? null;
+        await this.commit({ ...fresh, voice: { ...fresh.voice, stitch: { ...fresh.voice.stitch, checks: res.checks } }, extras: { ...(fresh.extras ?? initialExtras()), purgeAtMs } });
+        this.ports.send(socketId, res.ok ? { t: "stitchResult", word: m.word, ok: res.accepted, ...(res.accepted ? {} : { reason: "not_heard" }) } : { t: "stitchResult", word: m.word, ok: false, reason: res.code });
+        return;
+      }
+      if (m.t === "stitchLeave") {
+        if (me.role !== "controller" || me.seat === null) return refuse("not_a_player");
+        const left = applyStitchLeave(s.voice, me.seat);
+        if (left.deleteClipsFor === "all" || left.deleteClipsFor.length > 0) await this.ports.deleteStitchClips?.(left.deleteClipsFor);
+        await this.commit({ ...s, voice: left.state });
         return;
       }
       if (m.t === "songsSetting") {
@@ -614,16 +722,27 @@ export class RoomCore {
   }
 
   async alarm(): Promise<void> {
-    const s = await this.loaded();
+    await this.alarmInner();
+    await this.flushStitch();
+  }
+
+  private async alarmInner(): Promise<void> {
+    let s = await this.loaded();
     if (s === null) return;
     const now = this.ports.now();
     if (isRoomExpired(s.room, now)) return this.end(s);
+    // clips that no longer qualify go (six hours, a Player who left, Stitch off), and the next expiry rejoins the one alarm
+    if (this.ports.purgeStitchClips !== undefined && s.extras?.purgeAtMs != null && now >= s.extras.purgeAtMs) {
+      const stitch = s.voice.stitch;
+      const next = await this.ports.purgeStitchClips({ gameOver: s.engine?.phase === "ended", enabled: stitch.enabled, activeSeats: new Set(s.room.seats.filter((q) => !q.bot).map((q) => q.seat as number)), consents: stitch.consents }, now);
+      s = { ...s, extras: { ...(s.extras ?? initialExtras()), purgeAtMs: next } };
+    }
     if (s.engine === null) { await this.ports.setAlarm(s.room.lastActiveMs + s.room.ttlMs); return; }
     const r = step(s.engine, { kind: "alarm" }, now);
     const struck = this.strikeIfDue({ ...s, engine: r.state }, now);
     await this.commit(struck.state, [...r.out, ...struck.out], r.wakeAtMs);
     for (const m of struck.direct) this.ports.send(m.sid, m.msg);
-    if (struck.midnight !== null) await this.midnight(struck.midnight);
+    if (struck.midnight !== null) { await this.midnight(struck.midnight); this.stitchDue = "midnight"; }
   }
 
   /**
@@ -768,6 +887,7 @@ export class RoomCore {
   /** End the Room: tell every socket, close them, and delete everything at once (party-mode 1.5). */
   private async end(s: ServerState): Promise<void> {
     for (const sid of Object.keys(s.sockets)) { this.ports.send(sid, { t: "ended" }); this.ports.close(sid, 4000, "room_ended"); }
+    await this.ports.deleteStitchClips?.("all");
     await this.ports.deleteSongs?.(s.room.code);
     await this.ports.deleteContributions?.(s.room.code);
     await this.ports.deleteAll();

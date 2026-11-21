@@ -105,3 +105,22 @@ describe("PartyRoom Durable Object", () => {
     expect(await store.get("OTHR", "opening")).not.toBeNull();
   });
 });
+
+describe("PartyRoom Durable Object: Stitch without a speech binding", () => {
+  it("tells the Player the check is unavailable, keeps no clip, and leaves the Room's one alarm alone", async () => {
+    const t = room();
+    const { hostToken } = (await t.post("/create", { code: "WXYZ" })) as { hostToken: string };
+    const ana = (await t.post("/join", { nickname: "Ana" })) as { token: string };
+    const host = t.socket("h");
+    const sa = t.socket("a");
+    await t.r.webSocketMessage(host as unknown as WebSocket, JSON.stringify({ t: "hello", token: hostToken }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "hello", token: ana.token }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "stitchSetting", on: true }));
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "stitchAnswer", yes: true, tick: true }));
+    const alarmBefore = t.parts.alarm.at;
+    await t.r.webSocketMessage(sa as unknown as WebSocket, JSON.stringify({ t: "stitchClip", word: "here", audio: "AAECAwQFBgc=", contentType: "audio/webm", durationMs: 800 }));
+    expect(sa.sent.some((m) => (m as { t: string; reason?: string }).t === "stitchResult" && (m as { reason: string }).reason === "check_unavailable")).toBe(true);
+    expect([...t.parts.data.keys()].filter((k) => k.startsWith("clip:"))).toEqual([]);
+    expect(t.parts.alarm.at).toBe(alarmBefore);
+  });
+});

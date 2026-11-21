@@ -3,6 +3,10 @@ import { R2PhotoStore } from "../party/photo-store";
 import { roomScope } from "../party/contribute";
 import { RoomSongStore, type SongBucket } from "../songs/store";
 import { conditionsFromEnv, type ConditionsEnv } from "../conditions/snapshot-store";
+import { SpendGuardClient } from "../spend/client";
+import { sttModelFromEnv, WorkersAiTranscriber } from "../guarded/workersai/transcribe";
+import type { AiBinding } from "../guarded/workersai/call";
+import { runWordCheck } from "../voice/stitch";
 import { RoomStitchClipStore, type RoomClipStorage } from "../voice/stitch-store";
 
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -31,8 +35,10 @@ export class PartyRoom {
   private readonly core: RoomCore;
   private readonly clips: RoomStitchClipStore;
 
-  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace; BUCKET?: SongBucket } & ConditionsEnv = {}, clock: () => number = Date.now) {
-    this.clips = new RoomStitchClipStore(this.state.storage as unknown as RoomClipStorage);
+  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace; BUCKET?: SongBucket; AI?: AiBinding; SPEND_GUARD?: ConstructorParameters<typeof SpendGuardClient>[0]; VOICE_STT_MODEL_ID?: string } & ConditionsEnv = {}, clock: () => number = Date.now) {
+    // The Room's own alarm belongs to `RoomCore` alone: the clip store keeps clips, and its alarm calls do nothing here.
+    const st = this.state.storage as unknown as RoomClipStorage;
+    this.clips = new RoomStitchClipStore({ get: (k) => st.get(k), put: (k, v) => st.put(k, v), delete: (k) => st.delete(k), list: (o) => st.list(o), setAlarm: async () => undefined, deleteAlarm: async () => undefined });
     const songs = env.BUCKET !== undefined ? new RoomSongStore(env.BUCKET) : null;
     const sockets = (): WebSocket[] => (this.state as unknown as { getWebSockets(): WebSocket[] }).getWebSockets();
     const byId = (id: string): WebSocket | undefined => sockets().find((ws) => (ws as unknown as { deserializeAttachment(): { id?: string } | null }).deserializeAttachment()?.id === id);
@@ -52,6 +58,18 @@ export class PartyRoom {
         return { weather: snap.weather, timeOfDay: snap.timeOfDay, moon: snap.moon };
       },
       randomBytes: (n) => crypto.getRandomValues(new Uint8Array(n)),
+      // Stitch (party-mode 4.20): the word check needs the speech binding and the spend guard; without them the Player is told it is unavailable.
+      ...(env.AI !== undefined && env.SPEND_GUARD !== undefined && sttModelFromEnv(env.VOICE_STT_MODEL_ID) !== null
+        ? {
+            wordCheck: async (i) => runWordCheck(
+              { transcriber: new WorkersAiTranscriber(env.AI as AiBinding, { model: sttModelFromEnv(env.VOICE_STT_MODEL_ID) as string }), spend: new SpendGuardClient(env.SPEND_GUARD as never), clips: this.clips },
+              i.state,
+              { roomId: i.code, seat: i.seat, word: i.word, audio: i.audio, contentType: i.contentType, durationMs: i.durationMs, ipHash: "party-room" },
+            ),
+          }
+        : {}),
+      listStitchClips: () => this.clips.list(),
+      purgeStitchClips: async (ctx, now) => (await this.clips.purge(ctx, now)).nextAlarmAt,
       deleteStitchClips: async (forSeats) => {
         if (forSeats === "all") await this.clips.deleteAll();
         else for (const seat of forSeats) await this.clips.deleteForSeat(seat);
