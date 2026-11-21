@@ -4,7 +4,7 @@
 // Tap the plan to move yourself, Turn to face another way. A shared action fires only when enough different Players act inside two seconds.
 import { h, $ } from './dom.js';
 import { jolt } from './knock-core.js';
-import { ACTIONS, INITIAL_STATE, SPOTS, WINDOW_MS, applyAction, feel, makeShakeDetector, makeTogether } from './shake-core.js';
+import { ACTIONS, INITIAL_STATE, SPOTS, WINDOW_MS, applyAction, bearingOnPlan, feel, headingOf, makeFacing, makeFacingReporter, makeShakeDetector, makeTogether } from './shake-core.js';
 import { LabClient, labUrl } from './net.js';
 import { ROOM_RE, newRoomCode, platformOf } from './protocol.js';
 
@@ -81,12 +81,32 @@ function onMotion(e) {
   if (detector.motion(performance.now(), jolt(prev, cur))) act(client ? client.id : 'you');
   prev = cur;
 }
+// The phone's own facing (Requirement 25.6): face the door, tap Set, and the way the phone turns is the way its dot turns. Without it, the Turn control.
+const compass = makeFacing();
+const facingReporter = makeFacingReporter();
+let heading = null;
+function onOrientation(e) {
+  heading = headingOf(e) ?? heading;
+  const f = compass.facing(heading);
+  if (f === null) return;
+  phones[0].facing = f;
+  if (facingReporter.shouldSend(f, performance.now())) sendPos();
+  draw();
+}
+function setFacing() {
+  if (heading === null) { sensorText.textContent = 'No compass reading yet: tap Start first, or use Turn right.'; return; }
+  compass.set(heading, bearingOnPlan(phones[0], SPOTS.knock));
+  facingReporter.reset();
+  sensorText.textContent = 'Facing set: the door is where your phone points. Turn the phone and your dot turns.';
+}
 async function startShake() {
   try {
     if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
       if ((await DeviceMotionEvent.requestPermission()) !== 'granted') throw new Error('refused');
     }
     addEventListener('devicemotion', onMotion);
+    addEventListener('deviceorientation', onOrientation);
+    addEventListener('deviceorientationabsolute', onOrientation);
     sensorText.textContent = 'Shake your phone to act as You. (Motion only; nothing is recorded.)';
   } catch { sensorText.textContent = 'No motion on this phone: use the You acts button.'; }
 }
@@ -205,7 +225,7 @@ app.append(style,
   h('p', { class: 'muted' }, 'Tap the plan to move You. The line on each dot is the way it faces.'),
   h('div', { class: 'row' }, youBtn, ...pretendBtns, turnBtn),
   h('div', { class: 'row' }, joinBtn), roomText,
-  h('div', { class: 'row' }, h('button', { onClick: (e) => { e.target.disabled = true; startShake(); } }, 'Start')),
+  h('div', { class: 'row' }, h('button', { onClick: (e) => { e.target.disabled = true; startShake(); } }, 'Start'), h('button', { onClick: setFacing }, 'Face the door, then tap Set')),
   sensorText, status, log, live);
 
 draw();

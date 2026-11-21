@@ -100,3 +100,70 @@ export function cleanState(st) {
   const chair = Number.isInteger(st?.chair) && st.chair >= 0 && st.chair < CHAIR_STEPS ? st.chair : 0;
   return { bigDoor: st?.bigDoor === 'open' ? 'open' : 'shut', chair };
 }
+
+// ---------------------------------------------------------------- facing from the phone's own orientation (Requirement 25.6)
+// The plan's facing is degrees with 0 = east and 90 = south (clockwise on screen). A phone knows a compass heading (0 = north, clockwise),
+// or, without a compass, an arbitrary turn: so the demo asks the Player to face a known place (the door) and tap Set once, and the
+// difference between the two is kept. Nothing is recorded; only the facing number goes out, and the room cleans it (`cleanPos`).
+const norm = (d) => ((d % 360) + 360) % 360;
+const isNum = (n) => typeof n === 'number' && Number.isFinite(n);
+
+/**
+ * A heading in degrees (0 to 359, clockwise) from a `deviceorientation` reading: the iPhone's `webkitCompassHeading` if it has one,
+ * else `360 - alpha` (alpha turns the other way). `null` when the reading holds neither.
+ */
+export function headingOf(e) {
+  if (e && isNum(e.webkitCompassHeading)) return norm(e.webkitCompassHeading);
+  if (e && isNum(e.alpha)) return norm(360 - e.alpha);
+  return null;
+}
+
+/** The smallest signed turn from `a` to `b`, in degrees (-180 to 180]. */
+export const turnBetween = (a, b) => 180 - norm(180 - (b - a));
+
+/** The way from `from` to `to` on the plan, in the plan's facing degrees (0 = east, 90 = south). */
+export function bearingOnPlan(from, to) {
+  return norm((Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI);
+}
+
+/**
+ * Turns headings into plan facing. `set(heading, facing)` says "the phone reads `heading` now and faces `facing` on the plan" (face the door,
+ * then tap Set); after that `facing(heading)` is the plan facing. Before it is set there is none (`null`), so the Turn control is used instead.
+ * A reading is smoothed along the shortest way round, so a phone held steady does not jitter and 359 to 1 does not swing through 180.
+ */
+export function makeFacing(opts = {}) {
+  const k = isNum(opts.smoothing) && opts.smoothing > 0 && opts.smoothing <= 1 ? opts.smoothing : 0.35;
+  let offset = null;
+  let smooth = null;
+  return {
+    get calibrated() { return offset !== null; },
+    set(heading, facing) {
+      if (!isNum(heading) || !isNum(facing)) return false;
+      offset = norm(facing - heading);
+      smooth = null;
+      return true;
+    },
+    facing(heading) {
+      if (offset === null || !isNum(heading)) return null;
+      smooth = smooth === null ? heading : norm(smooth + k * turnBetween(smooth, heading));
+      return Math.round(norm(smooth + offset));
+    },
+    clear() { offset = null; smooth = null; },
+  };
+}
+
+/** Whether a new facing is worth sending: it turned at least `minDeg`, or it is the first, and `minMs` have passed since the last one sent. */
+export const FACING_REPORT = Object.freeze({ minDeg: 12, minMs: 500 });
+export function makeFacingReporter(opts = {}) {
+  const o = { ...FACING_REPORT, ...opts };
+  let last = null; // { facing, t }
+  return {
+    shouldSend(facing, t) {
+      if (!isNum(facing) || !isNum(t)) return false;
+      if (last !== null && (t - last.t < o.minMs || Math.abs(turnBetween(last.facing, facing)) < o.minDeg)) return false;
+      last = { facing, t };
+      return true;
+    },
+    reset() { last = null; },
+  };
+}
