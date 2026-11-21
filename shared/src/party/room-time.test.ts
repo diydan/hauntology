@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { EngineState } from "./engine";
 import { initialExtras } from "./room-extras";
-import { HAUNT_LIGHT, lightMessages, lightTriggers, strikeLine, strikeMessages } from "./room-time";
+import { RATTLE_LIGHT, HAUNT_LIGHT, lightMessages, lightTriggers, strikeLine, strikeMessages } from "./room-time";
 
-const eng = (log: unknown[], nextId: number) => ({ log, nextId }) as unknown as EngineState;
+const eng = (log: unknown[], nextId: number) => ({ log, nextId, players: [] }) as unknown as EngineState;
 
 describe("room-time: what the logged events ask of the light bar", () => {
   it("a Haunt Event lights every phone with its own light, a phone cue only the phone it landed on, and old events nothing", () => {
@@ -30,6 +30,19 @@ describe("room-time: what the logged events ask of the light bar", () => {
   it("a phone that prefers reduced motion gets none, and Bots (not in the human list) get none", () => {
     const x = { ...initialExtras(), light: { 1: { consent: true, reducedMotion: true }, 2: { consent: true, reducedMotion: false }, 3: { consent: true, reducedMotion: false } }, clock: { 1: [{ sentMs: 0, serverMs: 10, receivedMs: 20 }], 2: [{ sentMs: 0, serverMs: 10, receivedMs: 20 }] } };
     expect(lightMessages({ kind: "glow", seats: null }, 0, [1, 2], x).map((m) => m.seat)).toEqual([2]);
+  });
+});
+
+describe("room-time: Rattle and Becoming light", () => {
+  it("a Rattle's light grows with its level, and a Player joining the haunting dims every phone once", () => {
+    expect(RATTLE_LIGHT).toEqual({ 1: "glow", 2: "wave", 3: "creeping-dark" });
+    const ev = (level: number) => eng([{ id: 5, kind: "rattle", target: 1, turn: 2, level }], 6);
+    expect(lightTriggers(eng([], 5), ev(3))).toEqual([{ kind: "creeping-dark", seats: null }]);
+    expect(lightTriggers(eng([], 5), ev(2))).toEqual([{ kind: "wave", seats: null }]);
+    const prev = { ...eng([], 5), players: [{ seat: 2, becomingPlayed: false }] } as unknown as EngineState;
+    const next = { ...eng([], 5), players: [{ seat: 2, becomingPlayed: true }] } as unknown as EngineState;
+    expect(lightTriggers(prev, next)).toEqual([{ kind: "creeping-dark", seats: null }]);
+    expect(lightTriggers(next, next)).toEqual([]);
   });
 });
 

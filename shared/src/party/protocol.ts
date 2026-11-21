@@ -29,6 +29,8 @@ export const ClientMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("resume") }).strict(),
   z.object({ t: z.literal("cue"), cue, place: z.enum(["tv", "phone"]).optional() }).strict(),
   z.object({ t: z.literal("frame"), target: z.number().int().min(1).max(6), cue }).strict(),
+  z.object({ t: z.literal("rattleOn"), on: z.boolean() }).strict(),
+  z.object({ t: z.literal("rattle"), via: z.enum(["shake", "button"]) }).strict(),
   z.object({ t: z.literal("sound"), consent: z.boolean(), audio: z.boolean().optional() }).strict(),
   z.object({
     t: z.literal("settings"), preset: z.enum(["classic", "gentle", "quick"]).optional(), nudges: z.enum(["all", "help-only", "off"]).optional(),

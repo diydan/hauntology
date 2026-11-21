@@ -1,6 +1,7 @@
 import type { PhoneSeat } from "./cues";
 import type { EngineEvent, EngineState } from "./engine";
 import type { HauntOption } from "./haunt";
+import { rattleIntensity } from "./rattle";
 import { lightCue, lightSync, MAX_LIGHT_MS, type LightKind, type LightStep } from "./light";
 import { strikeTargets, type Strike } from "./hour";
 import { offsetOf, type RoomExtras } from "./room-extras";
@@ -16,6 +17,9 @@ export const HAUNT_LIGHT: Readonly<Record<HauntOption, LightKind>> = {
   "cold-spot": "creeping-dark", blackout: "creeping-dark", restless: "wave", lull: "glow", slam: "heartbeat",
 };
 
+/** A Rattle's light by level (party-mode 19.4): breathing grey, a grey wave, a creeping dark. */
+export const RATTLE_LIGHT: Readonly<Record<1 | 2 | 3, LightKind>> = { 1: rattleIntensity(1)!.light, 2: rattleIntensity(3)!.light, 3: rattleIntensity(5)!.light };
+
 export type LightTrigger = Readonly<{ kind: LightKind; /** `null` = every phone that agreed, or the seats named. */ seats: readonly number[] | null }>;
 
 /** The light cues the events logged between two Engine states ask for: a Haunt Event for every phone, a House Cue or a Frame for the one phone it played on. */
@@ -27,7 +31,10 @@ export function lightTriggers(prev: EngineState | null, next: EngineState | null
   for (const e of fresh) {
     if (e.kind === "haunt-event") out.push({ kind: HAUNT_LIGHT[e.option], seats: null });
     else if (e.kind === "phone-cue") out.push({ kind: "glow", seats: [e.target] });
+    else if (e.kind === "rattle") out.push({ kind: RATTLE_LIGHT[e.level ?? 1], seats: null });
   }
+  // a Player who just joined the haunting: a creeping dark on every phone that agreed (the sting itself is the Engine's `becoming`)
+  for (const p of next.players) if (p.becomingPlayed === true && prev?.players.find((q) => q.seat === p.seat)?.becomingPlayed !== true) out.push({ kind: "creeping-dark", seats: null });
   return out;
 }
 

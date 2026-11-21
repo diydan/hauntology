@@ -186,7 +186,7 @@ export class RoomCore {
       // only the three cosmetic fields of the frozen sky ride on the Public View (party-mode 4.18)
       const msg = o.to === "public" && o.msg.t === "public" && sky !== undefined ? { ...o.msg, view: { ...o.msg.view, atmosphere: sky } } : o.msg;
       for (const [sid, info] of Object.entries(s.sockets)) {
-        if (o.to === "public" || (info.role === "controller" && info.seat === o.seat)) this.ports.send(sid, msg);
+        if (o.to === "public" || (o.to === "host" && info.role === "host") || (o.to === "seat" && info.role === "controller" && info.seat === o.seat)) this.ports.send(sid, msg);
       }
     }
   }
@@ -358,7 +358,10 @@ export class RoomCore {
       if (m.t === "roomSettings") {
         if (!isMaster) return refuse("not_master");
         const x = s.extras ?? initialExtras();
-        const next = { ...s, extras: { ...x, switches: applySwitches(x.switches, m) } };
+        const switches = applySwitches(x.switches, m);
+        // the Engine reads the Rattle switch from its settings; the lobby keeps it for the Engine made at the start
+        const lobbySettings = { ...s.lobbySettings, rattle: switches.rattle };
+        const next = { ...s, lobbySettings, ...(s.engine === null ? {} : { engine: { ...s.engine, settings: { ...s.engine.settings, rattle: switches.rattle } } }), extras: { ...x, switches } };
         await this.commit(next);
         return this.broadcastLobby(next);
       }
