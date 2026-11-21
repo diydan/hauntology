@@ -1,3 +1,4 @@
+import type { DoorReason } from "@hauntology/shared/party/doors";
 import type { PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/engine";
 import type { CaseSetup } from "@hauntology/shared/app/case-setup";
 import { walkRadiusOf } from "@hauntology/shared/ghost/anchors";
@@ -36,7 +37,23 @@ export type RoomSnapshot = Readonly<{
   activeSong?: (ActiveRoomSong & { seq: number }) | null;
   /** Public log hint lines emitted by Clue Songs. */
   songHints?: readonly string[];
+  /** What the Room has said about doors, as it arrived (knock-door 2.4, 3.2, 4.4, 5.3). Optional: absent means none yet. */
+  doors?: DoorFeed;
 }>;
+
+/** One `door` message: a door opened or shut, or one more Player is pushing. `n` orders them, so a screen can tell a new one from an old one. */
+export type DoorEvent = Readonly<{ n: number; id: string; open: boolean; reason: DoorReason; need: number; have: number }>;
+
+/** The door messages a screen keeps: the latest few changes, this Player's last knock result, the knocks they heard, and the last knock-back at the TV. */
+export type DoorFeed = Readonly<{
+  events: readonly DoorEvent[];
+  result: Readonly<{ doorId: string; outcome: "opened" | "wrong" | "failed"; heard: string; triesLeft: number }> | null;
+  heard: readonly Readonly<{ doorId: string; groups: readonly number[]; long: number | null }>[];
+  tvResult: Readonly<{ outcome: "help" | "wrong"; heard: string }> | null;
+}>;
+
+export const EMPTY_DOOR_FEED: DoorFeed = { events: [], result: null, heard: [], tvResult: null };
+const KEPT_DOOR_EVENTS = 6;
 
 export type SocketLike = {
   send(text: string): void;
@@ -109,6 +126,8 @@ export function openRoom(deps: RoomDeps, code: string, token: string, opts: { ho
   let voiceSeq = 0;
   let songSeq = 0;
   const listeners = new Set<() => void>();
+  let doorCount = 0;
+  const doorFeed = (): DoorFeed => snap.doors ?? EMPTY_DOOR_FEED;
   const set = (patch: Partial<RoomSnapshot>): void => {
     snap = { ...snap, ...patch };
     for (const l of [...listeners]) l();
@@ -169,6 +188,33 @@ export function openRoom(deps: RoomDeps, code: string, token: string, opts: { ho
       case "songHint":
         if (typeof m.line === "string") set({ songHints: [...(snap.songHints ?? []), m.line] });
         return;
+      case "door": {
+        if (typeof m.id !== "string" || typeof m.open !== "boolean" || typeof m.reason !== "string") return;
+        const e: DoorEvent = { n: ++doorCount, id: m.id, open: m.open, reason: m.reason as DoorReason, need: typeof m.need === "number" ? m.need : 0, have: typeof m.have === "number" ? m.have : 0 };
+        set({ doors: { ...doorFeed(), events: [...doorFeed().events, e].slice(-KEPT_DOOR_EVENTS) } });
+        return;
+      }
+      case "doorResult": {
+        if (typeof m.doorId !== "string" || typeof m.heard !== "string") return;
+        const outcome = m.outcome === "opened" || m.outcome === "failed" ? m.outcome : "wrong";
+        set({ doors: { ...doorFeed(), result: { doorId: m.doorId, outcome, heard: m.heard, triesLeft: typeof m.triesLeft === "number" ? m.triesLeft : 0 } } });
+        return;
+      }
+      case "tvKnockResult": {
+        if (typeof m.heard !== "string") return;
+        set({ doors: { ...doorFeed(), tvResult: { outcome: m.outcome === "help" ? "help" : "wrong", heard: m.heard } } });
+        return;
+      }
+      case "sight": {
+        // the ghost's knock at a door, given to this phone (the sight id is `door-<id>`); other Sights belong to the puzzles
+        if (typeof m.sightId !== "string" || !m.sightId.startsWith("door-")) return;
+        const p = (m.sight as { payload?: { groups?: unknown; long?: unknown } } | undefined)?.payload;
+        if (!p || !Array.isArray(p.groups) || !p.groups.every((g) => typeof g === "number")) return;
+        const doorId = m.sightId.slice(5);
+        const heard = [...doorFeed().heard.filter((x) => x.doorId !== doorId), { doorId, groups: p.groups as number[], long: typeof p.long === "number" ? p.long : null }];
+        set({ doors: { ...doorFeed(), heard } });
+        return;
+      }
       case "refused": set({ refused: typeof m.code === "string" ? m.code : "refused" }); return;
       case "ended": set({ status: "closed" }); return;
     }

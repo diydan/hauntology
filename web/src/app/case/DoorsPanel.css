@@ -1,0 +1,15 @@
+/* The doors on the table. A door swings slowly when it opens or shuts and never flashes; with reduced motion it just is open or shut. */
+.case-door-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2, 0.5rem); }
+.case-door { align-items: center; }
+.case-door-text { flex: 1 1 12rem; }
+.case-door-glyph {
+  flex: none; display: inline-block; width: 1.5rem; height: 2.4rem; border-radius: var(--radius-sm, 0.25rem) var(--radius-sm, 0.25rem) 0 0;
+  border: var(--stroke-ring, 2px) solid color-mix(in srgb, var(--art-wood) 60%, var(--void));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--art-wood) 78%, var(--text)), var(--art-wood));
+  transform-origin: left center; transform: perspective(14rem) rotateY(0deg);
+  transition: transform var(--fade, 600ms) ease-in-out;
+}
+.case-door[data-open="true"] .case-door-glyph { transform: perspective(14rem) rotateY(-68deg); }
+.case-door[data-still="true"] .case-door-glyph { transition: none; }
+@media (prefers-reduced-motion: reduce) { .case-door-glyph { transition: none; } }
+.case-knock-marks { letter-spacing: 0.15em; min-height: 1.5em; margin: 0; }
