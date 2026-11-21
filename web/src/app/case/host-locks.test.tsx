@@ -112,4 +112,12 @@ describe("the solo table with a Lock or a Sight (integration 5.3)", () => {
     render(<SoloTable client={c} />);
     expect(screen.getByRole("alert").textContent).toBe("You have haunted with a puzzle this round already. Another one opens next round.");
   });
+
+  it("the table has at most one solid yellow button (Ask), the ending has none of its own (Play again is the Case screen's) (integration 8.1, 8.3)", () => {
+    const { c } = client({});
+    render(<SoloTable client={c} />);
+    expect(document.querySelectorAll(".ui-button--primary")).toHaveLength(1);
+    expect(document.querySelector(".ui-button--primary")!.textContent).toBe("Ask");
+  });
 });
+

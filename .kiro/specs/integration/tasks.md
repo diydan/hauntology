@@ -82,9 +82,9 @@ Order is fixed (Requirement 1). Task numbers in other specs are named in the tex
     - **Validates: Requirements 7.1**
 
 - [ ] 8. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 8 and the `design-system` spec)
-  - [ ] 8.1 Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
+  - [x] 8.1 (Audited: the Case, solo table, Lock layer, ending and Controller panel use `ui-` elements only; `web/src/styles/styles.test.ts` keeps the old look classes out and every own style to layout; one solid yellow button per view is pinned in `host-locks.test.tsx` (Ask), `Ending.test.tsx` (none; Play again is the Case screen's) and `one-primary.test.tsx` (puzzles)) Build each screen of this spec from the elements in `design/catalogue.html`; its own style says only where things go
     - _Requirements: 8.1, 8.3_
-  - [ ] 8.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
+  - [x] 8.2 (Done once in this branch: the ending's counts needed a table, so `ui-table` went into `design/elements.css` and `design/catalogue.html` first and is then used in `Ending.tsx`) A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 8.2_
   - [ ] 8.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
     - _Requirements: 8.4_

@@ -171,5 +171,11 @@ describe("the ending screen", () => {
     expect([...sec.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["The house itself sent the bell to Bot2."]);
     expect(sec.querySelector("p")).toBeNull();
   });
+
+  it("has no solid yellow button of its own: Play again is the Case screen's one main button (integration 8.3)", () => {
+    const view = ended({ houseWins: false, winners: [1] });
+    render(<Ending view={view} n={namesOf(view, 1)} reducedMotion />);
+    expect(document.querySelectorAll(".ui-button--primary")).toHaveLength(0);
+  });
 });
 
