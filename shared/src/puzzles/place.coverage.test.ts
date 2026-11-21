@@ -32,4 +32,15 @@ describe("every Kind appears across games (puzzles 7.5)", () => {
       }
     }
   });
+
+  it("placePuzzles refuses what cannot be placed and places nothing when puzzles are off (9.6 mutation pass)", () => {
+    const many = Array.from({ length: 2 * DEFAULT_KINDS.length + 1 }, (_, i) => `z${i}`);
+    expect(placePuzzles(1, many, "medium")).toMatchObject({ ok: false, code: "puzzle_bad_placement" });
+    const exactly = many.slice(0, 2 * DEFAULT_KINDS.length);
+    const full = placePuzzles(1, exactly, "medium");
+    expect(full.ok && full.value.length).toBe(exactly.length);
+    expect(placePuzzles(1, ["a", "a", "b"], "medium")).toMatchObject({ ok: false, code: "puzzle_bad_placement" });
+    expect(placePuzzles(1, ["only"], "medium")).toMatchObject({ ok: false, code: "puzzle_bad_placement" });
+    expect(placePuzzles(1, ZONES, "off")).toEqual({ ok: true, value: [] });
+  });
 });

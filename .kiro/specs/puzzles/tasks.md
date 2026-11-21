@@ -235,7 +235,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - Built in `kinds/Maze.tsx`.
     - _Requirements: 5.4_
 
-- [ ] 9. Settings, access and docs
+- [x] 9. Settings, access and docs
   - [x] 9.1 `PuzzleSettings`: the Master row, the Wander switch, the device switches for tilt, vibration, sound and Assist, and the Plain Inspect switch
     - Built in `web/src/puzzles/PuzzleSettings.tsx`: the Master row, the Wander Locks switch, Plain Inspect and the device switches (touch only, tilt, buzz, sound, Assist, tilt strength, flip the twist). It holds no state; the Controller keeps and remembers the settings and passes them in.
     - Remembered on the phone (2026-11-15): the puzzle screens store nothing (`source.test.ts`), so the Controller side keeps the device settings: `web/src/device/device-settings.ts` reads them once from `localStorage` (key `hauntology.puzzles.device`), saves every change, and falls back to the defaults for a missing, damaged or out-of-range value or when the phone's storage is blocked. A Controller calls `useDeviceSettings()` and hands the result to its screens (`PuzzleDemo` takes it as `settings`; `PuzzleSettings` takes `onDevice`, `PuzzleHost` takes `onTiltChoice`), so the tilt choice, Touch only, strength, buzz, sound and Assist come back next time on that phone. `device/PersistedPuzzleDemo.tsx` does this for the demo page; the real Controller (`party/controller/`) is not built yet. Tested in `device/device-settings.test.tsx` (9 deliberate breaks caught).
@@ -249,9 +249,11 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x] 9.4 Source-level checks: no `MediaRecorder` in `web/src/puzzles/`, no import of `web`, `api`, a Hand or the Solution in `shared/src/puzzles/`, no copied code or assets; word lists and mazes checked
     - Built as `shared/src/puzzles/source.test.ts` and `web/src/puzzles/source.test.ts`.
     - _Requirements: 11.2, 14.3_
-  - [ ] 9.5 Docs: `docs/spikes/puzzles-<n>.md`, assumptions 19 to 23 and `PUZZLES_ENABLED` in `.kiro/steering/tech.md`, the `puzzles/` folders in `structure.md`, a line in `docs/SOUNDS.md`, the decisions list in `docs/IMPLEMENTATION.md`, and one sentence in `product.md`
+  - [x] 9.5 Docs: `docs/spikes/puzzles-<n>.md`, assumptions 19 to 23 and `PUZZLES_ENABLED` in `.kiro/steering/tech.md`, the `puzzles/` folders in `structure.md`, a line in `docs/SOUNDS.md`, the decisions list in `docs/IMPLEMENTATION.md`, and one sentence in `product.md`
     - _Requirements: 14.4_
-  - [ ] 9.6 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `verify`, `lockCharge`, `placePuzzles` and `planHaptics`. Ensure every test passes; ask the user if questions arise.
+    - Built: `PUZZLES_ENABLED` and assumptions (numbered 21 to 26, because 19 and 20 were taken) in `.kiro/steering/tech.md`; the `puzzles/` folders in `structure.md`; a line in `docs/SOUNDS.md`; the decisions list in `docs/IMPLEMENTATION.md`; the `product.md` sentence was already there. The `docs/spikes/puzzles-<n>.md` records are written when each spike is run on a real phone (tasks 1.1 to 1.6), so none exists yet
+  - [x] 9.6 Final checkpoint: run `node tools/check-traceability.mjs`, the whole test suite and a mutation pass on `verify`, `lockCharge`, `placePuzzles` and `planHaptics`. Ensure every test passes; ask the user if questions arise.
+    - Built: traceability OK; shared 1601 tests and web all pass (one full web run timed out under load, and the failing files pass on re-run); mutation pass on `verify` (19 mutants), `lockCharge` (4), `placePuzzles` (7) and `planHaptics` (7): every non-equivalent mutant now fails a test, after edge tests were added in `verify.edges.test.ts`, `haptics.caps.test.ts` and `place.coverage.test.ts`. Two verify mutants are equivalent (the schema-failure branch is caught by the same `catch`)
 
 - [ ] 10. Spirit clues (optional layer; the first thing to cut)
   - [x] 10.1 Mockup of the Clue ring, the question-mark rings, the 0.7 second read, the arrow, the Clue list and "Show all as text", with the made-up values and a guard test
