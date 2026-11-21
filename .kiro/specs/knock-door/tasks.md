@@ -97,6 +97,7 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
   - [ ] 8.2 The TV shows each door as a marker on the diorama, and swings it open or shut slowly with the `creak` sound; a Player is at a door within 1.5 m
     - _Requirements: 2.4, 9.2_
   - [ ] 8.3 Each phone runs `feel` for the change from its own place and facing
+    - Progress (2026-11-21): the rule is built and tested in `shared/src/party/door-feel.ts` (`feel`, a port of the lab's `tools/playtest/js/shake-core.js` kept the same by a random-input parity test, and `doorFeel`, which takes the door's place on the plan as the source and applies reduced motion (no picture shake) and a phone that cannot buzz). NOT done: the Controller has no place or facing for the phone yet (puzzles 25.6: a tap on the floor plan and a Turn control, or the Spirit table's marks), so `DoorControls.tsx` does not call it, and the buzz, shake and sound on the phone are not wired. Not ticked until they are.
     - _Requirements: 2.4_
   - [ ] 8.4 A world with no doors loads and shows nothing for doors
     - Progress (2026-11-21): the Viewer half is tested (`viewerDoors([])` is `[]`, an empty list makes no box, `resolve` returns the same eye object); the TV half waits for 8.2. Not ticked until it does.
