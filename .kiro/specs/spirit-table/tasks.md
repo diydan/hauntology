@@ -97,8 +97,8 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
   - [x] 6.1 Mockup: carry a character, the finger holding the head, the lit room and the landing ring, the drop that marks or clears, the rag-doll swing and stand-up, reduced motion, a hook that steps the physics without drawing, and 14 tests
     - Built in `tools/playtest/js/ar.js`, `ar-rag.js`, `ar-marks.js` and `test/ar-rag.test.js`, `ar-marks.test.js`, `ar.test.js`. It keeps the mark only while the page is open and has no list choice; the real code uses the notebook (8.3) and the Table list (8.5).
     - _Requirements: 9.1, 9.2, 9.4_
-  - [ ] 6.2 `marks.ts`: `roomAtPoint`, `lineupPos`, `slotPos`, `applyDrop`, and `tableData` reading `placedIn` from the notebook
-    - Built in `shared/src/table/marks.ts`: `roomAtPoint`, `lineupPos`, `slotPos`, `roomCenter`, `applyDrop` (the notebook's own `setTheory`) and `placeSuspects`. Still to do: `tableData` reading `placedIn` (task 2.1).
+  - [x] 6.2 `marks.ts`: `roomAtPoint`, `lineupPos`, `slotPos`, `applyDrop`, and `tableData` reading `placedIn` from the notebook
+    - Built in `shared/src/table/marks.ts`: `roomAtPoint`, `lineupPos`, `slotPos`, `roomCenter`, `applyDrop` (the notebook's own `setTheory`) and `placeSuspects`. `tableData` reads `placedIn` through `theoryOf` and drops any zone that is not on the table (`shared/src/table/data.ts`). Checked 2026-11-21: `shared` table tests (28) and `web` table tests pass.
     - _Requirements: 2.3, 9.2, 9.3_
   - [x] 6.3 **Property 7: A drop only sets or clears the player's own theory mark**
     - Built in `shared/src/table/marks.prop.test.ts`.
