@@ -63,7 +63,15 @@ export function MasterMenu({ game, me, send, worlds }: { game: GameView; me: num
       <Switch label="Allow phone sounds" on={s.sounds !== false} onChange={(sounds) => set({ sounds })} />
       <Switch label="Auto-cross in the notebook" on={s.autoCross === true} onChange={(autoCross) => set({ autoCross })} />
       <Segments label="Bot level" value={(s.botLevel as string | undefined) ?? "standard"} options={[["standard", "Standard"], ["gentle", "Gentle"]]} onChange={(botLevel) => set({ botLevel })} />
-      <Switch label="Spoken narration" on={false} onChange={(on) => send({ t: "speech", action: on ? "on" : "off" })} />
+      <Switch label="Spoken narration" on={game.speechOn === true} onChange={(on) => send({ t: "speech", action: on ? "on" : "off" })} />
+      {game.speechOn === true ? (
+        <div className="ui-row" role="group" aria-label="The house's voice">
+          <button type="button" className="ui-button" onClick={() => send({ t: "speech", action: "mute" })}>Mute</button>
+          <button type="button" className="ui-button" onClick={() => send({ t: "speech", action: "unmute" })}>Unmute</button>
+          <button type="button" className="ui-button" onClick={() => send({ t: "speech", action: "replay" })}>Replay</button>
+          <button type="button" className="ui-button" onClick={() => send({ t: "speech", action: "skip" })}>Skip</button>
+        </div>
+      ) : null}
       <h3 className="ui-heading">The house</h3>
       <Segments label="Sky" value={(sw.conditions as string | undefined) ?? "off"} options={[["off", "Off"], ["place", "A place"], ["table", "This table"]]} onChange={(conditions) => room({ conditions })} />
       <Switch label="Hour strike" on={sw.hourStrike !== false} onChange={(hourStrike) => room({ hourStrike })} />
@@ -82,7 +90,12 @@ export function MasterMenu({ game, me, send, worlds }: { game: GameView; me: num
           <button type="button" className="ui-button" onClick={() => send({ t: game.pub?.paused ? "resume" : "pause" })}>{game.pub?.paused ? "Resume" : "Pause"}</button>
         </div>
       ) : null}
-      {ended ? <button type="button" className="ui-button ui-button--primary ui-button--block" onClick={() => send({ t: "playAgain" })}>Play again</button> : null}
+      {ended ? (
+        <div className="ui-stack--tight">
+          <button type="button" className="ui-button ui-button--block" onClick={() => send({ t: "recapSkip" })}>Skip the recap on the big screen</button>
+          <button type="button" className="ui-button ui-button--primary ui-button--block" onClick={() => send({ t: "playAgain" })}>Play again</button>
+        </div>
+      ) : null}
       {humans.length > 0 ? (
         <div className="ui-row">
           <label className="ui-sr-only" htmlFor="pc-hand">Hand the Master role to</label>

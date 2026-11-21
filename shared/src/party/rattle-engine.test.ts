@@ -173,3 +173,18 @@ describe("the private Scare points (party-mode 9.12)", () => {
     expect(st.players.length).toBe(4);
   });
 });
+
+describe("the public Inspect marker (party-mode 8.10)", () => {
+  it("names only the Zone being searched while it runs, and nothing once it is done", () => {
+    const s0 = playing(7);
+    const seat = s0.turn!.seat;
+    const zone = s0.pool.zones[0]!.id;
+    const walked = send(s0, seat, { t: "walk", zone }, 10).state;
+    expect(publicSnapshot(walked, 10).inspecting).toBeNull();
+    const searching = send(walked, seat, { t: "inspect" }, 20);
+    expect(publicSnapshot(searching.state, 20).inspecting).toBe(zone);
+    expect(JSON.stringify(publicSnapshot(searching.state, 20))).not.toMatch(/found|residue card/i);
+    const done = step(searching.state, { kind: "alarm" }, 20 + 10_000);
+    expect(publicSnapshot(done.state, 20 + 10_000).inspecting).toBeNull();
+  });
+});

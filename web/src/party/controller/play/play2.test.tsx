@@ -110,6 +110,20 @@ describe("MasterMenu (party-mode 9.10, 9.15, 9.21)", () => {
       { t: "roomSettings", hourStrike: false }, { t: "roomSettings", lightBar: false }, { t: "roomSettings", rattle: false }, { t: "roomSettings", stitch: true }, { t: "stitchSetting", on: true }, { t: "addBot" },
     ]);
   });
+  it("shows the voice's own controls only while it is on, and the recap skip only at the end", () => {
+    const send = vi.fn();
+    const { rerender } = render(<MasterMenu game={game()} me={1} send={send} worlds={WORLDS} />);
+    expect(screen.queryByRole("group", { name: "The house's voice" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Skip the recap/ })).toBeNull();
+    rerender(<MasterMenu game={{ ...game(), speechOn: true }} me={1} send={send} worlds={WORLDS} />);
+    const voice = within(screen.getByRole("group", { name: "The house's voice" }));
+    for (const action of ["Mute", "Unmute", "Replay", "Skip"]) fireEvent.click(voice.getByRole("button", { name: action }));
+    expect(send.mock.calls.map((c) => c[0])).toEqual(["mute", "unmute", "replay", "skip"].map((action) => ({ t: "speech", action })));
+    expect((screen.getByRole("switch", { name: /Spoken narration/ })).getAttribute("aria-checked")).toBe("true");
+    rerender(<MasterMenu game={game({ pub: pub({ phase: "ended" }) })} me={1} send={send} worlds={WORLDS} />);
+    fireEvent.click(screen.getByRole("button", { name: "Skip the recap on the big screen" }));
+    expect(send).toHaveBeenLastCalledWith({ t: "recapSkip" });
+  });
   it("in a game offers Pause or Resume, hand-over to another human only, End for everyone, and Play again after the end; the clock and Haunt maximum no longer change", () => {
     const send = vi.fn();
     const { rerender } = render(<MasterMenu game={game()} me={1} send={send} worlds={WORLDS} />);

@@ -242,3 +242,27 @@ describe("RoomCore: Nudge refusals say why (party-mode 4.15)", () => {
     expect((JSON.parse(f.disk.text as string) as { engine: { turn: unknown } }).engine.turn).not.toBeNull();
   });
 });
+
+describe("RoomCore: the Master's speaker controls and recap skip reach the Host only (party-mode 8.5, 8.8)", () => {
+  it("relays mute, unmute, replay, skip and recapSkip from the Master to the Host, and refuses anyone else", async () => {
+    const { f, core } = await lobby(false);
+    for (const action of ["mute", "unmute", "replay", "skip"]) await say(core, "ana", { t: "speech", action });
+    await say(core, "ana", { t: "recapSkip" });
+    expect(f.of("host", "speechControl").map((m) => m.action)).toEqual(["mute", "unmute", "replay", "skip"]);
+    expect(f.of("host", "recapSkip")).toHaveLength(1);
+    for (const n of ["ana", "ben", "disp"]) { expect(f.of(n, "speechControl")).toHaveLength(0); expect(f.of(n, "recapSkip")).toHaveLength(0); }
+    await say(core, "ben", { t: "speech", action: "skip" });
+    await say(core, "ben", { t: "recapSkip" });
+    expect(f.of("ben", "refused").map((m) => m.code)).toEqual(["not_master", "not_master"]);
+    expect(f.of("host", "speechControl")).toHaveLength(4);
+  });
+  it("on and off still switch the voice on and off for the Master only", async () => {
+    const { f, core } = await lobby(false);
+    await say(core, "ana", { t: "speech", action: "on" });
+    expect(f.of("host", "speech").at(-1)).toMatchObject({ on: true });
+    expect(f.of("ana", "speech").at(-1)).toMatchObject({ on: true }); // the Master's own switch shows it
+    expect(f.of("ben", "speech")).toHaveLength(0);
+    await say(core, "ben", { t: "speech", action: "off" });
+    expect(f.of("ben", "refused").at(-1)).toMatchObject({ code: "not_master" });
+  });
+});

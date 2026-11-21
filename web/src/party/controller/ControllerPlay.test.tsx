@@ -134,6 +134,22 @@ describe("the Controller with a real game behind its port (party-mode 9)", () =>
     expect(second.container.querySelector(".is-pulse")).not.toBeNull();
     if (had !== undefined) nav.vibrate = had;
   });
+  it("keeps the screen awake only while a game is running", async () => {
+    const nav = navigator as unknown as { wakeLock?: unknown };
+    const had = nav.wakeLock;
+    const release = vi.fn(async () => undefined);
+    const request = vi.fn(async () => ({ release }));
+    nav.wakeLock = { request };
+    const lobbyPort = new GamePort({ phase: "lobby", game: game({ pub: null, priv: null, lobby: lobby({ started: false }) }) });
+    const first = render(<Controller port={lobbyPort} extras={extras()} />);
+    await act(async () => { await Promise.resolve(); });
+    expect(request).not.toHaveBeenCalled();
+    first.unmount();
+    render(<Controller port={new GamePort()} extras={extras()} />);
+    await act(async () => { await Promise.resolve(); });
+    expect(request).toHaveBeenCalledWith("screen");
+    if (had === undefined) delete nav.wakeLock; else nav.wakeLock = had;
+  });
   it("without extras the scripted stand-in screens stay as they were", () => {
     const port = new GamePort({ game: undefined as never });
     render(<Controller port={port} />);

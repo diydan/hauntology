@@ -38,6 +38,11 @@ describe("game view reducer (party-mode 9)", () => {
     for (let i = 0; i < 12; i++) g = run(g, { t: "cue", eventId: 10 + i, cue: "bell", playAtMs: i, plan: "play" });
     expect(g.sounds).toHaveLength(8);
   });
+  it("follows the house's voice switch the Room reports to the Master", () => {
+    expect(run(EMPTY_GAME, { t: "speech", on: true }).speechOn).toBe(true);
+    expect(run(run(EMPTY_GAME, { t: "speech", on: true }), { t: "speech", on: false }).speechOn).toBe(false);
+    expect(run(EMPTY_GAME, { t: "speech", on: "yes" }).speechOn).toBe(false);
+  });
   it("plays the Becoming sting only with this phone's own yes to sound", () => {
     const yes = run(EMPTY_GAME, { t: "private", view: { seat: 2, soundConsent: true, hand: [] } }, { t: "becoming", atMs: 500, durationMs: 4000, offerRattle: true });
     expect(yes.sounds).toEqual([{ id: "becoming-500", kind: "cue", sound: "becoming", playAtMs: 500, plan: "play" }]);

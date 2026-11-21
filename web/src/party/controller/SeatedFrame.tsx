@@ -21,7 +21,7 @@ import type { Recorder } from "../phone/recorder";
 export type Layout = "pad" | "panel";
 
 /** What the real game screens need from the page around them: the places to choose from, the phone's storage, sound and microphone. A page without them (the scripted demo) still works. */
-export type PlayExtras = Readonly<{ worlds: readonly WorldChoice[]; storage: StorageLike; soundDeps: SoundDeps; unlock: () => Promise<boolean>; record?: Recorder; now?: () => number }>;
+export type PlayExtras = Readonly<{ embedded?: boolean; worlds: readonly WorldChoice[]; storage: StorageLike; soundDeps: SoundDeps; unlock: () => Promise<boolean>; record?: Recorder; now?: () => number }>;
 
 const CONNECTION_WORDS: Readonly<Record<Connection, string>> = { connecting: "Connecting…", online: "Connected", reconnecting: "Reconnecting…", offline: "Offline" };
 const PHASE_WORDS: Readonly<Record<RoomPhase, string>> = {
@@ -98,7 +98,7 @@ export function SeatedFrame({ port, view, control, extras }: { port: ControllerP
           <p className="ui-hint pc-phase" role="status">{PHASE_WORDS[view.phase]}</p>
           {view.game !== undefined && extras !== undefined ? (
             view.game.pub !== null
-              ? <PlayPanel port={port} view={view} layout={layout} storage={extras.storage} soundDeps={extras.soundDeps} {...(extras.now ? { now: extras.now } : {})} />
+              ? <PlayPanel port={port} view={view} layout={layout} storage={extras.storage} soundDeps={extras.soundDeps} embedded={extras.embedded === true} {...(extras.now ? { now: extras.now } : {})} />
               : <LobbyPanel view={view} send={(m) => port.send?.(m)} worlds={extras.worlds} {...(extras.record ? { record: extras.record } : {})} />
           ) : layout === "pad" ? (
             <section className="pc-pad" aria-label="Pad">

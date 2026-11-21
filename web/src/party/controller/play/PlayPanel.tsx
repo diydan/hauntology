@@ -21,8 +21,10 @@ import type { StorageLike } from "./notebook-store";
  * the actions of a Detective or the haunting Player's own screen, the hand and the notebook, the Cue, Nudge and Frame controls, the public log, and
  * the ending. It draws only what the Room sent (`view.game`) and sends only messages; the Room decides everything and its refusals show in words.
  */
-export function PlayPanel({ port, view, layout, now = Date.now, storage, soundDeps, sensors = hasMotionSensor() }: {
+export function PlayPanel({ port, view, layout, now = Date.now, storage, soundDeps, sensors = hasMotionSensor(), embedded = false }: {
   port: ControllerPort; view: RoomView; layout: "pad" | "panel"; now?: () => number; storage: StorageLike; soundDeps: SoundDeps; sensors?: boolean;
+  /** This pad sits on the Host's shared screen (party-mode 8.6): the Private View (hand, notebook, the card to show) is drawn only when every other seat is a Bot. */
+  embedded?: boolean;
 }): ReactNode {
   const game = view.game;
   const me = view.seat;
@@ -47,6 +49,7 @@ export function PlayPanel({ port, view, layout, now = Date.now, storage, soundDe
   const ended = game.pub.phase === "ended";
   const autoCross = (game.lobby?.settings as { autoCross?: boolean } | undefined)?.autoCross === true;
   const solo = game.pub.seats.filter((s) => !s.bot).length <= 1;
+  const peek = !embedded || game.pub.seats.every((s) => s.seat === me || s.bot);
 
   return (
     <div className={`pc-play ui-stack${pulse ? " is-pulse" : ""}`} data-layout={layout}>
@@ -54,22 +57,22 @@ export function PlayPanel({ port, view, layout, now = Date.now, storage, soundDe
       {ended ? <Recap game={game} me={me} /> : (
         <>
           <ClockBar game={game} me={me} offsetMs={offsetMs} nowMs={nowMs} />
-          <AnswerPrompt game={game} send={send} nowMs={nowMs} offsetMs={offsetMs} />
+          {peek ? <AnswerPrompt game={game} send={send} nowMs={nowMs} offsetMs={offsetMs} /> : null}
           <HauntChoice game={game} send={send} nowMs={nowMs} offsetMs={offsetMs} />
           {turn.poltergeist ? (
             <>
               <HauntingPanel game={game} send={send} sensors={sensors} />
               <RattlePrompt game={game} send={send} onDismiss={() => port.dismissPrompt?.()} />
-              <Actions game={game} me={me} send={send} nowMs={nowMs} offsetMs={offsetMs} />
+              <Actions game={game} me={me} send={send} nowMs={nowMs} offsetMs={offsetMs} hidePrivate={!peek} />
             </>
           ) : (
             <>
               {layout === "pad" ? <Pad active={turn.mine} online={online} send={send} /> : null}
-              <Actions game={game} me={me} send={send} nowMs={nowMs} offsetMs={offsetMs} />
-              {layout === "panel" ? <Hand game={game} /> : null}
+              <Actions game={game} me={me} send={send} nowMs={nowMs} offsetMs={offsetMs} hidePrivate={!peek} />
+              {layout === "panel" && peek ? <Hand game={game} /> : null}
             </>
           )}
-          {layout === "panel" && !turn.poltergeist && view.code !== null ? <Notebook game={game} me={me} code={view.code} autoCross={autoCross} storage={storage} /> : null}
+          {layout === "panel" && peek && !turn.poltergeist && view.code !== null ? <Notebook game={game} me={me} code={view.code} autoCross={autoCross} storage={storage} /> : null}
           <TableControls game={game} me={me} send={send} offersNudges={!solo} offersFrames={!solo} />
         </>
       )}

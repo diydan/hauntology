@@ -7,7 +7,7 @@ export const RELICS = [{ id: "r1", name: "Music box" }, { id: "r2", name: "Wax h
 
 export function pub(over: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    phase: "playing", round: 1, active: 1, at: null, deadlineMs: 70_000, paused: false,
+    phase: "playing", round: 1, active: 1, at: null, inspecting: null, deadlineMs: 70_000, paused: false,
     seats: [{ seat: 1, nickname: "Ana", bot: false, poltergeist: false, handSize: 4, sealed: false }, { seat: 2, nickname: "Ben", bot: false, poltergeist: false, handSize: 4, sealed: false },
       { seat: 3, nickname: "Cat", bot: false, poltergeist: true, handSize: 4, sealed: false }, { seat: 4, nickname: "Agnes", bot: true, poltergeist: false, handSize: 4, sealed: false }],
     haunt: { level: 0, max: 10, coldSpot: null, choosing: null }, zones: ZONES, suspects: SUSPECTS, relics: RELICS, events: [{ id: 1, kind: "turn-start", seat: 1 }],

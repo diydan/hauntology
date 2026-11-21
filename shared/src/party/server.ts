@@ -535,13 +535,25 @@ export class RoomCore {
         await this.commit(next);
         return this.broadcastLobby(next);
       }
+      if (m.t === "recapSkip") {
+        if (!isMaster) return refuse("not_master");
+        for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "host") this.ports.send(sid, { t: "recapSkip" });
+        return;
+      }
+      if (m.t === "speech" && m.action !== "on" && m.action !== "off") {
+        // mute, unmute, replay and skip go straight to the Host's speaker (party-mode 8.8); only the Master may
+        if (!isMaster) return refuse("not_master");
+        for (const [sid, info] of Object.entries(s.sockets)) if (info.role === "host") this.ports.send(sid, { t: "speechControl", action: m.action });
+        return;
+      }
       if (m.t === "speech") {
         const toggled = applyRoomSpeechToggle(s.voice, isMaster, m.action === "on");
         if (!toggled.ok) return refuse(toggled.code);
         const next = { ...s, voice: toggled.state };
         await this.commit(next);
+        // the Host plays it, and the Master's phone shows the switch as it really is
         for (const [sid, info] of Object.entries(next.sockets)) {
-          if (info.role === "host") this.ports.send(sid, { t: "speech", on: next.voice.speechOn });
+          if (info.role === "host" || (info.role === "controller" && info.seat === next.room.masterSeat)) this.ports.send(sid, { t: "speech", on: next.voice.speechOn });
         }
         return;
       }

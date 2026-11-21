@@ -1,0 +1,12 @@
+{
+  "name": "Hauntology",
+  "short_name": "Hauntology",
+  "description": "Play a ghost story with friends: this phone is your controller.",
+  "start_url": "/play",
+  "scope": "/play",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0d10",
+  "theme_color": "#0b0d10",
+  "icons": [{ "src": "/party-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

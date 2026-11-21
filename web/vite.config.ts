@@ -1,5 +1,6 @@
 import { rmSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
 import { demoPlaceholderSvg } from "./src/app/demo-assets";
@@ -47,11 +48,14 @@ const quietSparkLogs = (): Plugin => ({
   },
 });
 
+const page = (name: string): string => fileURLToPath(new URL(`./${name}`, import.meta.url));
+
 // The Worker serves `dist/` and answers `/api/*`; in development the API runs under `wrangler dev`.
 export default defineConfig({
   plugins: [react(), dropDemoAssets(), demoPlaceholders(), quietSparkLogs()],
   server: { proxy: { "/api": "http://localhost:8787" } },
-  build: { outDir: "dist", target: "es2022" },
+  // The three party pages (party-mode groups 8, 9 and 10) are their own entries beside the app: the phone at /play, the TV at /host, the optional Display at /display.
+  build: { outDir: "dist", target: "es2022", rollupOptions: { input: { index: page("index.html"), play: page("play.html"), host: page("host.html"), display: page("display.html") } } },
   // Debug output never ships. `console.error` stays for the logger (src/app/logger.ts).
   esbuild: { pure: ["console.log", "console.debug", "console.info"] },
 });

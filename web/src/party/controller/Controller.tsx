@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useWakeLock } from "../phone/wake-lock";
 import { useDeviceSettings } from "../../device/device-settings";
 import type { ControllerPort } from "./controller-port";
 import { JoinPage } from "./JoinPage";
@@ -14,6 +15,8 @@ import "./controller.css";
 export function Controller({ port, initialCode = "", extras }: { port: ControllerPort; initialCode?: string; extras?: PlayExtras }): ReactNode {
   const view = useSyncExternalStore((onChange) => port.subscribe(() => onChange()), () => port.getView(), () => port.getView());
   const [device, setDevice] = useDeviceSettings();
+  // the phone stays awake while a game runs (party-mode 9.13); a browser with no wake lock just follows its own timeout
+  useWakeLock(view.seat !== null && view.phase === "playing");
   // a reload or a returning tab takes the seat this device already holds (party-mode 9.1)
   useEffect(() => { void port.restore?.(initialCode === "" ? undefined : initialCode); }, [port, initialCode]);
   return (

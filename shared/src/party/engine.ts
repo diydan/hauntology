@@ -185,6 +185,8 @@ export type Action = Readonly<{ kind: "client"; seat: number; msg: ClientMsg }> 
 
 export type PublicSnapshot = Readonly<{
   phase: EngineState["phase"]; round: number; active: number | null; at: string | null;
+  /** The Zone the active Detective is searching now, or null; never the result. */
+  inspecting: string | null;
   deadlineMs: number | null; paused: boolean;
   seats: readonly Readonly<{ seat: number; nickname: string; bot: boolean; poltergeist: boolean; handSize: number; sealed: boolean }>[];
   haunt: Readonly<{ level: number; max: number; coldSpot: string | null; choosing: Readonly<{ options: readonly HauntOption[]; chooser: number | null; deadlineMs: number }> | null }>;
@@ -1106,6 +1108,8 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
   const p = s.haunt.pending;
   return {
     phase: s.phase, round: s.round, active: t?.seat ?? null, at: t?.at ?? null,
+    // the Zone being searched, never what is found there (party-mode 8.10)
+    inspecting: t?.inspecting?.zone ?? null,
     deadlineMs: t === null ? null : deadlineOf(t.clock, now), paused: t !== null && t.clock.pausedSinceMs !== null,
     seats: s.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, poltergeist: player(s, x.seat)?.poltergeist ?? false, handSize: s.deal?.hands[x.seat]?.length ?? 0, sealed: player(s, x.seat)?.sealed != null })),
     haunt: { level: s.haunt.level, max: s.haunt.max, coldSpot: coldSpotIn(s.haunt, s.round), choosing: p === null ? null : { options: [...p.options], chooser: p.chooser, deadlineMs: p.deadlineMs } },

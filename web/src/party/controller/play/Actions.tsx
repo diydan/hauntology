@@ -91,7 +91,7 @@ export function SealSheet({ game, send, onClose }: { game: GameView; send: Send;
  * (with the 15 second window after a Suggestion), and on another's Turn listen in with Resolve. Each button only sends; the Room decides and
  * its refusal is shown in words.
  */
-export function Actions({ game, me, send, nowMs }: { game: GameView; me: number; send: Send; nowMs: number; offsetMs?: number }): ReactNode {
+export function Actions({ game, me, send, nowMs, hidePrivate = false }: { game: GameView; me: number; send: Send; nowMs: number; offsetMs?: number; /** On a shared screen: nothing private is drawn (what was overheard, the cards in the hand). */ hidePrivate?: boolean }): ReactNode {
   const pub = game.pub;
   const priv = game.priv;
   const turn = turnOf(game, me);
@@ -124,7 +124,7 @@ export function Actions({ game, me, send, nowMs }: { game: GameView; me: number;
         {priv.canEavesdrop !== null && !turn.poltergeist ? (
           <button type="button" className="ui-button" onClick={() => send({ t: "eavesdrop", eventId: priv.canEavesdrop as number })}>Listen in (uses 1 Resolve)</button>
         ) : null}
-        {priv.heard.length > 0 ? (
+        {priv.heard.length > 0 && !hidePrivate ? (
           <ul className="ui-chips" aria-label="What you overheard">
             {priv.heard.map((h) => <li key={h.eventId} className="ui-chip">You heard: {nameOf(pub, h.card)}</li>)}
           </ul>
@@ -136,7 +136,7 @@ export function Actions({ game, me, send, nowMs }: { game: GameView; me: number;
     );
   }
 
-  if (sheet === "suggest") return <SuggestSheet game={game} me={me} send={send} onClose={() => setSheet(null)} />;
+  if (sheet === "suggest") return <SuggestSheet game={hidePrivate ? { ...game, priv: { ...priv, hand: [] } } : game} me={me} send={send} onClose={() => setSheet(null)} />;
   if (sheet === "seal") return <SealSheet game={game} send={send} onClose={() => setSheet(null)} />;
 
   const winLeft = suggested && windowAt.current !== null ? Math.max(0, WINDOW_SECONDS - Math.floor((nowMs - windowAt.current.at) / 1000)) : null;

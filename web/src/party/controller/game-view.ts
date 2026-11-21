@@ -40,9 +40,11 @@ export type GameView = Readonly<{
   /** The Host's pose, for a haunting Player who is spectating. */
   pose: Readonly<{ pos: readonly [number, number, number]; yaw: number }> | null;
   ended: boolean;
+  /** Whether the Master has the house's voice on (the Room says so to the Master and the Host). */
+  speechOn: boolean;
 }>;
 
-export const EMPTY_GAME: GameView = { lobby: null, pub: null, priv: null, atmosphere: null, log: [], refusal: null, sounds: [], lights: [], prompt: null, becomingAtMs: null, notYou: [], stitch: null, pose: null, ended: false };
+export const EMPTY_GAME: GameView = { lobby: null, pub: null, priv: null, atmosphere: null, log: [], refusal: null, sounds: [], lights: [], prompt: null, becomingAtMs: null, notYou: [], stitch: null, pose: null, ended: false, speechOn: false };
 
 const LOG_KEEP = 60;
 const KEEP_SOUNDS = 8;
@@ -127,6 +129,7 @@ export function applyRoomMessage(g: GameView, raw: unknown, now: number): GameVi
     case "stitchResult": return { ...g, stitch: { word: str(m.word), ok: m.ok === true, ...(typeof m.reason === "string" ? { reason: m.reason } : {}) } };
     case "pose": return Array.isArray(m.pos) && m.pos.length === 3 ? { ...g, pose: { pos: [num(m.pos[0]), num(m.pos[1]), num(m.pos[2])], yaw: num(m.yaw) } } : g;
     case "ended": return { ...g, ended: true };
+    case "speech": return { ...g, speechOn: m.on === true };
     default: return g;
   }
 }
