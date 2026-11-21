@@ -1,6 +1,7 @@
 import type { PuzzleSetting } from "@hauntology/shared/puzzles/types";
 import type { CluePlace } from "@hauntology/shared/puzzles/world-clues";
 import { openRoom, type RoomClient, type RoomDeps, type RoomSnapshot } from "../app/case/room-client";
+import { EMPTY_GAME } from "./controller/game-view";
 import { NOT_SEATED, type ControllerPort, type JoinFailure, type JoinResult, type RoomPhase, type RoomView } from "./controller/controller-port";
 
 /**
@@ -37,7 +38,7 @@ export function viewOf(snap: RoomSnapshot, nickname: string | null, joinedSeat: 
       ...(lock.canSeeAgain !== undefined ? { canSeeAgain: lock.canSeeAgain } : {}),
       ...(lock.assistText !== undefined ? { assistText: lock.assistText } : {}),
     },
-    ...(snap.public === null ? {} : { game: { pub: snap.public, priv: snap.private } }),
+    ...(snap.public === null ? {} : { game: { ...EMPTY_GAME, pub: snap.public, priv: snap.private } }),
     ...(snap.refused === null ? {} : { refused: snap.refused }),
     ...(snap.sight === null ? {} : { sight: snap.sight }),
   };

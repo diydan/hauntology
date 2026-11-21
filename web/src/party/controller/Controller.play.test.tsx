@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Controller } from "./Controller";
 import { NOT_SEATED, type ControllerPort, type RoomView } from "./controller-port";
+import { EMPTY_GAME } from "./game-view";
 
 let sight: { onDone: () => void; title: string } | null = null;
 vi.mock("../../puzzles/SightCard", () => ({ SightCard: (p: { onDone: () => void; title: string }) => { sight = p; return <div data-testid="sight" />; } }));
@@ -23,7 +24,7 @@ function game(over: (s: EngineState) => EngineState = (s) => s): EngineState {
 
 function port(s: EngineState, patch: Partial<RoomView> = {}) {
   const acts: unknown[] = [];
-  const view: RoomView = { ...NOT_SEATED, connection: "online", phase: "playing", code: "ABCD", seat: 1, nickname: "Ann", game: { pub: publicSnapshot(s, 0), priv: privateSnapshot(s, 1) }, ...patch };
+  const view: RoomView = { ...NOT_SEATED, connection: "online", phase: "playing", code: "ABCD", seat: 1, nickname: "Ann", game: { ...EMPTY_GAME, pub: publicSnapshot(s, 0), priv: privateSnapshot(s, 1) }, ...patch };
   const p: ControllerPort = {
     getView: () => view, subscribe: () => () => {}, join: async () => ({ ok: false, code: "unreachable" }),
     attempt: () => ({ outcome: "failed", reason: "x" }), closeLock: () => {}, setPuzzles: () => {}, leave: async () => {},

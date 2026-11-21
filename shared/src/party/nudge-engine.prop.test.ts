@@ -67,7 +67,7 @@ describe("Nudges, Eavesdrop and the Master pause in the Engine", () => {
       expect(publicSnapshot(r.state, now).deadlineMs).toBe(Math.min(before + 10_000, s.turn.clock.startedMs + s.turn.clock.pausedMs + 120_000));
       expect(privateSnapshot(r.state, 1)?.resolve).toBe((privateSnapshot(s, 1)?.resolve ?? 0) - 1);
       expect(r.state.nudgeCounts.others).toBe(1);
-      expect(step(r.state, { kind: "client", seat: 1, msg: { t: "nudge", kind: "help" } }, now).refused).toBe("help_turn_limit");
+      expect(step(r.state, { kind: "client", seat: 1, msg: { t: "nudge", kind: "help" } }, now).refused).toBe("nudge_denied:help_turn_limit");
       expect(r.state.log.at(-1)).toMatchObject({ kind: "nudge", seat: 1, nudge: "help" });
     }), { numRuns: 60 });
   });

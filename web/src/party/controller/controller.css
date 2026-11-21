@@ -41,3 +41,41 @@
   .pc-pad { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: "stick faces look"; }
   .pc-slot--stick, .pc-slot--look { min-height: 6rem; }
 }
+
+/* the game screens (party-mode group 9): layout only, from tokens */
+.pc-play { min-width: 0; }
+.pc-clock .ui-chip { min-width: 4.5rem; justify-content: center; }
+.pc-grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.pc-grid { border-collapse: separate; border-spacing: var(--space-1); min-width: 100%; }
+.pc-grid th { font-size: var(--text-small); font-weight: 500; text-align: left; padding: var(--space-1); white-space: nowrap; }
+.pc-grid thead th { text-align: center; }
+.pc-grid td { padding: 0; text-align: center; }
+.pc-cell { min-width: var(--pc-target); padding: 0; font-size: var(--text-lead); line-height: 1; }
+.pc-cell[data-mark="has"] { border-color: var(--accent); }
+.pc-cell[data-mark="lacks"] { border-color: var(--line-strong); color: var(--text-quiet); }
+.pc-cell[data-mark="maybe"] { border-style: dashed; }
+.pc-pick { border: 0; margin: 0; padding: 0; min-width: 0; }
+.pc-zones { border: 0; margin: 0; padding: 0; min-width: 0; }
+.pc-table fieldset, .pc-actions fieldset, .pc-master fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.pc-scan { width: 100%; max-height: 16rem; border-radius: var(--radius-lg); background: var(--surface-sunk); }
+.pc-stick, .pc-look { position: relative; display: grid; place-items: center; min-height: 10rem; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunk); touch-action: none; user-select: none; -webkit-user-select: none; }
+.pc-stick[aria-disabled="true"], .pc-look[aria-disabled="true"] { opacity: 0.5; }
+.pc-knob { width: 3rem; height: 3rem; border-radius: var(--radius-round); border: var(--stroke-ring) solid var(--accent); background: var(--surface-raised); }
+.pc-pad-label { position: absolute; bottom: var(--space-1); left: 0; right: 0; text-align: center; }
+.pc-faces { grid-area: faces; display: grid; gap: var(--space-2); }
+.pc-gyro { grid-column: 1 / -1; }
+.pc-flash { position: fixed; inset: 0; z-index: var(--z-modal); pointer-events: none; background: var(--text); opacity: 0.35; }
+.pc-light { position: fixed; inset: 0; z-index: var(--z-modal); pointer-events: none; background: var(--surface-page); }
+.pc-play.is-pulse { outline: var(--stroke-ring) solid var(--accent); outline-offset: calc(var(--space-1) * -1); }
+.pc-log .ui-log { max-height: 12rem; overflow: auto; }
+.pc-lobby .ui-chips { flex-wrap: wrap; }
+
+/* Seat Portraits (party-mode 9.25) */
+.pc-portrait { position: relative; display: inline-block; width: 2.5rem; height: 2.5rem; flex: 0 0 auto; border-radius: var(--radius-round); overflow: hidden; }
+.pc-portrait-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pc-chip-portrait { min-width: 2.5rem; justify-content: center; }
+.pc-seat-row { flex-wrap: wrap; }
+.pc-seat-row .ui-chip { align-items: center; gap: var(--space-2); }
+
+/* The Spirit lens (party-mode 9.17) */
+.pc-lens-canvas { width: 100%; max-width: 24rem; aspect-ratio: 4 / 3; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunk); touch-action: manipulation; }

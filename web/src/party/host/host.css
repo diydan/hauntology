@@ -1,0 +1,29 @@
+/* The Host and Display pages (party-mode groups 8 and 10): layout only, from tokens. The look is the design system. */
+.ph-page { min-height: 100vh; min-height: 100dvh; padding: var(--space-5); display: grid; align-content: start; gap: var(--space-4); }
+.ph-start, .ph-lobby, .ph-ending { max-width: 56rem; margin: 0 auto; }
+.ph-code-letters { margin: 0; font-size: var(--text-display); font-weight: 600; letter-spacing: 0.3em; line-height: 1; }
+.ph-stage { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.ph-world { min-height: 24rem; border: var(--stroke-thin) solid var(--line); border-radius: var(--radius-lg); background: var(--surface-sunk); overflow: hidden; }
+.ph-hud { min-width: 0; }
+.ph-clock { min-width: 5rem; justify-content: center; font-size: var(--text-lead); }
+.ph-zones { flex-wrap: wrap; }
+.ph-conn { position: sticky; top: 0; z-index: var(--z-sticky); }
+.ph-flash { position: fixed; inset: 0; z-index: var(--z-modal); pointer-events: none; background: var(--text); opacity: 0.15; }
+.ph-dim { position: fixed; inset: 0; z-index: var(--z-modal); pointer-events: none; background: var(--surface-page); }
+.ph-caption { position: fixed; left: 50%; bottom: var(--space-6); transform: translateX(-50%); z-index: var(--z-modal); max-width: 40rem; text-align: center; }
+.ph-pad { max-width: 28rem; }
+@media (max-width: 52rem) { .ph-stage { grid-template-columns: minmax(0, 1fr); } }
+
+.pd-page { position: fixed; inset: 0; background: var(--surface-page); overflow: hidden; }
+.pd-pyramid { position: absolute; inset: 0; }
+.pd-tile { position: absolute; display: grid; place-items: center; transform-origin: center; }
+.pd-single { position: absolute; inset: 0; display: grid; place-items: center; }
+.pd-stage { display: grid; gap: var(--space-2); text-align: center; padding: var(--space-3); }
+.pd-who { margin: 0; font-size: var(--text-title); }
+.pd-clock { margin: 0; font-size: var(--text-display); font-weight: 600; }
+.pd-haunt, .pd-line, .pd-wait { margin: 0; font-size: var(--text-body); color: var(--text-quiet); }
+.pd-note { position: absolute; top: var(--space-3); left: 0; right: 0; text-align: center; }
+.pd-toggle { position: absolute; right: var(--space-3); bottom: var(--space-3); opacity: 0.4; }
+.pd-cal { position: absolute; right: var(--space-3); bottom: calc(var(--space-3) + 3.5rem); width: min(24rem, calc(100% - var(--space-5))); }
+.pd-page[data-flash="on"] { background: var(--surface-raised); }
+.pd-page[data-dim="on"] .pd-pyramid, .pd-page[data-dim="on"] .pd-single { opacity: 0.6; }

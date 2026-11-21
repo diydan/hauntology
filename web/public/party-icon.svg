@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Hauntology">
+  <rect width="512" height="512" rx="96" fill="#0b0d10"/>
+  <path d="M136 400V232c0-70 50-120 120-120s120 50 120 120v168l-40-32-40 32-40-32-40 32-40-32z" fill="#d9d4c7"/>
+  <circle cx="218" cy="236" r="18" fill="#0b0d10"/>
+  <circle cx="294" cy="236" r="18" fill="#0b0d10"/>
+  <ellipse cx="256" cy="292" rx="16" ry="24" fill="#0b0d10"/>
+</svg>

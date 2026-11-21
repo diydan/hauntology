@@ -8,6 +8,8 @@ import type { PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/e
 import type { TablePrivateInput, TablePublicInput } from "@hauntology/shared/table/data";
 import type { TableNotebook } from "@hauntology/shared/table/notebook";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
+import type { ContributionApi } from "./contribute-api";
+import type { GameView } from "./game-view";
 
 /**
  * The Controller's side of a party Room (party-mode group 9), with nothing of the network in it. The shell talks only to this, so it is
@@ -113,12 +115,14 @@ export type RoomView = Readonly<{
   table?: TableFeed;
   /** The ghost's knock at the TV after a Slam, or none (knock-door 5.3). */
   tvKnock?: ControllerTvKnock | null;
-  /** The game as the Room last told this seat: the Public View and this seat's own Private View. Absent in the scripted stand-in. */
-  game?: Readonly<{ pub: PublicSnapshot; priv: PrivateSnapshot | null }>;
   /** The last thing the Room refused, until its next public view. */
   refused?: string;
   /** A clue the Room showed this seat once (a Sight, on entering a Zone), waiting to be seen. Later ones wait behind it. */
   sight?: Readonly<{ id: string; sight: Sight }>;
+  /** The game as this phone knows it, built only from the Room's messages (party-mode 9). Absent in the scripted stand-in. */
+  game?: GameView;
+  /** This phone's clock against the Room's (`server = phone + offsetMs`), measured with ping and pong; 0 until measured. */
+  clock?: Readonly<{ offsetMs: number; errorMs: number }>;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -161,6 +165,14 @@ export interface ControllerPort {
   ackSight?(sightId: string): void;
   /** Send the Room one game message (walk, inspect, suggest, show, seal, choose, hauntPuzzle...). The Room checks it and refuses what is not allowed. Absent in the scripted stand-in. */
   act?(msg: Readonly<{ t: string }> & Record<string, unknown>): void;
+  /** Send one message to the Room (a Suggestion, a Cue, a setting...). The Room checks it; the page never does. Absent in the scripted stand-in. */
+  send?(msg: Readonly<{ t: string } & Record<string, unknown>>): void;
+  /** This seat's contributions to the lobby (a photo, a Zone name, a Suspect); absent in the scripted stand-in. */
+  contributions?(): ContributionApi | null;
+  /** The Player answered or dismissed the Room's Rattle prompt; it is not shown again until the Room sends another. */
+  dismissPrompt?(): void;
+  /** After a reload: take the seat this device already holds, from its stored token. Resolves to the join result, or `null` when there is none. */
+  restore?(code?: string): Promise<JoinResult | null>;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }
