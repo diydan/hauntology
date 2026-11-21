@@ -372,7 +372,7 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ]* 14.14 Write property test for the Wander scenes over the real Wander flow once it exists
     - **Property 33: A Wander scene is its kind's, and its line is its own**
     - **Validates: Requirements 23.1, 23.2, 23.3, 23.4, 23.5, 23.6**
-- [x] 15. Scene clues: a clue written on the scene (added 2026-11-15; satisfies Requirement 22)
+- [ ] 15. Scene clues: a clue written on the scene (added 2026-11-15; satisfies Requirement 22)
   - [x] 15.1 `tools/playtest/js/places.js` (the Place data and a check of its shape: four corners forming a convex shape of the least size, a known surface and ink, `from` before `to`, `to` not past the clip) and `js/scene-clues.js` with the pure rules `placeFor`, `sceneClue`, `inkFor` and `contrastOk`, with tests over every seed in a grid, every shot with a Place and every answer form (a code, a time, a word)
     - _Requirements: 22.1, 22.2, 22.6, 22.8_
     - Built: `tools/playtest/js/places.js` (shape check `placeProblems`; `PLACES` is empty on purpose until a clip has a measured Place, `DEMO_PLACES` are stand-ins) and `js/scene-clues.js` (`placeFor`, `sceneClue`, `inkFor`, `contrastOk`); tests in `tools/playtest/test/scene-clues.test.js`
