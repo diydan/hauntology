@@ -51,6 +51,7 @@
     - _Requirements: 6.1, 6.3, 6.4_
     - Done (2026-11-19): all 39 Stock Songs defined and verified against `FORBIDDEN_WORDS` and `BOT_NAMES` in `shared/src/songs/stock.ts` and `stock.test.ts`.
   - [ ] 5.2 Make the Stock Songs with the Song Service (short songs first; the account has about 2 hours of credit), keep one version of each with its captions and a record of its prompt, and commit them under `web/public/sounds/songs/`
+    - Progress (2026-11-21): the render tool is built and tested over a fake Song Service, no real call made: `tools/songs-render.mjs` and `tools/lib/songs-render.mjs` (`tools/test/songs-render.test.mjs`, mutation-checked). Dry run by default; `--render` needs `MUREKA_API_KEY` in the environment and `--max-songs N` (a hard stop), makes one song at a time with no retry, stops at the first problem, keeps the shorter version, skips songs already made, and writes `<id>.mp3` plus `<id>.json` (prompt, captions, task id) under `web/public/sounds/songs/`. NOT done: the 39 songs themselves (they cost credit and need a person's key), listening to them, and committing the files. UNVERIFIED against the live API: the JSON field names, and the instrumental route (`/instrumental/generate`; the spike made sung songs only). Try `--render --max-songs 1 --only lobby` first.
     - _Requirements: 6.1, 6.3_
   - [x] 5.3 Play rules: the Haunt loops follow the Haunt level, the stings at Round end, a Relic or Zone Clue Song only when the public log already rules it out, a ghost's theme under its appearances
     - _Requirements: 6.4, 6.5_
