@@ -317,9 +317,10 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x] 13.1 One clip tried on the playtest site: `stair-shadow` (Nosferatu, 1922, Orlok's shadow on the stairs, 4.2 s), the page `footage.html` with three screens and three looks, the clip files and `media/PROVENANCE.md`, the build copy, and `test/footage-page.test.js`
     - Built 2026-11-15 in `tools/playtest/` (not deployed). Checked in desktop Chrome at 390 px wide: the clip plays and loops, Replay works, no sideways scroll. Not checked on a phone, in Safari or with a screen reader. Later the same day: the page starts still under data saver, the preload rule, `tools/playtest/flash-check.mjs` (whole-frame brightness, WCAG 2.3.1 counting; 7 tests, 5 mutations caught) and `node serve.mjs 8791 --dist` (the built site with byte ranges, for local testing).
     - _Requirements: 18.2, 18.3, 18.4, 18.5, 18.6_
-  - [ ]* 13.2 Write the property test for footage
+  - [x]* 13.2 Write the property test for footage
     - **Property 23: Footage is decoration with a record**
     - **Validates: Requirements 18.2, 18.3, 18.4, 18.5, 18.6**
+    - Built: `tools/playtest/test/footage-page.test.js` (the entry and file checks, the size limits, the stream and height checks, the page rules): 56 tests pass, and renaming a `PROVENANCE.md` heading makes one fail
   - [ ] 13.3 Spike puzzles 1.7: footage on a phone. On a real Android phone (Chrome) and an iPhone (Safari and the home-screen web app): does the muted clip start by itself and stay inline, does it loop without a flash, is it smooth on mobile data, which look reads best (tint, black and white, yellow ink), and is the Lock readable over it. Record in `docs/spikes/puzzles-<n>.md`
     - _Requirements: 18.5, 18.6_
   - [ ] 13.4 Choose where footage goes in the real game (a Sight, a Lock, "Nothing came loose", a title card), build it as one `Footage` piece from the design elements (added to `design/elements.css` and `design/catalogue.html` first), and keep Requirement 18.5 in it
@@ -371,17 +372,21 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [ ]* 14.14 Write property test for the Wander scenes over the real Wander flow once it exists
     - **Property 33: A Wander scene is its kind's, and its line is its own**
     - **Validates: Requirements 23.1, 23.2, 23.3, 23.4, 23.5, 23.6**
-- [ ] 15. Scene clues: a clue written on the scene (added 2026-11-15; satisfies Requirement 22)
-  - [ ] 15.1 `tools/playtest/js/places.js` (the Place data and a check of its shape: four corners forming a convex shape of the least size, a known surface and ink, `from` before `to`, `to` not past the clip) and `js/scene-clues.js` with the pure rules `placeFor`, `sceneClue`, `inkFor` and `contrastOk`, with tests over every seed in a grid, every shot with a Place and every answer form (a code, a time, a word)
+- [x] 15. Scene clues: a clue written on the scene (added 2026-11-15; satisfies Requirement 22)
+  - [x] 15.1 `tools/playtest/js/places.js` (the Place data and a check of its shape: four corners forming a convex shape of the least size, a known surface and ink, `from` before `to`, `to` not past the clip) and `js/scene-clues.js` with the pure rules `placeFor`, `sceneClue`, `inkFor` and `contrastOk`, with tests over every seed in a grid, every shot with a Place and every answer form (a code, a time, a word)
     - _Requirements: 22.1, 22.2, 22.6, 22.8_
-  - [ ]* 15.2 Write property test for `sceneClue`: public and following its inputs
+    - Built: `tools/playtest/js/places.js` (shape check `placeProblems`; `PLACES` is empty on purpose until a clip has a measured Place, `DEMO_PLACES` are stand-ins) and `js/scene-clues.js` (`placeFor`, `sceneClue`, `inkFor`, `contrastOk`); tests in `tools/playtest/test/scene-clues.test.js`
+  - [x]* 15.2 Write property test for `sceneClue`: public and following its inputs
     - **Property 27: A Scene clue is public and follows its inputs**
     - **Validates: Requirements 22.2, 22.8**
-  - [ ]* 15.3 Write property test for the Decoy
+    - Built: `scene-clues.test.js` (Property 27)
+  - [x]* 15.3 Write property test for the Decoy
     - **Property 28: A Decoy looks like a clue**
     - **Validates: Requirements 22.8**
-  - [ ] 15.4 `fitToPlace` (the four-point transform as a CSS `matrix3d`) and `drawClue` (the clip's own pixel size, `multiply` or `screen`, IBM Plex Mono or Newsreader italic from `design/fonts`, ink from the tokens); tests that the four corners of the canvas land exactly on the four corners of the Place and that a flat or crossed shape is refused
+    - Built: `scene-clues.test.js` (Property 28)
+  - [x] 15.4 `fitToPlace` (the four-point transform as a CSS `matrix3d`) and `drawClue` (the clip's own pixel size, `multiply` or `screen`, IBM Plex Mono or Newsreader italic from `design/fonts`, ink from the tokens); tests that the four corners of the canvas land exactly on the four corners of the Place and that a flat or crossed shape is refused
     - _Requirements: 22.4_
+    - Built: `fitToPlace`, `canvasSizeFor` and `drawClue` in `js/scene-clues.js`; the canvas corners land on the Place corners at three picture sizes, flat and crossed shapes are refused; `drawClue` is tested with a recording context, not in a browser
   - [ ] 15.5 `tools/playtest/place-check.mjs`: for each frame of a Place's window, the edge energy at the Place against the clip's own grain, and the Place's brightness written back into `places.js`; tests with a clip that has a mark (must fail) and a blank one (must pass), and a mutation pass on the threshold
     - _Requirements: 22.3, 22.6, 22.10_
   - [ ]* 15.6 Add a `check-places` script to the root `package.json` (`node tools/playtest/place-check.mjs --all`, like `check-sounds`) that checks every clip that has a Place, and write a property test over the clips
@@ -389,12 +394,14 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - **Validates: Requirements 22.3, 22.10**
   - [ ] 15.7 The demo: section 8 of `footage.html`, "A clue written on the scene", on a stand-in Place (a flat patch of a wall in a clip we already have, until a model clip has a real one): the clue on the picture, the film layer over both, the panel and the Clue list, and the footage-off state. Check it in jsdom and in desktop Chrome
     - _Requirements: 22.4, 22.5, 22.7_
-  - [ ]* 15.8 Write property test for the fallbacks
+  - [x]* 15.8 Write property test for the fallbacks
     - **Property 29: Nothing is lost when the picture is not shown**
     - **Validates: Requirements 22.7**
-  - [ ]* 15.9 Write property test for legibility and calm
+    - Built: `scene-clues.test.js` (Property 29, over every footage state)
+  - [x]* 15.9 Write property test for legibility and calm
     - **Property 30: A Scene clue is readable and calm**
     - **Validates: Requirements 22.4, 22.5, 22.6**
+    - Built: `scene-clues.test.js` (Property 30, over the Places, brightnesses and answer texts the game makes)
   - [ ] 15.10 The Host: draw the Scene clue on the TV over the Reel and ending shots that have a Place, write it to the Clue list and the live region, and ignore it for Bots, phones and the Display (needs `world-clues` and the Host)
     - _Requirements: 22.2, 22.7, 22.9_
   - [ ] 15.11 Spike puzzles 1.8 (scene clues): on a real TV at three metres and on a laptop, does the clue read as part of the scene (ask five people, 1 to 5, and where they looked first) and can a 480 pixel frame hold letters of 5 per cent of its height? If not, make the Place larger in the prompts or fall back to the panel only
