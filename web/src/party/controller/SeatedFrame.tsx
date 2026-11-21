@@ -7,6 +7,8 @@ import { ErrandOptOut, ErrandsPanel } from "./ErrandsControls";
 import { LockArea } from "./LockArea";
 import { MenuSheet } from "./MenuSheet";
 import { Slot } from "./Slot";
+import type { Theory } from "@hauntology/shared/party/theory";
+import { SpiritTableSection, SpiritTableSwitch, useSpiritTable } from "../../table/SpiritTableSwitch";
 import { WorldClueNotebook } from "./WorldClueNotebook";
 
 export type Layout = "pad" | "panel";
@@ -46,6 +48,9 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
   const layout: Layout = chosen ?? (landscape ? "pad" : "panel");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+  // The Spirit table (spirit-table 1.1 to 1.4): the Player's own device switch and the Player's own Theory marks, both in this page only.
+  const spirit = useSpiritTable(view.table);
+  const [theory, setTheory] = useState<Theory>({});
 
   const connection = <span className={`ui-chip${view.connection === "online" ? " is-active" : ""}`} role="status">{CONNECTION_WORDS[view.connection]}</span>;
   const menuButton = (
@@ -96,6 +101,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
           )}
           {view.phase === "playing" && view.errands ? <ErrandsPanel errands={view.errands} port={port} /> : null}
           {view.phase === "playing" ? <DoorControls port={port} view={view} /> : null}
+          {spirit.on && view.table ? <SpiritTableSection device={spirit} feed={view.table} roomCode={view.code ?? ""} theory={theory} onTheory={setTheory} /> : null}
         </main>
       )}
 
@@ -107,6 +113,7 @@ export function SeatedFrame({ port, view, control }: { port: ControllerPort; vie
                 {...(view.master ? { master: { value: view.master.puzzles, preset: view.master.preset, onChange: (s) => port.setPuzzles(s) } } : {})}
                 device={device.device} onDevice={device.changeDevice} tiltState={device.tilt} canVibrate={device.canVibrate}
               />
+              {spirit.offered ? <SpiritTableSwitch device={spirit} /> : null}
               {view.master && port.setCluePlace ? (
                 <div className="ui-stack--tight" role="radiogroup" aria-label="Clue place">
                   <p className="ui-hint">Clue place</p>

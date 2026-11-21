@@ -11,6 +11,7 @@ hauntology/
     conditions/        the real world: place, weather class, time of day, moon, Memory Day, stars (pure)
     voice/             the ghost's voice: speakable lines, speaking policy, Word Bank and Stitch templates, budgets (pure)
     print/             STL writer, mesh checks, QR plates, pyramid geometry
+    table/             the Spirit table's pure logic: table data from what a phone may see, layout, pawns, the Whisper, Place, the frame plan, marks, the rag doll (no clock, sensor or network)
   shared/fixtures/     recorded upstream responses (worldlabs/, ai/) used by contract tests
   api/src/
     routes/            Hono route modules (thin: parse → call service → respond)
@@ -26,6 +27,7 @@ hauntology/
     sketch/ viewer/ ghost/ creator/   feature folders
     party/             host/ controller/ display/ (three pages of Party Mode)
                        controller/ is built as a shell so far: join page, seated frame, menu, Lock; the Room is behind controller-port.ts; the phone's settings come from device/
+    table/             the Spirit table on a phone (a lazy chunk, loaded only when the Player's own switch is on): model.ts (where every piece stands), view.ts, picking.ts, carry.ts (drag to mark and the rag doll), camera.ts, orientation.ts, renderer.ts (the one WebGL file), threeScene.ts, SpiritTable.tsx, TableList.tsx, TableControls.tsx; it sends and stores nothing
     device/            what a phone remembers about its Player (the puzzle settings, in localStorage): the Controller's side; the puzzle screens in puzzles/ store nothing
   print/               optional 3D-print kit: scad/ (relics, pyramid holder), generated STL, README
   design/              the design system: tokens.json (every value, written once), elements.css (the reusable ui- elements), fonts.css and fonts/ (self-hosted), catalogue.html (every element on one page; open /design/ in `pnpm voice-demo`). See steering/design-system.md
