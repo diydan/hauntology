@@ -1,6 +1,6 @@
 # Hauntology: main task list
 
-Counted from ticked boxes (`- [x]`) in each `.kiro/specs/*/tasks.md` on `integration/overnight-merge` (origin/main plus PRs #81 to #91), 2026-11-21 22:55. Every nesting level is counted.
+Counted from ticked boxes (`- [x]`) in each `.kiro/specs/*/tasks.md` on `integration/overnight-merge` (origin/main plus PRs #81 to #91 and #95 to #98), 2026-11-21 23:55. Every nesting level is counted.
 
 ## Progress by spec
 
@@ -8,48 +8,40 @@ Counted from ticked boxes (`- [x]`) in each `.kiro/specs/*/tasks.md` on `integra
 |---|---|---|---|---|
 | design-system | 37 | 0 | 37 | 100% |
 | world-clues | 17 | 0 | 17 | 100% |
-| ghost-creator | 29 | 1 | 30 | 97% |
-| world-viewer | 49 | 4 | 53 | 92% |
-| haunwallker | 80 | 9 | 89 | 90% |
+| ghost-creator | 29 | 1 | 30 | 96% |
+| haunwallker | 86 | 3 | 89 | 96% |
+| world-viewer | 51 | 2 | 53 | 96% |
+| world-pipeline | 58 | 5 | 63 | 92% |
+| integration | 40 | 4 | 44 | 90% |
 | errands | 15 | 2 | 17 | 88% |
-| world-pipeline | 55 | 8 | 63 | 87% |
-| ghost-engine | 39 | 7 | 46 | 85% |
-| party-mode | 199 | 37 | 236 | 84% |
-| conditions | 44 | 11 | 55 | 80% |
-| game-songs | 16 | 6 | 22 | 73% |
-| ghost-voice | 52 | 19 | 71 | 73% |
-| spirit-table | 32 | 13 | 45 | 71% |
-| integration | 31 | 13 | 44 | 70% |
-| puzzles | 114 | 50 | 164 | 70% |
-| knock-door | 36 | 14 | 50 | 72% |
-| **Total** | **845** | **194** | **1039** | **81%** |
+| ghost-engine | 40 | 6 | 46 | 86% |
+| conditions | 47 | 8 | 55 | 85% |
+| party-mode | 202 | 34 | 236 | 85% |
+| spirit-table | 37 | 8 | 45 | 82% |
+| puzzles | 131 | 33 | 164 | 79% |
+| ghost-voice | 56 | 15 | 71 | 78% |
+| game-songs | 17 | 5 | 22 | 77% |
+| knock-door | 38 | 12 | 50 | 76% |
+| **Total** | **901** | **138** | **1039** | **86%** |
 
-## What is left (top-level groups with unticked work)
+## What is left, and why it is not built
 
-- **conditions**: 1 Spikes, 3 API, 4 viewer atmosphere, 5 narrator lines, 8 Checkpoint, 9 Shared look.
-- **errands**: 3 Controller screens (3.2 is a human playtest).
-- **game-songs**: 1 Song Service spike (paid), 4 Shared look, 5 catalogue and house style.
-- **ghost-creator**: 5 Checkpoint.
-- **ghost-engine**: 6 chat and journal (6.3 waits on the viewer), 7 Gallery content, 8 Checkpoint, 9 Shared look.
-- **ghost-voice**: 1 Spikes, 3 API (3.12), 4 web in Play and Host, 6 Live mode (stretch), 7 Checkpoint, 8 Shared look.
-- **haunwallker**: 10 tests (10.3 needs `@playwright/test` approval, 10.4 a person with a phone), 11 Checkpoint, 13 Shared look.
-- **integration**: 2 Engine, 4 solo case (4.5 playtest), 5 phones (5.1, 5.2, 5.6), 6 Wander puzzles, 7 optional layers, 8 Shared look.
-- **knock-door**: 5 Haunt Slam, 6 Wander door, 7 collider spike, 8 screens, 9 fairness pass, 10 Checkpoint, 11 Shared look.
-- **party-mode**: 1 hardware spikes, 2.114, 4.1, 5.5, 7, 8.1/8.3/8.4/8.9, 9.24, 12 Gallery worlds, 13 sounds, 14 Checkpoint, 15 Shared look.
-- **puzzles**: 1 Spikes, 6 demo slice, 8 third Kinds, 10 Spirit clues (cut first), 11 Shared look, 13 to 15 footage and scenes, 16 Secret knock, 17 Shake.
-- **spirit-table**: 1 Spike, 3 the phone (3.6 clue ring), 4 checks, 5 Shared look, 6 drag to mark.
-- **world-pipeline**: 1 Spikes, 9 Gallery, 11 Enhance (optional).
-- **world-viewer**: 1 Spike, 3 Loader and fallbacks, 10 Checkpoint.
+Every open item below needs something the build agents do not have. None is a plain coding task.
 
-## What blocks the rest
-
-- **Needs a person, phone, TV or browser:** playtests, real WebGL checks, 390 and 1280 px views.
-- **Needs a paid call or key:** game-songs 1.1 and 5.2, ghost-voice 1.1, World Labs spikes, the selfie ghost.
-- **Needs an owner decision:** `@playwright/test`, a QR encoder (party-mode 8.1), spend-guard caps for room scopes, the Mureka adapter (expects an instant answer; the real API is asynchronous).
-- **Needs another spec or PR:** Viewer messages for the Host (8.3, 8.4, 8.9), the Gallery worlds (in the bucket, not the repo).
+- **A person with a phone, TV or browser** (spikes, playtests, real-device and 390 / 1280 px checks, checkpoints):
+  conditions 1.1, 8, 9.3 · errands 3.2 · ghost-engine 6.3 (real-browser look), 8, 9.3 · ghost-voice 1.2, 1.3, 4.7, 8.3, 7 · haunwallker 10.4 · integration 4.5, 5.6 · knock-door 7.1, 8.1, 9.2, 10 · party-mode 1.1 to 1.10, 14, 15 · puzzles 1.1 to 1.6, 6.6, 11.3, 13.3, 14.8, 14.12, 15.11, 16.4, 17.4 · spirit-table 1.2, 5.3 · world-viewer 1, 10.
+- **Paid calls or keys:** game-songs 1.1 and 5.2 · ghost-voice 1.1 · ghost-creator 5 (paid portraits) · party-mode 5.5 (selfie ghost) · world-pipeline 1.2, 1.3.
+- **A dependency approval:** haunwallker 10.3 (`@playwright/test`).
+- **A design or content decision:** knock-door 5 (Slam voice lines), 8.3 · puzzles 8.3 (Voice Library), 13.4 to 13.8 (film rights) · party-mode 8.1 and 8.4 Host feed · world-pipeline 9.1 and ghost-engine 7 (Gallery pictures and licences).
+- **Another PR:** knock-door 6.1, 6.2 live on PR #93 (`feat/knock-door-wander`).
+- **Stretch or waiting on another task:** ghost-voice 6.3, 6.5 (live mode) · ghost-voice 3.12 and 4.8 (Single player has no speak signal) · party-mode 2.114 (story-writer review) · spirit-table 4.3, 6.7 (party-mode doc lines, notebook storage).
 
 ## Known failing checks
 
-- `tools/test/guarded-only.test.mjs`: `api/dev/playthrough-calls.ts` calls `ai.run` outside `api/src/guarded/` (on main).
+- `tools/test/guarded-only.test.mjs`: `api/dev/playthrough-calls.ts` calls `ai.run` outside `api/src/guarded/` (red on main).
 - `api/src/worker.test.ts` weather test depends on the date.
 - `api` tsc: 8 errors on main (`CONDITIONS_ENABLED`, `ORIGIN`, `node:fs`).
+
+## Checks on the combined branch (2026-11-21 23:50)
+
+shared 1993 pass · api 1251 pass (30 skipped) · web 1588 pass · tools 478 of 479 · traceability and tokens OK.
