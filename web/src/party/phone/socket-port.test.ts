@@ -238,6 +238,34 @@ describe("RoomSocketPort: the game through the port", () => {
     s.say({ t: "pong", id: 99, serverMs: 1 });
     expect(s.sent.length).toBe(before);
   });
+  it("shows the Room's Sights one at a time, and a Sight is acknowledged by its id to the Room (integration 5.1)", async () => {
+    const r = rig();
+    await r.port.join("K7M2", "Ben");
+    const s = r.sockets[0]!;
+    s.open();
+    s.say({ t: "welcome", role: "controller", seat: 2 });
+    const one = { kind: "wires", payload: { kind: "wires", order: [1, 2, 3] }, showMs: 4000 };
+    const two = { kind: "clock", payload: { kind: "clock", hour: 3 }, showMs: 3000 };
+    expect(r.port.getView().sight).toBeUndefined();
+    s.say({ t: "sight", sightId: "a", sight: one });
+    s.say({ t: "sight", sightId: "b", sight: two });
+    expect(r.port.getView().sight).toEqual({ id: "a", sight: one });
+    r.port.ackSight("b"); // not the one on screen: nothing is sent and nothing changes
+    expect(s.msgs().filter((m) => m.t === "sightAck")).toEqual([]);
+    expect(r.port.getView().sight?.id).toBe("a");
+    r.port.ackSight("a");
+    expect(s.msgs().filter((m) => m.t === "sightAck")).toEqual([{ t: "sightAck", sightId: "a" }]);
+    expect(r.port.getView().sight).toEqual({ id: "b", sight: two });
+    r.port.ackSight("b");
+    expect(r.port.getView().sight).toBeUndefined();
+    // a malformed Sight is ignored, and leaving the seat drops what was waiting
+    s.say({ t: "sight", sightId: 5, sight: one });
+    s.say({ t: "sight", sightId: "c", sight: null });
+    expect(r.port.getView().sight).toBeUndefined();
+    s.say({ t: "sight", sightId: "d", sight: one });
+    await r.port.leave();
+    expect(r.port.getView().sight).toBeUndefined();
+  });
   it("browserDeps points at wss on https, ws otherwise, and takes the Room Code only in the path", () => {
     let url = "";
     class W { constructor(u: string) { url = u; } }

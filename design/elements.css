@@ -256,6 +256,10 @@ a.ui-button { display: inline-flex; align-items: center; justify-content: center
 .ui-table thead th { color: var(--text-quiet); font-weight: 400; }
 .ui-table tbody th { color: var(--text); font-weight: 500; }
 
+/* ---- a code to scan (the Room's join address): dark modules on the light text colour, so any phone camera reads it on the dark page ------------- */
+.ui-qr { display: block; inline-size: min(100%, calc(var(--target) * 5)); block-size: auto; border-radius: var(--radius-md); background: var(--text); }
+.ui-qr-modules { fill: var(--surface-page); }
+
 @media (prefers-reduced-motion: reduce) {
   .ui-orb.is-speaking { animation: none; }
   .ui-page { scroll-behavior: auto; }

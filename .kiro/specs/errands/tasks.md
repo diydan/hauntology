@@ -24,6 +24,7 @@
   - [x] 3.1 The Poltergeist's Errand card with Done and the "Never grab or push" line; the Detective's Caught picker once per Round
     - _Requirements: 3.1, 4.3_
   - [ ] 3.2 Checkpoint: playtest one evening with Errands on; note any object people could not find or felt unsafe with
+    - Left open (needs people in a room): everything that can be checked without them passes: `errands.test.ts`, `errands-engine.prop.test.ts` (Errands never touch the case, Done and Caught settle once), `no-dead-switches.test.mjs` (the Errands switch has its Master control and a reader in the Room), `optional-layers.prop.test.ts` (Errands off sends nothing through a whole game) and the Controller screens in `web/src/party/controller/ErrandsControls.tsx`, which `tools/ui-check.mjs` does not reach yet (they need a Room). The evening's playtest is the person's.
     - _Requirements: 4.2_
 
 - [x] 4. Shared look (added 2026-11-15, after the other tasks were numbered; satisfies Requirement 5 and the `design-system` spec)
