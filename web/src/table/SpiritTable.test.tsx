@@ -348,3 +348,16 @@ describe("SpiritTable: camera and clues", () => {
     expect(onClues).toHaveBeenCalled();
   });
 });
+
+describe("SpiritTable: the Clue ring shares the viewpoint (7.1)", () => {
+  it("gives the ring the same scene and camera the Table is drawn with, and takes it down when the Table closes", () => {
+    const h = rig(); const down = vi.fn(); let got: { scene: Scene; camera: PerspectiveCamera } | null = null;
+    const { unmount } = render(<SpiritTable {...props(h, { ring: (ctx) => { got = ctx; return down; } })} />);
+    h.advance(50);
+    expect(got).not.toBeNull();
+    expect(got!.scene).toBe(h.r.lastScene);
+    expect(got!.camera).toBe(h.r.lastCamera);
+    unmount();
+    expect(down).toHaveBeenCalledTimes(1);
+  });
+});

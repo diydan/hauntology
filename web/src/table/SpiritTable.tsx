@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import type { PerspectiveCamera, Scene } from "three";
 import type { Theory } from "@hauntology/shared/party/theory";
 import type { TableData } from "@hauntology/shared/table/data";
 import { tablePlan } from "@hauntology/shared/table/plan";
@@ -41,6 +42,10 @@ export type SpiritTableProps = Readonly<{
   frame?: FrameClock;
   portraits?: Readonly<Record<string, PictureRef>>;
   buzz?: (ms: number) => void;
+  /** Tilt is on from the start (the Spirit table switch already asked for motion with its own tap). */
+  initialTilt?: boolean;
+  /** The Clue ring of `puzzles` hangs in the same scene with the same camera, so it turns with the same view (7.1). It returns the way to take itself down. */
+  ring?: (ctx: Readonly<{ scene: Scene; camera: PerspectiveCamera }>) => () => void;
   /** The screen's turn in degrees (0 upright). */
   screenAngle?: () => number;
 }>;
@@ -60,7 +65,7 @@ export function SpiritTable(props: SpiritTableProps): ReactNode {
   const [webgl] = useState<boolean>(() => (props.createRenderer ? true : webglAvailable()));
   const [mode, setMode] = useState<"table" | "list">("table");
   const [picked, setPicked] = useState<PieceId | null>(null);
-  const [tiltOn, setTiltOn] = useState<boolean>(false);
+  const [tiltOn, setTiltOn] = useState<boolean>(!!props.initialTilt && !!props.orientation?.available);
   const [saying, setSaying] = useState<string>("");
   const [arrow, setArrow] = useState<{ show: boolean; angle: number }>({ show: false, angle: 0 });
   const [drawn, setDrawn] = useState<boolean>(true);
@@ -68,12 +73,10 @@ export function SpiritTable(props: SpiritTableProps): ReactNode {
 
   // The model is rebuilt from Table data and the Player's own Theory marks, at the clock's time: the list and the drawing read the same one.
   const tRef = useRef(0);
-  const [tick, setTick] = useState(0);
   const model: TableModel = useMemo(() => buildModel({ data, roomCode, theory, tMs: tRef.current, reducedMotion: reduced }), [data, roomCode, theory, reduced]);
   const modelRef = useRef(model); modelRef.current = model;
   const theoryRef = useRef(theory); theoryRef.current = theory;
   const onTheoryRef = useRef(onTheory); onTheoryRef.current = onTheory;
-  void tick;
 
   const stageRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -91,6 +94,7 @@ export function SpiritTable(props: SpiritTableProps): ReactNode {
   const driftSaid = useRef(false);
   const aspect = useRef(DEFAULT_FOV.aspect);
   const carriedRef = useRef<string | null>(null);
+  const ringRef = useRef(props.ring); ringRef.current = props.ring;
 
   const sensorsOn = !!orientation && orientation.available && tiltOn;
 
@@ -120,6 +124,7 @@ export function SpiritTable(props: SpiritTableProps): ReactNode {
     rendererRef.current = r;
     const scene = createTableScene(modelRef.current, { reducedMotion: reduced, ...(props.portraits ? { portraits: props.portraits } : {}) });
     sceneRef.current = scene;
+    const takeDownRing = ringRef.current ? ringRef.current({ scene: scene.scene, camera: scene.camera }) : null;
     const fit = (): void => {
       const st = stageRef.current; if (!st) return;
       const w = st.clientWidth || 390, h = st.clientHeight || 700;
@@ -130,7 +135,7 @@ export function SpiritTable(props: SpiritTableProps): ReactNode {
     if (typeof window !== "undefined") window.addEventListener("resize", onResize);
     return () => {
       if (typeof window !== "undefined") window.removeEventListener("resize", onResize);
-      scene.dispose(); r.dispose(); sceneRef.current = null; rendererRef.current = null;
+      takeDownRing?.(); scene.dispose(); r.dispose(); sceneRef.current = null; rendererRef.current = null;
     };
   }, [webgl, mode, factory, reduced, props.portraits]);
 

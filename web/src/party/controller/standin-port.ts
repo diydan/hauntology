@@ -6,7 +6,7 @@ import { ATTEMPTS, type Kind, type Level, type Lock, type PuzzleSetting, type Tr
 import { verify } from "@hauntology/shared/puzzles/verify";
 import { worldCluePrompt, type CluePlace, type PublicWorldClue, type Sign } from "@hauntology/shared/puzzles/world-clues";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
-import { NOT_SEATED, type ControllerDoorLock, type ControllerErrandsView, type ControllerPort, type JoinResult, type LockOffer, type RoomView } from "./controller-port";
+import { NOT_SEATED, type TableFeed, type ControllerDoorLock, type ControllerErrandsView, type ControllerPort, type JoinResult, type LockOffer, type RoomView } from "./controller-port";
 
 /** The codes this Room answers to. Anything else is an unknown Room: the answer never says what exists. */
 export const STANDIN_CODES = { open: "K7M2", full: "MAX6", started: "STR4" } as const;
@@ -71,6 +71,14 @@ export class StandInPort implements ControllerPort {
   /** Set the World Clues kept on this seat's own Turn (Assist notebook). */
   setWorldClues(worldClues: readonly PublicWorldClue[]): void {
     this.set({ worldClues });
+  }
+
+  /** Give this seat what the Spirit table may draw, or take it away with `undefined`. */
+  setTable(table: TableFeed | undefined): void {
+    const { table: _drop, ...rest } = this.view;
+    void _drop;
+    this.view = table === undefined ? rest : { ...rest, table };
+    for (const l of [...this.listeners]) l(this.view);
   }
 
   /** What the connection says (the header shows it in words). */
