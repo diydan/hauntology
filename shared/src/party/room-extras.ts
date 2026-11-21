@@ -18,8 +18,10 @@ export type WorldChoice = Readonly<{
 }>;
 /** The three cosmetic sky fields, the only part of the real world a Room keeps. */
 export type Sky = Readonly<{ weather: string; timeOfDay: string; moon: string }>;
+/** A place for the sky: the position is rounded and kept only until the start. */
+export type SkyPlace = Readonly<{ lat: number; lon: number; tz?: string; label?: string }>;
 export type ConditionsChoice = "off" | "place" | "table";
-export type RoomSwitches = Readonly<{ conditions: ConditionsChoice; hourStrike: boolean; lightBar: boolean; rattle: boolean; stitch: boolean }>;
+export type RoomSwitches = Readonly<{ conditions: ConditionsChoice; /** Where the sky is read, until the game starts (then it is dropped: only the cosmetic sky stays). */ place: SkyPlace | null; hourStrike: boolean; lightBar: boolean; rattle: boolean; stitch: boolean }>;
 export type LightPref = Readonly<{ consent: boolean; reducedMotion: boolean }>;
 
 export type RoomExtras = Readonly<{
@@ -32,9 +34,11 @@ export type RoomExtras = Readonly<{
   light: Readonly<Record<number, LightPref>>;
   clock: Readonly<Record<number, readonly PingSample[]>>;
   lastStrike: Strike | null;
+  /** The strike the Room alarm is waiting for, or null (switch off, Host offset unknown, or no game running). */
+  pendingStrike?: Strike | null;
 }>;
 
-export const DEFAULT_SWITCHES: RoomSwitches = { conditions: "off", hourStrike: true, lightBar: true, rattle: true, stitch: false };
+export const DEFAULT_SWITCHES: RoomSwitches = { conditions: "off", place: null, hourStrike: true, lightBar: true, rattle: true, stitch: false };
 export const initialExtras = (): RoomExtras => ({ world: null, switches: DEFAULT_SWITCHES, hostOffsetMin: null, sky: null, light: {}, clock: {}, lastStrike: null });
 
 /** A world is refused when it is too small to place six Zones and has none of its own (party-mode 4.5, `world_too_small`). */
@@ -75,15 +79,28 @@ export function addClockSample(clock: RoomExtras["clock"], seat: number, raw: un
 }
 export const offsetOf = (clock: RoomExtras["clock"], seat: number): OffsetEstimate | null => estimateOffset(clock[seat] ?? []);
 
+function cleanPlace(v: unknown): SkyPlace | null {
+  if (typeof v !== "object" || v === null) return null;
+  const o = v as Record<string, unknown>;
+  if (typeof o.lat !== "number" || typeof o.lon !== "number" || !Number.isFinite(o.lat) || !Number.isFinite(o.lon) || Math.abs(o.lat) > 90 || Math.abs(o.lon) > 180) return null;
+  const r2 = (n: number): number => Math.round(n * 100) / 100;
+  return { lat: r2(o.lat), lon: r2(o.lon), ...(typeof o.tz === "string" && o.tz.length <= 64 ? { tz: o.tz } : {}), ...(typeof o.label === "string" ? { label: o.label.slice(0, 64) } : {}) };
+}
+
 /** What a Master's switch message may change. Anything else in it is ignored. */
 export function applySwitches(cur: RoomSwitches, raw: Readonly<Partial<Record<keyof RoomSwitches, unknown>>>): RoomSwitches {
   const bool = (v: unknown, d: boolean): boolean => (typeof v === "boolean" ? v : d);
   const conditions = raw.conditions === "off" || raw.conditions === "place" || raw.conditions === "table" ? raw.conditions : cur.conditions;
-  return { conditions, hourStrike: bool(raw.hourStrike, cur.hourStrike), lightBar: bool(raw.lightBar, cur.lightBar), rattle: bool(raw.rattle, cur.rattle), stitch: bool(raw.stitch, cur.stitch) };
+  const place = raw.place === null ? null : cleanPlace(raw.place) ?? cur.place;
+  return { conditions, place, hourStrike: bool(raw.hourStrike, cur.hourStrike), lightBar: bool(raw.lightBar, cur.lightBar), rattle: bool(raw.rattle, cur.rattle), stitch: bool(raw.stitch, cur.stitch) };
 }
 
-/** The next hour strike after `now` and after the one already made, or null when the switch is off or the Host never said its offset. */
-export function nextStrike(x: RoomExtras, now: number): Strike | null {
-  if (x.hostOffsetMin === null) return null;
-  return hourStrike(now, x.hostOffsetMin, x.lastStrike, x.switches.hourStrike);
+/**
+ * The strike the Room should wait for now: none unless a game is running, the switch is on and the Host said its offset;
+ * otherwise the pending one, or the first boundary after `now` and after the last one made. Pure: the Room stores the answer.
+ */
+export function scheduleStrike(x: RoomExtras, playing: boolean, now: number): Strike | null {
+  if (!playing || x.hostOffsetMin === null || !x.switches.hourStrike) return null;
+  if (x.pendingStrike != null) return x.pendingStrike;
+  return hourStrike(now, x.hostOffsetMin, x.lastStrike, true);
 }

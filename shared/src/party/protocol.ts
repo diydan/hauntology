@@ -80,7 +80,7 @@ export const RoomMsgSchema = z.discriminatedUnion("t", [
   z.object({ t: z.literal("world"), id: z.string().min(1).max(64), walkRadius: z.number().finite().min(0).max(10_000), authoredZones: z.boolean().optional(),
     bounds: z.object({ min: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]), max: z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]) }).strict().optional() }).strict(),
   /** The Master's room switches (party-mode 9.21): the sky, the hour strike, the light bar, Rattle and Stitch. */
-  z.object({ t: z.literal("roomSettings"), conditions: z.enum(["off", "place", "table"]).optional(), hourStrike: z.boolean().optional(), lightBar: z.boolean().optional(), rattle: z.boolean().optional(), stitch: z.boolean().optional() }).strict(),
+  z.object({ t: z.literal("roomSettings"), conditions: z.enum(["off", "place", "table"]).optional(), place: z.object({ lat: z.number().finite().min(-90).max(90), lon: z.number().finite().min(-180).max(180), tz: z.string().max(64).optional(), label: z.string().max(64).optional() }).strict().nullable().optional(), hourStrike: z.boolean().optional(), lightBar: z.boolean().optional(), rattle: z.boolean().optional(), stitch: z.boolean().optional() }).strict(),
   /** A phone's stick and look (party-mode 2.2). Never stored; only the active Detective's input reaches the Host. */
   z.object({ t: z.literal("input"), seq: z.number().int().nonnegative(), move: z.tuple([z.number(), z.number()]), look: z.tuple([z.number(), z.number()]), aim: z.tuple([z.number(), z.number()]).optional() }).strict(),
   /** The Host's pose (party-mode 4.5), at most 4 a second; never stored. */

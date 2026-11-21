@@ -2,6 +2,7 @@ import { RoomCore, type Ports } from "@hauntology/shared/party/server";
 import { R2PhotoStore } from "../party/photo-store";
 import { roomScope } from "../party/contribute";
 import { RoomSongStore, type SongBucket } from "../songs/store";
+import { conditionsFromEnv, type ConditionsEnv } from "../conditions/snapshot-store";
 import { RoomStitchClipStore, type RoomClipStorage } from "../voice/stitch-store";
 
 const json = (body: unknown, status = 200): Response => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -30,7 +31,7 @@ export class PartyRoom {
   private readonly core: RoomCore;
   private readonly clips: RoomStitchClipStore;
 
-  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace; BUCKET?: SongBucket } = {}, clock: () => number = Date.now) {
+  constructor(private readonly state: DurableObjectState, env: { PARTY_DIRECTORY?: DirectoryNamespace; BUCKET?: SongBucket } & ConditionsEnv = {}, clock: () => number = Date.now) {
     this.clips = new RoomStitchClipStore(this.state.storage as unknown as RoomClipStorage);
     const songs = env.BUCKET !== undefined ? new RoomSongStore(env.BUCKET) : null;
     const sockets = (): WebSocket[] => (this.state as unknown as { getWebSockets(): WebSocket[] }).getWebSockets();
@@ -45,6 +46,11 @@ export class PartyRoom {
       now: clock,
       // a game starts only on a world the Master chose (party-mode 4.11)
       requireWorld: () => true,
+      // The sky is read once at the start, through the same service as a solo game; only its three cosmetic fields are kept (party-mode 4.18).
+      conditions: async (_choice, place, hostHour) => {
+        const snap = await conditionsFromEnv(env).read({ hostHour, ...(place === null ? {} : { place }) });
+        return { weather: snap.weather, timeOfDay: snap.timeOfDay, moon: snap.moon };
+      },
       randomBytes: (n) => crypto.getRandomValues(new Uint8Array(n)),
       deleteStitchClips: async (forSeats) => {
         if (forSeats === "all") await this.clips.deleteAll();
