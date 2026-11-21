@@ -70,3 +70,11 @@ test('the clue says the knock in words and marks, with no digit in the marks', (
   assert.doesNotMatch(d.marks, /\d/);
   assert.equal((d.marks.match(/●/g) || []).length, 6);
 });
+
+test('two knocks exactly the group gap apart are one group, one millisecond more is two (the boundary is pinned)', () => {
+  assert.deepEqual(readKnocks([0, READ.groupGapMs]).groups, [2]);
+  assert.deepEqual(readKnocks([0, READ.groupGapMs + 1]).groups, [1, 1]);
+  assert.deepEqual(readKnocks([0, READ.groupGapMs + 1]).pauses, [READ.groupGapMs + 1]);
+  // order does not matter, and anything not a number is dropped
+  assert.deepEqual(readKnocks([READ.groupGapMs + 1, NaN, 0]).groups, [1, 1]);
+});

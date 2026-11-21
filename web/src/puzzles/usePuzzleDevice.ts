@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react";
 import { createBrowserFeel } from "./feel/create";
-import type { PuzzleFeel, TiltState } from "./feel/types";
+import type { FeelSettings, PuzzleFeel, TiltState } from "./feel/types";
 import { useFeelValue } from "./hooks";
 import type { DeviceSettings, DeviceSettingsControl } from "./PuzzleSettings";
 
@@ -23,11 +23,18 @@ export type PuzzleDevice = Readonly<{
  * as a `DeviceSettingsControl` and whoever owns them (the Controller, through `useDeviceSettings`) keeps them on the phone.
  * The feel layer reads the settings through a getter, so a change is seen by the next frame without making a new feel.
  */
-export function usePuzzleDevice(control: DeviceSettingsControl): PuzzleDevice {
+export function usePuzzleDevice(
+  control: DeviceSettingsControl,
+  makeFeel: (settings: () => FeelSettings) => PuzzleFeel = createBrowserFeel,
+  /** Party Mode: `soundAllowed` is the Room's word on this seat's sound consent. The Synth plays only when it and the phone's Sound switch are both on; Wander gives none. */
+  gate: Readonly<{ soundAllowed?: boolean }> = {},
+): PuzzleDevice {
   const { device, setDevice } = control;
   const deviceRef = useRef(device);
   deviceRef.current = device;
-  const feel = useMemo(() => createBrowserFeel(() => deviceRef.current), []);
+  const soundAllowedRef = useRef(gate.soundAllowed);
+  soundAllowedRef.current = gate.soundAllowed;
+  const feel = useMemo(() => makeFeel(() => (soundAllowedRef.current === false && deviceRef.current.soundConsent ? { ...deviceRef.current, soundConsent: false } : deviceRef.current)), []);  // one feel per screen
   const tilt = useFeelValue(feel.motion.subscribe, () => feel.motion.state);
   // The Player's wish for tilt lives in the device settings. Tilt starts by itself where the phone has a sensor, so a switch must act at once:
   // turning it on (a tap, which is also what an iPhone needs to ask) asks now, turning it off or choosing Touch only stops it.

@@ -25,3 +25,20 @@
 /* A real app page (the puzzle demo, `?bare=1`) in the phone frame: it fills the frame, over the film, on a clear page so the film shows around its panels. */
 .ft-phone--app { padding: 0; }
 .ft-app { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: transparent; color-scheme: dark; }
+
+/* Section 12: a Scene clue on a Place. The canvas is laid on the plate by a four-point transform (set by the page); one film layer sits over the video and the clue together. */
+.ft-sclue { position: relative; }
+.ft-sc-canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; opacity: 0; pointer-events: none; transition: opacity var(--fade); }
+.ft-sc-canvas[data-in='true'] { opacity: 1; transition: opacity var(--fade-slow); }
+.ft-sc-film {
+  position: absolute; inset: 0; pointer-events: none; mix-blend-mode: overlay; opacity: 0.32;
+  background:
+    radial-gradient(ellipse at center, transparent 50%, color-mix(in srgb, var(--ink) 60%, transparent) 100%),
+    repeating-conic-gradient(color-mix(in srgb, var(--bone) 16%, transparent) 0% 25%, transparent 0% 50%) 0 0 / 3px 3px;
+  animation: ft-sc-flicker 2.6s ease-in-out infinite;
+}
+@keyframes ft-sc-flicker { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.36; } }
+@media (prefers-reduced-motion: reduce) {
+  .ft-sc-film { animation: none; }
+  .ft-sc-canvas, .ft-sc-canvas[data-in='true'] { transition: none; }
+}

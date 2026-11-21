@@ -492,3 +492,31 @@ describe("Doors Controller UI (knock-door 1.4, 3.3, 4.2, 11.1)", () => {
     expect(port.calls).toContain("doorKnock cellar-door 2");
   });
 });
+
+describe("the Sound switch and the Room's sound consent (puzzles 5.6)", () => {
+  it("turning the Sound switch tells the Room this seat's consent, and the Room's answer comes back in the view", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    fireEvent.click(sw(/^Sound/));
+    expect(port.calls).toContain("setSound false");
+    expect(port.getView().soundConsent).toBe(false);
+    fireEvent.click(sw(/^Sound/));
+    expect(port.calls).toContain("setSound true");
+    expect(port.getView().soundConsent).toBe(true);
+  });
+});
+
+describe("the Assist switch and the Room (puzzles 8.3)", () => {
+  it("turning Assist on or off tells the Room this seat's setting", async () => {
+    const port = new StandInPort();
+    render(<Controller port={port} />);
+    await seat(port);
+    openMenu();
+    fireEvent.click(sw(/^Assist/));
+    expect(port.calls).toContain("setAssist true");
+    fireEvent.click(sw(/^Assist/));
+    expect(port.calls).toContain("setAssist false");
+  });
+});

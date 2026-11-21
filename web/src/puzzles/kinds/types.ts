@@ -32,6 +32,8 @@ export type KindProps<K extends Kind> = Readonly<{
    * said (no voice), and the screen falls back to the clue. Absent in the other Kinds.
    */
   hear?: (() => boolean | void | Promise<boolean | void>) | undefined;
+  /** Spirit board only, with Assist on: the word as text, which the Room sends to this seat alone (puzzles 8.3). Absent otherwise. */
+  assistText?: string | undefined;
   /**
    * The Kinds that steer with Tilt only: the host's tilt buttons ("Tilt", and "Hold level" while it is on), with no
    * wrapper. The screen puts them in a row with its own buttons, so tilt sits with the play controls and apart from Give up.
