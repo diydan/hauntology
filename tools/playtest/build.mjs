@@ -98,7 +98,7 @@ if (existsSync(resolve(cbSrc, 'index.html'))) {
         if (!rel) return true;
         const name = basename(rel);
         if (name === '.DS_Store' || name === '.local') return false;
-        if (/^clips_.*\.glb$/i.test(name)) return false;
+        if (/^clips_.*\.glb$/i.test(name) && process.env.INCLUDE_MIXAMO_CLIPS !== '1') return false; // opt-in only: set INCLUDE_MIXAMO_CLIPS=1 to ship the animations to a test build
         if (/^faces\/selfie/i.test(rel)) return false;
         return true;
       },
