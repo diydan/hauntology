@@ -51,7 +51,7 @@ const post = (stub: Stub, path: string, body: unknown): Promise<Response> =>
  *   POST / {replace?}      create a Room: {code, hostToken, displayToken} | {code: "rooms_full" | "session_has_room"};
  *                          with `replace: true` the session's own earlier Room is ended first
  *   POST /:code/join       {nickname} -> {seat, token} | refusal; an unknown or expired code is "room_unknown" and says nothing else
- *   DELETE /:code {token}  ends the Room for its Master or host token: 204 | 403 "forbidden" | 404 "room_unknown"
+ *   DELETE /:code          (Authorization: Bearer <token>) ends the Room for its Master or host token: 204 | 401 | 403 "not_master" | 404 "room_unknown" (the handler is below, with the contribution routes)
  *   GET  /:code/ws         the socket, handed to the Room; the token goes in the first message, never in the URL
  */
 export function partyRoutes(deps: PartyDeps): Hono {
@@ -100,24 +100,6 @@ export function partyRoutes(deps: PartyDeps): Hono {
     const nickname = sanitizeNickname(typeof body.nickname === "string" ? body.nickname : "");
     const res = (await (await post(roomOf(code), "/join", { nickname })).json()) as { ok: boolean };
     return c.json(res, res.ok ? 200 : 409);
-  });
-
-  /**
-   * Ends a Room for its Master or its host (`{token}` in the body, never the address). Anyone else gets `forbidden`
-   * and the Room stays. An ended Room frees its place in the directory at once.
-   */
-  app.delete("/:code", async (c) => {
-    const code = normalizeCode(c.req.param("code"));
-    if (code === null) return c.json({ ok: false, code: "room_unknown" }, 404);
-    const body = (await c.req.json().catch(() => ({}))) as { token?: unknown };
-    const token = typeof body.token === "string" ? body.token : "";
-    const res = (await (await post(roomOf(code), "/end-as", { token })).json()) as { result: string };
-    if (res.result === "ended") {
-      await post(dir(), "/delete", { code });
-      return c.body(null, 204);
-    }
-    if (res.result === "forbidden") return c.json({ ok: false, code: "forbidden" }, 403);
-    return c.json({ ok: false, code: "room_unknown" }, 404);
   });
 
   app.get("/:code/ws", async (c) => {

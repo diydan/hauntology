@@ -79,12 +79,11 @@ describe("/api/party routes", () => {
     const room = (await (await routes.request("/", { method: "POST" })).json()) as { code: string; hostToken: string };
     const master = (await (await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Ana" }) })).json()) as { token: string };
     const player = (await (await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Ben" }) })).json()) as { token: string };
-    const del = (token?: string) => routes.request(`/${room.code}`, { method: "DELETE", body: JSON.stringify(token === undefined ? {} : { token }) });
-    for (const refused of [player.token, "nope", undefined]) {
-      const res = await del(refused);
-      expect(res.status).toBe(403);
-      expect(await res.json()).toEqual({ ok: false, code: "forbidden" });
-    }
+    const del = (token?: string) => routes.request(`/${room.code}`, { method: "DELETE", headers: token === undefined ? {} : { Authorization: `Bearer ${token}` } });
+    const refused = await del(player.token);
+    expect(refused.status).toBe(403);
+    expect(await refused.json()).toEqual({ ok: false, code: "not_master" });
+    for (const unknown of ["nope", undefined]) expect((await del(unknown)).status).toBe(401); // a malformed or missing token: no identity at all
     expect(rooms.data.get(room.code)?.has("room")).toBe(true);
     expect((await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Cy" }) })).status).toBe(200);
     expect((await del(room.hostToken)).status).toBe(204);
@@ -98,7 +97,7 @@ describe("/api/party routes", () => {
     const { routes } = app("s1");
     const room = (await (await routes.request("/", { method: "POST" })).json()) as { code: string };
     const master = (await (await routes.request(`/${room.code}/join`, { method: "POST", body: JSON.stringify({ nickname: "Ana" }) })).json()) as { token: string };
-    const res = await routes.request(`/${room.code}`, { method: "DELETE", body: JSON.stringify({ token: master.token }) });
+    const res = await routes.request(`/${room.code}`, { method: "DELETE", headers: { Authorization: `Bearer ${master.token}` } });
     expect(res.status).toBe(204);
   });
 });
