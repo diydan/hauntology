@@ -363,7 +363,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - **Validates: Requirements 5.1**
     - **Property 58: Scare points change nothing**
     - **Validates: Requirements 11.6**
-  - [ ] 2.111 `tools/balance.mjs`: the statistical balance regression (500 seeded games each at 3 to 6 Players, all Standard Bots: at least 95% solved, mean Rounds between 4 and 7, every seat's win share within 8 points of its fair share), run in CI; a failing run blocks merges that touch `shared/src/party/`
+  - [x] 2.111 `tools/balance.mjs`: the statistical balance regression (500 seeded games each at 3 to 6 Players, all Standard Bots: at least 95% solved, mean Rounds between 4 and 7, every seat's win share within 8 points of its fair share), run in CI; a failing run blocks merges that touch `shared/src/party/`
+    - **Built 2026-11-21** (`shared/src/party/balance.ts`, `balance.test.ts`, `tools/balance.mjs`, `pnpm check-balance`): the real Engine plays 500 seeded all-Standard-Bot games at each of 3 to 6 Players and the report is checked against the limits. Measured today: 100% solved at every size, mean Rounds 5.22, 4.90, 4.50 and 4.34, largest win-share gap from fair 2.2, 2.2, 2.0 and 1.6 points, so every limit holds. `tools/balance.mjs` exits 1 when a limit fails (checked by tightening a limit). The repository has no CI workflow, so nothing runs it on merge yet: run it before merging changes under `shared/src/party/`. Bots here are perfect note-takers (the design's own caveat), so real tables will be slower.
     - _Requirements: 9.2, 5.1_
   - [x] 2.112 `solo.ts`: `soloSetup` (the visitor as Master at seat 1, the Room's first seat; seats run 1 to 6, two to five Bots at the level the preset gives, fixed Bot names, `speech` off, every name from the Preset Ghosts and the curated Zone names, and `{error}` for a bad Bot count or a world that is too small)
     - _Requirements: 9.5_
