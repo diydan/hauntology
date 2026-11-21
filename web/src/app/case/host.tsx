@@ -8,8 +8,10 @@ import { browserHostAudioSupport, createHostAudio, fetchHostSpeech, type HostAud
 import { browserRoomDeps, checkWorld, RoomError, startSolo, type RoomClient, type RoomDeps } from "./room-client";
 import type { HostHandle, HostSetup } from "./types";
 import type { ViewerHandle } from "../viewer/types";
-import { eventLine, namesOf, notebook, secondsLeft } from "./words";
+import { GameSections } from "../../party/GameSections";
+import { eventLine, namesOf, secondsLeft } from "./words";
 import { Ending } from "./Ending";
+import { SoloLockLayer } from "./SoloLockLayer";
 
 /**
  * The real Host for "Play a case" (integration 4.1, 4.2; party-mode 8.15): a real Room on the server, the visitor in
@@ -106,13 +108,6 @@ export async function mountHost(setup: HostSetup, deps: RoomDeps = browserRoomDe
   };
 }
 
-const REFUSALS: Record<string, string> = {
-  not_your_turn: "It is not your turn.",
-  already_inspected: "You have searched this room already.",
-  already_suggested: "You have asked once this turn.",
-  not_in_zone: "Go to a room first.",
-  zone_closed: "A shut door blocks the way to that room.",
-};
 
 export type SoloAudioDeps = Partial<Pick<HostAudioDeps, "fetchSpeech" | "createAudio" | "unlockAudio" | "fallbackSpeak" | "deadlineMs">>;
 
@@ -206,8 +201,6 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
       songsCtrl.destroy();
     }
   }, [snap.status, snap.public?.phase, songsCtrl]);
-  const [ask, setAsk] = useState({ suspect: "", relic: "" });
-  const [seal, setSeal] = useState({ suspect: "", zone: "", relic: "", sure: false });
 
   const view = snap.public;
   if (view === null) return <p aria-busy="true">Setting the table…</p>;
@@ -216,6 +209,9 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
   const mine = view.active !== null && view.active === snap.seat;
   const left = secondsLeft(view, now);
   const lines = view.events.map((e) => eventLine(e, n)).filter((x): x is string => x !== null).slice(-8);
+
+  // A Lock or a Sight from the Room comes first: the puzzle fills the shared screen, played by touch or mouse (integration 5.3).
+  if (view.phase === "playing" && (snap.lock !== null || snap.sight !== null)) return <SoloLockLayer client={client} lock={snap.lock} sight={snap.sight} />;
 
   if (view.phase === "ended" && view.ending) {
     const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -286,102 +282,7 @@ export function SoloTable({ client, ...audioOverrides }: { client: RoomClient } 
           Playing without doors: {doorProblemLines(view.doorProblems, n.card).join(" ")}
         </p>
       ) : null}
-      {snap.refused ? <p className="ui-notice" role="alert">{REFUSALS[snap.refused] ?? `Not now (${snap.refused}).`}</p> : null}
-
-      {me?.answer ? (
-        <section className="ui-panel ui-stack" aria-label="Show a card">
-          <p>Someone asked about a card you hold. Show one:</p>
-          <div className="ui-row">
-            {me.answer.options.map((id) => (
-              <button key={id} type="button" className="ui-button" onClick={() => client.send({ t: "show", card: id })}>Show {n.card(id)}</button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {me?.choose ? (
-        <section className="ui-panel ui-stack" aria-label="The house stirs">
-          <p>The house stirs. You choose what happens:</p>
-          <div className="ui-row">
-            {me.choose.options.map((o) => (
-              <button key={o} type="button" className="ui-button" onClick={() => client.send({ t: "choose", option: o })}>{o.replace("-", " ")}</button>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section className="ui-panel ui-stack" aria-label="Your turn">
-        <p>{view.at ? `${mine ? "You are" : `${n.seat(view.active)} is`} in the ${n.card(view.at)}.` : mine ? "Choose a room to go to." : "Waiting…"}</p>
-        <div className="ui-row" role="group" aria-label="Rooms">
-          {view.zones.map((z) => (
-            <button key={z.id} type="button" className="ui-button" disabled={!mine || view.at === z.id || view.closedZones.includes(z.id)} onClick={() => client.send({ t: "walk", zone: z.id })}>
-              {z.name}
-            </button>
-          ))}
-        </div>
-        <div className="ui-row">
-          <button type="button" className="ui-button" disabled={!mine || view.at === null} onClick={() => client.send({ t: "inspect" })}>Search this room</button>
-          <button type="button" className="ui-button" disabled={!mine} onClick={() => client.send({ t: "endTurn" })}>End turn</button>
-          <button type="button" className="ui-button ui-button--quiet" disabled={!mine} onClick={() => client.send({ t: "pass" })}>Pass</button>
-        </div>
-        <form className="ui-row" onSubmit={(ev) => { ev.preventDefault(); if (ask.suspect && ask.relic) client.send({ t: "suggest", suspect: ask.suspect, relic: ask.relic }); }}>
-          <label className="ui-field">
-            <span className="ui-field-label">Ghost</span>
-            <select className="ui-select" value={ask.suspect} onChange={(ev) => setAsk({ ...ask, suspect: ev.target.value })}>
-              <option value="">Choose…</option>
-              {view.suspects.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-            </select>
-          </label>
-          <label className="ui-field">
-            <span className="ui-field-label">Relic</span>
-            <select className="ui-select" value={ask.relic} onChange={(ev) => setAsk({ ...ask, relic: ev.target.value })}>
-              <option value="">Choose…</option>
-              {view.relics.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-            </select>
-          </label>
-          <button type="submit" className="ui-button ui-button--primary" disabled={!mine || view.at === null || !ask.suspect || !ask.relic}>Ask</button>
-        </form>
-      </section>
-
-      <section className="ui-panel ui-stack" aria-label="Your cards and notebook">
-        <p>Your cards: {me ? me.hand.map((c) => n.card(c.id)).join(", ") : "…"}</p>
-        <table className="solo-notebook">
-          <caption className="ui-sr-only">Notebook: what you know is not the answer</caption>
-          <tbody>
-            {notebook(view, me).map((g) => g.rows.map((r, i) => (
-              <tr key={r.id}>
-                {i === 0 ? <th scope="rowgroup" rowSpan={g.rows.length}>{g.group}</th> : null}
-                <td>{r.mark ? <s>{r.name}</s> : r.name}</td>
-                <td>{r.mark === "mine" ? "in your hand" : r.mark === "shown" ? "shown to you" : r.mark === "found" ? "found" : ""}</td>
-              </tr>
-            )))}
-          </tbody>
-        </table>
-      </section>
-
-      <section className="ui-panel ui-stack" aria-label="Accuse">
-        {me?.sealed ? <p>Your accusation is sealed.</p> : (
-          <form className="ui-row" onSubmit={(ev) => {
-            ev.preventDefault();
-            if (!seal.sure) { setSeal({ ...seal, sure: true }); return; }
-            client.send({ t: "seal", suspect: seal.suspect, zone: seal.zone, relic: seal.relic });
-            setSeal({ ...seal, sure: false });
-          }}>
-            {(["suspect", "zone", "relic"] as const).map((k) => (
-              <label key={k} className="ui-field">
-                <span className="ui-field-label">{k === "suspect" ? "Ghost" : k === "zone" ? "Room" : "Relic"}</span>
-                <select className="ui-select" value={seal[k]} onChange={(ev) => setSeal({ ...seal, [k]: ev.target.value, sure: false })}>
-                  <option value="">Choose…</option>
-                  {(k === "suspect" ? view.suspects : k === "zone" ? view.zones : view.relics).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-                </select>
-              </label>
-            ))}
-            <button type="submit" className="ui-button ui-button--danger" disabled={!seal.suspect || !seal.zone || !seal.relic}>
-              {seal.sure ? "Yes, seal it" : "Seal accusation"}
-            </button>
-          </form>
-        )}
-      </section>
+      <GameSections view={view} me={me} seat={snap.seat} send={(m) => client.send(m)} refused={snap.refused} />
 
       <section className="ui-stack" aria-label="What happened">
         <ol className="ui-log" aria-live="polite">

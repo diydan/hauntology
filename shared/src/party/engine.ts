@@ -493,6 +493,28 @@ function finish(s0: EngineState, _now: number): EngineState {
   return { ...s, phase: "ended", turn: null, errandAsk: null, ending };
 }
 
+/**
+ * Every Bot that may Eavesdrop on the open window does, at once (party-mode 9.2): it has Resolve, is a Detective, is neither the
+ * suggester nor the one who showed, and its own notes do not yet place a named card with the Player who showed. It pays one Resolve,
+ * hears one named card that was not shown, and keeps the clue in its own facts only. The log says who listened, as for a human.
+ */
+function botsEavesdrop(s: EngineState, now: number): EngineState {
+  const w = s.eavesdrop;
+  if (w === null) return s;
+  let st = s;
+  for (const b of s.seats.filter((x) => x.bot)) {
+    const me = player(st, b.seat);
+    if (!me || !canEavesdrop(w, b.seat, me.poltergeist, me.resolve, now, me.heard.some((h) => h.eventId === w.eventId))) continue;
+    const mind = mindOf(st, b.seat);
+    if (w.named.some((c) => mind.place.get(c) === w.refuter)) continue; // already resolved in its notes
+    const card = eavesdrop(w, b.seat, st.seed);
+    st = setPlayer(st, b.seat, (p) => ({ ...p, resolve: spendResolve(p.resolve, 1) as number, heard: [...p.heard, { eventId: w.eventId, card }] }));
+    st = addFact(st, b.seat, { kind: "heard", seat: w.refuter, cards: w.named, heard: card });
+    st = addLog(st, { kind: "eavesdrop", seat: b.seat })[0];
+  }
+  return st;
+}
+
 /** Show a card to the suggester, privately, and open the 15 s window. */
 function deliverShown(s: EngineState, eventId: number, card: string, now: number): EngineState {
   const t = s.turn as TurnRec;
@@ -501,6 +523,7 @@ function deliverShown(s: EngineState, eventId: number, card: string, now: number
   st = addFact(st, t.seat, { kind: "shown", card, by: refuter });
   const sug = st.log.find((e) => e.id === eventId) as Extract<EngineEvent, { kind: "suggest" }>;
   st = { ...st, eavesdrop: { eventId, suggester: t.seat, refuter, named: [sug.suspect, sug.zone, sug.relic], shown: card, untilMs: now + EAVESDROP_MS } };
+  st = botsEavesdrop(st, now);
   return { ...st, shownLog: { ...st.shownLog, [eventId]: card }, turn: { ...t, answering: null, windowUntilMs: now + WINDOW_MS, botDueMs: isBot(st, t.seat) ? now + thinkMs(st, eventId) : null } };
 }
 

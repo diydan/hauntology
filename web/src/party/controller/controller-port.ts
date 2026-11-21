@@ -4,6 +4,7 @@ import type { Errand, ErrandObject } from "@hauntology/shared/party/errands";
 import type { Preset } from "@hauntology/shared/puzzles/settings";
 import type { Kind, LockView, PuzzleSetting, Sight, Transcript } from "@hauntology/shared/puzzles/types";
 import type { CluePlace, PublicWorldClue, Sign } from "@hauntology/shared/puzzles/world-clues";
+import type { PrivateSnapshot, PublicSnapshot } from "@hauntology/shared/party/engine";
 import type { TablePrivateInput, TablePublicInput } from "@hauntology/shared/table/data";
 import type { TableNotebook } from "@hauntology/shared/table/notebook";
 import type { AttemptReply } from "../../puzzles/PuzzleHost";
@@ -112,6 +113,12 @@ export type RoomView = Readonly<{
   table?: TableFeed;
   /** The ghost's knock at the TV after a Slam, or none (knock-door 5.3). */
   tvKnock?: ControllerTvKnock | null;
+  /** The game as the Room last told this seat: the Public View and this seat's own Private View. Absent in the scripted stand-in. */
+  game?: Readonly<{ pub: PublicSnapshot; priv: PrivateSnapshot | null }>;
+  /** The last thing the Room refused, until its next public view. */
+  refused?: string;
+  /** A clue the Room showed this seat once (a Sight, on entering a Zone), waiting to be seen. Later ones wait behind it. */
+  sight?: Readonly<{ id: string; sight: Sight }>;
 }>;
 
 export const NOT_SEATED: RoomView = { connection: "offline", phase: "lobby", code: null, seat: null, nickname: null, master: null, lock: null };
@@ -150,6 +157,10 @@ export interface ControllerPort {
   doorKnock?(doorId: string, times: readonly number[]): void;
   /** Any Player: knock the ghost's pattern back at the TV after a Slam; the first right knock gets a Help (knock-door 5.3). */
   tvKnock?(times: readonly number[]): void;
+  /** The Sight on screen has been seen, or its time ran out. */
+  ackSight?(sightId: string): void;
+  /** Send the Room one game message (walk, inspect, suggest, show, seal, choose, hauntPuzzle...). The Room checks it and refuses what is not allowed. Absent in the scripted stand-in. */
+  act?(msg: Readonly<{ t: string }> & Record<string, unknown>): void;
   /** Give the seat up and close the connection. */
   leave(): Promise<void>;
 }

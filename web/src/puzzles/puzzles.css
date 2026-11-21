@@ -48,6 +48,8 @@
 .pz-timer { font-variant-numeric: tabular-nums; }
 
 .pz-host .pz-stage { position: relative; min-height: 20rem; padding: var(--space-3); border-radius: var(--radius-lg); touch-action: none; overflow: hidden; }
+/* One solid yellow button in a view: once the result shows, Done is it, and the finished puzzle's own main button is a plain one. */
+.pz-host .pz-stage[data-done] .ui-button--primary { border-color: var(--line); background: var(--surface-raised); color: var(--text); font-weight: inherit; }
 .pz-skeleton { min-height: 18rem; border-radius: var(--radius-md); background: linear-gradient(90deg, var(--surface-sunk), var(--surface-raised), var(--surface-sunk)); }
 .pz-host .pz-status { min-height: 1.5rem; }
 .pz-host .pz-twin { min-height: 1.3rem; } /* always there, so the buttons below never jump when it shows */

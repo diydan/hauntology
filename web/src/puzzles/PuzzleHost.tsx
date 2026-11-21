@@ -203,7 +203,7 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
           <button type="button" className="ui-button ui-button--primary" onClick={() => setPeeking(false)}>Back to the puzzle</button>
         </div>
       ) : null}
-      <div className="ui-panel pz-stage" hidden={peeking || helping}>
+      <div className="ui-panel pz-stage" hidden={peeking || helping} {...(phase === "done" && reply ? { "data-done": "true" } : {})}>
         <Suspense fallback={<div className="pz-skeleton" aria-busy="true" aria-label="Loading the puzzle" />}>
           <Screen view={view as never} feel={feel} assist={assist} reducedMotion={reducedMotion} elapsed={elapsed} submit={submit as never} resetKey={wrong} announce={announce} hear={onHear} assistText={assistText} tiltButtons={tiltButtons} />
         </Suspense>
@@ -229,7 +229,7 @@ export function PuzzleHost(props: PuzzleHostProps): ReactNode {
             <div className="pz-give">
               <p className="ui-hint">Give up on this lock? Nothing will open.{capMs !== null ? " The time you used still counts." : ""}</p>
               <div className="pz-grid2 pz-confirm">
-                <button type="button" className="ui-button ui-button--primary" onClick={() => setConfirmGive(false)}>Keep playing</button>
+                <button type="button" className="ui-button" onClick={() => setConfirmGive(false)}>Keep playing</button>
                 <button type="button" className="ui-button ui-button--quiet" onClick={onGiveUp}>Yes, give up</button>
               </div>
             </div>
