@@ -167,8 +167,8 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
     - _Requirements: 14.1, 2.1_
 
 - [ ] 5. Feel layer (`web/src/puzzles/feel/`)
-  - [ ] 5.1 The `Motion`, `Haptics`, `Synth` and `Breath` interfaces, the four fakes, `PlatformKit.puzzleFeel`, and a per-device switch for each
-    - Built in `web/src/puzzles/feel/types.ts` (the four interfaces and `PuzzleFeel`), `fakes.ts` (the four fakes) and `create.ts` (`createBrowserFeel`). Still to do: `PlatformKit.puzzleFeel` and the per-device switches, which belong to the Controller.
+  - [x] 5.1 The `Motion`, `Haptics`, `Synth` and `Breath` interfaces, the four fakes, `PlatformKit.puzzleFeel`, and a per-device switch for each
+    - Built in `web/src/puzzles/feel/types.ts` (the four interfaces and `PuzzleFeel`), `fakes.ts` (the four fakes) and `create.ts` (`createBrowserFeel`). `PlatformKit.puzzleFeel` (`web/src/app/platform.ts`; Wander's Play screen and `usePuzzleDevice` take it). The per-device switches are the `DeviceSettings` rows (tilt for Motion, `hapticMode` for Haptics, `soundConsent` for Synth, and `touchOnly` for all); Breath has no standing switch on purpose, because the microphone opens only from the "Blow to snuff" tap each time (decision for review).
     - _Requirements: 8.6, 9.4_
   - [x] 5.2 `browserMotion`: permission from a tap, `beta` and `gamma` at 30 samples a second, the screen angle, stop when hidden or face down and when the Lock closes, raw values never leave the phone
     - Built in `feel/motion.ts` (`BrowserMotion`).

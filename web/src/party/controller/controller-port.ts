@@ -72,6 +72,8 @@ export type RoomView = Readonly<{
   /** Set only for the Master seat: the room controls are the Master's alone (Requirement 1.7). */
   master: Readonly<{ puzzles: PuzzleSetting; preset: Preset; cluePlace?: CluePlace; errands?: boolean }> | null;
   lock: LockOffer | null;
+  /** This seat's sound consent as the Room has it; absent means yes. */
+  soundConsent?: boolean;
   /** World Clues and Decoys kept on this seat's own Turn (shown when Assist is on). */
   worldClues?: readonly PublicWorldClue[];
   /** Private Errands state for this phone (errands spec Groups 3 & 4). */
@@ -96,6 +98,8 @@ export interface ControllerPort {
   attempt(lockId: string, transcript: Transcript): AttemptReply | Promise<AttemptReply>;
   /** The Player is done with a Lock: they tapped Done on the result, gave up, or the Turn time ran out. The Room decides what comes next. */
   closeLock(lockId: string, why: "finished" | "gave_up" | "time_up"): void;
+  /** This seat's sound consent changed (the Sound switch): the Room keeps it with the seat, and the Synth plays only while it is yes (puzzles 5.6). */
+  setSound?(consent: boolean): void;
   /** The Master chose another Puzzle setting. A seat that is not the Master is refused by the Room. */
   setPuzzles(setting: PuzzleSetting): void;
   /** The Master chose where Memory clues live (`phone` or `world`). */

@@ -78,7 +78,7 @@ export default function Play() {
   });
   const { controller, voice } = parts;
   const [device, setDevice] = useDeviceSettings();
-  const puzzleDevice = usePuzzleDevice({ device, setDevice });
+  const puzzleDevice = usePuzzleDevice({ device, setDevice }, platform.puzzleFeel);
   const reducedMotion = typeof matchMedia === "function" ? matchMedia("(prefers-reduced-motion: reduce)").matches : false;
 
   const ui = useSyncExternalStore(controller.subscribe, controller.getSnapshot, controller.getSnapshot);

@@ -94,6 +94,11 @@ export class StandInPort implements ControllerPort {
     this.set({ phase: "lobby", lock: null });
   }
 
+  setSound(consent: boolean): void {
+    this.calls.push(`setSound ${consent}`);
+    this.set({ soundConsent: consent });
+  }
+
   setPuzzles(setting: PuzzleSetting): void {
     this.calls.push(`setPuzzles ${setting}`);
     if (this.view.master !== null) this.set({ master: { ...this.view.master, puzzles: setting } });
