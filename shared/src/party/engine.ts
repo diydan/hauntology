@@ -24,8 +24,8 @@ import { capFor } from "../puzzles/settings";
 import { lockLevel } from "../puzzles/level";
 import { placePuzzles } from "../puzzles/place";
 import { makeLock } from "../puzzles/make";
-import { freezeFor, closeLock, initPartyLocks, markWorldClueSeen, openLock, sightsOnEntry, ackSight, submitAttempt, worldClueNotebook, type PartyLocks } from "../puzzles/inspect";
-import type { Level, LockView, PuzzleSetting, Sight } from "../puzzles/types";
+import { freezeFor, closeLock, initPartyLocks, markWorldClueSeen, openLock, pendingSights, restoreLock, sightsOnEntry, ackSight, submitAttempt, worldClueNotebook, type PartyLocks } from "../puzzles/inspect";
+import { ATTEMPTS, type Level, type LockView, type PuzzleSetting, type Sight } from "../puzzles/types";
 import { placeWorldClues, toPublicWorldClues, type CluePlace, type PublicWorldClue, type Sign } from "../puzzles/world-clues";
 import { CUE_PLAY_MS, canCue, canFrame, houseCuePhones, isCue, restlessSchedule, soundPlan, type CueId, type FrameSeat, type PhoneSeat, type SoundPlan } from "./cues";
 import { canSuggest, defaultShown, isBluff, resolveSuggestion, validShow } from "./suggest";
@@ -183,6 +183,8 @@ export type PublicSnapshot = Readonly<{
   doors: readonly PublicDoor[];
   /** The Zones nobody can reach now, behind a shut door. */
   closedZones: readonly string[];
+  /** The Puzzle setting, the one thing the Public View says about puzzles (puzzles 3.5, requirement 1.4). */
+  puzzleSetting: PuzzleSetting;
   /** The ghost's knock at the TV in this Round, public because every Player hears it; null when there is none (knock-door 5.3). */
   tvKnock: Readonly<{ groups: readonly number[]; long: number | null; answeredBy: number | null }> | null;
   /** Why the world's doors were refused, as short codes (the game plays without them). */
@@ -804,6 +806,10 @@ function closeLocks(s: EngineState, now: number): EngineState {
  * Player's clock pauses for up to 20 s; a Master away for 60 s hands the role to the next human.
  */
 function connection(s: EngineState, seat: number, up: boolean, now: number): EngineState | string {
+  const r = connectionCore(s, seat, up, now);
+  return up && typeof r !== "string" && r !== s ? resendOnReconnect(r, seat, now) : r;
+}
+function connectionCore(s: EngineState, seat: number, up: boolean, now: number): EngineState | string {
   const p = player(s, seat);
   if (!p || isBot(s, seat)) return "bad_token";
   if (p.connected === up) return s;
@@ -816,6 +822,29 @@ function connection(s: EngineState, seat: number, up: boolean, now: number): Eng
     return { ...st, turn: { ...t, clock: free ? pause(t.clock, now) : t.clock, disconnectPausedClock: free, disconnectEndsMs: now + DISCONNECT_GRACE_MS } };
   }
   return { ...st, turn: { ...t, clock: t.disconnectPausedClock ? resume(t.clock, now) : t.clock, disconnectPausedClock: false, disconnectEndsMs: null } };
+}
+
+/**
+ * A phone came back (puzzles 3.1, 3.2): the Lock it had open is rebuilt from the seed with the Attempts already used, and a
+ * Sight it was sent but never acknowledged is sent again. Both go to that seat only; nothing is added to a public view.
+ */
+function resendOnReconnect(s: EngineState, seat: number, now: number): EngineState {
+  const id = String(seat);
+  const out: Outbound[] = [];
+  const restored = s.locks.open[id] ? restoreLock(s.locks, id, {}) : null;
+  if (restored !== null && restored.ok) {
+    const v = restored.value;
+    const placed = s.locks.placed.find((l) => l.lockId === v.lockId);
+    const open = s.locks.open[id];
+    if (placed !== undefined && open) {
+      const level = placed.level;
+      const dl = s.turn === null ? null : deadlineOf(s.turn.clock, now);
+      const deadlineAt = Math.min(open.openedAt + capFor(s.settings.preset ?? "classic"), dl ?? Number.POSITIVE_INFINITY);
+      out.push({ to: "seat", seat, msg: { t: "lock", lockId: v.lockId, view: v.view, level, attempts: ATTEMPTS - v.attemptsUsed, deadlineAt, faded: v.faded, ...(v.sign !== undefined ? { sign: v.sign, prompt: v.prompt, canSeeAgain: v.canSeeAgain } : {}) } });
+    }
+  }
+  for (const d of pendingSights(s.locks, id)) out.push({ to: "seat", seat, msg: { t: "sight", sightId: d.sightId, sight: d.sight } });
+  return out.length === 0 ? s : { ...s, outbox: [...s.outbox, ...out] };
 }
 
 /** The Master resumes: every deadline moves on by the length of the pause, so nothing ran while it was paused. */
@@ -937,6 +966,7 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
     ending: s.phase === "ended" ? s.ending : null,
     doors: s.doors ? publicDoors(s.doors, seatedHumans(s), now) : [],
     closedZones: s.doors ? closedZones(s.doors, s.pool.zones.map((z) => z.id)) : [],
+    puzzleSetting: s.settings.puzzles ?? "off",
     tvKnock: s.tvKnock && s.tvKnock.round === s.round ? { groups: [...s.tvKnock.groups], long: s.tvKnock.long, answeredBy: s.tvKnock.answeredBy } : null,
     doorProblems: [...(s.doorProblems ?? [])],
     ...((s.settings.cluePlace ?? "phone") === "world" ? { cluePlace: "world" as const, worldClues: toPublicWorldClues(s.locks.worldClues ?? []) } : {}),

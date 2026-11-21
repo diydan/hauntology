@@ -32,6 +32,11 @@ export type PartyLocks = Readonly<{
   worldSeenAny?: readonly Sign[];
   /** Per-seat World Clue Signs seen during that Player's own Turn (for Assist notebook). */
   worldSeenTurn?: Readonly<Record<SeatId, readonly Sign[]>>;
+  /**
+   * Telemetry (requirement 14.2): counts of `<kind>.<outcome>` (`solved` or `failed`) and `<kind>.attempts`, and
+   * nothing else: no seat, Zone, time, Tilt value or Transcript. Dies with the Room.
+   */
+  stats?: Readonly<Record<string, number>>;
 }>;
 
 export const MIN_ATTEMPT_GAP_MS = 1000;
@@ -217,6 +222,30 @@ export type AttemptOutcome<R> =
 
 function closed(state: PartyLocks, seat: SeatId): PartyLocks { return { ...state, open: put(state.open, seat, null) }; }
 
+/** Closes a seat's Lock and counts it: the Kind, the outcome and the Attempts made, never who, where or when. */
+function finish(state: PartyLocks, seat: SeatId, open: OpenLock, outcome: "solved" | "failed", attemptsMade: number): PartyLocks {
+  const kind = lockAt(state, open.zone)?.kind;
+  const base = closed(state, seat);
+  if (kind === undefined) return base;
+  const stats = state.stats ?? {};
+  const key = `${kind}.${outcome}`;
+  const akey = `${kind}.attempts`;
+  return { ...base, stats: { ...stats, [key]: (stats[key] ?? 0) + 1, [akey]: (stats[akey] ?? 0) + attemptsMade } };
+}
+
+/** Sights sent to a seat and not yet acknowledged, as the same deliveries again (sent after a reconnect). */
+export function pendingSights(state: PartyLocks, seat: SeatId, assist = false): readonly SightDelivery[] {
+  const out: SightDelivery[] = [];
+  for (const sightId of state.sent[seat] ?? []) {
+    if ((state.seen[seat] ?? []).includes(sightId)) continue;
+    const placed = state.placed.find((p) => sightIdOf(p.lockId) === sightId);
+    if (placed === undefined) continue;
+    const sight = sightFor(makeLock(placed.kind, placed.level, placed.seed), assist);
+    if (sight !== null) out.push({ sightId, sight });
+  }
+  return out;
+}
+
 /**
  * Check an Attempt. Solved: the party-mode `inspect()` result, and the time charged. Wrong: how many Attempts are left
  * and nothing more (no count of right parts). Failed: three wrong, or the Cap or the Turn ran out; nothing is shown
@@ -229,14 +258,14 @@ export function submitAttempt<R>(state: PartyLocks, seat: SeatId, lockId: string
   if (open.lastAttemptAt !== null && now - open.lastAttemptAt < MIN_ATTEMPT_GAP_MS) return fail(ErrorCode.puzzle_rate_limited);
   const charge = lockCharge(now - open.openedAt, ctx.capMs);
   if (now >= Math.min(open.openedAt + ctx.capMs, ctx.turnDeadline ?? Number.POSITIVE_INFINITY)) {
-    return ok({ outcome: "failed", state: closed(state, seat), chargeMs: charge, reason: ctx.turnDeadline !== undefined && ctx.turnDeadline <= open.openedAt + ctx.capMs ? "turn_ended" : "cap" });
+    return ok({ outcome: "failed", state: finish(state, seat, open, "failed", open.attemptsUsed), chargeMs: charge, reason: ctx.turnDeadline !== undefined && ctx.turnDeadline <= open.openedAt + ctx.capMs ? "turn_ended" : "cap" });
   }
   const placed = lockAt(state, open.zone);
   if (placed === undefined) return fail(ErrorCode.puzzle_not_open);
   const verdict = verify(makeLock(placed.kind, placed.level, placed.seed), transcript);
-  if (verdict.ok) return ok({ outcome: "solved", state: closed(state, seat), chargeMs: charge, inspectResult: ctx.inspect() });
+  if (verdict.ok) return ok({ outcome: "solved", state: finish(state, seat, open, "solved", open.attemptsUsed + 1), chargeMs: charge, inspectResult: ctx.inspect() });
   const used = open.attemptsUsed + 1;
-  if (used >= ATTEMPTS) return ok({ outcome: "failed", state: closed(state, seat), chargeMs: charge, reason: "attempts" });
+  if (used >= ATTEMPTS) return ok({ outcome: "failed", state: finish(state, seat, open, "failed", used), chargeMs: charge, reason: "attempts" });
   return ok({ outcome: "wrong", state: { ...state, open: put(state.open, seat, { ...open, attemptsUsed: used, lastAttemptAt: now }) }, attemptsLeft: ATTEMPTS - used });
 }
 
@@ -244,5 +273,5 @@ export function submitAttempt<R>(state: PartyLocks, seat: SeatId, lockId: string
 export function closeLock(state: PartyLocks, seat: SeatId, reason: Exclude<CloseReason, "attempts">, now: number, capMs: number): Result<Readonly<{ state: PartyLocks; chargeMs: number; reason: CloseReason }>> {
   const open = state.open[seat];
   if (!open) return fail(ErrorCode.puzzle_not_open);
-  return ok({ state: closed(state, seat), chargeMs: lockCharge(now - open.openedAt, capMs), reason });
+  return ok({ state: finish(state, seat, open, "failed", open.attemptsUsed), chargeMs: lockCharge(now - open.openedAt, capMs), reason });
 }
