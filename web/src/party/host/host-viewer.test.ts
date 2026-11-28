@@ -32,3 +32,15 @@ describe("viewerMessages frames (party-mode 8.4)", () => {
     expect(viewerMessages(host, last, places, { x: 0, z: 0 }).some((x) => x.t === "set_frames")).toBe(false);
   });
 });
+
+describe("viewerMessages frame photos (party-mode 8.4)", () => {
+  const host = { game: { atmosphere: null, pub: { doors: [], zones: [{ id: "z1", name: "a" }, { id: "z2", name: "b" }] } } } as never;
+  const places = { z1: { x: 4, z: 0 }, z2: { x: 0, z: 4 } };
+  it("puts a fetched photo's address in its Zone's frame and resends when it arrives", () => {
+    const last: { sky: string | null; frames?: string } = { sky: null };
+    viewerMessages(host, last, places, { x: 0, z: 0 }, {});
+    const m = viewerMessages(host, last, places, { x: 0, z: 0 }, { z2: "blob:https://h.test/00000000-0000-0000-0000-000000000001" }).find((x) => x.t === "set_frames");
+    expect(parseShellMessage(m)).toEqual(m);
+    expect((m as { frames: { zone: string; url: string | null }[] }).frames.map((f) => [f.zone, f.url])).toEqual([["z1", null], ["z2", "blob:https://h.test/00000000-0000-0000-0000-000000000001"]]);
+  });
+});

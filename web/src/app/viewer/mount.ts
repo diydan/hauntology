@@ -452,7 +452,8 @@ function startScene(container: HTMLElement, world: LoadedWorld, splatMesh: Splat
       picture.position.z = 0.005;
       const stand = new THREE.Mesh(new THREE.BoxGeometry(0.04, f.pos[1], 0.04), new THREE.MeshBasicMaterial({ color: color.ink }));
       stand.position.set(0, -f.pos[1] / 2 - 0.4, -0.03);
-      if (f.url !== null) {
+      // only the Room's own address or a `blob:` the page itself made: nothing from another origin is ever loaded into a frame
+      if (f.url !== null && (f.url.startsWith("/api/party/") || f.url.startsWith(`blob:${location.origin}/`))) {
         new THREE.TextureLoader().load(f.url, (tex) => {
           tex.colorSpace = THREE.SRGBColorSpace;
           const mat = picture.material as THREE.MeshBasicMaterial;

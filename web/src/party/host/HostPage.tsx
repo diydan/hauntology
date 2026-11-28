@@ -21,6 +21,7 @@ import { RoomCodeCard } from "./RoomCodeCard";
 import { waitForGround } from "../../app/viewer/anchor-ground";
 import { remoteMove, viewerMessages, type HostViewer } from "./host-viewer";
 import { zonePlacesFromGround } from "./zone-places";
+import { useFramePhotos, type PhotoFetch, type PhotoUrls } from "./frame-photos";
 import { useNarration, type NarrationDeps } from "./narration";
 import { useWhisper, type WhisperDeps } from "./whisper";
 import { MASTER_AWAY_NOTE } from "./words";
@@ -47,6 +48,8 @@ export type HostExtras = Readonly<{
   scenes?: SceneDeps;
   /** The places of the Zones on the plan, for the angle of each door's wall (knock-door 8.1). Absent: every wall lies along x. */
   zonePlaces?: ZonePlaces;
+  /** How the Host fetches the Room's photos for its frames (party-mode 8.4); without it the frames stay empty. */
+  framePhotos?: Readonly<{ fetch: PhotoFetch; urls: PhotoUrls }>;
 }>;
 
 /**
@@ -55,6 +58,7 @@ export type HostExtras = Readonly<{
  * nothing but the screen's own pose and clock and the End that the Host token is allowed; every control is on a phone.
  */
 const NO_ZONES: ZonePlaces = {};
+const NO_FRAMED: readonly Readonly<{ zone: string; photoId: string }>[] = [];
 
 export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExtras }): ReactNode {
   const state = useSyncExternalStore((l) => port.subscribe(() => l()), () => port.getState(), () => port.getState());
@@ -79,6 +83,8 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
   const spawn = placed?.spawn ?? null;
   const zonesRef = useRef(zones); zonesRef.current = zones;
   const spawnRef = useRef(spawn); spawnRef.current = spawn;
+  const framePhotos = useFramePhotos({ code: state.code, hostToken: state.hostToken }, game.pub?.framed ?? NO_FRAMED, extras.framePhotos ?? null);
+  const photosRef = useRef(framePhotos); photosRef.current = framePhotos;
   const zoneIds = (game.pub?.zones ?? []).map((z) => z.id).join(",");
   const offsetMs = 0;
 
@@ -94,7 +100,7 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
       viewer.current = v;
       // what the Room said before the Viewer was there (the sky, the doors) is said now: the first messages had nobody to hear them
       lastSky.current = { sky: null };
-      for (const m of viewerMessages(hostRef.current, lastSky.current, zonesRef.current, spawnRef.current)) v.send(m as ShellToViewer);
+      for (const m of viewerMessages(hostRef.current, lastSky.current, zonesRef.current, spawnRef.current, photosRef.current)) v.send(m as ShellToViewer);
       const ground = v.anchorGround;
       if (ground !== undefined) {
         void waitForGround(ground, { timeoutMs: 15_000 }).then((g) => {
@@ -108,7 +114,7 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
   }, [playing, extras, worldId]);
 
   // the sky and the Haunt, and the active Detective's walk, go to the Viewer
-  useEffect(() => { for (const m of viewerMessages(host, lastSky.current, zones, spawn)) viewer.current?.send(m as ShellToViewer); }, [host.game.atmosphere, host, zones, spawn]);
+  useEffect(() => { for (const m of viewerMessages(host, lastSky.current, zones, spawn, framePhotos)) viewer.current?.send(m as ShellToViewer); }, [host.game.atmosphere, host, zones, spawn, framePhotos]);
   useEffect(() => { const i = host.input; if (i !== null && viewer.current?.move) viewer.current.move(remoteMove(i)); }, [host.input]);
 
   const [creating, setCreating] = useState(false);

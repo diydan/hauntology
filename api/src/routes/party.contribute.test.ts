@@ -19,7 +19,7 @@ import { partyRoutes } from "./party";
 import { createLogger, type Logger } from "../log";
 
 const NOW = 1_800_000_000_000;
-class MemoryPhotos implements PhotoStore { files = new Map<string, Uint8Array>(); async put(id: string, b: Uint8Array) { this.files.set(id, b); } async deleteRoom() { this.files.clear(); } }
+class MemoryPhotos implements PhotoStore { files = new Map<string, Uint8Array>(); async put(id: string, b: Uint8Array) { this.files.set(id, b); } async get(_room: string, id: string) { const b = this.files.get(id); return b === undefined ? null : { bytes: b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer, contentType: "image/jpeg" }; } async deleteRoom() { this.files.clear(); } }
 
 function world(o: { vet?: PhotoVetAnswer; guardVerdict?: "safe" | "unsafe"; services?: boolean; selfies?: boolean; log?: Logger } = {}) {
   const rooms = new FakeNamespace((state) => new PartyRoom(state, {}, () => NOW));
@@ -117,6 +117,17 @@ describe("prompts and photos (party-mode 3.2, 3.6 to 3.9, 5.1, 5.1a)", () => {
     expect([r.status, await r.json()]).toEqual([200, { ok: true, status: "accepted" }]);
     expect(w.photos.files.size).toBe(1);
     expect(w.vetCalls.n).toBe(1);
+  });
+  it("serves a stored photo to the Host token alone, privately, and to no seat (party-mode 8.4)", async () => {
+    const w = world(); const { room, ana } = await lobby(w);
+    await w.routes.request(`/${room.code}/contribute/photo`, { ...form({ image: photoBlob(), promptId: "mug" }), headers: bearer(ana.token) });
+    const id = [...w.photos.files.keys()][0] as string;
+    const host = await w.routes.request(`/${room.code}/photo/${id}`, { headers: bearer(room.hostToken) });
+    expect([host.status, host.headers.get("Content-Type"), host.headers.get("Cache-Control")]).toEqual([200, "image/jpeg", "private, no-store"]);
+    expect((await w.routes.request(`/${room.code}/photo/${id}`, { headers: bearer(ana.token) })).status).toBe(401);
+    expect((await w.routes.request(`/${room.code}/photo/${id}`)).status).toBeGreaterThanOrEqual(400);
+    expect((await w.routes.request(`/${room.code}/photo/nope`, { headers: bearer(room.hostToken) })).status).toBeGreaterThanOrEqual(400);
+    expect((await w.routes.request(`/${room.code}/photo/..%2Fx`, { headers: bearer(room.hostToken) })).status).toBeGreaterThanOrEqual(400);
   });
   it("answers photo_rejected with its reason for a person in the picture, and stores nothing", async () => {
     const w = world({ vet: { ok: true, verdict: { kind: "person_visible" } } }); const { room, ana } = await lobby(w);

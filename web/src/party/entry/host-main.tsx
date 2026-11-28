@@ -33,6 +33,7 @@ function App(): React.ReactNode {
     const extras: HostExtras = {
       origin: location.origin, reducedMotion: prefersReducedMotion(), soundDeps,
       narration: { fetchSpeech: fetchHostSpeech((u, i) => fetch(u, i)), createAudio: hostAudio.createAudio, unlockAudio: hostAudio.unlockAudio, fallbackSpeak: hostAudio.fallbackSpeak },
+      framePhotos: { fetch: (u, i) => fetch(u, i), urls: { make: (b) => URL.createObjectURL(b), revoke: (u) => URL.revokeObjectURL(u) } },
       mountViewer: async (container, worldId) => {
         const handle = await mountViewer({ container, worldId, onMessage: (raw) => { const m = parseViewerMessage(raw); if (m?.t === "pose") port.reportPose(m.pos, m.yaw); } });
         return { send: (m) => handle.send(m), move: (m) => handle.send(remoteInputMessage(m)), dispose: () => handle.dispose(), anchorGround: () => handle.anchorGround?.() };

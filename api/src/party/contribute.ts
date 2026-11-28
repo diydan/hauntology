@@ -50,6 +50,8 @@ const denied = (meter: "llm" | "image"): Fail => (meter === "llm" ? fail("quota_
 // ---------------------------------------------------------------- 5.1 photos
 export interface PhotoStore {
   put(photoId: string, bytes: Uint8Array, meta: { contentType: string; room: string; seat: number; promptId?: string }): Promise<void>;
+  /** Reads a stored photo back, for the Host's frame (party-mode 8.4); `null` when there is none. Optional so a store that cannot read simply has no frames. */
+  get?(room: string, photoId: string): Promise<Readonly<{ bytes: ArrayBuffer; contentType: string }> | null>;
   /** Removes a stored photo; used when the Room ends, so nothing outlives it. */
   deleteRoom(room: string): Promise<void>;
 }

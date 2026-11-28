@@ -4,7 +4,7 @@ import { errorCodeOf } from "@hauntology/shared/party/telemetry";
 import type { Logger } from "../log";
 import type { ContribPatch } from "@hauntology/shared/party/lobby-contrib";
 import type { LodgerVoice } from "@hauntology/shared/voice/voices";
-import { presetFor, contributeSelfie, contributeZoneName, intakePhoto, suspectPortraits, suspectSprite, type Fail, type LodgerPick } from "../party/contribute";
+import { presetFor, contributeSelfie, contributeZoneName, intakePhoto, roomScope, suspectPortraits, suspectSprite, type Fail, type LodgerPick } from "../party/contribute";
 import type { ContributionServices } from "../party/wiring";
 import { readLimited } from "./uploads";
 import { sanitizeNickname } from "@hauntology/shared/party/nickname";
@@ -183,6 +183,19 @@ export function partyRoutes(deps: PartyDeps): Hono {
     if (g instanceof Response) return g;
     const r = await roomJson<{ ok: boolean; code?: string; offer?: unknown }>(g.stub, "/skip", { token: g.token });
     return r.ok ? c.json({ ok: true, ...(r.offer as object) }) : refusal(c, r.code ?? "bad_request");
+  });
+
+  // A Room photo for the Host's frame (party-mode 8.4): the Host token alone, never a seat's, and never listed; it goes with the Room.
+  app.get("/:code/photo/:id", async (c) => {
+    const g = await guarded(c);
+    if (g instanceof Response) return g;
+    if (g.who.role !== "host") return refusal(c, "bad_token");
+    const id = c.req.param("id") ?? "";
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return refusal(c, "bad_request");
+    const svc = services(g.code, g.stub);
+    const photo = svc?.photo.photos.get === undefined ? null : await svc.photo.photos.get(roomScope(g.code), id);
+    if (photo === null) return refusal(c, "bad_request");
+    return new Response(photo.bytes, { headers: { "Content-Type": photo.contentType, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" } });
   });
 
   app.post("/:code/contribute/photo", async (c) => {

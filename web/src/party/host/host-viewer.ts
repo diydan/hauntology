@@ -44,7 +44,7 @@ export type HostViewer = Readonly<{ send(m: ShellToViewer): void; move?(m: Remot
  * from the Public View's doors alone. A world with no doors sends nothing at first (the Viewer's default is no door) and an empty list only to
  * clear doors it was told about. `zones` are the places of the Zones on the plan for the wall's angle; without them every wall lies along x (the Host makes them from the Viewer's floor: `zone-places.ts`).
  */
-export function viewerMessages(host: HostView, last: { sky: string | null; doors?: string; frames?: string }, zones: ZonePlaces = {}, spawn: Readonly<{ x: number; z: number }> | null = null): ShellToViewer[] {
+export function viewerMessages(host: HostView, last: { sky: string | null; doors?: string; frames?: string }, zones: ZonePlaces = {}, spawn: Readonly<{ x: number; z: number }> | null = null, photos: Readonly<Record<string, string>> = {}): ShellToViewer[] {
   const out: ShellToViewer[] = [];
   const atmosphere = atmosphereFromSky(host.game.atmosphere);
   const key = atmosphere === null ? null : JSON.stringify(atmosphere);
@@ -52,11 +52,11 @@ export function viewerMessages(host: HostView, last: { sky: string | null; doors
   const doors = viewerDoors(host.game.pub?.doors, zones);
   const doorKey = JSON.stringify(doors);
   if (doorKey !== (last.doors ?? "[]")) { last.doors = doorKey; out.push({ t: "set_doors", doors }); }
-  // an empty frame (no photo address yet) near each Zone that has a place, facing the spawn; none until both are known (party-mode 8.4)
+  // a frame near each Zone that has a place, with the Zone's photo when the Host has fetched it (`photos` maps a Zone id to a `blob:` address), else empty, facing the spawn; none until both are known (party-mode 8.4)
   if (spawn !== null) {
     const ids = host.game.pub?.zones.map((z) => z.id) ?? [];
     const spots = frameSpots(ids.flatMap((id) => (zones[id] ? [{ id, x: zones[id]!.x, z: zones[id]!.z }] : [])), spawn, new Set(ids));
-    const frames = spots.map((f) => ({ zone: f.zone, pos: [...f.pos] as [number, number, number], yaw: f.yaw, url: null }));
+    const frames = spots.map((f) => ({ zone: f.zone, pos: [...f.pos] as [number, number, number], yaw: f.yaw, url: photos[f.zone] ?? null }));
     const frameKey = JSON.stringify(frames);
     if (frameKey !== (last.frames ?? "[]")) { last.frames = frameKey; out.push({ t: "set_frames", frames }); }
   }

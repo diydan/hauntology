@@ -83,3 +83,22 @@ export function buildPool(contributions: readonly Contribution[], presetIds: rea
   const photos = bySeat.flatMap((c) => (c.photo?.status === "accepted" ? [{ photoId: c.photo.photoId, seat: c.seat }] : []));
   return { suspects, zones, relics: RELICS, photos };
 }
+
+/**
+ * Which Zone each accepted photo is framed near (party-mode 3.5, 8.4): the Zone its contributor named, else the next Zone that has no photo yet, in order.
+ * One photo per Zone; a photo with no Zone left over is not framed. Pure and fixed by the pool, so every screen agrees.
+ */
+export function framedPhotos(pool: Pick<Pool, "zones" | "photos">): readonly Readonly<{ zone: string; photoId: string }>[] {
+  const byZone = new Map<string, string>();
+  const spare: string[] = [];
+  for (const p of pool.photos) {
+    const own = pool.zones.find((z) => z.contributedBy === p.seat)?.id;
+    if (own !== undefined && !byZone.has(own)) byZone.set(own, p.photoId);
+    else spare.push(p.photoId);
+  }
+  for (const z of pool.zones) {
+    if (spare.length === 0) break;
+    if (!byZone.has(z.id)) byZone.set(z.id, spare.shift() as string);
+  }
+  return pool.zones.flatMap((z) => (byZone.has(z.id) ? [{ zone: z.id, photoId: byZone.get(z.id) as string }] : []));
+}
