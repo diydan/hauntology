@@ -71,7 +71,8 @@ const ViewerFrameSchema = z.object({
   zone: z.string().regex(/^[a-z][a-z0-9-]{0,15}$/),
   pos: Vec3Schema,
   yaw: z.number().finite(),
-  url: z.string().regex(/^\/api\/party\/[A-Za-z0-9]{4}\/photo\/[A-Za-z0-9_-]{1,64}$/).nullable(),
+  // the Room's own photo address, or a `blob:` address the Host made from it (the photo route needs the Host's token, which a texture load cannot send)
+  url: z.string().regex(/^(\/api\/party\/[A-Za-z0-9]{4}\/photo\/[A-Za-z0-9_-]{1,64}|blob:https?:\/\/[A-Za-z0-9.:\[\]-]{1,80}\/[0-9a-f-]{36})$/).nullable(),
 }).strict();
 export const MAX_FRAMES = 6;
 

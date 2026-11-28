@@ -11,31 +11,31 @@ describe("buildLibrary: every real bank", () => {
   const all = [...(SCRIPTED_BANKS.whisper ?? []), ...(SCRIPTED_BANKS.keeper ?? []), ...(SCRIPTED_BANKS.lodger ?? [])];
   const entries = buildLibrary(SCRIPTED_BANKS, FINITE_VALUES);
 
-  it("has the banks the story writer produced: 77 single-player and 158 party lines, 16 Lodger lines", () => {
-    expect(GHOST_WHISPER_BANK.length + GHOST_KEEPER_BANK.length).toBe(77);
-    expect(PARTY_WHISPER_BANK.length + PARTY_KEEPER_BANK.length).toBe(158);
+  it("has the banks the story writer produced: 79 single-player and 187 party lines, 16 Lodger lines", () => {
+    expect(GHOST_WHISPER_BANK.length + GHOST_KEEPER_BANK.length).toBe(79);
+    expect(PARTY_WHISPER_BANK.length + PARTY_KEEPER_BANK.length).toBe(187);
     expect(SCRIPTED_BANKS.lodger).toHaveLength(16);
-    expect(all.length).toBe(77 + 158 + 16);
+    expect(all.length).toBe(79 + 187 + 16);
   });
 
   it("uses each id once", () => {
     expect(new Set(all.map((l) => l.id)).size).toBe(all.length);
   });
 
-  it("lists 532 files: 66 Lodger, 226 for the Whisper (Pippa) and 240 for the Keeper (Ronald)", () => {
-    expect(entries).toHaveLength(532);
+  it("lists 563 files: 66 Lodger, 257 for the Whisper (Pippa) and 240 for the Keeper (Ronald)", () => {
+    expect(entries).toHaveLength(563);
     expect(entries.filter((e) => e.speaker === "lodger")).toHaveLength(66);
-    expect(entries.filter((e) => e.voice === "inworld:Pippa")).toHaveLength(226);
+    expect(entries.filter((e) => e.voice === "inworld:Pippa")).toHaveLength(257);
     expect(entries.filter((e) => e.voice === "inworld:Ronald")).toHaveLength(240);
   });
 
-  it("estimates about 60,500 characters and $1.50 for everything", () => {
+  it("estimates about 62,000 characters and $1.50 for everything", () => {
     const est = estimateLibrary(entries);
-    expect(est.files).toBe(532);
-    expect(est.chars).toBeGreaterThan(60_000);
-    expect(est.chars).toBeLessThan(61_000);
-    expect(est.usd).toBeGreaterThan(1.45);
-    expect(est.usd).toBeLessThan(1.55);
+    expect(est.files).toBe(563);
+    expect(est.chars).toBeGreaterThan(61_500);
+    expect(est.chars).toBeLessThan(62_500);
+    expect(est.usd).toBeGreaterThan(1.5);
+    expect(est.usd).toBeLessThan(1.6);
   });
 
   it("renders no text-only line: no cue, nudge, phone cue, not-you, choice prompt, haunt rise, round end, hand-over or aside", () => {

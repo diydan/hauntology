@@ -102,7 +102,8 @@ Cut order if time runs short, first to last: the Solution lighting at the end (3
   - [x] 5.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - Nothing was missing: no new element was needed.
     - _Requirements: 8.2_
-  - [ ] 5.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 5.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Run 2026-11-28 in headless Chrome with `node tools/ui-check.mjs` (390 and 1280 px, normal and reduced motion; stops: Haunt with the Set the sky card, Wander chat panel, journal and ending, Controller, Puzzles demo, Host and Display shells): nothing found. An emulated browser, not a real phone.
     - Partly done 2026-11-21 (headless Chrome at 390 and 1280 px, with and without reduced motion): no control under 44 px, no sideways scroll, no console error, no animation running, no solid yellow button on the Table. Not done: looking at it next to the play-through, and the focus ring by eye.
     - _Requirements: 8.4_
   - [x] 5.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)

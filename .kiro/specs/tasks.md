@@ -22,7 +22,9 @@ Counted from ticked boxes (`- [x]`) in each `.kiro/specs/*/tasks.md` on `integra
 | ghost-voice | 56 | 15 | 71 | 78% |
 | game-songs | 17 | 5 | 22 | 77% |
 | knock-door | 38 | 12 | 50 | 76% |
-| **Total** | **901** | **138** | **1039** | **86%** |
+| **Total** | **912** | **127** | **1039** | **88%** |
+
+Update 2026-11-28: PR #93 merged in, the three known failing checks fixed, Playwright smoke run (haunwallker 10.3), and the 390/1280 px shared-look checks run in headless Chrome (conditions 9.3, ghost-engine 9.3, ghost-voice 8.3, party-mode 15.3, puzzles 11.3, spirit-table 5.3). Content decisions the owner settled ("all recommended"): knock-door 5 and puzzles 8.3 (24 Whisper board lines, unrendered) are done. 912 done, 127 left.
 
 ## What is left, and why it is not built
 
@@ -36,7 +38,7 @@ Every open item below needs something the build agents do not have. None is a pl
 - **Another PR:** knock-door 6.1, 6.2 live on PR #93 (`feat/knock-door-wander`).
 - **Stretch or waiting on another task:** ghost-voice 6.3, 6.5 (live mode) · ghost-voice 3.12 and 4.8 (Single player has no speak signal) · party-mode 2.114 (story-writer review) · spirit-table 4.3, 6.7 (party-mode doc lines, notebook storage).
 
-## Known failing checks
+## Known failing checks (all three fixed 2026-11-28)
 
 - `tools/test/guarded-only.test.mjs`: `api/dev/playthrough-calls.ts` calls `ai.run` outside `api/src/guarded/` (red on main).
 - `api/src/worker.test.ts` weather test depends on the date.

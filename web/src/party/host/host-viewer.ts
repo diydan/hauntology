@@ -2,6 +2,8 @@ import type { ShellToViewer } from "@hauntology/shared/app/events";
 import { AtmosphereSchema, type Atmosphere } from "@hauntology/shared/conditions/types";
 import type { Input } from "@hauntology/shared/party/input";
 import { viewerDoors, type ZonePlaces } from "@hauntology/shared/party/door-view";
+import type { AnchorGround } from "../../app/viewer/types";
+import { frameSpots } from "./frames";
 import type { HostView } from "./host-view";
 
 /**
@@ -34,16 +36,15 @@ export function remoteInputMessage(m: RemoteMove): Extract<ShellToViewer, { t: "
   return { t: "remote_input", forward: c(m.forward, 1), strafe: c(m.strafe, 1), yawDelta: c(m.yawDelta, 0.5), pitchDelta: c(m.pitchDelta, 0.5) };
 }
 
-export type HostViewer = Readonly<{ send(m: ShellToViewer): void; move?(m: RemoteMove): void }>;
+export type HostViewer = Readonly<{ send(m: ShellToViewer): void; move?(m: RemoteMove): void; /** The floor, spawn and bounds once the Viewer has them (`undefined`: not yet, `null`: never). */ anchorGround?(): AnchorGround | undefined | null }>;
 
 /**
  * Everything the Viewer is told for one Host view: the sky (once per change) and the doors of the world (once per change: knock-door 8.1,
  * Requirement 9.1). `set_doors` carries each door's place, width, wall angle and whether it is open, and never its lock or a pattern: it is built
  * from the Public View's doors alone. A world with no doors sends nothing at first (the Viewer's default is no door) and an empty list only to
- * clear doors it was told about. `zones` are the places of the Zones on the plan for the wall's angle; without them every wall lies along x (the
- * Room does not send Zone places yet, so a world with doors needs them before this is useful: see the PR notes).
+ * clear doors it was told about. `zones` are the places of the Zones on the plan for the wall's angle; without them every wall lies along x (the Host makes them from the Viewer's floor: `zone-places.ts`).
  */
-export function viewerMessages(host: HostView, last: { sky: string | null; doors?: string }, zones: ZonePlaces = {}): ShellToViewer[] {
+export function viewerMessages(host: HostView, last: { sky: string | null; doors?: string; frames?: string }, zones: ZonePlaces = {}, spawn: Readonly<{ x: number; z: number }> | null = null, photos: Readonly<Record<string, string>> = {}): ShellToViewer[] {
   const out: ShellToViewer[] = [];
   const atmosphere = atmosphereFromSky(host.game.atmosphere);
   const key = atmosphere === null ? null : JSON.stringify(atmosphere);
@@ -51,5 +52,13 @@ export function viewerMessages(host: HostView, last: { sky: string | null; doors
   const doors = viewerDoors(host.game.pub?.doors, zones);
   const doorKey = JSON.stringify(doors);
   if (doorKey !== (last.doors ?? "[]")) { last.doors = doorKey; out.push({ t: "set_doors", doors }); }
+  // a frame near each Zone that has a place, with the Zone's photo when the Host has fetched it (`photos` maps a Zone id to a `blob:` address), else empty, facing the spawn; none until both are known (party-mode 8.4)
+  if (spawn !== null) {
+    const ids = host.game.pub?.zones.map((z) => z.id) ?? [];
+    const spots = frameSpots(ids.flatMap((id) => (zones[id] ? [{ id, x: zones[id]!.x, z: zones[id]!.z }] : [])), spawn, new Set(ids));
+    const frames = spots.map((f) => ({ zone: f.zone, pos: [...f.pos] as [number, number, number], yaw: f.yaw, url: photos[f.zone] ?? null }));
+    const frameKey = JSON.stringify(frames);
+    if (frameKey !== (last.frames ?? "[]")) { last.frames = frameKey; out.push({ t: "set_frames", frames }); }
+  }
   return out;
 }

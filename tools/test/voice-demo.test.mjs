@@ -42,18 +42,18 @@ test('a combination with no audio in the Library is reported as a hole, not hidd
   assert.deepEqual(lodgerCut.holes, [{ id: 'lodger.stall.1', values: { voice: 'inworld:Chloe' } }]);
 });
 
-test('every one of the 532 files in the manifest is reachable from some line, and no line points anywhere else', () => {
+test('every one of the 563 files in the manifest is reachable from some line, and no line points anywhere else', () => {
   const used = new Set(seq.lines.flatMap((l) => l.variants.map((v) => v.file)));
-  assert.equal(used.size, 532);
+  assert.equal(used.size, 563);
   assert.deepEqual([...used].sort(), [...allFiles].sort());
 });
 
-test('the sequence holds all 251 lines: 192 are voiced, 59 are text only', () => {
-  assert.equal(rows.length, 251);
-  assert.equal(seq.lines.length, 251);
-  assert.equal(seq.lines.filter((l) => l.spoken).length, 192, '86 Whisper, 95 Keeper and 11 Lodger lines');
+test('the sequence holds all 282 lines: 223 are voiced, 59 are text only', () => {
+  assert.equal(rows.length, 282);
+  assert.equal(seq.lines.length, 282);
+  assert.equal(seq.lines.filter((l) => l.spoken).length, 223, '117 Whisper, 95 Keeper and 11 Lodger lines');
   assert.equal(seq.lines.filter((l) => !l.spoken).length, 59, '54 party lines and the 5 Lodger asides');
-  assert.equal(seq.lines.filter((l) => l.spoken && l.suffix === 'soft').length, 86);
+  assert.equal(seq.lines.filter((l) => l.spoken && l.suffix === 'soft').length, 117);
   assert.equal(seq.lines.filter((l) => l.spoken && l.suffix === 'dry').length, 95);
   assert.equal(seq.lines.filter((l) => l.spoken && l.suffix === 'lodger').length, 11);
 });
@@ -316,7 +316,7 @@ test('server: listens on 127.0.0.1 only, serves the page and its two scripts wit
 test('server: /sequence.json is the real sequence, and says which audio, portraits and clips are present', async () => {
   await withServer(async ({ base }) => {
     const j = JSON.parse((await get(base + '/sequence.json')).body.toString());
-    assert.equal(j.lines.length, 251);
+    assert.equal(j.lines.length, 282);
     assert.deepEqual(j.holes, []);
     assert.equal(j.lines.flatMap((l) => l.variants).filter((v) => v.present).length, 3, 'only the three files in the folder are present');
     assert.equal(j.characters.whisper.present, true);

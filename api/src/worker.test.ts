@@ -185,6 +185,7 @@ describe("worker", () => {
     const NEW_YORK = { lat: 40.7128, lon: -74.006, tz: "America/New_York", label: "New York, New York, United States" };
     const playWithSky = async (extra: Record<string, string>, conditions: unknown) => {
       vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-06-15T12:00:00Z"));
       const urls: string[] = [];
       globalThis.fetch = (async (input: unknown) => {
         urls.push(String(input));

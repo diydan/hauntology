@@ -14,7 +14,7 @@ import {
   type Errand, type ErrandObject, type SeatInfo,
 } from "./errands";
 import { applyEvent, chooseOption, chooserFor, coldSpotIn, defaultOption, fireEvent, takeBlackout, type Haunt, type HauntOption } from "./haunt";
-import { buildPool, type Pool } from "./pool";
+import { buildPool, framedPhotos, type Pool } from "./pool";
 import { inspectRefusal, placeResidue, settleInspect, startInspect, type Inspecting } from "./residue";
 import { EAVESDROP_MS, canEavesdrop, eavesdrop, gainResolve, spendResolve, type EavesdropWindow } from "./resolve";
 import { NUDGE_CAP_MS, NUDGE_MS, applyNudge, canNudge, type LastSpook, type NudgeKind } from "./nudge";
@@ -191,6 +191,8 @@ export type PublicSnapshot = Readonly<{
   seats: readonly Readonly<{ seat: number; nickname: string; bot: boolean; poltergeist: boolean; handSize: number; sealed: boolean }>[];
   haunt: Readonly<{ level: number; max: number; coldSpot: string | null; choosing: Readonly<{ options: readonly HauntOption[]; chooser: number | null; deadlineMs: number }> | null }>;
   zones: readonly Readonly<{ id: string; name: string }>[];
+  /** The accepted photos and the Zone each is framed near: ids only, for the Host's frames (party-mode 8.4); the picture itself is served to the Host token alone. */
+  framed: readonly Readonly<{ zone: string; photoId: string }>[];
   suspects: readonly Readonly<{ id: string; name: string }>[];
   relics: readonly Readonly<{ id: string; name: string }>[];
   events: readonly EngineEvent[];
@@ -1137,6 +1139,7 @@ export function publicSnapshot(s: EngineState, now: number): PublicSnapshot {
     seats: s.seats.map((x) => ({ seat: x.seat, nickname: x.nickname, bot: x.bot, poltergeist: player(s, x.seat)?.poltergeist ?? false, handSize: s.deal?.hands[x.seat]?.length ?? 0, sealed: player(s, x.seat)?.sealed != null })),
     haunt: { level: s.haunt.level, max: s.haunt.max, coldSpot: coldSpotIn(s.haunt, s.round), choosing: p === null ? null : { options: [...p.options], chooser: p.chooser, deadlineMs: p.deadlineMs } },
     zones: s.pool.zones.map((z) => ({ id: z.id, name: z.name })),
+    framed: framedPhotos(s.pool),
     suspects: s.pool.suspects.map((x) => ({ id: x.id, name: ghostName(x.profileId) })),
     relics: s.pool.relics.map((x) => ({ id: x.id, name: x.name })),
     events: s.log.map((e) => ({ ...e })),

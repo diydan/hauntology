@@ -71,7 +71,8 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
   - [x] 4.2 Every phone shows "n of need" in words and in the live region, with a control to act
     - _Requirements: 4.4_
 
-- [ ] 5. Haunt Slam
+- [x] 5. Haunt Slam
+  - Decisions 2026-11-28 (owner: all recommended): the five `haunt.slam.soft` lines stand as written, and a Slam stays silent until the next render run; "Help" stays 10 seconds more on the knocker's next Turn.
   - [x] 5.1 Add the `slam` option at threshold 6: offered only when `slamTargets` is not empty, puzzles are on and the Gentle preset is off
     - _Requirements: 5.1, 5.5_
   - [x] 5.2 Count the Players behind each door with `zonesBehind`; shut the first target with `shutDoor`
@@ -79,12 +80,17 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
   - [x] 5.3 The ghost knocks a pattern at the TV for every Player; the first to knock it back gets Help
     - _Requirements: 5.3_
   - Progress (2026-11-18): 5.1 to 5.3 are in the Engine (`haunt.ts`, `doors.ts`, `engine.ts`, `protocol.ts`) with `doors-slam.test.ts` (15 tests). 5.4 (a slammed door opens by itself next Round) is covered by task 2.6 and tested. Not done: the Voice Library has no `haunt.slam` lines, so a Slam is silent until some are written; the TV screen for the Slam (built 2026-11-21: `shared/src/party/tv-knock.ts` and `web/src/party/display/TvKnock.tsx`, tested in `tv-knock.test.ts` and `DoorDiorama.test.tsx`: the Display plays the ghost's knock once for the Round with the footage-scene file `knock.m4a` (its own player, so the seven-sound set of party-mode 20 is not widened), says in words that the ghost is knocking and who knocked it back, and never shows the pattern; not heard in a real browser; the phone half, knocking back at the TV, is built 2026-11-21 in `web/src/party/controller/DoorControls.tsx`: touch-only taps, the result and who got the Help in live regions, tested in `Controller.test.tsx`, but only the stand-in port feeds it: no real socket port for the Controller exists yet); mutation checks on the Slam rules (run 2026-11-21, all caught; the Help cap needed one more test in `doors-slam.test.ts`). "Help" is built as 10 seconds more on the knocker's next Turn: that is my reading of puzzles 24.6, to confirm.
+  - Progress (2026-11-18): 5.1 to 5.3 are in the Engine (`haunt.ts`, `doors.ts`, `engine.ts`, `protocol.ts`) with `doors-slam.test.ts` (15 tests). 5.4 (a slammed door opens by itself next Round) is covered by task 2.6 and tested. Voice lines (2026-11-22): `haunt.slam.soft.1` to `.5` are in `docs/story/party-lines.md` and the bank and manifest, not yet rendered (a Slam is silent until they are). Not done:  the TV and phone screens for the Slam (task 8); mutation checks on the Slam rules. "Help" is built as 10 seconds more on the knocker's next Turn: that is my reading of puzzles 24.6, to confirm.
 
 - [ ] 6. Wander door
-  - [ ] 6.1 One door on the way to a memory, a Knock door or a Heavy door that asks for 1
+  - [x] 6.1 One door on the way to a memory, a Knock door or a Heavy door that asks for 1
     - _Requirements: 6.1_
-  - [ ] 6.2 Skip always shown at the door: it opens at once, and says so in words
+  - [x] 6.2 Skip always shown at the door: it opens at once, and says so in words
     - _Requirements: 6.2_
+  - Progress (2026-11-21, wiring): the walk uses the door. With `WANDER_DOORS_ENABLED` on and Locks on, `startSession({ wanderDoor })` sets `lockState.doors`, and `gateReveal` makes the one door memory a knock Lock (`WanderOpen.door`) whose Skip is there from the start (`skipAvailable`); other memories are unchanged. The door's memory says "A door stands in the way..." and a solve or Skip says "The door opens." first. `sightAfterReveal` gives the knock as a Sight before a door that is not the first memory. Both flags are kept in a saved game (`WanderLocksSchema`) and by Haunt again. Tests: `play.wander-door.test.ts` (7), the route test `api/src/routes/play.wander-door.test.ts` (3); one mutation (Skip at once) was caught and reverted. The switch is off by default, because the knock Kind is not in the defaults until it has been tried on real tables (puzzles 16.4). Decided here (default, for Dan to overrule): a door memory replaces the 20-second Skip rule; the other memories keep it.
+  - Progress (2026-11-21, screen): the lock view carries `door: true` (`WanderLockViewSchema`, `play.ts`), and `PuzzleHost` takes `door`: Skip is there at once (before this the screen worked out Skip on its own, 20 s or two wrong tries, and ignored the server), the button says "Skip the door" and the give-up line says "door". Test in `PuzzleHost.test.tsx`; the mutation (no `door ||`) was caught and reverted.
+  - Not done in the walk: only knock doors are placed (a heavy door has no screen on the Play page); the two door lines (`wander.door.soft.1`, `wander.door-open.soft.1`, word for word the scripted replies) are in `ghost-lines.md` and the bank, not yet rendered; the fake API (`shared/src/app/fake-api.ts`) has no door switch; model narration may replace the reply words.
+  - Progress (2026-11-21): the pure rules are in `shared/src/puzzles/wander-door.ts` with 12 tests in `wander-door.test.ts`: at most one door per walk (on memory `hash % 3`), a knock or a heavy door that asks for 1, Skip with no clock and no count, the words. One mutation of the Skip rule was caught by the tests and reverted. NOT done: the walk does not use it yet. `shared/src/ghost/play.ts` and the Play screen still use the Wander Lock (`wander.ts`), whose Skip waits 20 s or two wrong tries; wiring the door in replaces that gate for a door memory, which needs a decision (below).
 
 - [ ] 7. Spike: the collider box
   - [ ] 7.1 In a real Gallery world, put a box across a doorway and record in `docs/spikes/` whether the walker stops cleanly, slides, snags or steps through at speed

@@ -24,6 +24,8 @@ export type Bindings = {
   PARTY_ENABLED?: string;
   /** `false`, `0` or `off` turns off puzzles (Party runs plain Inspect; Wander hides the Locks switch). Unset is on. */
   PUZZLES_ENABLED?: string;
+  /** `true`, `1` or `on` gives a Wander walk with Locks one door (the ghost's knock, with Skip at once; knock-door 6). Unset is off: the knock Kind is not in the defaults until it has been tried on real tables. */
+  WANDER_DOORS_ENABLED?: string;
   /** When set (not empty), Turnstile is configured and its origin is allowed by the page policy. */
   TURNSTILE_SECRET?: string;
   /** The Turnstile widget's public site key, sent in the Quote when Turnstile is on. Public; not a secret. */
@@ -34,6 +36,14 @@ export type Bindings = {
   WORLD_TTL_DAYS?: string;
   /** The operator's token (a secret of at least 32 characters). Without a valid one the `/admin` routes do not exist. */
   ADMIN_TOKEN?: string;
+  /** `false`, `0` or `off` turns off the Conditions feature. Unset is on. */
+  CONDITIONS_ENABLED?: string;
+  /** `false` turns off live creation (tests and development). */
+  CREATE_LIVE_ENABLED?: string;
+  /** `false` turns off the ghost model (tests and development). */
+  GHOST_MODEL_ENABLED?: string;
+  /** The site's own origin (tests and development). */
+  ORIGIN?: string;
   /** Extra allowed `Origin` values, comma-separated (development only). */
   ALLOWED_ORIGINS?: string;
 };

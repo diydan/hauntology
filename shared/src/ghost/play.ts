@@ -3,6 +3,7 @@ import type { Atmosphere, ConditionsSnapshot, PromptFields } from "../conditions
 import type { PlayView, WanderLockView } from "../app/api";
 import type { Sight } from "../puzzles/types";
 import { gateReveal, initWander, sightAfterReveal, skipAvailable, skipWanderLock, submitWanderAttempt, type WanderLocks } from "../puzzles/wander";
+import { wanderDoorLine } from "../puzzles/wander-door";
 import { placeAnchors, ringAnchors, validateAnchors, walkRadiusOf } from "./anchors";
 import { initialState, step, withHistory, withMemory, type StepResult } from "./engine";
 import { parseAction } from "./parse";
@@ -56,6 +57,8 @@ export type StartInput = {
   conditions?: ConditionsSnapshot | null | undefined;
   /** Enables optional Wander Locks (`puzzles` Requirement 2; off by default). */
   locks?: boolean | undefined;
+  /** With `locks`, one memory has a Wander door: the ghost's knock, with Skip at once (knock-door 6; off by default, the server switch `WANDER_DOORS_ENABLED`). */
+  wanderDoor?: boolean | undefined;
 };
 
 /** Where the anchors come from: the world's own, else the client's if they pass, else placed from the seed, else the ring. */
@@ -95,7 +98,7 @@ export function startSession(input: StartInput): PlaySession {
     expiresAt: now + SESSION_TTL_MS,
     atmosphere: input.atmosphere ?? atmosphereForGame(kept),
     ...(kept === null ? {} : { conditions: kept }),
-    ...(input.locks === true ? { gameSeed: seed >>> 0, lockState: initWander(true) } : {}),
+    ...(input.locks === true ? { gameSeed: seed >>> 0, lockState: initWander(true, input.wanderDoor === true) } : {}),
   };
 }
 
@@ -110,7 +113,7 @@ export function resetSession(session: PlaySession, input: { world: WorldFacts; s
     now: input.now,
     atmosphere: session.atmosphere,
     conditions: session.conditions ?? null,
-    ...(session.lockState?.on === true ? { locks: true } : {}),
+    ...(session.lockState?.on === true ? { locks: true, wanderDoor: session.lockState.doors === true } : {}),
   });
   return { ...fresh, voice: session.voice };
 }
@@ -146,6 +149,11 @@ export type NarrationJob = {
 };
 export const WANDER_ATTEMPT_COOLDOWN_MS = 1000;
 const LOCK_HOLDING_LINE = "Something holds this memory shut. Open the lock to hear it.";
+/** The door memory's words: what stands in the way, and that Skip is there (knock-door 6.2, 7.3). Never the knock. */
+const DOOR_HOLDING_LINE = wanderDoorLine({ lock: "knock", level: "easy", seed: 0, need: 1 });
+/** Said first when a door opens, by the knock or by Skip, so the visitor is told in words (knock-door 6.2). */
+export const DOOR_OPENED_LINE = "The door opens.";
+const withDoorWords = <T extends { reply: { text: string; scripted: true } }>(r: T): T => ({ ...r, reply: { ...r.reply, text: `${DOOR_OPENED_LINE} ${r.reply.text}` } });
 
 function buildOpenLockView(session: PlaySession, now: number): WanderLockView | undefined {
   const ls = session.lockState;
@@ -161,6 +169,7 @@ function buildOpenLockView(session: PlaySession, now: number): WanderLockView | 
     wrong: open.wrong,
     openedAt: open.openedAt,
     skipAvailable: skipAvailable(open, now),
+    ...(open.door === true ? { door: true as const } : {}),
   };
 }
 
@@ -288,7 +297,7 @@ export function playTurn(session: PlaySession, turn: TurnInput): TurnResult {
       return {
         ok: true,
         session: next,
-        reply: { text: LOCK_HOLDING_LINE, scripted: true },
+        reply: { text: gated.state.open?.door === true ? DOOR_HOLDING_LINE : LOCK_HOLDING_LINE, scripted: true },
         view: viewOf(next, turn.now),
         directive: stepped.directive,
         revealed: false,
@@ -328,6 +337,7 @@ export function attemptWanderLock(
   if (session.lastAttemptAt !== undefined && session.lastAttemptAt !== null && args.now - session.lastAttemptAt < WANDER_ATTEMPT_COOLDOWN_MS) {
     return { ok: false, code: "puzzle_rate_limited" };
   }
+  const wasDoor = session.lockState.open.door === true;
   const r = submitWanderAttempt(session.lockState, args.transcript, args.now);
   if (!r.ok) return { ok: false, code: r.code === "puzzle_not_open" ? "puzzle_not_open" : "puzzle_disabled" };
   const outcome = r.value;
@@ -341,7 +351,7 @@ export function attemptWanderLock(
   const action = parseAction({ button: "touch" });
   const stepped = step(session.state, action, { anchors: session.anchors, pos: anchor.pos, yaw: pose.yaw, now: args.now });
   const done = finalizeTurnStep({ ...session, lastAttemptAt: args.now }, stepped, pose, action, { now: args.now, world: args.world, voiceLineId: args.voiceLineId }, outcome.state);
-  return { ...done, outcome: "solved" };
+  return { ...(wasDoor ? withDoorWords(done) : done), outcome: "solved" };
 }
 
 export function skipWanderLockForSession(
@@ -351,6 +361,7 @@ export function skipWanderLockForSession(
   if (isExpired(session, args.now)) return { ok: false, code: "session_expired" };
   if (!session.lockState?.on) return { ok: false, code: "puzzle_disabled" };
   if (session.lockState.open === null) return { ok: false, code: "puzzle_not_open" };
+  const wasDoor = session.lockState.open.door === true;
   const r = skipWanderLock(session.lockState, args.now);
   if (!r.ok) return { ok: false, code: r.code === "puzzle_not_open" ? "puzzle_not_open" : "puzzle_rate_limited" };
   const anchor = session.anchors.find((a) => a.id === r.value.anchorId);
@@ -358,7 +369,8 @@ export function skipWanderLockForSession(
   const pose = sanitizePose({ pos: anchor.pos, yaw: session.pose.yaw }, args.world.bounds, session.pose);
   const action = parseAction({ button: "touch" });
   const stepped = step(session.state, action, { anchors: session.anchors, pos: anchor.pos, yaw: pose.yaw, now: args.now });
-  return finalizeTurnStep(session, stepped, pose, action, { now: args.now, world: args.world, voiceLineId: args.voiceLineId }, r.value.state);
+  const done = finalizeTurnStep(session, stepped, pose, action, { now: args.now, world: args.world, voiceLineId: args.voiceLineId }, r.value.state);
+  return wasDoor ? withDoorWords(done) : done;
 }
 
 /** What the model said for a turn, to be put where the scripted words were. */

@@ -95,6 +95,9 @@ const STOPS = [
     }
     await sleep(500);
   } },
+  { name: "Wander journal", go: async (p) => { await toHaunt(p); await p.clickText("button", "Use a preset ghost"); await p.clickText("button", "Maren"); await p.clickText("button", "Wander"); await p.clickText("button", "Go in", 400); await p.clickText("button", "Journal", 400); } },
+  { name: "Host (no Room)", go: (p) => p.goto("/host.html?demo=1") },
+  { name: "Display (no Room)", go: (p) => p.goto("/display.html?demo=1") },
   { name: "Create (draw a place)", go: async (p) => { await p.goto("/?demo=1"); await p.clickText("a, button", "Draw a place", 600); } },
   { name: "Shared link (a Gallery place is not shared: the Expired screen)", go: (p) => p.goto("/shared/attic-room?demo=1&zero=1") },
   { name: "Not found", go: (p) => p.goto("/play/not%20a%20place?demo=1&zero=1") },

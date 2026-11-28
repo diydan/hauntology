@@ -87,6 +87,7 @@ export const WanderLockViewSchema = z.object({
   wrong: z.number().int().min(0),
   openedAt: z.number().finite(),
   skipAvailable: z.boolean(),
+  door: z.literal(true).optional(),
 });
 
 export const PlayViewSchema = z.object({

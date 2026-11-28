@@ -13,7 +13,7 @@ Speakers: **the Keeper** (Inworld Ronald, id suffix `dry`, played by Mr. Ashby o
 | `accuse.wrong`, `accuse.right`, `end.solved` | `accuse-wrong`, `accuse-right`, `ended-solved` | Keeper | spoken |
 | `cue.<sound>`, `nudge.help`, `nudge.spook`, `phone-cue.<sound>` | `cue`, `nudge`, `phone-cue` (scripted only, never a model) | Keeper | text only (proposed: they happen too often to voice) |
 | `not-you` | the private `notYou` message of a House Cue and a Frame | Keeper | text only, on the target's phone |
-| `haunt.cold-spot`, `haunt.blackout`, `haunt.restless`, `haunt.lull` | `haunt-event` | Whisper | spoken |
+| `haunt.cold-spot`, `haunt.blackout`, `haunt.restless`, `haunt.lull`, `haunt.slam` | `haunt-event` | Whisper | spoken |
 | `poltergeist` | `poltergeist` (a Player joins the haunting) | Whisper | spoken |
 | `end.haunting` | `ended-haunted` | Whisper | spoken |
 | `haunt.choose` | none: the prompt that offers two options to a Poltergeist | Whisper | text only, private on the phone |
@@ -302,6 +302,49 @@ The Haunt falls by one. The lines say only that the house settles.
 | `haunt.lull.soft.3` | Something loosens its grip, and I think that is my doing, though I am not sure I mean it. Breathe, all of you. |
 | `haunt.lull.soft.4` | I let the house be for a little, and it forgets itself. I am glad of the rest. So is the house. |
 | `haunt.lull.soft.5` | The house takes a long, slow, kindly breath, and I let it. I think it has earned that. You may take one too. |
+
+## Whisper: haunt.slam (spoken)
+
+The Haunt shuts a door (`knock-door` Requirement 5). It opens again by itself, and the ghost knocks at the TV for whoever is quick. No line names a door, a Zone or a Player: only the door that is shut, and no one is behind it. No line says when it opens again.
+
+| Id | Line |
+|---|---|
+| `haunt.slam.soft.1` | A door swings shut, quite on its own. I like the sound it makes. It means something has been decided. |
+| `haunt.slam.soft.2` | I close a door. It is only a door, and it will open again in its own time. I would not lean on it. |
+| `haunt.slam.soft.3` | Somewhere a door slams, and the whole house hears it. I say nothing. A slam says all I mean. |
+| `haunt.slam.soft.4` | One door fewer to walk through. I shut it gently, the way you would for a sleeper. It wakes by itself. |
+| `haunt.slam.soft.5` | I shut a door, and I knock to say so. Knock back, if you are quick. I answer the quick. |
+
+## Whisper: board (spoken)
+
+The Spirit board (`puzzles` 8.3): the Whisper says the word, a short clue and the word again, for the 24 three- and four-letter words, where a phone voice alone is least clear. The clue is the one in `BOARD_CLUES`, never the word spelled out. The five-letter words use the phone's own voice.
+
+| Id | Line |
+|---|---|
+| `board.elm.soft.1` | Elm. A tall tree. Elm. |
+| `board.oak.soft.1` | Oak. A strong tree. Oak. |
+| `board.owl.soft.1` | Owl. A bird of the night. Owl. |
+| `board.fog.soft.1` | Fog. Low grey cloud. Fog. |
+| `board.dew.soft.1` | Dew. Drops on morning grass. Dew. |
+| `board.fir.soft.1` | Fir. An evergreen tree. Fir. |
+| `board.key.soft.1` | Key. It opens a lock. Key. |
+| `board.urn.soft.1` | Urn. A tall jar. Urn. |
+| `board.hat.soft.1` | Hat. Worn on the head. Hat. |
+| `board.sun.soft.1` | Sun. It rises each morning. Sun. |
+| `board.bee.soft.1` | Bee. It makes honey. Bee. |
+| `board.orb.soft.1` | Orb. A glowing ball. Orb. |
+| `board.hush.soft.1` | Hush. Be very quiet. Hush. |
+| `board.door.soft.1` | Door. You open it to come in. Door. |
+| `board.star.soft.1` | Star. It shines at night. Star. |
+| `board.rose.soft.1` | Rose. A red flower. Rose. |
+| `board.dove.soft.1` | Dove. A white bird. Dove. |
+| `board.leaf.soft.1` | Leaf. It grows on a tree. Leaf. |
+| `board.snow.soft.1` | Snow. Cold, white and soft. Snow. |
+| `board.rain.soft.1` | Rain. It falls from the clouds. Rain. |
+| `board.bird.soft.1` | Bird. It can fly. Bird. |
+| `board.hall.soft.1` | Hall. A long room. Hall. |
+| `board.glow.soft.1` | Glow. A soft light. Glow. |
+| `board.home.soft.1` | Home. Where you live. Home. |
 
 ## Whisper: haunt.choose (text only, private to a Poltergeist) PROPOSED
 

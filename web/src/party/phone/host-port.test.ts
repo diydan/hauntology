@@ -50,7 +50,7 @@ describe("RoomHostPort (party-mode 8.1)", () => {
     expect(r.calls[0]!.url).not.toContain(HOST);
     r.sockets[0]!.say({ t: "welcome", role: "host", seat: null });
     expect(p.getState().connection).toBe("online");
-    expect(r.sockets[0]!.msgs().at(-1)).toEqual({ t: "hostClock", offsetMin: -new Date(Date.UTC(2026, 10, 21, 12, 0)).getTimezoneOffset() }); // the machine's own offset
+    expect(r.sockets[0]!.msgs().at(-1)).toEqual({ t: "hostClock", offsetMin: -new Date(Date.UTC(2026, 10, 21, 12, 0)).getTimezoneOffset() + 0 }); // the machine's own offset
     expect(JSON.parse(r.store.get("hauntology.party.host")!)).toMatchObject({ code: "K7M2", hostToken: HOST });
   });
   it("can replace the visitor's own earlier Room, and says the Room's refusal as it is (or unreachable)", async () => {

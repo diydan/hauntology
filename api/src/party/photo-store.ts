@@ -20,6 +20,11 @@ export class R2PhotoStore implements PhotoStore {
     await this.bucket.put(`${photoPrefix(meta.room)}${safe(photoId)}`, bytes, { httpMetadata: { contentType: meta.contentType } });
   }
 
+  async get(room: string, photoId: string): Promise<Readonly<{ bytes: ArrayBuffer; contentType: string }> | null> {
+    const obj = await this.bucket.get(`${photoPrefix(room)}${safe(photoId)}`);
+    return obj === null ? null : { bytes: await obj.arrayBuffer(), contentType: obj.httpMetadata?.contentType ?? "image/jpeg" };
+  }
+
   async deleteRoom(room: string): Promise<void> {
     await this.deletePrefix(photoPrefix(room));
     for (let seat = 1; seat <= 6; seat++) {

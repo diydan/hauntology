@@ -69,7 +69,7 @@ test("Wander: a preset ghost, three memories, the Ending", async ({ page }) => {
     await page.getByRole("button", { name: new RegExp(`(Walk to|Back to) memory ${n}`) }).click();
     await page.getByRole("button", { name: "Talk" }).click();
     await page.getByRole("button", { name: "Look" }).click();
-    if (n < 3) await expect(page.locator(".transcript .ghost").last()).toBeVisible();
+    if (n < 3) await expect(page.locator(".transcript .ui-log-row[data-who=\"ghost\"]").last()).toBeVisible();
   }
 
   await expect(page.getByRole("heading", { name: "You remembered" })).toBeVisible();

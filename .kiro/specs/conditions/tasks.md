@@ -155,6 +155,7 @@ Order: the spike first, then pure logic with property tests, then the API module
   - [x] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - Verified (2026-11-21): no missing piece, so nothing was added to `design/elements.css`; `tools/test/design-system.test.mjs` fails on any undefined `ui-` class in `web/src`.
     - _Requirements: 7.2_
-  - [ ] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Run 2026-11-28 in headless Chrome with `node tools/ui-check.mjs` (390 and 1280 px, normal and reduced motion; stops: Haunt with the Set the sky card, Wander chat panel, journal and ending, Controller, Puzzles demo, Host and Display shells): nothing found. An emulated browser, not a real phone.
     - **Not done, needs a real browser or phone (left open on purpose in the finish pass):** the Set the sky card (`SkyCard.tsx`) at 390 and 1280 px.
     - _Requirements: 7.4_

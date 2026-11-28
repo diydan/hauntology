@@ -43,6 +43,8 @@ export const GHOST_WHISPER_BANK: readonly BankLine[] = [
   { id: "wander.chair.soft.1", kind: "wander.chair", text: "The tea is still warm, and the coat is still on the chair. Somebody has only just stepped out. I shall wait.", spoken: true },
   { id: "wander.letter.soft.1", kind: "wander.letter", text: "A sealed envelope, and a pair of gloves set down just so. It is not mine to open. I keep it safe all the same.", spoken: true },
   { id: "wander.departure.soft.1", kind: "wander.departure", text: "Somebody waves from this window until the road is empty. I wave too, now and then. Nobody has told me to stop.", spoken: true },
+  { id: "wander.door.soft.1", kind: "wander.door", text: "A door stands in the way. It opens to a secret knock. You can skip it.", spoken: true },
+  { id: "wander.door-open.soft.1", kind: "wander.door-open", text: "The door opens.", spoken: true },
   { id: "meet.soft.1", kind: "meet", text: "Hello. I was waiting. I did not mind. I am very good at waiting.", spoken: true },
 ];
 
