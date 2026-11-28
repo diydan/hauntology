@@ -7,6 +7,9 @@ export type SpendStatus = { dayCapReached: boolean; totalCapReached: boolean; ki
 const OFF = new Set(["false", "0", "off"]);
 const ON = new Set(["true", "1", "on"]);
 
+/** Whether a Wander walk with Locks gets one door (knock-door 6). Off unless `WANDER_DOORS_ENABLED` says on. Not one of the shell's switches: the client never needs it. */
+export const wanderDoorsEnabled = (env: Bindings | undefined): boolean => ON.has((env?.WANDER_DOORS_ENABLED ?? "false").trim().toLowerCase());
+
 /**
  * The switches the shell shows. The world switch is on unless `WORLD_GEN_ENABLED` says off or
  * `SpendGuard` has tripped the kill switch. Until a `SpendStatus` is supplied the caps read as not

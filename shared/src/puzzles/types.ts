@@ -165,10 +165,14 @@ export const WanderOpenSchema = z.object({
   seed: z.number().int().nonnegative(),
   openedAt: finite,
   wrong: z.number().int().min(0),
+  /** The one memory with a Wander door (knock-door 6): its Skip is there from the start. Kept in a saved game. */
+  door: z.literal(true).optional(),
 });
 
 export const WanderLocksSchema = z.object({
   on: z.boolean(),
+  /** The walk has a door (knock-door 6.1). Kept in a saved game. */
+  doors: z.literal(true).optional(),
   revealed: z.array(z.string().min(1).max(32)).max(16),
   open: WanderOpenSchema.nullable(),
   seen: z.array(z.string().min(1).max(32)).max(16),

@@ -1,80 +1,67 @@
+
+!.dev.vars.example
+!.env.example
+!.vscode/extensions.json
+!tools/animations/.gitignore
+# Build output
+# Cloudflare
+# Dependencies
+# Dev MCP ledger and recorded raw responses with keys
+# Generated 3D print output (rebuilt by tools/build-print.mjs)
+# Kiro Crew app plumbing (UI state for specs, not part of the spec)
+# Logs
+# Mixamo animation assets (not redistributable; never commit regardless of branch/folder state)
 # NOTE: do NOT ignore /.kiro. Kiroween requires it committed.
 # NOTE: do NOT ignore pnpm-lock.yaml. Pinned versions must be committed.
-
-# Dependencies
-node_modules/
-.pnpm-store/
-
-# Build output
-dist/
-build/
-.vite/
-*.tsbuildinfo
-
-# Cloudflare
-.wrangler/
-.dev.vars
-.dev.vars.*
-!.dev.vars.example
-
-# Secrets and local env
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-.worldlabs/
-worldlabs-credentials*
-
-# Rendered Voice Library audio (tools/prerender-voice.mjs). Audio lives in R2 only; never commit it.
-/.voice-library/
-
-# The narrator spike's replies, ledger and Durable Object state (tools/ghost-spike.mjs, docs/spikes/4.1.md). Local only.
-/.ghost-spike/
-# The narrator play-through's replies, ledger and Durable Object state (tools/ghost-playthrough.mjs, docs/spikes/4.2.md). Local only.
-/.ghost-playthrough/
-/.ghost-playthrough-*/
-
-# Dev MCP ledger and recorded raw responses with keys
-tools/worldlabs-mcp/.ledger.json
-
-# Test and coverage output
-coverage/
-.nyc_output/
-test-results/
-playwright-report/
-
-# Logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-
-# Generated 3D print output (rebuilt by tools/build-print.mjs)
-print/out/
-*.stl.tmp
-
-# Scratch and local outputs
-scratch/
-tmp/
-out/
-*.local
-
 # OS and editors
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/*
-!.vscode/extensions.json
-*.swp
-
-# Kiro Crew app plumbing (UI state for specs, not part of the spec)
-.kiro/specs/*/.spec-state.json
-
+# Rendered Voice Library audio (tools/prerender-voice.mjs). Audio lives in R2 only; never commit it.
+# Scratch and local outputs
+# Secrets and local env
+# Test and coverage output
+# The narrator play-through's replies, ledger and Durable Object state (tools/ghost-playthrough.mjs, docs/spikes/4.2.md). Local only.
+# The narrator spike's replies, ledger and Durable Object state (tools/ghost-spike.mjs, docs/spikes/4.1.md). Local only.
 # Uncut model renders for the web hero media (web/public/media). The cut loops ship; the
 # raw renders carry a burned-in vendor watermark and are kept locally as provenance only.
-web/public/media/src/
-
-# Mixamo animation assets (not redistributable; never commit regardless of branch/folder state)
+*.key
+*.local
+*.log
+*.pem
+*.stl.tmp
+*.swp
+*.tsbuildinfo
+.DS_Store
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+.idea/
+.kiro/specs/*/.spec-state.json
+.nyc_output/
+.pnpm-store/
+.vite/
+.vscode/*
+.worldlabs/
+.wrangler/
+/.ghost-playthrough-*/
+/.ghost-playthrough/
+/.ghost-spike/
+/.voice-library/
+Thumbs.db
+build/
+coverage/
+dist/
+node_modules
+node_modules/
+npm-debug.log*
+out/
+playwright-report/
+pnpm-debug.log*
+print/out/
+scratch/
+test-results/
+tmp/
 tools/animations/*
-!tools/animations/.gitignore
 tools/character-builder/**/clips_*.glb
+tools/worldlabs-mcp/.ledger.json
+web/public/media/src/
+worldlabs-credentials*
