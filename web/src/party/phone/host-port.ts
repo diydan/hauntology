@@ -103,7 +103,7 @@ export class RoomHostPort {
       this.retries = 0;
       this.set({ connection: "online" });
       // only the Host reports its offset (the hour strike is on the Host's clock); a Display is only a second picture
-      if (this.opts.role !== "display") this.send({ t: "hostClock", offsetMin: -new Date(this.deps.now()).getTimezoneOffset() });
+      if (this.opts.role !== "display") this.send({ t: "hostClock", offsetMin: -new Date(this.deps.now()).getTimezoneOffset() + 0 });
       return;
     }
     for (const l of [...this.inputListeners]) l(msg);
