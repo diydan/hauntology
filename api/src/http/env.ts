@@ -34,6 +34,14 @@ export type Bindings = {
   WORLD_TTL_DAYS?: string;
   /** The operator's token (a secret of at least 32 characters). Without a valid one the `/admin` routes do not exist. */
   ADMIN_TOKEN?: string;
+  /** `false`, `0` or `off` turns off the Conditions feature. Unset is on. */
+  CONDITIONS_ENABLED?: string;
+  /** `false` turns off live creation (tests and development). */
+  CREATE_LIVE_ENABLED?: string;
+  /** `false` turns off the ghost model (tests and development). */
+  GHOST_MODEL_ENABLED?: string;
+  /** The site's own origin (tests and development). */
+  ORIGIN?: string;
   /** Extra allowed `Origin` values, comma-separated (development only). */
   ALLOWED_ORIGINS?: string;
 };
