@@ -71,7 +71,8 @@ Depends on `puzzles` (the Secret knock Kind, `makeLock`, `judgeKnock`, the share
   - [x] 4.2 Every phone shows "n of need" in words and in the live region, with a control to act
     - _Requirements: 4.4_
 
-- [ ] 5. Haunt Slam
+- [x] 5. Haunt Slam
+  - Decisions 2026-11-28 (owner: all recommended): the five `haunt.slam.soft` lines stand as written, and a Slam stays silent until the next render run; "Help" stays 10 seconds more on the knocker's next Turn.
   - [x] 5.1 Add the `slam` option at threshold 6: offered only when `slamTargets` is not empty, puzzles are on and the Gentle preset is off
     - _Requirements: 5.1, 5.5_
   - [x] 5.2 Count the Players behind each door with `zonesBehind`; shut the first target with `shutDoor`

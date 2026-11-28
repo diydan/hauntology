@@ -22,9 +22,9 @@ Counted from ticked boxes (`- [x]`) in each `.kiro/specs/*/tasks.md` on `integra
 | ghost-voice | 56 | 15 | 71 | 78% |
 | game-songs | 17 | 5 | 22 | 77% |
 | knock-door | 38 | 12 | 50 | 76% |
-| **Total** | **910** | **129** | **1039** | **88%** |
+| **Total** | **912** | **127** | **1039** | **88%** |
 
-Update 2026-11-28: PR #93 merged in, the three known failing checks fixed, Playwright smoke run (haunwallker 10.3), and the 390/1280 px shared-look checks run in headless Chrome (conditions 9.3, ghost-engine 9.3, ghost-voice 8.3, party-mode 15.3, puzzles 11.3, spirit-table 5.3). 910 done, 129 left.
+Update 2026-11-28: PR #93 merged in, the three known failing checks fixed, Playwright smoke run (haunwallker 10.3), and the 390/1280 px shared-look checks run in headless Chrome (conditions 9.3, ghost-engine 9.3, ghost-voice 8.3, party-mode 15.3, puzzles 11.3, spirit-table 5.3). Content decisions the owner settled ("all recommended"): knock-door 5 and puzzles 8.3 (24 Whisper board lines, unrendered) are done. 912 done, 127 left.
 
 ## What is left, and why it is not built
 
