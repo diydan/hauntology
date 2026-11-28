@@ -125,11 +125,11 @@ const edit = (b, from, to) => { assert.ok(b.markdown.includes(from), `test setup
 const entryOf = (input, id, voice) => input.manifest.entries.find((e) => e.voice === voice && e.sources.includes(id));
 const recount = (input) => { input.manifest.count = input.manifest.entries.length; };
 
-test('the real repo passes: 539 entries, and 54 of the 242 Whisper and Keeper lines are text only', () => {
+test('the real repo passes: 563 entries, and 54 of the 266 Whisper and Keeper lines are text only', () => {
   const r = checkVoiceLibrary(real());
   assert.deepEqual(r.problems, []);
-  assert.deepEqual(r.summary.extra, { lines: 242, textOnly: 54, spokenLines: 188, expectedEntries: 473 });
-  assert.equal(r.summary.entries, 539);
+  assert.deepEqual(r.summary.extra, { lines: 266, textOnly: 54, spokenLines: 212, expectedEntries: 497 });
+  assert.equal(r.summary.entries, 563);
   assert.equal(r.summary.spokenLines, 11);
 });
 
@@ -146,7 +146,7 @@ test('the parser reads ids, speakers and whether a line is spoken from the headi
   assert.equal(by('end.haunting.dry.1').review?.startsWith('fixed word for word'), true);
   assert.ok(!by('end.haunting.dry.1').text.includes('REVIEW'));
   // the summary tables of the file are not lines
-  assert.equal(rows.length, 163);
+  assert.equal(rows.length, 187);
 });
 
 test('a spoken line with no entry fails (the Whisper or the Keeper)', () => {

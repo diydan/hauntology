@@ -315,6 +315,37 @@ The Haunt shuts a door (`knock-door` Requirement 5). It opens again by itself, a
 | `haunt.slam.soft.4` | One door fewer to walk through. I shut it gently, the way you would for a sleeper. It wakes by itself. |
 | `haunt.slam.soft.5` | I shut a door, and I knock to say so. Knock back, if you are quick. I answer the quick. |
 
+## Whisper: board (spoken)
+
+The Spirit board (`puzzles` 8.3): the Whisper says the word, a short clue and the word again, for the 24 three- and four-letter words, where a phone voice alone is least clear. The clue is the one in `BOARD_CLUES`, never the word spelled out. The five-letter words use the phone's own voice.
+
+| Id | Line |
+|---|---|
+| `board.elm.soft.1` | Elm. A tall tree. Elm. |
+| `board.oak.soft.1` | Oak. A strong tree. Oak. |
+| `board.owl.soft.1` | Owl. A bird of the night. Owl. |
+| `board.fog.soft.1` | Fog. Low grey cloud. Fog. |
+| `board.dew.soft.1` | Dew. Drops on morning grass. Dew. |
+| `board.fir.soft.1` | Fir. An evergreen tree. Fir. |
+| `board.key.soft.1` | Key. It opens a lock. Key. |
+| `board.urn.soft.1` | Urn. A tall jar. Urn. |
+| `board.hat.soft.1` | Hat. Worn on the head. Hat. |
+| `board.sun.soft.1` | Sun. It rises each morning. Sun. |
+| `board.bee.soft.1` | Bee. It makes honey. Bee. |
+| `board.orb.soft.1` | Orb. A glowing ball. Orb. |
+| `board.hush.soft.1` | Hush. Be very quiet. Hush. |
+| `board.door.soft.1` | Door. You open it to come in. Door. |
+| `board.star.soft.1` | Star. It shines at night. Star. |
+| `board.rose.soft.1` | Rose. A red flower. Rose. |
+| `board.dove.soft.1` | Dove. A white bird. Dove. |
+| `board.leaf.soft.1` | Leaf. It grows on a tree. Leaf. |
+| `board.snow.soft.1` | Snow. Cold, white and soft. Snow. |
+| `board.rain.soft.1` | Rain. It falls from the clouds. Rain. |
+| `board.bird.soft.1` | Bird. It can fly. Bird. |
+| `board.hall.soft.1` | Hall. A long room. Hall. |
+| `board.glow.soft.1` | Glow. A soft light. Glow. |
+| `board.home.soft.1` | Home. Where you live. Home. |
+
 ## Whisper: haunt.choose (text only, private to a Poltergeist) PROPOSED
 
 The prompt that offers a Poltergeist two Haunt Event options and 15 seconds to choose. The option names come from the screen, so no line names an event. It says nothing about the 15 seconds or what happens if nobody chooses. The spec has no scripted text for this prompt.

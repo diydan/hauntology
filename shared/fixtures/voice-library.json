@@ -50,7 +50,7 @@
       "very close"
     ]
   },
-  "count": 539,
+  "count": 563,
   "entries": [
     {
       "key": "speech/lib/v1/d8ce0fe2cd4d4dea406a515ee239522af8b19543f8139702cee27be7cbe8c10f",
@@ -1738,6 +1738,198 @@
       "spoken": "I shut a door, and I knock to say so. Knock back, if you are quick. I answer the quick.",
       "sources": [
         "haunt.slam.soft.5"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/8eadbd303054e002bf2c8567197e5d13be3513eb7a2341f564302a7401e97053",
+      "voice": "inworld:Pippa",
+      "spoken": "Elm. A tall tree. Elm.",
+      "sources": [
+        "board.elm.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/207f1d6239e9cb4248e8878c0fdfe8abbc09e91aab004c671b508ec6b7a7adc5",
+      "voice": "inworld:Pippa",
+      "spoken": "Oak. A strong tree. Oak.",
+      "sources": [
+        "board.oak.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/5164b6923b1801c477e8fa4177c0c3fb892f498fb5cee74a3bc9c605e9ae9736",
+      "voice": "inworld:Pippa",
+      "spoken": "Owl. A bird of the night. Owl.",
+      "sources": [
+        "board.owl.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7b87c190873d6a5f19fd1d78a9f0a2ba5d97ee81d23f4b88bb9b78a83317b7a3",
+      "voice": "inworld:Pippa",
+      "spoken": "Fog. Low grey cloud. Fog.",
+      "sources": [
+        "board.fog.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/15be7269db71601c1cfcb44b3f62cfa5bf1d9871f33e00bdbbed1c5b926c3991",
+      "voice": "inworld:Pippa",
+      "spoken": "Dew. Drops on morning grass. Dew.",
+      "sources": [
+        "board.dew.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fe2ee3ac6df5ae980275cf60e5fdce329ca2ad80bc746bc6a885a49b78374bfa",
+      "voice": "inworld:Pippa",
+      "spoken": "Fir. An evergreen tree. Fir.",
+      "sources": [
+        "board.fir.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/065b68e0a8c39f94b945e1047900417c86541c27efb7a69d01ef0a58a7cafbe8",
+      "voice": "inworld:Pippa",
+      "spoken": "Key. It opens a lock. Key.",
+      "sources": [
+        "board.key.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d2975fbb30458bd0d755dc88d94ae91d65c673f6494e751e69f706b6f692679d",
+      "voice": "inworld:Pippa",
+      "spoken": "Urn. A tall jar. Urn.",
+      "sources": [
+        "board.urn.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/574fd4c79886d92b7324bb1f94a20accda9a31ff3ea5c702a9d9f029e7d4eac3",
+      "voice": "inworld:Pippa",
+      "spoken": "Hat. Worn on the head. Hat.",
+      "sources": [
+        "board.hat.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/a8f3e0ad1741abfb560ce86989468827481ad8608b1a5f9f59e41de79265f177",
+      "voice": "inworld:Pippa",
+      "spoken": "Sun. It rises each morning. Sun.",
+      "sources": [
+        "board.sun.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/07d4ceb79a6ff15be7779ba0905a0937c93a7fa3350cbe049ebb05206f908441",
+      "voice": "inworld:Pippa",
+      "spoken": "Bee. It makes honey. Bee.",
+      "sources": [
+        "board.bee.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/739aa1d98b6c56cb143829f1dacd02ede9bf9c0a6f298ace103cdd85f7d5509f",
+      "voice": "inworld:Pippa",
+      "spoken": "Orb. A glowing ball. Orb.",
+      "sources": [
+        "board.orb.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/338c6ca4931d61da1bdf03d2a96c294844e6031979f48fcb1078785e30baae3b",
+      "voice": "inworld:Pippa",
+      "spoken": "Hush. Be very quiet. Hush.",
+      "sources": [
+        "board.hush.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/50f11bd2ebc6a178e799fa4abb7f2b750f598260baa76da73c3033b001ee4079",
+      "voice": "inworld:Pippa",
+      "spoken": "Door. You open it to come in. Door.",
+      "sources": [
+        "board.door.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/77d19476220668a6c887b1d2482421ea63ea3d153258fa73beafb891912690bf",
+      "voice": "inworld:Pippa",
+      "spoken": "Star. It shines at night. Star.",
+      "sources": [
+        "board.star.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d5d7d2bac72966a3138b40ced1b25504340f4b6985b5aa802099a4898b836d84",
+      "voice": "inworld:Pippa",
+      "spoken": "Rose. A red flower. Rose.",
+      "sources": [
+        "board.rose.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/d6324d557d6a7ed2495a570698500975cb5cef933079f324e875f93f3ee2f666",
+      "voice": "inworld:Pippa",
+      "spoken": "Dove. A white bird. Dove.",
+      "sources": [
+        "board.dove.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1065b2dd8701fffb822cacdeb501ff2aef51ffba0781cea3f837cc0453a319ad",
+      "voice": "inworld:Pippa",
+      "spoken": "Leaf. It grows on a tree. Leaf.",
+      "sources": [
+        "board.leaf.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/c5daf638eb0651646ca9e8716baa3e74b7d4af35c796d1a2134b53509730a073",
+      "voice": "inworld:Pippa",
+      "spoken": "Snow. Cold, white and soft. Snow.",
+      "sources": [
+        "board.snow.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1c79a308aafaf0b77b2b223d80ac209db0c58bb6f796a7e29b9c7f9738f2cde1",
+      "voice": "inworld:Pippa",
+      "spoken": "Rain. It falls from the clouds. Rain.",
+      "sources": [
+        "board.rain.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/fca416b92486b53b4665e1c8b1b293e4e68aeedb7724b5f6e711e65d05348d89",
+      "voice": "inworld:Pippa",
+      "spoken": "Bird. It can fly. Bird.",
+      "sources": [
+        "board.bird.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/7cee226111224dc4996d64b05c9326313bfc1be9f13af0d9b902636e3c8b2256",
+      "voice": "inworld:Pippa",
+      "spoken": "Hall. A long room. Hall.",
+      "sources": [
+        "board.hall.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/96307af45dc706f511bc4832ef97cd33e9541bbe128b57203fa45bf6f7518e87",
+      "voice": "inworld:Pippa",
+      "spoken": "Glow. A soft light. Glow.",
+      "sources": [
+        "board.glow.soft.1"
+      ]
+    },
+    {
+      "key": "speech/lib/v1/1d840435ac27f24b1c67756718e22cd4b68f63d52f0ac1eafe49ee296ec4f2e3",
+      "voice": "inworld:Pippa",
+      "spoken": "Home. Where you live. Home.",
+      "sources": [
+        "board.home.soft.1"
       ]
     },
     {
