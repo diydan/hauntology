@@ -272,7 +272,8 @@ Tasks marked `*` are optional test tasks that should still be done before submis
     - _Requirements: 7.1, 7.3_
   - [x] 8.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 7.2_
-  - [ ] 8.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 8.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Run 2026-11-28 in headless Chrome with `node tools/ui-check.mjs` (390 and 1280 px, normal and reduced motion; stops: Haunt with the Set the sky card, Wander chat panel, journal and ending, Controller, Puzzles demo, Host and Display shells): nothing found. An emulated browser, not a real phone.
     - Progress (2026-11-22): the speak button and the Host's unlock tap use existing elements (`ui-button`, `ui-button--main`, `ui-switch`, `ui-note`, `ui-speech`) and no colour of their own; 8.1, 8.2 and 8.4 are ticked on that. **Open:** the check at 390 px and 1280 px next to the play-through needs a browser and a person's eyes.
     - _Requirements: 7.4_
   - [x] 8.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)

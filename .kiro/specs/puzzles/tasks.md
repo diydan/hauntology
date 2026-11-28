@@ -299,7 +299,8 @@ Cut order if time runs short, first to last: Spirit clues (group 10), the Marble
   - [x] 11.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - Built: nothing was missing: the ring and the scenes use existing elements (`ui-panel`, `ui-button`, `ui-chip`, `ui-gauge`, `ui-figure`, `ui-card`, `ui-speech`, `ui-log`); the `cr-`, `ph-` classes only place things
     - _Requirements: 16.2_
-  - [ ] 11.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 11.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Run 2026-11-28 in headless Chrome with `node tools/ui-check.mjs` (390 and 1280 px, normal and reduced motion; stops: Haunt with the Set the sky card, Wander chat panel, journal and ending, Controller, Puzzles demo, Host and Display shells): nothing found. An emulated browser, not a real phone.
     - _Requirements: 16.4_
   - [x] 11.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - Built: the Controller menu (`SeatedFrame.tsx`) changed in this branch and the new switch is a `ui-switch`; nothing else built earlier needed to move

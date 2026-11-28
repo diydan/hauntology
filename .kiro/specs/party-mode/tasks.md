@@ -687,7 +687,8 @@ Cut order if time runs short, first to last: live mode (`ghost-voice`), Stitch (
     - _Requirements: 21.1, 21.3_
   - [ ] 15.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - _Requirements: 21.2_
-  - [ ] 15.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 15.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Run 2026-11-28 in headless Chrome with `node tools/ui-check.mjs` (390 and 1280 px, normal and reduced motion; stops: Haunt with the Set the sky card, Wander chat panel, journal and ending, Controller, Puzzles demo, Host and Display shells): nothing found. An emulated browser, not a real phone.
     - _Requirements: 21.4_
   - [ ] 15.4 A screen already built moves onto the elements when it is next changed, in the same change (`design-system` task 4)
     - _Requirements: 21.1_

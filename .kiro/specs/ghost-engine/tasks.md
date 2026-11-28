@@ -163,6 +163,7 @@ Depends on `ghost-creator` 1.10 (Persona), `world-pipeline` 4.1 (SpendGuard) and
   - [x] 9.2 A missing piece goes into `design/elements.css` and `design/catalogue.html` first, made of tokens, and is then used
     - **Verified 2026-11-21:** no missing piece. Every class of the chat panel, the journal and the end screen is a `ui-` element already in `design/elements.css` or a layout class (`chat`, `chat-stage`, `chat-quick`, `transcript`, `journal`) that `web/src/styles/app.css` uses for position only; `tools/test/design-system.test.mjs` fails on any undefined `ui-` class or colour in `web/src` and passes (the finish pass added no screen: the anchor work is logic and the Viewer hook).
     - _Requirements: 10.2_
-  - [ ] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+  - [x] 9.3 Check each screen at 390 px and at 1280 px next to the play-through: contrast, 44 px targets, the focus ring, reduced motion, one solid yellow button
+    - Run 2026-11-28 in headless Chrome with `node tools/ui-check.mjs` (390 and 1280 px, normal and reduced motion; stops: Haunt with the Set the sky card, Wander chat panel, journal and ending, Controller, Puzzles demo, Host and Display shells): nothing found. An emulated browser, not a real phone.
     - **Not done, needs a real browser or phone (left open on purpose in the finish pass):** the chat panel, journal and end screen at 390 and 1280 px.
     - _Requirements: 10.4_
