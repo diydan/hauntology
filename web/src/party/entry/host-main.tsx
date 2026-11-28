@@ -35,7 +35,7 @@ function App(): React.ReactNode {
       narration: { fetchSpeech: fetchHostSpeech((u, i) => fetch(u, i)), createAudio: hostAudio.createAudio, unlockAudio: hostAudio.unlockAudio, fallbackSpeak: hostAudio.fallbackSpeak },
       mountViewer: async (container, worldId) => {
         const handle = await mountViewer({ container, worldId, onMessage: (raw) => { const m = parseViewerMessage(raw); if (m?.t === "pose") port.reportPose(m.pos, m.yaw); } });
-        return { send: (m) => handle.send(m), move: (m) => handle.send(remoteInputMessage(m)), dispose: () => handle.dispose() };
+        return { send: (m) => handle.send(m), move: (m) => handle.send(remoteInputMessage(m)), dispose: () => handle.dispose(), anchorGround: () => handle.anchorGround?.() };
       },
       whisper: { playClip: async (c) => { const bin = atob(c.audio); const bytes = Uint8Array.from(bin, (ch) => ch.charCodeAt(0)); const url = URL.createObjectURL(new Blob([bytes], { type: c.contentType })); try { const el = new Audio(url); await new Promise<void>((resolve, reject) => { el.onended = () => resolve(); el.onerror = () => reject(new Error("audio")); void el.play().catch(reject); }); } finally { URL.revokeObjectURL(url); } } },
       playHere: { port: padPort, extras: { worlds: [], storage: localStorage, unlock: audio.unlock, soundDeps } },

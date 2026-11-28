@@ -18,7 +18,9 @@ import { PlayHere } from "./PlayHere";
 import { HostEffects } from "./HostEffects";
 import { Hud } from "./Hud";
 import { RoomCodeCard } from "./RoomCodeCard";
+import { waitForGround } from "../../app/viewer/anchor-ground";
 import { remoteMove, viewerMessages, type HostViewer } from "./host-viewer";
+import { zonePlacesFromGround } from "./zone-places";
 import { useNarration, type NarrationDeps } from "./narration";
 import { useWhisper, type WhisperDeps } from "./whisper";
 import { MASTER_AWAY_NOTE } from "./words";
@@ -52,6 +54,8 @@ export type HostExtras = Readonly<{
  * "Connection lost" when the socket drops, then the world (when a Viewer is given) with the public HUD, and at the end the ending screen. It sends
  * nothing but the screen's own pose and clock and the End that the Host token is allowed; every control is on a phone.
  */
+const NO_ZONES: ZonePlaces = {};
+
 export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExtras }): ReactNode {
   const state = useSyncExternalStore((l) => port.subscribe(() => l()), () => port.getState(), () => port.getState());
   const now = extras.now ?? Date.now;
@@ -69,11 +73,19 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
   const viewer = useRef<(HostViewer & { dispose(): Promise<void> }) | null>(null);
   const lastSky = useRef<{ sky: string | null; doors?: string }>({ sky: null });
   const hostRef = useRef(host); hostRef.current = host;
-  const zonesRef = useRef(extras.zonePlaces); zonesRef.current = extras.zonePlaces;
+  // Zone places: the ones given, else made here from the Viewer's floor once it has one (party-mode 8.4; the Room keeps no places)
+  const [placed, setPlaced] = useState<{ zones: ZonePlaces; spawn: { x: number; z: number } } | null>(null);
+  const zones: ZonePlaces = extras.zonePlaces ?? placed?.zones ?? NO_ZONES;
+  const spawn = placed?.spawn ?? null;
+  const zonesRef = useRef(zones); zonesRef.current = zones;
+  const spawnRef = useRef(spawn); spawnRef.current = spawn;
+  const zoneIds = (game.pub?.zones ?? []).map((z) => z.id).join(",");
   const offsetMs = 0;
 
   // mount the world once the game is on, and tear it down when the page goes
   const worldId = game.lobby?.worldId ?? null;
+  const zoneIdsRef = useRef(zoneIds); zoneIdsRef.current = zoneIds;
+  const worldIdRef = useRef(worldId); worldIdRef.current = worldId;
   useEffect(() => {
     if (!playing || extras.mountViewer === undefined || worldBox.current === null || worldId === null) return;
     let live = true;
@@ -82,13 +94,21 @@ export function HostPage({ port, extras }: { port: RoomHostPort; extras: HostExt
       viewer.current = v;
       // what the Room said before the Viewer was there (the sky, the doors) is said now: the first messages had nobody to hear them
       lastSky.current = { sky: null };
-      for (const m of viewerMessages(hostRef.current, lastSky.current, zonesRef.current)) v.send(m as ShellToViewer);
+      for (const m of viewerMessages(hostRef.current, lastSky.current, zonesRef.current, spawnRef.current)) v.send(m as ShellToViewer);
+      const ground = v.anchorGround;
+      if (ground !== undefined) {
+        void waitForGround(ground, { timeoutMs: 15_000 }).then((g) => {
+          if (!live || g === undefined) return;
+          const ids = zoneIdsRef.current.split(",").filter((x) => x !== "");
+          setPlaced({ zones: zonePlacesFromGround(g, ids, worldIdRef.current ?? ""), spawn: { x: g.spawn[0], z: g.spawn[2] } });
+        });
+      }
     }).catch(() => { viewer.current = null; });
     return () => { live = false; void viewer.current?.dispose(); viewer.current = null; };
   }, [playing, extras, worldId]);
 
   // the sky and the Haunt, and the active Detective's walk, go to the Viewer
-  useEffect(() => { for (const m of viewerMessages(host, lastSky.current, extras.zonePlaces)) viewer.current?.send(m as ShellToViewer); }, [host.game.atmosphere, host, extras.zonePlaces]);
+  useEffect(() => { for (const m of viewerMessages(host, lastSky.current, zones, spawn)) viewer.current?.send(m as ShellToViewer); }, [host.game.atmosphere, host, zones, spawn]);
   useEffect(() => { const i = host.input; if (i !== null && viewer.current?.move) viewer.current.move(remoteMove(i)); }, [host.input]);
 
   const [creating, setCreating] = useState(false);
